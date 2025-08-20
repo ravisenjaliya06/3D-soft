@@ -1,0 +1,8 @@
+[run]
+omit =
+    */migrations/*
+    */tests/*
+    umaboy/asgi.py
+    umaboy/wsgi.py
+    manage.py
+

@@ -1,0 +1,45 @@
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { MeasurementState, UnitType } from './interface';
+
+// import type UnitType = 'mm' | 'cm' | 'in';
+
+const initialState: MeasurementState = {
+  isActive: false,
+  unitType: 'cm', // Default unit
+  lastMeasurement: null,
+};
+
+const measurementSlice = createSlice({
+  name: 'measurement',
+  initialState,
+  reducers: {
+    toggleMeasurementTool: (state) => {
+      state.isActive = !state.isActive;
+      // Reset last measurement when toggling
+      if (state.isActive) {
+        state.lastMeasurement = null;
+      }
+    },
+    setMeasurementActive: (state, action: PayloadAction<boolean>) => {
+      state.isActive = action.payload;
+      if (state.isActive) {
+        state.lastMeasurement = null;
+      }
+    },
+    setUnitType: (state, action: PayloadAction<UnitType>) => {
+      state.unitType = action.payload;
+    },
+    setLastMeasurement: (state, action: PayloadAction<number | null>) => {
+      state.lastMeasurement = action.payload;
+    },
+  },
+});
+
+export const {
+  toggleMeasurementTool,
+  setMeasurementActive,
+  setUnitType,
+  setLastMeasurement,
+} = measurementSlice.actions;
+
+export default measurementSlice.reducer;

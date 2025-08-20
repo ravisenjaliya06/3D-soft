@@ -1,0 +1,35 @@
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+lint.select = ["E", "W", "F", "N", "S", "T20", "Q", "RET", "SIM", "TD", "BLE", "ANN"]
+lint.ignore = ["E501", "E402", "S113", "SIM108", "TD003", "ANN002", "ANN003"]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "migrations",
+    "manage.py",
+]
+
+line-length = 120
+
+# Assume Python 3.11.
+target-version = "py311"

@@ -1,0 +1,465 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.card {
+  width: 53rem;
+  display: flex;
+  border: 0.2rem solid var(--primary-white);
+  border-radius: 1.6rem;
+  box-shadow: var(--box-shadow);
+  background-image: url('../../assets/login-background.svg');
+  background-size: cover;
+}
+
+.popup_logo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.popup_logo img {
+  margin: 2rem 2rem 0rem 2rem;
+  width: 3.5rem;
+}
+
+.left_side {
+  width: 19rem;
+  height: 36rem;
+}
+
+.left_side h1 {
+  margin: 0.9rem 0rem 2rem 2rem;
+  font-family: var(--font-family);
+  font-size: 1.2rem;
+  font-weight: 200;
+  text-align: left;
+  color: var(--primary-white);
+}
+
+.left_side h1 span {
+  display: block;
+  font-family: var(--font-family);
+  font-size: 1.3rem;
+  font-weight: bold;
+  text-align: left;
+  color: var(--primary-white);
+}
+
+.left_side p {
+  max-width: 16rem;
+  margin: 2rem 1rem 2rem 2rem;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 300;
+  text-align: left;
+  color: var(--primary-white);
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo img {
+  width: 11rem;
+  margin: 6rem;
+}
+
+.right_side {
+  width: 34rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  background: var(--primary-white);
+}
+
+.right_side h2 {
+  font-family: var(--font-family);
+  font-size: 1.5rem;
+  margin-top: 4rem;
+  color: var(--common-text-color);
+  margin-left: 5.5rem;
+  margin-top: 6rem;
+  margin-bottom: 0;
+}
+
+.right_side p {
+  font-family: 'Poppins';
+  font-size: 0.7rem;
+  color: var(--text-gray);
+  margin-top: 0.5rem;
+  margin-left: 5.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.buttonContainer {
+  margin-left: auto;
+  margin-right: auto;
+  width: 23rem;
+  margin-top: 2rem;
+}
+
+.loginButton {
+  width: 23rem;
+  height: 2.5rem;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  background-color: var(--primary-color);
+  color: var(--primary-white);
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.3rem;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--primary-hover);
+    color: var(--primary-color);
+    border: 0.063rem solid var(--primary-color);
+  }
+}
+
+.forgotContainer {
+  display: flex;
+  justify-content: center;
+}
+
+.linkContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.forgotPasswordContainer {
+  margin-left: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.forgotPassword {
+  font-family: var(--font-family);
+  font-size: 0.7rem;
+  color: var(--link-text-color);
+  text-decoration: none;
+}
+
+.forgotpasswordheaderText {
+  font-family: var(--font-family);
+  font-size: 1.2rem;
+  color: var(--common-text-color);
+  text-align: center;
+}
+
+.orSection {
+  display: flex;
+  align-self: center;
+  font-family: var(--font-family);
+  font-size: 0.7rem;
+  color: var(--common-text-color);
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.orSection img {
+  width: 8.5rem;
+  margin: 0 0.8rem;
+}
+
+.googleButton {
+  margin-top: 0.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  width: 12rem;
+  height: 2.5rem;
+  border: 0.063rem solid var(--primary-color);
+  display: flex;
+  color: var(--common-text-color);
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  background: var(--primary-white);
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+}
+
+.googleButton img {
+  width: 1.5rem;
+  margin-left: 0.3rem;
+  margin-right: 0.3rem;
+}
+.googleButton p {
+  font-family: var(--font-family);
+}
+
+.inputGroup {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2rem;
+  width: 23rem;
+  border-radius: 1rem;
+}
+.form {
+  display: block;
+}
+
+.textField {
+  width: 25.5rem;
+  max-width: 25.5rem;
+  margin-bottom: 0.7rem;
+  max-width: 25.5rem;
+}
+.googleIcon {
+  margin-right: 0.5rem;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 1.4rem;
+}
+.closeIcon {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.forgotPasswordPopup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--text-white);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  width: 25rem;
+  padding: 2rem;
+}
+
+.forgotPasswordPopup p {
+  color: var(--header-text-color);
+  font-family: var(--font-family);
+  color: var(--common-text-color);
+}
+
+.forgotpasswordheaderText {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-left: 6rem;
+  font-weight: 600;
+}
+.resetText {
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.popup_reset_input {
+  width: 100%;
+}
+
+.forgotPasswordPopup input[type='email'] {
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+.forgotPasswordPopup img {
+  width: 23rem;
+}
+.popup_reset_button {
+  width: 10rem;
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+  margin-left: 15rem;
+  border-radius: 1rem;
+  height: 2.5rem;
+}
+
+.forgotPasswordPopup button:hover {
+  background-color: var(--button-hover-color);
+}
+
+.remembermeContainer {
+  display: flex;
+  align-items: center;
+  width: 14rem;
+  gap: 0.3rem;
+}
+
+.remembermeContainer label {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 0.6rem;
+  color: var(--text-gray);
+}
+
+.rememberMeCheckbox {
+  appearance: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 0.125rem solid var(--primary-color);
+  border-radius: 0.19rem;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  display: inline-block;
+  background-color: var(--primary-white);
+}
+
+.rememberMeCheckbox:checked {
+  background-color: var(--primary-color);
+}
+
+.rememberMeCheckbox::before {
+  content: '✔';
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--primary-white);
+  font-size: 0.7rem;
+  text-align: center;
+  line-height: 0.8rem;
+  margin-right: 0.1rem;
+  padding: 0;
+}
+
+.registerLinkContainer {
+  display: flex;
+  align-items: center;
+  width: 12.5rem;
+  margin-left: 1rem;
+}
+
+.registerLinkContainer p {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 0.7rem;
+  color: var(--common-text-color);
+  gap: 0.1rem;
+}
+
+.registerLinkContainer span {
+  text-decoration: none;
+  cursor: pointer;
+  color: var(--link-text-color);
+}
+
+.errorPopup {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 0rem 1rem;
+  border-radius: 1rem;
+  box-shadow: 0px 0.25rem 0.5rem var(--dropdown-shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  font-size: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.errorPopupContent {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.errorPopupContent p {
+  font-weight: bold;
+}
+
+.errorPopupContent img {
+  width: 1.3rem;
+}
+
+.loginerrorMessage {
+  font-family: var(--font-family) !important;
+  font-size: 0.6rem !important;
+  text-align: center;
+  letter-spacing: 0.04rem !important;
+  color: var(--error-text-color) !important;
+  margin-left: 0rem !important;
+  margin-top: 0rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.closeIconpopup {
+  cursor: pointer;
+  color: #721c24;
+  font-size: 2rem;
+}
+
+.inputField {
+  width: 25rem;
+  height: 3rem;
+  padding: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.successMessage {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.successPopup {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: #ffffff;
+  color: #2d3748;
+  padding: 0rem 1rem;
+  border-radius: 1rem;
+  box-shadow: 0px 0.25rem 0.5rem var(--dropdown-shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  font-size: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}

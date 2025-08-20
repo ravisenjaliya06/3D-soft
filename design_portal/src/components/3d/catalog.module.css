@@ -1,0 +1,11 @@
+.container {
+  background-color: var(--background-color);
+  height: 100vh;
+  display: flex;
+}
+
+.viewer3D {
+  display: flex;
+  flex-flow: wrap;
+  overflow: hidden;
+}

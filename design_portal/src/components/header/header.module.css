@@ -1,0 +1,170 @@
+.mainheader {
+  display: flex;
+  justify-content: right;
+  align-items: center;
+  padding: 0.5rem 1rem 0rem 1rem;
+  width: 82rem;
+}
+
+.withBorderRadius {
+  border-radius: 0rem 0rem 0rem 0.7rem;
+}
+
+.noBorderRadius {
+  border-radius: 0rem;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  margin-right: 0.2rem;
+  position: fixed;
+  right: 1rem;
+  top: 0.5rem;
+}
+
+.profileIcon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+.profile_setting_line {
+  height: 0.2rem;
+}
+
+.userInfo {
+  margin-left: 0.7rem;
+  margin-right: 1rem;
+  margin-top: 0.5rem;
+}
+
+.userName {
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 500;
+  max-width: 2rem;
+  margin-top: 0.3rem;
+}
+
+.userSubtitle {
+  margin-top: 0rem;
+  font-family: var(--font-family);
+  font-size: 0.6rem;
+  color: var(--subtext-color);
+  cursor: pointer;
+}
+
+.dropdownMenuProfile {
+  position: absolute;
+  background-color: var(--primary-white);
+  box-shadow: 0rem 0.125rem 0.313rem var(--dropdown-shadow);
+  border-radius: 0rem 0rem 0.313rem 0.313rem;
+  width: 10rem;
+  display: flex;
+  justify-content: center;
+  padding: 0.3rem;
+  top: 2.75rem;
+  left: 3rem;
+  z-index: 1;
+}
+
+.dropdownMenuProfile ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.dropdownMenuProfile li {
+  position: relative;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-gray);
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+}
+
+.ProfiledropdownList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ProfiledropdownList li {
+  padding: 0.5rem;
+  width: 8rem;
+  text-align: center;
+}
+
+.ProfiledropdownList li:hover {
+  background-color: var(--dropdown-background-color);
+  border-radius: 0.6rem;
+}
+
+.simpleLine {
+  margin: 0rem 2rem 1rem 2rem;
+  width: 81rem;
+}
+
+.profileIconContainer {
+  width: 11.5rem;
+  height: 2.6rem;
+  background-color: var(--primary-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  font-family: var(--font-family);
+  border: 0.1rem solid var(--border-color);
+}
+
+.profileIconContainer p {
+  font-family: var(--font-family);
+}
+
+.dropDown {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: 0.3rem;
+  margin-right: 0.3rem;
+}
+
+.simpleLine {
+  width: 1rem;
+  margin: 3rem 0 0 2rem;
+  height: 1rem;
+}
+
+.simpleLine img {
+  width: 81.8rem;
+  height: 1rem;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  margin-left: 0.5rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  height: 0;
+  position: relative;
+  top: 2rem;
+  left: 1rem;
+}
+
+.headerTitle p {
+  font-family: var(--font-family);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  margin-right: 0.5rem;
+  margin-left: 0.5rem;
+}

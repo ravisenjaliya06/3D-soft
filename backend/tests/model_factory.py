@@ -1,0 +1,156 @@
+# Python imports
+from datetime import datetime, timedelta
+from typing import Optional
+
+# Django imports
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import Group
+from django.utils import timezone
+
+# App imports
+from design.models import Catalog, CatalogItem, Design, DesignSetting, Material, Texture
+from umaboy.models import Organization, User, UserOrganizationPermission
+from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
+
+
+def new_user(
+    database: str,
+    email: str,
+    name: str,
+    username: str,
+    password: str,
+    confirm_password: str,
+    phone: str = "1234567899",
+    otp: int = 1234,
+    otp_expiration_time: Optional[datetime] = None,
+    is_verified: bool = False,
+    selected_organization: Optional[Organization] = None,
+) -> User:
+    if otp_expiration_time is None:
+        otp_expiration_time = timezone.now() + timedelta(minutes=30)
+
+    user = User.objects.using(database).create(
+        email=email,
+        username=username,
+        name=name,
+        password=make_password(password),
+        phone=phone,
+        otp=otp,
+        otp_expiration_time=otp_expiration_time,
+        is_verified=True,
+        selected_organization=selected_organization,
+    )
+    if selected_organization:
+        organization = selected_organization
+        user.organization.add(organization)
+
+    user.save()
+    return user
+
+
+def new_organization(database: str, user: User) -> Organization:
+    organization = Organization.objects.using(database).create(
+        name=f"{user.username}'s Organization"
+    )
+    organization.user.add(user)
+    organization.save()
+    return organization
+
+
+def new_user_organization_permission(
+    database: str,
+    user: User,
+    organization: Organization,
+) -> UserOrganizationPermission:
+    check_user = User.objects.using(database).filter(id=user.id).first()
+    check_organization = (
+        Organization.objects.using(database).filter(id=organization.id).first()
+    )
+
+    permission_instance = UserOrganizationPermission.objects.using(database).create(
+        user=check_user, organization=check_organization
+    )
+    group_ids = []
+    groups = [ACCOUNTS_MANAGER, MES_EDITOR, DESIGNER, CATALOG_MANAGER]
+    for group_name in groups:
+        try:
+            group = Group.objects.using(database).get(name=group_name)
+            group_ids.append(group.id)
+        except Group.DoesNotExist:
+            continue
+
+    permission_instance.groups.set(group_ids)
+    permission_instance.save()
+
+    return permission_instance
+
+
+def new_design(
+    database: str,
+    organization: Organization,
+    user: User,
+    design_name: str,
+    status: str = "DRAFT",
+    created_at: Optional[datetime] = None,
+    updated_at: Optional[datetime] = None,
+) -> Design:
+    return Design.objects.using(database).create(
+        created_by=user,
+        organization=organization,
+        design_name=design_name,
+        status=status,
+        created_at=created_at,
+        updated_at=updated_at,
+    )
+
+
+def new_texture(database: str, name: str, image: str) -> Texture:
+    return Texture.objects.using(database).create(name=name, image=image)
+
+
+def new_material(database: str, name: str, texture: Texture) -> Material:
+    return Material.objects.using(database).create(name=name, texture=texture)
+
+
+def new_catalog(
+    database: str,
+    name: str,
+    design: Optional[Design] = None,
+    parent: Optional["Catalog"] = None,
+    data: Optional[dict] = None,
+    is_default: bool = False,
+) -> Catalog:
+    return Catalog.objects.using(database).create(
+        name=name, design=design, parent=parent, data=data or {}, is_default=is_default
+    )
+
+
+def new_catalog_item(
+    database: str,
+    name: str,
+    catalog: Catalog,
+    data: dict,
+    material: Optional[Material] = None,
+) -> CatalogItem:
+    return CatalogItem.objects.using(database).create(
+        name=name, catalog=catalog, data=data, material=material
+    )
+
+
+def new_design_setting(
+    database: str,
+    oraganization: Organization,
+    design: Optional[Design] = None,
+    unit: str = "mm",
+    sheet_width: int = 100,
+    sheet_height: int = 100,
+    minifix_distance: int = 10,
+) -> DesignSetting:
+    return DesignSetting.objects.using(database).create(
+        organization=oraganization,
+        design=design,
+        unit=unit,
+        sheet_width=sheet_width,
+        sheet_height=sheet_height,
+        minifix_distance=minifix_distance,
+    )

@@ -1,0 +1,119 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--background-color);
+}
+
+.rightside {
+  flex: 3;
+}
+
+.mainContent {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-direction: column;
+  align-items: center;
+  height: 85vh;
+}
+
+.showdetails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--primary-white);
+  width: 50rem;
+  height: 6rem;
+  border-radius: 1rem;
+  border: 0.063rem solid var(--border-color);
+}
+
+.projectDetails {
+  display: block;
+  font-family: var(--font-family);
+  margin-right: 2rem;
+}
+.showname {
+  margin: 0.4rem 0rem 0rem 0rem;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+}
+
+.showValues {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.Lines {
+  width: 1rem;
+  height: 4rem;
+}
+
+.showprojectdetails {
+  width: 13rem;
+  margin-left: 1.6rem;
+  display: flex;
+}
+
+.showprojectimage {
+  width: 3rem;
+  margin-right: 0.8rem;
+}
+
+.CardSectionlist {
+  display: flex;
+  justify-content: space-between;
+  width: 50rem;
+}
+
+.CardSection {
+  align-items: center;
+  flex-direction: column;
+  margin-top: 1rem;
+  width: 11.3rem;
+  height: 10.6rem;
+  border-radius: 1rem;
+  border: 0.063rem solid var(--border-color);
+  background-color: var(--primary-white);
+  display: block;
+  justify-content: space-between;
+  font-family: var(--font-family);
+  cursor: not-allowed;
+}
+
+.CardSection img {
+  margin-top: 1.4rem;
+  width: 6rem;
+  margin-left: 2.5rem;
+  opacity: 0.6;
+}
+
+.CardSection p {
+  display: flex;
+  justify-content: center;
+  color: var(--primary-color);
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.Analytics {
+  margin-top: 1rem;
+  background-color: var(--primary-white);
+  width: 50rem;
+  height: 22rem;
+  border: 0.063rem solid var(--border-color);
+  border-radius: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.Analytics p {
+  font-family: var(--font-family);
+  font-size: 1.3rem;
+  letter-spacing: 0.04rem;
+  color: var(--primary-color-grey-2);
+  text-align: center;
+}

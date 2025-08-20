@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--background-color);
+}
+
+/* Right side main content part */
+
+.rightside {
+  flex: 3;
+  overflow-y: auto;
+  max-width: 85rem;
+  min-width: none;
+}
+
+.rightside p {
+  font-family: var(--font-family);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.04rem;
+  color: var(--primary-color);
+  text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+}

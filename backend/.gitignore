@@ -1,0 +1,23 @@
+.env
+
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.venv/
+.mypy_cache/git config --list
+.umaboy/__pycache__
+Pipfile.lock
+
+**/project/textures/
+**/project/catalog_items/
+celerybeat**
+
+**/media/organization/
+**/media/profile_pictures/
+**/media/project/catalogs/
+**/media/output/
+**/media/project/
+**/umaboy/media/output/*
+/output.pdf
+/output_sheet_1.svg
+/output_sheet_1.gcode
