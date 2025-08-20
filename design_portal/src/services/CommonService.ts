@@ -1,7 +1,6 @@
 import { REDIRECT, STATUS_CODES } from '@/services/CommonStatus';
 import http from '@/services/http-common';
 import Cookies from 'js-cookie';
-import { string } from 'prop-types';
 
 export type AppName = 'user' | 'design' | 'mes_portal';
 export type RemainingPath =

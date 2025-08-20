@@ -43,8 +43,8 @@ class APIBaseTestCase(APITestCase):
         self.database = db
         self.seed_permissions(DEFAULT_DATABASE)
         self.seed_users(DEFAULT_DATABASE)
-        self.seed_default_users(DEFAULT_DATABASE)
         self.seed_organization(DEFAULT_DATABASE)
+        self.seed_invalid_user(DEFAULT_DATABASE)
         self.seed_new_design(DEFAULT_DATABASE)
         self.seed_new_texture(DEFAULT_DATABASE)
         self.seed_new_material(DEFAULT_DATABASE)
@@ -66,12 +66,12 @@ class APIBaseTestCase(APITestCase):
         return headers
 
     @property
-    def get_defult_headers(self: "APIBaseTestCase") -> Dict[str, str]:
+    def get_invalid_user_headers(self: "APIBaseTestCase") -> Dict[str, str]:
         headers = {"Content-Type": "application/json"}
         if not self.access_token:
             response = self.client.post(
                 reverse("login"),
-                {"email": self.defualt_user.email, "password": PASSWORD},
+                {"email": self.invalid_user.email, "password": PASSWORD},
                 format="json",
             )
             self.access_token = response.data["payload"]["access"]
@@ -124,25 +124,25 @@ class APIBaseTestCase(APITestCase):
         Logger.debug({"message": "populating test db with users"})
         self.user = new_user(
             database=db,
-            email="umaboy@gmail.com",
-            name="umaboy",
-            username="umaboy",
+            email="bravento@gmail.com",
+            name="bravento",
+            username="bravento",
             password=PASSWORD,
             confirm_password=PASSWORD,
         )
         self.invited_user = new_user(
             database=db,
-            email="bravento.developer@gmail.com",
-            name="Bravento",
-            username="Bravento",
+            email="invited.user@gmail.com",
+            name="invited user",
+            username="invited_user",
             password=PASSWORD,
             confirm_password=PASSWORD,
         )
         Logger.debug({"message": "Finished populating test database with users."})
 
-    def seed_default_users(self: "APIBaseTestCase", db: str) -> None:
+    def seed_invalid_user(self: "APIBaseTestCase", db: str) -> None:
         Logger.debug({"message": "populating test db with users"})
-        self.defualt_user = new_user(
+        self.invalid_user = new_user(
             database=db,
             email="testing@gmail.com",
             name="testing",
