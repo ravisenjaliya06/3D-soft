@@ -8,4 +8,7 @@
 git clone https://github.com/yrcoderit/bravento.git
 ```
 
-## More steps in design_portal/README.md and backend/README.md
+## More steps in 
+
+- [design_portal README](design_portal/README.md)
+- [backend README](backend/README.md)
