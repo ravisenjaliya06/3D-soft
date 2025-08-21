@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   pull_request:
     branches: [main]
-
+    
 jobs:
   deploy:
     name: Deploy
@@ -15,12 +15,13 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Add Server to known_hosts
+      - name: Add server to known_hosts
         run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy via SSH
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd bravento
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd /root/bravento || git clone git@github.com:yrcoderit/bravento.git
+            cd /root/bravento
             git pull origin main
             cd backend && pipenv install --dev --deploy --ignore-pipfile
             cd ../design_portal && npm install && npm run build
