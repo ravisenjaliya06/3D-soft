@@ -1,42 +1,92 @@
-name: Backend CI
-
+name: Backend Cleanup and Run TestCase, Formatter check, Type checker, and Migration Check
 on:
   pull_request:
     branches: [main]
+    types:
+      - opened
+      - synchronize
     paths:
       - 'backend/**'
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+
 jobs:
-  backend:
-    name: Run Backend Checks
+  ci:
+    name: Backend Cleanup and Run TestCase
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
+
       - name: Install Pipenv
-        run: pip install pipenv
-      - name: Install Dependencies
-        working-directory: ./backend
-        run: pipenv install --dev --deploy --ignore-pipfile
-      - name: Type Check
-        working-directory: ./backend
-        run: ./backend/scripts/type-checker.sh
-      - name: Formatter Check
-        working-directory: ./backend
-        run: ./backend/scripts/formatter.sh
-      - name: Migration Check
-        working-directory: ./backend
-        run: ./backend/scripts/check_migrations.sh
-      - name: Run Tests & Coverage
+        run: |
+          pip install pipenv
+
+      - name: Install Backend Dependencies
         working-directory: ./backend
         run: |
-          pipenv run coverage run -m pytest
-          coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
-          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
-            echo "Coverage below 90%: $coverage_percentage%"
+          pipenv install --dev --deploy --ignore-pipfile
+
+      - name: Verify Backend Script Exists
+        run: |
+          cd backend/scripts
+          ls -a
+
+      - name: Run Backend Type Checker
+        working-directory: ./backend
+        run: |
+          chmod +x scripts/type-checker.sh
+          ./scripts/type-checker.sh
+
+      - name: Backend Formatter Check
+        working-directory: ./backend
+        run: |
+          chmod +x scripts/formatter.sh
+          ./scripts/formatter.sh
+          if [ $? -ne 0 ]; then
+            echo "Formatter check failed. Please fix the formatting issues."
             exit 1
           fi
+
+      - name: Run Backend Migrations Checker
+        working-directory: ./backend
+        run: |
+          chmod +x scripts/check_migrations.sh
+          ./scripts/check_migrations.sh
+          if [ $? -ne 0 ]; then
+            echo "Migration check failed. Please ensure only one migration file exists per app."
+            exit 1
+          fi
+
+      - name: Run Backend Tests
+        working-directory: ./backend
+        env:
+          SECRET_KEY: '1'
+        run: |
+          pipenv run coverage run -m pytest
+
+      - name: Check Backend Coverage
+        working-directory: ./backend
+        run: |
+          pipenv run coverage report
+          coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+            echo "Coverage is below 90%: $coverage_percentage%. Please add more tests to improve coverage."
+            exit 1
+          else
+            echo "Coverage is sufficient: $coverage_percentage%."
+          fi
+
+      - name: Finalize CI Success
+        run: echo "All checks passed successfully!"
