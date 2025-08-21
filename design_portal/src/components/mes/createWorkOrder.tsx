@@ -11,7 +11,7 @@ type Props = {
   refreshWorkOrders: () => void;
 };
 
-const createWorkOrder: React.FC<Props> = ({
+const CreateWorkOrder: React.FC<Props> = ({
   setCreateWorkOrderPopup,
   refreshWorkOrders,
 }) => {
@@ -180,4 +180,4 @@ const createWorkOrder: React.FC<Props> = ({
   );
 };
 
-export default createWorkOrder;
+export default CreateWorkOrder;

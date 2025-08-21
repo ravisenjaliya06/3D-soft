@@ -1,15 +1,17 @@
 import download from '@/assets/mes/download.svg';
-import { SettingConfigs, sheetsData } from '@/components/settings/interface';
+import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import CommonService from '@/services/CommonService';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
 import styles from './workorder.module.css';
+import { WorkOrderData } from '../interface';
+import { CatalogItem } from '@/components/3dmodel/interface';
 
-const WorkOrder = (workOrderData) => {
+const WorkOrder = (workOrderData: WorkOrderData) => {
   const [designSheets, setDesignSheets] = useState<sheetsData[]>([]);
-  const [sheetDetails, setSheetDetails] = useState<Record<string, any[]>>({});
+  const [sheetDetails, setSheetDetails] = useState<Record<string, sheetData[]>>({});
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<sheetData | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
 
   const getDesignSheet = async () => {
@@ -29,7 +31,7 @@ const WorkOrder = (workOrderData) => {
 
     const details = await Promise.all(
       ids.map(async (id) => {
-        const res: { status: number; data: any } = await CommonService.get(
+        const res: { status: number; data: CatalogItem } = await CommonService.get(
           'design',
           `${workOrderData.design}/catalog/item/${id}`,
         );
@@ -37,7 +39,7 @@ const WorkOrder = (workOrderData) => {
       }),
     );
 
-    setSheetDetails((prev) => ({ ...prev, [sheetName]: details }));
+    setSheetDetails((prev) => ({ ...prev, [sheetName]: details as sheetData[] }));
     setActiveSheet(sheetName);
   };
 
@@ -66,7 +68,6 @@ const WorkOrder = (workOrderData) => {
       );
 
       if (response.status === 200) {
-        //@ts-ignore
         const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${response.data.file}`;
 
         const link = document.createElement('a');
@@ -84,7 +85,7 @@ const WorkOrder = (workOrderData) => {
     }
   };
 
-  const DetailRow = ({ label, value }: { label: string; value: any }) => {
+  const DetailRow = ({ label, value }: { label: string; value: string | number | object }) => {
     const [open, setOpen] = useState(false);
 
     if (value === null || value === undefined) {
@@ -134,11 +135,10 @@ const WorkOrder = (workOrderData) => {
     <div className={styles.workOrderContainer}>
       {designSheets.length > 0 ? (
         <>
-          {/* 🔹 Sheet Buttons (top, only once) */}
           <div className={styles.sheetButtonContainer}>
             {designSheets.map((sheetObj, index) => {
               const sheetName = Object.keys(sheetObj)[0];
-              const ids = sheetObj[sheetName];
+              const ids = Array.isArray(sheetObj[sheetName]) ? sheetObj[sheetName] as string[] : [];
               return (
                 <button
                   key={index}
@@ -202,16 +202,16 @@ const WorkOrder = (workOrderData) => {
                 {sheetDetails[activeSheet] ? (
                   sheetDetails[activeSheet].map((detail, index) => (
                     <div
-                      key={detail.id}
+                      key={detail.id.toString()}
                       className={styles.detailKeyValue}
                       onClick={() => setSelectedDetail(detail)}
                     >
                       {index + 1}:{' '}
                       {detail.name
-                        ? detail.name
+                        ? (detail.name)
                             .replace(/_/g, ' ')
                             .toLowerCase()
-                            .replace(/\b\w/g, (c) => c.toUpperCase())
+                            .replace(/\b\w/g, (c: string) => c.toUpperCase())
                         : detail.id}
                     </div>
                   ))
@@ -239,17 +239,17 @@ const WorkOrder = (workOrderData) => {
             <div className={styles.popupContent}>
               <h2 className={styles.popupTitle}>
                 {selectedDetail.name
-                  ? selectedDetail.name
+                  ? (selectedDetail.name as string)
                       .replace(/_/g, ' ')
                       .toLowerCase()
-                      .replace(/\b\w/g, (c) => c.toUpperCase())
+                      .replace(/\b\w/g, (c: string) => c.toUpperCase())
                   : selectedDetail.id}
               </h2>
 
               <div className={styles.detailContainer}>
                 <div className="space-y-2">
                   {Object.entries(selectedDetail).map(([key, value]) => (
-                    <DetailRow key={key} label={key} value={value} />
+                    <DetailRow key={key} label={key} value={value as string | number | object} />
                   ))}
                 </div>
                 <div className={styles.qrCodeContainer}>
