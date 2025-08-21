@@ -251,19 +251,19 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       let dx = p1.x - p0.x;
       let dy = p1.y - p0.y;
       let len = Math.hypot(dx, dy);
-      let u_in_x = dx / len;
-      let u_in_y = dy / len;
+      const u_in_x = dx / len;
+      const u_in_y = dy / len;
 
       dx = p2.x - p1.x;
       dy = p2.y - p1.y;
       len = Math.hypot(dx, dy);
-      let u_out_x = dx / len;
-      let u_out_y = dy / len;
+      const u_out_x = dx / len;
+      const u_out_y = dy / len;
 
-      let dot = u_in_x * u_out_x + u_in_y * u_out_y;
-      let alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
+      const dot = u_in_x * u_out_x + u_in_y * u_out_y;
+      const alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
 
-      let det = u_in_x * u_out_y - u_in_y * u_out_x;
+      const det = u_in_x * u_out_y - u_in_y * u_out_x;
       if (det <= 0 || alpha === 0) {
         return {
           tp_in: { x: p1.x, y: p1.y },
@@ -275,25 +275,25 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         };
       }
 
-      let half_alpha = alpha / 2;
-      let tan_half = Math.tan(half_alpha);
+      const half_alpha = alpha / 2;
+      const tan_half = Math.tan(half_alpha);
       let l = r * tan_half;
 
-      let len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      let len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+      const len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
       if (l > len_prev / 2 || l > len_next / 2) {
         l = Math.min(len_prev / 2, len_next / 2);
       }
 
-      let tp_in_x = p1.x - u_in_x * l;
-      let tp_in_y = p1.y - u_in_y * l;
-      let tp_out_x = p1.x + u_out_x * l;
-      let tp_out_y = p1.y + u_out_y * l;
+      const tp_in_x = p1.x - u_in_x * l;
+      const tp_in_y = p1.y - u_in_y * l;
+      const tp_out_x = p1.x + u_out_x * l;
+      const tp_out_y = p1.y + u_out_y * l;
 
-      let n_in_x = -u_in_y;
-      let n_in_y = u_in_x;
-      let n_out_x = -u_out_y;
-      let n_out_y = u_out_x;
+      const n_in_x = -u_in_y;
+      const n_in_y = u_in_x;
+      const n_out_x = -u_out_y;
+      const n_out_y = u_out_x;
 
       let bis_x = n_in_x + n_out_x;
       let bis_y = n_in_y + n_out_y;
@@ -301,15 +301,15 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       bis_x /= len;
       bis_y /= len;
 
-      let sin_half = Math.sin(half_alpha);
-      let d = r / sin_half;
+      const sin_half = Math.sin(half_alpha);
+      const d = r / sin_half;
 
-      let center_x = p1.x + bis_x * d;
-      let center_y = p1.y + bis_y * d;
+      const center_x = p1.x + bis_x * d;
+      const center_y = p1.y + bis_y * d;
 
       let vec_x = tp_in_x - center_x;
       let vec_y = tp_in_y - center_y;
-      let start_angle = Math.atan2(vec_y, vec_x);
+      const start_angle = Math.atan2(vec_y, vec_x);
 
       vec_x = tp_out_x - center_x;
       vec_y = tp_out_y - center_y;
@@ -605,19 +605,19 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       let dx = p1.x - p0.x;
       let dy = p1.y - p0.y;
       let len = Math.hypot(dx, dy);
-      let u_in_x = dx / len;
-      let u_in_y = dy / len;
+      const u_in_x = dx / len;
+      const u_in_y = dy / len;
 
       dx = p2.x - p1.x;
       dy = p2.y - p1.y;
       len = Math.hypot(dx, dy);
-      let u_out_x = dx / len;
-      let u_out_y = dy / len;
+      const u_out_x = dx / len;
+      const u_out_y = dy / len;
 
-      let dot = u_in_x * u_out_x + u_in_y * u_out_y;
-      let alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
+      const dot = u_in_x * u_out_x + u_in_y * u_out_y;
+      const alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
 
-      let det = u_in_x * u_out_y - u_in_y * u_out_x;
+      const det = u_in_x * u_out_y - u_in_y * u_out_x;
       if (det <= 0 || alpha === 0) {
         return {
           tp_in: { x: p1.x, y: p1.y },
@@ -626,20 +626,20 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         };
       }
 
-      let half_alpha = alpha / 2;
-      let tan_half = Math.tan(half_alpha);
+      const half_alpha = alpha / 2;
+      const tan_half = Math.tan(half_alpha);
       let l = r * tan_half;
 
-      let len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      let len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+      const len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
       if (l > len_prev / 2 || l > len_next / 2) {
         l = Math.min(len_prev / 2, len_next / 2);
       }
 
-      let tp_in_x = p1.x - u_in_x * l;
-      let tp_in_y = p1.y - u_in_y * l;
-      let tp_out_x = p1.x + u_out_x * l;
-      let tp_out_y = p1.y + u_out_y * l;
+      const tp_in_x = p1.x - u_in_x * l;
+      const tp_in_y = p1.y - u_in_y * l;
+      const tp_out_x = p1.x + u_out_x * l;
+      const tp_out_y = p1.y + u_out_y * l;
 
       return {
         tp_in: { x: tp_in_x, y: tp_in_y },
@@ -840,114 +840,114 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           <Layer>
             {(shapePoints.length > 0 ||
               (panelWidth > 0 && panelHeight > 0)) && (
-                <>
-                  <Path
-                    data={buildPathData(
-                      shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
-                      cornerRadius,
-                    )}
-                    fill="#d8fdd3"
-                    stroke="green"
-                    strokeWidth={0.5}
-                  />
-                  {tempHole &&
-                    (tempHole.type === 'circle' ? (
-                      <Circle
-                        x={tempHole.x + tempHole.width / 2}
-                        y={tempHole.y + tempHole.height / 2}
-                        radius={Math.min(tempHole.width, tempHole.height) / 2}
-                        fill="rgba(0,0,0,0.2)"
-                        stroke="black"
-                        strokeWidth={0.5}
-                        listening={false}
-                      />
-                    ) : (
-                      <Rect
-                        x={tempHole.x}
-                        y={tempHole.y}
-                        width={tempHole.width}
-                        height={tempHole.height}
-                        fill="rgba(0,0,0,0.2)"
-                        stroke="black"
-                        strokeWidth={0.5}
-                        listening={false}
-                      />
-                    ))}
-                  {holes.map((hole, index) =>
-                    hole.type === 'circle' ? (
-                      <Circle
-                        key={index}
-                        x={hole.x + hole.width / 2}
-                        y={hole.y + hole.height / 2}
-                        radius={Math.min(hole.width, hole.height) / 2}
-                        fill="rgba(0,0,0,0.2)"
-                        stroke="black"
-                        opacity={0.7}
-                        strokeWidth={0.5}
-                        listening={false}
-                      />
-                    ) : (
-                      <Rect
-                        key={index}
-                        x={hole.x}
-                        y={hole.y}
-                        width={hole.width}
-                        height={hole.height}
-                        fill="rgba(0,0,0,0.2)"
-                        stroke="black"
-                        opacity={0.7}
-                        strokeWidth={0.5}
-                        listening={false}
-                      />
-                    ),
+              <>
+                <Path
+                  data={buildPathData(
+                    shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
+                    cornerRadius,
                   )}
-                  {(shapePoints.length > 0
-                    ? shapePoints
-                    : defaultPanelPoints
-                  ).map((point, index) => (
+                  fill="#d8fdd3"
+                  stroke="green"
+                  strokeWidth={0.5}
+                />
+                {tempHole &&
+                  (tempHole.type === 'circle' ? (
+                    <Circle
+                      x={tempHole.x + tempHole.width / 2}
+                      y={tempHole.y + tempHole.height / 2}
+                      radius={Math.min(tempHole.width, tempHole.height) / 2}
+                      fill="rgba(0,0,0,0.2)"
+                      stroke="black"
+                      strokeWidth={0.5}
+                      listening={false}
+                    />
+                  ) : (
                     <Rect
-                      key={index}
-                      x={point.x - 3}
-                      y={point.y - 3}
-                      width={6}
-                      height={6}
-                      fill="grey"
-                      opacity={0.7}
-                      draggable
-                      onClick={
-                        activeTool === 'Curve'
-                          ? () => handleCurveClick(index)
-                          : undefined
-                      }
-                      onDragMove={(e) => {
-                        const newPoints = [
-                          ...(shapePoints.length > 0
-                            ? shapePoints
-                            : defaultPanelPoints),
-                        ];
-                        newPoints[index] = {
-                          x: e.target.x() + 3,
-                          y: e.target.y() + 3,
-                        };
-                        setShapePoints(newPoints);
-                      }}
-                      onMouseEnter={(e) => {
-                        const container = e.target.getStage()?.container();
-                        if (container) {
-                          container.style.cursor =
-                            activeTool === 'Curve' ? 'crosshair' : 'pointer';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        const container = e.target.getStage()?.container();
-                        if (container) {
-                          container.style.cursor = 'default';
-                        }
-                      }}
+                      x={tempHole.x}
+                      y={tempHole.y}
+                      width={tempHole.width}
+                      height={tempHole.height}
+                      fill="rgba(0,0,0,0.2)"
+                      stroke="black"
+                      strokeWidth={0.5}
+                      listening={false}
                     />
                   ))}
-                </>
-              )}
+                {holes.map((hole, index) =>
+                  hole.type === 'circle' ? (
+                    <Circle
+                      key={index}
+                      x={hole.x + hole.width / 2}
+                      y={hole.y + hole.height / 2}
+                      radius={Math.min(hole.width, hole.height) / 2}
+                      fill="rgba(0,0,0,0.2)"
+                      stroke="black"
+                      opacity={0.7}
+                      strokeWidth={0.5}
+                      listening={false}
+                    />
+                  ) : (
+                    <Rect
+                      key={index}
+                      x={hole.x}
+                      y={hole.y}
+                      width={hole.width}
+                      height={hole.height}
+                      fill="rgba(0,0,0,0.2)"
+                      stroke="black"
+                      opacity={0.7}
+                      strokeWidth={0.5}
+                      listening={false}
+                    />
+                  ),
+                )}
+                {(shapePoints.length > 0
+                  ? shapePoints
+                  : defaultPanelPoints
+                ).map((point, index) => (
+                  <Rect
+                    key={index}
+                    x={point.x - 3}
+                    y={point.y - 3}
+                    width={6}
+                    height={6}
+                    fill="grey"
+                    opacity={0.7}
+                    draggable
+                    onClick={
+                      activeTool === 'Curve'
+                        ? () => handleCurveClick(index)
+                        : undefined
+                    }
+                    onDragMove={(e) => {
+                      const newPoints = [
+                        ...(shapePoints.length > 0
+                          ? shapePoints
+                          : defaultPanelPoints),
+                      ];
+                      newPoints[index] = {
+                        x: e.target.x() + 3,
+                        y: e.target.y() + 3,
+                      };
+                      setShapePoints(newPoints);
+                    }}
+                    onMouseEnter={(e) => {
+                      const container = e.target.getStage()?.container();
+                      if (container) {
+                        container.style.cursor =
+                          activeTool === 'Curve' ? 'crosshair' : 'pointer';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const container = e.target.getStage()?.container();
+                      if (container) {
+                        container.style.cursor = 'default';
+                      }
+                    }}
+                  />
+                ))}
+              </>
+            )}
             <Transformer
               ref={transformerRef}
               boundBoxFunc={(newBox) => newBox}
@@ -997,4 +997,3 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     </div>
   );
 }
-

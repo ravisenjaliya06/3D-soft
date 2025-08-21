@@ -140,7 +140,10 @@ export class MoveHandler implements IMoveHandler {
           );
         } else if (this.draggedObject.name.includes('DRAWER')) {
           this.draggedObject.children.forEach((child) => {
-            if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry) {
+            if (
+              child instanceof THREE.Mesh &&
+              child.geometry instanceof THREE.BoxGeometry
+            ) {
               if (child.name.includes('LEFT') || child.name.includes('RIGHT')) {
                 child.geometry = new THREE.BoxGeometry(
                   2,
@@ -151,7 +154,10 @@ export class MoveHandler implements IMoveHandler {
                   ? -plankWidth / 2
                   : plankWidth / 2;
                 child.position.y = child.position.z - 0.5;
-              } else if (child.name.includes('BACK') || child.name.includes('FRONT')) {
+              } else if (
+                child.name.includes('BACK') ||
+                child.name.includes('FRONT')
+              ) {
                 child.geometry = new THREE.BoxGeometry(
                   plankWidth + 2,
                   child.geometry.parameters.height,
@@ -173,18 +179,31 @@ export class MoveHandler implements IMoveHandler {
             }
           });
         } else if (this.draggedObject.name.includes('DOOR')) {
-          const doorWidth = (plankWidth) / 2;
+          const doorWidth = plankWidth / 2;
           const doorHeight = plankHeight;
           const doorDepth = 2;
 
-          const leftDoor = this.draggedObject.children[0] instanceof THREE.Mesh ? this.draggedObject.children[0] : new THREE.Mesh();
-          leftDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
+          const leftDoor =
+            this.draggedObject.children[0] instanceof THREE.Mesh
+              ? this.draggedObject.children[0]
+              : new THREE.Mesh();
+          leftDoor.geometry = new THREE.BoxGeometry(
+            doorWidth,
+            doorHeight,
+            doorDepth,
+          );
           leftDoor.position.set(-doorWidth / 2, 0, plankDepth / 2 - 1.5);
 
-          const rightDoor = this.draggedObject.children[1] instanceof THREE.Mesh ? this.draggedObject.children[1] : new THREE.Mesh();
-          rightDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
+          const rightDoor =
+            this.draggedObject.children[1] instanceof THREE.Mesh
+              ? this.draggedObject.children[1]
+              : new THREE.Mesh();
+          rightDoor.geometry = new THREE.BoxGeometry(
+            doorWidth,
+            doorHeight,
+            doorDepth,
+          );
           rightDoor.position.set(doorWidth / 2, 0, plankDepth / 2 - 1.5);
-
         } else {
           (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
             2,

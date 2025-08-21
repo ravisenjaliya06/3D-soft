@@ -763,11 +763,11 @@ class APIViewTestCase(APIBaseTestCase):
             ),
             data=data,
             format="json",
-            headers=self.get_defult_headers,
+            headers=self.get_invalid_user_headers,
         )
         response_data, status_code = response.json(), response.status_code
-        self.assertEqual(status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response_data["error"], "User not found in the organization.")
+        self.assertEqual(status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response_data["detail"], "You do not have permission to perform this action.")
 
     def test_edit_user_permission_with_invalid_data(self: "APIViewTestCase") -> None:
         """Test editing a user with invalid data that fails serializer validation"""
@@ -828,11 +828,11 @@ class APIViewTestCase(APIBaseTestCase):
         response = self.client.get(
             reverse("show_origanization_users"),
             format="json",
-            headers=self.get_defult_headers,
+            headers=self.get_invalid_user_headers,
         )
         response_data, status_code = response.json(), response.status_code
-        self.assertEqual(status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response_data["error"], "Organization not found.")
+        self.assertEqual(status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response_data["detail"], "You do not have permission to perform this action.")
 
     def test_delete_user_in_organization(self: "APIViewTestCase") -> None:
         reponse = self.client.delete(

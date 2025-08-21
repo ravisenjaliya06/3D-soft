@@ -100,23 +100,23 @@
 }
 
 .gridthree_dots ul li {
-    display: flex;
-    justify-content: start;
-    align-items: center;
-    gap: 0.2rem;
-    cursor: pointer;
-    color: var(--primary-color);
-    opacity: 0.7;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  color: var(--primary-color);
+  opacity: 0.7;
 }
 
 .gridthree_dots ul li:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 .gridthree_dots ul li img {
-    width: 1rem;
-    height: 1rem;
-    cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
 }
 
 .grid_line {
@@ -258,7 +258,7 @@
 
 .popupTitle {
   margin-top: 0;
-  margin-bottom: 1rem;  
+  margin-bottom: 1rem;
 }
 
 .simpleDetail {
