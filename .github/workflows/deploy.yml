@@ -1,7 +1,7 @@
 name: Deploy to Server
 
 on:
-  push:
+  pull_request:
     branches: [main]
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd /var/www/myapp
+            cd bravento
             git pull origin main
             cd backend && pipenv install --dev --deploy --ignore-pipfile
             cd ../design_portal && npm install && npm run build
