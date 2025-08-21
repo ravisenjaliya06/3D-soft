@@ -8,19 +8,11 @@ on:
 jobs:
   deploy:
     name: Deploy to Server
-    needs: [backend, design_portal]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-build
-          path: ./design_portal/.next
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
