@@ -515,7 +515,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => {};
+      const getMinifixData = async () => { };
     };
 
     fetchCatalogItems();
@@ -571,9 +571,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -594,9 +593,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -693,16 +691,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>
