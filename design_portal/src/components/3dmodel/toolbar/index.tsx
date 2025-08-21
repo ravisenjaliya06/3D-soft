@@ -459,17 +459,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
-    {
-      option: 'Texture',
-      icon: texture,
-      onClick: () => {
-        setdesignTexture((prev) => !prev);
-        setmaterial(false);
-        setcatalogMenu(false);
-        setparts(false);
-      },
-      isActive: designTexture,
-    },
   ];
 
   const viewTools = [
