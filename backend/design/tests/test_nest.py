@@ -60,7 +60,7 @@ class NestModuleTestCase(APIBaseTestCase):
     def test_nest_function_minimal(self: "NestModuleTestCase") -> None:
         """Minimal test for nest function that only checks it runs without errors"""
 
-        files = {"rect1": {"type": "rectangle", "width": 100, "height": 50}}
+        files = {"rect1": {"type": "rectangle", "width": 100, "height": 50, "grooves": [], "minifix_holes": []}}
 
         result = nest("output.svg", files, 500, 300)
         self.assertTrue(True)

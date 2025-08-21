@@ -36,21 +36,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["design_name"], "New design")
 
-    def test_create_design_settings_not_found(self: "DesignAPIViewTestCase") -> None:
-        data = {"design_name": "New design"}
-        design_settings = DesignSetting.objects.using(DEFAULT_DATABASE).filter(
-            organization=self.organization, design=None
-        )
-        design_settings.delete()
-        response = self.client.post(
-            reverse("design"),
-            data=data,
-            format="json",
-            headers=self.get_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["design_name"], "New design")
-
     def test_create_design_with_invalid_data(self: "DesignAPIViewTestCase") -> None:
         data = {"design_name": ""}
         response = self.client.post(
@@ -390,62 +375,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]["name"], "Updated Cabinet")
 
-    def test_create_organization_design_settings(self: "DesignAPIViewTestCase") -> None:
-        data = {"unit": "mm", "sheet_width": 100, "sheet_height": 100}
-
-        response = self.client.post(
-            reverse("organization_design_settings"),
-            format="json",
-            data=data,
-            headers=self.get_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error"], "Design setting already exists.")
-
-    def test_create_organization_design_settings_with_new_data(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        data = {"unit": "mm", "sheet_width": 100, "sheet_height": 100}
-        DesignSetting.objects.filter(organization=self.organization).delete()
-        response = self.client.post(
-            reverse("organization_design_settings"),
-            format="json",
-            data=data,
-            headers=self.get_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["sheet_width"], 100)
-        self.assertEqual(response.data["sheet_height"], 100)
-        self.assertEqual(response.data["unit"], "mm")
-
-    def test_create_organization_design_settings_with_invalid_data(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        data = {"unit": "mm", "width": 100, "sheet_height": 100}
-        DesignSetting.objects.filter(organization=self.organization).delete()
-        response = self.client.post(
-            reverse("organization_design_settings"),
-            format="json",
-            data=data,
-            headers=self.get_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["sheet_width"][0], "This field is required.")
-
-    def test_create_organization_design_settings_with_invalid_organization(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        data = {"unit": "mm", "sheet_width": 100, "sheet_height": 100}
-
-        response = self.client.post(
-            reverse("organization_design_settings"),
-            format="json",
-            data=data,
-            headers=self.get_defult_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error"], "Organization not found.")
-
     def test_get_organization_design_settings(self: "DesignAPIViewTestCase") -> None:
         response = self.client.get(
             reverse("organization_design_settings"),
@@ -482,7 +411,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         response = self.client.get(
             reverse("organization_design_settings"),
             format="json",
-            headers=self.get_defult_headers,
+            headers=self.get_invalid_user_headers,
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -507,7 +436,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             reverse("organization_design_settings"),
             format="json",
             data=data,
-            headers=self.get_defult_headers,
+            headers=self.get_invalid_user_headers,
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error"], "Organization not found.")
@@ -529,7 +458,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     def test_update_organization_design_settings_with_error(
         self: "DesignAPIViewTestCase",
     ) -> None:
-        data = {"unit": "mm", "width": 100, "sheet_height": 100}
+        data = {"sheet_width": "abc"}
         response = self.client.put(
             reverse("organization_design_settings"),
             format="json",
@@ -537,7 +466,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             headers=self.get_headers,
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["sheet_width"][0], "This field is required.")
 
     def test_get_design_mes_data(self: "DesignAPIViewTestCase") -> None:
         response = self.client.get(

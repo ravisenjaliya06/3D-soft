@@ -75,12 +75,9 @@ def new_user_organization_permission(
     for group_name in groups:
         try:
             group = Group.objects.using(database).get(name=group_name)
-            group_ids.append(group.id)
+            permission_instance.groups.add(group)
         except Group.DoesNotExist:
             continue
-
-    permission_instance.groups.set(group_ids)
-    permission_instance.save()
 
     return permission_instance
 

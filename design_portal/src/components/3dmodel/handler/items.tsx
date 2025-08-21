@@ -79,7 +79,11 @@ export function generateCompartmentsFromPlanks(
 
   internalPlanks.forEach((p) => {
     const { width, height, position, name } = p;
-    if (name.includes('VERTICAL') || name.includes('HORIZONTAL') || name.includes(ITEM.DRAWER)) {
+    if (
+      name.includes('VERTICAL') ||
+      name.includes('HORIZONTAL') ||
+      name.includes(ITEM.DRAWER)
+    ) {
       const startX = Math.round((position.x - width / 2 - minX) / step);
       const endX = Math.round((position.x + width / 2 - minX) / step);
       const startY = Math.round((position.y - height / 2 - minY) / step);
@@ -930,7 +934,10 @@ async function createItem(
 
   objectData.push(normalizedData);
 
-  if (threeDObject.name.includes(ITEM.PLANK) || threeDObject.name.includes(ITEM.DRAWER)) {
+  if (
+    threeDObject.name.includes(ITEM.PLANK) ||
+    threeDObject.name.includes(ITEM.DRAWER)
+  ) {
     const allObjects: Object3D[] = store.getState().data.objects || [];
     const cupboards = allObjects.filter(
       (obj) =>
@@ -956,7 +963,8 @@ async function createItem(
           .filter(
             (obj) =>
               obj.parent === targetCupboard.id &&
-              (obj.name.includes(ITEM.PLANK) || obj.name.includes(ITEM.DRAWER)) &&
+              (obj.name.includes(ITEM.PLANK) ||
+                obj.name.includes(ITEM.DRAWER)) &&
               !obj.name.includes(ITEM.DOOR),
           )
           .map((obj) => ({
@@ -1125,15 +1133,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                {
-                  id: normalizedData.id,
-                  name: normalizedData.name,
-                  width: normalizedData.width,
-                  height: normalizedData.height,
-                  depth: normalizedData.depth,
-                  position: normalizedData.position,
-                },
-              ]
+                  {
+                    id: normalizedData.id,
+                    name: normalizedData.name,
+                    width: normalizedData.width,
+                    height: normalizedData.height,
+                    depth: normalizedData.depth,
+                    position: normalizedData.position,
+                  },
+                ]
               : [],
           );
 
@@ -1396,7 +1404,8 @@ async function moveObject(
           .filter(
             (obj) =>
               obj.parent === cupboard.id &&
-              (obj.name.includes(ITEM.PLANK) || obj.name.includes(ITEM.DRAWER)) &&
+              (obj.name.includes(ITEM.PLANK) ||
+                obj.name.includes(ITEM.DRAWER)) &&
               !obj.name.includes(ITEM.DOOR),
           )
           .map((obj) => ({
@@ -2014,5 +2023,3 @@ export function toggleDrawer(child: THREE.Mesh) {
   child.userData.isClosed = !isClosed;
   child.userData.closedZ = closedZ;
 }
-
-
