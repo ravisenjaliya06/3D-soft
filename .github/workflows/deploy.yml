@@ -69,8 +69,8 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          ssh -o StrictHostKeyChecking=no user@your-server-ip << 'EOF'
-            cd /var/www/bravento
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd /root/bravento
 
             # Pull latest code
             git pull origin main
