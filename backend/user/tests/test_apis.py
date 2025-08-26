@@ -8,16 +8,20 @@ from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth.models import Group, Permission, ContentType
 
 # External imports
 import jwt
 import pytest
 from rest_framework import serializers, status
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.test import APIRequestFactory
+from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-from umaboy.models import Organization, User
+from umaboy.models import Organization, User, UserOrganizationPermission
+from user.permissions import CatalogManager, CAN_VIEW_CATALOG, CAN_MANAGE_CATALOG
 from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, MES_EDITOR
 from user.serializers import AddUserInOrganizationSerializer, SetPasswordSerializer
 
@@ -801,6 +805,15 @@ class APIViewTestCase(APIBaseTestCase):
         self.assertEqual(
             response_data["message"], "Organization details updated successfully."
         )
+    
+    def test_update_organization_details_with_invalid_data(self: "APIViewTestCase") -> None:
+        response = self.client.put(
+            reverse("update_organization_details"),
+            data={"logo": 1},
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_organization_details(self: "APIViewTestCase") -> None:
         response = self.client.get(
