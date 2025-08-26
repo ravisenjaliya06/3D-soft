@@ -1,31 +1,53 @@
-name: Frontend CI
+name: Design Portal Linter
 
 on:
   pull_request:
     branches: [main]
+    types:
+      - opened
+      - synchronize
     paths:
       - 'design_portal/**'
 
 jobs:
-  frontend:
-    name: Lint, Format & Build Frontend
+  lint:
+    name: Lint Frontend Code
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Dependencies
-        working-directory: ./design_portal
-        run: npm install
-      - name: Lint & Format
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install Frontend Dependencies
+        working-directory: ./design_portal  # Adjusted to point to the design_portal folder
+        run: |
+          npm install # Install frontend dependencies
+
+      - name: Run Frontend Linter
         working-directory: ./design_portal
         run: |
-          npm run lint
-          npm run format
-      - name: Build
+          npm run lint  # Run the ESLint linter
+          if [ $? -ne 0 ]; then
+            echo "Design_portal linting failed. Please fix the linting issues."
+            exit 1  # Fail the job if there are linting issues
+          fi
+
+      - name: Run Frontend Formatter Check
         working-directory: ./design_portal
-        run: npm run build
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-build
-          path: ./design_portal/.next
+        run: |
+          npm run format  # Run the Prettier formatter
+          if [ $? -ne 0 ]; then
+            echo "Design_portal formatter check failed. Please fix the formatting issues."
+            exit 1  # Fail the job if there are formatting issues
+          fi
+
+      - name: Build Next.js
+        working-directory: ./design_portal
+        run: |
+          npm run build
+          if [ $? -ne 0 ]; then
+            echo "Design_portal build failed. Please fix the build issues."
+            exit 1  # Fail the job if there are build issues
+          fi
