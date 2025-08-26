@@ -16,7 +16,7 @@ import { RootState } from '../store';
 import styles from './panelDesign.module.css';
 
 interface PanelDesignerProps {
-  state: RootState;
+  // state: RootState;
 }
 
 export default function PanelDesigner({ state }: PanelDesignerProps) {
@@ -840,114 +840,114 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           <Layer>
             {(shapePoints.length > 0 ||
               (panelWidth > 0 && panelHeight > 0)) && (
-              <>
-                <Path
-                  data={buildPathData(
-                    shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
-                    cornerRadius,
+                <>
+                  <Path
+                    data={buildPathData(
+                      shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
+                      cornerRadius,
+                    )}
+                    fill="#d8fdd3"
+                    stroke="green"
+                    strokeWidth={0.5}
+                  />
+                  {tempHole &&
+                    (tempHole.type === 'circle' ? (
+                      <Circle
+                        x={tempHole.x + tempHole.width / 2}
+                        y={tempHole.y + tempHole.height / 2}
+                        radius={Math.min(tempHole.width, tempHole.height) / 2}
+                        fill="rgba(0,0,0,0.2)"
+                        stroke="black"
+                        strokeWidth={0.5}
+                        listening={false}
+                      />
+                    ) : (
+                      <Rect
+                        x={tempHole.x}
+                        y={tempHole.y}
+                        width={tempHole.width}
+                        height={tempHole.height}
+                        fill="rgba(0,0,0,0.2)"
+                        stroke="black"
+                        strokeWidth={0.5}
+                        listening={false}
+                      />
+                    ))}
+                  {holes.map((hole, index) =>
+                    hole.type === 'circle' ? (
+                      <Circle
+                        key={index}
+                        x={hole.x + hole.width / 2}
+                        y={hole.y + hole.height / 2}
+                        radius={Math.min(hole.width, hole.height) / 2}
+                        fill="rgba(0,0,0,0.2)"
+                        stroke="black"
+                        opacity={0.7}
+                        strokeWidth={0.5}
+                        listening={false}
+                      />
+                    ) : (
+                      <Rect
+                        key={index}
+                        x={hole.x}
+                        y={hole.y}
+                        width={hole.width}
+                        height={hole.height}
+                        fill="rgba(0,0,0,0.2)"
+                        stroke="black"
+                        opacity={0.7}
+                        strokeWidth={0.5}
+                        listening={false}
+                      />
+                    ),
                   )}
-                  fill="#d8fdd3"
-                  stroke="green"
-                  strokeWidth={0.5}
-                />
-                {tempHole &&
-                  (tempHole.type === 'circle' ? (
-                    <Circle
-                      x={tempHole.x + tempHole.width / 2}
-                      y={tempHole.y + tempHole.height / 2}
-                      radius={Math.min(tempHole.width, tempHole.height) / 2}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ) : (
+                  {(shapePoints.length > 0
+                    ? shapePoints
+                    : defaultPanelPoints
+                  ).map((point, index) => (
                     <Rect
-                      x={tempHole.x}
-                      y={tempHole.y}
-                      width={tempHole.width}
-                      height={tempHole.height}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      strokeWidth={0.5}
-                      listening={false}
+                      key={index}
+                      x={point.x - 3}
+                      y={point.y - 3}
+                      width={6}
+                      height={6}
+                      fill="grey"
+                      opacity={0.7}
+                      draggable
+                      onClick={
+                        activeTool === 'Curve'
+                          ? () => handleCurveClick(index)
+                          : undefined
+                      }
+                      onDragMove={(e) => {
+                        const newPoints = [
+                          ...(shapePoints.length > 0
+                            ? shapePoints
+                            : defaultPanelPoints),
+                        ];
+                        newPoints[index] = {
+                          x: e.target.x() + 3,
+                          y: e.target.y() + 3,
+                        };
+                        setShapePoints(newPoints);
+                      }}
+                      onMouseEnter={(e) => {
+                        const container = e.target.getStage()?.container();
+                        if (container) {
+                          container.style.cursor =
+                            activeTool === 'Curve' ? 'crosshair' : 'pointer';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const container = e.target.getStage()?.container();
+                        if (container) {
+                          container.style.cursor = 'default';
+                        }
+                      }}
                     />
                   ))}
-                {holes.map((hole, index) =>
-                  hole.type === 'circle' ? (
-                    <Circle
-                      key={index}
-                      x={hole.x + hole.width / 2}
-                      y={hole.y + hole.height / 2}
-                      radius={Math.min(hole.width, hole.height) / 2}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      opacity={0.7}
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ) : (
-                    <Rect
-                      key={index}
-                      x={hole.x}
-                      y={hole.y}
-                      width={hole.width}
-                      height={hole.height}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      opacity={0.7}
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ),
-                )}
-                {(shapePoints.length > 0
-                  ? shapePoints
-                  : defaultPanelPoints
-                ).map((point, index) => (
-                  <Rect
-                    key={index}
-                    x={point.x - 3}
-                    y={point.y - 3}
-                    width={6}
-                    height={6}
-                    fill="grey"
-                    opacity={0.7}
-                    draggable
-                    onClick={
-                      activeTool === 'Curve'
-                        ? () => handleCurveClick(index)
-                        : undefined
-                    }
-                    onDragMove={(e) => {
-                      const newPoints = [
-                        ...(shapePoints.length > 0
-                          ? shapePoints
-                          : defaultPanelPoints),
-                      ];
-                      newPoints[index] = {
-                        x: e.target.x() + 3,
-                        y: e.target.y() + 3,
-                      };
-                      setShapePoints(newPoints);
-                    }}
-                    onMouseEnter={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) {
-                        container.style.cursor =
-                          activeTool === 'Curve' ? 'crosshair' : 'pointer';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) {
-                        container.style.cursor = 'default';
-                      }
-                    }}
-                  />
-                ))}
-              </>
-            )}
+                </>
+              )}
             <Transformer
               ref={transformerRef}
               boundBoxFunc={(newBox) => newBox}
