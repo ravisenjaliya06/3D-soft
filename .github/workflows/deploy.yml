@@ -30,6 +30,7 @@ jobs:
 
             # Backend setup
             cd backend
+            pipenv --rm || true   
             pipenv install --deploy --ignore-pipfile
             # run migrations if needed
             # pipenv run python manage.py migrate
