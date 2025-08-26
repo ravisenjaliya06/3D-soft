@@ -11,50 +11,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Add server to known_hosts
         run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
+            cd /root/bravento 
             cd /root/bravento
             git pull origin main
-
-            # Backend setup
-            cd backend
-            pipenv install --dev --deploy --ignore-pipfile
-            pipenv run python manage.py migrate --noinput
-            pipenv run python manage.py collectstatic --noinput
-
-            # Frontend build
-            cd ../design_portal
-            npm install
-            npm run build
-
-            # PM2 process handling
-            cd ..
-            if pm2 list | grep -q bravento-backend; then
-              echo "Restarting backend..."
-              pm2 restart bravento-backend
-            else
-              echo "Starting backend..."
-              pm2 start backend/manage.py --name bravento-backend -- runserver 0.0.0.0:8000
-            fi
-
-            if pm2 list | grep -q bravento-frontend; then
-              echo "Restarting frontend..."
-              pm2 restart bravento-frontend
-            else
-              echo "Starting frontend..."
-              pm2 start npm --name bravento-frontend -- run start --prefix design_portal
-            fi
-
-            pm2 save
+            cd backend && pipenv install --dev --deploy --ignore-pipfile
+            cd ../design_portal && npm install && npm run build
+            pm2 restart all
           EOF
