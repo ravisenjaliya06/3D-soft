@@ -27,23 +27,21 @@ jobs:
 
             cd /root/bravento
             git pull origin main
-
+            
             # Backend setup
-            cd backend
-            pipenv --rm || true   
-            pipenv install --deploy --ignore-pipfile
-            # run migrations if needed
-            # pipenv run python manage.py migrate
+              cd backend
+              pipenv --rm || true   
+              pipenv install --deploy --ignore-pipfile
+              pipenv run python manage.py migrate || true
 
-            # Frontend setup
-            cd ../design_portal
-            npm install --legacy-peer-deps
-            # Ensure env file exists
-            cp .env.production .env || true
-            npm run build
+              # Frontend setup
+              cd ../design_portal
+              npm install --legacy-peer-deps
+              cp .env.production .env || true
+              npm run build
 
-            # Restart services
-            pm2 restart all || pm2 start ecosystem.config.js
-          EOF
-
+              # Restart both apps via PM2
+              cd ..
+              pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+            EOF
 
