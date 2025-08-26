@@ -41,14 +41,18 @@ jobs:
             # PM2 process handling
             cd ..
             if pm2 list | grep -q bravento-backend; then
+              echo "Restarting backend..."
               pm2 restart bravento-backend
             else
+              echo "Starting backend..."
               pm2 start backend/manage.py --name bravento-backend -- runserver 0.0.0.0:8000
             fi
 
             if pm2 list | grep -q bravento-frontend; then
+              echo "Restarting frontend..."
               pm2 restart bravento-frontend
             else
+              echo "Starting frontend..."
               pm2 start npm --name bravento-frontend -- run start --prefix design_portal
             fi
 
