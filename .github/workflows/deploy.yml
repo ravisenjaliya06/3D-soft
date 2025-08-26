@@ -1,3 +1,53 @@
+# name: Deploy to Server
+
+# on:
+#   push:
+#     branches: [main]
+
+# jobs:
+#   deploy:
+#     name: Deploy
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+#       - name: Add server to known_hosts
+#         run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+#       - name: Deploy via SSH
+#         run: |
+#           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+#             set -e
+
+#             cd /root/bravento
+#             git pull origin main
+
+#             # Backend setup
+#             cd backend
+#             pipenv --rm || true   
+#             pipenv install --deploy --ignore-pipfile
+#             # run migrations if needed
+#             # pipenv run python manage.py migrate
+
+#             # Frontend setup
+#             cd ../design_portal
+#             npm install --legacy-peer-deps
+#             # Ensure env file exists
+#             cp .env.production .env || true
+#             npm run build
+
+#             # Restart services
+#             pm2 restart all || pm2 start ecosystem.config.js
+#           EOF
+
+
+
 name: Deploy to Server
 
 on:
@@ -6,8 +56,8 @@ on:
 
 jobs:
   deploy:
-    name: Deploy
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -17,31 +67,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy via SSH
+      - name: Deploy to Server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
+          ssh -o StrictHostKeyChecking=no user@your-server-ip << 'EOF'
+            cd /var/www/bravento
 
-            cd /root/bravento
+            # Pull latest code
             git pull origin main
 
-            # Backend setup
-            cd backend
-            pipenv --rm || true   
-            pipenv install --deploy --ignore-pipfile
-            # run migrations if needed
-            # pipenv run python manage.py migrate
+            # Install dependencies
+            npm install
 
-            # Frontend setup
-            cd ../design_portal
-            npm install --legacy-peer-deps
-            # Ensure env file exists
-            cp .env.production .env || true
+            # Build Next.js app
             npm run build
 
-            # Restart services
-            pm2 restart all || pm2 start ecosystem.config.js
+            # Reload app with PM2
+            pm2 start ecosystem.config.js --env production || pm2 reload ecosystem.config.js --env production
+
+            # Save PM2 config so it restarts on reboot
+            pm2 save
           EOF
