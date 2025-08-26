@@ -70,7 +70,6 @@ def new_user_organization_permission(
     permission_instance = UserOrganizationPermission.objects.using(database).create(
         user=check_user, organization=check_organization
     )
-    group_ids = []
     groups = [ACCOUNTS_MANAGER, MES_EDITOR, DESIGNER, CATALOG_MANAGER]
     for group_name in groups:
         try:

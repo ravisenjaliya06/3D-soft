@@ -33,7 +33,6 @@ mypy = "==1.9.0"
 types-requests = "==2.32.0.20240602"
 coverage = "==7.6.6"
 pytest-cov = "==6.0.0"
-celery = "*"
 
 [requires]
 python_version = "3.11"

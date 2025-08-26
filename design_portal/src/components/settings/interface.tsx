@@ -30,9 +30,11 @@ export interface TeamRole {
   group: string[];
 }
 
-interface sheetData {
+export interface sheetData {
   id: string;
+  name: string;
 }
+
 export interface sheetsData {
   [key: string]: sheetData;
 }

@@ -767,7 +767,10 @@ class APIViewTestCase(APIBaseTestCase):
         )
         response_data, status_code = response.json(), response.status_code
         self.assertEqual(status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response_data["detail"], "You do not have permission to perform this action.")
+        self.assertEqual(
+            response_data["detail"],
+            "You do not have permission to perform this action.",
+        )
 
     def test_edit_user_permission_with_invalid_data(self: "APIViewTestCase") -> None:
         """Test editing a user with invalid data that fails serializer validation"""
@@ -802,6 +805,17 @@ class APIViewTestCase(APIBaseTestCase):
             response_data["message"], "Organization details updated successfully."
         )
 
+    def test_update_organization_details_with_invalid_data(
+        self: "APIViewTestCase",
+    ) -> None:
+        response = self.client.put(
+            reverse("update_organization_details"),
+            data={"logo": 1},
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_get_organization_details(self: "APIViewTestCase") -> None:
         response = self.client.get(
             reverse("get_organization_details"),
@@ -832,7 +846,10 @@ class APIViewTestCase(APIBaseTestCase):
         )
         response_data, status_code = response.json(), response.status_code
         self.assertEqual(status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response_data["detail"], "You do not have permission to perform this action.")
+        self.assertEqual(
+            response_data["detail"],
+            "You do not have permission to perform this action.",
+        )
 
     def test_delete_user_in_organization(self: "APIViewTestCase") -> None:
         reponse = self.client.delete(

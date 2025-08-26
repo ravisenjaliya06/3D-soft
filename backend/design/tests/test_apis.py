@@ -1,7 +1,7 @@
 # Python imports
 import uuid
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 # Django imports
 from django.http import JsonResponse
@@ -250,6 +250,20 @@ class DesignAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error"], "Design Not Found")
+
+    @patch("design.views.Logger.error")
+    def test_delete_with_is_catalog_none(
+        self: "DesignAPIViewTestCase", mock_logger_error: MagicMock
+    ) -> None:
+        """Test deleting with an invalid design ID"""
+        url = reverse("design_objects", kwargs={"design_id": self.design.id})
+        response = self.client.delete(url, format="json", headers=self.get_headers)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "No catalog ids and type provided")
+        mock_logger_error.assert_called_once_with(
+            {"message": "No catalog ids and type provided"}
+        )
 
     def test_delete_with_all_data(self: "DesignAPIViewTestCase") -> None:
         """Test deleting with a non-existent ID"""
