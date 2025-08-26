@@ -16,7 +16,7 @@ import { RootState } from '../store';
 import styles from './panelDesign.module.css';
 
 interface PanelDesignerProps {
-  // state: RootState;
+  state: RootState;
 }
 
 export default function PanelDesigner({ state }: PanelDesignerProps) {
