@@ -46,8 +46,8 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
 
             cd /root/bravento
-            git reset --hard
-            git pull origin main
+            git fetch origin main --depth=1
+            git reset --hard origin/main
 
             cd /backend
             pipenv install --deploy --ignore-pipfile --python 3.11
@@ -109,8 +109,8 @@ jobs:
             set -euo pipefail
 
             cd /root/bravento
-            git reset --hard
-            git pull origin main
+            git fetch origin main --depth=1
+            git reset --hard origin/main
 
             cd /design_portal
             cp .env.production .env
