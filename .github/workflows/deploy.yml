@@ -5,15 +5,31 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
-    name: Deploy
+  deploy-backend:
+    name: Deploy Backend
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push'
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      # Only run if backend/ folder has changes
+      - name: Check backend folder changes
+        id: backend_changes
+        run: |
+          git fetch origin main --depth=1
+          echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)"
+
+      - name: Skip backend deploy if no changes
+        if: steps.backend_changes.outputs.changed == ''
+        run: |
+          echo "No backend changes, skipping deploy."
+          exit 0
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -21,153 +37,88 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add server to known_hosts
-        run: ssh-keyscan -H 88.99.184.131 >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Set environment variables
+      - name: Deploy Backend via SSH
         run: |
-          echo "DJANGO_SETTINGS_MODULE=umaboy.settings.production" >> $GITHUB_ENV
-          echo "PYTHONPATH=/root/bravento" >> $GITHUB_ENV
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
 
-      - name: Deploy via SSH
-        shell: bash
-        run: |
-          ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
-          set -euo pipefail
-          export DEBIAN_FRONTEND=noninteractive
+            cd /root/bravento/backend
+            pipenv install --deploy --ignore-pipfile --python 3.11
+            pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
+            pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
 
-          echo "==== Installing Python 3.11 and tools ===="
-          add-apt-repository -y ppa:deadsnakes/ppa
-          apt update
-          apt install -y python3.11 python3.11-venv python3.11-dev \
-              build-essential libpq-dev git curl nginx ufw
-          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
-          python3.11 -m pip install --upgrade pip setuptools wheel pipenv
-
-          # Node.js + PM2
-          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-          apt install -y nodejs
-          npm install -g pm2
-
-          echo "==== Updating repo ===="
-          cd /root/bravento
-          git reset --hard
-          git pull origin main
-
-          echo "==== Backend setup ===="
-          cd backend
-          pipenv install --deploy --ignore-pipfile --python 3.11
-          pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
-          pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
-
-          echo "==== Frontend setup ===="
-          cd ../design_portal
-          cp .env.production .env
-          npm run build
-
-          echo "==== Gunicorn service setup ===="
-          cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
-          [Unit]
-          Description=Gunicorn Daemon for Bravento
-          After=network.target
-
-          [Service]
-          User=root
-          WorkingDirectory=/root/bravento/backend
-          ExecStart=/usr/local/bin/pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock umaboy.wsgi:application
-          Restart=always
-          Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-          Environment="DJANGO_SETTINGS_MODULE=backend.settings"
-          EnvironmentFile=/root/bravento/backend/.env
-
-          [Install]
-          WantedBy=multi-user.target
-          SERVICE
-
-          systemctl daemon-reload
-          systemctl enable gunicorn
-          systemctl restart gunicorn
-          systemctl status gunicorn --no-pager
-
-          echo "==== NGINX setup ===="
-          cat > /etc/nginx/sites-available/bravento << 'NGINX_EOF'
-          server {
-              listen 80;
-              server_name 88.99.184.131;
-
-              location /static/ {
-                  alias /root/bravento/backend/staticfiles/;
-              }
-
-              location /media/ {
-                  alias /root/bravento/backend/media/;
-              }
-
-              # --- Backend API via Gunicorn ---
-              location /api/ {
-                  proxy_pass http://unix:/root/bravento/backend/bravento.sock;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_cache_bypass $http_upgrade;
-              }
-
-              # --- Frontend on port 3000 ---
-              location / {
-                  proxy_pass http://localhost:3000;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_cache_bypass $http_upgrade;
-              }
-          }
-          NGINX_EOF
-
-          ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
-          rm -f /etc/nginx/sites-enabled/default
-          nginx -t
-          systemctl restart nginx
-
-          echo "==== Firewall ===="
-          ufw allow 80 || true
-          ufw reload || true
-
-          echo "==== PM2 setup ===="
-          cd /root/bravento
-          pm2 restart ecosystem.config.js --update-env
-          pm2 save
-
-          echo "==== Deployment completed successfully ===="
+            systemctl restart gunicorn
           EOF
 
-      - name: Verify Gunicorn status
+      - name: Verify Gunicorn
         run: |
-          echo "==== Checking Gunicorn status on server ===="
-          ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             if ! systemctl is-active --quiet gunicorn; then
-              echo "❌ Gunicorn failed to start. Showing logs..."
+              echo "❌ Gunicorn failed to start"
               sudo journalctl -u gunicorn --no-pager -n 50
               exit 1
             else
-              echo "✅ Gunicorn started successfully."
+              echo "✅ Gunicorn running"
             fi
           EOF
 
-      - name: Check frontend is running
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Only run if design_portal/ folder has changes
+      - name: Check frontend folder changes
+        id: frontend_changes
         run: |
-          ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
-            sleep 5  # wait for app to boot
+          git fetch origin main --depth=1
+          echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)"
+
+      - name: Skip frontend deploy if no changes
+        if: steps.frontend_changes.outputs.changed == ''
+        run: |
+          echo "No frontend changes, skipping deploy."
+          exit 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy Frontend via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+            set -euo pipefail
+            cd /root/bravento/design_portal
+            cp .env.production .env
+            npm install --legacy-peer-deps
+            npm run build
+            pm2 restart ecosystem.config.js --update-env
+            pm2 save
+          EOF
+
+      - name: Verify Frontend
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+            sleep 5
             if curl -fs http://localhost:3000 >/dev/null; then
-              echo "✅ Frontend is running"
+              echo "✅ Frontend running"
             else
-              echo "❌ Frontend is not running"
+              echo "❌ Frontend not running"
               pm2 logs design-portal --lines 50 --nostream || true
               exit 1
             fi
