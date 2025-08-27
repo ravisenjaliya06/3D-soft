@@ -161,7 +161,7 @@ jobs:
 
       - name: Check frontend is running
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@your-server-ip << 'EOF'
+          ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
             sleep 5  # wait for app to boot
             if curl -s --head http://localhost:3000 | grep "200 OK" > /dev/null; then
               echo "✅ Frontend is running"
