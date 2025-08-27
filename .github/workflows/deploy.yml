@@ -40,7 +40,7 @@ jobs:
             cd backend
             pipenv --rm || true
             pipenv install --deploy --ignore-pipfile
-            pipenv run python manage.py migrate || true  # Remove if FastAPI has no migrations
+            pipenv run python manage.py migrate || true
 
             # Frontend setup
             cd ../design_portal
@@ -51,6 +51,13 @@ jobs:
               echo "Frontend build failed. Aborting deployment."
               exit 1
             fi
+
+            # --- NEW: Deploy Gunicorn service ---
+            cp /root/bravento/bravento/gunicorn.service /etc/systemd/system/gunicorn.service
+            systemctl daemon-reload
+            systemctl enable gunicorn
+            systemctl restart gunicorn
+            systemctl status gunicorn --no-pager || true
 
             # Configure NGINX
             cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
@@ -71,7 +78,7 @@ jobs:
                 }
 
                 location /api/ {
-                    proxy_pass http://localhost:8000/;
+                    proxy_pass http://unix:/root/bravento/backend/bravento.sock;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade $http_upgrade;
                     proxy_set_header Connection 'upgrade';
@@ -93,7 +100,7 @@ jobs:
             ufw allow 80 || true
             ufw reload || true
 
-            # Restart PM2 only if all steps succeed
+            # Restart PM2
             cd ..
             pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
 
