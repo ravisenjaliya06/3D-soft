@@ -18,18 +18,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Only run if backend/ folder has changes
-      - name: Check backend folder changes
-        id: backend_changes
-        run: |
-          git fetch origin main --depth=1
-          echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)"
+      # # Only run if backend/ folder has changes
+      # - name: Check backend folder changes
+      #   id: backend_changes
+      #   run: |
+      #     git fetch origin main --depth=1
+      #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)"
 
-      - name: Skip backend deploy if no changes
-        if: steps.backend_changes.outputs.changed == ''
-        run: |
-          echo "No backend changes, skipping deploy."
-          exit 0
+      # - name: Skip backend deploy if no changes
+      #   if: steps.backend_changes.outputs.changed == ''
+      #   run: |
+      #     echo "No backend changes, skipping deploy."
+      #     exit 0
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -46,8 +46,8 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
 
             cd /root/bravento
-            # git fetch origin main --depth=1
-            # git reset --hard origin/main
+            git fetch origin main --depth=1
+            git reset --hard origin/main
 
             cd backend/
             pipenv install --deploy --ignore-pipfile --python 3.11
@@ -76,24 +76,25 @@ jobs:
     defaults:
       run:
         shell: bash
+    needs: deploy-backend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Only run if design_portal/ folder has changes
-      - name: Check frontend folder changes
-        id: frontend_changes
-        run: |
-          git fetch origin main --depth=1
-          echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)"
+      # # Only run if design_portal/ folder has changes
+      # - name: Check frontend folder changes
+      #   id: frontend_changes
+      #   run: |
+      #     git fetch origin main --depth=1
+      #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)"
 
-      - name: Skip frontend deploy if no changes
-        if: steps.frontend_changes.outputs.changed == ''
-        run: |
-          echo "No frontend changes, skipping deploy."
-          exit 0
+      # - name: Skip frontend deploy if no changes
+      #   if: steps.frontend_changes.outputs.changed == ''
+      #   run: |
+      #     echo "No frontend changes, skipping deploy."
+      #     exit 0
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -109,8 +110,8 @@ jobs:
             set -euo pipefail
 
             cd /root/bravento
-            # git fetch origin main --depth=1
-            # git reset --hard origin/main
+            git fetch origin main --depth=1
+            git reset --hard origin/main
 
             cd design_portal/
             cp .env.production .env
