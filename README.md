@@ -1,4 +1,4 @@
-# bravento
+# Bravento
 
 1. **Clone Project**:
 
