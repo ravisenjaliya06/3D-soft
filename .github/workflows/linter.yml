@@ -1,4 +1,4 @@
-name: Backend Cleanup and Run TestCase, Formatter check, Type checker, and Migration Check
+name: Backend Cleanup and Run TestCase, Formatter Check, Type Checker, and Migration Check
 on:
   pull_request:
     branches: [main]
