@@ -62,20 +62,20 @@ jobs:
             npm run build
 
             echo "==== Gunicorn service setup ===="
-cat << 'SERVICE' > /etc/systemd/system/gunicorn.service
-[Unit]
-Description=Gunicorn Daemon for Bravento
-After=network.target
-
-[Service]
-User=root
-WorkingDirectory=/root/bravento/backend
-ExecStart=/usr/bin/env pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-SERVICE
+            cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
+          [Unit]
+          Description=Gunicorn Daemon for Bravento
+          After=network.target
+          
+          [Service]
+          User=root
+          WorkingDirectory=/root/bravento/backend
+          ExecStart=/usr/bin/env pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
 
             systemctl daemon-reload
             systemctl enable gunicorn
@@ -83,38 +83,38 @@ SERVICE
             systemctl status gunicorn --no-pager
 
             echo "==== NGINX setup ===="
-cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
-server {
-    listen 80;
-    server_name 88.99.184.131;
-
-    # --- Frontend on port 3000 ---
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # --- Backend API via Gunicorn ---
-    location /api/ {
-        proxy_pass http://unix:/root/bravento/backend/bravento.sock;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-NGINX_EOF
+            cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
+          server {
+              listen 80;
+              server_name 88.99.184.131;
+          
+              # --- Frontend on port 3000 ---
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          
+              # --- Backend API via Gunicorn ---
+              location /api/ {
+                  proxy_pass http://unix:/root/bravento/backend/bravento.sock;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+          NGINX_EOF
 
             ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
             rm -f /etc/nginx/sites-enabled/default
