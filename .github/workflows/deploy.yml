@@ -55,7 +55,7 @@ jobs:
             fi
 
             # --- NEW: Deploy Gunicorn service ---
-            cd /root/bravento/gunicorn.service /etc/systemd/system/gunicorn.service
+            cp /root/bravento/gunicorn.service /etc/systemd/system/gunicorn.service
             systemctl daemon-reload
             systemctl enable gunicorn
             systemctl restart gunicorn
