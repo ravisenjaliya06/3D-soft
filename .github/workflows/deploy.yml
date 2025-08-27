@@ -18,30 +18,84 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H 88.99.184.131 >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
             set -e
 
+            # Install required software (idempotent)
+            apt update
+            apt install -y python3 python3-pip python3-venv nginx
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            apt install -y nodejs
+            npm install -g pm2 || true
+
+            # Navigate to project directory
             cd /root/bravento
             git pull origin main
-            
+
             # Backend setup
-              cd backend
-              pipenv --rm || true   
-              pipenv install --deploy --ignore-pipfile
-              pipenv run python manage.py migrate || true
+            cd backend
+            pipenv --rm || true
+            pipenv install --deploy --ignore-pipfile
+            pipenv run python manage.py migrate || true  # Remove if FastAPI has no migrations
 
-              # Frontend setup
-              cd ../design_portal
-              npm install --legacy-peer-deps
-              cp .env.production .env || true
-              npm run build
+            # Frontend setup
+            cd ../design_portal
+            npm install --legacy-peer-deps
+            cp .env.production .env || true
+            npm run build
+            if [ $? -ne 0 ]; then
+              echo "Frontend build failed. Aborting deployment."
+              exit 1
+            fi
 
-              # Restart both apps via PM2
-              cd ..
-              pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
-            EOF
+            # Configure NGINX
+            cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
+            server {
+                listen 80;
+                server_name 88.99.184.131;
 
+                location / {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_cache_bypass $http_upgrade;
+                }
+
+                location /api/ {
+                    proxy_pass http://localhost:8000/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_cache_bypass $http_upgrade;
+                }
+            }
+            NGINX_EOF
+
+            # Enable NGINX site and restart
+            ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
+            rm /etc/nginx/sites-enabled/default || true
+            nginx -t && systemctl restart nginx || { echo "NGINX config failed"; exit 1; }
+
+            # Open firewall port
+            ufw allow 80 || true
+            ufw reload || true
+
+            # Restart PM2 only if all steps succeed
+            cd ..
+            pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+
+            echo "Deployment completed successfully."
+          EOF
