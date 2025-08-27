@@ -45,6 +45,9 @@ jobs:
             set -euo pipefail
             export DEBIAN_FRONTEND=noninteractive
 
+            git reset --hard
+            git pull origin main
+
             cd /root/bravento/backend
             pipenv install --deploy --ignore-pipfile --python 3.11
             pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
@@ -103,10 +106,16 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             set -euo pipefail
+
+            git reset --hard
+            git pull origin main
+
             cd /root/bravento/design_portal
             cp .env.production .env
             npm install --legacy-peer-deps
             npm run build
+
+            cd ..
             pm2 restart ecosystem.config.js --update-env
             pm2 save
           EOF
