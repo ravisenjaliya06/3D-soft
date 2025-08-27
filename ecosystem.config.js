@@ -9,7 +9,6 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 3000,
       },
-      post_update: ["npm install", "npm run build"]
     },
   ],
 };
