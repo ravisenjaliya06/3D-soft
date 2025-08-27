@@ -121,11 +121,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             set -euo pipefail
 
-            cd /root/bravento
-            git fetch origin main --depth=1
-            git reset --hard origin/main
-
-            cd design_portal/
+            cd /root/bravento/design_portal/
             npm install --legacy-peer-deps
             npm run build
 
