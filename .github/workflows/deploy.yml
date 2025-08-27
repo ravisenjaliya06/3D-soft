@@ -8,10 +8,15 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+
     steps:
+      # --- Checkout repo ---
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
+      # --- Setup SSH ---
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -20,88 +25,108 @@ jobs:
       - name: Add server to known_hosts
         run: ssh-keyscan -H 88.99.184.131 >> ~/.ssh/known_hosts
 
+      # --- Deploy via SSH ---
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
             set -e
 
-            # Install required software (idempotent)
+            echo "==== Installing required software ===="
             apt update
-            apt install -y python3 python3-pip python3-venv nginx
+            apt install -y python3 python3-pip python3-venv python3-dev \
+                           build-essential libpq-dev git curl nginx ufw
+            pip3 install --upgrade pip setuptools wheel
+            pip3 install pipenv
+
+            # Install Node.js + PM2
             curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
             apt install -y nodejs
             npm install -g pm2
 
-            # Navigate to project directory
+            echo "==== Updating repo ===="
             cd /root/bravento
+            git reset --hard
             git pull origin main
 
-            # Backend setup
+            echo "==== Backend setup ===="
             cd backend
-            pipenv install
             pipenv install --deploy --ignore-pipfile
-            pipenv run python manage.py migrate
+            pipenv run python manage.py migrate --noinput
+            pipenv run python manage.py collectstatic --noinput
 
-            # Frontend setup
+            echo "==== Frontend setup ===="
             cd ../design_portal
-            npm install --legacy-peer-deps
             cp .env.production .env || true
-            npm run build
-            if [ $? -ne 0 ]; then
-              echo "Frontend build failed. Aborting deployment."
-              exit 1
-            fi
+            npm install --legacy-peer-deps
+            npm run build || { echo "Frontend build failed"; exit 1; }
 
-            # --- Restart Gunicorn service ---
+            echo "==== Gunicorn service setup ===="
+cat << 'SERVICE' > /etc/systemd/system/gunicorn.service
+[Unit]
+Description=Gunicorn Daemon for Bravento
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/bravento/backend
+ExecStart=/usr/bin/env pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
             systemctl daemon-reload
             systemctl enable gunicorn
             systemctl restart gunicorn
             systemctl status gunicorn --no-pager || true
 
-            # Configure NGINX
-            cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
-            server {
-                listen 80;
-                server_name 88.99.184.131;
+            echo "==== NGINX setup ===="
+cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
+server {
+    listen 80;
+    server_name 88.99.184.131;
 
-                location / {
-                    proxy_pass http://localhost:3000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection 'upgrade';
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_cache_bypass $http_upgrade;
-                }
+    # --- Frontend on port 3000 ---
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
 
-                location /api/ {
-                    proxy_pass http://unix:/root/bravento/backend/bravento.sock;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection 'upgrade';
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_cache_bypass $http_upgrade;
-                }
-            }
-            NGINX_EOF
+    # --- Backend API via Gunicorn ---
+    location /api/ {
+        proxy_pass http://unix:/root/bravento/backend/bravento.sock;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+NGINX_EOF
 
-            # Enable NGINX site and restart
             ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
-            rm /etc/nginx/sites-enabled/default || true
+            rm -f /etc/nginx/sites-enabled/default
             nginx -t && systemctl restart nginx || { echo "NGINX config failed"; exit 1; }
 
-            # Open firewall port
+            echo "==== Firewall ===="
             ufw allow 80 || true
             ufw reload || true
 
-            # Restart PM2
-            cd ..
+            echo "==== PM2 setup ===="
+            cd /root/bravento
             pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+            pm2 save
 
-            echo "Deployment completed successfully."
+            echo "==== Deployment completed successfully ===="
           EOF
