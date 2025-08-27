@@ -62,6 +62,7 @@ jobs:
           echo "==== Frontend setup ===="
           cd ../design_portal
           cp .env.production .env
+          npm run build
 
           echo "==== Gunicorn service setup ===="
           cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
@@ -140,7 +141,7 @@ jobs:
 
           echo "==== PM2 setup ===="
           cd /root/bravento
-          pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+          pm2 restart ecosystem.config.js --update-env
           pm2 save
 
           echo "==== Deployment completed successfully ===="
