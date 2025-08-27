@@ -10,13 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --- Checkout repo ---
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # --- Setup SSH ---
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -25,69 +23,71 @@ jobs:
       - name: Add server to known_hosts
         run: ssh-keyscan -H 88.99.184.131 >> ~/.ssh/known_hosts
 
-      # --- Deploy via SSH ---
       - name: Deploy via SSH
+        shell: bash
         run: |
           ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
-            # exit immediately if a command fails, treat unset vars as errors
-            set -euo pipefail
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
 
-            echo "==== Installing required software ===="
-            apt update
-            apt install -y python3 python3-pip python3-venv python3-dev \
-                           build-essential libpq-dev git curl nginx ufw
-            pip3 install --upgrade pip setuptools wheel
-            pip3 install pipenv
+          echo "==== Installing Python 3.11 and tools ===="
+          add-apt-repository -y ppa:deadsnakes/ppa
+          apt update
+          apt install -y python3.11 python3.11-venv python3.11-dev \
+              build-essential libpq-dev git curl nginx ufw
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+          python3.11 -m pip install --upgrade pip setuptools wheel pipenv
 
-            # Install Node.js + PM2
-            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-            apt install -y nodejs
-            npm install -g pm2
+          # Node.js + PM2
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt install -y nodejs
+          npm install -g pm2
 
-            echo "==== Updating repo ===="
-            cd /root/bravento
-            git reset --hard
-            git pull origin main
+          echo "==== Updating repo ===="
+          cd /root/bravento
+          git reset --hard
+          git pull origin main
 
-            echo "==== Backend setup ===="
-            cd backend
-            pipenv install --deploy --ignore-pipfile
-            pipenv run python manage.py migrate --noinput
-            pipenv run python manage.py collectstatic --noinput
+          echo "==== Backend setup ===="
+          cd backend
+          pipenv install --deploy --ignore-pipfile --python 3.11
+          pipenv run python manage.py migrate --noinput
+          pipenv run python manage.py collectstatic --noinput
 
-            echo "==== Frontend setup ===="
-            cd ../design_portal
-            cp .env.production .env || true
-            npm install --legacy-peer-deps
-            npm run build
+          echo "==== Frontend setup ===="
+          cd ../design_portal
+          cp .env.production .env || true
+          npm install --legacy-peer-deps
+          npm run build
 
-            echo "==== Gunicorn service setup ===="
-            cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
+          echo "==== Gunicorn service setup ===="
+          cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
           [Unit]
           Description=Gunicorn Daemon for Bravento
           After=network.target
-          
+
           [Service]
           User=root
           WorkingDirectory=/root/bravento/backend
-          ExecStart=/usr/bin/env pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
+          ExecStart=/usr/local/bin/pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
           Restart=always
-          
+          Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
           [Install]
           WantedBy=multi-user.target
           SERVICE
 
-            systemctl daemon-reload
-            systemctl enable gunicorn
-            systemctl restart gunicorn
-            systemctl status gunicorn --no-pager
+          systemctl daemon-reload
+          systemctl enable gunicorn
+          systemctl restart gunicorn
+          systemctl status gunicorn --no-pager
 
-            echo "==== NGINX setup ===="
-            cat << 'NGINX_EOF' > /etc/nginx/sites-available/bravento
+          echo "==== NGINX setup ===="
+          cat > /etc/nginx/sites-available/bravento << 'NGINX_EOF'
           server {
               listen 80;
               server_name 88.99.184.131;
-          
+
               # --- Frontend on port 3000 ---
               location / {
                   proxy_pass http://localhost:3000;
@@ -100,7 +100,7 @@ jobs:
                   proxy_set_header X-Forwarded-Proto $scheme;
                   proxy_cache_bypass $http_upgrade;
               }
-          
+
               # --- Backend API via Gunicorn ---
               location /api/ {
                   proxy_pass http://unix:/root/bravento/backend/bravento.sock;
@@ -116,19 +116,19 @@ jobs:
           }
           NGINX_EOF
 
-            ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
-            rm -f /etc/nginx/sites-enabled/default
-            nginx -t
-            systemctl restart nginx
+          ln -sf /etc/nginx/sites-available/bravento /etc/nginx/sites-enabled/bravento
+          rm -f /etc/nginx/sites-enabled/default
+          nginx -t
+          systemctl restart nginx
 
-            echo "==== Firewall ===="
-            ufw allow 80 || true
-            ufw reload || true
+          echo "==== Firewall ===="
+          ufw allow 80 || true
+          ufw reload || true
 
-            echo "==== PM2 setup ===="
-            cd /root/bravento
-            pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
-            pm2 save
+          echo "==== PM2 setup ===="
+          cd /root/bravento
+          pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+          pm2 save
 
-            echo "==== Deployment completed successfully ===="
+          echo "==== Deployment completed successfully ===="
           EOF
