@@ -103,9 +103,9 @@ jobs:
                   alias /root/bravento/backend/media/;
               }
 
-              # --- Frontend on port 3000 ---
-              location / {
-                  proxy_pass http://localhost:3000;
+              # --- Backend API via Gunicorn ---
+              location /api/ {
+                  proxy_pass http://unix:/root/bravento/backend/bravento.sock;
                   proxy_http_version 1.1;
                   proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
@@ -116,9 +116,9 @@ jobs:
                   proxy_cache_bypass $http_upgrade;
               }
 
-              # --- Backend API via Gunicorn ---
-              location /api/ {
-                  proxy_pass http://unix:/root/bravento/backend/bravento.sock;
+              # --- Frontend on port 3000 ---
+              location / {
+                  proxy_pass http://localhost:3000;
                   proxy_http_version 1.1;
                   proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
@@ -150,11 +150,13 @@ jobs:
 
       - name: Verify Gunicorn status
         run: |
-          echo "==== Checking Gunicorn status ===="
-          if ! systemctl is-active --quiet gunicorn; then
-            echo "❌ Gunicorn failed to start. Showing logs..."
-            sudo journalctl -u gunicorn --no-pager -n 50
-            exit 1
-          else
-            echo "✅ Gunicorn started successfully."
-          fi
+          echo "==== Checking Gunicorn status on server ===="
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            if ! systemctl is-active --quiet gunicorn; then
+              echo "❌ Gunicorn failed to start. Showing logs..."
+              sudo journalctl -u gunicorn --no-pager -n 50
+              exit 1
+            else
+              echo "✅ Gunicorn started successfully."
+            fi
+          EOF
