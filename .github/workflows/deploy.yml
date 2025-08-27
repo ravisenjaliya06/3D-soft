@@ -164,11 +164,11 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no root@88.99.184.131 << 'EOF'
             sleep 5  # wait for app to boot
-            if curl -s --head http://localhost:3000 | grep "200 OK" > /dev/null; then
+            if curl -fs http://localhost:3000 >/dev/null; then
               echo "✅ Frontend is running"
             else
               echo "❌ Frontend is not running"
-              pm2 logs design-portal --lines 50
+              pm2 logs design-portal --lines 50 --nostream || true
               exit 1
             fi
           EOF
