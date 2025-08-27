@@ -147,3 +147,14 @@ jobs:
 
           echo "==== Deployment completed successfully ===="
           EOF
+
+      - name: Verify Gunicorn status
+        run: |
+          echo "==== Checking Gunicorn status ===="
+          if ! systemctl is-active --quiet gunicorn; then
+            echo "❌ Gunicorn failed to start. Showing logs..."
+            sudo journalctl -u gunicorn --no-pager -n 50
+            exit 1
+          else
+            echo "✅ Gunicorn started successfully."
+          fi
