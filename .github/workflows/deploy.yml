@@ -61,9 +61,7 @@ jobs:
 
           echo "==== Frontend setup ===="
           cd ../design_portal
-          cp .env.production .env || true
-          npm install --legacy-peer-deps
-          npm run build
+          cp .env.production .env
 
           echo "==== Gunicorn service setup ===="
           cat > /etc/systemd/system/gunicorn.service << 'SERVICE'
@@ -158,5 +156,18 @@ jobs:
               exit 1
             else
               echo "✅ Gunicorn started successfully."
+            fi
+          EOF
+
+      - name: Check frontend is running
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@your-server-ip << 'EOF'
+            sleep 5  # wait for app to boot
+            if curl -s --head http://localhost:3000 | grep "200 OK" > /dev/null; then
+              echo "✅ Frontend is running"
+            else
+              echo "❌ Frontend is not running"
+              pm2 logs design-portal --lines 50
+              exit 1
             fi
           EOF
