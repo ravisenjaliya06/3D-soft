@@ -74,7 +74,7 @@ jobs:
           [Service]
           User=root
           WorkingDirectory=/root/bravento/backend
-          ExecStart=/usr/local/bin/pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
+          ExecStart=/usr/local/bin/pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock umaboy.wsgi:application
           Restart=always
           Environment="PATH=/usr/local/bin:/usr/bin:/bin"
           Environment="DJANGO_SETTINGS_MODULE=backend.settings"
