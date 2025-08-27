@@ -69,6 +69,18 @@ jobs:
             fi
           EOF
 
+      # - name: Notify Google Chat
+      #   if: always()  # run even if previous steps failed
+      #   run: |
+      #     STATUS="SUCCESS"
+      #     if [ "${{ job.status }}" != "success" ]; then
+      #       STATUS="FAILED"
+      #     fi
+      
+      #     curl -X POST -H "Content-Type: application/json" \
+      #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
+      #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
@@ -135,3 +147,15 @@ jobs:
               exit 1
             fi
           EOF
+
+      # - name: Notify Google Chat
+      #   if: always()  # run even if previous steps failed
+      #   run: |
+      #     STATUS="SUCCESS"
+      #     if [ "${{ job.status }}" != "success" ]; then
+      #       STATUS="FAILED"
+      #     fi
+      
+      #     curl -X POST -H "Content-Type: application/json" \
+      #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
+      #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
