@@ -56,8 +56,8 @@ jobs:
           echo "==== Backend setup ===="
           cd backend
           pipenv install --deploy --ignore-pipfile --python 3.11
-          pipenv run python manage.py migrate --noinput
-          pipenv run python manage.py collectstatic --noinput
+          pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
+          pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
 
           echo "==== Frontend setup ===="
           cd ../design_portal
@@ -97,6 +97,10 @@ jobs:
 
               location /static/ {
                   alias /root/bravento/backend/staticfiles/;
+              }
+
+              location /media/ {
+                  alias /root/bravento/backend/media/;
               }
 
               # --- Frontend on port 3000 ---
