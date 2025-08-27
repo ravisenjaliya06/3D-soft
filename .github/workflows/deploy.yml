@@ -49,7 +49,7 @@ jobs:
             git fetch origin main --depth=1
             git reset --hard origin/main
 
-            cd /backend
+            cd backend/
             pipenv install --deploy --ignore-pipfile --python 3.11
             pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
             pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
@@ -112,7 +112,7 @@ jobs:
             git fetch origin main --depth=1
             git reset --hard origin/main
 
-            cd /design_portal
+            cd design_portal/
             cp .env.production .env
             npm install --legacy-peer-deps
             npm run build
