@@ -1,14 +1,12 @@
 # bravento
 
-## Get Started
-
 1. **Clone Project**:
 
 ``` bash
 git clone https://github.com/yrcoderit/bravento.git
 ```
 
-## More steps in 
+## More specific steps in specific setup
 
-- [design_portal README](design_portal/README.md)
-- [backend README](backend/README.md)
+- [Frontend (Design Portal) README](design_portal/README.md)
+- [Backend README](backend/README.md)
