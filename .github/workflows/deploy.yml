@@ -123,6 +123,7 @@ jobs:
 
             cd /root/bravento/design_portal/
             npm install --legacy-peer-deps
+            cp .env.production .env
             npm run build
 
             cd ..
