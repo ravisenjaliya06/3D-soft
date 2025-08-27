@@ -23,6 +23,11 @@ jobs:
       - name: Add server to known_hosts
         run: ssh-keyscan -H 88.99.184.131 >> ~/.ssh/known_hosts
 
+      - name: Set environment variables
+        run: |
+          echo "DJANGO_SETTINGS_MODULE=umaboy.settings.production" >> $GITHUB_ENV
+          echo "PYTHONPATH=/root/bravento" >> $GITHUB_ENV
+
       - name: Deploy via SSH
         shell: bash
         run: |
@@ -72,6 +77,8 @@ jobs:
           ExecStart=/usr/local/bin/pipenv run gunicorn --workers 3 --bind unix:/root/bravento/backend/bravento.sock bravento.wsgi:application
           Restart=always
           Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+          Environment="DJANGO_SETTINGS_MODULE=backend.settings"
+          EnvironmentFile=/root/bravento/backend/.env
 
           [Install]
           WantedBy=multi-user.target
@@ -87,6 +94,10 @@ jobs:
           server {
               listen 80;
               server_name 88.99.184.131;
+
+              location /static/ {
+                  alias /root/bravento/backend/staticfiles/;
+              }
 
               # --- Frontend on port 3000 ---
               location / {
