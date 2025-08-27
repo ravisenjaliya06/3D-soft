@@ -126,7 +126,6 @@ jobs:
             git reset --hard origin/main
 
             cd design_portal/
-            cp .env.production .env
             npm install --legacy-peer-deps
             npm run build
 
