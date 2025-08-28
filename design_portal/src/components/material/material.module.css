@@ -1,0 +1,260 @@
+/* .container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--background-color);
+}
+
+.rightside {
+  flex: 3;
+  max-width: 85rem;
+  min-width: none;
+}
+
+.maincontainer {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 1rem 1rem 1rem 2rem;
+}
+
+.materialleftside {
+  width: 12rem;
+  height: 42rem;
+  background: var(--primary-white);
+  border-radius: 0.9rem;
+  border: 0.063rem solid var(--border-color);
+}
+
+.materialrightside {
+  width: 69rem;
+  height: 42rem;
+  background: var(--primary-white);
+  border-radius: 0.9rem;
+  border: 0.063rem solid var(--border-color);
+  padding: 0rem 2rem 0rem 2 rem;
+  overflow: hidden;
+} */
+
+
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--background-color);
+}
+
+.rightside {
+  flex: 3;
+  max-width: 85rem;
+  min-width: none;
+}
+
+.maincontainer {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 1rem 1rem 1rem 2rem;
+}
+
+.materialleftside {
+  width: 18rem;
+  height: 42rem;
+  background: var(--primary-white);
+  border-radius: 0.9rem;
+  border: 0.063rem solid var(--border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.materialrightside {
+  flex: 1;
+  height: 42rem;
+  background: var(--primary-white);
+  border-radius: 0.9rem;
+  border: 0.063rem solid var(--border-color);
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.menuContainer {
+  padding: 0.5rem 0;
+}
+
+.categoryContainer {
+  margin-bottom: 0.125rem;
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0.375rem;
+  margin: 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+.categoryItem:hover {
+  background-color: #f8f9fa;
+}
+
+.categoryItem.expanded {
+  background-color: #6366f1;
+  color: white;
+}
+
+.categoryItem.selected {
+  background-color: #e0e7ff;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.categoryContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryIcon {
+  font-size: 0.875rem;
+  width: 1.125rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.categoryName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownArrow {
+  font-size: 0.625rem;
+  transition: transform 0.2s ease;
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.categoryItem.expanded .dropdownArrow {
+  color: white;
+}
+
+.dropdownArrow.rotated {
+  transform: rotate(180deg);
+}
+
+.subItemsContainer {
+  margin-left: 0.5rem;
+  border-left: 0.125rem solid #e5e7eb;
+  margin-bottom: 0.25rem;
+}
+
+.contentArea {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selectedContent {
+  text-align: center;
+  color: #6b7280;
+  max-width: 100%;
+}
+
+.selectedContent h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.selectedContent p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.itemDetails {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.itemDetails p {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.itemDetails p:last-child {
+  margin-bottom: 0;
+}
+
+/* Custom scrollbar for left sidebar */
+.materialleftside::-webkit-scrollbar {
+  width: 0.375rem;
+}
+
+.materialleftside::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0.375rem;
+}
+
+.materialleftside::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 0.375rem;
+}
+
+.materialleftside::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .maincontainer {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .materialleftside {
+    width: 100%;
+    height: 25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .materialrightside {
+    height: 20rem;
+  }
+
+  .categoryName {
+    font-size: 0.813rem;
+  }
+}
+
+/* Animation for smooth expand/collapse */
+.subItemsContainer {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}

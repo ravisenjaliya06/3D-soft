@@ -3,7 +3,7 @@ import simple_line from '@/assets/sidebar/Line.svg';
 import simple_line2 from '@/assets/sidebar/Line2.svg';
 import Logout from '@/assets/sidebar/Logout.svg';
 import Setting from '@/assets/sidebar/Setting.svg';
-import admin from '@/assets/sidebar/admin.svg';
+import material from '@/assets/sidebar/material.svg';
 import dropdown from '@/assets/sidebar/arrow-down.svg';
 import dropup from '@/assets/sidebar/arrow-up.svg';
 import dashboard from '@/assets/sidebar/dashboard.svg';
@@ -28,8 +28,8 @@ const Sidebar = () => {
     const currentPath = router.pathname;
     if (currentPath.includes('dashboard')) {
       setActiveItem('dashboard');
-    } else if (currentPath.includes('admin')) {
-      setActiveItem('admin');
+    } else if (currentPath.includes('material')) {
+      setActiveItem('material');
     } else if (currentPath.includes('mes')) {
       setActiveItem('mes');
     } else if (currentPath.includes('designs')) {
@@ -92,9 +92,8 @@ const Sidebar = () => {
                 <img
                   src={dashboard.src}
                   alt="Dashboard"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'dashboard' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'dashboard' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Dashboard
               </li>
@@ -112,17 +111,16 @@ const Sidebar = () => {
                 <img
                   src={mes.src}
                   alt="MES"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'mes' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'mes' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 MES
               </li>
               <li
-                className={activeItem === 'admin' ? styles.active : ''}
-                onClick={() => handleClick('admin', REDIRECT.ADMIN)}
+                className={activeItem === 'material' ? styles.active : ''}
+                onClick={() => handleClick('material', REDIRECT.MATERIAL)}
               >
-                {activeItem === 'admin' && (
+                {activeItem === 'material' && (
                   <img
                     src={selected.src}
                     alt="Selected"
@@ -130,13 +128,12 @@ const Sidebar = () => {
                   />
                 )}
                 <img
-                  src={admin.src}
-                  alt="Admin"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'admin' ? styles.icon_adjusted : ''
-                  }`}
+                  src={material.src}
+                  alt="Material"
+                  className={`${styles.sidebar_icon} ${activeItem === 'material' ? styles.icon_adjusted : ''
+                    }`}
                 />
-                Admin
+                Material
               </li>
               <li
                 className={activeItem === 'designs' ? styles.active : ''}
@@ -152,9 +149,8 @@ const Sidebar = () => {
                 <img
                   src={design.src}
                   alt="design"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'designs' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'designs' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Design
               </li>
@@ -176,9 +172,8 @@ const Sidebar = () => {
                   <img
                     src={Setting.src}
                     alt="settings"
-                    className={`${styles.sidebar_icon} ${
-                      activeItem === 'settings' ? styles.icon_adjusted : ''
-                    }`}
+                    className={`${styles.sidebar_icon} ${activeItem === 'settings' ? styles.icon_adjusted : ''
+                      }`}
                   />
                   Settings
                 </li>
@@ -222,9 +217,8 @@ const Sidebar = () => {
                 <img
                   src={dashboard.src}
                   alt="Dashboard"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'dashboard' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'dashboard' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -242,17 +236,16 @@ const Sidebar = () => {
                 <img
                   src={mes.src}
                   alt="MES"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'mes' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'mes' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
-                className={`${styles.listItem} ${activeItem === 'admin' ? styles.active_small : ''}`}
-                onClick={() => handleClick('admin', REDIRECT.ADMIN)}
-                data-title="Admin"
+                className={`${styles.listItem} ${activeItem === 'material' ? styles.active_small : ''}`}
+                onClick={() => handleClick('admin', REDIRECT.MATERIAL)}
+                data-title="Material"
               >
-                {activeItem === 'admin' && (
+                {activeItem === 'material' && (
                   <img
                     src={selected.src}
                     alt="Selected"
@@ -260,11 +253,10 @@ const Sidebar = () => {
                   />
                 )}
                 <img
-                  src={admin.src}
-                  alt="Admin"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'admin' ? styles.icon_adjusted : ''
-                  }`}
+                  src={material.src}
+                  alt="Material"
+                  className={`${styles.sidebar_icon} ${activeItem === 'material' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -282,9 +274,8 @@ const Sidebar = () => {
                 <img
                   src={design.src}
                   alt="design"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'designs' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'designs' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <div className={styles.userhelp}>
