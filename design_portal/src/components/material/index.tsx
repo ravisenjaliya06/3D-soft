@@ -301,7 +301,7 @@ const Material = () => {
         <div
           className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""} ${isSelected ? styles.selected : ""}`}
           style={{ paddingLeft: `${1 + level * 1.5}rem` }}
-          onClick={() => handleItemClick(item.id, hasSubItems)}
+          onClick={() => handleItemClick(item.id, hasSubItems || false)}
         >
           <div className={styles.categoryContent}>
             <span className={styles.categoryIcon}>{item.icon}</span>
