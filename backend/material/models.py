@@ -273,23 +273,21 @@ class FinishesLibrary(models.Model):
     is_deleted = models.BooleanField(default=False)
 
 
-class Material(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    type = models.CharField(
-        max_length=100, choices=MaterialTypes.choices, null=True, blank=True
-    )
-    organization = models.ForeignKey(
-        UserOrganizationPermission, on_delete=models.CASCADE
-    )
-    description = models.TextField(null=True, blank=True)
-    is_deleted = models.BooleanField(default=False)
-
-
 class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+
+
+class Material(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    type = models.CharField(max_length=100, choices=MaterialTypes.choices)
+    organization = models.ForeignKey(
+        UserOrganizationPermission, on_delete=models.CASCADE, null=True, blank=True
+    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    description = models.TextField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)
 
 
 class MountPlateHoles(models.Model):

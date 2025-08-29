@@ -1,3 +1,9 @@
 # Django imports
+import django.contrib.admin as admin
 
-# Register your models here.
+# Local imports
+from .models import Company, Material, Properties
+
+admin.site.register(Material)
+admin.site.register(Properties)
+admin.site.register(Company)
