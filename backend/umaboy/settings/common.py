@@ -53,7 +53,7 @@ THIRD_PARTY_APP = [
     "django_celery_beat",
 ]
 
-LOCAL_APP = ["umaboy", "user", "design", "mes_portal"]
+LOCAL_APP = ["umaboy", "user", "design", "mes_portal", "material"]
 
 INSTALLED_APPS = INSTALLED_APPS + THIRD_PARTY_APP + LOCAL_APP
 
