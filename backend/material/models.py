@@ -244,9 +244,7 @@ class TextureTypeChoices(models.TextChoices):
 
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE
-    )
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     type = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )

@@ -1,8 +1,12 @@
+# External imports
 from rest_framework import serializers
-from .models import Company, Material
+
+# Local imports
+from .models import Company
+
 
 class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = '__all__'
+        fields = "__all__"
