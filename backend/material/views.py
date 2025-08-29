@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 # External imports
 from rest_framework import viewsets
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -14,7 +14,6 @@ from umaboy.constant import DELETE, GET, POST, PUT
 # Local imports
 from .models import Company, Material
 from .serializers import CompanySerializer, MaterialSerializer
-from rest_framework.permissions import IsAuthenticated
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -45,9 +44,9 @@ class MaterialViewSet(viewsets.ModelViewSet):
     serializer_class = MaterialSerializer
 
     def get_queryset(self: "MaterialViewSet", *args, **kwargs) -> QuerySet[Material]:
-        user = self.request.user
         company_id = self.kwargs.get("pk")
-        print(company_id, "company_id")
-        if not user or not user.is_authenticated:
-            raise NotAuthenticated("Authentication token is missing or invalid.")
         return Material.objects.filter(company_id=company_id, is_deleted=False)
+
+    def perform_create(self: "MaterialViewSet", serializer: MaterialSerializer) -> None:
+        company_id = self.kwargs.get("pk")
+        serializer.save(company_id=company_id)

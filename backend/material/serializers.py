@@ -5,7 +5,17 @@ from typing import Dict
 from rest_framework import serializers
 
 # Local imports
-from .models import Company, Material, Properties, MaterialTypes
+from .models import (
+    Company,
+    FinishesLibrary,
+    Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
+    MountHoles,
+    MountPlateHoles,
+    Properties,
+)
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -45,16 +55,127 @@ class CompanySerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class MountHolesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MountHoles
+        fields = "__all__"
+
+
+class MountPlateHolesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MountPlateHoles
+        fields = "__all__"
+
+
+class FinishesLibrarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinishesLibrary
+        fields = "__all__"
+
+
 class MaterialPropertiesSerializer(serializers.ModelSerializer):
+    front_mount_holes = MountHolesSerializer(read_only=True)
+    back_mount_holes = MountHolesSerializer(read_only=True)
+    bottom_mount_holes = MountHolesSerializer(read_only=True)
+
+    mount_plate_hole_one = MountPlateHolesSerializer(read_only=True)
+    mount_plate_hole_two = MountPlateHolesSerializer(read_only=True)
+    mount_plate_hole_third = MountPlateHolesSerializer(read_only=True)
+    mount_plate_hole_forth = MountPlateHolesSerializer(read_only=True)
+    mount_plate_hole_fifth = MountPlateHolesSerializer(read_only=True)
+
     class Meta:
         model = Properties
         fields = "__all__"
         read_only_fields = ["material"]
 
 
+class MaterialFinishSerializer(serializers.ModelSerializer):
+    finish = FinishesLibrarySerializer(read_only=True)
+
+    class Meta:
+        model = MaterialFinish
+        fields = "__all__"
+        read_only_fields = ["material"]
+
+
+class MaterialFinishTypeSerializer(serializers.ModelSerializer):
+    finish_type = FinishesLibrarySerializer(read_only=True)
+
+    class Meta:
+        model = MaterialFinishType
+        fields = "__all__"
+        read_only_fields = ["material"]
+
+
+class MaterialTextureSerializer(serializers.ModelSerializer):
+    texture = FinishesLibrarySerializer(read_only=True)
+
+    class Meta:
+        model = MaterialTexture
+        fields = "__all__"
+        read_only_fields = ["material"]
+
+
 class MaterialSerializer(serializers.ModelSerializer):
-    properties = MaterialPropertiesSerializer()
+    properties = MaterialPropertiesSerializer(many=True, read_only=False)
+    finishes = MaterialFinishSerializer(
+        source="materialfinish_set", many=True, read_only=False
+    )
+    finish_types = MaterialFinishTypeSerializer(
+        source="materialfinishtype_set", many=True, read_only=False
+    )
+    textures = MaterialTextureSerializer(
+        source="materialtexture_set", many=True, read_only=False
+    )
 
     class Meta:
         model = Material
-        fields = ["id", "name", "type", "company", "properties"]
+        fields = [
+            "id",
+            "name",
+            "type",
+            "company",
+            "description",
+            "is_deleted",
+            "properties",
+            "finishes",
+            "finish_types",
+            "textures",
+        ]
+        read_only_fields = ["company"]
+
+    def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+        name = attrs.get("name")
+        view = self.context.get("view")
+        company_id = view.kwargs.get("pk") if view else None
+
+        existing_company = Material.objects.filter(name=name, company_id=company_id)
+        if self.instance:
+            existing_company = existing_company.exclude(pk=self.instance.pk)
+
+        if name and existing_company.exists():
+            raise serializers.ValidationError({"name": "Name must be unique."})
+        return attrs
+
+    def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
+        properties_data = validated_data.pop("properties", [])
+        finishes_data = validated_data.pop("materialfinish_set", [])
+        finish_types_data = validated_data.pop("materialfinishtype_set", [])
+        textures_data = validated_data.pop("materialtexture_set", [])
+
+        material = Material.objects.create(**validated_data)
+
+        for prop in properties_data:
+            Properties.objects.create(material=material, **prop)
+
+        for finish in finishes_data:
+            MaterialFinish.objects.create(material=material, **finish)
+
+        for finish_type in finish_types_data:
+            MaterialFinishType.objects.create(material=material, **finish_type)
+
+        for texture in textures_data:
+            MaterialTexture.objects.create(material=material, **texture)
+
+        return material

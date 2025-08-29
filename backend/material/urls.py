@@ -31,8 +31,20 @@ urlpatterns = [
         MaterialViewSet.as_view(
             {
                 "get": "list",
+                "post": "create",
             }
         ),
-        name="company-detail",
+        name="material-list",
+    ),
+    path(
+        "company/<uuid:pk>/material/",
+        MaterialViewSet.as_view(
+            {
+                "get": "retrieve",
+                "put": "update",
+                "delete": "destroy",
+            }
+        ),
+        name="material-details",
     ),
 ]
