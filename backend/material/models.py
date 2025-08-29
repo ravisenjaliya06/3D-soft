@@ -38,17 +38,17 @@ class UnitOfIssueChoices(models.TextChoices):
     Unit of Issue
     """
 
-    BD_Ft = "BD Ft"
+    BD_FT = "BD Ft"
     BD_M = "BD M"
-    Cubic_Ft = "Cubic Ft"
+    Cubic_FT = "Cubic Ft"
     Cubic_M = "Cubic M"
-    Each = "Each"
-    Pair = "Pair"
-    Per_Ft = "Per Ft"
+    EACH = "Each"
+    PAIR = "Pair"
+    Per_FT = "Per Ft"
     Per_M = "Per M"
-    SQ_Ft = "SQ Ft"
+    SQ_FT = "SQ Ft"
     SQ_M = "SQ M"
-    Sheet = "Sheet"
+    SHEET = "Sheet"
 
 
 class ConnecterTypeChoices(models.TextChoices):
@@ -286,7 +286,30 @@ class Material(models.Model):
     is_deleted = models.BooleanField(default=False)
 
 
-class MaterialProperties(models.Model):
+class Company(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+
+
+class MountPlateHoles(models.Model):
+    horizontal_offset = models.FloatField(default=0.00)
+    vertical_offset = models.FloatField(default=0.00)
+    diameter = models.FloatField(default=0.00)
+    depth = models.FloatField(default=0.00)
+
+
+class MountHoles(models.Model):
+    top_reference = models.BooleanField(default=False)
+    horizontal_offset = models.FloatField(default=0.00)
+    vertical_offset = models.FloatField(default=0.00)
+    diameter = models.FloatField(default=0.00)
+    depth = models.FloatField(default=0.00)
+    spacing = models.FloatField(default=0.00)
+    quantity = models.IntegerField(default=0)
+
+
+class Properties(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     material = models.ForeignKey("Material", on_delete=models.CASCADE)
 
@@ -351,33 +374,34 @@ class MaterialProperties(models.Model):
     mount_holes_depth = models.FloatField(default=0.00)
     mount_holes_top_reference = models.BooleanField(default=False)
     mount_holes_screw_center_to_reference = models.FloatField(default=0.00)
+    front_mount_holes = models.ForeignKey(
+        MountHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="front_properties",
+    )
 
-    front_mount_holes_top_reference = models.BooleanField(default=False)
-    front_mount_holes_horizontal_offset = models.FloatField(default=0.00)
-    front_mount_holes_vertical_offset = models.FloatField(default=0.00)
-    front_mount_holes_diameter = models.FloatField(default=0.00)
-    front_mount_holes_depth = models.FloatField(default=0.00)
-    front_mount_holes_spacing = models.FloatField(default=0.00)
-    front_mount_holes_quantity = models.IntegerField(default=0)
+    back_mount_holes = models.ForeignKey(
+        MountHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="back_properties",
+    )
 
-    back_mount_holes_top_reference = models.BooleanField(default=False)
-    back_mount_holes_horizontal_offset = models.FloatField(default=0.00)
-    back_mount_holes_vertical_offset = models.FloatField(default=0.00)
-    back_mount_holes_diameter = models.FloatField(default=0.00)
-    back_mount_holes_depth = models.FloatField(default=0.00)
-    back_mount_holes_spacing = models.FloatField(default=0.00)
-    back_mount_holes_quantity = models.IntegerField(default=0)
-
+    bottom_mount_holes = models.ForeignKey(
+        MountHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bottom_properties",
+    )
     back_mount_notches_length = models.FloatField(default=0.00)
     back_mount_notches_height = models.FloatField(default=0.00)
     back_mount_notches_horizontal_offset = models.FloatField(default=0.00)
 
     bottom_mount_holes_first_position = models.FloatField(default=0.00)
-    bottom_mount_holes_horizontal_offset = models.FloatField(default=0.00)
-    bottom_mount_holes_diameter = models.FloatField(default=0.00)
-    bottom_mount_holes_depth = models.FloatField(default=0.00)
-    bottom_mount_holes_spacing = models.FloatField(default=0.00)
-    bottom_mount_holes_quantity = models.IntegerField(default=0)
 
     bottom_mount_grooves_horizontal_offset = models.FloatField(default=0.00)
     bottom_mount_grooves_width = models.FloatField(default=0.00)
@@ -475,26 +499,41 @@ class MaterialProperties(models.Model):
         max_length=100, choices=DadoReferenceTypeChoices.choices, blank=True, null=True
     )
     dado_offset = models.FloatField(default=0.00)
-    mount_plate_hole_one_horizontal_offset = models.FloatField(default=0.00)
-    mount_plate_hole_one_vertical_offset = models.FloatField(default=0.00)
-    mount_plate_hole_one_diameter = models.FloatField(default=0.00)
-    mount_plate_hole_one_depth = models.FloatField(default=0.00)
-    mount_plate_hole_two_horizontal_offset = models.FloatField(default=0.00)
-    mount_plate_hole_two_vertical_offset = models.FloatField(default=0.00)
-    mount_plate_hole_two_diameter = models.FloatField(default=0.00)
-    mount_plate_hole_two_depth = models.FloatField(default=0.00)
-    mount_plate_hole_third_horizontal_offset = models.FloatField(default=0.00)
-    mount_plate_hole_third_vertical_offset = models.FloatField(default=0.00)
-    mount_plate_hole_third_diameter = models.FloatField(default=0.00)
-    mount_plate_hole_third_depth = models.FloatField(default=0.00)
-    mount_plate_hole_forth_horizontal_offset = models.FloatField(default=0.00)
-    mount_plate_hole_forth_vertical_offset = models.FloatField(default=0.00)
-    mount_plate_hole_forth_diameter = models.FloatField(default=0.00)
-    mount_plate_hole_forth_depth = models.FloatField(default=0.00)
-    mount_plate_hole_fifth_horizontal_offset = models.FloatField(default=0.00)
-    mount_plate_hole_fifth_vertical_offset = models.FloatField(default=0.00)
-    mount_plate_hole_fifth_diameter = models.FloatField(default=0.00)
-    mount_plate_hole_fifth_depth = models.FloatField(default=0.00)
+    mount_plate_hole_one = models.ForeignKey(
+        MountPlateHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plate_hole_one_properties",
+    )
+    mount_plate_hole_two = models.ForeignKey(
+        MountPlateHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plate_hole_two_properties",
+    )
+    mount_plate_hole_third = models.ForeignKey(
+        MountPlateHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plate_hole_third_properties",
+    )
+    mount_plate_hole_forth = models.ForeignKey(
+        MountPlateHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plate_hole_forth_properties",
+    )
+    mount_plate_hole_fifth = models.ForeignKey(
+        MountPlateHoles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plate_hole_fifth_properties",
+    )
 
     # ---------- Wire Basket ----------
     wire_basket_type = models.CharField(
