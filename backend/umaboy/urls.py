@@ -27,6 +27,7 @@ urlpatterns = (
         path("v1/user/", include("user.urls")),
         path("v1/design/", include("design.urls")),
         path("v1/mes_portal/", include("mes_portal.urls")),
+        path("v1/material/", include("material.urls")),
     ]
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     + static(settings.NESTING_MEDIA_URL, document_root=settings.NESTING_MEDIA_ROOT)

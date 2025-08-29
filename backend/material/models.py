@@ -5,7 +5,7 @@ import uuid
 from django.db import models
 
 # App imports
-from umaboy.models import UserOrganizationPermission
+from umaboy.models import Organization
 
 
 class MaterialTypes(models.TextChoices):
@@ -245,7 +245,7 @@ class TextureTypeChoices(models.TextChoices):
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(
-        UserOrganizationPermission, on_delete=models.CASCADE
+        Organization, on_delete=models.CASCADE
     )
     type = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
@@ -278,7 +278,7 @@ class Company(models.Model):
     name = models.CharField(max_length=100)
     material_type = models.CharField(max_length=100, choices=MaterialTypes.choices)
     organization = models.ForeignKey(
-        UserOrganizationPermission, on_delete=models.CASCADE, null=True, blank=True
+        Organization, on_delete=models.CASCADE, null=True, blank=True
     )
 
 
