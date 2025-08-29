@@ -37,9 +37,3 @@ class CompanySerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         validated_data["organization"] = request.user.selected_organization
         return super().create(validated_data)
-
-    def update(
-        self: "CompanySerializer", instance: Company, validated_data: Dict[str, str]
-    ) -> Company:
-        validated_data.pop("material_type", None)
-        return super().update(instance, validated_data)
