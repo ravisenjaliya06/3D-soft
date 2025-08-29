@@ -5,7 +5,7 @@ from typing import Dict
 from rest_framework import serializers
 
 # Local imports
-from .models import Company
+from .models import Company, Material, Properties, MaterialTypes
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -43,3 +43,18 @@ class CompanySerializer(serializers.ModelSerializer):
     ) -> Company:
         validated_data.pop("material_type", None)
         return super().update(instance, validated_data)
+
+
+class MaterialPropertiesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = "__all__"
+        read_only_fields = ["material"]
+
+
+class MaterialSerializer(serializers.ModelSerializer):
+    properties = MaterialPropertiesSerializer()
+
+    class Meta:
+        model = Material
+        fields = ["id", "name", "type", "company", "properties"]

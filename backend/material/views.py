@@ -12,12 +12,13 @@ from rest_framework.response import Response
 from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
-from .models import Company
-from .serializers import CompanySerializer
+from .models import Company, Material
+from .serializers import CompanySerializer, MaterialSerializer
+from rest_framework.permissions import IsAuthenticated
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     serializer_class = CompanySerializer
     http_method_names = [GET, POST, PUT, DELETE]
 
@@ -37,3 +38,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
         """
         partial = kwargs.pop("partial", True)
         return super().update(request, *args, partial=partial, **kwargs)
+
+
+class MaterialViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MaterialSerializer
+
+    def get_queryset(self: "MaterialViewSet", *args, **kwargs) -> QuerySet[Material]:
+        user = self.request.user
+        company_id = self.kwargs.get("pk")
+        print(company_id, "company_id")
+        if not user or not user.is_authenticated:
+            raise NotAuthenticated("Authentication token is missing or invalid.")
+        return Material.objects.filter(company_id=company_id, is_deleted=False)

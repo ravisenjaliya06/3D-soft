@@ -308,7 +308,7 @@ class MountHoles(models.Model):
 
 class Properties(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    material = models.ForeignKey("Material", on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE)
 
     width = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
