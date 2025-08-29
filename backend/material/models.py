@@ -276,6 +276,7 @@ class FinishesLibrary(models.Model):
 class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
+    material_type = models.CharField(max_length=100, choices=MaterialTypes.choices)
     organization = models.ForeignKey(
         UserOrganizationPermission, on_delete=models.CASCADE, null=True, blank=True
     )
