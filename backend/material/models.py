@@ -1,6 +1,10 @@
+# Python imports
 import uuid
+
+# Django imports
 from django.db import models
 
+# App imports
 from umaboy.models import UserOrganizationPermission
 
 
@@ -119,7 +123,6 @@ class MoldingTypesChoices(models.TextChoices):
     CASING = "Casing"
     CEILING = "Ceiling"
     CHAIR_RAIL = "Chair Rail"
-    CROWN = "Crown"
     DOOR_APPLIED = "Door Applied"
     LIGHT_RAIL = "Light Rail"
     SCRIBE = "Scribe"
@@ -241,13 +244,21 @@ class TextureTypeChoices(models.TextChoices):
 
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    organization = models.ForeignKey(UserOrganizationPermission, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100, choices=FinishesChoices.choices, null=True, blank=True)
-    texture_type = models.CharField(max_length=100, choices=TextureTypeChoices.choices, null=True, blank=True)
+    organization = models.ForeignKey(
+        UserOrganizationPermission, on_delete=models.CASCADE
+    )
+    type = models.CharField(
+        max_length=100, choices=FinishesChoices.choices, null=True, blank=True
+    )
+    texture_type = models.CharField(
+        max_length=100, choices=TextureTypeChoices.choices, null=True, blank=True
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
-    shader = models.CharField(max_length=100, choices=FinishTypeShaderChoices.choices, null=True, blank=True)
+    shader = models.CharField(
+        max_length=100, choices=FinishTypeShaderChoices.choices, null=True, blank=True
+    )
     ambient = models.IntegerField(null=True, blank=True)
     diffuse = models.IntegerField(null=True, blank=True)
     specular = models.IntegerField(null=True, blank=True)
@@ -265,8 +276,12 @@ class FinishesLibrary(models.Model):
 class Material(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    type = models.CharField(max_length=100, choices=MaterialTypes.choices, null=True, blank=True)
-    organization = models.ForeignKey(UserOrganizationPermission, on_delete=models.CASCADE)
+    type = models.CharField(
+        max_length=100, choices=MaterialTypes.choices, null=True, blank=True
+    )
+    organization = models.ForeignKey(
+        UserOrganizationPermission, on_delete=models.CASCADE
+    )
     description = models.TextField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
 
@@ -288,7 +303,11 @@ class MaterialProperties(models.Model):
     mount_holes_position_6 = models.FloatField(default=0.00)
 
     # ---------- Base Material Properties ----------
-    unit_of_issue = models.CharField(max_length=100, choices=UnitOfIssueChoices.choices, default="UnitOfIssueChoices.Each")
+    unit_of_issue = models.CharField(
+        max_length=100,
+        choices=UnitOfIssueChoices.choices,
+        default="UnitOfIssueChoices.Each",
+    )
     default_cost = models.FloatField(default=0.00)
     sell_price = models.FloatField(default=0.00)
     default_markup = models.FloatField(default=0.00)
@@ -312,7 +331,9 @@ class MaterialProperties(models.Model):
     cnc_maximum_depth_per_pass = models.IntegerField(null=True, blank=True)
 
     # ---------- Connector Fields ----------
-    connector_type = models.CharField(max_length=100, choices=ConnecterTypeChoices.choices, blank=True, null=True)
+    connector_type = models.CharField(
+        max_length=100, choices=ConnecterTypeChoices.choices, blank=True, null=True
+    )
     connector_slot_type = models.CharField(max_length=100, blank=True, null=True)
 
     # ---------- Drawer Guide Fields ----------
@@ -363,7 +384,9 @@ class MaterialProperties(models.Model):
     bottom_mount_grooves_depth = models.FloatField(default=0.00)
 
     # ---------- Hinge Fields ----------
-    hinge_type = models.CharField(max_length=100, choices=HingeTypesChoices.choices, blank=True, null=True)
+    hinge_type = models.CharField(
+        max_length=100, choices=HingeTypesChoices.choices, blank=True, null=True
+    )
     horizontal_overlay = models.FloatField(default=0.00)
     vertical_overlay = models.FloatField(default=0.00)
     door_end_to_hinge = models.FloatField(default=0.00)
@@ -380,9 +403,11 @@ class MaterialProperties(models.Model):
     anchor_holes_spacing = models.FloatField(default=0.00)
 
     # ---------- Hinge Plate ----------
-    hinge_plate_type = models.CharField(max_length=100, choices=HingePlateTypesChoices.choices, blank=True, null=True)
+    hinge_plate_type = models.CharField(
+        max_length=100, choices=HingePlateTypesChoices.choices, blank=True, null=True
+    )
     hole_offset = models.FloatField(default=0.00)
-    hinge_diameter = models.FloatField(default=0.00)   # renamed
+    hinge_diameter = models.FloatField(default=0.00)  # renamed
     depth = models.FloatField(default=0.00)
     spacing = models.FloatField(default=0.00)
 
@@ -390,43 +415,65 @@ class MaterialProperties(models.Model):
     oversize = models.FloatField(default=0.00)
 
     # ---------- Leg ----------
-    leg_type = models.CharField(max_length=100, choices=LegTypesChoices.choices, blank=True, null=True)
+    leg_type = models.CharField(
+        max_length=100, choices=LegTypesChoices.choices, blank=True, null=True
+    )
 
     # ---------- Miscellaneous ----------
     model = models.BooleanField(default=False)
 
     # ---------- Molding ----------
-    molding_type = models.CharField(max_length=100, choices=MoldingTypesChoices.choices, blank=True, null=True)
+    molding_type = models.CharField(
+        max_length=100, choices=MoldingTypesChoices.choices, blank=True, null=True
+    )
 
     # ---------- Pull ----------
-    pull_type = models.CharField(max_length=100, choices=PullTypesChoices.choices, blank=True, null=True)
+    pull_type = models.CharField(
+        max_length=100, choices=PullTypesChoices.choices, blank=True, null=True
+    )
     center_to_center = models.FloatField(default=0.00)
     horizontal_inset = models.FloatField(default=0.00)
     vertical_inset = models.FloatField(default=0.00)
     mounting_holes_holes_diameter = models.FloatField(default=0.00)
 
     # ---------- Rod ----------
-    rod_type = models.CharField(max_length=100, choices=RodTypesChoices.choices, blank=True, null=True)
-    boring_pattern = models.CharField(max_length=100, choices=RodPatternChoices.choices, blank=True, null=True)
-    boring_diameter = models.FloatField(default=0.00)   # kept
+    rod_type = models.CharField(
+        max_length=100, choices=RodTypesChoices.choices, blank=True, null=True
+    )
+    boring_pattern = models.CharField(
+        max_length=100, choices=RodPatternChoices.choices, blank=True, null=True
+    )
+    boring_diameter = models.FloatField(default=0.00)  # kept
     boring_spacing = models.FloatField(default=0.00)
     boring_quantity = models.IntegerField(default=0)
 
     # ---------- Sliding Door Rail ----------
-    sliding_door_rail_type = models.CharField(max_length=100, choices=SlidingDoorRailTypesChoices.choices, blank=True, null=True)
+    sliding_door_rail_type = models.CharField(
+        max_length=100,
+        choices=SlidingDoorRailTypesChoices.choices,
+        blank=True,
+        null=True,
+    )
     boring_first_position = models.FloatField(default=0.00)
-    rail_boring_diameter = models.FloatField(default=0.00)   # renamed
+    rail_boring_diameter = models.FloatField(default=0.00)  # renamed
     boring_depth = models.FloatField(default=0.00)
     boring_spacing = models.FloatField(default=0.00)
 
     # ---------- Sliding Door Roller ----------
-    sliding_door_roller_type = models.CharField(max_length=100, choices=SlidingDoorRailTypesChoices.choices, blank=True, null=True)
+    sliding_door_roller_type = models.CharField(
+        max_length=100,
+        choices=SlidingDoorRailTypesChoices.choices,
+        blank=True,
+        null=True,
+    )
     mount_on_back = models.BooleanField(default=False)
     horizontal_offset = models.FloatField(default=0.00)
     vertical_offset = models.FloatField(default=0.00)
     door_edge_inset = models.FloatField(default=0.00)
     door_end_inset = models.FloatField(default=0.00)
-    dado_reference = models.CharField(max_length=100, choices=DadoReferenceTypeChoices.choices, blank=True, null=True)
+    dado_reference = models.CharField(
+        max_length=100, choices=DadoReferenceTypeChoices.choices, blank=True, null=True
+    )
     dado_offset = models.FloatField(default=0.00)
     mount_plate_hole_one_horizontal_offset = models.FloatField(default=0.00)
     mount_plate_hole_one_vertical_offset = models.FloatField(default=0.00)
@@ -450,8 +497,10 @@ class MaterialProperties(models.Model):
     mount_plate_hole_fifth_depth = models.FloatField(default=0.00)
 
     # ---------- Wire Basket ----------
-    wire_basket_type = models.CharField(max_length=100, choices=WireBasketTypesChoices.choices, blank=True, null=True)
-    basket_diameter = models.FloatField(default=0.00)   # renamed
+    wire_basket_type = models.CharField(
+        max_length=100, choices=WireBasketTypesChoices.choices, blank=True, null=True
+    )
+    basket_diameter = models.FloatField(default=0.00)  # renamed
     screw_center_to_reference = models.FloatField(default=0.00)
 
 
