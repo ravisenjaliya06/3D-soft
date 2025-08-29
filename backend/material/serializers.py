@@ -12,7 +12,7 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ["id", "name", "material_type", "organization"]
-        read_only_fields = ["organization", "material_type"]
+        read_only_fields = ["organization"]
 
     def validate(self: "CompanySerializer", attrs: Dict[str, str]) -> Dict[str, str]:
         request = self.context.get("request")
@@ -23,21 +23,19 @@ class CompanySerializer(serializers.ModelSerializer):
             self.instance, "material_type", attrs.get("material_type")
         )
 
-        # Uniqueness validation for both create & update
-        qs = Company.objects.filter(
+        existing_company = Company.objects.filter(
             name=name, material_type=material_type, organization=organization
         )
-        if self.instance:  # if updating
-            qs = qs.exclude(pk=self.instance.pk)
+        if self.instance:
+            existing_company = existing_company.exclude(pk=self.instance.pk)
 
-        if name and qs.exists():
+        if name and existing_company.exists():
             raise serializers.ValidationError({"name": "Name must be unique."})
         return attrs
 
     def update(
         self: "CompanySerializer", instance: Company, validated_data: Dict[str, str]
     ) -> Company:
-        # Block changing material_type even if passed
         validated_data.pop("material_type", None)
         return super().update(instance, validated_data)
 
