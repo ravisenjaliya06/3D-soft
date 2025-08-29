@@ -18,6 +18,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Install and setup WireGuard
+      - name: Install WireGuard
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard
+
+      - name: Create WireGuard config
+        run: |
+          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+          sudo chmod 600 wg0.conf
+
+      - name: Start WireGuard VPN
+        run: sudo wg-quick up ./wg0.conf
+
       # # Only run if backend/ folder has changes
       # - name: Check backend folder changes
       #   id: backend_changes
@@ -94,6 +108,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Install WireGuard
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard
+
+      - name: Create WireGuard config
+        run: |
+          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+          sudo chmod 600 wg0.conf
+
+      - name: Start WireGuard VPN
+        run: sudo wg-quick up ./wg0.conf
 
       # # Only run if design_portal/ folder has changes
       # - name: Check frontend folder changes
