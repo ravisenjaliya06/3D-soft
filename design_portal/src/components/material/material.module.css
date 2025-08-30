@@ -548,27 +548,28 @@
 .materialleftside::-webkit-scrollbar,
 .tableContainer::-webkit-scrollbar,
 .modalBody::-webkit-scrollbar {
-  width: 6px;
+  width: 0.4rem;
+  height: 0.4rem;
 }
 
 .materialleftside::-webkit-scrollbar-track,
 .tableContainer::-webkit-scrollbar-track,
 .modalBody::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 6px;
+  background: var(--primary-white);
+  border-radius: 0.7rem;
 }
 
 .materialleftside::-webkit-scrollbar-thumb,
 .tableContainer::-webkit-scrollbar-thumb,
 .modalBody::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 6px;
+  background: var(--border-color);
+  border-radius: 0.7rem;
 }
 
 .materialleftside::-webkit-scrollbar-thumb:hover,
 .tableContainer::-webkit-scrollbar-thumb:hover,
 .modalBody::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--border-color);
 }
 
 @keyframes slideDown {
