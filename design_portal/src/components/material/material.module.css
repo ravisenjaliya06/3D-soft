@@ -88,7 +88,7 @@
 }
 
 .categoryName {
-  font-size: 0.700rem;
+  font-size: 0.7rem;
   overflow: hidden;
   color: var(--primary-color);
   font-family: var(--font-family);
@@ -101,14 +101,12 @@
   flex-shrink: 0;
 }
 
-
 .categoryItem.expanded .dropdownArrow {
   color: white;
 }
 
 .dropdownArrow.rotated {
   transform: rotate(180deg);
-
 }
 
 .subItemsContainer {
@@ -121,9 +119,8 @@
   animation: slideDown 0.2s ease-out;
 }
 
-
 .subItemsContainer::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0.5rem;
   /* aligns with submenu */
@@ -155,8 +152,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border: 0.063rem solid rgba(57, 37, 121, 0.30);
-  background: linear-gradient(90deg, #FFF 0%, #F5E5FF 100%);
+  border: 0.063rem solid rgba(57, 37, 121, 0.3);
+  background: linear-gradient(90deg, #fff 0%, #f5e5ff 100%);
   border-radius: 1rem;
   margin-bottom: 1rem;
 }
@@ -177,8 +174,8 @@
   padding: 0.2rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
-  background: #F4F3FF;
-  font-size: 0.700rem;
+  background: #f4f3ff;
+  font-size: 0.7rem;
   color: #374151;
   cursor: pointer;
   min-width: 10rem;
@@ -231,8 +228,8 @@
   padding: 0.5rem 2.5rem 0.5rem 0.75rem;
   border: 0.063rem solid var(--primary-color-grey-2);
   border-radius: 0.5rem;
-  height: 0.500rem;
-  background: #F4F3FF;
+  height: 0.5rem;
+  background: #f4f3ff;
   font-size: 0.8rem;
   color: #374151;
   outline: none;
@@ -258,7 +255,7 @@
   color: white;
   border: none;
   border-radius: 0.5rem;
-  font-size: 0.800rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -318,8 +315,6 @@
   }
 }
 
-
-
 /* Data Table */
 .dataTable {
   width: 100%;
@@ -365,8 +360,10 @@
 /* Rows */
 .tableRow {
   cursor: pointer;
-  transition: background-color 0.2s ease, border 0.2s ease;
-  font-size: 0.75rem;
+  transition:
+    background-color 0.2s ease,
+    border 0.2s ease;
+  font-size: 0.65rem;
   font-family: var(--font-family);
 }
 
@@ -401,7 +398,6 @@
   background-color: #f3f4f6;
 }
 
-
 .tableCell {
   padding: 0.75rem;
   border-bottom: 1px solid #e5e7eb;
@@ -429,7 +425,9 @@
   width: 90%;
   max-height: 80vh;
   overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .modalHeader {
