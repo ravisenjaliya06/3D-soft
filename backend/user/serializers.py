@@ -21,7 +21,7 @@ from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import DesignSetting
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import MOBILE_NUMBER_LENGTH
-from user.utils import add_user_to_organization, verify_otp
+from user.utils import add_user_to_organization, default_material_data, verify_otp
 
 
 class PhoneValidationSerializer(serializers.Serializer):
@@ -126,6 +126,7 @@ class SignupSerializer(PhoneValidationSerializer):
         user.save()
         add_user_to_organization(user, organization, group_names)
 
+        default_material_data(organization=organization)
         DesignSetting.objects.get_or_create(
             organization=organization,
             defaults={

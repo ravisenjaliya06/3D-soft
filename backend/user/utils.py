@@ -129,3 +129,19 @@ def add_user_to_organization(
         permission_instance.groups.add(group)
     permission_instance.is_invited = True
     permission_instance.save()
+
+
+# App imports
+from material.models import Material
+
+
+def default_material_data(organization: Organization) -> bool:
+    default_materials = Material.objects.filter(organization=None, is_deleted=False)
+    for material in default_materials:
+        material_data = {
+            field.name: getattr(material, field.name)
+            for field in material._meta.fields
+            if field.name not in ("id", "organization")
+        }
+        Material.objects.create(**material_data, organization=organization)
+    return True

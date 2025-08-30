@@ -1289,7 +1289,9 @@ def create_company() -> dict[tuple[str, str, str | None], Company]:
     return company_objects
 
 
-def create_materials(company_objects: dict[tuple[str, str, str | None], Company]) -> None:
+def create_materials(
+    company_objects: dict[tuple[str, str, str | None], Company],
+) -> None:
     """
     Creates materials for global scope (organization=None) and duplicates them
     for each registered organization. Properties are applied if present.
@@ -1326,7 +1328,9 @@ def create_materials(company_objects: dict[tuple[str, str, str | None], Company]
             if company_name is None:
                 org_company = None
             else:
-                org_company = company_objects.get((company_name, material_type, org.name))
+                org_company = company_objects.get(
+                    (company_name, material_type, org.name)
+                )
                 if not org_company:
                     org_company = None
 
