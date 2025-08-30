@@ -10,7 +10,7 @@ sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from material.models import FinishesLibrary, Company
+from material.models import Company, FinishesLibrary
 
 FINISH = [
     {
@@ -444,8 +444,9 @@ COMPANY = [
     {"name": "Blum", "material_type": "Rod", "organization": None},
     {"name": "Blum", "material_type": "Sliding Door Rail", "organization": None},
     {"name": "Blum", "material_type": "Sliding Door Roller", "organization": None},
-    {"name": "Blum", "material_type": "Wire Basket", "organization": None}
+    {"name": "Blum", "material_type": "Wire Basket", "organization": None},
 ]
+
 
 def create_finish() -> None:
     """
@@ -466,6 +467,7 @@ def create_finish() -> None:
         finish_objects[finish_data["name"]] = finish
     return finish_objects
 
+
 def create_finish_type() -> None:
     """
     Creates finish_type records.
@@ -473,7 +475,9 @@ def create_finish_type() -> None:
     """
     finish_type_objects = {}
     for finish_type_data in FINISH_TYPE:
-        defaults = {k: v for k, v in finish_type_data.items() if k not in ["type", "name"]}
+        defaults = {
+            k: v for k, v in finish_type_data.items() if k not in ["type", "name"]
+        }
 
         finish_type, created = FinishesLibrary.objects.update_or_create(
             type=finish_type_data["type"],
@@ -483,6 +487,7 @@ def create_finish_type() -> None:
         finish_type_objects[finish_type_data["name"]] = finish_type
 
     return finish_type_objects
+
 
 def create_textures() -> None:
     """
@@ -501,6 +506,7 @@ def create_textures() -> None:
         texture_objects[texture_data["name"]] = texture
     return texture_objects
 
+
 def create_company() -> None:
     """
     Creates company records.
@@ -508,7 +514,9 @@ def create_company() -> None:
     """
     company_objects = {}
     for company_data in COMPANY:
-        defaults = {k: v for k, v in company_data.items() if k not in ["name", "material_type"]}
+        defaults = {
+            k: v for k, v in company_data.items() if k not in ["name", "material_type"]
+        }
 
         company, created = Company.objects.update_or_create(
             name=company_data["name"],
@@ -517,6 +525,7 @@ def create_company() -> None:
         )
         company_objects[company_data["name"]] = company
     return company_objects
+
 
 if __name__ == "__main__":
     create_finish()

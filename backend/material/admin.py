@@ -12,11 +12,14 @@ from .models import (
     Properties,
 )
 
+
 class FinishesLibraryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "type", "organization")
 
+
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "material_type", "organization")
+
 
 admin.site.register(Material)
 admin.site.register(Properties)
