@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
+from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
@@ -131,17 +132,45 @@ def add_user_to_organization(
     permission_instance.save()
 
 
-# App imports
-from material.models import Material
-
-
 def default_material_data(organization: Organization) -> bool:
+    """
+    Creates default materials, companies, and their properties
+    for a given organization.
+    """
+
+    default_companies = Company.objects.filter(organization=None)
+    company_map = {}
+    for company in default_companies:
+        company_data = {
+            field.name: getattr(company, field.name)
+            for field in company._meta.fields
+            if field.name not in ("id", "organization")
+        }
+        new_company = Company.objects.create(**company_data, organization=organization)
+        company_map[company.id] = new_company
+
     default_materials = Material.objects.filter(organization=None, is_deleted=False)
+    material_map = {}
     for material in default_materials:
         material_data = {
             field.name: getattr(material, field.name)
             for field in material._meta.fields
-            if field.name not in ("id", "organization")
+            if field.name not in ("id", "organization", "company")
         }
-        Material.objects.create(**material_data, organization=organization)
+        new_material = Material.objects.create(
+            **material_data,
+            organization=organization,
+            company=company_map.get(material.company_id),
+        )
+        material_map[material.id] = new_material
+
+        default_properties = Properties.objects.filter(material=material)
+        for prop in default_properties:
+            prop_data = {
+                field.name: getattr(prop, field.name)
+                for field in prop._meta.fields
+                if field.name not in ("id", "material")
+            }
+            Properties.objects.create(**prop_data, material=new_material)
+
     return True
