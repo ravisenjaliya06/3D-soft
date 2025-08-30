@@ -242,14 +242,49 @@ class TextureTypeChoices(models.TextChoices):
     LAMINATE = "Laminate"
 
 
+class LightChoices(models.TextChoices):
+    """
+    Light
+    """
+
+    BLUE = "Blue"
+    FLUORESCENT = "Fluorescent"
+    GREEN = "Green"
+    INCANDESCENT = "Incandescent"
+    ORANGE = "Orange"
+    RED = "Red"
+    SKY_LIGHT = "Sky Light"
+    SUN_LIGHT = "Sun Light"
+    VIOLET = "Violet"
+    WHITE_LIGHT = "White Light"
+    YELLOW = "Yellow"
+
+
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )
     texture_type = models.CharField(
         max_length=100, choices=TextureTypeChoices.choices, null=True, blank=True
+    )
+    parent_finish = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="child_finishes",
+    )
+    parent_texture = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="child_textures",
+    )
+    light = models.CharField(
+        max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
@@ -262,6 +297,7 @@ class FinishesLibrary(models.Model):
     specular = models.IntegerField(null=True, blank=True)
     shininess = models.IntegerField(null=True, blank=True)
     transparency = models.IntegerField(null=True, blank=True)
+    brightness = models.IntegerField(null=True, blank=True)
     width = models.IntegerField(null=True, blank=True)
     height = models.IntegerField(null=True, blank=True)
     decal = models.IntegerField(null=True, blank=True)
