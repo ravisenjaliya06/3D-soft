@@ -455,7 +455,7 @@ MATERIAL = [
         "name": "Alder Ven EB",
         "description": "Veneer Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
         "properties": {
             "unit_of_issue": "Each",
             "default_cost": 10.00,
@@ -473,43 +473,43 @@ MATERIAL = [
         "name": "PVC Woodgrain",
         "description": "PVC Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "PVC Solid",
         "description": "PVC Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Paint Grade EB",
         "description": "Paint Grade Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Oak Ven EB",
         "description": "Veneer Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "PVC White",
         "description": "PVC Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Maple Ven EB",
         "description": "Veneer Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Cherry Ven EB",
         "description": "Veneer Edgebanding",
         "type": "Banding",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Birch Ven EB",
@@ -521,31 +521,31 @@ MATERIAL = [
         "name": "1/2 Solid Poplar",
         "description": "Poplar",
         "type": "Board Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "3/4 Solid Poplar",
         "description": "Poplar",
         "type": "Board Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 Solid Alder",
         "description": "Alder",
         "type": "Board Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "3/4 Solid Alder",
         "description": "Alder",
         "type": "Board Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 Paint Grade Wood",
         "description": "Paint Grade",
         "type": "Board Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 Solid Oak",
@@ -563,85 +563,97 @@ MATERIAL = [
         "name": "Caster",
         "description": "Caster",
         "type": "Caster",
+        "company": "",
+    },
+    {
+        "name": "Blum Caster",
+        "description": "Blum Caster",
+        "type": "Caster",
         "company": "Blum",
     },
     {
         "name": "Connector",
         "description": "Connector",
         "type": "Connector",
+        "company": "",
+    },
+    {
+        "name": "Blum Connector",
+        "description": "Blum Connector",
+        "type": "Connector",
         "company": "Blum",
     },
     {
-        "name": "Blum 430E6500V",
+        "name": "430E6500V",
         "description": "26in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E6000V",
+        "name": "430E6000V",
         "description": "24in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E5500V",
+        "name": "430E5500V",
         "description": "22in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E5000V",
+        "name": "430E5000V",
         "description": "20in Blum Full Extension Guide",
         "type": "Drawer Guide",
         "company": "Blum",
     },
     {
-        "name": "Blum 430E4500V",
+        "name": "430E4500V",
         "description": "18in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E4000V",
+        "name": "430E4000V",
         "description": "16in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E3500V",
+        "name": "430E3500V",
         "description": "14in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E3000V",
+        "name": "430E3000V",
         "description": "12in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 430E2500",
+        "name": "430E2500",
         "description": "10in Blum Full Extension Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 230M2500",
+        "name": "230M2500",
         "description": "10in Blum Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 230M6500",
+        "name": "230M6500",
         "description": "26in Blum Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
-        "name": "Blum 230M6000",
+        "name": "230M6000",
         "description": "24in Blum Guide",
         "type": "Drawer Guide",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Blum 230M5500",
@@ -683,67 +695,67 @@ MATERIAL = [
         "name": "120 Degree Euro",
         "description": "Concealed",
         "type": "Hinge",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Inset Double Door Hinge",
         "description": "Double Door",
         "type": "Hinge",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Double Door Hinge",
         "description": "Double Door",
         "type": "Hinge",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Inset Hinge",
         "description": "Concealed",
         "type": "Hinge",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "5/8 Overlay FF",
         "description": "Exposed",
         "type": "Hinge",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Hinge Plate",
         "description": "Concealed",
         "type": "Hinge Plate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Double DoorHinge Plate",
         "description": "Exposed",
         "type": "Hinge Plate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "SG Solid Lam_HG",
         "description": "Solid Color - Standard Grade",
         "type": "Laminate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "VT Solid Lam_HG",
         "description": "Solid Color - Vertical Grade",
         "type": "Laminate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "SG Solid Lam",
         "description": "Solid Color - Standard Grade",
         "type": "Laminate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "VT Woodgrain Lam",
         "description": "Woodgrain - Vertical Grade",
         "type": "Laminate",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "VT Solid Lam",
@@ -767,79 +779,79 @@ MATERIAL = [
         "name": "Bun Foot",
         "description": "",
         "type": "Leg",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Pedestal Leg",
         "description": "",
         "type": "Leg",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Tapered Leg",
         "description": "",
         "type": "Leg",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Leg Leveler",
         "description": "",
         "type": "Leg Leveler",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Leg Leveler (No Ops)",
         "description": "",
         "type": "Leg Leveler",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/8 Black Glass",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Art Glass_Wire",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Art Glass_Rain",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Art Glass_Frost",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Art Glass",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Art Glass_Grid",
         "description": "Glass",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Concrete",
         "description": "Stone",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Granite",
         "description": "Stone",
         "type": "Miscellaneous",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Wall_Gloss",
@@ -869,91 +881,97 @@ MATERIAL = [
         "name": "Molding",
         "description": "Molding",
         "type": "Molding",
+        "company": "",
+    },
+    {
+        "name": "Blum Molding",
+        "description": "Molding",
+        "type": "Molding",
         "company": "Blum",
     },
     {
         "name": "3/4 1s Poplar Ply",
         "description": "Poplar",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "5/8 1s Poplar Ply",
         "description": "Poplar",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 1s Poplar Ply",
         "description": "Poplar",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/4 1s Poplar Ply",
         "description": "Poplar",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/8 1s Poplar Ply",
         "description": "Poplar",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 1s Oak Ply",
         "description": "Oak",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "3/4 1s Oak Ply",
         "description": "Oak",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "5/8 1s Oak Ply",
         "description": "Oak",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/4 1s Oak Ply",
         "description": "Oak",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/8 1s Oak Ply",
         "description": "Oak",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "3/4 1s Maple Ply",
         "description": "Maple",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "5/8 1s Maple Ply",
         "description": "Maple",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/2 1s Maple Ply",
         "description": "Maple",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/4 1s Maple Ply",
         "description": "Maple",
         "type": "Panel Stock",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1/8 1s Maple Ply",
@@ -996,31 +1014,31 @@ MATERIAL = [
         "name": "4in Bar Pull",
         "description": "Bar Pull",
         "type": "Pull",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Wooden Knob",
         "description": "Knob",
         "type": "Pull",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "No Pull",
         "description": "No Pull",
         "type": "Pull",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "Chrome 4in C-Pull",
         "description": "C-Pull",
         "type": "Pull",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "1-1/4in Brass Knob",
         "description": "Knob",
         "type": "Pull",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "White 3in C-Pull",
@@ -1041,22 +1059,40 @@ MATERIAL = [
         "company": "Blum",
     },
     {
+        "name": "Blum Rod",
+        "description": "Blum Rod",
+        "type": "Rod",
+        "company": "Blum",
+    },
+    {
         "name": "Rod",
         "description": "Rod",
         "type": "Rod",
+        "company": "",
+    },
+    {
+        "name": "Blum Sliding Door Rail",
+        "description": "",
+        "type": "Sliding Door Rail",
         "company": "Blum",
     },
     {
         "name": "Sliding Door Rail",
         "description": "",
         "type": "Sliding Door Rail",
+        "company": "",
+    },
+    {
+        "name": "Blum Sliding Door Roller",
+        "description": "",
+        "type": "Sliding Door Roller",
         "company": "Blum",
     },
     {
         "name": "Sliding Door Roller",
         "description": "",
         "type": "Sliding Door Roller",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "BW-324-14",
@@ -1080,31 +1116,31 @@ MATERIAL = [
         "name": "BW-1718-14",
         "description": "Wire Basket 17h x 18w x 14d",
         "type": "Wire Basket",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "BW-1324-14",
         "description": "Wire Basket 13h x 24w x 14d",
         "type": "Wire Basket",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "BW-1318-14",
         "description": "Wire Basket 13h x 18w x 14d",
         "type": "Wire Basket",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "BW-618-14",
         "description": "Wire Basket 6h x 18w x 14d",
         "type": "Wire Basket",
-        "company": "Blum",
+        "company": "",
     },
     {
         "name": "BW-624-14",
         "description": "Wire Basket 6h x 24w x 14d",
         "type": "Wire Basket",
-        "company": "Blum",
+        "company": "",
     },
 ]
 
@@ -1253,56 +1289,59 @@ def create_company() -> dict[tuple[str, str, str | None], Company]:
     return company_objects
 
 
-def create_materials(company_objects: dict[tuple[str, str], Company]) -> None:
+def create_materials(company_objects: dict[tuple[str, str, str | None], Company]) -> None:
+    """
+    Creates materials for global scope (organization=None) and duplicates them
+    for each registered organization. Properties are applied if present.
+    If company is missing/blank, material will be stored with company=None.
+    """
+    organizations = get_registred_organization()
+
     for material_data in MATERIAL:
-        company = company_objects.get(
-            (
-                material_data["company"],
-                material_data["type"],
-                material_data.get("organization", None),
-            )
-        )
+        company_name = material_data.get("company") or None
+        material_type = material_data["type"]
         properties = material_data.get("properties", {})
 
-        if not company:
-            raise ValueError(
-                f"No company found for {material_data['company']} in {material_data['type']}"
+        if company_name is None:
+            company = None
+        else:
+            company = company_objects.get((company_name, material_type, None))
+            if not company:
+                company = None
+
+        material, created = Material.objects.update_or_create(
+            name=material_data["name"],
+            type=material_type,
+            company=company,
+            organization=None,
+            defaults={"description": material_data.get("description", "")},
+        )
+
+        Properties.objects.update_or_create(
+            material=material,
+            defaults=properties,
+        )
+
+        for org in organizations:
+            if company_name is None:
+                org_company = None
+            else:
+                org_company = company_objects.get((company_name, material_type, org.name))
+                if not org_company:
+                    org_company = None
+
+            org_material, created = Material.objects.update_or_create(
+                name=material_data["name"],
+                type=material_type,
+                company=org_company,
+                organization=org,
+                defaults={"description": material_data.get("description", "")},
             )
 
-        materials = Material.objects.filter(
-            name=material_data["name"], type=material_data["type"], company=company
-        )
-        if materials.exists():
-            material = materials.first()
-            material.description = material_data.get("description", "")
-            material.save()
-        else:
-            new_material = Material.objects.create(
-                name=material_data["name"],
-                type=material_data["type"],
-                company=company,
-                description=material_data.get("description", ""),
-            )
             Properties.objects.update_or_create(
-                material=new_material,
+                material=org_material,
                 defaults=properties,
             )
-            organization = get_registred_organization()
-            for org in organization:
-                org_company = company_objects.get(
-                    (material_data["company"], material_data["type"], org.name)
-                )
-                organization_material = Material.objects.create(
-                    name=material_data["name"],
-                    type=material_data["type"],
-                    company=org_company,
-                    description=material_data.get("description", ""),
-                )
-
-                Properties.objects.create(
-                    material=organization_material,
-                    **properties,
-                )
 
 
 if __name__ == "__main__":
