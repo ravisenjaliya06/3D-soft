@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react"
-import styles from "./material.module.css"
-import Sidebar from "@/components/sidebar/sidebar"
-import Header from "@/components/header/header"
-import banding from "@/assets/material/banding.svg"
-import filter from "@/assets/material/filter.svg"
-import AddMaterialPopup from "./addItem"
-import commonService from "@/services/CommonService"
+import { useState, useEffect } from "react";
+import styles from "./material.module.css";
+import Sidebar from "@/components/sidebar/sidebar";
+import Header from "@/components/header/header";
+import banding from "@/assets/material/banding.svg";
+import filter from "@/assets/material/filter.svg";
+import AddMaterialPopup from "./addItem";
+import down_arrow from "@/assets/material/down arrow.svg";
+import up_arrow from "@/assets/material/up arrow.svg";
+import commonService from "@/services/CommonService";
 
 interface MaterialItem {
   id: string
@@ -177,7 +179,9 @@ const Material = () => {
             <span className={styles.categoryName}>{item.name}</span>
           </div>
           {!isSubItem && hasSubItems && (
-            <span className={`${styles.dropdownArrow} ${isExpanded ? styles.rotated : ""}`}>V</span>
+            <span className={`${styles.dropdownArrow}`}>
+              <img src={isExpanded ? up_arrow.src : down_arrow.src}></img>
+            </span>
           )}
         </div>
 
