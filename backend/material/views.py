@@ -40,9 +40,18 @@ class MaterialViewSet(viewsets.ModelViewSet):
                 raise NotFound(detail="Company not found.")
             return Material.objects.filter(company_id=company_id, is_deleted=False)
 
-        queryset = Material.objects.filter(company__isnull=True, organization=self.request.user.selected_organization, is_deleted=False)
+        queryset = Material.objects.filter(
+            company__isnull=True,
+            organization=self.request.user.selected_organization,
+            is_deleted=False,
+        )
         if material_type:
-            queryset = queryset.filter(type=material_type, company__isnull=True, organization=self.request.user.selected_organization, is_deleted=False)
+            queryset = queryset.filter(
+                type=material_type,
+                company__isnull=True,
+                organization=self.request.user.selected_organization,
+                is_deleted=False,
+            )
 
         return queryset
 
