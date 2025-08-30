@@ -25,10 +25,9 @@ export type RemainingPath =
   | `${string}/nesting`
   | `${string}/catalog/item/${string}`
   | 'work_order'
-  | "material"
+  | 'material'
   | 'company'
-  | `company/${string}/material`
-
+  | `company/${string}/material`;
 
 type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type`;
 
