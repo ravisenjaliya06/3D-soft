@@ -1,12 +1,12 @@
 import logo from '@/assets/titleLogo.svg';
-import Admin from '@/components/admin';
+import Material from '@/components/material';
 import { useAuthRedirect } from '@/components/helper/helper';
 import { PAGE_TITLE } from '@/services/CommonStatus';
 import { useEffect } from 'react';
 
-const AdminPage = () => {
+const MaterialPage = () => {
   useEffect(() => {
-    document.title = PAGE_TITLE.ADMIN;
+    document.title = PAGE_TITLE.MATERIAL;
     const link = document.createElement('link');
     link.rel = 'icon';
     link.href = logo.src;
@@ -23,7 +23,7 @@ const AdminPage = () => {
     return null;
   }
 
-  return <Admin />;
+  return <Material />;
 };
 
-export default AdminPage;
+export default MaterialPage;

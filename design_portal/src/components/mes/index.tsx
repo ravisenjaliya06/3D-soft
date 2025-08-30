@@ -99,7 +99,7 @@ const Mes = () => {
 
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Design" />
+        <Header isBorderRadius={true} dashboardName="MES" />
         <div className={styles.maincontent}>
           <div className={styles.tabs}>
             {tabs.map((tab) => (
