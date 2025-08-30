@@ -16,7 +16,7 @@ class MaterialTypes(models.TextChoices):
     BANDING = "Banding"
     BOARD_STOCK = "Board Stock"
     CASTER = "Caster"
-    CONNECTER = "Connecter"
+    CONNECTOR = "Connector"
     DRAWER_GUIDE = "Drawer Guide"
     HINGE = "Hinge"
     HINGE_PLATE = "Hinge Plate"

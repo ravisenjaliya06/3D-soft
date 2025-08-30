@@ -433,7 +433,7 @@ COMPANY = [
     {"name": "Blum", "material_type": "Banding", "organization": None},
     {"name": "Blum", "material_type": "Board Stock", "organization": None},
     {"name": "Blum", "material_type": "Caster", "organization": None},
-    {"name": "Blum", "material_type": "Connecter", "organization": None},
+    {"name": "Blum", "material_type": "Connector", "organization": None},
     {"name": "Blum", "material_type": "Drawer Guide", "organization": None},
     {"name": "Blum", "material_type": "Hinge", "organization": None},
     {"name": "Blum", "material_type": "Hinge Plate", "organization": None},
@@ -566,9 +566,9 @@ MATERIAL = [
         "company": "Blum",
     },
     {
-        "name": "Connecter",
-        "description": "Connecter",
-        "type": "Connecter",
+        "name": "Connector",
+        "description": "Connector",
+        "type": "Connector",
         "company": "Blum",
     },
     {
