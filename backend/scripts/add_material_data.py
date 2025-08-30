@@ -10,7 +10,7 @@ sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from material.models import FinishesLibrary
+from material.models import FinishesLibrary, Company
 
 FINISH = [
     {
@@ -427,6 +427,25 @@ FINISH_TYPE = [
     },
 ]
 
+COMPANY = [
+    {"name": "Blum", "material_type": "Banding", "organization": None},
+    {"name": "Blum", "material_type": "Board Stock", "organization": None},
+    {"name": "Blum", "material_type": "Caster", "organization": None},
+    {"name": "Blum", "material_type": "Connecter", "organization": None},
+    {"name": "Blum", "material_type": "Drawer Guide", "organization": None},
+    {"name": "Blum", "material_type": "Hinge", "organization": None},
+    {"name": "Blum", "material_type": "Hinge Plate", "organization": None},
+    {"name": "Blum", "material_type": "Leg", "organization": None},
+    {"name": "Blum", "material_type": "Leg Leveler", "organization": None},
+    {"name": "Blum", "material_type": "Miscellaneous", "organization": None},
+    {"name": "Blum", "material_type": "Molding", "organization": None},
+    {"name": "Blum", "material_type": "Panel Stoke", "organization": None},
+    {"name": "Blum", "material_type": "Pull", "organization": None},
+    {"name": "Blum", "material_type": "Rod", "organization": None},
+    {"name": "Blum", "material_type": "Sliding Door Rail", "organization": None},
+    {"name": "Blum", "material_type": "Sliding Door Roller", "organization": None},
+    {"name": "Blum", "material_type": "Wire Basket", "organization": None}
+]
 
 def create_finish() -> None:
     """
@@ -482,7 +501,25 @@ def create_textures() -> None:
         texture_objects[texture_data["name"]] = texture
     return texture_objects
 
+def create_company() -> None:
+    """
+    Creates company records.
+    Returns a dictionary mapping company names to company objects.
+    """
+    company_objects = {}
+    for company_data in COMPANY:
+        defaults = {k: v for k, v in company_data.items() if k not in ["name", "material_type"]}
+
+        company, created = Company.objects.update_or_create(
+            name=company_data["name"],
+            material_type=company_data["material_type"],
+            defaults=defaults,
+        )
+        company_objects[company_data["name"]] = company
+    return company_objects
+
 if __name__ == "__main__":
     create_finish()
     create_finish_type()
     create_textures()
+    create_company()
