@@ -1,3 +1,5 @@
+import createicon from '@/assets/createicon.svg';
+import close from '@/assets/design/close.svg';
 import banding from '@/assets/material/banding.svg';
 import brandstok from '@/assets/material/brandstok.svg';
 import caster from '@/assets/material/caster.svg';
@@ -12,7 +14,8 @@ import up_arrow from '@/assets/material/up arrow.svg';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import commonService from '@/services/CommonService';
-import { useEffect, useState } from 'react';
+import { SetStateAction, useEffect, useState } from 'react';
+import InputField from '../inputfields/InputField';
 import AddMaterialPopup from './addItem';
 import styles from './material.module.css';
 
@@ -52,18 +55,40 @@ interface TableRow {
 
 const Material = () => {
   const [expandedCategory, setExpandedCategory] = useState<string>('banding');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortColumn, setSortColumn] = useState<string>('');
-  const [activePopup, setActivePopup] = useState<boolean>(false);
-  const [selectedRowDetails, setSelectedRowDetails] = useState<TableRow | null>(
-    null,
-  );
   const [addMaterialPopup, setAddMaterialPopup] = useState<boolean>(false);
   const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([]);
   const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>(
     [],
   );
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    categoryId: string;
+  } | null>(null);
+  const [createCompanyPopup, setCreateCompanyPopup] = useState<boolean>(false);
+  const [companyName, setCompanyName] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    categoryId: string,
+    name: string,
+  ) => {
+    e.preventDefault();
+    setExpandedCategory(categoryId);
+    setSelectedType(name);
+    setContextMenu({ x: e.clientX, y: e.clientY, categoryId });
+  };
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
 
   const staticMaterialThings: MaterialItem[] = [
     { id: 'banding', name: 'Banding', icon: banding.src },
@@ -230,11 +255,6 @@ const Material = () => {
     setSelectedSubItem(null);
   };
 
-  const handleRowClick = (row: TableRow) => {
-    setSelectedRowDetails(row);
-    setActivePopup(true);
-  };
-
   const handleCreateItemOfMaterial = () => {
     setAddMaterialPopup(true);
   };
@@ -272,13 +292,48 @@ const Material = () => {
     }
   };
 
+  const handleCreateCompany = async () => {
+    if (!companyName.trim()) {
+      setError('Company name is required');
+      return;
+    }
+
+    try {
+      const payload = {
+        name: companyName,
+        material_type: selectedType || '',
+      };
+
+      const response = await commonService.post('material', 'company', payload);
+
+      if (response.status === 201 || response.status === 200) {
+        setCreateCompanyPopup(false);
+        setCompanyName('');
+        setSelectedType(null);
+        setError(null);
+        handleGetData();
+      } else {
+        setError('Failed to create company. Try again.');
+      }
+    } catch (err) {
+      console.error('Error creating company:', err);
+      setError('Something went wrong.');
+    }
+  };
+
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isSubItem = !!parentType;
 
     return (
-      <div key={item.id} className={styles.categoryContainer}>
+      <div
+        key={item.id}
+        className={styles.categoryContainer}
+        onContextMenu={(e) =>
+          !parentType && handleContextMenu(e, item.id, item.name)
+        }
+      >
         <div
           className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ''}`}
           onClick={() => {
@@ -393,11 +448,7 @@ const Material = () => {
                 </thead>
                 <tbody>
                   {sortedData.map((row) => (
-                    <tr
-                      key={row.id}
-                      className={styles.tableRow}
-                      onClick={() => handleRowClick(row)}
-                    >
+                    <tr key={row.id} className={styles.tableRow}>
                       {tableColumns.map((column) => (
                         <td key={column.key} className={styles.tableCell}>
                           {getCellValue(row, column.key)}
@@ -411,6 +462,85 @@ const Material = () => {
           </div>
         </div>
       </div>
+
+      {contextMenu && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x,
+            position: 'absolute',
+          }}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              setCreateCompanyPopup(true);
+              setContextMenu(null);
+            }}
+          >
+            ➕ Add Company
+          </button>
+        </div>
+      )}
+
+      {createCompanyPopup && (
+        <div className={styles.createpopupOverlay}>
+          <div className={styles.createpopup}>
+            <img
+              src={createicon.src}
+              className={styles.createicon}
+              alt="createicon"
+            />
+            <img
+              src={close.src}
+              className={styles.createclose}
+              alt="close"
+              onClick={() => setCreateCompanyPopup(false)}
+            />
+            <div className={styles.create_right_side}>
+              <h2>Create Company</h2>
+              <p>Please fill all the details to create company.</p>
+              <form
+                className={styles.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleCreateCompany();
+                }}
+              >
+                <div className={styles.createinputGroup}>
+                  <InputField
+                    mediumField={true}
+                    className={styles.inputField}
+                    borderColor="var(--primary-color-grey-2)"
+                    value={companyName}
+                    onChange={(e: {
+                      target: { value: SetStateAction<string> };
+                    }) => setCompanyName(e.target.value)}
+                    placeholder="Enter Company Name"
+                    label={companyName ? 'Company Name' : ''}
+                    error={error || ''}
+                  />
+                </div>
+              </form>
+            </div>
+            <div className={styles.createButtonGrop}>
+              <button
+                className={styles.cancelcreateButton}
+                onClick={() => setCreateCompanyPopup(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.createcontinueButton}
+                onClick={handleCreateCompany}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {addMaterialPopup && (
         <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} />
