@@ -94,7 +94,9 @@ const Material = () => {
   ]
 
   useEffect(() => {
+
     handleGetData()
+    handleGetMaterialByType("Banding")
   }, [])
 
   const handleGetData = async () => {
@@ -228,6 +230,41 @@ const Material = () => {
   const handleCreateItemOfMaterial = () => {
     setAddMaterialPopup(true)
   }
+  const handleGetMaterialByType = async (type: string) => {
+    try {
+
+      const response: MaterialResponse = await commonService.getWithQueryParam(
+        'material',
+        '',
+        'type',
+        `${type}`,
+      );
+
+      console.log(response.data, "material by type")
+      if (response.status === 200) {
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.material_type || m.type,
+          unit_of_issue: m.unit_of_issue,
+          defaultVender: m.default_vender,
+          defaultCode: m.default_code,
+          sell_price: m.sell_price,
+          default_markup: m.default_markup,
+          sales_tax: m.sales_tax,
+          default_tax_rate: m.default_tax_rate,
+          waste: m.waste,
+          eslimate: m.eslimate,
+          model: m.model,
+          ...m
+        }))
+        setCompanyMaterials(materials)
+      }
+    } catch (error) {
+      console.error("Error fetching materials by type:", error)
+    }
+  }
 
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id
@@ -240,8 +277,11 @@ const Material = () => {
           className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""}`}
           onClick={() => {
             if (!isSubItem) {
+              // when clicking static material type
               toggleCategory(item.id)
+              handleGetMaterialByType(item.name)  // << new function
             } else {
+              // when clicking company material
               setSelectedSubItem(item.id)
               handleGetCompanyMaterials(item.id)
             }
