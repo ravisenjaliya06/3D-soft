@@ -26,9 +26,11 @@ export type RemainingPath =
   | `${string}/catalog/item/${string}`
   | 'work_order'
   | "material"
-  | 'company';
+  | 'company'
+  | `company/${string}/material`
 
-type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom';
+
+type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type`;
 
 type Error = {
   message: string;

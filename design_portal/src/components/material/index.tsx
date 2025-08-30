@@ -4,6 +4,13 @@ import Sidebar from "@/components/sidebar/sidebar"
 import Header from "@/components/header/header"
 import banding from "@/assets/material/banding.svg"
 import filter from "@/assets/material/filter.svg"
+import brandstok from "@/assets/material/brandstok.svg"
+import connator from "@/assets/material/connector.svg"
+import hinge from "@/assets/material/hing.svg"
+import molding from "@/assets/material/molding.svg"
+import drawerguide from "@/assets/material/drawerguid.svg"
+import mis from "@/assets/material/mis.svg"
+import caster from "@/assets/material/caster.svg"
 import AddMaterialPopup from "./addItem"
 import commonService from "@/services/CommonService"
 
@@ -19,15 +26,26 @@ interface TableColumn {
   label: string
   sortable: boolean
 }
+
 type MaterialResponse = {
   status: number;
   data: [];
 };
+
 interface TableRow {
   id: string
   name: string
   description?: string
   material_type?: string
+  unit_of_issue?: string
+  default_cost?: number
+  default_markup?: number
+  sell_price?: number
+  sales_tax?: boolean
+  default_tax_rate?: number
+  waste?: number
+  eslimate?: boolean
+  model?: boolean
 }
 
 const Material = () => {
@@ -43,17 +61,17 @@ const Material = () => {
 
   const staticMaterialThings: MaterialItem[] = [
     { id: "banding", name: "Banding", icon: banding.src },
-    { id: "board-stock", name: "Board Stock", icon: banding.src },
-    { id: "caster", name: "Caster", icon: banding.src },
-    { id: "connector", name: "Connector", icon: banding.src },
-    { id: "drawer-guide", name: "Drawer Guide", icon: banding.src },
-    { id: "hinge", name: "Hinge", icon: banding.src },
-    { id: "hinge-plate", name: "Hinge Plate", icon: banding.src },
-    { id: "laminate", name: "Laminate", icon: banding.src },
+    { id: "board-stock", name: "Board Stock", icon: brandstok.src },
+    { id: "caster", name: "Caster", icon: caster.src },
+    { id: "connector", name: "Connector", icon: connator.src },
+    { id: "drawer-guide", name: "Drawer Guide", icon: drawerguide.src },
+    { id: "hinge", name: "Hinge", icon: hinge.src },
+    { id: "hinge-plate", name: "Hinge Plate", icon: hinge.src },
+    { id: "laminate", name: "Laminate", icon: brandstok.src },
     { id: "leg", name: "Leg", icon: banding.src },
     { id: "leg-leveler", name: "Leg Leveler", icon: banding.src },
-    { id: "miscellaneous", name: "Miscellaneous", icon: banding.src },
-    { id: "molding", name: "Molding", icon: banding.src },
+    { id: "miscellaneous", name: "Miscellaneous", icon: mis.src },
+    { id: "molding", name: "Molding", icon: molding.src },
     { id: "panel-stock", name: "Panel Stock", icon: banding.src },
     { id: "rod", name: "Rod", icon: banding.src },
     { id: "sliding-door-rail", name: "Sliding Door Rail", icon: banding.src },
@@ -63,28 +81,46 @@ const Material = () => {
   const tableColumns: TableColumn[] = [
     { key: "name", label: "Name", sortable: true },
     { key: "description", label: "Description", sortable: false },
-    { key: "type", label: "Type", sortable: true },
-    { key: "unitOfIssue", label: "Unit of issue", sortable: false },
-    { key: "defaultVender", label: "Default vender", sortable: false },
+    { key: "material_type", label: "Type", sortable: true },
+    { key: "unit_of_issue", label: "Unit of issue", sortable: false },
     { key: "defaultCode", label: "Default code", sortable: false },
-    { key: "sellPrice", label: "Sell Price", sortable: false },
-    { key: "defaultMarkup", label: "Default markup", sortable: false },
-    { key: "sales", label: "Sales", sortable: false },
+    { key: "sell_price", label: "Sell Price", sortable: false },
+    { key: "default_markup", label: "Default markup", sortable: false },
+    { key: "sales_tax", label: "Sales Tax", sortable: false },
+    { key: "default_tax_rate", label: "Default Tax Rate", sortable: false },
+    { key: "waste", label: "Waste", sortable: false },
+    { key: "eslimate", label: "Estimate", sortable: false },
+    { key: "model", label: "Load Model", sortable: false },
   ]
 
   useEffect(() => {
+
     handleGetData()
+    handleGetMaterialByType("Banding")
   }, [])
 
-  // ---- Fetch Materials ----
   const handleGetData = async () => {
     try {
       const response: MaterialResponse = await commonService.get("material", "company")
       if (response.status === 200) {
-        console.log(response.data)
-        const materials: TableRow[] = response.data.map((m: TableRow) => ({
-          ...m,
-          type: m.material_type,
+        console.log("API Response:", response.data)
+
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.material_type || m.type,
+          unit_of_issue: m.unit_of_issue,
+          defaultVender: m.default_vender,
+          defaultCode: m.default_code,
+          sell_price: m.sell_price,
+          default_markup: m.default_markup,
+          sales_tax: m.sales_tax,
+          default_tax_rate: m.default_tax_rate,
+          waste: m.waste,
+          eslimate: m.eslimate,
+          model: m.model,
+          ...m
         }))
 
         setCompanyMaterials(materials)
@@ -109,13 +145,58 @@ const Material = () => {
     }
   }
 
-
-  let filtered = companyMaterials
-  if (expandedCategory) {
-    filtered = filtered.filter((m) => m.material_type === materialCategories.find(c => c.id === expandedCategory)?.name)
-    if (selectedSubItem) {
-      filtered = filtered.filter((m) => m.id === selectedSubItem)
+  const handleGetCompanyMaterials = async (companyId: string) => {
+    try {
+      const response: MaterialResponse = await commonService.get(
+        `material`,
+        `company/${companyId}/material`
+      )
+      if (response.status === 200) {
+        console.log(response.data, "company materials")
+        const companyData: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.properties[0].material_type || m.type,
+          unit_of_issue: m.properties[0].unit_of_issue,
+          defaultCode: m.properties[0].default_cost,
+          sell_price: m.properties[0].sell_price,
+          default_markup: m.properties[0].default_markup,
+          sales_tax: m.properties[0].sales_tax,
+          default_tax_rate: m.properties[0].default_tax_rate,
+          waste: m.properties[0].waste,
+          eslimate: m.properties[0].eslimate,
+          model: m.properties[0].model,
+          ...m
+        }))
+        setCompanyMaterials(companyData)
+      }
+    } catch (error) {
+      console.error("Error fetching company materials:", error)
     }
+  }
+
+  // Helper function to get cell value based on column key
+  const getCellValue = (row: TableRow, columnKey: string): string => {
+    const value = row[columnKey as keyof TableRow];
+
+    if (value === undefined || value === null) {
+      return "N/A";
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+
+    return value.toString();
+  };
+
+  let filtered = companyMaterials;
+  if (expandedCategory && !selectedSubItem) {
+    const categoryName = materialCategories.find(c => c.id === expandedCategory)?.name;
+    filtered = filtered.filter(
+      (m) => m.material_type === categoryName
+    )
   }
 
   const filteredData = filtered.filter((row) =>
@@ -123,11 +204,11 @@ const Material = () => {
       value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
     )
   )
+
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0
-    const sortColumnKey = sortColumn as keyof TableRow;
-    const aValue = a[sortColumnKey]
-    const bValue = b[sortColumnKey]
+    const aValue = a[sortColumn as keyof TableRow]
+    const bValue = b[sortColumn as keyof TableRow]
 
     if (aValue === undefined || bValue === undefined) {
       return 0;
@@ -135,7 +216,7 @@ const Material = () => {
 
     return aValue < bValue ? 1 : -1
   })
-  // ---- Accordion Toggle ----
+
   const toggleCategory = (categoryId: string) => {
     setExpandedCategory((prev) => (prev === categoryId ? "" : categoryId))
     setSelectedSubItem(null)
@@ -149,8 +230,42 @@ const Material = () => {
   const handleCreateItemOfMaterial = () => {
     setAddMaterialPopup(true)
   }
+  const handleGetMaterialByType = async (type: string) => {
+    try {
 
-  // ---- Render Menu ----
+      const response: MaterialResponse = await commonService.getWithQueryParam(
+        'material',
+        '',
+        'type',
+        `${type}`,
+      );
+
+      console.log(response.data, "material by type")
+      if (response.status === 200) {
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.material_type || m.type,
+          unit_of_issue: m.unit_of_issue,
+          defaultVender: m.default_vender,
+          defaultCode: m.default_code,
+          sell_price: m.sell_price,
+          default_markup: m.default_markup,
+          sales_tax: m.sales_tax,
+          default_tax_rate: m.default_tax_rate,
+          waste: m.waste,
+          eslimate: m.eslimate,
+          model: m.model,
+          ...m
+        }))
+        setCompanyMaterials(materials)
+      }
+    } catch (error) {
+      console.error("Error fetching materials by type:", error)
+    }
+  }
+
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id
     const hasSubItems = item.subItems && item.subItems.length > 0
@@ -162,9 +277,13 @@ const Material = () => {
           className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""}`}
           onClick={() => {
             if (!isSubItem) {
+              // when clicking static material type
               toggleCategory(item.id)
+              handleGetMaterialByType(item.name)  // << new function
             } else {
+              // when clicking company material
               setSelectedSubItem(item.id)
+              handleGetCompanyMaterials(item.id)
             }
           }}
         >
@@ -190,12 +309,11 @@ const Material = () => {
     )
   }
 
-
   return (
     <div className={styles.container}>
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Material" />
+        <Header isBorderRadius={true} dashboardName="Material Manager" />
 
         <div className={styles.maincontainer}>
           {/* Left Sidebar */}
@@ -210,17 +328,7 @@ const Material = () => {
             {/* Toolbar */}
             <div className={styles.topToolbar}>
               <div className={styles.toolbarLeft}>
-                {/* <select
-//                   className={styles.dropdown}
-//                   value={selectedDropdown}
-//                   onChange={(e) => setSelectedDropdown(e.target.value)}
-//                 >
-//                   {dropdownOptions.map((option) => (
-//                     <option key={option} value={option}>
-//                       {option}
-//                     </option>
-//                   ))}
-//                 </select> */}
+                {/* Dropdown can be added here if needed */}
               </div>
 
               <div className={styles.toolbarRight}>
@@ -259,11 +367,6 @@ const Material = () => {
                         onClick={() => column.sortable && setSortColumn(column.key)}
                       >
                         {column.label}
-                        {/* {column.sortable && (
-                          <span className={styles.sortArrow}>
-                            {sortColumn === column.key ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
-                          </span>
-                        )} */}
                       </th>
                     ))}
                   </tr>
@@ -273,7 +376,7 @@ const Material = () => {
                     <tr key={row.id} className={styles.tableRow} onClick={() => handleRowClick(row)}>
                       {tableColumns.map((column) => (
                         <td key={column.key} className={styles.tableCell}>
-                          {row[column.key as keyof TableRow] ?? "N/A"}
+                          {getCellValue(row, column.key)}
                         </td>
                       ))}
                     </tr>
@@ -285,37 +388,10 @@ const Material = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {
-        activePopup && selectedRowDetails && (
-          <div className={styles.modalOverlay} onClick={() => setActivePopup(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h2>Item Details</h2>
-                <button className={styles.closeButton} onClick={() => setActivePopup(false)}>×</button>
-              </div>
-              <div className={styles.modalBody}>
-                {Object.entries(selectedRowDetails).map(([key, value]) => (
-                  <div key={key} className={styles.detailRow}>
-                    <span className={styles.detailLabel}>
-                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1")}:
-                    </span>
-                    <span className={styles.detailValue}>{value}</span>
-                  </div>
-                ))}
-              </div>
-              <div className={styles.modalFooter}>
-                <button className={styles.editButton}>Edit</button>
-                <button className={styles.deleteButton}>Delete</button>
-                <button className={styles.cancelButton} onClick={() => setActivePopup(false)}>Close</button>
-              </div>
-            </div>
-          </div>
-        )
-      }
+
 
       {addMaterialPopup && <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} />}
-    </div >
+    </div>
   )
 }
 
