@@ -966,8 +966,9 @@ const Settings = () => {
 
                   <input
                     type="text"
-                    className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
-                      }`}
+                    className={`${styles.organizationInputfild} ${
+                      organizationNameError ? styles.errorInput : ''
+                    }`}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       setOrganizationName(e.target.value);
                       setOrganizationNameError(null);
