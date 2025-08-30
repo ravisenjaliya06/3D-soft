@@ -19,3 +19,4 @@ src/components/3dmodel/handler/items.tsx
 src/components/3dmodel/handler/updateHandler.tsx
 src/components/3dmodel/store/customDesignSlice.ts
 src/components/material/index.tsx
+src/components/material/addItem.tsx

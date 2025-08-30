@@ -340,7 +340,8 @@ const Material = () => {
         key={item.id}
         className={styles.categoryContainer}
         onContextMenu={(e) => {
-          if (!parentType) {  // ✅ only fire on main categories
+          if (!parentType) {
+            // ✅ only fire on main categories
             e.preventDefault();
             handleContextMenu(e, item.id, item.name);
           }
@@ -531,7 +532,6 @@ const Material = () => {
         </div>
       )}
 
-
       {createCompanyPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
@@ -591,7 +591,11 @@ const Material = () => {
       )}
 
       {addMaterialPopup && (
-        <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} companyState={companyID} handleGetCompanyMaterials={handleGetCompanyMaterials} />
+        <AddMaterialPopup
+          setCreateWorkOrderPopup={setAddMaterialPopup}
+          companyState={companyID}
+          handleGetCompanyMaterials={handleGetCompanyMaterials}
+        />
       )}
     </div>
   );

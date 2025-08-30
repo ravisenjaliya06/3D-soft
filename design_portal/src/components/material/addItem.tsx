@@ -1,15 +1,10 @@
 import close from '@/assets/design/close.svg';
 import InputField from '@/components/inputfields/InputField';
+import commonService from '@/services/CommonService';
 import type React from 'react';
 import { useState } from 'react';
 import styles from './materialWizard.module.css';
-import commonService from '@/services/CommonService';
 
-interface company {
-    name: string;
-    id: string;
-    material_types: string;
-}
 type Props = {
     setCreateWorkOrderPopup: (value: boolean) => void;
     companyState: any;
@@ -41,7 +36,11 @@ interface Field {
     label: string;
 }
 
-const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup, companyState, handleGetCompanyMaterials }) => {
+const AddMaterialPopup: React.FC<Props> = ({
+    setCreateWorkOrderPopup,
+    companyState,
+    handleGetCompanyMaterials,
+}) => {
     console.log(companyState);
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<FormData>({});
@@ -751,7 +750,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup, companySta
         const response = await commonService.post(
             'material',
             `company/${companyState}/material`,
-            finalData
+            finalData,
         );
 
         if (response.status === 201 || response.status === 200) {
