@@ -21,14 +21,13 @@ interface TableColumn {
 }
 type MaterialResponse = {
   status: number;
-  data: any[];
+  data: [];
 };
 interface TableRow {
   id: string
   name: string
   description?: string
   material_type?: string
-  [key: string]: any
 }
 
 const Material = () => {
@@ -83,7 +82,7 @@ const Material = () => {
       const response: MaterialResponse = await commonService.get("material", "company")
       if (response.status === 200) {
         console.log(response.data)
-        const materials: TableRow[] = response.data.map((m: any) => ({
+        const materials: TableRow[] = response.data.map((m: TableRow) => ({
           ...m,
           type: m.material_type,
         }))
@@ -124,15 +123,18 @@ const Material = () => {
       value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
     )
   )
-
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0
-    const aValue = a[sortColumn]
-    const bValue = b[sortColumn]
-    // if (sortDirection === "asc") return aValue > bValue ? 1 : -1
+    const sortColumnKey = sortColumn as keyof TableRow;
+    const aValue = a[sortColumnKey]
+    const bValue = b[sortColumnKey]
+
+    if (aValue === undefined || bValue === undefined) {
+      return 0;
+    }
+
     return aValue < bValue ? 1 : -1
   })
-
   // ---- Accordion Toggle ----
   const toggleCategory = (categoryId: string) => {
     setExpandedCategory((prev) => (prev === categoryId ? "" : categoryId))
@@ -271,7 +273,7 @@ const Material = () => {
                     <tr key={row.id} className={styles.tableRow} onClick={() => handleRowClick(row)}>
                       {tableColumns.map((column) => (
                         <td key={column.key} className={styles.tableCell}>
-                          {row[column.key] ?? "N/A"}
+                          {row[column.key as keyof TableRow] ?? "N/A"}
                         </td>
                       ))}
                     </tr>

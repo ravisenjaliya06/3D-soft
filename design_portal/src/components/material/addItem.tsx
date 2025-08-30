@@ -8,8 +8,9 @@ type Props = {
     setCreateWorkOrderPopup: (value: boolean) => void
 }
 
+
 interface FormData {
-    [key: string]: any
+    [key: string]: string | number | boolean | string[] | undefined
 }
 
 interface PopupStep {
@@ -22,6 +23,16 @@ interface PopupStep {
         options?: string[]
         disabled?: boolean
     }>
+}
+
+interface Field {
+    key: string;
+    type: string;
+    options?: string[];
+    disabled?: boolean;
+    placeholder?: string;
+    label: string;
+
 }
 
 const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
@@ -305,7 +316,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
     const isFirstStep = currentStep === 0
     const isLastStep = currentStep === currentSequence.length - 1
 
-    const handleInputChange = (key: string, value: any) => {
+    const handleInputChange = (key: string, value: string | number | boolean) => {
         setFormData((prev) => ({
             ...prev,
             [key]: value,
@@ -313,7 +324,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
 
         // Set material type when selected in first step
         if (key === "type" && currentStep === 0) {
-            setSelectedMaterialType(value)
+            setSelectedMaterialType(value as string)
         }
     }
 
@@ -377,7 +388,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
         setCreateWorkOrderPopup(false)
     }
 
-    const renderField = (field: any) => {
+    const renderField = (field: Field) => {
         const value = formData[field.key] || ""
 
         switch (field.type) {
@@ -385,7 +396,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
                 return (
                     <select
                         className={styles.selectField}
-                        value={value}
+                        value={value as number | string}
                         onChange={(e) => handleInputChange(field.key, e.target.value)}
                         disabled={field.disabled}
                     >
@@ -402,7 +413,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
                     <label className={styles.toggleContainer}>
                         <input
                             type="checkbox"
-                            checked={value}
+                            checked={value as boolean}
                             onChange={(e) => handleInputChange(field.key, e.target.checked)}
                             disabled={field.disabled}
                         />
@@ -414,7 +425,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
                     <input
                         type="number"
                         className={styles.inputField}
-                        value={value}
+                        value={value as number | string}
                         placeholder={field.placeholder}
                         onChange={(e) => handleInputChange(field.key, Number.parseFloat(e.target.value) || "")}
                         disabled={field.disabled}
@@ -425,7 +436,7 @@ const AddMaterialPopup: React.FC<Props> = ({ setCreateWorkOrderPopup }) => {
                     <input
                         type="text"
                         className={styles.inputField}
-                        value={value}
+                        value={value as string | number}
                         placeholder={field.placeholder}
                         onChange={(e) => handleInputChange(field.key, e.target.value)}
                         disabled={field.disabled}
