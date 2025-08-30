@@ -137,7 +137,6 @@ def default_material_data(organization):
     print(default_materials, "show the default materials")
     
     for material in default_materials:
-        # Use the model's __dict__ or values, but exclude id/PK and auto fields
         material_data = {
             field.name: getattr(material, field.name)
             for field in material._meta.fields
