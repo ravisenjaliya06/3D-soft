@@ -1,339 +1,193 @@
-// import styles from '../material/material.module.css';
-// import Sidebar from '@/components/sidebar/sidebar';
-// import Header from '@/components/header/header';
-// import banding from '@/assets/material/banding.svg';
-
-// const Material = () => {
-
-//   const MaterialThings = [
-//     {
-//       name: "Banding",
-//       image: banding,
-//     },
-//     {
-//       name: "Board Stock",
-//       image: banding,
-//     },
-//     {
-//       name: "Caster",
-//       image: banding,
-//     },
-//     {
-//       name: "Connector",
-//       image: banding,
-//     },
-//     {
-//       name: "Drawer Guide",
-//       image: banding,
-//     },
-//     {
-//       name: "Hinge",
-//       image: banding,
-//     },
-//     {
-//       name: "Hinge Palte",
-//       image: banding,
-//     },
-//     {
-//       name: "Lag leveler",
-//       image: banding,
-//     },
-//   ]
-
-
-
-//   return (
-
-//     <div className={styles.container}>
-//       <Sidebar />
-//       <div className={styles.rightside}>
-//         <Header isBorderRadius={true} dashboardName="Material" />
-
-//         <div className={styles.maincontainer}>
-//           <div className={styles.materialleftside}>
-
-//           </div>
-
-
-//           <div className={styles.materialrightside}>
-
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Material;
-
-
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import styles from "./material.module.css"
 import Sidebar from "@/components/sidebar/sidebar"
 import Header from "@/components/header/header"
-
+import banding from "@/assets/material/banding.svg"
+import filter from "@/assets/material/filter.svg"
+import AddMaterialPopup from "./addItem"
+import commonService from "@/services/CommonService"
 
 interface MaterialItem {
   id: string
   name: string
-  icon: string
+  icon?: string
   subItems?: MaterialItem[]
 }
 
-const Material = () => {
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(["hinge"])
-  const [selectedItem, setSelectedItem] = useState<string>("hettich-soft-close")
+interface TableColumn {
+  key: string
+  label: string
+  sortable: boolean
+}
+type MaterialResponse = {
+  status: number;
+  data: any[];
+};
+interface TableRow {
+  id: string
+  name: string
+  description?: string
+  material_type?: string
+  [key: string]: any
+}
 
-  const MaterialThings: MaterialItem[] = [
-    {
-      id: "banding",
-      name: "Banding",
-      icon: "🏷️",
-      subItems: [
-        {
-          id: "3m-banding",
-          name: "3M",
-          icon: "📦",
-          subItems: [
-            {
-              id: "3m-wood-grain",
-              name: "Wood Grain",
-              icon: "🌳",
-              subItems: [
-                { id: "3m-oak", name: "Oak", icon: "🟤" },
-                { id: "3m-maple", name: "Maple", icon: "🟡" },
-                { id: "3m-walnut", name: "Walnut", icon: "🤎" },
-              ],
-            },
-            {
-              id: "3m-solid-colors",
-              name: "Solid Colors",
-              icon: "🎨",
-              subItems: [
-                { id: "3m-white", name: "White", icon: "⚪" },
-                { id: "3m-black", name: "Black", icon: "⚫" },
-                { id: "3m-gray", name: "Gray", icon: "🔘" },
-              ],
-            },
-          ],
-        },
-        {
-          id: "rehau-banding",
-          name: "Rehau",
-          icon: "📦",
-          subItems: [
-            { id: "rehau-premium", name: "Premium Series", icon: "⭐" },
-            { id: "rehau-standard", name: "Standard Series", icon: "📋" },
-          ],
-        },
-        {
-          id: "egger-banding",
-          name: "Egger",
-          icon: "📦",
-          subItems: [
-            { id: "egger-abs", name: "ABS Edge", icon: "🔲" },
-            { id: "egger-pvc", name: "PVC Edge", icon: "🔳" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "board-stock",
-      name: "Board Stock",
-      icon: "📋",
-      subItems: [
-        {
-          id: "mdf-boards",
-          name: "MDF",
-          icon: "📄",
-          subItems: [
-            { id: "mdf-standard", name: "Standard MDF", icon: "📃" },
-            { id: "mdf-moisture", name: "Moisture Resistant", icon: "💧" },
-            { id: "mdf-fire", name: "Fire Retardant", icon: "🔥" },
-          ],
-        },
-        {
-          id: "plywood-boards",
-          name: "Plywood",
-          icon: "📄",
-          subItems: [
-            { id: "plywood-birch", name: "Birch Plywood", icon: "🌿" },
-            { id: "plywood-marine", name: "Marine Grade", icon: "🌊" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "caster",
-      name: "Caster",
-      icon: "⚙️",
-      subItems: [
-        {
-          id: "fixed-casters",
-          name: "Fixed",
-          icon: "🔒",
-          subItems: [
-            { id: "fixed-light", name: "Light Duty", icon: "🪶" },
-            { id: "fixed-heavy", name: "Heavy Duty", icon: "💪" },
-          ],
-        },
-        {
-          id: "swivel-casters",
-          name: "Swivel",
-          icon: "🔄",
-          subItems: [
-            { id: "swivel-brake", name: "With Brake", icon: "🛑" },
-            { id: "swivel-no-brake", name: "Without Brake", icon: "▶️" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "connector",
-      name: "Connector",
-      icon: "🔗",
-      subItems: [
-        {
-          id: "cam-lock",
-          name: "Cam Lock",
-          icon: "🔐",
-          subItems: [
-            { id: "cam-15mm", name: "15mm", icon: "📏" },
-            { id: "cam-25mm", name: "25mm", icon: "📏" },
-          ],
-        },
-        {
-          id: "dowel-pins",
-          name: "Dowel",
-          icon: "📌",
-          subItems: [
-            { id: "dowel-6mm", name: "6mm", icon: "📏" },
-            { id: "dowel-8mm", name: "8mm", icon: "📏" },
-            { id: "dowel-10mm", name: "10mm", icon: "📏" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "hinge",
-      name: "Hinge",
-      icon: "🚪",
-      subItems: [
-        {
-          id: "blum-hinges",
-          name: "Blum",
-          icon: "🔧",
-          subItems: [
-            {
-              id: "blum-clip-top",
-              name: "Clip Top",
-              icon: "📎",
-              subItems: [
-                { id: "blum-soft-close", name: "Soft Close", icon: "🤫" },
-                { id: "blum-standard", name: "Standard", icon: "📋" },
-              ],
-            },
-            { id: "blum-compact", name: "Compact", icon: "📦" },
-          ],
-        },
-        {
-          id: "hettich-hinges",
-          name: "Hettich",
-          icon: "🔧",
-          subItems: [
-            {
-              id: "hettich-sensys",
-              name: "Sensys",
-              icon: "🎯",
-              subItems: [
-                { id: "hettich-soft-close", name: "Soft Close", icon: "🤫" },
-                { id: "hettich-push-open", name: "Push to Open", icon: "👆" },
-              ],
-            },
-            { id: "hettich-intermat", name: "Intermat", icon: "⚡" },
-          ],
-        },
-        {
-          id: "godrej-hinges",
-          name: "Godrej",
-          icon: "🔧",
-          subItems: [
-            { id: "godrej-premium", name: "Premium", icon: "⭐" },
-            { id: "godrej-standard", name: "Standard", icon: "📋" },
-          ],
-        },
-        {
-          id: "ebco-hinges",
-          name: "Ebco",
-          icon: "🔧",
-          subItems: [
-            { id: "ebco-hydraulic", name: "Hydraulic", icon: "💧" },
-            { id: "ebco-spring", name: "Spring", icon: "🌀" },
-          ],
-        },
-      ],
-    },
+const Material = () => {
+  const [expandedCategory, setExpandedCategory] = useState<string>("banding")
+  const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [sortColumn, setSortColumn] = useState<string>("")
+  const [activePopup, setActivePopup] = useState<boolean>(false)
+  const [selectedRowDetails, setSelectedRowDetails] = useState<TableRow | null>(null)
+  const [addMaterialPopup, setAddMaterialPopup] = useState<boolean>(false)
+  const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([])
+  const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>([])
+
+  const staticMaterialThings: MaterialItem[] = [
+    { id: "banding", name: "Banding", icon: banding.src },
+    { id: "board-stock", name: "Board Stock", icon: banding.src },
+    { id: "caster", name: "Caster", icon: banding.src },
+    { id: "connector", name: "Connector", icon: banding.src },
+    { id: "drawer-guide", name: "Drawer Guide", icon: banding.src },
+    { id: "hinge", name: "Hinge", icon: banding.src },
+    { id: "hinge-plate", name: "Hinge Plate", icon: banding.src },
+    { id: "laminate", name: "Laminate", icon: banding.src },
+    { id: "leg", name: "Leg", icon: banding.src },
+    { id: "leg-leveler", name: "Leg Leveler", icon: banding.src },
+    { id: "miscellaneous", name: "Miscellaneous", icon: banding.src },
+    { id: "molding", name: "Molding", icon: banding.src },
+    { id: "panel-stock", name: "Panel Stock", icon: banding.src },
+    { id: "rod", name: "Rod", icon: banding.src },
+    { id: "sliding-door-rail", name: "Sliding Door Rail", icon: banding.src },
+    { id: "wire-basket", name: "Wire Basket", icon: banding.src },
   ]
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
-    )
-  }
+  const tableColumns: TableColumn[] = [
+    { key: "name", label: "Name", sortable: true },
+    { key: "description", label: "Description", sortable: false },
+    { key: "type", label: "Type", sortable: true },
+    { key: "unitOfIssue", label: "Unit of issue", sortable: false },
+    { key: "defaultVender", label: "Default vender", sortable: false },
+    { key: "defaultCode", label: "Default code", sortable: false },
+    { key: "sellPrice", label: "Sell Price", sortable: false },
+    { key: "defaultMarkup", label: "Default markup", sortable: false },
+    { key: "sales", label: "Sales", sortable: false },
+  ]
 
-  const handleItemClick = (itemId: string, hasSubItems: boolean) => {
-    if (hasSubItems) {
-      toggleCategory(itemId)
-    } else {
-      setSelectedItem(itemId)
+  useEffect(() => {
+    handleGetData()
+  }, [])
+
+  // ---- Fetch Materials ----
+  const handleGetData = async () => {
+    try {
+      const response: MaterialResponse = await commonService.get("material", "company")
+      if (response.status === 200) {
+        console.log(response.data)
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          ...m,
+          type: m.material_type,
+        }))
+
+        setCompanyMaterials(materials)
+
+        const updatedCategories = staticMaterialThings.map((category) => {
+          const matchingItems = materials.filter(
+            (m) => m.material_type === category.name
+          )
+          return {
+            ...category,
+            subItems: matchingItems.map((m) => ({
+              id: m.id,
+              name: m.name,
+            })),
+          }
+        })
+
+        setMaterialCategories(updatedCategories)
+      }
+    } catch (error) {
+      console.error("Error fetching materials:", error)
     }
   }
 
-  const renderMenuItem = (item: MaterialItem, level = 0): JSX.Element => {
-    const isExpanded = expandedCategories.includes(item.id)
+
+  let filtered = companyMaterials
+  if (expandedCategory) {
+    filtered = filtered.filter((m) => m.material_type === materialCategories.find(c => c.id === expandedCategory)?.name)
+    if (selectedSubItem) {
+      filtered = filtered.filter((m) => m.id === selectedSubItem)
+    }
+  }
+
+  const filteredData = filtered.filter((row) =>
+    Object.values(row).some((value) =>
+      value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  )
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortColumn) return 0
+    const aValue = a[sortColumn]
+    const bValue = b[sortColumn]
+    // if (sortDirection === "asc") return aValue > bValue ? 1 : -1
+    return aValue < bValue ? 1 : -1
+  })
+
+  // ---- Accordion Toggle ----
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategory((prev) => (prev === categoryId ? "" : categoryId))
+    setSelectedSubItem(null)
+  }
+
+  const handleRowClick = (row: TableRow) => {
+    setSelectedRowDetails(row)
+    setActivePopup(true)
+  }
+
+  const handleCreateItemOfMaterial = () => {
+    setAddMaterialPopup(true)
+  }
+
+  // ---- Render Menu ----
+  const renderMenuItem = (item: MaterialItem, parentType?: string) => {
+    const isExpanded = expandedCategory === item.id
     const hasSubItems = item.subItems && item.subItems.length > 0
-    const isSelected = selectedItem === item.id && !hasSubItems
+    const isSubItem = !!parentType
 
     return (
       <div key={item.id} className={styles.categoryContainer}>
         <div
-          className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""} ${isSelected ? styles.selected : ""}`}
-          style={{ paddingLeft: `${1 + level * 1.5}rem` }}
-          onClick={() => handleItemClick(item.id, hasSubItems || false)}
+          className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""}`}
+          onClick={() => {
+            if (!isSubItem) {
+              toggleCategory(item.id)
+            } else {
+              setSelectedSubItem(item.id)
+            }
+          }}
         >
           <div className={styles.categoryContent}>
-            <span className={styles.categoryIcon}>{item.icon}</span>
+            {!isSubItem && item.icon && (
+              <span className={styles.categoryIcon}>
+                <img src={item.icon} alt="" />
+              </span>
+            )}
             <span className={styles.categoryName}>{item.name}</span>
           </div>
-          {hasSubItems && <span className={`${styles.dropdownArrow} ${isExpanded ? styles.rotated : ""}`}>▼</span>}
+          {!isSubItem && hasSubItems && (
+            <span className={`${styles.dropdownArrow} ${isExpanded ? styles.rotated : ""}`}>V</span>
+          )}
         </div>
 
-        {hasSubItems && isExpanded && (
+        {hasSubItems && isExpanded && !isSubItem && (
           <div className={styles.subItemsContainer}>
-            {item.subItems!.map((subItem) => renderMenuItem(subItem, level + 1))}
+            {item.subItems!.map((subItem) => renderMenuItem(subItem, item.name))}
           </div>
         )}
       </div>
     )
   }
 
-  const getSelectedItemName = () => {
-    const findItemById = (items: MaterialItem[], id: string): MaterialItem | null => {
-      for (const item of items) {
-        if (item.id === id) return item
-        if (item.subItems) {
-          const found = findItemById(item.subItems, id)
-          if (found) return found
-        }
-      }
-      return null
-    }
-
-    const selectedItemData = findItemById(MaterialThings, selectedItem)
-    return selectedItemData?.name || selectedItem
-  }
 
   return (
     <div className={styles.container}>
@@ -342,34 +196,124 @@ const Material = () => {
         <Header isBorderRadius={true} dashboardName="Material" />
 
         <div className={styles.maincontainer}>
+          {/* Left Sidebar */}
           <div className={styles.materialleftside}>
-            <div className={styles.menuContainer}>{MaterialThings.map((category) => renderMenuItem(category))}</div>
+            <div className={styles.menuContainer}>
+              {materialCategories.map((category) => renderMenuItem(category))}
+            </div>
           </div>
 
+          {/* Right Content */}
           <div className={styles.materialrightside}>
-            <div className={styles.contentArea}>
-              {selectedItem && (
-                <div className={styles.selectedContent}>
-                  <h2>Selected: {getSelectedItemName()}</h2>
-                  <p>Content for {getSelectedItemName()} will be displayed here.</p>
-                  <div className={styles.itemDetails}>
-                    <p>
-                      <strong>Item ID:</strong> {selectedItem}
-                    </p>
-                    <p>
-                      <strong>Category:</strong> Material Component
-                    </p>
-                    <p>
-                      <strong>Status:</strong> Available
-                    </p>
-                  </div>
+            {/* Toolbar */}
+            <div className={styles.topToolbar}>
+              <div className={styles.toolbarLeft}>
+                {/* <select
+//                   className={styles.dropdown}
+//                   value={selectedDropdown}
+//                   onChange={(e) => setSelectedDropdown(e.target.value)}
+//                 >
+//                   {dropdownOptions.map((option) => (
+//                     <option key={option} value={option}>
+//                       {option}
+//                     </option>
+//                   ))}
+//                 </select> */}
+              </div>
+
+              <div className={styles.toolbarRight}>
+                <button className={styles.filterButton}>
+                  <img src={filter.src} alt="" />
+                </button>
+                <div className={styles.searchContainer}>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className={styles.searchInput}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                  </svg>
                 </div>
-              )}
+                <button className={styles.addNewButton} onClick={handleCreateItemOfMaterial}>
+                  <span className={styles.plusIcon}>+</span>
+                  Add New
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className={styles.tableContainer}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    {tableColumns.map((column) => (
+                      <th
+                        key={column.key}
+                        className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ""}`}
+                        onClick={() => column.sortable && setSortColumn(column.key)}
+                      >
+                        {column.label}
+                        {/* {column.sortable && (
+                          <span className={styles.sortArrow}>
+                            {sortColumn === column.key ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
+                          </span>
+                        )} */}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((row) => (
+                    <tr key={row.id} className={styles.tableRow} onClick={() => handleRowClick(row)}>
+                      {tableColumns.map((column) => (
+                        <td key={column.key} className={styles.tableCell}>
+                          {row[column.key] ?? "N/A"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal */}
+      {
+        activePopup && selectedRowDetails && (
+          <div className={styles.modalOverlay} onClick={() => setActivePopup(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2>Item Details</h2>
+                <button className={styles.closeButton} onClick={() => setActivePopup(false)}>×</button>
+              </div>
+              <div className={styles.modalBody}>
+                {Object.entries(selectedRowDetails).map(([key, value]) => (
+                  <div key={key} className={styles.detailRow}>
+                    <span className={styles.detailLabel}>
+                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1")}:
+                    </span>
+                    <span className={styles.detailValue}>{value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.editButton}>Edit</button>
+                <button className={styles.deleteButton}>Delete</button>
+                <button className={styles.cancelButton} onClick={() => setActivePopup(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {addMaterialPopup && <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} />}
+    </div >
   )
 }
 

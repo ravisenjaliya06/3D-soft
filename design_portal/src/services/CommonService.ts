@@ -2,7 +2,7 @@ import { REDIRECT, STATUS_CODES } from '@/services/CommonStatus';
 import http from '@/services/http-common';
 import Cookies from 'js-cookie';
 
-export type AppName = 'user' | 'design' | 'mes_portal';
+export type AppName = 'user' | 'design' | 'mes_portal' | 'material';
 export type RemainingPath =
   | ''
   | 'register'
@@ -24,7 +24,10 @@ export type RemainingPath =
   | `object/?is_custom=False`
   | `${string}/nesting`
   | `${string}/catalog/item/${string}`
-  | 'work_order';
+  | 'work_order'
+  | "material"
+  | 'company';
+
 type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom';
 
 type Error = {
