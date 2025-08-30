@@ -325,7 +325,9 @@ class Material(models.Model):
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, null=True, blank=True
     )
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, null=True, blank=True
+    )
     description = models.TextField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
 
