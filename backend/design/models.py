@@ -85,21 +85,6 @@ class Texture(models.Model):
         verbose_name_plural = "textures"
 
 
-# class Position(models.Model):
-#     """
-#     Position Model
-
-#     Args:
-#         id (uuid): The unique id of the position
-#         name (str): The name of the position
-#     """
-
-#     id = models.UUIDField(
-#         default=uuid.uuid4, editable=False, primary_key=True, unique=True
-#     )
-#     name = models.CharField(max_length=100)
-
-
 class Material(models.Model):
     """
     Material Model

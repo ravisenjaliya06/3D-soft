@@ -231,8 +231,6 @@ CORS_ALLOW_HEADERS = [
     "ngrok-skip-browser-warning",
 ]
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 
