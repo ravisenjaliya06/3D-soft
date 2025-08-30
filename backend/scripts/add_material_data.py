@@ -4,6 +4,7 @@ from os.path import abspath, dirname
 
 # Django imports
 import django
+from django.db.models import QuerySet
 
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)
@@ -11,6 +12,7 @@ django.setup()
 
 # App imports
 from material.models import Company, FinishesLibrary, Material, Properties
+from umaboy.models import Organization
 
 FINISH = [
     {
@@ -1107,6 +1109,10 @@ MATERIAL = [
 ]
 
 
+def get_registred_organization() -> QuerySet[Organization]:
+    return Organization.objects.all()
+
+
 def create_finish() -> None:
     """
     Creates finish records.
@@ -1117,12 +1123,23 @@ def create_finish() -> None:
         finish, created = FinishesLibrary.objects.update_or_create(
             type=finish_data["type"],
             name=finish_data["name"],
+            organization=finish_data["organization"],
             defaults={
                 "description": finish_data["description"],
                 "color": finish_data["color"],
-                "organization": finish_data["organization"],
             },
         )
+
+        if created:
+            organization = get_registred_organization()
+            for org in organization:
+                FinishesLibrary.objects.create(
+                    type=finish_data["type"],
+                    name=finish_data["name"],
+                    description=finish_data["description"],
+                    color=finish_data["color"],
+                    organization=org,
+                )
         finish_objects[finish_data["name"]] = finish
     return finish_objects
 
@@ -1135,14 +1152,27 @@ def create_finish_type() -> None:
     finish_type_objects = {}
     for finish_type_data in FINISH_TYPE:
         defaults = {
-            k: v for k, v in finish_type_data.items() if k not in ["type", "name"]
+            k: v
+            for k, v in finish_type_data.items()
+            if k not in ["type", "name", "organization"]
         }
 
         finish_type, created = FinishesLibrary.objects.update_or_create(
             type=finish_type_data["type"],
             name=finish_type_data["name"],
+            organization=finish_type_data["organization"],
             defaults=defaults,
         )
+
+        if created:
+            organization = get_registred_organization()
+            for org in organization:
+                FinishesLibrary.objects.create(
+                    type=finish_type_data["type"],
+                    name=finish_type_data["name"],
+                    organization=org,
+                    **defaults,
+                )
         finish_type_objects[finish_type_data["name"]] = finish_type
 
     return finish_type_objects
@@ -1155,40 +1185,83 @@ def create_textures() -> None:
     """
     texture_objects = {}
     for texture_data in TEXTURE:
-        defaults = {k: v for k, v in texture_data.items() if k not in ["type", "name"]}
+        defaults = {
+            k: v
+            for k, v in texture_data.items()
+            if k not in ["type", "name", "organization"]
+        }
 
         texture, created = FinishesLibrary.objects.update_or_create(
             type=texture_data["type"],
             name=texture_data["name"],
+            organization=texture_data["organization"],
             defaults=defaults,
         )
+        if created:
+            organization = get_registred_organization()
+            for org in organization:
+                FinishesLibrary.objects.create(
+                    type=texture_data["type"],
+                    name=texture_data["name"],
+                    organization=org,
+                    **defaults,
+                )
         texture_objects[texture_data["name"]] = texture
     return texture_objects
 
 
-def create_company() -> None:
+def create_company() -> dict[tuple[str, str, str | None], Company]:
     """
-    Creates company records.
-    Returns a dictionary mapping company names to company objects.
+    Creates company records for all registered organizations **and** a global company with organization=None.
+    Returns a dictionary mapping (name, material_type, org_name_or_None) -> company object
     """
     company_objects = {}
+    organizations = get_registred_organization()
+
     for company_data in COMPANY:
         defaults = {
-            k: v for k, v in company_data.items() if k not in ["name", "material_type"]
+            k: v
+            for k, v in company_data.items()
+            if k not in ["name", "material_type", "organization"]
         }
 
-        company, created = Company.objects.update_or_create(
+        global_company, created = Company.objects.update_or_create(
             name=company_data["name"],
             material_type=company_data["material_type"],
+            organization=None,
             defaults=defaults,
         )
-        company_objects[(company.name, company.material_type)] = company
+        company_objects[
+            (
+                company_data["name"],
+                company_data["material_type"],
+                company_data.get("organization", None),
+            )
+        ] = global_company
+
+        for org in organizations:
+            org_company, created = Company.objects.update_or_create(
+                name=company_data["name"],
+                material_type=company_data["material_type"],
+                organization=org,
+                defaults=defaults,
+            )
+            company_objects[
+                (company_data["name"], company_data["material_type"], org.name)
+            ] = org_company
+
     return company_objects
 
 
 def create_materials(company_objects: dict[tuple[str, str], Company]) -> None:
     for material_data in MATERIAL:
-        company = company_objects.get((material_data["company"], material_data["type"]))
+        company = company_objects.get(
+            (
+                material_data["company"],
+                material_data["type"],
+                material_data.get("organization", None),
+            )
+        )
         properties = material_data.get("properties", {})
 
         if not company:
@@ -1196,19 +1269,40 @@ def create_materials(company_objects: dict[tuple[str, str], Company]) -> None:
                 f"No company found for {material_data['company']} in {material_data['type']}"
             )
 
-        material, _ = Material.objects.update_or_create(
-            name=material_data["name"],
-            type=material_data["type"],
-            company=company,
-            defaults={
-                "description": material_data.get("description", ""),
-            },
+        materials = Material.objects.filter(
+            name=material_data["name"], type=material_data["type"], company=company
         )
+        if materials.exists():
+            material = materials.first()
+            material.description = material_data.get("description", "")
+            material.save()
+        else:
+            new_material = Material.objects.create(
+                name=material_data["name"],
+                type=material_data["type"],
+                company=company,
+                description=material_data.get("description", ""),
+            )
+            Properties.objects.update_or_create(
+                material=new_material,
+                defaults=properties,
+            )
+            organization = get_registred_organization()
+            for org in organization:
+                org_company = company_objects.get(
+                    (material_data["company"], material_data["type"], org.name)
+                )
+                organization_material = Material.objects.create(
+                    name=material_data["name"],
+                    type=material_data["type"],
+                    company=org_company,
+                    description=material_data.get("description", ""),
+                )
 
-        Properties.objects.update_or_create(
-            material=material,
-            defaults=properties,
-        )
+                Properties.objects.create(
+                    material=organization_material,
+                    **properties,
+                )
 
 
 if __name__ == "__main__":
