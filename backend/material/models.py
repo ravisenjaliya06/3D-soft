@@ -25,7 +25,7 @@ class MaterialTypes(models.TextChoices):
     LEG_LEVELER = "Leg Leveler"
     MISCELLANEOUS = "Miscellaneous"
     MOLDING = "Molding"
-    PANEL_STOCK = "Panel Stoke"
+    PANEL_STOCK = "Panel Stock"
     PULL = "Pull"
     ROD = "Rod"
     SLIDING_DOOR_RAIL = "Sliding Door Rail"
