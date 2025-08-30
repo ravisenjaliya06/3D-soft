@@ -25,7 +25,7 @@ class MaterialTypes(models.TextChoices):
     LEG_LEVELER = "Leg Leveler"
     MISCELLANEOUS = "Miscellaneous"
     MOLDING = "Molding"
-    PANEL_STOCK = "Panel Stoke"
+    PANEL_STOCK = "Panel Stock"
     PULL = "Pull"
     ROD = "Rod"
     SLIDING_DOOR_RAIL = "Sliding Door Rail"
@@ -262,7 +262,9 @@ class LightChoices(models.TextChoices):
 
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
     type = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )
