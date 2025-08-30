@@ -322,7 +322,10 @@ class Material(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=100, choices=MaterialTypes.choices)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
 
