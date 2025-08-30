@@ -31,14 +31,20 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self: "MaterialViewSet") -> QuerySet[Material]:
         company_id = self.kwargs.get("pk")
-        company_filter = Company.objects.filter(
-            id=company_id, organization=self.request.user.selected_organization
-        ).first()
+        material_type = self.request.query_params.get("type")
 
-        if not company_filter:
-            raise NotFound(detail="Company not found.")
+        if company_id:
+            if not Company.objects.filter(
+                id=company_id, organization=self.request.user.selected_organization
+            ).exists():
+                raise NotFound(detail="Company not found.")
+            return Material.objects.filter(company_id=company_id, is_deleted=False)
 
-        return Material.objects.filter(company_id=company_id, is_deleted=False)
+        queryset = Material.objects.filter(company__isnull=True, organization=self.request.user.selected_organization, is_deleted=False)
+        if material_type:
+            queryset = queryset.filter(type=material_type, company__isnull=True, organization=self.request.user.selected_organization, is_deleted=False)
+
+        return queryset
 
     def perform_create(self: "MaterialViewSet", serializer: MaterialSerializer) -> None:
         company_id = self.kwargs.get("pk")
