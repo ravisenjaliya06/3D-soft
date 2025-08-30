@@ -11,10 +11,10 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
+from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
-from material.models import Material, Properties, Company
 
 
 def send_email(email_data: EmailData) -> bool:
@@ -139,7 +139,7 @@ def default_material_data(organization: Organization) -> bool:
     """
 
     default_companies = Company.objects.filter(organization=None)
-    company_map = {} 
+    company_map = {}
     for company in default_companies:
         company_data = {
             field.name: getattr(company, field.name)
