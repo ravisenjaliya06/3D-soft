@@ -68,15 +68,15 @@ class FinishesLibrarySerializer(serializers.ModelSerializer):
 
 
 class MaterialPropertiesSerializer(serializers.ModelSerializer):
-    front_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    back_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False)
+    front_mount_holes = MountHolesSerializer(many=True, read_only=True)
+    back_mount_holes = MountHolesSerializer(many=True, read_only=True)
+    bottom_mount_holes = MountHolesSerializer(many=True, read_only=True)
 
-    mount_plate_hole_one = MountPlateHolesSerializer(many=True, read_only=False)
-    mount_plate_hole_two = MountPlateHolesSerializer(many=True, read_only=False)
-    mount_plate_hole_third = MountPlateHolesSerializer(many=True, read_only=False)
-    mount_plate_hole_forth = MountPlateHolesSerializer(many=True, read_only=False)
-    mount_plate_hole_fifth = MountPlateHolesSerializer(many=True, read_only=False)
+    mount_plate_hole_one = MountPlateHolesSerializer(many=True, read_only=True)
+    mount_plate_hole_two = MountPlateHolesSerializer(many=True, read_only=True)
+    mount_plate_hole_third = MountPlateHolesSerializer(many=True, read_only=True)
+    mount_plate_hole_forth = MountPlateHolesSerializer(many=True, read_only=True)
+    mount_plate_hole_fifth = MountPlateHolesSerializer(many=True, read_only=True)
 
     class Meta:
         model = Properties

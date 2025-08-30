@@ -64,10 +64,16 @@ const Material = () => {
   const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>(
     [],
   );
+  const [companyID, setCompanyID] = useState<string>('');
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     categoryId: string;
+  } | null>(null);
+  const [contextMaterialMenu, setContextMaterialMenu] = useState<{
+    x: number;
+    y: number;
+    companyId: string;
   } | null>(null);
   const [createCompanyPopup, setCreateCompanyPopup] = useState<boolean>(false);
   const [companyName, setCompanyName] = useState<string>('');
@@ -85,7 +91,10 @@ const Material = () => {
   };
 
   useEffect(() => {
-    const handleClick = () => setContextMenu(null);
+    const handleClick = () => {
+      setContextMenu(null);
+      setContextMaterialMenu(null);
+    };
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, []);
@@ -330,9 +339,13 @@ const Material = () => {
       <div
         key={item.id}
         className={styles.categoryContainer}
-        onContextMenu={(e) =>
-          !parentType && handleContextMenu(e, item.id, item.name)
-        }
+        onContextMenu={(e) => {
+          if (!parentType) {
+            // ✅ only fire on main categories
+            e.preventDefault();
+            handleContextMenu(e, item.id, item.name);
+          }
+        }}
       >
         <div
           className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ''}`}
@@ -365,9 +378,22 @@ const Material = () => {
 
         {hasSubItems && isExpanded && !isSubItem && (
           <div className={styles.subItemsContainer}>
-            {item.subItems!.map((subItem) =>
-              renderMenuItem(subItem, item.name),
-            )}
+            {item.subItems!.map((subItem) => (
+              <div
+                key={subItem.id}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation(); // ✅ stop parent context menu
+                  setContextMaterialMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    companyId: subItem.id,
+                  });
+                }}
+              >
+                {renderMenuItem(subItem, item.name)}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -484,6 +510,28 @@ const Material = () => {
         </div>
       )}
 
+      {contextMaterialMenu && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            top: contextMaterialMenu.y,
+            left: contextMaterialMenu.x,
+            position: 'absolute',
+          }}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              setAddMaterialPopup(true);
+              setContextMaterialMenu(null);
+              setCompanyID(contextMaterialMenu.companyId);
+            }}
+          >
+            ➕ Add Material
+          </button>
+        </div>
+      )}
+
       {createCompanyPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
@@ -543,7 +591,11 @@ const Material = () => {
       )}
 
       {addMaterialPopup && (
-        <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} />
+        <AddMaterialPopup
+          setCreateWorkOrderPopup={setAddMaterialPopup}
+          companyState={companyID}
+          handleGetCompanyMaterials={handleGetCompanyMaterials}
+        />
       )}
     </div>
   );
