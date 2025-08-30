@@ -9,8 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
-from .models import Company
-from .serializers import CompanySerializer
+from .models import Company, Material
+from .serializers import CompanySerializer, MaterialSerializer
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -22,3 +22,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return Company.objects.filter(
             organization=self.request.user.selected_organization
         )
+
+
+class MaterialViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MaterialSerializer
+
+    def get_queryset(self: "MaterialViewSet", *args, **kwargs) -> QuerySet[Material]:
+        company_id = self.kwargs.get("pk")
+        return Material.objects.filter(company_id=company_id, is_deleted=False)
+
+    def perform_create(self: "MaterialViewSet", serializer: MaterialSerializer) -> None:
+        company_id = self.kwargs.get("pk")
+        serializer.save(company_id=company_id)
