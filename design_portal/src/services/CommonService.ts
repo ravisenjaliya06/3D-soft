@@ -25,10 +25,11 @@ export type RemainingPath =
   | `${string}/nesting`
   | `${string}/catalog/item/${string}`
   | 'work_order'
-  | "material"
-  | 'company';
+  | 'material'
+  | 'company'
+  | `company/${string}/material`;
 
-type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom';
+type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type`;
 
 type Error = {
   message: string;

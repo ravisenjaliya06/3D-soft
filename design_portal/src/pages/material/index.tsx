@@ -1,6 +1,6 @@
 import logo from '@/assets/titleLogo.svg';
-import Material from '@/components/material';
 import { useAuthRedirect } from '@/components/helper/helper';
+import Material from '@/components/material';
 import { PAGE_TITLE } from '@/services/CommonStatus';
 import { useEffect } from 'react';
 

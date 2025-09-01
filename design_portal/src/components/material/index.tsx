@@ -1,170 +1,363 @@
-import { useState, useEffect } from "react"
-import styles from "./material.module.css"
-import Sidebar from "@/components/sidebar/sidebar"
-import Header from "@/components/header/header"
-import banding from "@/assets/material/banding.svg"
-import filter from "@/assets/material/filter.svg"
-import AddMaterialPopup from "./addItem"
-import commonService from "@/services/CommonService"
+import createicon from '@/assets/createicon.svg';
+import close from '@/assets/design/close.svg';
+import banding from '@/assets/material/banding.svg';
+import brandstok from '@/assets/material/brandstok.svg';
+import caster from '@/assets/material/caster.svg';
+import connator from '@/assets/material/connector.svg';
+import down_arrow from '@/assets/material/down arrow.svg';
+import drawerguide from '@/assets/material/drawerguid.svg';
+import filter from '@/assets/material/filter.svg';
+import hinge from '@/assets/material/hing.svg';
+import mis from '@/assets/material/mis.svg';
+import molding from '@/assets/material/molding.svg';
+import up_arrow from '@/assets/material/up arrow.svg';
+import Header from '@/components/header/header';
+import Sidebar from '@/components/sidebar/sidebar';
+import commonService from '@/services/CommonService';
+import { SetStateAction, useEffect, useState } from 'react';
+import InputField from '../inputfields/InputField';
+import AddMaterialPopup from './addItem';
+import styles from './material.module.css';
 
 interface MaterialItem {
-  id: string
-  name: string
-  icon?: string
-  subItems?: MaterialItem[]
+  id: string;
+  name: string;
+  icon?: string;
+  subItems?: MaterialItem[];
 }
 
 interface TableColumn {
-  key: string
-  label: string
-  sortable: boolean
+  key: string;
+  label: string;
+  sortable: boolean;
 }
+
 type MaterialResponse = {
   status: number;
   data: [];
 };
+
 interface TableRow {
-  id: string
-  name: string
-  description?: string
-  material_type?: string
+  id: string;
+  name: string;
+  description?: string;
+  material_type?: string;
+  unit_of_issue?: string;
+  default_cost?: number;
+  default_markup?: number;
+  sell_price?: number;
+  sales_tax?: boolean;
+  default_tax_rate?: number;
+  waste?: number;
+  eslimate?: boolean;
+  model?: boolean;
 }
 
 const Material = () => {
-  const [expandedCategory, setExpandedCategory] = useState<string>("banding")
-  const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState<string>("")
-  const [sortColumn, setSortColumn] = useState<string>("")
-  const [activePopup, setActivePopup] = useState<boolean>(false)
-  const [selectedRowDetails, setSelectedRowDetails] = useState<TableRow | null>(null)
-  const [addMaterialPopup, setAddMaterialPopup] = useState<boolean>(false)
-  const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([])
-  const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>([])
+  const [expandedCategory, setExpandedCategory] = useState<string>('banding');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortColumn, setSortColumn] = useState<string>('');
+  const [addMaterialPopup, setAddMaterialPopup] = useState<boolean>(false);
+  const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([]);
+  const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>(
+    [],
+  );
+  const [companyID, setCompanyID] = useState<string>('');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    categoryId: string;
+  } | null>(null);
+  const [contextMaterialMenu, setContextMaterialMenu] = useState<{
+    x: number;
+    y: number;
+    companyId: string;
+  } | null>(null);
+  const [createCompanyPopup, setCreateCompanyPopup] = useState<boolean>(false);
+  const [companyName, setCompanyName] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
-  const staticMaterialThings: MaterialItem[] = [
-    { id: "banding", name: "Banding", icon: banding.src },
-    { id: "board-stock", name: "Board Stock", icon: banding.src },
-    { id: "caster", name: "Caster", icon: banding.src },
-    { id: "connector", name: "Connector", icon: banding.src },
-    { id: "drawer-guide", name: "Drawer Guide", icon: banding.src },
-    { id: "hinge", name: "Hinge", icon: banding.src },
-    { id: "hinge-plate", name: "Hinge Plate", icon: banding.src },
-    { id: "laminate", name: "Laminate", icon: banding.src },
-    { id: "leg", name: "Leg", icon: banding.src },
-    { id: "leg-leveler", name: "Leg Leveler", icon: banding.src },
-    { id: "miscellaneous", name: "Miscellaneous", icon: banding.src },
-    { id: "molding", name: "Molding", icon: banding.src },
-    { id: "panel-stock", name: "Panel Stock", icon: banding.src },
-    { id: "rod", name: "Rod", icon: banding.src },
-    { id: "sliding-door-rail", name: "Sliding Door Rail", icon: banding.src },
-    { id: "wire-basket", name: "Wire Basket", icon: banding.src },
-  ]
-
-  const tableColumns: TableColumn[] = [
-    { key: "name", label: "Name", sortable: true },
-    { key: "description", label: "Description", sortable: false },
-    { key: "type", label: "Type", sortable: true },
-    { key: "unitOfIssue", label: "Unit of issue", sortable: false },
-    { key: "defaultVender", label: "Default vender", sortable: false },
-    { key: "defaultCode", label: "Default code", sortable: false },
-    { key: "sellPrice", label: "Sell Price", sortable: false },
-    { key: "defaultMarkup", label: "Default markup", sortable: false },
-    { key: "sales", label: "Sales", sortable: false },
-  ]
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    categoryId: string,
+    name: string,
+  ) => {
+    e.preventDefault();
+    setExpandedCategory(categoryId);
+    setSelectedType(name);
+    setContextMenu({ x: e.clientX, y: e.clientY, categoryId });
+  };
 
   useEffect(() => {
-    handleGetData()
-  }, [])
+    const handleClick = () => {
+      setContextMenu(null);
+      setContextMaterialMenu(null);
+    };
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
 
-  // ---- Fetch Materials ----
+  const staticMaterialThings: MaterialItem[] = [
+    { id: 'banding', name: 'Banding', icon: banding.src },
+    { id: 'board-stock', name: 'Board Stock', icon: brandstok.src },
+    { id: 'caster', name: 'Caster', icon: caster.src },
+    { id: 'connector', name: 'Connector', icon: connator.src },
+    { id: 'drawer-guide', name: 'Drawer Guide', icon: drawerguide.src },
+    { id: 'hinge', name: 'Hinge', icon: hinge.src },
+    { id: 'hinge-plate', name: 'Hinge Plate', icon: hinge.src },
+    { id: 'laminate', name: 'Laminate', icon: brandstok.src },
+    { id: 'leg', name: 'Leg', icon: banding.src },
+    { id: 'leg-leveler', name: 'Leg Leveler', icon: banding.src },
+    { id: 'miscellaneous', name: 'Miscellaneous', icon: mis.src },
+    { id: 'molding', name: 'Molding', icon: molding.src },
+    { id: 'panel-stock', name: 'Panel Stock', icon: banding.src },
+    { id: 'rod', name: 'Rod', icon: banding.src },
+    { id: 'sliding-door-rail', name: 'Sliding Door Rail', icon: banding.src },
+    { id: 'wire-basket', name: 'Wire Basket', icon: banding.src },
+  ];
+
+  const tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', sortable: true },
+    { key: 'description', label: 'Description', sortable: false },
+    { key: 'material_type', label: 'Type', sortable: true },
+    { key: 'unit_of_issue', label: 'Unit of issue', sortable: false },
+    { key: 'defaultCode', label: 'Default code', sortable: false },
+    { key: 'sell_price', label: 'Sell Price', sortable: false },
+    { key: 'default_markup', label: 'Default markup', sortable: false },
+    { key: 'sales_tax', label: 'Sales Tax', sortable: false },
+    { key: 'default_tax_rate', label: 'Default Tax Rate', sortable: false },
+    { key: 'waste', label: 'Waste', sortable: false },
+    { key: 'eslimate', label: 'Estimate', sortable: false },
+    { key: 'model', label: 'Load Model', sortable: false },
+  ];
+
+  useEffect(() => {
+    handleGetData();
+    handleGetMaterialByType('Banding');
+  }, []);
+
   const handleGetData = async () => {
     try {
-      const response: MaterialResponse = await commonService.get("material", "company")
+      const response: MaterialResponse = await commonService.get(
+        'material',
+        'company',
+      );
       if (response.status === 200) {
-        console.log(response.data)
-        const materials: TableRow[] = response.data.map((m: TableRow) => ({
-          ...m,
-          type: m.material_type,
-        }))
+        console.log('API Response:', response.data);
 
-        setCompanyMaterials(materials)
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.material_type || m.type,
+          unit_of_issue: m.unit_of_issue,
+          defaultVender: m.default_vender,
+          defaultCode: m.default_code,
+          sell_price: m.sell_price,
+          default_markup: m.default_markup,
+          sales_tax: m.sales_tax,
+          default_tax_rate: m.default_tax_rate,
+          waste: m.waste,
+          eslimate: m.eslimate,
+          model: m.model,
+          ...m,
+        }));
+
+        setCompanyMaterials(materials);
 
         const updatedCategories = staticMaterialThings.map((category) => {
           const matchingItems = materials.filter(
-            (m) => m.material_type === category.name
-          )
+            (m) => m.material_type === category.name,
+          );
           return {
             ...category,
             subItems: matchingItems.map((m) => ({
               id: m.id,
               name: m.name,
             })),
-          }
-        })
+          };
+        });
 
-        setMaterialCategories(updatedCategories)
+        setMaterialCategories(updatedCategories);
       }
     } catch (error) {
-      console.error("Error fetching materials:", error)
+      console.error('Error fetching materials:', error);
     }
-  }
+  };
 
-
-  let filtered = companyMaterials
-  if (expandedCategory) {
-    filtered = filtered.filter((m) => m.material_type === materialCategories.find(c => c.id === expandedCategory)?.name)
-    if (selectedSubItem) {
-      filtered = filtered.filter((m) => m.id === selectedSubItem)
+  const handleGetCompanyMaterials = async (companyId: string) => {
+    try {
+      const response: MaterialResponse = await commonService.get(
+        `material`,
+        `company/${companyId}/material`,
+      );
+      if (response.status === 200) {
+        console.log(response.data, 'company materials');
+        const companyData: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.properties[0].material_type || m.type,
+          unit_of_issue: m.properties[0].unit_of_issue,
+          defaultCode: m.properties[0].default_cost,
+          sell_price: m.properties[0].sell_price,
+          default_markup: m.properties[0].default_markup,
+          sales_tax: m.properties[0].sales_tax,
+          default_tax_rate: m.properties[0].default_tax_rate,
+          waste: m.properties[0].waste,
+          eslimate: m.properties[0].eslimate,
+          model: m.properties[0].model,
+          ...m,
+        }));
+        setCompanyMaterials(companyData);
+      }
+    } catch (error) {
+      console.error('Error fetching company materials:', error);
     }
+  };
+
+  // Helper function to get cell value based on column key
+  const getCellValue = (row: TableRow, columnKey: string): string => {
+    const value = row[columnKey as keyof TableRow];
+
+    if (value === undefined || value === null) {
+      return 'N/A';
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+
+    return value.toString();
+  };
+
+  let filtered = companyMaterials;
+  if (expandedCategory && !selectedSubItem) {
+    const categoryName = materialCategories.find(
+      (c) => c.id === expandedCategory,
+    )?.name;
+    filtered = filtered.filter((m) => m.material_type === categoryName);
   }
 
   const filteredData = filtered.filter((row) =>
     Object.values(row).some((value) =>
-      value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  )
+      value?.toString().toLowerCase().includes(searchQuery.toLowerCase()),
+    ),
+  );
+
   const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortColumn) return 0
-    const sortColumnKey = sortColumn as keyof TableRow;
-    const aValue = a[sortColumnKey]
-    const bValue = b[sortColumnKey]
+    if (!sortColumn) return 0;
+    const aValue = a[sortColumn as keyof TableRow];
+    const bValue = b[sortColumn as keyof TableRow];
 
     if (aValue === undefined || bValue === undefined) {
       return 0;
     }
 
-    return aValue < bValue ? 1 : -1
-  })
-  // ---- Accordion Toggle ----
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategory((prev) => (prev === categoryId ? "" : categoryId))
-    setSelectedSubItem(null)
-  }
+    return aValue < bValue ? 1 : -1;
+  });
 
-  const handleRowClick = (row: TableRow) => {
-    setSelectedRowDetails(row)
-    setActivePopup(true)
-  }
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategory((prev) => (prev === categoryId ? '' : categoryId));
+    setSelectedSubItem(null);
+  };
 
   const handleCreateItemOfMaterial = () => {
-    setAddMaterialPopup(true)
-  }
+    setAddMaterialPopup(true);
+  };
+  const handleGetMaterialByType = async (type: string) => {
+    try {
+      const response: MaterialResponse = await commonService.getWithQueryParam(
+        'material',
+        '',
+        'type',
+        `${type}`,
+      );
 
-  // ---- Render Menu ----
+      console.log(response.data, 'material by type');
+      if (response.status === 200) {
+        const materials: TableRow[] = response.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          material_type: m.properties[0].material_type || m.type,
+          unit_of_issue: m.properties[0].unit_of_issue,
+          defaultCode: m.properties[0].default_cost,
+          sell_price: m.properties[0].sell_price,
+          default_markup: m.properties[0].default_markup,
+          sales_tax: m.properties[0].sales_tax,
+          default_tax_rate: m.properties[0].default_tax_rate,
+          waste: m.properties[0].waste,
+          eslimate: m.properties[0].eslimate,
+          model: m.properties[0].model,
+          ...m,
+        }));
+        setCompanyMaterials(materials);
+      }
+    } catch (error) {
+      console.error('Error fetching materials by type:', error);
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    if (!companyName.trim()) {
+      setError('Company name is required');
+      return;
+    }
+
+    try {
+      const payload = {
+        name: companyName,
+        material_type: selectedType || '',
+      };
+
+      const response = await commonService.post('material', 'company', payload);
+
+      if (response.status === 201 || response.status === 200) {
+        setCreateCompanyPopup(false);
+        setCompanyName('');
+        setSelectedType(null);
+        setError(null);
+        handleGetData();
+      } else {
+        setError('Failed to create company. Try again.');
+      }
+    } catch (err) {
+      console.error('Error creating company:', err);
+      setError('Something went wrong.');
+    }
+  };
+
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
-    const isExpanded = expandedCategory === item.id
-    const hasSubItems = item.subItems && item.subItems.length > 0
-    const isSubItem = !!parentType
+    const isExpanded = expandedCategory === item.id;
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const isSubItem = !!parentType;
 
     return (
-      <div key={item.id} className={styles.categoryContainer}>
+      <div
+        key={item.id}
+        className={styles.categoryContainer}
+        onContextMenu={(e) => {
+          if (!parentType) {
+            // ✅ only fire on main categories
+            e.preventDefault();
+            handleContextMenu(e, item.id, item.name);
+          }
+        }}
+      >
         <div
-          className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ""}`}
+          className={`${styles.categoryItem} ${isExpanded ? styles.expanded : ''}`}
           onClick={() => {
             if (!isSubItem) {
-              toggleCategory(item.id)
+              // when clicking static material type
+              toggleCategory(item.id);
+              handleGetMaterialByType(item.name); // << new function
             } else {
-              setSelectedSubItem(item.id)
+              // when clicking company material
+              setSelectedSubItem(item.id);
+              handleGetCompanyMaterials(item.id);
             }
           }}
         >
@@ -177,25 +370,41 @@ const Material = () => {
             <span className={styles.categoryName}>{item.name}</span>
           </div>
           {!isSubItem && hasSubItems && (
-            <span className={`${styles.dropdownArrow} ${isExpanded ? styles.rotated : ""}`}>V</span>
+            <span className={`${styles.dropdownArrow}`}>
+              <img src={isExpanded ? up_arrow.src : down_arrow.src}></img>
+            </span>
           )}
         </div>
 
         {hasSubItems && isExpanded && !isSubItem && (
           <div className={styles.subItemsContainer}>
-            {item.subItems!.map((subItem) => renderMenuItem(subItem, item.name))}
+            {item.subItems!.map((subItem) => (
+              <div
+                key={subItem.id}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation(); // ✅ stop parent context menu
+                  setContextMaterialMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    companyId: subItem.id,
+                  });
+                }}
+              >
+                {renderMenuItem(subItem, item.name)}
+              </div>
+            ))}
           </div>
         )}
       </div>
-    )
-  }
-
+    );
+  };
 
   return (
     <div className={styles.container}>
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Material" />
+        <Header isBorderRadius={true} dashboardName="Material Manager" />
 
         <div className={styles.maincontainer}>
           {/* Left Sidebar */}
@@ -210,17 +419,7 @@ const Material = () => {
             {/* Toolbar */}
             <div className={styles.topToolbar}>
               <div className={styles.toolbarLeft}>
-                {/* <select
-//                   className={styles.dropdown}
-//                   value={selectedDropdown}
-//                   onChange={(e) => setSelectedDropdown(e.target.value)}
-//                 >
-//                   {dropdownOptions.map((option) => (
-//                     <option key={option} value={option}>
-//                       {option}
-//                     </option>
-//                   ))}
-//                 </select> */}
+                {/* Dropdown can be added here if needed */}
               </div>
 
               <div className={styles.toolbarRight}>
@@ -235,12 +434,20 @@ const Material = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                  <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <svg
+                    className={styles.searchIcon}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                   </svg>
                 </div>
-                <button className={styles.addNewButton} onClick={handleCreateItemOfMaterial}>
+                <button
+                  className={styles.addNewButton}
+                  onClick={handleCreateItemOfMaterial}
+                >
                   <span className={styles.plusIcon}>+</span>
                   Add New
                 </button>
@@ -255,25 +462,22 @@ const Material = () => {
                     {tableColumns.map((column) => (
                       <th
                         key={column.key}
-                        className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ""}`}
-                        onClick={() => column.sortable && setSortColumn(column.key)}
+                        className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ''}`}
+                        onClick={() =>
+                          column.sortable && setSortColumn(column.key)
+                        }
                       >
                         {column.label}
-                        {/* {column.sortable && (
-                          <span className={styles.sortArrow}>
-                            {sortColumn === column.key ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
-                          </span>
-                        )} */}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {sortedData.map((row) => (
-                    <tr key={row.id} className={styles.tableRow} onClick={() => handleRowClick(row)}>
+                    <tr key={row.id} className={styles.tableRow}>
                       {tableColumns.map((column) => (
                         <td key={column.key} className={styles.tableCell}>
-                          {row[column.key as keyof TableRow] ?? "N/A"}
+                          {getCellValue(row, column.key)}
                         </td>
                       ))}
                     </tr>
@@ -285,38 +489,116 @@ const Material = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {
-        activePopup && selectedRowDetails && (
-          <div className={styles.modalOverlay} onClick={() => setActivePopup(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h2>Item Details</h2>
-                <button className={styles.closeButton} onClick={() => setActivePopup(false)}>×</button>
-              </div>
-              <div className={styles.modalBody}>
-                {Object.entries(selectedRowDetails).map(([key, value]) => (
-                  <div key={key} className={styles.detailRow}>
-                    <span className={styles.detailLabel}>
-                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1")}:
-                    </span>
-                    <span className={styles.detailValue}>{value}</span>
-                  </div>
-                ))}
-              </div>
-              <div className={styles.modalFooter}>
-                <button className={styles.editButton}>Edit</button>
-                <button className={styles.deleteButton}>Delete</button>
-                <button className={styles.cancelButton} onClick={() => setActivePopup(false)}>Close</button>
-              </div>
+      {contextMenu && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x,
+            position: 'absolute',
+          }}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              setCreateCompanyPopup(true);
+              setContextMenu(null);
+            }}
+          >
+            ➕ Add Company
+          </button>
+        </div>
+      )}
+
+      {contextMaterialMenu && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            top: contextMaterialMenu.y,
+            left: contextMaterialMenu.x,
+            position: 'absolute',
+          }}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              setAddMaterialPopup(true);
+              setContextMaterialMenu(null);
+              setCompanyID(contextMaterialMenu.companyId);
+            }}
+          >
+            ➕ Add Material
+          </button>
+        </div>
+      )}
+
+      {createCompanyPopup && (
+        <div className={styles.createpopupOverlay}>
+          <div className={styles.createpopup}>
+            <img
+              src={createicon.src}
+              className={styles.createicon}
+              alt="createicon"
+            />
+            <img
+              src={close.src}
+              className={styles.createclose}
+              alt="close"
+              onClick={() => setCreateCompanyPopup(false)}
+            />
+            <div className={styles.create_right_side}>
+              <h2>Create Company</h2>
+              <p>Please fill all the details to create company.</p>
+              <form
+                className={styles.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleCreateCompany();
+                }}
+              >
+                <div className={styles.createinputGroup}>
+                  <InputField
+                    mediumField={true}
+                    className={styles.inputField}
+                    borderColor="var(--primary-color-grey-2)"
+                    value={companyName}
+                    onChange={(e: {
+                      target: { value: SetStateAction<string> };
+                    }) => setCompanyName(e.target.value)}
+                    placeholder="Enter Company Name"
+                    label={companyName ? 'Company Name' : ''}
+                    error={error || ''}
+                  />
+                </div>
+              </form>
+            </div>
+            <div className={styles.createButtonGrop}>
+              <button
+                className={styles.cancelcreateButton}
+                onClick={() => setCreateCompanyPopup(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.createcontinueButton}
+                onClick={handleCreateCompany}
+              >
+                Create
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {addMaterialPopup && <AddMaterialPopup setCreateWorkOrderPopup={setAddMaterialPopup} />}
-    </div >
-  )
-}
+      {addMaterialPopup && (
+        <AddMaterialPopup
+          setCreateWorkOrderPopup={setAddMaterialPopup}
+          companyState={companyID}
+          handleGetCompanyMaterials={handleGetCompanyMaterials}
+        />
+      )}
+    </div>
+  );
+};
 
-export default Material
+export default Material;
