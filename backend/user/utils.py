@@ -14,6 +14,7 @@ from django.utils import timezone
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
+from material.models import Material
 
 
 def send_email(email_data: EmailData) -> bool:
@@ -129,11 +130,6 @@ def add_user_to_organization(
         permission_instance.groups.add(group)
     permission_instance.is_invited = True
     permission_instance.save()
-
-
-# App imports
-from material.models import Material
-
 
 def default_material_data(organization: Organization) -> bool:
     default_materials = Material.objects.filter(organization=None, is_deleted=False)
