@@ -131,10 +131,7 @@ def add_user_to_organization(
     permission_instance.is_invited = True
     permission_instance.save()
 
-<<<<<<< HEAD
-=======
 
->>>>>>> cce62b9dd2794bfc89fa35f8730cad8c9071bd65
 def default_material_data(organization: Organization) -> bool:
     """
     Creates default materials, companies, and their properties
