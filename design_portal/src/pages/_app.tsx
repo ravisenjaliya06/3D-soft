@@ -35,6 +35,7 @@ const poppinsSemiBold = localFont({
 export default function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const isDesignPage = router.pathname.startsWith('/design/');
+  const isCatalogPage = router.pathname.startsWith('/catalogmanager');
   const isMaterialPage = router.pathname.startsWith('/material');
 
   return (
@@ -44,7 +45,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
         >
           <Component {...pageProps} />
-          {!isDesignPage && !isMaterialPage && (
+          {!isDesignPage && !isMaterialPage && !isCatalogPage && (
             <div className="fixed-image">
               <img src={brevento_background_logo.src} alt="Background" />
             </div>
