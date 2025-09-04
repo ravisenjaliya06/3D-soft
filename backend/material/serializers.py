@@ -3,15 +3,13 @@ from typing import Dict
 
 # External imports
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 # Local imports
 from .models import (
     Company,
-    FinishesLibrary,
     Material,
-    MaterialFinish,
-    MaterialFinishType,
-    MaterialTexture,
+    MaterialTypes,
     MountHoles,
     MountPlateHoles,
     Properties,
@@ -61,67 +59,336 @@ class MountPlateHolesSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class FinishesLibrarySerializer(serializers.ModelSerializer):
+class BasePropertiesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FinishesLibrary
-        fields = "__all__"
+        model = Properties
+        fields = [
+            "id",
+            "material",
+            "unit_of_issue",
+            "default_cost",
+            "sell_price",
+            "default_markup",
+            "sales_tax",
+            "default_tax_rate",
+            "waste",
+            "eslimate",
+        ]
+        read_only_fields = ["id", "material"]
 
 
-class MaterialPropertiesSerializer(serializers.ModelSerializer):
-    front_mount_holes = MountHolesSerializer(many=True, read_only=True)
-    back_mount_holes = MountHolesSerializer(many=True, read_only=True)
-    bottom_mount_holes = MountHolesSerializer(many=True, read_only=True)
+class BandingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness"]
 
-    mount_plate_hole_one = MountPlateHolesSerializer(many=True, read_only=True)
-    mount_plate_hole_two = MountPlateHolesSerializer(many=True, read_only=True)
-    mount_plate_hole_third = MountPlateHolesSerializer(many=True, read_only=True)
-    mount_plate_hole_forth = MountPlateHolesSerializer(many=True, read_only=True)
-    mount_plate_hole_fifth = MountPlateHolesSerializer(many=True, read_only=True)
+
+class BoardStockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "thickness",
+            "rough_thickness",
+            "cnc_optimize",
+            "cnc_grain_dependent",
+            "cnc_drop_width",
+            "cnc_drop_length",
+            "cnc_feed_rate_percent",
+            "cnc_spindle_speed_percent",
+            "cnc_minimize_face_chip",
+            "cnc_minimize_back_chip",
+            "cnc_climb_cut",
+            "cnc_maximum_depth_per_pass",
+        ]
+
+
+class CasterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["height"]
+
+
+class ConnectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "connector_type",
+            "connector_slot_type",
+        ]
+
+
+class DrawerGuideSerializer(serializers.ModelSerializer):
+    front_mount_holes = MountHolesSerializer(many=True, read_only=False)
+    back_mount_holes = MountHolesSerializer(many=True, read_only=False)
+    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False)
 
     class Meta:
         model = Properties
-        fields = "__all__"
-        read_only_fields = ["material"]
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "side_clearance",
+            "top_clearance",
+            "bottom_clearance",
+            "minimum_below_box",
+            "minimum_above_box",
+            "guide_type",
+            "height",
+            "length",
+            "extension",
+            "screw_center_reference_to_top",
+            "screw_center_to_box_reference",
+            "back_notch_length",
+            "back_notch_height",
+            "back_notch_offset",
+            "mount_holes_diameter",
+            "mount_holes_depth",
+            "mount_holes_top_reference",
+            "mount_holes_screw_center_to_reference",
+            "mount_holes_position_1",
+            "mount_holes_position_2",
+            "mount_holes_position_3",
+            "mount_holes_position_4",
+            "mount_holes_position_5",
+            "mount_holes_position_6",
+            "front_mount_holes",
+            "back_mount_holes",
+            "bottom_mount_holes",
+            "back_mount_notches_length",
+            "back_mount_notches_height",
+            "back_mount_notches_horizontal_offset",
+            "bottom_mount_holes_first_position",
+            "bottom_mount_grooves_horizontal_offset",
+            "bottom_mount_grooves_width",
+            "bottom_mount_grooves_depth",
+        ]
 
 
-class MaterialFinishSerializer(serializers.ModelSerializer):
-    finish = FinishesLibrarySerializer(read_only=True)
+class HingeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "hinge_type",
+            "horizontal_overlay",
+            "vertical_overlay",
+            "door_end_to_hinge",
+            "inset",
+            "maximum_spacing",
+            "opening_angle",
+            "door_edge_to_reference_point",
+            "roll_out_clearance",
+            "cup_diameter",
+            "cup_depth",
+            "anchor_holes_cup_to_anchor",
+            "anchor_holes_diameter",
+            "anchor_holes_depth",
+            "anchor_holes_spacing",
+        ]
+
+
+class HingePlateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "hinge_plate_type",
+            "hole_offset",
+            "hinge_diameter",
+            "depth",
+            "spacing",
+        ]
+
+
+class LaminateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "oversize",
+            "cnc_optimize",
+            "cnc_grain_dependent",
+            "cnc_drop_width",
+            "cnc_drop_length",
+            "cnc_feed_rate_percent",
+            "cnc_spindle_speed_percent",
+            "cnc_minimize_face_chip",
+            "cnc_minimize_back_chip",
+            "cnc_climb_cut",
+            "cnc_maximum_depth_per_pass",
+        ]
+
+
+class LegSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["leg_type", "height"]
+
+
+class LegLevelerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["height"]
+
+
+class MiscellaneousSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["model"]
+
+
+class MoldingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + ["molding_type", "length"]
+
+
+class PanelStockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "cnc_optimize",
+            "cnc_grain_dependent",
+            "cnc_drop_width",
+            "cnc_drop_length",
+            "cnc_feed_rate_percent",
+            "cnc_spindle_speed_percent",
+            "cnc_minimize_face_chip",
+            "cnc_minimize_back_chip",
+            "cnc_climb_cut",
+            "cnc_maximum_depth_per_pass",
+            "width",
+            "length",
+            "thickness",
+        ]
+
+
+class PullSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "pull_type",
+            "center_to_center",
+            "width",
+            "depth",
+            "horizontal_inset",
+            "vertical_inset",
+            "mounting_holes_holes_diameter",
+        ]
+
+
+class RodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "width",
+            "length",
+            "height",
+            "rod_type",
+            "boring_pattern",
+            "boring_diameter",
+            "boring_spacing",
+            "boring_quantity",
+            "boring_depth",
+        ]
+
+
+class SlidingDoorRailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "length",
+            "sliding_door_rail_type",
+            "boring_first_position",
+            "rail_boring_diameter",
+            "boring_depth",
+            "boring_spacing",
+        ]
+
+
+class SlidingDoorRollerSerializer(serializers.ModelSerializer):
+    mount_plate_hole_one = MountPlateHolesSerializer(many=True, read_only=False)
+    mount_plate_hole_two = MountPlateHolesSerializer(many=True, read_only=False)
+    mount_plate_hole_third = MountPlateHolesSerializer(many=True, read_only=False)
+    mount_plate_hole_forth = MountPlateHolesSerializer(many=True, read_only=False)
+    mount_plate_hole_fifth = MountPlateHolesSerializer(many=True, read_only=False)
 
     class Meta:
-        model = MaterialFinish
-        fields = "__all__"
-        read_only_fields = ["material"]
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "sliding_door_roller_type",
+            "mount_on_back",
+            "horizontal_offset",
+            "vertical_offset",
+            "door_edge_inset",
+            "door_end_inset",
+            "dado_reference",
+            "dado_offset",
+            "mount_plate_hole_one",
+            "mount_plate_hole_two",
+            "mount_plate_hole_third",
+            "mount_plate_hole_forth",
+            "mount_plate_hole_fifth",
+        ]
 
 
-class MaterialFinishTypeSerializer(serializers.ModelSerializer):
-    finish_type = FinishesLibrarySerializer(read_only=True)
-
+class WireBasketSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MaterialFinishType
-        fields = "__all__"
-        read_only_fields = ["material"]
+        model = Properties
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "wire_basket_type",
+            "basket_diameter",
+            "screw_center_to_reference",
+            "depth",
+            "width",
+            "height",
+            "mount_holes_diameter",
+            "mount_holes_depth",
+            "mount_holes_screw_center_to_reference",
+        ]
 
 
-class MaterialTextureSerializer(serializers.ModelSerializer):
-    texture = FinishesLibrarySerializer(read_only=True)
+class MaterialFactorySerializer:
+    @staticmethod
+    def get_material_serializer(
+        material_type: str,
+    ) -> type[serializers.ModelSerializer]:
+        serializer_mapping = {
+            MaterialTypes.BANDING.value: BandingSerializer,
+            MaterialTypes.BOARD_STOCK.value: BoardStockSerializer,
+            MaterialTypes.CASTER.value: CasterSerializer,
+            MaterialTypes.CONNECTOR.value: ConnectorSerializer,
+            MaterialTypes.DRAWER_GUIDE.value: DrawerGuideSerializer,
+            MaterialTypes.HINGE.value: HingeSerializer,
+            MaterialTypes.HINGE_PLATE.value: HingePlateSerializer,
+            MaterialTypes.LAMINATE.value: LaminateSerializer,
+            MaterialTypes.LEG.value: LegSerializer,
+            MaterialTypes.LEG_LEVELER.value: LegLevelerSerializer,
+            MaterialTypes.MISCELLANEOUS.value: MiscellaneousSerializer,
+            MaterialTypes.MOLDING.value: MoldingSerializer,
+            MaterialTypes.PANEL_STOCK.value: PanelStockSerializer,
+            MaterialTypes.PULL.value: PullSerializer,
+            MaterialTypes.ROD.value: RodSerializer,
+            MaterialTypes.SLIDING_DOOR_RAIL.value: SlidingDoorRailSerializer,
+            MaterialTypes.SLIDING_DOOR_ROLLER.value: SlidingDoorRollerSerializer,
+            MaterialTypes.WIRE_BASKET.value: WireBasketSerializer,
+        }
 
+        if material_type not in serializer_mapping:
+            raise ValidationError(f"Unsupported material type: {material_type}")
+
+        return serializer_mapping[material_type]
+
+
+class PropertiesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MaterialTexture
-        fields = "__all__"
-        read_only_fields = ["material"]
+        model = Properties
+
+    def to_representation(self: "PropertiesSerializer", instance: Properties) -> dict:
+        material_type = self.context.get("material_type")
+        serializer_class = MaterialFactorySerializer.get_material_serializer(
+            material_type
+        )
+        return serializer_class(instance).data
 
 
 class MaterialSerializer(serializers.ModelSerializer):
-    properties = MaterialPropertiesSerializer(many=True, read_only=False)
-    finishes = MaterialFinishSerializer(
-        source="materialfinish_set", many=True, read_only=False
-    )
-    finish_types = MaterialFinishTypeSerializer(
-        source="materialfinishtype_set", many=True, read_only=False
-    )
-    textures = MaterialTextureSerializer(
-        source="materialtexture_set", many=True, read_only=False
-    )
+    properties = serializers.SerializerMethodField()
 
     class Meta:
         model = Material
@@ -133,43 +400,16 @@ class MaterialSerializer(serializers.ModelSerializer):
             "description",
             "is_deleted",
             "properties",
-            "finishes",
-            "finish_types",
-            "textures",
         ]
-        read_only_fields = ["company"]
 
-    def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
-        name = attrs.get("name")
-        view = self.context.get("view")
-        company_id = view.kwargs.get("pk") if view else None
+    def get_properties(self: "MaterialSerializer", obj: Material) -> dict:
+        material_type = obj.type
+        serializer_class = MaterialFactorySerializer.get_material_serializer(
+            material_type
+        )
 
-        existing_company = Material.objects.filter(name=name, company_id=company_id)
-        if self.instance:
-            existing_company = existing_company.exclude(pk=self.instance.pk)
+        props = obj.properties.first()
+        if not props:
+            return {}
 
-        if name and existing_company.exists():
-            raise serializers.ValidationError({"name": "Name must be unique."})
-        return attrs
-
-    def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
-        properties_data = validated_data.pop("properties", [])
-        finishes_data = validated_data.pop("materialfinish_set", [])
-        finish_types_data = validated_data.pop("materialfinishtype_set", [])
-        textures_data = validated_data.pop("materialtexture_set", [])
-
-        material = Material.objects.create(**validated_data)
-
-        for prop in properties_data:
-            Properties.objects.create(material=material, **prop)
-
-        for finish in finishes_data:
-            MaterialFinish.objects.create(material=material, **finish)
-
-        for finish_type in finish_types_data:
-            MaterialFinishType.objects.create(material=material, **finish_type)
-
-        for texture in textures_data:
-            MaterialTexture.objects.create(material=material, **texture)
-
-        return material
+        return serializer_class(props).data

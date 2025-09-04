@@ -403,6 +403,8 @@ class Properties(models.Model):
 
     # ---------- Drawer Guide Fields ----------
     side_clearance = models.FloatField(default=0.00)
+    top_clearance = models.FloatField(default=0.00)
+    bottom_clearance = models.FloatField(default=0.00)
     minimum_below_box = models.FloatField(default=0.00)
     minimum_above_box = models.FloatField(default=0.00)
     guide_type = models.CharField(max_length=100, blank=True, null=True)
@@ -410,7 +412,8 @@ class Properties(models.Model):
     screw_center_reference_to_top = models.BooleanField(default=False)
     screw_center_to_box_reference = models.FloatField(default=0.00)
     back_notch_length = models.FloatField(default=0.00)
-    back_notch_width = models.FloatField(default=0.00)
+    back_notch_height = models.FloatField(default=0.00)
+    back_notch_offset = models.FloatField(default=0.00)
 
     mount_holes_diameter = models.FloatField(default=0.00)
     mount_holes_depth = models.FloatField(default=0.00)
@@ -473,7 +476,7 @@ class Properties(models.Model):
         max_length=100, choices=HingePlateTypesChoices.choices, blank=True, null=True
     )
     hole_offset = models.FloatField(default=0.00)
-    hinge_diameter = models.FloatField(default=0.00)  # renamed
+    hinge_diameter = models.FloatField(default=0.00)
     depth = models.FloatField(default=0.00)
     spacing = models.FloatField(default=0.00)
 
@@ -492,6 +495,8 @@ class Properties(models.Model):
     molding_type = models.CharField(
         max_length=100, choices=MoldingTypesChoices.choices, blank=True, null=True
     )
+    cost_per_joint = models.FloatField(default=0.00)
+    miter_trim = models.FloatField(default=0.00)
 
     # ---------- Pull ----------
     pull_type = models.CharField(
@@ -511,6 +516,7 @@ class Properties(models.Model):
     )
     boring_diameter = models.FloatField(default=0.00)  # kept
     boring_spacing = models.FloatField(default=0.00)
+    boring_depth = models.FloatField(default=0.00)
     boring_quantity = models.IntegerField(default=0)
 
     # ---------- Sliding Door Rail ----------
