@@ -8,7 +8,12 @@ from rest_framework.exceptions import ValidationError
 # Local imports
 from .models import (
     Company,
+    FinishesChoices,
+    FinishesLibrary,
     Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
     MaterialTypes,
     MountHoles,
     MountPlateHoles,
@@ -64,7 +69,6 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         model = Properties
         fields = [
             "id",
-            "material",
             "unit_of_issue",
             "default_cost",
             "sell_price",
@@ -387,8 +391,104 @@ class PropertiesSerializer(serializers.ModelSerializer):
         return serializer_class(instance).data
 
 
+class FinishSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinishesLibrary
+        fields = ["color"]
+
+
+class FinishTypeSerializer(serializers.ModelSerializer):
+    parent_finish = serializers.PrimaryKeyRelatedField(read_only=True)
+    parent_texture = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = FinishesLibrary
+        fields = [
+            "shader",
+            "ambient",
+            "diffuse",
+            "specular",
+            "shininess",
+            "transparency",
+            "brightness",
+            "parent_finish",
+            "parent_texture",
+            "light",
+        ]
+
+
+class TextureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinishesLibrary
+        fields = ["url", "image", "width", "height", "decal", "tile"]
+
+
+class FinishesLibrarySerializerFactory:
+    @staticmethod
+    def get_serializer(instance: FinishesLibrary) -> type[serializers.ModelSerializer]:
+        if instance.type == FinishesChoices.FINISH.value:
+            return FinishSerializer
+        if instance.type == FinishesChoices.FINISH_TYPE.value:
+            return FinishTypeSerializer
+        if instance.type == FinishesChoices.TEXTURE.value:
+            return TextureSerializer
+        return FinishesLibrarySerializer
+
+
+class FinishesLibrarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinishesLibrary
+        fields = ["id", "name", "organization", "type"]
+
+    def to_representation(
+        self: "FinishesLibrarySerializer", instance: FinishesLibrary
+    ) -> dict:
+        base_data = super().to_representation(instance)
+        serializer_class = FinishesLibrarySerializerFactory.get_serializer(instance)
+        type_data = serializer_class(instance).data
+        return {**base_data, **type_data}
+
+
+class MaterialFinishSerializer(serializers.ModelSerializer):
+    finish = serializers.PrimaryKeyRelatedField(queryset=FinishesLibrary.objects.all())
+    finish_detail = FinishesLibrarySerializer(source="finish", read_only=True)
+
+    class Meta:
+        model = MaterialFinish
+        fields = ["id", "name", "finish", "finish_detail"]
+
+
+class MaterialFinishTypeSerializer(serializers.ModelSerializer):
+    finish_type = serializers.PrimaryKeyRelatedField(
+        queryset=FinishesLibrary.objects.all()
+    )
+    finish_type_detail = FinishesLibrarySerializer(source="finish_type", read_only=True)
+
+    class Meta:
+        model = MaterialFinishType
+        fields = ["id", "name", "finish_type", "finish_type_detail"]
+
+
+class MaterialTextureSerializer(serializers.ModelSerializer):
+    texture = serializers.PrimaryKeyRelatedField(queryset=FinishesLibrary.objects.all())
+    texture_detail = FinishesLibrarySerializer(source="texture", read_only=True)
+
+    class Meta:
+        model = MaterialTexture
+        fields = ["id", "name", "texture", "texture_detail"]
+
+
+class MaterialPropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        exclude = ["material"]
+
+
 class MaterialSerializer(serializers.ModelSerializer):
-    properties = serializers.SerializerMethodField()
+    properties = serializers.DictField(write_only=True, required=False)
+    finishes = MaterialFinishSerializer(many=True, required=False)
+    finish_types = MaterialFinishTypeSerializer(many=True, required=False)
+    textures = MaterialTextureSerializer(many=True, required=False)
 
     class Meta:
         model = Material
@@ -400,16 +500,105 @@ class MaterialSerializer(serializers.ModelSerializer):
             "description",
             "is_deleted",
             "properties",
+            "finishes",
+            "finish_types",
+            "textures",
         ]
 
-    def get_properties(self: "MaterialSerializer", obj: Material) -> dict:
-        material_type = obj.type
-        serializer_class = MaterialFactorySerializer.get_material_serializer(
-            material_type
-        )
+    def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+        properties_data = attrs.get("properties")
+        material_type = attrs.get("type")
 
-        props = obj.properties.first()
-        if not props:
-            return {}
+        if properties_data:
+            serializer_class = MaterialFactorySerializer.get_material_serializer(
+                material_type
+            )
+            serializer = serializer_class(data=properties_data)
+            serializer.is_valid(raise_exception=True)
+            attrs["properties"] = serializer.validated_data
 
-        return serializer_class(props).data
+        finishes_ids = attrs.get("finishes", [])
+        if not finishes_ids:
+            raise serializers.ValidationError(
+                {"finishes": "At least one finish is required."}
+            )
+
+        finishes_types_ids = attrs.get("finish_types", [])
+        if not finishes_types_ids:
+            raise serializers.ValidationError(
+                {"finishes": "At least one finish type is required."}
+            )
+
+        textures_ids = attrs.get("textures", [])
+        if not textures_ids:
+            raise serializers.ValidationError(
+                {"finishes": "At least one texture is required."}
+            )
+        return attrs
+
+    def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
+        data = super().to_representation(instance)
+        data.pop("properties", None)
+
+        prop_obj = self._get_property_obj(instance)
+        if prop_obj:
+            serializer_class = MaterialFactorySerializer.get_material_serializer(
+                instance.type
+            )
+
+            data["properties"] = serializer_class(prop_obj).data
+        else:
+            data["properties"] = {}
+
+        return data
+
+    def _get_property_obj(self: "MaterialSerializer", instance: Material) -> Properties:
+        """
+        Supports:
+        - OneToOneField (reverse: material.properties -> object)
+        - ForeignKey with related_name="properties" (reverse: material.properties -> manager)
+        - ForeignKey with default reverse name (material.properties_set -> manager)
+        """
+        obj = getattr(instance, "properties", None)
+        if obj is not None and not hasattr(obj, "all") and not hasattr(obj, "first"):
+            return obj
+
+        if hasattr(obj, "first"):
+            return obj.first()
+        mgr = getattr(instance, "properties_set", None)
+        if hasattr(mgr, "first"):
+            return mgr.first()
+
+        return None
+
+    def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
+        properties_data = validated_data.pop("properties", None)
+        finishes_data = validated_data.pop("finishes", [])
+        finish_types_data = validated_data.pop("finish_types", [])
+        textures_data = validated_data.pop("textures", [])
+
+        material = Material.objects.create(**validated_data)
+
+        if properties_data:
+            Properties.objects.create(material=material, **properties_data)
+
+        for f in finishes_data:
+            finish = f.pop("finish")
+            MaterialFinish.objects.create(
+                material=material, name=f.get("name", ""), finish=finish
+            )
+
+        for ft in finish_types_data:
+            finish_type = ft.pop("finish_type")
+            MaterialFinishType.objects.create(
+                material=material, name=ft.get("name", ""), finish_type=finish_type
+            )
+
+        for t in textures_data:
+            texture = t.pop("texture")
+            MaterialTexture.objects.create(
+                material=material, name=t.get("name", ""), texture=texture
+            )
+
+        material.refresh_from_db()
+        return material

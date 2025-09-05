@@ -305,7 +305,7 @@ class FinishesLibrary(models.Model):
     decal = models.IntegerField(null=True, blank=True)
     tile = models.IntegerField(null=True, blank=True)
     url = models.CharField(max_length=100, null=True, blank=True)
-    image = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
 
 
@@ -594,19 +594,25 @@ class Properties(models.Model):
 class MaterialFinish(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    material = models.ForeignKey(
+        Material, on_delete=models.CASCADE, related_name="finishes"
+    )
     finish = models.ForeignKey(FinishesLibrary, on_delete=models.CASCADE)
 
 
 class MaterialFinishType(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    material = models.ForeignKey(
+        Material, on_delete=models.CASCADE, related_name="finish_types"
+    )
     finish_type = models.ForeignKey(FinishesLibrary, on_delete=models.CASCADE)
 
 
 class MaterialTexture(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    material = models.ForeignKey(
+        Material, on_delete=models.CASCADE, related_name="textures"
+    )
     texture = models.ForeignKey(FinishesLibrary, on_delete=models.CASCADE)
