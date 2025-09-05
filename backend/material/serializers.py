@@ -18,6 +18,9 @@ from .models import (
     MountHoles,
     MountPlateHoles,
     Properties,
+    Catalog, 
+    CatalogRuleParts, 
+    CatalogRules
 )
 
 
@@ -602,3 +605,85 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         material.refresh_from_db()
         return material
+
+
+class CatalogRulePartSerializer(serializers.ModelSerializer):
+    material = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CatalogRuleParts
+        fields = ["id", "name", "material"]
+
+    def get_material(self, obj):
+        if obj.material:
+            return {"id": str(obj.material.id), "name": obj.material.name}
+        return None
+
+
+
+class CatalogRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogRules
+        fields = ["id", "name"]
+
+
+class CatalogSerializer(serializers.ModelSerializer):
+    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Catalog
+        fields = ["id", "type", "name", "description", "catalog_rule"]
+
+    def create(self, validated_data):
+        new_catalog = Catalog.objects.create(
+            **validated_data
+        )
+
+        template_catalog = Catalog.objects.filter(
+            organization__isnull=True,
+            type=new_catalog.type
+        ).first()
+
+        if template_catalog:
+            for rule in template_catalog.catalog_rule.all():
+                new_rule = CatalogRules.objects.create(
+                    catalog=new_catalog,
+                    name=rule.name,
+                )
+                for part in rule.catalog_rule_parts.all():
+                    CatalogRuleParts.objects.create(
+                        catalog_rule=new_rule,
+                        name=part.name,
+                        material=part.material,
+                    )
+
+        return new_catalog
+
+
+class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
+    material_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+
+    class Meta:
+        model = CatalogRuleParts
+        fields = ["id", "name", "material_id"]
+        read_only_fields = ["id", "name"]
+
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        material_id = validated_data.get("material_id", None)
+
+        if material_id is None:
+            instance.material = None
+        else:
+            material = Material.objects.filter(
+                id=material_id,
+                organization=request.user.selected_organization
+            ).first()
+
+            if not material:
+                raise serializers.ValidationError("Material not found for this organization.")
+
+            instance.material = material
+
+        instance.save()
+        return instance

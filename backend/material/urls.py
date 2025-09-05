@@ -2,7 +2,7 @@
 from django.urls import path
 
 # Local imports
-from .views import CompanyViewSet, FinishesLibraryListAPIView, MaterialViewSet
+from .views import CatalogRulePartsViewSet, CompanyViewSet, FinishesLibraryListAPIView, MaterialViewSet, CatalogViewSet, CatalogRulePartsListView
 
 urlpatterns = [
     path(
@@ -59,4 +59,11 @@ urlpatterns = [
         ),
         name="material-details",
     ),
+    path("catalog/", CatalogViewSet.as_view({"get": "list", "post": "create"}), name="catalog-list"),
+    path(
+    "catalog/part/<uuid:id>/",
+    CatalogRulePartsViewSet.as_view({"put": "update"}),
+    name="catalog-parts"
+),
+    path("catalog_rules/<uuid:rule_id>/parts/", CatalogRulePartsListView.as_view(), name="catalog-rule-parts"),
 ]

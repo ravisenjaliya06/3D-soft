@@ -10,6 +10,9 @@ from .models import (
     MaterialFinishType,
     MaterialTexture,
     Properties,
+    Catalog,
+    CatalogRules,
+    CatalogRuleParts,
 )
 
 
@@ -20,6 +23,14 @@ class FinishesLibraryAdmin(admin.ModelAdmin):
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "material_type", "organization")
 
+class CatalogAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "type", "organization")
+
+class CatalogRulesAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "catalog")
+
+class CatalogRulesPartsAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "catalog_rule")
 
 admin.site.register(Material)
 admin.site.register(Properties)
@@ -28,3 +39,6 @@ admin.site.register(MaterialFinishType)
 admin.site.register(MaterialTexture)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(FinishesLibrary, FinishesLibraryAdmin)
+admin.site.register(Catalog, CatalogAdmin)
+admin.site.register(CatalogRules, CatalogRulesAdmin)
+admin.site.register(CatalogRuleParts, CatalogRulesPartsAdmin)

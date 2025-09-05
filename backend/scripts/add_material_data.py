@@ -11,7 +11,7 @@ sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from material.models import Company, FinishesLibrary, Material, Properties
+from material.models import Company, FinishesLibrary, Material, Properties, Catalog, CatalogRules, CatalogRuleParts
 from umaboy.models import Organization
 
 FINISH = [
@@ -1144,6 +1144,152 @@ MATERIAL = [
     },
 ]
 
+CATALOG = [
+    {
+        "type": "Door",
+        "name": "Default Door",
+        "description": "Default Door",
+        "catalog_rules": [
+            {
+                "name": "Molding",
+                "rules_parts": [
+                    {
+                        "name": "Door Molding",
+                        "material": "Molding"
+                    }
+                ]
+            },
+            {
+                "name": "Banding",
+                "rules_parts": [
+                    {
+                        "name": "Door Banding",
+                        "material": "Alder Ven EB"
+                    }
+                ]
+            },
+            {
+                "name": "Handles",
+                "rules_parts": [
+                    {
+                        "name": "Door Handle",
+                        "material": "4in Bar Pull"
+                    }
+                ]
+            },
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {
+                        "name": "Door Panel",
+                        "material": "3/4 1s Poplar Ply"
+                    }
+                ]
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {
+                        "name": "Door and Handle Connections"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "Drawer",
+        "name": "Default Door",
+        "description": "Default Door",
+        "catalog_rules": [
+            {
+                "name": "Drawer Guide",
+                "rules_parts": [
+                    {
+                        "name": "Left Drawer Guide",
+                        "material": "430E6500V"
+                    },
+                    {
+                        "name": "Right Drawer Guide",
+                        "material": "430E6500V"
+                    }
+                ]
+            },
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {
+                        "name": "Left Drawer Panel",
+                        "material": "3/4 1s Poplar Ply"
+                    },
+                    {
+                        "name": "Right Drawer Panel",
+                        "material": "5/8 1s Poplar Ply"
+                    },
+                    {
+                        "name": "Front Drawer Panel",
+                        "material": "1/2 1s Poplar Ply"
+                    },
+                    {
+                        "name": "Back Drawer Panel",
+                        "material": "1/4 1s Poplar Ply"
+                    },
+                    {
+                        "name": "Bottom Drawer Panel",
+                        "material": "1/8 1s Poplar Ply"
+                    }
+                ]
+            },
+            {
+                "name": "Handles",
+                "rules_parts": [
+                    {
+                        "name": "Drawer Handle",
+                        "material": "Wooden Knob"
+                    }
+                ]
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {
+                        "name": "Front and Left Panel Connections"
+                    },
+                    {
+                        "name": "Front and Right Panel Connections"
+                    },
+                    {
+                        "name": "Back and Right Panel Connections"
+                    },
+                    {
+                        "name": "Back and Left Panel Connections"
+                    },
+                    {
+                        "name": "Bottom and Front Panel Connections"
+                    },
+                    {
+                        "name": "Bottom and Back Panel Connections"
+                    },
+                    {
+                        "name": "Bottom and Left Panel Connections"
+                    },
+                    {
+                        "name": "Bottom and Right Panel Connections"
+                    },
+                    {
+                        "name": "Front Panel and Handle Connections"
+                    },
+                    {
+                        "name": "Right Panel and Right Drawer Guide Connections"
+                    },
+                    {
+                        "name": "Left Panel and Left Drawer Guide Connections"
+                    },
+                ]
+            }
+        ]
+    }
+]
+
 
 def get_registred_organization() -> QuerySet[Organization]:
     return Organization.objects.all()
@@ -1348,9 +1494,42 @@ def create_materials(
             )
 
 
+def create_catalog_data():
+    organizations = list(Organization.objects.all()) + [None]
+
+    for org in organizations:
+        for catalog_data in CATALOG:
+            catalog, _ = Catalog.objects.update_or_create(
+                organization=org,
+                type=catalog_data["type"],
+                name=catalog_data["name"],
+                defaults={
+                    "description": catalog_data.get("description", "")
+                }
+            )
+
+            for rule_data in catalog_data.get("catalog_rules", []):
+                catalog_rule, _ = CatalogRules.objects.update_or_create(
+                    catalog=catalog,
+                    name=rule_data["name"],
+                    defaults={}
+                )
+
+                for part_data in rule_data.get("rules_parts", []):
+                    material_obj = None
+                    if "material" in part_data and part_data["material"]:
+                        material_obj = Material.objects.filter(name=part_data["material"], organization=org).first()
+
+                    CatalogRuleParts.objects.update_or_create(
+                        catalog_rule=catalog_rule,
+                        name=part_data["name"],
+                        defaults={"material": material_obj}
+                    )
+
 if __name__ == "__main__":
     create_finish()
     create_finish_type()
     create_textures()
     company_objects = create_company()
     create_materials(company_objects)
+    create_catalog_data()
