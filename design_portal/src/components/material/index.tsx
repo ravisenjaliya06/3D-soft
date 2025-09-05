@@ -84,7 +84,7 @@ const tableColumns: TableColumn[] = [
   { key: 'default_tax_rate', label: 'Default Tax Rate', sortable: false },
   { key: 'waste', label: 'Waste', sortable: false },
   { key: 'estimate', label: 'Estimate', sortable: false },
-  { key: 'model', label: 'Load Model', sortable: false },
+  // { key: 'model', label: 'Load Model', sortable: false },
 ];
 
 const Material = () => {
@@ -170,16 +170,16 @@ const Material = () => {
           id: m.id,
           name: m.name,
           description: m.description,
-          material_type: m.properties?.[0]?.material_type || m.type,
-          unit_of_issue: m.properties?.[0]?.unit_of_issue,
-          default_cost: m.properties?.[0]?.default_cost,
-          sell_price: m.properties?.[0]?.sell_price,
-          default_markup: m.properties?.[0]?.default_markup,
-          sales_tax: m.properties?.[0]?.sales_tax,
-          default_tax_rate: m.properties?.[0]?.default_tax_rate,
-          waste: m.properties?.[0]?.waste,
-          estimate: m.properties?.[0]?.estimate || m.properties?.[0]?.eslimate,
-          model: m.properties?.[0]?.model,
+          material_type: m.properties.material_type || m.type,
+          unit_of_issue: m.properties.unit_of_issue,
+          default_cost: m.properties.default_cost,
+          sell_price: m.properties.sell_price,
+          default_markup: m.properties.default_markup,
+          sales_tax: m.properties.sales_tax,
+          default_tax_rate: m.properties.default_tax_rate,
+          waste: m.properties.waste,
+          estimate: m.properties.estimate || m.properties.eslimate,
+          model: m.properties.model,
           ...m,
         }));
         setCompanyMaterials(materials);
@@ -201,16 +201,16 @@ const Material = () => {
           id: m.id,
           name: m.name,
           description: m.description,
-          material_type: m.properties?.[0]?.material_type || m.type,
-          unit_of_issue: m.properties?.[0]?.unit_of_issue,
-          default_cost: m.properties?.[0]?.default_cost,
-          sell_price: m.properties?.[0]?.sell_price,
-          default_markup: m.properties?.[0]?.default_markup,
-          sales_tax: m.properties?.[0]?.sales_tax,
-          default_tax_rate: m.properties?.[0]?.default_tax_rate,
-          waste: m.properties?.[0]?.waste,
-          estimate: m.properties?.[0]?.estimate || m.properties?.[0]?.eslimate,
-          model: m.properties?.[0]?.model,
+          material_type: m.properties.material_type || m.type,
+          unit_of_issue: m.properties.unit_of_issue,
+          default_cost: m.properties.default_cost,
+          sell_price: m.properties.sell_price,
+          default_markup: m.properties.default_markup,
+          sales_tax: m.properties.sales_tax,
+          default_tax_rate: m.properties.default_tax_rate,
+          waste: m.properties.waste,
+          estimate: m.properties.estimate || m.properties.eslimate,
+          model: m.properties.model,
           ...m,
         }));
         setCompanyMaterials(materials);
@@ -419,13 +419,13 @@ const Material = () => {
                     <path d="m21 21-4.35-4.35" />
                   </svg>
                 </div>
-                <button
+                {/* <button
                   className={styles.addNewButton}
                   onClick={() => setAddMaterialPopup(true)}
                 >
                   <span className={styles.plusIcon}>+</span>
                   Add New
-                </button>
+                </button> */}
               </div>
             </div>
 
