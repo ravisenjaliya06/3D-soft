@@ -1226,6 +1226,41 @@ CATALOG = [
             },
         ],
     },
+    {
+        "type": "Sliding Door",
+        "name": "Default Sliding Door",
+        "description": "Default Sliding Door",
+        "catalog_rules": [
+            {
+                "name": "Door Rail",
+                "rules_parts": [
+                    {"name": "Top Rail", "material": "Sliding Door Rail"},
+                    {"name": "Bottom Rail", "material": "Sliding Door Rail"},
+                ],
+            },
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Left Door Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Right Door Panel", "material": "5/8 1s Poplar Ply"},
+                ],
+            },
+            {
+                "name": "Handles",
+                "rules_parts": [
+                    {"name": "Right Door Handle", "material": "Wooden Knob"},
+                    {"name": "Left Door Handle", "material": "Wooden Knob"},
+                ],
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {"name": "Right Door and Right Door Handle Connections"},
+                    {"name": "Left Door and Left Door Handle Connections"},
+                ],
+            },
+        ],
+    },
 ]
 
 

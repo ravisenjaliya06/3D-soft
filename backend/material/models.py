@@ -267,6 +267,7 @@ class CatalogTypeChoices(models.TextChoices):
 
     DOOR = "Door"
     DRAWER = "Drawer"
+    SLIDING_DOOR = "Sliding Door"
 
 
 class FinishesLibrary(models.Model):
