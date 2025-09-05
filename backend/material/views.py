@@ -69,7 +69,8 @@ class MaterialViewSet(viewsets.ModelViewSet):
         organization = self.request.user.selected_organization
         if company_id:
             serializer.save(company_id=company_id, organization=organization)
-        serializer.save(organization=organization)
+        else:
+            serializer.save(organization=organization)
 
 
 # External imports
