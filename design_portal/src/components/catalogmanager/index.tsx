@@ -1,16 +1,14 @@
+import createicon from '@/assets/createicon.svg';
+import close from '@/assets/design/close.svg';
+import commonService from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
 import add from '../../assets/catalogmanager/add.svg';
-import Header from '../header/header';
-import Sidebar from '../sidebar/sidebar';
-import styles from './catalogmanager.module.css';
-import createicon from '@/assets/createicon.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
-import close from '@/assets/design/close.svg';
-import arrow from '../../assets/catalogmanager/arrow.svg';
 import deleteIcon from '../../assets/catalogmanager/delete.svg';
 import matariel from '../../assets/catalogmanager/matireal.svg';
+import Header from '../header/header';
 import InputField from '../inputfields/InputField';
-import commonService from '@/services/CommonService';
+import Sidebar from '../sidebar/sidebar';
+import styles from './catalogmanager.module.css';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -22,7 +20,9 @@ const CatalogManager = () => {
   const [description, setDescription] = useState('1/2 millimeter');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [catalogType, setCatalogType] = useState('Door');
-  const [selectedCatalog, setSelectedCatalog] = useState<null | typeof catalogData[0]>(null);
+  const [selectedCatalog, setSelectedCatalog] = useState<
+    null | (typeof catalogData)[0]
+  >(null);
   const [catalogData, setCatalogData] = useState<any[]>([]);
   const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
   const [ruleParts, setRuleParts] = useState<any[]>([]);
@@ -41,10 +41,11 @@ const CatalogManager = () => {
   // );
 
   const filteredMaterials = materialData
-    .filter(mat => mat.type === selectedMaterialType) // keep type filter
-    .filter(mat =>
-      mat.name.toLowerCase().includes(materialSearch.toLowerCase()) ||
-      mat.description.toLowerCase().includes(materialSearch.toLowerCase())
+    .filter((mat) => mat.type === selectedMaterialType) // keep type filter
+    .filter(
+      (mat) =>
+        mat.name.toLowerCase().includes(materialSearch.toLowerCase()) ||
+        mat.description.toLowerCase().includes(materialSearch.toLowerCase()),
     );
 
   const fields = [
@@ -52,14 +53,16 @@ const CatalogManager = () => {
       label: 'Name',
       type: 'name',
       placeholder: 'Enter catalog name',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setNewName(e.target.value),
       error: '',
     },
     {
       label: 'Description',
       type: 'name',
       placeholder: 'Enter catalog description',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNewDescription(e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setNewDescription(e.target.value),
       error: '',
     },
   ];
@@ -72,24 +75,24 @@ const CatalogManager = () => {
   ];
 
   const materialTypes = [
-    "Banding",
-    "Board Stock",
-    "Caster",
-    "Connector",
-    "Drawer Guide",
-    "Hinge",
-    "Hinge Plate",
-    "Laminate",
-    "Leg",
-    "Leg Leveler",
-    "Miscellaneous",
-    "Molding",
-    "Panel Stock",
-    "Pull",
-    "Rod",
-    "Sliding Door Rail",
-    "Sliding Door Roller",
-    "Wire Basket"
+    'Banding',
+    'Board Stock',
+    'Caster',
+    'Connector',
+    'Drawer Guide',
+    'Hinge',
+    'Hinge Plate',
+    'Laminate',
+    'Leg',
+    'Leg Leveler',
+    'Miscellaneous',
+    'Molding',
+    'Panel Stock',
+    'Pull',
+    'Rod',
+    'Sliding Door Rail',
+    'Sliding Door Roller',
+    'Wire Basket',
   ];
 
   const doorTableData = [
@@ -100,8 +103,12 @@ const CatalogManager = () => {
   ];
 
   // ---------- UTILS ----------
-  const handleBlur = (setEditing: (v: boolean) => void) => () => setEditing(false);
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, setEditing: (v: boolean) => void) => {
+  const handleBlur = (setEditing: (v: boolean) => void) => () =>
+    setEditing(false);
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    setEditing: (v: boolean) => void,
+  ) => {
     if (e.key === 'Enter') setEditing(false);
   };
 
@@ -109,7 +116,13 @@ const CatalogManager = () => {
   const handleDeleteCatalog = () => setshowDeletePopup(true);
 
   const getCatalog = async () => {
-    const response: { status: number; data: any } = await commonService.getWithQueryParam('material', 'catalog', 'type', catalogType);
+    const response: { status: number; data: any } =
+      await commonService.getWithQueryParam(
+        'material',
+        'catalog',
+        'type',
+        catalogType,
+      );
     if (response.status === 200) {
       setCatalogData(response.data);
     }
@@ -120,7 +133,7 @@ const CatalogManager = () => {
     try {
       const response: { status: number; data: any[] } = await commonService.get(
         'material',
-        `catalog_rules/${ruleId}/parts`
+        `catalog_rules/${ruleId}/parts`,
       );
       if (response.status === 200) {
         setRuleParts(response.data);
@@ -162,17 +175,18 @@ const CatalogManager = () => {
     const response: { status: number; data: any } = await commonService.post(
       'material',
       'catalog',
-      payload
+      payload,
     );
 
     if (response.status === 201) {
       // fetch all catalogs
-      const catalogResponse: { status: number; data: any[] } = await commonService.getWithQueryParam(
-        'material',
-        'catalog',
-        'type',
-        catalogType
-      );
+      const catalogResponse: { status: number; data: any[] } =
+        await commonService.getWithQueryParam(
+          'material',
+          'catalog',
+          'type',
+          catalogType,
+        );
       if (catalogResponse.status === 200) {
         setCatalogData(catalogResponse.data);
         setSelectedCatalog(response.data);
@@ -201,19 +215,23 @@ const CatalogManager = () => {
 
     setRuleParts((prevParts) =>
       prevParts.map((part) =>
-        part.id === partId ? { ...part, material } : part
-      )
+        part.id === partId ? { ...part, material } : part,
+      ),
     );
 
-    const response: { status: number; } = commonService.put('material', `catalog/part/${partId}`, {
-      "material_id": materialId
-    })
+    const response: { status: number } = commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: materialId,
+      },
+    );
 
     if (response.status === 200) {
       setRuleParts((prevParts) =>
         prevParts.map((part) =>
-          part.id === partId ? { ...part, material } : part
-        )
+          part.id === partId ? { ...part, material } : part,
+        ),
       );
     }
   };
@@ -234,7 +252,9 @@ const CatalogManager = () => {
                   className={styles.dropdown}
                   value={selectedCatalog?.id || ''}
                   onChange={(e) => {
-                    const catalog = catalogData.find((c) => c.id === e.target.value);
+                    const catalog = catalogData.find(
+                      (c) => c.id === e.target.value,
+                    );
                     setSelectedCatalog(catalog || null);
                   }}
                 >
@@ -245,14 +265,23 @@ const CatalogManager = () => {
                   ))}
                 </select>
                 <div className={styles.iconContainer}>
-                  <img src={add.src} alt="Add" className={styles.addIcon} onClick={handleAddCatalog} />
+                  <img
+                    src={add.src}
+                    alt="Add"
+                    className={styles.addIcon}
+                    onClick={handleAddCatalog}
+                  />
                 </div>
               </div>
             </div>
             <div className={styles.toolbarRight}>
               <div className={styles.toolbarRightContent}>
                 <span>Catalog Type</span>
-                <select className={styles.dropdown} value={catalogType} onChange={(e) => setCatalogType(e.target.value)}>
+                <select
+                  className={styles.dropdown}
+                  value={catalogType}
+                  onChange={(e) => setCatalogType(e.target.value)}
+                >
                   {catalogTypes.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -273,8 +302,16 @@ const CatalogManager = () => {
               <div className={styles.topBoxContent}>
                 <h3>Rules</h3>
                 <div className={styles.buttonContainer}>
-                  <button className={styles.deleteButtonRule} onClick={handleDeleteCatalog}>
-                    <img src={deleteIcon.src} alt="" className={styles.deleteIconButton} /> Delete
+                  <button
+                    className={styles.deleteButtonRule}
+                    onClick={handleDeleteCatalog}
+                  >
+                    <img
+                      src={deleteIcon.src}
+                      alt=""
+                      className={styles.deleteIconButton}
+                    />{' '}
+                    Delete
                   </button>
                 </div>
               </div>
@@ -284,7 +321,11 @@ const CatalogManager = () => {
                 <div className={styles.topBoxLeft}>
                   <div className={styles.matirealmanu}>
                     {selectedCatalog?.catalog_rule.map((rule) => (
-                      <div key={rule.id} className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`} onClick={() => fetchRuleParts(rule.id)}>
+                      <div
+                        key={rule.id}
+                        className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
+                        onClick={() => fetchRuleParts(rule.id)}
+                      >
                         <img src={matariel.src} alt="" />
                         <span>{rule.name}</span>
                       </div>
@@ -302,24 +343,29 @@ const CatalogManager = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {ruleParts.length > 0 ? (
-                        ruleParts.map((part) => (
-                          <tr
-                            key={part.id}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              const materialId = e.dataTransfer.getData('materialId');
-                              handleAssignMaterial(part.id, materialId);
-                            }}
-                          >
-                            <td>{part.name}</td>
-                            <td>{part.material?.name || 'NO MATERIAL ASSIGNED'}</td>
-                          </tr>
-                        ))
-                      ) : null}
+                      {ruleParts.length > 0
+                        ? ruleParts.map((part) => (
+                            <tr
+                              key={part.id}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                const materialId =
+                                  e.dataTransfer.getData('materialId');
+                                handleAssignMaterial(part.id, materialId);
+                              }}
+                            >
+                              <td>{part.name}</td>
+                              <td>
+                                {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                              </td>
+                            </tr>
+                          ))
+                        : null}
 
                       {/* Fill remaining rows up to 8 */}
-                      {Array.from({ length: Math.max(0, 8 - ruleParts.length) }).map((_, idx) => (
+                      {Array.from({
+                        length: Math.max(0, 8 - ruleParts.length),
+                      }).map((_, idx) => (
                         <tr key={`empty-${idx}`}>
                           <td>&nbsp;</td>
                           <td>&nbsp;</td>
@@ -350,10 +396,14 @@ const CatalogManager = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onBlur={handleBlur(setIsEditingName)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
+                            onKeyDown={(e) =>
+                              handleKeyDown(e, setIsEditingName)
+                            }
                           />
                         ) : (
-                          <p onClick={() => setIsEditingName(true)}>{selectedCatalog?.name}</p>
+                          <p onClick={() => setIsEditingName(true)}>
+                            {selectedCatalog?.name}
+                          </p>
                         )}
                       </td>
                     </tr>
@@ -366,10 +416,14 @@ const CatalogManager = () => {
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             onBlur={handleBlur(setIsEditingDescription)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
+                            onKeyDown={(e) =>
+                              handleKeyDown(e, setIsEditingDescription)
+                            }
                           />
                         ) : (
-                          <p onClick={() => setIsEditingDescription(true)}>{selectedCatalog?.description}</p>
+                          <p onClick={() => setIsEditingDescription(true)}>
+                            {selectedCatalog?.description}
+                          </p>
                         )}
                       </td>
                     </tr>
@@ -420,7 +474,9 @@ const CatalogManager = () => {
                         <tr
                           key={row.id}
                           draggable
-                          onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
+                          onDragStart={(e) =>
+                            e.dataTransfer.setData('materialId', row.id)
+                          }
                         >
                           <td>{row.name}</td>
                           <td>{row.description}</td>
@@ -439,63 +495,61 @@ const CatalogManager = () => {
         </div>
       </div>
       {/* add catalog popup  */}
-      {
-        showPopup && (
-          <div className={styles.createpopupOverlay}>
-            <div className={styles.createpopup}>
-              <img
-                src={createicon.src}
-                className={styles.createicon}
-                alt="createicon"
-              />
-              <img
-                src={close.src}
-                className={styles.createclose}
-                alt="close"
+      {showPopup && (
+        <div className={styles.createpopupOverlay}>
+          <div className={styles.createpopup}>
+            <img
+              src={createicon.src}
+              className={styles.createicon}
+              alt="createicon"
+            />
+            <img
+              src={close.src}
+              className={styles.createclose}
+              alt="close"
+              onClick={() => setShowPopup(false)}
+            />
+            <div className={styles.create_right_side}>
+              <h2>Add Catalog</h2>
+              <p>Please enter a name for this Material.</p>
+              <form
+                className={styles.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // handleCreateDesign();
+                }}
+              >
+                <div className={styles.createinputGroup}>
+                  {fields.map((field, index) => (
+                    <InputField
+                      className={styles.inputField}
+                      key={index}
+                      borderColor="var(--primary-color-grey-2)"
+                      {...field}
+                      error=""
+                    />
+                  ))}
+                </div>
+              </form>
+            </div>
+            <div className={styles.createButtonGrop}>
+              <button
+                className={styles.cancelcreateButton}
                 onClick={() => setShowPopup(false)}
-              />
-              <div className={styles.create_right_side}>
-                <h2>Add Catalog</h2>
-                <p>Please enter a name for this Material.</p>
-                <form
-                  className={styles.form}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    // handleCreateDesign();
-                  }}
-                >
-                  <div className={styles.createinputGroup}>
-                    {fields.map((field, index) => (
-                      <InputField
-                        className={styles.inputField}
-                        key={index}
-                        borderColor="var(--primary-color-grey-2)"
-                        {...field}
-                        error=""
-                      />
-                    ))}
-                  </div>
-                </form>
-              </div>
-              <div className={styles.createButtonGrop}>
-                <button
-                  className={styles.cancelcreateButton}
-                  onClick={() => setShowPopup(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={styles.createcontinueButton}
-                  onClick={handleCreateCatalog}
-                >
-                  continue
-                </button>
-              </div>
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.createcontinueButton}
+                onClick={handleCreateCatalog}
+              >
+                continue
+              </button>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 };
 
