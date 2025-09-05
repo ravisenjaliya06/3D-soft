@@ -56,7 +56,7 @@ urlpatterns = [
         name="material-list",
     ),
     path(
-        "company/<uuid:pk>/material/",
+        "company/<uuid:company_id>/material/<uuid:id>/",
         MaterialViewSet.as_view(
             {
                 "get": "retrieve",
