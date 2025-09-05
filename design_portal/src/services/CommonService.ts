@@ -27,7 +27,8 @@ export type RemainingPath =
   | 'work_order'
   | 'material'
   | 'company'
-  | `company/${string}/material`;
+  | `company/${string}/material`
+  | `catalog_rules/${string}/parts`;
 
 type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type`;
 
