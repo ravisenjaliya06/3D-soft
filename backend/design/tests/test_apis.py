@@ -77,6 +77,25 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    # Delete design
+    def test_destroy_design(self: "DesignAPIViewTestCase") -> None:
+        response = self.client.delete(
+            reverse("get_put_and_delete_design", kwargs={"design_id": self.design.id}),
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_destroy_design_with_invalid_id(self: "DesignAPIViewTestCase") -> None:
+        response = self.client.delete(
+            reverse(
+                "get_put_and_delete_design", kwargs={"design_id": str(uuid.uuid4())}
+            ),
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     # Design API Test case
     def test_get_list_design(self: "DesignAPIViewTestCase") -> None:
         response = self.client.get(
@@ -87,6 +106,15 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     def test_get_list_design_with_recent_design(self: "DesignAPIViewTestCase") -> None:
         response = self.client.get(
             reverse("design"), {"recent": True}, format="json", headers=self.get_headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_list_design_with_custom_param(self: "DesignAPIViewTestCase") -> None:
+        response = self.client.get(
+            reverse("design"),
+            {"is_custom": "true"},
+            format="json",
+            headers=self.get_headers,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -194,6 +222,17 @@ class DesignAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error"], "Design Not Found")
+
+    # design catalog with query param
+    def test_get_design_catalog_with_is_custom(self: "DesignAPIViewTestCase") -> None:
+        data = {"is_custom": True}
+        response = self.client.get(
+            reverse("design_objects", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_design_catalog(self: "DesignAPIViewTestCase") -> None:
         """Test deleting a catalog and its items"""
@@ -696,3 +735,36 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             url, data=data, format="json", headers=self.get_headers
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_catalog_item_with_invalid_design_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test creating a catalog item with invalid data"""
+        data = {"design_id": str(uuid.uuid4())}
+
+        url = reverse(
+            "design_objects_create",
+            kwargs={
+                "design_id": str(uuid.uuid4()),
+                "item_id": self.new_catalog_item.id,
+            },
+        )
+        response = self.client.get(
+            url, data=data, format="json", headers=self.get_headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_catalog_item_with_invalid_catalog_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test creating a catalog item with invalid data"""
+        data = {"item_id": str(uuid.uuid4())}
+
+        url = reverse(
+            "design_objects_create",
+            kwargs={"design_id": self.design.id, "item_id": str(uuid.uuid4())},
+        )
+        response = self.client.get(
+            url, data=data, format="json", headers=self.get_headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
