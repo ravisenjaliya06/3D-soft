@@ -95,17 +95,29 @@ const Material = () => {
   const [sortColumn, setSortColumn] = useState<string>('');
   const [addMaterialPopup, setAddMaterialPopup] = useState<boolean>(false);
   const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([]);
-  const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>(staticMaterialTypes);
+  const [materialCategories, setMaterialCategories] =
+    useState<MaterialItem[]>(staticMaterialTypes);
   const [companyID, setCompanyID] = useState<string>('');
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; categoryId: string } | null>(null);
-  const [contextMaterialMenu, setContextMaterialMenu] = useState<{ x: number; y: number; companyId: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    categoryId: string;
+  } | null>(null);
+  const [contextMaterialMenu, setContextMaterialMenu] = useState<{
+    x: number;
+    y: number;
+    companyId: string;
+  } | null>(null);
   const [createCompanyPopup, setCreateCompanyPopup] = useState<boolean>(false);
   const [companyName, setCompanyName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const response: MaterialResponse = await commonService.get('material', 'company');
+      const response: MaterialResponse = await commonService.get(
+        'material',
+        'company',
+      );
       if (response.status === 200) {
         const companies: TableRow[] = response.data.map((m: any) => ({
           id: m.id,
@@ -125,10 +137,15 @@ const Material = () => {
         }));
 
         const updatedCategories = staticMaterialTypes.map((category) => {
-          const matchingCompanies = companies.filter((c) => c.material_type === category.name);
+          const matchingCompanies = companies.filter(
+            (c) => c.material_type === category.name,
+          );
           return {
             ...category,
-            subItems: matchingCompanies.map((c) => ({ id: c.id, name: c.name })),
+            subItems: matchingCompanies.map((c) => ({
+              id: c.id,
+              name: c.name,
+            })),
           };
         });
 
@@ -142,7 +159,12 @@ const Material = () => {
 
   const fetchMaterialsByType = useCallback(async (type: string) => {
     try {
-      const response: MaterialResponse = await commonService.getWithQueryParam('material', '', 'type', type);
+      const response: MaterialResponse = await commonService.getWithQueryParam(
+        'material',
+        '',
+        'type',
+        type,
+      );
       if (response.status === 200) {
         const materials: TableRow[] = response.data.map((m: any) => ({
           id: m.id,
@@ -170,7 +192,10 @@ const Material = () => {
 
   const fetchCompanyMaterials = useCallback(async (companyId: string) => {
     try {
-      const response: MaterialResponse = await commonService.get(`material`, `company/${companyId}/material`);
+      const response: MaterialResponse = await commonService.get(
+        `material`,
+        `company/${companyId}/material`,
+      );
       if (response.status === 200) {
         const materials: TableRow[] = response.data.map((m: any) => ({
           id: m.id,
@@ -237,7 +262,11 @@ const Material = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handleContextMenu = (e: React.MouseEvent, categoryId: string, name: string) => {
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    categoryId: string,
+    name: string,
+  ) => {
     e.preventDefault();
     setExpandedCategory(categoryId);
     setSelectedType(name);
@@ -258,8 +287,12 @@ const Material = () => {
 
   let filteredMaterials = companyMaterials;
   if (expandedCategory && !selectedSubItem) {
-    const categoryName = materialCategories.find((c) => c.id === expandedCategory)?.name;
-    filteredMaterials = filteredMaterials.filter((m) => m.material_type === categoryName);
+    const categoryName = materialCategories.find(
+      (c) => c.id === expandedCategory,
+    )?.name;
+    filteredMaterials = filteredMaterials.filter(
+      (m) => m.material_type === categoryName,
+    );
   }
 
   const searchedMaterials = filteredMaterials.filter((row) =>
@@ -405,7 +438,9 @@ const Material = () => {
                       <th
                         key={column.key}
                         className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ''}`}
-                        onClick={() => column.sortable && setSortColumn(column.key)}
+                        onClick={() =>
+                          column.sortable && setSortColumn(column.key)
+                        }
                       >
                         {column.label}
                       </th>
@@ -432,7 +467,11 @@ const Material = () => {
       {contextMenu && (
         <div
           className={styles.contextMenu}
-          style={{ top: contextMenu.y, left: contextMenu.x, position: 'absolute' }}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x,
+            position: 'absolute',
+          }}
         >
           <button
             className={styles.contextMenuItem}
@@ -449,7 +488,11 @@ const Material = () => {
       {contextMaterialMenu && (
         <div
           className={styles.contextMenu}
-          style={{ top: contextMaterialMenu.y, left: contextMaterialMenu.x, position: 'absolute' }}
+          style={{
+            top: contextMaterialMenu.y,
+            left: contextMaterialMenu.x,
+            position: 'absolute',
+          }}
         >
           <button
             className={styles.contextMenuItem}
@@ -467,7 +510,11 @@ const Material = () => {
       {createCompanyPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img src={createicon.src} className={styles.createicon} alt="createicon" />
+            <img
+              src={createicon.src}
+              className={styles.createicon}
+              alt="createicon"
+            />
             <img
               src={close.src}
               className={styles.createclose}
@@ -477,14 +524,22 @@ const Material = () => {
             <div className={styles.create_right_side}>
               <h2>Create Company</h2>
               <p>Please fill all the details to create company.</p>
-              <form className={styles.form} onSubmit={(e) => { e.preventDefault(); createCompany(); }}>
+              <form
+                className={styles.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  createCompany();
+                }}
+              >
                 <div className={styles.createinputGroup}>
                   <InputField
                     mediumField={true}
                     className={styles.inputField}
                     borderColor="var(--primary-color-grey-2)"
                     value={companyName}
-                    onChange={(e: { target: { value: SetStateAction<string> } }) => setCompanyName(e.target.value)}
+                    onChange={(e: {
+                      target: { value: SetStateAction<string> };
+                    }) => setCompanyName(e.target.value)}
                     placeholder="Enter Company Name"
                     label={companyName ? 'Company Name' : ''}
                     error={error || ''}
@@ -493,10 +548,16 @@ const Material = () => {
               </form>
             </div>
             <div className={styles.createButtonGrop}>
-              <button className={styles.cancelcreateButton} onClick={() => setCreateCompanyPopup(false)}>
+              <button
+                className={styles.cancelcreateButton}
+                onClick={() => setCreateCompanyPopup(false)}
+              >
                 Cancel
               </button>
-              <button className={styles.createcontinueButton} onClick={createCompany}>
+              <button
+                className={styles.createcontinueButton}
+                onClick={createCompany}
+              >
                 Create
               </button>
             </div>
