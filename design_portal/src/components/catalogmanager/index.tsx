@@ -1,70 +1,240 @@
-import add from '../../assets/catalogmanager/add.svg';
-import Header from '../header/header';
-import Sidebar from '../sidebar/sidebar';
-import styles from './catalogmanager.module.css';
-// import edit from '../../assets/catalogmanager/edit.svg';
 import createicon from '@/assets/createicon.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
 import close from '@/assets/design/close.svg';
-import React, { useState } from 'react';
-import arrow from '../../assets/catalogmanager/arrow.svg';
+import commonService from '@/services/CommonService';
+import React, { useEffect, useState } from 'react';
+import add from '../../assets/catalogmanager/add.svg';
 import deleteIcon from '../../assets/catalogmanager/delete.svg';
 import matariel from '../../assets/catalogmanager/matireal.svg';
+import Header from '../header/header';
 import InputField from '../inputfields/InputField';
+import Sidebar from '../sidebar/sidebar';
+import styles from './catalogmanager.module.css';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [name, setName] = useState('Data 1');
   const [isEditingName, setIsEditingName] = useState(false);
-
-  const [description, setDescription] = useState('1/2 milimine');
+  const [description, setDescription] = useState('1/2 millimeter');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [catalogType, setCatalogType] = useState('Door');
+  const [selectedCatalog, setSelectedCatalog] = useState<
+    null | (typeof catalogData)[0]
+  >(null);
+  const [catalogData, setCatalogData] = useState<any[]>([]);
+  const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
+  const [ruleParts, setRuleParts] = useState<any[]>([]);
+  const [materialData, setMaterialData] = useState<any[]>([]);
+  const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
+  const [materialSearch, setMaterialSearch] = useState('');
 
-  // handlers
-  const handleBlur =
-    (setEditing: {
-      (value: React.SetStateAction<boolean>): void;
-      (value: React.SetStateAction<boolean>): void;
-      (arg0: boolean): void;
-    }) =>
-    () =>
-      setEditing(false);
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    setEditing: {
-      (value: React.SetStateAction<boolean>): void;
-      (value: React.SetStateAction<boolean>): void;
-      (arg0: boolean): void;
-    },
-  ) => {
-    if (e.key === 'Enter') setEditing(false);
-  };
+  useEffect(() => {
+    if (catalogData.length > 0) {
+      setSelectedCatalog(catalogData[0]);
+    }
+  }, [catalogData]);
+
+  // const filteredMaterials = materialData.filter(
+  //   (mat) => mat.type === selectedMaterialType
+  // );
+
+  const filteredMaterials = materialData
+    .filter((mat) => mat.type === selectedMaterialType) // keep type filter
+    .filter(
+      (mat) =>
+        mat.name.toLowerCase().includes(materialSearch.toLowerCase()) ||
+        mat.description.toLowerCase().includes(materialSearch.toLowerCase()),
+    );
 
   const fields = [
     {
       label: 'Name',
       type: 'name',
-      placeholder: 'Enter design name',
-
-      onChange: '',
+      placeholder: 'Enter catalog name',
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setNewName(e.target.value),
+      error: '',
+    },
+    {
+      label: 'Description',
+      type: 'name',
+      placeholder: 'Enter catalog description',
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setNewDescription(e.target.value),
       error: '',
     },
   ];
 
-  const menuItems = [
-    { id: 1, name: 'Material', icon: matariel.src },
-    { id: 2, name: 'Banding', icon: matariel.src },
-    { id: 3, name: 'MDF', icon: matariel.src },
-    { id: 4, name: 'Wood', icon: matariel.src },
+  // ---------- DROPDOWN DATA ----------
+  const catalogTypes = [
+    { value: 'Door', label: 'Door' },
+    { value: 'Drawer', label: 'Drawer' },
+    { value: 'Sliding Door', label: 'Sliding Door' },
   ];
-  const handleAddCatalog = () => {
-    setShowPopup(true);
-    console.log('Add Catalog');
+
+  const materialTypes = [
+    'Banding',
+    'Board Stock',
+    'Caster',
+    'Connector',
+    'Drawer Guide',
+    'Hinge',
+    'Hinge Plate',
+    'Laminate',
+    'Leg',
+    'Leg Leveler',
+    'Miscellaneous',
+    'Molding',
+    'Panel Stock',
+    'Pull',
+    'Rod',
+    'Sliding Door Rail',
+    'Sliding Door Roller',
+    'Wire Basket',
+  ];
+
+  const doorTableData = [
+    { name: 'Elder ven EB', description: 'Veneer Edgebanding' },
+    { name: 'Elder ven EB', description: '1/2 minute' },
+    { name: 'Up Elder ven EB', description: '10%' },
+    { name: 'Elder ven EB', description: 'No' },
+  ];
+
+  // ---------- UTILS ----------
+  const handleBlur = (setEditing: (v: boolean) => void) => () =>
+    setEditing(false);
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    setEditing: (v: boolean) => void,
+  ) => {
+    if (e.key === 'Enter') setEditing(false);
   };
-  const handleDeleteCatalog = () => {
-    setshowDeletePopup(true);
-    console.log('Delete Catalog');
+
+  const handleAddCatalog = () => setShowPopup(true);
+  const handleDeleteCatalog = () => setshowDeletePopup(true);
+
+  const getCatalog = async () => {
+    const response: { status: number; data: any } =
+      await commonService.getWithQueryParam(
+        'material',
+        'catalog',
+        'type',
+        catalogType,
+      );
+    if (response.status === 200) {
+      setCatalogData(response.data);
+    }
+  };
+
+  const fetchRuleParts = async (ruleId: string) => {
+    setActiveRuleId(ruleId); // mark active rule
+    try {
+      const response: { status: number; data: any[] } = await commonService.get(
+        'material',
+        `catalog_rules/${ruleId}/parts`,
+      );
+      if (response.status === 200) {
+        setRuleParts(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching rule parts:', error);
+      setRuleParts([]);
+    }
+  };
+
+  useEffect(() => {
+    getCatalog();
+  }, [catalogType]);
+
+  useEffect(() => {
+    if (selectedCatalog && selectedCatalog.catalog_rule.length > 0) {
+      fetchRuleParts(selectedCatalog.catalog_rule[0].id);
+    } else {
+      setActiveRuleId(null);
+      setRuleParts([]);
+    }
+  }, [selectedCatalog]);
+
+  useEffect(() => {
+    if (catalogData.length > 0) {
+      if (!selectedCatalog) {
+        setSelectedCatalog(catalogData[0]);
+      }
+    }
+  }, [catalogData]);
+
+  const handleCreateCatalog = async () => {
+    const payload = {
+      type: catalogType,
+      name: newName,
+      description: newDescription,
+    };
+
+    const response: { status: number; data: any } = await commonService.post(
+      'material',
+      'catalog',
+      payload,
+    );
+
+    if (response.status === 201) {
+      // fetch all catalogs
+      const catalogResponse: { status: number; data: any[] } =
+        await commonService.getWithQueryParam(
+          'material',
+          'catalog',
+          'type',
+          catalogType,
+        );
+      if (catalogResponse.status === 200) {
+        setCatalogData(catalogResponse.data);
+        setSelectedCatalog(response.data);
+      }
+      setShowPopup(false);
+    }
+  };
+
+  const getMaterial = async () => {
+    const response: { status: number; data: any } = await commonService.get(
+      'material',
+      '',
+    );
+    if (response.status === 200) {
+      setMaterialData(response.data);
+    }
+  };
+
+  useEffect(() => {
+    getMaterial();
+  }, []);
+
+  const handleAssignMaterial = (partId: string, materialId: string) => {
+    const material = materialData.find((m) => m.id === materialId);
+    if (!material) return;
+
+    setRuleParts((prevParts) =>
+      prevParts.map((part) =>
+        part.id === partId ? { ...part, material } : part,
+      ),
+    );
+
+    // @ts-ignore
+    const response: { status: number } = commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: materialId,
+      },
+    );
+
+    if (response.status === 200) {
+      setRuleParts((prevParts) =>
+        prevParts.map((part) =>
+          part.id === partId ? { ...part, material } : part,
+        ),
+      );
+    }
   };
 
   return (
@@ -72,16 +242,28 @@ const CatalogManager = () => {
       <Sidebar />
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Catalog Manager" />
+
+        {/* TOP TOOLBAR */}
         <div className={styles.maincontainer}>
-          {/* Top bar (already implemented) */}
           <div className={styles.topToolbar}>
             <div className={styles.toolbarLeft}>
               <div className={styles.toolbarLeftContent}>
-                <span>Catalog part</span>
-                <select className={styles.dropdown}>
-                  <option value="MDF">MDF</option>
-                  <option value="PLY">PLY</option>
-                  <option value="HDF">HDF</option>
+                <span>Catalog Part</span>
+                <select
+                  className={styles.dropdown}
+                  value={selectedCatalog?.id || ''}
+                  onChange={(e) => {
+                    const catalog = catalogData.find(
+                      (c) => c.id === e.target.value,
+                    );
+                    setSelectedCatalog(catalog || null);
+                  }}
+                >
+                  {catalogData.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.name}
+                    </option>
+                  ))}
                 </select>
                 <div className={styles.iconContainer}>
                   <img
@@ -90,33 +272,37 @@ const CatalogManager = () => {
                     className={styles.addIcon}
                     onClick={handleAddCatalog}
                   />
-                  {/* <img src={edit.src} alt="Edit" className={styles.editIcon} /> */}
-                  {/* <img src={deleteIcon.src} alt="Delete" className={styles.deleteIcon} /> */}
                 </div>
               </div>
             </div>
             <div className={styles.toolbarRight}>
               <div className={styles.toolbarRightContent}>
                 <span>Catalog Type</span>
-                <select className={styles.dropdown}>
-                  <option value="Door">Door</option>
-                  <option value="Panel">Panel</option>
-                  <option value="Drawer">Drawer</option>
+                <select
+                  className={styles.dropdown}
+                  value={catalogType}
+                  onChange={(e) => setCatalogType(e.target.value)}
+                >
+                  {catalogTypes.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
         </div>
+
+        {/* MAIN CONTENT */}
         <div className={styles.mainContent}>
+          {/* LEFT BOX */}
           <div className={styles.leftBox}>
+            {/* RULES */}
             <div className={styles.topBox}>
               <div className={styles.topBoxContent}>
                 <h3>Rules</h3>
                 <div className={styles.buttonContainer}>
-                  {/* <button className={styles.addButtonRule}>
-                                        <img src={add.src} alt="" className={styles.addIconButton} />Add Material</button>
-                                    <button className={styles.editButtonRule}>
-                                        <img src={edit.src} alt="" className={styles.editIconButton} />Edit Material</button> */}
                   <button
                     className={styles.deleteButtonRule}
                     onClick={handleDeleteCatalog}
@@ -125,104 +311,84 @@ const CatalogManager = () => {
                       src={deleteIcon.src}
                       alt=""
                       className={styles.deleteIconButton}
-                    />
+                    />{' '}
                     Delete
                   </button>
                 </div>
               </div>
               <hr className={styles.divider} />
               <div className={styles.content}>
+                {/* MENU */}
                 <div className={styles.topBoxLeft}>
                   <div className={styles.matirealmanu}>
-                    {menuItems.map((item) => (
-                      <div key={item.id} className={`${styles.rulematireal} `}>
-                        <img src={item.icon} alt={item.name} />
-                        <span>{item.name}</span>
+                    {selectedCatalog?.catalog_rule.map((rule: any) => (
+                      <div
+                        key={rule.id}
+                        className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
+                        onClick={() => fetchRuleParts(rule.id)}
+                      >
+                        <img src={matariel.src} alt="" />
+                        <span>{rule.name}</span>
                       </div>
-                    ))}
-                  </div>
-                  <div className={styles.manuiconContainer}>
-                    {/* <img src={add.src} alt="Add" className={styles.manuaddIcon} />
-                                        <img src={edit.src} alt="Edit" className={styles.manueditIcon} /> */}
-                    {/* <img src={deleteIcon.src} alt="Delete" className={styles.manudeleteIcon} /> */}
+                    )) || <p>No rules available</p>}
                   </div>
                 </div>
+
+                {/* PARTS TABLE */}
                 <div className={styles.tableWrapper}>
                   <table className={styles.partsTable}>
                     <thead>
                       <tr>
-                        <th>Parts</th>
-                        <th>Material</th>
+                        <th>Part Name</th>
+                        <th>Material Name</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
+                      {ruleParts.length > 0
+                        ? ruleParts.map((part) => (
+                            <tr
+                              key={part.id}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                const materialId =
+                                  e.dataTransfer.getData('materialId');
+                                handleAssignMaterial(part.id, materialId);
+                              }}
+                            >
+                              <td>{part.name}</td>
+                              <td>
+                                {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                              </td>
+                            </tr>
+                          ))
+                        : null}
 
-                      <tr>
-                        <td>Door Edge Banding</td>
-                        <td>
-                          <input type="text" defaultValue="PVC Wood grain" />
-                        </td>
-                      </tr>
+                      {/* Fill remaining rows up to 8 */}
+                      {Array.from({
+                        length: Math.max(0, 8 - ruleParts.length),
+                      }).map((_, idx) => (
+                        <tr key={`empty-${idx}`}>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
 
+            {/* DETAILS TABLE */}
             <div className={styles.bottomBox}>
               <div className={styles.table_container}>
                 <table className={styles.custom_table}>
                   <thead>
                     <tr>
-                      <th className={styles.tablehead} colSpan={2}>
-                        Details
-                      </th>
+                      <th colSpan={2}>Details</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className={styles.Tablerow}>
+                    <tr>
                       <td>Name</td>
                       <td>
                         {isEditingName ? (
@@ -234,20 +400,15 @@ const CatalogManager = () => {
                             onKeyDown={(e) =>
                               handleKeyDown(e, setIsEditingName)
                             }
-                            className={styles.editable_input}
                           />
                         ) : (
-                          <p
-                            className="editable-input"
-                            onClick={() => setIsEditingName(true)}
-                          >
-                            {name}
+                          <p onClick={() => setIsEditingName(true)}>
+                            {selectedCatalog?.name}
                           </p>
                         )}
                       </td>
                     </tr>
-
-                    <tr className={styles.Tablerow}>
+                    <tr>
                       <td>Description</td>
                       <td>
                         {isEditingDescription ? (
@@ -259,14 +420,10 @@ const CatalogManager = () => {
                             onKeyDown={(e) =>
                               handleKeyDown(e, setIsEditingDescription)
                             }
-                            className={styles.editable_input}
                           />
                         ) : (
-                          <p
-                            className="editable-input"
-                            onClick={() => setIsEditingDescription(true)}
-                          >
-                            {description}
+                          <p onClick={() => setIsEditingDescription(true)}>
+                            {selectedCatalog?.description}
                           </p>
                         )}
                       </td>
@@ -276,30 +433,29 @@ const CatalogManager = () => {
               </div>
             </div>
           </div>
+
+          {/* RIGHT BOX */}
           <div className={styles.rightBox}>
             <div className={styles.righttopbar}>
-              <select className={styles.rightBoxdropdown}>
-                <option value="MDF">MDF</option>
-                <option value="PLY">PLY</option>
-                <option value="HDF">HDF</option>
+              <select
+                className={styles.rightBoxdropdown}
+                value={selectedMaterialType}
+                onChange={(e) => setSelectedMaterialType(e.target.value)}
+              >
+                {materialTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
               <div className={styles.searchContainer}>
                 <input
                   type="text"
-                  placeholder=""
+                  placeholder="Search..."
                   className={styles.searchInput}
-                  // value={searchQuery}
-                  // onChange={(e) => setSearchQuery(e.target.value)}
+                  value={materialSearch}
+                  onChange={(e) => setMaterialSearch(e.target.value)}
                 />
-                <svg
-                  className={styles.searchIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
               </div>
             </div>
             <hr className={styles.divider} />
@@ -314,66 +470,31 @@ const CatalogManager = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>Veneer Edgebanding</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>1/2 minute</td>
-                    </tr>
-                    <tr>
-                      <td>Up Elder ven EB</td>
-                      <td>10%</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>No</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>Veneer Edgebanding</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>1/2 minute</td>
-                    </tr>
-                    <tr>
-                      <td>Up Elder ven EB</td>
-                      <td>10%</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>No</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>Veneer Edgebanding</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>1/2 minute</td>
-                    </tr>
-                    <tr>
-                      <td>Up Elder ven EB</td>
-                      <td>10%</td>
-                    </tr>
-                    <tr>
-                      <td>Elder ven EB</td>
-                      <td>No</td>
-                    </tr>
+                    {filteredMaterials.length > 0 ? (
+                      filteredMaterials.map((row) => (
+                        <tr
+                          key={row.id}
+                          draggable
+                          onDragStart={(e) =>
+                            e.dataTransfer.setData('materialId', row.id)
+                          }
+                        >
+                          <td>{row.name}</td>
+                          <td>{row.description}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={2}>No materials found</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-              <button className={styles.addButton}>
-                <img src={arrow.src} alt="" />
-                Add to material
-              </button>
             </div>
           </div>
         </div>
       </div>
-
       {/* add catalog popup  */}
       {showPopup && (
         <div className={styles.createpopupOverlay}>
@@ -390,7 +511,7 @@ const CatalogManager = () => {
               onClick={() => setShowPopup(false)}
             />
             <div className={styles.create_right_side}>
-              <h2>Add Material</h2>
+              <h2>Add Catalog</h2>
               <p>Please enter a name for this Material.</p>
               <form
                 className={styles.form}
@@ -421,58 +542,9 @@ const CatalogManager = () => {
               </button>
               <button
                 className={styles.createcontinueButton}
-                // onClick={handleCreateDesign}
+                onClick={handleCreateCatalog}
               >
                 continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* delete popup */}
-      {showDeletePopup && (
-        <div
-          className={styles.deletepopupOverlay}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (e.target === e.currentTarget) {
-              setshowDeletePopup(false);
-            }
-          }}
-        >
-          <div className={styles.deletepopup}>
-            <img
-              src={deletepopupicon.src}
-              alt="deletepopupicon"
-              className={styles.deletepopupicon}
-            />
-
-            <img
-              src={close.src}
-              alt="close"
-              onClick={() => setshowDeletePopup(false)}
-              className={styles.close}
-            />
-
-            <div className={styles.right_side}>
-              <h2>Delete Design</h2>
-              <p className={styles.deletemassage}>
-                Are you sure you want to delete this design? This action cannot
-                be undone.
-              </p>
-            </div>
-            <div className={styles.deleteButtonGrop}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setshowDeletePopup(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.deleteButton}
-                // onClick={handleDeleteClick}
-              >
-                Delete
               </button>
             </div>
           </div>

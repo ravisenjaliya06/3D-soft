@@ -1184,8 +1184,8 @@ CATALOG = [
     },
     {
         "type": "Drawer",
-        "name": "Default Door",
-        "description": "Default Door",
+        "name": "Default Drawer",
+        "description": "Default Drawer",
         "catalog_rules": [
             {
                 "name": "Drawer Guide",
