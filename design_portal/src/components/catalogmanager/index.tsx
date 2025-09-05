@@ -219,6 +219,7 @@ const CatalogManager = () => {
       ),
     );
 
+    // @ts-ignore
     const response: { status: number } = commonService.put(
       'material',
       `catalog/part/${partId}`,
@@ -320,7 +321,7 @@ const CatalogManager = () => {
                 {/* MENU */}
                 <div className={styles.topBoxLeft}>
                   <div className={styles.matirealmanu}>
-                    {selectedCatalog?.catalog_rule.map((rule) => (
+                    {selectedCatalog?.catalog_rule.map((rule: any) => (
                       <div
                         key={rule.id}
                         className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
