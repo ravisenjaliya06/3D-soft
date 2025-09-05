@@ -1,5 +1,5 @@
 # Python imports
-from typing import Dict
+from typing import Any, Dict
 
 # External imports
 from rest_framework import serializers
@@ -7,6 +7,9 @@ from rest_framework.exceptions import ValidationError
 
 # Local imports
 from .models import (
+    Catalog,
+    CatalogRuleParts,
+    CatalogRules,
     Company,
     FinishesChoices,
     FinishesLibrary,
@@ -18,9 +21,6 @@ from .models import (
     MountHoles,
     MountPlateHoles,
     Properties,
-    Catalog, 
-    CatalogRuleParts, 
-    CatalogRules
 )
 
 
@@ -614,11 +614,10 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
         model = CatalogRuleParts
         fields = ["id", "name", "material"]
 
-    def get_material(self, obj):
+    def get_material(self: "CatalogRulePartSerializer", obj: CatalogRuleParts) -> dict:
         if obj.material:
             return {"id": str(obj.material.id), "name": obj.material.name}
         return None
-
 
 
 class CatalogRuleSerializer(serializers.ModelSerializer):
@@ -634,14 +633,11 @@ class CatalogSerializer(serializers.ModelSerializer):
         model = Catalog
         fields = ["id", "type", "name", "description", "catalog_rule"]
 
-    def create(self, validated_data):
-        new_catalog = Catalog.objects.create(
-            **validated_data
-        )
+    def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
+        new_catalog = Catalog.objects.create(**validated_data)
 
         template_catalog = Catalog.objects.filter(
-            organization__isnull=True,
-            type=new_catalog.type
+            organization__isnull=True, type=new_catalog.type
         ).first()
 
         if template_catalog:
@@ -661,27 +657,34 @@ class CatalogSerializer(serializers.ModelSerializer):
 
 
 class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
-    material_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    material_id = serializers.UUIDField(
+        write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = CatalogRuleParts
         fields = ["id", "name", "material_id"]
         read_only_fields = ["id", "name"]
 
-    def update(self, instance, validated_data):
+    def update(
+        self: "CatalogRulePartUpdateSerializer",
+        instance: CatalogRuleParts,
+        validated_data: Dict[str, Any],
+    ) -> CatalogRuleParts:
         request = self.context.get("request")
-        material_id = validated_data.get("material_id", None)
+        material_id = validated_data.get("material_id")
 
         if material_id is None:
             instance.material = None
         else:
             material = Material.objects.filter(
-                id=material_id,
-                organization=request.user.selected_organization
+                id=material_id, organization=request.user.selected_organization
             ).first()
 
             if not material:
-                raise serializers.ValidationError("Material not found for this organization.")
+                raise serializers.ValidationError(
+                    "Material not found for this organization."
+                )
 
             instance.material = material
 

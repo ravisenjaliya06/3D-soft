@@ -3,6 +3,9 @@ import django.contrib.admin as admin
 
 # Local imports
 from .models import (
+    Catalog,
+    CatalogRuleParts,
+    CatalogRules,
     Company,
     FinishesLibrary,
     Material,
@@ -10,9 +13,6 @@ from .models import (
     MaterialFinishType,
     MaterialTexture,
     Properties,
-    Catalog,
-    CatalogRules,
-    CatalogRuleParts,
 )
 
 
@@ -23,14 +23,18 @@ class FinishesLibraryAdmin(admin.ModelAdmin):
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "material_type", "organization")
 
+
 class CatalogAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "type", "organization")
+
 
 class CatalogRulesAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "catalog")
 
+
 class CatalogRulesPartsAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "catalog_rule")
+
 
 admin.site.register(Material)
 admin.site.register(Properties)
