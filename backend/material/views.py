@@ -1,3 +1,5 @@
+# Python imports
+
 # Django imports
 from django.db.models.query import QuerySet
 
@@ -11,6 +13,7 @@ from umaboy.constant import DELETE, GET, POST, PUT
 # Local imports
 from .models import Company, FinishesLibrary, Material
 from .serializers import (
+    CatalogRulePartUpdateSerializer,
     CompanySerializer,
     FinishesLibrarySerializer,
     MaterialSerializer,
@@ -67,3 +70,53 @@ class MaterialViewSet(viewsets.ModelViewSet):
         if company_id:
             serializer.save(company_id=company_id, organization=organization)
         serializer.save(organization=organization)
+
+
+# External imports
+from rest_framework import generics
+
+# Local imports
+from .models import Catalog, CatalogRuleParts
+from .serializers import CatalogRulePartSerializer, CatalogSerializer
+
+
+class CatalogViewSet(viewsets.ModelViewSet):
+    serializer_class = CatalogSerializer
+
+    def get_queryset(self: "CatalogViewSet") -> QuerySet[Catalog]:
+        catalog_type = self.request.query_params.get("type")
+        qs = Catalog.objects.filter(
+            organization=self.request.user.selected_organization
+        )
+        if catalog_type:
+            qs = qs.filter(type=catalog_type)
+        return qs
+
+    def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
+        serializer.save(organization=self.request.user.selected_organization)
+
+    def update(
+        self: "CatalogViewSet", instance: Catalog, validated_data: dict
+    ) -> Catalog:
+        material_id = validated_data.get("material_id")
+        if material_id:
+            material = Material.objects.get(
+                id=material_id, organization=self.request.user.selected_organization
+            )
+            instance.material = material
+            instance.save()
+        return instance
+
+
+class CatalogRulePartsListView(generics.ListAPIView):
+    serializer_class = CatalogRulePartSerializer
+
+    def get_queryset(self: "CatalogRulePartsListView") -> QuerySet[CatalogRuleParts]:
+        rule_id = self.kwargs["rule_id"]
+        return CatalogRuleParts.objects.filter(catalog_rule_id=rule_id)
+
+
+class CatalogRulePartsViewSet(viewsets.ModelViewSet):
+    queryset = CatalogRuleParts.objects.all()
+    serializer_class = CatalogRulePartUpdateSerializer
+    lookup_field = "id"
