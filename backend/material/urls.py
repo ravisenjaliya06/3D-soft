@@ -2,13 +2,25 @@
 from django.urls import path
 
 # Local imports
-from .views import CompanyViewSet, MaterialViewSet
+from .views import CompanyViewSet, FinishesLibraryListAPIView, MaterialViewSet
 
 urlpatterns = [
     path(
         "",
-        MaterialViewSet.as_view({"get": "list"}),
+        MaterialViewSet.as_view({"get": "list", "post": "create"}),
         name="company-list",
+    ),
+    path(
+        "<uuid:id>/",
+        MaterialViewSet.as_view(
+            {"get": "retrieve", "put": "update", "delete": "destroy"}
+        ),
+        name="company-details",
+    ),
+    path(
+        "finishes/",
+        FinishesLibraryListAPIView.as_view({"get": "list"}),
+        name="finishes-list",
     ),
     path(
         "company/",
@@ -27,7 +39,7 @@ urlpatterns = [
         name="company-detail",
     ),
     path(
-        "company/<uuid:pk>/material/",
+        "company/<uuid:company_id>/material/",
         MaterialViewSet.as_view(
             {
                 "get": "list",

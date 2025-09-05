@@ -3,15 +3,18 @@ from django.db.models.query import QuerySet
 
 # External imports
 from rest_framework import viewsets
-from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 
 # App imports
 from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
-from .models import Company, Material
-from .serializers import CompanySerializer, MaterialSerializer
+from .models import Company, FinishesLibrary, Material
+from .serializers import (
+    CompanySerializer,
+    FinishesLibrarySerializer,
+    MaterialSerializer,
+)
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -25,36 +28,42 @@ class CompanyViewSet(viewsets.ModelViewSet):
         )
 
 
+class FinishesLibraryListAPIView(viewsets.ModelViewSet):
+    serializer_class = FinishesLibrarySerializer
+
+    def get_queryset(self: "FinishesLibraryListAPIView") -> QuerySet[FinishesLibrary]:
+        type = self.request.query_params.get("type")
+        qs = FinishesLibrary.objects.filter(
+            organization=self.request.user.selected_organization, is_deleted=False
+        )
+
+        if type:
+            qs = qs.filter(type=type)
+        return qs
+
+
 class MaterialViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
     serializer_class = MaterialSerializer
+    lookup_field = "id"
 
     def get_queryset(self: "MaterialViewSet") -> QuerySet[Material]:
-        company_id = self.kwargs.get("pk")
+        company_id = self.kwargs.get("company_id")
         material_type = self.request.query_params.get("type")
+        qs = Material.objects.filter(
+            organization=self.request.user.selected_organization, is_deleted=False
+        )
+
+        if material_type:
+            qs = qs.filter(type=material_type, company__isnull=True)
 
         if company_id:
-            if not Company.objects.filter(
-                id=company_id, organization=self.request.user.selected_organization
-            ).exists():
-                raise NotFound(detail="Company not found.")
-            return Material.objects.filter(company_id=company_id, is_deleted=False)
+            qs = qs.filter(company_id=company_id)
 
-        queryset = Material.objects.filter(
-            company__isnull=True,
-            organization=self.request.user.selected_organization,
-            is_deleted=False,
-        )
-        if material_type:
-            queryset = queryset.filter(
-                type=material_type,
-                company__isnull=True,
-                organization=self.request.user.selected_organization,
-                is_deleted=False,
-            )
-
-        return queryset
+        return qs
 
     def perform_create(self: "MaterialViewSet", serializer: MaterialSerializer) -> None:
-        company_id = self.kwargs.get("pk")
-        serializer.save(company_id=company_id)
+        company_id = self.kwargs.get("company_id")
+        organization = self.request.user.selected_organization
+        if company_id:
+            serializer.save(company_id=company_id, organization=organization)
+        serializer.save(organization=organization)
