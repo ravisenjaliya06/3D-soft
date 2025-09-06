@@ -180,7 +180,19 @@ const AddMaterialPopup: React.FC<Props> = ({
               key: 'unitOfIssue',
               label: 'Unit of Issue',
               type: 'select',
-              options: ['Sheet', 'Square Meter', 'Piece'],
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
             },
             {
               key: 'thickness',
@@ -217,6 +229,223 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'End Finish',
               type: 'select',
               options: ['Banded', 'Raw', 'Sealed'],
+            },
+          ],
+        },
+      ],
+      Caster: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Caster Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'axleFinish',
+              label: 'Axle Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'axleFinishType',
+              label: 'Axle Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'axleTexture',
+              label: 'Axle Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+            {
+              key: 'pivotFinish',
+              label: 'Pivot Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'pivotFinishType',
+              label: 'Pivot Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'pivotTexture',
+              label: 'Pivot Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+            {
+              key: 'plateFinish',
+              label: 'Plate Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'plateFinishType',
+              label: 'Plate Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'plateTexture',
+              label: 'Plate Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+            {
+              key: 'wheelFinish',
+              label: 'Wheel Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'wheelFinishType',
+              label: 'Wheel Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'wheelTexture',
+              label: 'Wheel Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      Connector: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Connector Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'connectorType',
+              label: 'Type',
+              type: 'select',
+              options: ['Rafix', 'Other'],
+            },
+            {
+              key: 'slotType',
+              label: 'Slot Type',
+              type: 'text',
+              placeholder: 'Enter slot type',
+              disabled: true,
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'connectorFinish',
+              label: 'Connector Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'connectorFinishType',
+              label: 'Connector Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'connectorTexture',
+              label: 'Connector Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
             },
           ],
         },
@@ -573,6 +802,468 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
       ],
+      'Hinge Plate': [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Hinge Plate Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'hingePlateType',
+              label: 'Type',
+              type: 'select',
+              options: ['Frame', 'Inline', 'Panel'],
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Mounting Holes',
+          fields: [
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            {
+              key: 'spacing',
+              label: 'Spacing',
+              type: 'number',
+              placeholder: 'Enter spacing (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'hingePlateFinish',
+              label: 'Hinge Plate Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'hingePlateFinishType',
+              label: 'Hinge Plate Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'hingePlateTexture',
+              label: 'Hinge Plate Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      Laminate: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Laminate Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'length',
+              label: 'Length',
+              type: 'number',
+              placeholder: 'Enter length (mm)',
+            },
+            {
+              key: 'width',
+              label: 'Width',
+              type: 'number',
+              placeholder: 'Enter width (mm)',
+            },
+            {
+              key: 'thickness',
+              label: 'Thickness',
+              type: 'number',
+              placeholder: 'Enter thickness (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'faceFinish',
+              label: 'Face Finish',
+              type: 'select',
+              options: ['Laminated', 'Veneer', 'Raw'],
+            },
+            {
+              key: 'faceFinishType',
+              label: 'Face Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'faceTexture',
+              label: 'Face Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      Leg: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Leg Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'legType',
+              label: 'Type',
+              type: 'select',
+              options: ['Bun Foot', 'Pedestal', 'Tapered'],
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            {
+              key: 'width',
+              label: 'Width',
+              type: 'number',
+              placeholder: 'Enter width (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'faceFinish',
+              label: 'Face Finish',
+              type: 'select',
+              options: ['Laminated', 'Veneer', 'Raw'],
+            },
+            {
+              key: 'faceFinishType',
+              label: 'Face Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'faceTexture',
+              label: 'Face Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      'Leg Leveler': [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Leg Leveler Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'faceFinish',
+              label: 'Face Finish',
+              type: 'select',
+              options: ['Laminated', 'Veneer', 'Raw'],
+            },
+            {
+              key: 'faceFinishType',
+              label: 'Face Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'faceTexture',
+              label: 'Face Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      Miscellaneous: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+      ],
+      Molding: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Molding Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'faceFinish',
+              label: 'Face Finish',
+              type: 'select',
+              options: ['Laminated', 'Veneer', 'Raw'],
+            },
+            {
+              key: 'faceFinishType',
+              label: 'Face Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'faceTexture',
+              label: 'Face Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
       'Panel Stock': [
         {
           title: 'New Material',
@@ -663,6 +1354,777 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
       ],
+      Pull: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Pull Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'pullType',
+              label: 'Type',
+              type: 'select',
+              options: ['Knob #1', 'Other'],
+            },
+            {
+              key: 'centerToCenter',
+              label: 'Center To Center',
+              type: 'number',
+              placeholder: 'Enter center to center (mm)',
+            },
+            {
+              key: 'width',
+              label: 'Width',
+              type: 'number',
+              placeholder: 'Enter width (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            {
+              key: 'horizontalInset',
+              label: 'Horizontal Inset',
+              type: 'number',
+              placeholder: 'Enter horizontal inset (mm)',
+            },
+            {
+              key: 'verticalInset',
+              label: 'Vertical Inset',
+              type: 'number',
+              placeholder: 'Enter vertical inset (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Mounting Holes',
+          fields: [
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'pullFinish',
+              label: 'Pull Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'pullFinishType',
+              label: 'Pull Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'pullTexture',
+              label: 'Pull Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      Rod: [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Rod Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'rodType',
+              label: 'Type',
+              type: 'select',
+              options: ['Round', 'Oval'],
+            },
+            {
+              key: 'length',
+              label: 'Length',
+              type: 'number',
+              placeholder: 'Enter length (mm)',
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            {
+              key: 'width',
+              label: 'Width',
+              type: 'number',
+              placeholder: 'Enter width (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Boring',
+          fields: [
+            {
+              key: 'pattern',
+              label: 'Pattern',
+              type: 'select',
+              options: [
+                'One',
+                'Two Vertical',
+                'Two Horizontal',
+                'Three Holes',
+                'Four Holes',
+                'Multiple Vertical',
+              ],
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            {
+              key: 'spacing',
+              label: 'Spacing',
+              type: 'number',
+              placeholder: 'Enter spacing (mm)',
+            },
+            {
+              key: 'quantity',
+              label: 'Quantity',
+              type: 'number',
+              placeholder: 'Enter quantity',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'pullFinish',
+              label: 'Pull Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'pullFinishType',
+              label: 'Pull Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'pullTexture',
+              label: 'Pull Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      'Sliding Door Rail': [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Sliding Door Rail Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'railType',
+              label: 'Type',
+              type: 'select',
+              options: ['Rail', 'Slot'],
+            },
+            {
+              key: 'length',
+              label: 'Length',
+              type: 'number',
+              placeholder: 'Enter length (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Boring',
+          fields: [
+            {
+              key: 'firstPosition',
+              label: '1st Position',
+              type: 'number',
+              placeholder: 'Enter 1st position (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            {
+              key: 'spacing',
+              label: 'Spacing',
+              type: 'number',
+              placeholder: 'Enter spacing (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'pullFinish',
+              label: 'Pull Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'pullFinishType',
+              label: 'Pull Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'pullTexture',
+              label: 'Pull Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      'Sliding Door Roller': [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Sliding Door Roller Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'rollerType',
+              label: 'Type',
+              type: 'select',
+              options: ['Roller', 'Slot'],
+            },
+            {
+              key: 'mountOnBack',
+              label: 'Mount On Back',
+              type: 'toggle',
+            },
+            {
+              key: 'horizontalInset',
+              label: 'Horizontal Inset',
+              type: 'number',
+              placeholder: 'Enter horizontal inset (mm)',
+            },
+            {
+              key: 'verticalInset',
+              label: 'Vertical Inset',
+              type: 'number',
+              placeholder: 'Enter vertical inset (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Mount Plate Hole 1',
+          fields: [
+            {
+              key: 'horizontalOffset',
+              label: 'Horizontal Offset',
+              type: 'number',
+              placeholder: 'Enter horizontal offset (mm)',
+            },
+            {
+              key: 'verticalOffset',
+              label: 'Vertical Offset',
+              type: 'number',
+              placeholder: 'Enter vertical offset (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Mount Plate Hole 2',
+          fields: [
+            {
+              key: 'horizontalOffset',
+              label: 'Horizontal Offset',
+              type: 'number',
+              placeholder: 'Enter horizontal offset (mm)',
+            },
+            {
+              key: 'verticalOffset',
+              label: 'Vertical Offset',
+              type: 'number',
+              placeholder: 'Enter vertical offset (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Mount Plate Hole 3',
+          fields: [
+            {
+              key: 'horizontalOffset',
+              label: 'Horizontal Offset',
+              type: 'number',
+              placeholder: 'Enter horizontal offset (mm)',
+            },
+            {
+              key: 'verticalOffset',
+              label: 'Vertical Offset',
+              type: 'number',
+              placeholder: 'Enter vertical offset (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Mount Plate Hole 4',
+          fields: [
+            {
+              key: 'horizontalOffset',
+              label: 'Horizontal Offset',
+              type: 'number',
+              placeholder: 'Enter horizontal offset (mm)',
+            },
+            {
+              key: 'verticalOffset',
+              label: 'Vertical Offset',
+              type: 'number',
+              placeholder: 'Enter vertical offset (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Mount Plate Hole 5',
+          fields: [
+            {
+              key: 'horizontalOffset',
+              label: 'Horizontal Offset',
+              type: 'number',
+              placeholder: 'Enter horizontal offset (mm)',
+            },
+            {
+              key: 'verticalOffset',
+              label: 'Vertical Offset',
+              type: 'number',
+              placeholder: 'Enter vertical offset (mm)',
+            },
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'pullFinish',
+              label: 'Pull Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'pullFinishType',
+              label: 'Pull Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'pullTexture',
+              label: 'Pull Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
+      'Wire Basket': [
+        {
+          title: 'New Material',
+          fields: [
+            {
+              key: 'type',
+              label: 'Material Type',
+              type: 'select',
+              options: materialTypes,
+            },
+            {
+              key: 'name',
+              label: 'Name*',
+              type: 'text',
+              placeholder: 'Enter Name',
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              type: 'text',
+              placeholder: 'Enter Description',
+            },
+          ],
+        },
+        {
+          title: 'Wire Basket Specifications',
+          fields: [
+            {
+              key: 'unitOfIssue',
+              label: 'Unit of Issue',
+              type: 'select',
+              options: [
+                'BD Ft',
+                'BD M',
+                'Cubic Ft',
+                'Cubic M',
+                'Each',
+                'pair',
+                'Per Ft',
+                'Per M',
+                'SQ Ft',
+                'SQ M',
+                'sheet',
+              ],
+            },
+            {
+              key: 'basketType',
+              label: 'Type',
+              type: 'select',
+              options: ['Bottom', 'No', 'Side', 'Top Mount'],
+            },
+            {
+              key: 'height',
+              label: 'Height',
+              type: 'number',
+              placeholder: 'Enter height (mm)',
+            },
+            {
+              key: 'width',
+              label: 'Width',
+              type: 'number',
+              placeholder: 'Enter width (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+          ],
+        },
+        {
+          title: 'Mount Holes',
+          fields: [
+            {
+              key: 'diameter',
+              label: 'Diameter',
+              type: 'number',
+              placeholder: 'Enter diameter (mm)',
+            },
+            {
+              key: 'depth',
+              label: 'Depth',
+              type: 'number',
+              placeholder: 'Enter depth (mm)',
+            },
+            {
+              key: 'screwCenterToReference',
+              label: 'Screw Center to Reference',
+              type: 'number',
+              placeholder: 'Enter screw center to reference (mm)',
+            },
+            {
+              key: 'position1To6',
+              label: 'Position 1 → Position6',
+              type: 'text',
+              placeholder: 'Enter positions (comma separated)',
+            },
+          ],
+        },
+        {
+          title: 'Finish Details',
+          fields: [
+            {
+              key: 'wireBasketFinish',
+              label: 'Wire Basket Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'wireBasketFinishType',
+              label: 'Wire Basket Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'wireBasketTexture',
+              label: 'Wire Basket Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+            {
+              key: 'basketMemberFinish',
+              label: 'Basket Member Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'basketMemberFinishType',
+              label: 'Basket Member Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'basketMemberTexture',
+              label: 'Basket Member Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+            {
+              key: 'assemblyMemberFinish',
+              label: 'Assembly Member Finish',
+              type: 'select',
+              options: ['Matte', 'Gloss', 'Semi-Gloss'],
+            },
+            {
+              key: 'assemblyMemberFinishType',
+              label: 'Assembly Member Finish Type',
+              type: 'select',
+              options: ['Wood Grain', 'Solid Color', 'Textured'],
+            },
+            {
+              key: 'assemblyMemberTexture',
+              label: 'Assembly Member Texture',
+              type: 'select',
+              options: ['Smooth', 'Embossed', 'Brushed'],
+            },
+          ],
+        },
+      ],
     };
 
     return (
@@ -730,18 +2192,16 @@ const AddMaterialPopup: React.FC<Props> = ({
       name: formData.name || '',
       type: formData.type || selectedMaterialType,
       description: formData.description || '',
-      properties: [
-        {
-          unit_of_issue: formData.unitOfIssue || '',
-          default_cost: formData.defaultCost || 0,
-          sell_price: formData.sellPrice || 0,
-          length: formData.length || 0,
-          width: formData.width || 0,
-          thickness: formData.thickness || 0,
-          ...(formData.height && { height: formData.height }),
-          ...(formData.drawerType && { drawer_type: formData.drawerType }),
-        },
-      ],
+      properties: {
+        unit_of_issue: formData.unitOfIssue || '',
+        default_cost: formData.defaultCost || 0,
+        sell_price: formData.sellPrice || 0,
+        length: formData.length || 0,
+        width: formData.width || 0,
+        thickness: formData.thickness || 0,
+        ...(formData.height && { height: formData.height }),
+        ...(formData.drawerType && { drawer_type: formData.drawerType }),
+      },
       finishes: [],
       finish_types: [],
       textures: [],
@@ -783,19 +2243,19 @@ const AddMaterialPopup: React.FC<Props> = ({
           />
         );
 
-      case 'toggle':
-        return (
-          <label className={styles.toggleContainer}>
-            {field.label}
-            <input
-              type="checkbox"
-              checked={value as boolean}
-              onChange={(e) => handleInputChange(field.key, e.target.checked)}
-              disabled={field.disabled}
-            />
-            <span className={styles.toggleSlider}></span>
-          </label>
-        );
+      // case 'toggle':
+      //   return (
+      //     <label className={styles.toggleContainer}>
+      //       {field.label}
+      //       <input
+      //         type="checkbox"
+      //         checked={value as boolean}
+      //         onChange={(e) => handleInputChange(field.key, e.target.checked)}
+      //         disabled={field.disabled}
+      //       />
+      //       <span className={styles.toggleSlider}></span>
+      //     </label>
+      //   );
 
       case 'number':
         return (
@@ -838,8 +2298,8 @@ const AddMaterialPopup: React.FC<Props> = ({
     <div className={styles.popupOverlay}>
       <div className={styles.popup}>
         {/* <div className={styles.popupLeft}>
-                    <img src={createicon.src || "/placeholder.svg"} className={styles.illustration} alt="Material Creation" />
-                </div> */}
+                      <img src={createicon.src || "/placeholder.svg"} className={styles.illustration} alt="Material Creation" />
+                  </div> */}
 
         <div className={styles.popupRight}>
           <div className={styles.popupHeader}>
@@ -875,11 +2335,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               Cancel
             </button>
 
-            {!isFirstStep && (
-              <button className={styles.backButton} onClick={handleBack}>
-                Back
-              </button>
-            )}
+            <button
+              className={styles.backButton}
+              onClick={handleBack}
+              disabled={isFirstStep}
+            >
+              Back
+            </button>
 
             {!isLastStep ? (
               <button

@@ -489,9 +489,9 @@ class MaterialPropertySerializer(serializers.ModelSerializer):
 
 class MaterialSerializer(serializers.ModelSerializer):
     properties = serializers.DictField(write_only=True, required=False)
-    finishes = MaterialFinishSerializer(many=True, required=False)
-    finish_types = MaterialFinishTypeSerializer(many=True, required=False)
-    textures = MaterialTextureSerializer(many=True, required=False)
+    finishes = MaterialFinishSerializer(many=True, required=False, read_only=True)
+    finish_types = MaterialFinishTypeSerializer(many=True, required=False, read_only=True)
+    textures = MaterialTextureSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = Material
@@ -520,23 +520,23 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer.is_valid(raise_exception=True)
             attrs["properties"] = serializer.validated_data
 
-        finishes_ids = attrs.get("finishes", [])
-        if not finishes_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one finish is required."}
-            )
+        # finishes_ids = attrs.get("finishes", [])
+        # if not finishes_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one finish is required."}
+        #     )
 
-        finishes_types_ids = attrs.get("finish_types", [])
-        if not finishes_types_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one finish type is required."}
-            )
+        # finishes_types_ids = attrs.get("finish_types", [])
+        # if not finishes_types_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one finish type is required."}
+        #     )
 
-        textures_ids = attrs.get("textures", [])
-        if not textures_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one texture is required."}
-            )
+        # textures_ids = attrs.get("textures", [])
+        # if not textures_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one texture is required."}
+        #     )
         return attrs
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
