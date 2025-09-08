@@ -602,7 +602,7 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         material.refresh_from_db()
         return material
-    
+
     def update(self, instance: Material, validated_data: dict) -> Material:
         # Pop nested data
         properties_data = validated_data.pop("properties", None)
