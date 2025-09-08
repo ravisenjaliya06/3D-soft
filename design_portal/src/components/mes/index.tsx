@@ -38,16 +38,16 @@ const Mes = () => {
   };
 
   const getWorkOrdersList = async () => {
-    const response: { status: number; data: WorkOrderData[] } =
-      await CommonService.get('mes_portal', 'work_order');
+    const response: { status: number; data: WorkOrderData[] } = await CommonService.get('mes_portal', 'work_order');
 
-    if (response.status === 200) {
+    if (response?.status === 200 && Array.isArray(response.data)) {
       const sortedData = [...response.data].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
       setWorkOrders(sortedData);
     } else {
+      setWorkOrders([]);
       setErrorPopup(true);
       setApiErrorMessage('Failed to fetch work orders');
     }
@@ -150,14 +150,16 @@ const Mes = () => {
                   onClick={() => setFilterToggle('active')}
                 >
                   Active (
-                  {workorders.filter((order) => !order.is_archived).length})
+                  {Array.isArray(workorders) ? workorders.filter((o) => !o.is_archived).length : 0}
+                  )
                 </div>
                 <div
                   className={`${styles.activeButtonToggle} ${filterToggle === 'archive' ? styles.activeToggle : ''}`}
                   onClick={() => setFilterToggle('archive')}
                 >
                   Archive (
-                  {workorders.filter((order) => order.is_archived).length})
+                  {Array.isArray(workorders) ? workorders.filter((o) => o.is_archived).length : 0}
+                  )
                 </div>
               </div>
             </div>
