@@ -632,7 +632,6 @@ class MaterialSerializer(serializers.ModelSerializer):
         # Update finishes
         if finishes_data:
             for finish in finishes_data:
-                # finish_value = finishes.get("finish")
                 finish_name = finish.get("name")
 
                 # Filter only finishes for this material with this name
