@@ -78,6 +78,11 @@
   margin-bottom: 2rem;
 }
 
+.popupHeaderimg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .popupHeader h2 {
   font-size: 1.5rem;
   font-weight: 600;
@@ -209,12 +214,15 @@
 .nextButton,
 .finishButton {
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   font-size: 0.9rem;
-  font-weight: 500;
+  /* font-weight: 500; */
   cursor: pointer;
   transition: all 0.2s;
   border: none;
+  font-family: var(--font-family);
+  height: 2.9rem;
+  width: 7rem;
 }
 
 .cancelButton {
@@ -238,13 +246,13 @@
 
 .nextButton,
 .finishButton {
-  background: #667eea;
+  background: var(--primary-color);
   color: white;
 }
 
 .nextButton:hover,
 .finishButton:hover {
-  background: #5a6fd8;
+  background: var(--primary-color);
 }
 
 .nextButton:disabled {
@@ -253,9 +261,9 @@
 }
 
 .finishButton {
-  background: #28a745;
+  background: var(--primary-color);
 }
 
 .finishButton:hover {
-  background: #218838;
+  background: var(--primary-color);
 }

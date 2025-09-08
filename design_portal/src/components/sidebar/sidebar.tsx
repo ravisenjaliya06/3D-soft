@@ -5,6 +5,7 @@ import Logout from '@/assets/sidebar/Logout.svg';
 import Setting from '@/assets/sidebar/Setting.svg';
 import dropdown from '@/assets/sidebar/arrow-down.svg';
 import dropup from '@/assets/sidebar/arrow-up.svg';
+import catalogmanager from '@/assets/sidebar/catalogmanager.svg';
 import dashboard from '@/assets/sidebar/dashboard.svg';
 import design from '@/assets/sidebar/design.svg';
 import material from '@/assets/sidebar/material.svg';
@@ -30,6 +31,8 @@ const Sidebar = () => {
       setActiveItem('dashboard');
     } else if (currentPath.includes('material')) {
       setActiveItem('material');
+    } else if (currentPath.includes('catalogmanager')) {
+      setActiveItem('catalogmanager');
     } else if (currentPath.includes('mes')) {
       setActiveItem('mes');
     } else if (currentPath.includes('designs')) {
@@ -137,6 +140,28 @@ const Sidebar = () => {
                   }`}
                 />
                 Material
+              </li>
+              <li
+                className={activeItem === 'catalogmanager' ? styles.active : ''}
+                onClick={() =>
+                  handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)
+                }
+              >
+                {activeItem === 'catalogmanager' && (
+                  <img
+                    src={selected.src}
+                    alt="Selected"
+                    className={styles.selected_icon}
+                  />
+                )}
+                <img
+                  src={catalogmanager.src}
+                  alt="Catalog Manager"
+                  className={`${styles.sidebar_icon} ${
+                    activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
+                  }`}
+                />
+                Catalog Manager
               </li>
               <li
                 className={activeItem === 'designs' ? styles.active : ''}
@@ -249,7 +274,7 @@ const Sidebar = () => {
               </li>
               <li
                 className={`${styles.listItem} ${activeItem === 'material' ? styles.active_small : ''}`}
-                onClick={() => handleClick('admin', REDIRECT.MATERIAL)}
+                onClick={() => handleClick('material', REDIRECT.MATERIAL)}
                 data-title="Material"
               >
                 {activeItem === 'material' && (
@@ -264,6 +289,28 @@ const Sidebar = () => {
                   alt="Material"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'material' ? styles.icon_adjusted : ''
+                  }`}
+                />
+              </li>
+              <li
+                className={`${styles.listItem} ${activeItem === 'catalogmanager' ? styles.active_small : ''}`}
+                onClick={() =>
+                  handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)
+                }
+                data-title="Catalog Manager"
+              >
+                {activeItem === 'catalogmanager' && (
+                  <img
+                    src={selected.src}
+                    alt="Selected"
+                    className={styles.selected_icon}
+                  />
+                )}
+                <img
+                  src={catalogmanager.src}
+                  alt="Catalog Manager"
+                  className={`${styles.sidebar_icon} ${
+                    activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
                   }`}
                 />
               </li>

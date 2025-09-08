@@ -1,5 +1,5 @@
 # Python imports
-from typing import Dict
+from typing import Any, Dict
 
 # External imports
 from rest_framework import serializers
@@ -7,6 +7,9 @@ from rest_framework.exceptions import ValidationError
 
 # Local imports
 from .models import (
+    Catalog,
+    CatalogRuleParts,
+    CatalogRules,
     Company,
     FinishesChoices,
     FinishesLibrary,
@@ -486,9 +489,9 @@ class MaterialPropertySerializer(serializers.ModelSerializer):
 
 class MaterialSerializer(serializers.ModelSerializer):
     properties = serializers.DictField(write_only=True, required=False)
-    finishes = MaterialFinishSerializer(many=True, required=False)
-    finish_types = MaterialFinishTypeSerializer(many=True, required=False)
-    textures = MaterialTextureSerializer(many=True, required=False)
+    finishes = MaterialFinishSerializer(many=True, required=False, read_only=True)
+    finish_types = MaterialFinishTypeSerializer(many=True, required=False, read_only=True)
+    textures = MaterialTextureSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = Material
@@ -517,23 +520,23 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer.is_valid(raise_exception=True)
             attrs["properties"] = serializer.validated_data
 
-        finishes_ids = attrs.get("finishes", [])
-        if not finishes_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one finish is required."}
-            )
+        # finishes_ids = attrs.get("finishes", [])
+        # if not finishes_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one finish is required."}
+        #     )
 
-        finishes_types_ids = attrs.get("finish_types", [])
-        if not finishes_types_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one finish type is required."}
-            )
+        # finishes_types_ids = attrs.get("finish_types", [])
+        # if not finishes_types_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one finish type is required."}
+        #     )
 
-        textures_ids = attrs.get("textures", [])
-        if not textures_ids:
-            raise serializers.ValidationError(
-                {"finishes": "At least one texture is required."}
-            )
+        # textures_ids = attrs.get("textures", [])
+        # if not textures_ids:
+        #     raise serializers.ValidationError(
+        #         {"finishes": "At least one texture is required."}
+        #     )
         return attrs
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
@@ -644,5 +647,90 @@ class MaterialSerializer(serializers.ModelSerializer):
                 MaterialTexture.objects.create(
                     material=instance, name=t.get("name", ""), texture=texture
                 )
+        instance.save()
+        return instance
+
+
+class CatalogRulePartSerializer(serializers.ModelSerializer):
+    material = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CatalogRuleParts
+        fields = ["id", "name", "material"]
+
+    def get_material(self: "CatalogRulePartSerializer", obj: CatalogRuleParts) -> dict:
+        if obj.material:
+            return {"id": str(obj.material.id), "name": obj.material.name}
+        return None
+
+
+class CatalogRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogRules
+        fields = ["id", "name"]
+
+
+class CatalogSerializer(serializers.ModelSerializer):
+    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Catalog
+        fields = ["id", "type", "name", "description", "catalog_rule"]
+
+    def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
+        new_catalog = Catalog.objects.create(**validated_data)
+
+        template_catalog = Catalog.objects.filter(
+            organization__isnull=True, type=new_catalog.type
+        ).first()
+
+        if template_catalog:
+            for rule in template_catalog.catalog_rule.all():
+                new_rule = CatalogRules.objects.create(
+                    catalog=new_catalog,
+                    name=rule.name,
+                )
+                for part in rule.catalog_rule_parts.all():
+                    CatalogRuleParts.objects.create(
+                        catalog_rule=new_rule,
+                        name=part.name,
+                        material=part.material,
+                    )
+
+        return new_catalog
+
+
+class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
+    material_id = serializers.UUIDField(
+        write_only=True, required=False, allow_null=True
+    )
+
+    class Meta:
+        model = CatalogRuleParts
+        fields = ["id", "name", "material_id"]
+        read_only_fields = ["id", "name"]
+
+    def update(
+        self: "CatalogRulePartUpdateSerializer",
+        instance: CatalogRuleParts,
+        validated_data: Dict[str, Any],
+    ) -> CatalogRuleParts:
+        request = self.context.get("request")
+        material_id = validated_data.get("material_id")
+
+        if material_id is None:
+            instance.material = None
+        else:
+            material = Material.objects.filter(
+                id=material_id, organization=request.user.selected_organization
+            ).first()
+
+            if not material:
+                raise serializers.ValidationError(
+                    "Material not found for this organization."
+                )
+
+            instance.material = material
+
         instance.save()
         return instance

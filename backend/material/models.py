@@ -260,6 +260,16 @@ class LightChoices(models.TextChoices):
     YELLOW = "Yellow"
 
 
+class CatalogTypeChoices(models.TextChoices):
+    """
+    Catalog Type
+    """
+
+    DOOR = "Door"
+    DRAWER = "Drawer"
+    SLIDING_DOOR = "Sliding Door"
+
+
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(
@@ -616,3 +626,40 @@ class MaterialTexture(models.Model):
         Material, on_delete=models.CASCADE, related_name="textures"
     )
     texture = models.ForeignKey(FinishesLibrary, on_delete=models.CASCADE)
+
+
+class Catalog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="catalogs_organization",
+    )
+    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+
+
+class CatalogRules(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    catalog = models.ForeignKey(
+        Catalog, on_delete=models.CASCADE, related_name="catalog_rule"
+    )
+    name = models.CharField(max_length=100)
+
+
+class CatalogRuleParts(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    catalog_rule = models.ForeignKey(
+        CatalogRules, on_delete=models.CASCADE, related_name="catalog_rule_parts"
+    )
+    material = models.ForeignKey(
+        Material,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="catalog_part_material",
+    )
