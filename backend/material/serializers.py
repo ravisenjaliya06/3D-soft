@@ -634,7 +634,9 @@ class MaterialSerializer(serializers.ModelSerializer):
                 finish_name = f.get("name")
 
                 # Filter only finishes for this material with this name
-                finish = MaterialFinish.objects.filter(material=instance, name=finish_name)
+                finish = MaterialFinish.objects.filter(
+                    material=instance, name=finish_name
+                )
 
                 # Update only the finish field
                 finish.update(finish=finish_value)
@@ -646,7 +648,9 @@ class MaterialSerializer(serializers.ModelSerializer):
                 finish_type_name = ft.get("name")
 
                 # Filter only finishe_type for this material with this name
-                finish_type = MaterialFinishType.objects.filter(material=instance, name=finish_type_name)
+                finish_type = MaterialFinishType.objects.filter(
+                    material=instance, name=finish_type_name
+                )
 
                 # Update only the finish_type field
                 finish_type.update(finish=finish_type_value)
@@ -658,11 +662,13 @@ class MaterialSerializer(serializers.ModelSerializer):
                 texture_name = t.get("name")
 
                 # Filter only finishes for this material with this name
-                texture = MaterialTexture.objects.filter(material=instance, name=texture_name)
+                texture = MaterialTexture.objects.filter(
+                    material=instance, name=texture_name
+                )
 
                 # Update only the finish field
                 texture.update(finish=texture_value)
-                
+
         instance.save()
         return instance
 
