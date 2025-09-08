@@ -621,8 +621,11 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update properties if properties exist
         if properties_data and hasattr(instance, "properties"):
-            for attr, value in properties_data.items():
-                setattr(instance.properties, attr, value)
+            properties_obj = instance.properties.first()
+            if properties_obj:
+                for attr, value in properties_data.items():
+                    setattr(properties_obj, attr, value)
+                properties_obj.save()
 
         # Update finishes
         if finishes_data:
@@ -643,7 +646,7 @@ class MaterialSerializer(serializers.ModelSerializer):
                 finish_type_name = ft.get("name")
 
                 # Filter only finishe_type for this material with this name
-                finish_type = MaterialFinish.objects.filter(material=instance, name=finish_type_name)
+                finish_type = MaterialFinishType.objects.filter(material=instance, name=finish_type_name)
 
                 # Update only the finish_type field
                 finish_type.update(finish=finish_type_value)
@@ -655,7 +658,7 @@ class MaterialSerializer(serializers.ModelSerializer):
                 texture_name = t.get("name")
 
                 # Filter only finishes for this material with this name
-                texture = MaterialFinish.objects.filter(material=instance, name=texture_name)
+                texture = MaterialTexture.objects.filter(material=instance, name=texture_name)
 
                 # Update only the finish field
                 texture.update(finish=texture_value)
