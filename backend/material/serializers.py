@@ -608,7 +608,9 @@ class MaterialSerializer(serializers.ModelSerializer):
         material.refresh_from_db()
         return material
 
-    def update(self, instance: Material, validated_data: dict) -> Material:
+    def update(
+        self: "MaterialSerializer", instance: Material, validated_data: dict
+    ) -> Material:
         # Pop nested data
         properties_data = validated_data.pop("properties", None)
         finishes_data = validated_data.pop("finishes", [])
@@ -629,45 +631,34 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update finishes
         if finishes_data:
-            for f in finishes_data:
-                finish_value = f.get("finish")
-                finish_name = f.get("name")
+            for finish in finishes_data:
+                # finish_value = finishes.get("finish")
+                finish_name = finish.get("name")
 
                 # Filter only finishes for this material with this name
-                finish = MaterialFinish.objects.filter(
+                MaterialFinish.objects.filter(
                     material=instance, name=finish_name
-                )
-
-                # Update only the finish field
-                finish.update(finish=finish_value)
+                ).first()
 
         # Update finish_types
         if finish_types_data:
-            for ft in finish_types_data:
-                finish_type_value = ft.get("finish_type")
-                finish_type_name = ft.get("name")
+            for finsh_type in finish_types_data:
+                finish_type_name = finsh_type.get("name")
 
                 # Filter only finishe_type for this material with this name
-                finish_type = MaterialFinishType.objects.filter(
+                MaterialFinishType.objects.filter(
                     material=instance, name=finish_type_name
-                )
-
-                # Update only the finish_type field
-                finish_type.update(finish=finish_type_value)
+                ).first()
 
         # Update textures
         if textures_data:
-            for t in textures_data:
-                texture_value = t.get("texture")
-                texture_name = t.get("name")
+            for texture in textures_data:
+                texture_name = texture.get("name")
 
                 # Filter only finishes for this material with this name
-                texture = MaterialTexture.objects.filter(
+                MaterialTexture.objects.filter(
                     material=instance, name=texture_name
-                )
-
-                # Update only the finish field
-                texture.update(finish=texture_value)
+                ).first()
 
         instance.save()
         return instance
