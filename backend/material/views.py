@@ -6,17 +6,19 @@ from django.db.models.query import QuerySet
 # External imports
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics
 
 # App imports
 from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
-from .models import Company, FinishesLibrary, Material
+from .models import Company, FinishesLibrary, Material, Catalog, CatalogRuleParts
 from .serializers import (
     CatalogRulePartUpdateSerializer,
     CompanySerializer,
     FinishesLibrarySerializer,
     MaterialSerializer,
+    CatalogRulePartSerializer, CatalogSerializer
 )
 
 
@@ -71,15 +73,6 @@ class MaterialViewSet(viewsets.ModelViewSet):
             serializer.save(company_id=company_id, organization=organization)
         else:
             serializer.save(organization=organization)
-
-
-# External imports
-from rest_framework import generics
-
-# Local imports
-from .models import Catalog, CatalogRuleParts
-from .serializers import CatalogRulePartSerializer, CatalogSerializer
-
 
 class CatalogViewSet(viewsets.ModelViewSet):
     serializer_class = CatalogSerializer

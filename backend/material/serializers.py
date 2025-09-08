@@ -627,26 +627,39 @@ class MaterialSerializer(serializers.ModelSerializer):
         # Update finishes
         if finishes_data:
             for f in finishes_data:
-                finish = f.pop("finish")
-                MaterialFinish.objects.create(
-                    material=instance, name=f.get("name", ""), finish=finish
-                )
+                finish_value = f.get("finish")
+                finish_name = f.get("name")
+
+                # Filter only finishes for this material with this name
+                finish = MaterialFinish.objects.filter(material=instance, name=finish_name)
+
+                # Update only the finish field
+                finish.update(finish=finish_value)
 
         # Update finish_types
         if finish_types_data:
             for ft in finish_types_data:
-                finish_type = ft.pop("finish_type")
-                MaterialFinishType.objects.create(
-                    material=instance, name=ft.get("name", ""), finish_type=finish_type
-                )
+                finish_type_value = ft.get("finish_type")
+                finish_type_name = ft.get("name")
+
+                # Filter only finishe_type for this material with this name
+                finish_type = MaterialFinish.objects.filter(material=instance, name=finish_type_name)
+
+                # Update only the finish_type field
+                finish_type.update(finish=finish_type_value)
 
         # Update textures
         if textures_data:
             for t in textures_data:
-                texture = t.pop("texture")
-                MaterialTexture.objects.create(
-                    material=instance, name=t.get("name", ""), texture=texture
-                )
+                texture_value = t.get("texture")
+                texture_name = t.get("name")
+
+                # Filter only finishes for this material with this name
+                texture = MaterialFinish.objects.filter(material=instance, name=texture_name)
+
+                # Update only the finish field
+                texture.update(finish=texture_value)
+                
         instance.save()
         return instance
 
