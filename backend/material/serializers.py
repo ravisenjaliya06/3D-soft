@@ -616,17 +616,13 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update or create properties
         if properties_data:
-            # If properties exist, update; else create
+            # If properties exist, update
             if hasattr(instance, "properties"):
                 for attr, value in properties_data.items():
                     setattr(instance.properties, attr, value)
-            else:
-                Properties.objects.create(material=instance, **properties_data)
 
         # Update finishes
         if finishes_data:
-            # Clear existing finishes (optional, or implement smarter update)
-            instance.finishes.all().delete()
             for f in finishes_data:
                 finish = f.pop("finish")
                 MaterialFinish.objects.create(
@@ -635,7 +631,6 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update finish_types
         if finish_types_data:
-            instance.finish_types.all().delete()
             for ft in finish_types_data:
                 finish_type = ft.pop("finish_type")
                 MaterialFinishType.objects.create(
@@ -644,13 +639,10 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update textures
         if textures_data:
-            instance.textures.all().delete()
             for t in textures_data:
                 texture = t.pop("texture")
                 MaterialTexture.objects.create(
                     material=instance, name=t.get("name", ""), texture=texture
                 )
-
-        # Refresh from DB and return
-        instance.refresh_from_db()
+        instance.save()
         return instance
