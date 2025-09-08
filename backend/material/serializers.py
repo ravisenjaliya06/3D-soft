@@ -602,3 +602,55 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         material.refresh_from_db()
         return material
+    
+    def update(self, instance: Material, validated_data: dict) -> Material:
+        # Pop nested data
+        properties_data = validated_data.pop("properties", None)
+        finishes_data = validated_data.pop("finishes", [])
+        finish_types_data = validated_data.pop("finish_types", [])
+        textures_data = validated_data.pop("textures", [])
+
+        # Update main Material fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Update or create properties
+        if properties_data:
+            # If properties exist, update; else create
+            if hasattr(instance, "properties"):
+                for attr, value in properties_data.items():
+                    setattr(instance.properties, attr, value)
+            else:
+                Properties.objects.create(material=instance, **properties_data)
+
+        # Update finishes
+        if finishes_data:
+            # Clear existing finishes (optional, or implement smarter update)
+            instance.finishes.all().delete()
+            for f in finishes_data:
+                finish = f.pop("finish")
+                MaterialFinish.objects.create(
+                    material=instance, name=f.get("name", ""), finish=finish
+                )
+
+        # Update finish_types
+        if finish_types_data:
+            instance.finish_types.all().delete()
+            for ft in finish_types_data:
+                finish_type = ft.pop("finish_type")
+                MaterialFinishType.objects.create(
+                    material=instance, name=ft.get("name", ""), finish_type=finish_type
+                )
+
+        # Update textures
+        if textures_data:
+            instance.textures.all().delete()
+            for t in textures_data:
+                texture = t.pop("texture")
+                MaterialTexture.objects.create(
+                    material=instance, name=t.get("name", ""), texture=texture
+                )
+
+        # Refresh from DB and return
+        instance.refresh_from_db()
+        return instance
