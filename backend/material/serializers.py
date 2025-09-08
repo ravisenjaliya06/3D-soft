@@ -490,7 +490,9 @@ class MaterialPropertySerializer(serializers.ModelSerializer):
 class MaterialSerializer(serializers.ModelSerializer):
     properties = serializers.DictField(write_only=True, required=False)
     finishes = MaterialFinishSerializer(many=True, required=False, read_only=True)
-    finish_types = MaterialFinishTypeSerializer(many=True, required=False, read_only=True)
+    finish_types = MaterialFinishTypeSerializer(
+        many=True, required=False, read_only=True
+    )
     textures = MaterialTextureSerializer(many=True, required=False, read_only=True)
 
     class Meta:
@@ -617,12 +619,10 @@ class MaterialSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        # Update or create properties
-        if properties_data:
-            # If properties exist, update
-            if hasattr(instance, "properties"):
-                for attr, value in properties_data.items():
-                    setattr(instance.properties, attr, value)
+        # Update properties if properties exist
+        if properties_data and hasattr(instance, "properties"):
+            for attr, value in properties_data.items():
+                setattr(instance.properties, attr, value)
 
         # Update finishes
         if finishes_data:
