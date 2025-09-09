@@ -635,9 +635,13 @@ class MaterialSerializer(serializers.ModelSerializer):
                 finish_name = finish.get("name")
 
                 # Filter only finishes for this material with this name
-                MaterialFinish.objects.filter(
+                finishes = MaterialFinish.objects.filter(
                     material=instance, name=finish_name
                 ).first()
+                if finishes:
+                    for attr, value in finish.items():
+                        setattr(finishes, attr, value)
+                    finishes.save()
 
         # Update finish_types
         if finish_types_data:
@@ -645,9 +649,13 @@ class MaterialSerializer(serializers.ModelSerializer):
                 finish_type_name = finsh_type.get("name")
 
                 # Filter only finishe_type for this material with this name
-                MaterialFinishType.objects.filter(
+                finishes_type = MaterialFinishType.objects.filter(
                     material=instance, name=finish_type_name
                 ).first()
+                if finishes_type:
+                    for attr, value in finsh_type.items():
+                        setattr(finishes_type, attr, value)
+                    finishes_type.save()
 
         # Update textures
         if textures_data:
@@ -655,9 +663,13 @@ class MaterialSerializer(serializers.ModelSerializer):
                 texture_name = texture.get("name")
 
                 # Filter only finishes for this material with this name
-                MaterialTexture.objects.filter(
+                textures = MaterialTexture.objects.filter(
                     material=instance, name=texture_name
                 ).first()
+                if textures:
+                    for attr, value in texture.items():
+                        setattr(textures, attr, value)
+                    textures.save()
 
         instance.save()
         return instance
