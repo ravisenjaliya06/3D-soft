@@ -86,7 +86,9 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
 
 
 class ValidationMixin:
-    def to_internal_value(self, data):
+    def to_internal_value(
+        self: "ValidationMixin", data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         allowed_fields = set(self.fields.keys())
         received_fields = set(data.keys())
         required_fields = allowed_fields - {"id"}
@@ -106,6 +108,7 @@ class ValidationMixin:
             )
 
         return super().to_internal_value(data)
+
 
 class BandingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
@@ -507,7 +510,9 @@ class MaterialFinishTypeSerializer(serializers.ModelSerializer):
             "finish_type_detail": {"required": False},
             "name": {
                 "required": True,
-                "validators": [UniqueValidator(queryset=MaterialFinishType.objects.all())],
+                "validators": [
+                    UniqueValidator(queryset=MaterialFinishType.objects.all())
+                ],
             },
             "finish_type": {"required": True},
         }
@@ -558,7 +563,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "textures",
         ]
 
-    def validate(self, attrs):
+    def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
         properties_data = attrs.get("properties")
         material_type = attrs.get("type")
 
