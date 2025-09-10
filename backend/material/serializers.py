@@ -4,6 +4,7 @@ from typing import Any, Dict
 # External imports
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
 
 # Local imports
 from .models import (
@@ -84,13 +85,35 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "material"]
 
 
-class BandingSerializer(serializers.ModelSerializer):
+class ValidationMixin:
+    def to_internal_value(self, data):
+        allowed_fields = set(self.fields.keys())
+        received_fields = set(data.keys())
+        required_fields = allowed_fields - {"id"}
+
+        # Check for missing required fields
+        missing_fields = required_fields - received_fields
+        if missing_fields:
+            raise serializers.ValidationError(
+                {field: "This field is required." for field in missing_fields}
+            )
+
+        # Check for unexpected fields
+        extra_fields = received_fields - allowed_fields
+        if extra_fields:
+            raise serializers.ValidationError(
+                {field: "This field is not allowed." for field in extra_fields}
+            )
+
+        return super().to_internal_value(data)
+
+class BandingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness"]
 
 
-class BoardStockSerializer(serializers.ModelSerializer):
+class BoardStockSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -109,13 +132,13 @@ class BoardStockSerializer(serializers.ModelSerializer):
         ]
 
 
-class CasterSerializer(serializers.ModelSerializer):
+class CasterSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["height"]
 
 
-class ConnectorSerializer(serializers.ModelSerializer):
+class ConnectorSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -124,7 +147,7 @@ class ConnectorSerializer(serializers.ModelSerializer):
         ]
 
 
-class DrawerGuideSerializer(serializers.ModelSerializer):
+class DrawerGuideSerializer(ValidationMixin, serializers.ModelSerializer):
     front_mount_holes = MountHolesSerializer(many=True, read_only=False)
     back_mount_holes = MountHolesSerializer(many=True, read_only=False)
     bottom_mount_holes = MountHolesSerializer(many=True, read_only=False)
@@ -169,7 +192,7 @@ class DrawerGuideSerializer(serializers.ModelSerializer):
         ]
 
 
-class HingeSerializer(serializers.ModelSerializer):
+class HingeSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -191,7 +214,7 @@ class HingeSerializer(serializers.ModelSerializer):
         ]
 
 
-class HingePlateSerializer(serializers.ModelSerializer):
+class HingePlateSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -203,7 +226,7 @@ class HingePlateSerializer(serializers.ModelSerializer):
         ]
 
 
-class LaminateSerializer(serializers.ModelSerializer):
+class LaminateSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -221,31 +244,31 @@ class LaminateSerializer(serializers.ModelSerializer):
         ]
 
 
-class LegSerializer(serializers.ModelSerializer):
+class LegSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["leg_type", "height"]
 
 
-class LegLevelerSerializer(serializers.ModelSerializer):
+class LegLevelerSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["height"]
 
 
-class MiscellaneousSerializer(serializers.ModelSerializer):
+class MiscellaneousSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["model"]
 
 
-class MoldingSerializer(serializers.ModelSerializer):
+class MoldingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + ["molding_type", "length"]
 
 
-class PanelStockSerializer(serializers.ModelSerializer):
+class PanelStockSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -265,7 +288,7 @@ class PanelStockSerializer(serializers.ModelSerializer):
         ]
 
 
-class PullSerializer(serializers.ModelSerializer):
+class PullSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -279,7 +302,7 @@ class PullSerializer(serializers.ModelSerializer):
         ]
 
 
-class RodSerializer(serializers.ModelSerializer):
+class RodSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -295,7 +318,7 @@ class RodSerializer(serializers.ModelSerializer):
         ]
 
 
-class SlidingDoorRailSerializer(serializers.ModelSerializer):
+class SlidingDoorRailSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -308,7 +331,7 @@ class SlidingDoorRailSerializer(serializers.ModelSerializer):
         ]
 
 
-class SlidingDoorRollerSerializer(serializers.ModelSerializer):
+class SlidingDoorRollerSerializer(ValidationMixin, serializers.ModelSerializer):
     mount_plate_hole_one = MountPlateHolesSerializer(many=True, read_only=False)
     mount_plate_hole_two = MountPlateHolesSerializer(many=True, read_only=False)
     mount_plate_hole_third = MountPlateHolesSerializer(many=True, read_only=False)
@@ -334,7 +357,7 @@ class SlidingDoorRollerSerializer(serializers.ModelSerializer):
         ]
 
 
-class WireBasketSerializer(serializers.ModelSerializer):
+class WireBasketSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
         fields = BasePropertiesSerializer.Meta.fields + [
@@ -459,6 +482,15 @@ class MaterialFinishSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialFinish
         fields = ["id", "name", "finish", "finish_detail"]
+        extra_kwargs = {
+            "id": {"required": False},
+            "finish_detail": {"required": False},
+            "name": {
+                "required": True,
+                "validators": [UniqueValidator(queryset=MaterialFinish.objects.all())],
+            },
+            "finish": {"required": True},
+        }
 
 
 class MaterialFinishTypeSerializer(serializers.ModelSerializer):
@@ -470,6 +502,15 @@ class MaterialFinishTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialFinishType
         fields = ["id", "name", "finish_type", "finish_type_detail"]
+        extra_kwargs = {
+            "id": {"required": False},
+            "finish_type_detail": {"required": False},
+            "name": {
+                "required": True,
+                "validators": [UniqueValidator(queryset=MaterialFinishType.objects.all())],
+            },
+            "finish_type": {"required": True},
+        }
 
 
 class MaterialTextureSerializer(serializers.ModelSerializer):
@@ -479,6 +520,15 @@ class MaterialTextureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialTexture
         fields = ["id", "name", "texture", "texture_detail"]
+        extra_kwargs = {
+            "id": {"required": False},
+            "texture_detail": {"required": False},
+            "name": {
+                "required": True,
+                "validators": [UniqueValidator(queryset=MaterialTexture.objects.all())],
+            },
+            "texture": {"required": True},
+        }
 
 
 class MaterialPropertySerializer(serializers.ModelSerializer):
@@ -489,9 +539,9 @@ class MaterialPropertySerializer(serializers.ModelSerializer):
 
 class MaterialSerializer(serializers.ModelSerializer):
     properties = serializers.DictField(write_only=True, required=False)
-    finishes = MaterialFinishSerializer(many=True, required=False, read_only=True)
-    finish_types = MaterialFinishTypeSerializer(many=True, required=False, read_only=True)
-    textures = MaterialTextureSerializer(many=True, required=False, read_only=True)
+    finishes = MaterialFinishSerializer(many=True, required=False)
+    finish_types = MaterialFinishTypeSerializer(many=True, required=False)
+    textures = MaterialTextureSerializer(many=True, required=False)
 
     class Meta:
         model = Material
@@ -508,10 +558,11 @@ class MaterialSerializer(serializers.ModelSerializer):
             "textures",
         ]
 
-    def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+    def validate(self, attrs):
         properties_data = attrs.get("properties")
         material_type = attrs.get("type")
 
+        # Validate nested properties
         if properties_data:
             serializer_class = MaterialFactorySerializer.get_material_serializer(
                 material_type
@@ -520,23 +571,27 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer.is_valid(raise_exception=True)
             attrs["properties"] = serializer.validated_data
 
-        # finishes_ids = attrs.get("finishes", [])
-        # if not finishes_ids:
-        #     raise serializers.ValidationError(
-        #         {"finishes": "At least one finish is required."}
-        #     )
+        # Uniqueness check
+        company = attrs.get("company") or getattr(self.instance, "company", None)
+        name = attrs.get("name") or getattr(self.instance, "name", None)
 
-        # finishes_types_ids = attrs.get("finish_types", [])
-        # if not finishes_types_ids:
-        #     raise serializers.ValidationError(
-        #         {"finishes": "At least one finish type is required."}
-        #     )
+        qs = Material.objects.filter(name=name)
 
-        # textures_ids = attrs.get("textures", [])
-        # if not textures_ids:
-        #     raise serializers.ValidationError(
-        #         {"finishes": "At least one texture is required."}
-        #     )
+        if company:
+            # uniqueness within company
+            qs = qs.filter(company=company)
+        else:
+            # uniqueness across all user-based materials
+            qs = qs.filter(company__isnull=True)
+
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                {"name": "A material with this name already exists."}
+            )
+
         return attrs
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
