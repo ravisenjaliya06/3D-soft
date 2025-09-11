@@ -31,6 +31,7 @@ class MaterialTypes(models.TextChoices):
     SLIDING_DOOR_RAIL = "Sliding Door Rail"
     SLIDING_DOOR_ROLLER = "Sliding Door Roller"
     WIRE_BASKET = "Wire Basket"
+    CONNECTION = "Connection"
 
 
 class UnitOfIssueChoices(models.TextChoices):
