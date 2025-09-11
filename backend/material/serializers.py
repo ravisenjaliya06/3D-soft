@@ -490,11 +490,11 @@ class MaterialPropertySerializer(serializers.ModelSerializer):
 
 class MaterialSerializer(serializers.ModelSerializer):
     properties = serializers.DictField(write_only=True, required=False)
-    finishes = MaterialFinishSerializer(many=True, required=False, read_only=True)
+    finishes = MaterialFinishSerializer(many=True, required=False, read_only=False)
     finish_types = MaterialFinishTypeSerializer(
-        many=True, required=False, read_only=True
+        many=True, required=False, read_only=False
     )
-    textures = MaterialTextureSerializer(many=True, required=False, read_only=True)
+    textures = MaterialTextureSerializer(many=True, required=False, read_only=False)
 
     class Meta:
         model = Material
@@ -647,10 +647,9 @@ class MaterialSerializer(serializers.ModelSerializer):
                 properties_obj.save()  
 
         # Update finishes
-        if finishes_data: 
-            for finish in finishes_data:
+        if finishes_data:
+            for finish in finishes_data: 
                 finish_name = finish.get("name")
-
                 # Filter only finishes for this material with this name
                 finishes_obj = MaterialFinish.objects.filter(
                     material=instance, name=finish_name
@@ -658,35 +657,33 @@ class MaterialSerializer(serializers.ModelSerializer):
 
                 if finishes_obj:
                     new_finishes_obj = finish.get("finish")
-                    finishes_obj.finish = FinishesLibrary.objects.get(id=new_finishes_obj)
+                    finishes_obj.finish = new_finishes_obj
                     finishes_obj.save()
             
         # Update finish_types
         if finish_types_data:
             for finish_type in finish_types_data:
                 finish_type_name = finish_type.get("name")
-
-                    # Filter only finishe_type for this material with this name
+                # Filter only finishe_type for this material with this name
                 finishes_type_obj = MaterialFinishType.objects.filter(
                     material=instance, name=finish_type_name
                 ).first()
                 if finishes_type_obj:
                     new_finishes_type_obj = finish_type.get("finish_type")
-                    finishes_type_obj.finish_type = FinishesLibrary.objects.get(id=new_finishes_type_obj)
+                    finishes_type_obj.finish_type = new_finishes_type_obj
                     finishes_type_obj.save()
 
         # Update textures
         if textures_data:
             for texture in textures_data:
                 texture_name = texture.get("name")
-
-                    # Filter only finishes for this material with this name
+                # Filter only finishes for this material with this name
                 textures_obj = MaterialTexture.objects.filter(
                     material=instance, name=texture_name
                 ).first()
                 if textures_obj:
                     mew_textures_obj = texture.get("texture")
-                    textures_obj.texture = FinishesLibrary.objects.get(id=mew_textures_obj)
+                    textures_obj.texture = mew_textures_obj
                     textures_obj.save()
 
         instance.save()
