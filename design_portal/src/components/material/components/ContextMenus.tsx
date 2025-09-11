@@ -1,0 +1,55 @@
+import type React from "react"
+import type { ContextMenu, MaterialContextMenu } from "../types"
+import styles from "../material.module.css"
+
+interface ContextMenusProps {
+    contextMenu: ContextMenu | null
+    contextMaterialMenu: MaterialContextMenu | null
+    onAddCompany: () => void
+    onAddMaterial: (companyId: string) => void
+}
+
+export const ContextMenus: React.FC<ContextMenusProps> = ({
+    contextMenu,
+    contextMaterialMenu,
+    onAddCompany,
+    onAddMaterial,
+}) => {
+    return (
+        <>
+            {contextMenu && (
+                <div
+                    className={styles.contextMenu}
+                    style={{
+                        top: contextMenu.y,
+                        left: contextMenu.x,
+                        position: "absolute",
+                    }}
+                >
+                    <button className={styles.contextMenuItem} onClick={onAddCompany}>
+                        ➕ Add Company
+                    </button>
+                </div>
+            )}
+
+            {contextMaterialMenu && (
+                <div
+                    className={styles.contextMenu}
+                    style={{
+                        top: contextMaterialMenu.y,
+                        left: contextMaterialMenu.x,
+                        position: "absolute",
+                    }}
+                >
+                    <button className={styles.contextMenuItem} onClick={() => onAddMaterial(contextMaterialMenu.companyId)}>
+                        ➕ Add Material
+                    </button>
+                </div>
+            )}
+        </>
+    )
+}
+
+
+
+
