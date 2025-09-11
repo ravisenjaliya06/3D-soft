@@ -483,20 +483,23 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-family);
-  flex: 1; /* fill the container height */
+  flex: 1;
+  /* fill the container height */
 }
 
 .partsTable tbody {
   display: block;
   flex: 1;
-  overflow-y: auto; /* scroll if rows exceed */
+  overflow-y: auto;
+  /* scroll if rows exceed */
 }
 
 .partsTable thead,
 .partsTable tbody tr {
   display: table;
   width: 100%;
-  table-layout: fixed; /* keep columns aligned */
+  table-layout: fixed;
+  /* keep columns aligned */
 }
 
 .partsTable th {

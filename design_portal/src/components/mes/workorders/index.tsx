@@ -32,6 +32,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
   );
 
   const visibleWorkOrders = filteredWorkOrders.slice(0, visibleCount);
+  console.log(visibleWorkOrders, 'visibleWorkOrders');
 
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
@@ -62,6 +63,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
   };
 
   const handleWorkorderClick = async (workOrder: WorkOrderData) => {
+    console.log(workOrder, 'workOrder');
     setIsLoading(true);
     const response: { status: number } = await commonService.get(
       'design',

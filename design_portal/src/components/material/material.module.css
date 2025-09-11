@@ -286,6 +286,30 @@
   border: 0.063rem solid var(--primary-color-grey-2);
 }
 
+.tabletabsbox {
+  display: flex;
+}
+
+.tabletabs {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  color: var(--primary-color);
+}
+
+.tabletabs:hover {
+  background-color: var(--primary-hover);
+}
+
+.activeTab {
+  background-color: var(--primary-color);
+  color: var(--primary-white);
+  font-weight: 600;
+}
+
 .loadingContainer {
   display: flex;
   flex-direction: column;
