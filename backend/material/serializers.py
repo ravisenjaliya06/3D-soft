@@ -1,10 +1,9 @@
 # Python imports
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 # External imports
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueValidator
 
 # Local imports
 from .models import (
@@ -489,8 +488,7 @@ class MaterialFinishSerializer(serializers.ModelSerializer):
             "id": {"required": False},
             "finish_detail": {"required": False},
             "name": {
-                "required": True,
-                "validators": [UniqueValidator(queryset=MaterialFinish.objects.all())],
+                "required": False,
             },
             "finish": {"required": True},
         }
@@ -509,10 +507,7 @@ class MaterialFinishTypeSerializer(serializers.ModelSerializer):
             "id": {"required": False},
             "finish_type_detail": {"required": False},
             "name": {
-                "required": True,
-                "validators": [
-                    UniqueValidator(queryset=MaterialFinishType.objects.all())
-                ],
+                "required": False,
             },
             "finish_type": {"required": True},
         }
@@ -529,8 +524,7 @@ class MaterialTextureSerializer(serializers.ModelSerializer):
             "id": {"required": False},
             "texture_detail": {"required": False},
             "name": {
-                "required": True,
-                "validators": [UniqueValidator(queryset=MaterialTexture.objects.all())],
+                "required": False,
             },
             "texture": {"required": True},
         }
@@ -564,10 +558,11 @@ class MaterialSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+        request = self.context.get("request")
+        organization = getattr(request.user, "selected_organization", None)
         properties_data = attrs.get("properties")
         material_type = attrs.get("type")
 
-        # Validate nested properties
         if properties_data:
             serializer_class = MaterialFactorySerializer.get_material_serializer(
                 material_type
@@ -576,17 +571,18 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer.is_valid(raise_exception=True)
             attrs["properties"] = serializer.validated_data
 
-        # Uniqueness check
         company = attrs.get("company") or getattr(self.instance, "company", None)
         name = attrs.get("name") or getattr(self.instance, "name", None)
 
-        qs = Material.objects.filter(name=name)
+        qs = Material.objects.filter(
+            name=name,
+            organization=organization,
+            is_deleted=False,
+        )
 
         if company:
-            # uniqueness within company
             qs = qs.filter(company=company)
         else:
-            # uniqueness across all user-based materials
             qs = qs.filter(company__isnull=True)
 
         if self.instance:
@@ -595,6 +591,51 @@ class MaterialSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError(
                 {"name": "A material with this name already exists."}
+            )
+
+        finishes = attrs.get("finishes", [])
+        finish_types = attrs.get("finish_types", [])
+        textures = attrs.get("textures", [])
+
+        def find_duplicates(items: List[Dict[str, str]]) -> List[str]:
+            seen, dups = set(), set()
+            for item in items:
+                n = item.get("name")
+                if n:
+                    if n in seen:
+                        dups.add(n)
+                    else:
+                        seen.add(n)
+            return dups
+
+        errors = {}
+        dup_finish = find_duplicates(finishes)
+        if dup_finish:
+            errors["finishes"] = f"Duplicate names not allowed: {', '.join(dup_finish)}"
+        dup_finish_type = find_duplicates(finish_types)
+        if dup_finish_type:
+            errors["finish_types"] = (
+                f"Duplicate names not allowed: {', '.join(dup_finish_type)}"
+            )
+        dup_texture = find_duplicates(textures)
+        if dup_texture:
+            errors["textures"] = (
+                f"Duplicate names not allowed: {', '.join(dup_texture)}"
+            )
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        finish_set = {i["name"] for i in finishes if i.get("name")}
+        finish_type_set = {i["name"] for i in finish_types if i.get("name")}
+        texture_set = {i["name"] for i in textures if i.get("name")}
+        if not (finish_set == finish_type_set == texture_set):
+            raise serializers.ValidationError(
+                {
+                    "non_field_errors": (
+                        "finishes, finish_types and textures must contain the same set of names."
+                    )
+                }
             )
 
         return attrs

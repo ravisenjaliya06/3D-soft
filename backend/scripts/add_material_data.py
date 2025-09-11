@@ -1155,45 +1155,35 @@ MATERIAL = [
         "description": "",
         "type": "Connection",
         "company": "",
-        "properties": {
-            
-        }
+        "properties": {},
     },
     {
         "name": "Asm Bore: Vert: 8mm x 10mm Horz: 8mm x 20mm(2)",
         "description": "",
         "type": "Connection",
         "company": "",
-        "properties": {
-            
-        }
+        "properties": {},
     },
     {
         "name": "Stop Dado - 0.3750in deep",
         "description": "",
         "type": "Connection",
         "company": "",
-        "properties": {
-            
-        }
+        "properties": {},
     },
     {
         "name": "Stop Dado - 0.2500in deep",
         "description": "",
         "type": "Connection",
         "company": "",
-        "properties": {
-            
-        }
+        "properties": {},
     },
     {
         "name": "Through Dado - 0.2500in deep",
         "description": "",
         "type": "Connection",
         "company": "",
-        "properties": {
-            
-        }
+        "properties": {},
     },
 ]
 
