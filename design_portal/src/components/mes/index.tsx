@@ -38,7 +38,8 @@ const Mes = () => {
   };
 
   const getWorkOrdersList = async () => {
-    const response: { status: number; data: WorkOrderData[] } = await CommonService.get('mes_portal', 'work_order');
+    const response: { status: number; data: WorkOrderData[] } =
+      await CommonService.get('mes_portal', 'work_order');
 
     if (response?.status === 200 && Array.isArray(response.data)) {
       const sortedData = [...response.data].sort(
@@ -150,7 +151,9 @@ const Mes = () => {
                   onClick={() => setFilterToggle('active')}
                 >
                   Active (
-                  {Array.isArray(workorders) ? workorders.filter((o) => !o.is_archived).length : 0}
+                  {Array.isArray(workorders)
+                    ? workorders.filter((o) => !o.is_archived).length
+                    : 0}
                   )
                 </div>
                 <div
@@ -158,7 +161,9 @@ const Mes = () => {
                   onClick={() => setFilterToggle('archive')}
                 >
                   Archive (
-                  {Array.isArray(workorders) ? workorders.filter((o) => o.is_archived).length : 0}
+                  {Array.isArray(workorders)
+                    ? workorders.filter((o) => o.is_archived).length
+                    : 0}
                   )
                 </div>
               </div>
