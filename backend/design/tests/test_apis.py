@@ -520,6 +520,120 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_organization_design_setting(self: "DesignAPIViewTestCase") -> None:
+        """
+        Test POST /organization_design_settings/ to create a new design setting.
+        """
+
+        DesignSetting.objects.filter(organization=self.organization).delete()
+
+        payload = {
+            "unit": "mm",
+            "sheet_width": 120,
+            "sheet_height": 240,
+        }
+
+        url = reverse("organization_design_settings")
+        response = self.client.post(
+            url,
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["unit"], "mm")
+        self.assertEqual(
+            DesignSetting.objects.filter(organization=self.organization).count(), 1
+        )
+
+    def test_create_organization_design_setting_org_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """
+        Test POST when user has no organization -> 404
+        """
+        response = self.client.post(
+            reverse("organization_design_settings"),
+            data={"unit": "mm", "sheet_width": 100, "sheet_height": 100},
+            format="json",
+            headers=self.get_invalid_user_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error"], "Organization not found.")
+
+    def test_create_organization_design_setting_already_exists(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """
+        Test POST when a design setting already exists -> 400
+        """
+        DesignSetting.objects.filter(organization=self.organization).delete()
+        DesignSetting.objects.create(
+            organization=self.organization,
+            unit="mm",
+            sheet_width=100,
+            sheet_height=100,
+        )
+
+        response = self.client.post(
+            reverse("organization_design_settings"),
+            data={"unit": "inch", "sheet_width": 200, "sheet_height": 200},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "Design setting already exists.")
+
+    def test_create_organization_design_setting_with_invalid_data(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """
+        POST with invalid payload should return serializer.errors (HTTP 400).
+        This covers the `return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)` branch.
+        """
+        DesignSetting.objects.filter(organization=self.organization).delete()
+
+        payload = {"unit": "", "sheet_width": 100, "sheet_height": 100}
+
+        url = reverse("organization_design_settings")
+        response = self.client.post(
+            url, data=payload, format="json", headers=self.get_headers
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.assertIsInstance(response.data, dict)
+        self.assertIn("unit", response.data)
+
+        self.assertEqual(
+            DesignSetting.objects.filter(organization=self.organization).count(), 0
+        )
+
+    def test_create_organization_design_setting_invalid_unit(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """
+        POST with an empty 'unit' (invalid) should hit serializer.errors
+        and return HTTP 400.  Covers the `return Response(serializer.errors, ...)` branch.
+        """
+        DesignSetting.objects.filter(organization=self.organization).delete()
+
+        payload = {"unit": "", "sheet_width": 100, "sheet_height": 100}
+
+        url = reverse("organization_design_settings")
+        response = self.client.post(
+            url, data=payload, format="json", headers=self.get_headers
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIsInstance(response.data, dict)
+        self.assertIn("unit", response.data)
+        self.assertEqual(
+            DesignSetting.objects.filter(organization=self.organization).count(), 0
+        )
+
     def test_get_design_mes_data(self: "DesignAPIViewTestCase") -> None:
         response = self.client.get(
             reverse("mes", kwargs={"design_id": self.design.id}),

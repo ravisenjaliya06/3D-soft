@@ -1150,6 +1150,41 @@ MATERIAL = [
         "type": "Wire Basket",
         "company": "",
     },
+    {
+        "name": "Asm Bore: Vert: 8mm x 10mm Horz: 8mm x 20mm",
+        "description": "",
+        "type": "Connection",
+        "company": "",
+        "properties": {},
+    },
+    {
+        "name": "Asm Bore: Vert: 8mm x 10mm Horz: 8mm x 20mm(2)",
+        "description": "",
+        "type": "Connection",
+        "company": "",
+        "properties": {},
+    },
+    {
+        "name": "Stop Dado - 0.3750in deep",
+        "description": "",
+        "type": "Connection",
+        "company": "",
+        "properties": {},
+    },
+    {
+        "name": "Stop Dado - 0.2500in deep",
+        "description": "",
+        "type": "Connection",
+        "company": "",
+        "properties": {},
+    },
+    {
+        "name": "Through Dado - 0.2500in deep",
+        "description": "",
+        "type": "Connection",
+        "company": "",
+        "properties": {},
+    },
 ]
 
 CATALOG = [
