@@ -460,6 +460,10 @@ class MaterialFinishSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialFinish
         fields = ["id", "name", "finish", "finish_detail"]
+        extra_kwargs = {
+            "id": {"required": True},
+            'name': {'required': False}
+        }
 
 
 class MaterialFinishTypeSerializer(serializers.ModelSerializer):
@@ -471,6 +475,10 @@ class MaterialFinishTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialFinishType
         fields = ["id", "name", "finish_type", "finish_type_detail"]
+        extra_kwargs = {
+            "id": {"required": True},
+            'name': {'required': False}
+        }
 
 
 class MaterialTextureSerializer(serializers.ModelSerializer):
@@ -480,6 +488,10 @@ class MaterialTextureSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialTexture
         fields = ["id", "name", "texture", "texture_detail"]
+        extra_kwargs = {
+            "id": {"required": True},
+            'name': {'required': False}
+        }
 
 
 class MaterialPropertySerializer(serializers.ModelSerializer):
@@ -624,67 +636,62 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update properties if properties exist
         if properties_data and hasattr(instance, "properties"):
-            properties_obj = instance.properties.first()
-            if properties_obj:
-                properties_obj.unit_of_issue = properties_data.get(
-                    "unit_of_issue", properties_obj.unit_of_issue
+                properties_data.unit_of_issue = properties_data.get(
+                    "unit_of_issue", finishes_obj.unit_of_issue
                 )
-                properties_obj.default_cost = properties_data.get(
-                    "default_cost", properties_obj.default_cost
+                properties_data.default_cost = properties_data.get(
+                    "default_cost", properties_data.default_cost
                 )
-                properties_obj.sell_price = properties_data.get(
-                    "sell_price", properties_obj.sell_price
+                properties_data.sell_price = properties_data.get(
+                    "sell_price", properties_data.sell_price
                 )
-                properties_obj.length = properties_data.get(
-                    "length", properties_obj.length
+                properties_data.length = properties_data.get(
+                    "length", properties_data.length
                 )
-                properties_obj.width = properties_data.get(
-                    "width", properties_obj.width
+                properties_data.width = properties_data.get(
+                    "width", properties_data.width
                 )
-                properties_obj.thickness = properties_data.get(
-                    "thickness", properties_obj.thickness
+                properties_data.thickness = properties_data.get(
+                    "thickness", properties_data.thickness
                 )
-                properties_obj.save()  
+                properties_data.save()  
 
         # Update finishes
         if finishes_data:
+            finishes_data = self.initial_data["finishes"]
             for finish in finishes_data: 
-                finish_name = finish.get("name")
+                finish_id_obj = finish.get("id")
                 # Filter only finishes for this material with this name
-                finishes_obj = MaterialFinish.objects.filter(
-                    material=instance, name=finish_name
-                ).first()
-
+                finishes_obj = MaterialFinish.objects.filter(id=finish_id_obj)
                 if finishes_obj:
-                    new_finishes_obj = finish.get("finish")
-                    finishes_obj.finish = new_finishes_obj
-                    finishes_obj.save()
+                    finishes_obj.finish = finish.get("finish")
+                    finishes_obj.update(finish=finishes_obj.finish)
             
         # Update finish_types
         if finish_types_data:
+            finish_types_data = self.initial_data["finish_types"]
+            logging.info(f"finish type_data {finish_types_data}")
             for finish_type in finish_types_data:
-                finish_type_name = finish_type.get("name")
+                logging.info(f"finish_type {finish_type}")
+                finish_type_id = finish_type.get("id")
+                logging.info(f"finish_type_id {finish_type_id}")
                 # Filter only finishe_type for this material with this name
-                finishes_type_obj = MaterialFinishType.objects.filter(
-                    material=instance, name=finish_type_name
-                ).first()
+                finishes_type_obj = MaterialFinishType.objects.filter(id=finish_type_id)
                 if finishes_type_obj:
-                    new_finishes_type_obj = finish_type.get("finish_type")
-                    finishes_type_obj.finish_type = new_finishes_type_obj
-                    finishes_type_obj.save()
+                    finishes_type_obj.finish_type = finish_type.get("finish_type")
+                    logging.info(f"finishes_type_obj.finish_type {finishes_type_obj.finish_type}")
+                    finishes_type_obj.update(finish_type=finishes_type_obj.finish_type)
 
         # Update textures
         if textures_data:
+            textures_data = self.initial_data["textures"]
             for texture in textures_data:
-                texture_name = texture.get("name")
+                texture_id = texture.get("id")
                 # Filter only finishes for this material with this name
-                textures_obj = MaterialTexture.objects.filter(
-                    material=instance, name=texture_name
-                ).first()
-                if textures_obj:
-                    mew_textures_obj = texture.get("texture")
-                    textures_obj.texture = mew_textures_obj
-                    textures_obj.save()
+                textures_obj = MaterialTexture.objects.filter(id=texture_id)
+                if textures_obj: 
+                    textures_obj.texture = texture.get("texture")
+                    textures_obj.update(texture= textures_obj.texture)
 
         instance.save()
         return instance
