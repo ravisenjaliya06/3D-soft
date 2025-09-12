@@ -1,17 +1,17 @@
-import type React from "react"
-import { useEffect } from "react"
-import Header from "@/components/header/header"
-import Sidebar from "@/components/sidebar/sidebar"
-import { useMaterialData } from "./hooks/useMaterialData"
-import { useMaterialState } from "./hooks/useMaterialState"
-import { MaterialSidebar } from "./components/MaterialSidebar"
-import { MaterialToolbar } from "./components/MaterialToolbar"
-import { MaterialTable } from "./components/MaterialTable"
-import { ContextMenus } from "./components/ContextMenus"
-import { CreateCompanyPopup } from "./components/CreateCompanyPopup"
-import AddMaterialPopup from "./addItem"
-import { CATEGORY_TABS } from "./constants"
-import styles from "./material.module.css"
+import Header from '@/components/header/header';
+import Sidebar from '@/components/sidebar/sidebar';
+import type React from 'react';
+import { useEffect } from 'react';
+import AddMaterialPopup from './addItem';
+import { ContextMenus } from './components/ContextMenus';
+import { CreateCompanyPopup } from './components/CreateCompanyPopup';
+import { MaterialSidebar } from './components/MaterialSidebar';
+import { MaterialTable } from './components/MaterialTable';
+import { MaterialToolbar } from './components/MaterialToolbar';
+import { CATEGORY_TABS } from './constants';
+import { useMaterialData } from './hooks/useMaterialData';
+import { useMaterialState } from './hooks/useMaterialState';
+import styles from './material.module.css';
 const Material: React.FC = () => {
   const {
     companyMaterials,
@@ -21,7 +21,7 @@ const Material: React.FC = () => {
     fetchMaterialsByType,
     fetchCompanyMaterials,
     createCompany,
-  } = useMaterialData()
+  } = useMaterialData();
 
   const {
     expandedCategory,
@@ -50,101 +50,114 @@ const Material: React.FC = () => {
     setContextMaterialMenu,
     setCreateCompanyPopup,
     setCompanyName,
-  } = useMaterialState()
+  } = useMaterialState();
 
   // Event handlers
   const handleCategoryClick = (categoryId: string, name: string) => {
-    setActiveCategory(categoryId)
-    const tabs = CATEGORY_TABS[categoryId]
+    setActiveCategory(categoryId);
+    const tabs = CATEGORY_TABS[categoryId];
     if (tabs && tabs.length > 0) {
-      setActiveTab(tabs[0].id)
+      setActiveTab(tabs[0].id);
     }
-    fetchMaterialsByType(name)
-  }
+    fetchMaterialsByType(name);
+  };
 
   const handleToggleCategory = (categoryId: string) => {
-    setExpandedCategory(expandedCategory === categoryId ? "" : categoryId)
-    setSelectedSubItem(null)
-  }
+    setExpandedCategory(expandedCategory === categoryId ? '' : categoryId);
+    setSelectedSubItem(null);
+  };
 
   const handleSubItemClick = (itemId: string) => {
-    setSelectedSubItem(itemId)
-    fetchCompanyMaterials(itemId)
-  }
+    setSelectedSubItem(itemId);
+    fetchCompanyMaterials(itemId);
+  };
 
-  const handleContextMenu = (e: React.MouseEvent, categoryId: string, name: string) => {
-    e.preventDefault()
-    setExpandedCategory(categoryId)
-    setSelectedType(name)
-    setContextMenu({ x: e.clientX, y: e.clientY, categoryId })
-  }
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    categoryId: string,
+    name: string,
+  ) => {
+    e.preventDefault();
+    setExpandedCategory(categoryId);
+    setSelectedType(name);
+    setContextMenu({ x: e.clientX, y: e.clientY, categoryId });
+  };
 
-  const handleMaterialContextMenu = (e: React.MouseEvent, companyId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleMaterialContextMenu = (
+    e: React.MouseEvent,
+    companyId: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
     setContextMaterialMenu({
       x: e.clientX,
       y: e.clientY,
       companyId,
-    })
-  }
+    });
+  };
 
   const handleCreateCompany = async () => {
-    const success = await createCompany(companyName, selectedType)
+    const success = await createCompany(companyName, selectedType);
     if (success) {
-      setCreateCompanyPopup(false)
-      setCompanyName("")
-      setSelectedType(null)
+      setCreateCompanyPopup(false);
+      setCompanyName('');
+      setSelectedType(null);
     }
-  }
+  };
 
   const handleAddCompany = () => {
-    setCreateCompanyPopup(true)
-    setContextMenu(null)
-  }
+    setCreateCompanyPopup(true);
+    setContextMenu(null);
+  };
 
   const handleAddMaterial = (companyId: string) => {
-    setAddMaterialPopup(true)
-    setContextMaterialMenu(null)
-    setCompanyID(companyId)
-  }
+    setAddMaterialPopup(true);
+    setContextMaterialMenu(null);
+    setCompanyID(companyId);
+  };
 
   // Filter and sort materials
   const getFilteredMaterials = () => {
-    let filteredMaterials = companyMaterials
+    let filteredMaterials = companyMaterials;
 
     if (expandedCategory && !selectedSubItem) {
-      const categoryName = materialCategories.find((c) => c.id === expandedCategory)?.name
-      filteredMaterials = filteredMaterials.filter((m) => m.material_type === categoryName)
+      const categoryName = materialCategories.find(
+        (c) => c.id === expandedCategory,
+      )?.name;
+      filteredMaterials = filteredMaterials.filter(
+        (m) => m.material_type === categoryName,
+      );
     }
 
     const searchedMaterials = filteredMaterials.filter((row) =>
-      Object.values(row).some((value) => value?.toString().toLowerCase().includes(searchQuery.toLowerCase())),
-    )
+      Object.values(row).some((value) =>
+        value?.toString().toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    );
 
     return [...searchedMaterials].sort((a, b) => {
-      if (!sortColumn) return 0
-      const aValue = a[sortColumn as keyof typeof a]
-      const bValue = b[sortColumn as keyof typeof b]
-      if (aValue === undefined || bValue === undefined) return 0
-      return aValue < bValue ? 1 : -1
-    })
-  }
+      if (!sortColumn) return 0;
+      const aValue = a[sortColumn as keyof typeof a];
+      const bValue = b[sortColumn as keyof typeof b];
+      if (aValue === undefined || bValue === undefined) return 0;
+      return aValue < bValue ? 1 : -1;
+    });
+  };
 
   // Effects
   useEffect(() => {
-    fetchCompanies()
-    fetchMaterialsByType("Banding")
-  }, [fetchCompanies, fetchMaterialsByType])
+    fetchCompanies();
+    fetchMaterialsByType('Banding');
+  }, [fetchCompanies, fetchMaterialsByType]);
 
   useEffect(() => {
     const handleClickOutside = () => {
-      setContextMenu(null)
-      setContextMaterialMenu(null)
-    }
-    window.addEventListener("click", handleClickOutside)
-    return () => window.removeEventListener("click", handleClickOutside)
-  }, [])
+      setContextMenu(null);
+      setContextMaterialMenu(null);
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -164,7 +177,10 @@ const Material: React.FC = () => {
           />
 
           <div className={styles.materialrightside}>
-            <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <MaterialToolbar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
 
             <MaterialTable
               materials={getFilteredMaterials()}
@@ -202,7 +218,7 @@ const Material: React.FC = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Material
+export default Material;

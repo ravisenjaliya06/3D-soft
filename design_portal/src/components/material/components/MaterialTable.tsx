@@ -11,6 +11,7 @@ interface MaterialTableProps {
     onSort: (column: string) => void
 }
 
+
 export const MaterialTable: React.FC<MaterialTableProps> = ({
     materials,
     activeCategory,
@@ -31,18 +32,20 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
     return (
         <div className={styles.tableContainer}>
-            <div className={styles.tabletabsbox}>
-                {CATEGORY_TABS[activeCategory].map((tab) => (
-                    <div
-                        key={tab.id}
-                        className={`${styles.tabletabs} ${activeTab === tab.id ? styles.activeTab : ""}`}
-                        onClick={() => onTabChange(tab.id)}
-                    >
-                        {tab.label}
-                    </div>
-                ))}
+            <div className={styles.tableTabsContainer}>
+                <div className={styles.tabletabsbox}>
+                    {CATEGORY_TABS[activeCategory].map((tab) => (
+                        <div
+                            key={tab.id}
+                            className={`${styles.tabletabs} ${activeTab === tab.id ? styles.activeTab : ""}`}
+                            onClick={() => onTabChange(tab.id)}
+                        >
+                            {tab.label}
+                        </div>
+                    ))}
+                </div>
             </div>
-
+            <hr className={styles.tableHr} />
             <table className={styles.dataTable}>
                 <thead>
                     <tr>
