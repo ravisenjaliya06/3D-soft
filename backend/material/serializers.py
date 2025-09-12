@@ -720,52 +720,45 @@ class MaterialSerializer(serializers.ModelSerializer):
         # Update main Material fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        logging.info("validated data{validated_data}")
+
         # Update properties if properties exist
         if properties_data and hasattr(instance, "properties"):
-            properties_data.unit_of_issue = properties_data.get(
-                "unit_of_issue", properties_data.unit_of_issue
-            )
-            properties_data.default_cost = properties_data.get(
-                "default_cost", properties_data.default_cost
-            )
-            properties_data.sell_price = properties_data.get(
-                "sell_price", properties_data.sell_price
-            )
-            properties_data.length = properties_data.get(
-                "length", properties_data.length
-            )
-            properties_data.width = properties_data.get("width", properties_data.width)
-            properties_data.thickness = properties_data.get(
-                "thickness", properties_data.thickness
-            )
-            properties_data.save()
+            properties_data = self.initial_data["properties"]
+            logging.info(f"properties_data {properties_data}")
+            properties_id = properties_data.get("id")
+            logging.info(f"properties_id {properties_id}")
+            properties = Properties.objects.get(id=properties_id)
+            logging.info(f"properties {properties}")
+            properties.properties = properties_data
+            logging.info(f"properties.properties {properties.properties}")
+            properties.save()
 
         # Update finishes
         if finishes_data:
-            finishes_data = self.initial_data["finishes"]
-            for finish in finishes_data:
+            print("finishes_data", finishes_data)
+            recieve_finishes = self.initial_data["finishes"]
+            print("recieve_finishes", recieve_finishes)
+            for finish in recieve_finishes:
                 finish_id_obj = finish.get("id")
+                print("finish_id_obj", finish_id_obj)
                 # Filter only finishes for this material with this name
                 finishes_obj = MaterialFinish.objects.filter(id=finish_id_obj)
+                print("finishes_obj", finishes_obj)
                 if finishes_obj:
-                    finishes_obj.finish = finish.get("finish")
-                    finishes_obj.update(finish=finishes_obj.finish)
+                    updated_finishes = finish.get("finish")
+                    # print("updated_finishes", updated_finishes)
+                    finishes_obj.finish = updated_finishes
+                    print("finishes_obj finish", finishes_obj.finish)
+                    finishes_obj.update(finish= finishes_obj.finish)
         # Update finish_types
         if finish_types_data:
             finish_types_data = self.initial_data["finish_types"]
-            logging.info(f"finish type_data {finish_types_data}")
             for finish_type in finish_types_data:
-                logging.info(f"finish_type {finish_type}")
                 finish_type_id = finish_type.get("id")
-                logging.info(f"finish_type_id {finish_type_id}")
                 # Filter only finishe_type for this material with this name
                 finishes_type_obj = MaterialFinishType.objects.filter(id=finish_type_id)
                 if finishes_type_obj:
                     finishes_type_obj.finish_type = finish_type.get("finish_type")
-                    logging.info(
-                        f"finishes_type_obj.finish_type {finishes_type_obj.finish_type}"
-                    )
                     finishes_type_obj.update(finish_type=finishes_type_obj.finish_type)
 
         # Update textures
