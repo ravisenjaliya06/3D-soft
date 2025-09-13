@@ -21,3 +21,5 @@ src/components/3dmodel/store/customDesignSlice.ts
 src/components/material/index.tsx
 src/components/material/addItem.tsx
 src/components/catalogmanager/index.tsx
+src/components/material/types.ts
+src/components/material/utils/materialMapper.ts

@@ -1,11 +1,9 @@
 import createicon from '@/assets/createicon.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
 import close from '@/assets/design/close.svg';
 import commonService from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
 import add from '../../assets/catalogmanager/add.svg';
-import addMaterialIcon from '../../assets/catalogmanager/addMaterial.svg';
-import deleteIconOne from '../../assets/catalogmanager/deleteIcon.svg';
+import deleteIcon from '../../assets/catalogmanager/delete.svg';
 import matariel from '../../assets/catalogmanager/matireal.svg';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
@@ -31,8 +29,6 @@ const CatalogManager = () => {
   const [materialData, setMaterialData] = useState<any[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
   const [materialSearch, setMaterialSearch] = useState('');
-  const [selectedPartId, setSelectedPartId] = useState<string>('');
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
 
   useEffect(() => {
     if (catalogData.length > 0) {
@@ -99,13 +95,6 @@ const CatalogManager = () => {
     'Wire Basket',
   ];
 
-  const doorTableData = [
-    { name: 'Elder ven EB', description: 'Veneer Edgebanding' },
-    { name: 'Elder ven EB', description: '1/2 minute' },
-    { name: 'Up Elder ven EB', description: '10%' },
-    { name: 'Elder ven EB', description: 'No' },
-  ];
-
   // ---------- UTILS ----------
   const handleBlur = (setEditing: (v: boolean) => void) => () =>
     setEditing(false);
@@ -117,6 +106,7 @@ const CatalogManager = () => {
   };
 
   const handleAddCatalog = () => setShowPopup(true);
+  const handleDeleteCatalog = () => setshowDeletePopup(true);
 
   const getCatalog = async () => {
     const response: { status: number; data: any } =
@@ -212,7 +202,7 @@ const CatalogManager = () => {
     getMaterial();
   }, []);
 
-  const handleAssignMaterial = (partId: string, materialId: string | null) => {
+  const handleAssignMaterial = (partId: string, materialId: string) => {
     const material = materialData.find((m) => m.id === materialId);
     if (!material) return;
 
@@ -237,75 +227,7 @@ const CatalogManager = () => {
           part.id === partId ? { ...part, material } : part,
         ),
       );
-      setSelectedPartId('');
-      setSelectedMaterialId('');
-    } else {
-      setSelectedPartId('');
-      setSelectedMaterialId('');
     }
-  };
-
-  const handleDeleteMaterial = (partId: string) => {
-    setRuleParts((prevParts) =>
-      prevParts.map((part) =>
-        part.id === partId ? { ...part, material: null } : part,
-      ),
-    );
-
-    // @ts-ignore
-    const response: { status: number } = commonService.put(
-      'material',
-      `catalog/part/${partId}`,
-      {
-        material_id: null,
-      },
-    );
-
-    if (response.status === 200) {
-      setRuleParts((prevParts) =>
-        prevParts.map((part) =>
-          part.id === partId ? { ...part, material: null } : part,
-        ),
-      );
-      setSelectedPartId('');
-      setSelectedMaterialId('');
-      setshowDeletePopup(false);
-    } else {
-      setSelectedPartId('');
-      setSelectedMaterialId('');
-      setshowDeletePopup(false);
-    }
-  };
-
-  const handleAssignMaterialButton = () => {
-    if (!selectedPartId || !selectedMaterialId) {
-      alert('Please select a part and material');
-      setSelectedPartId('');
-      setSelectedMaterialId('');
-    }
-    handleAssignMaterial(selectedPartId, selectedMaterialId);
-    setSelectedPartId('');
-    setSelectedMaterialId('');
-  };
-
-  const handleDeleteAssignMaterial = () => {
-    if (!selectedPartId) {
-      alert('Please select a part');
-      setSelectedPartId('');
-      return;
-    }
-    handleDeleteMaterial(selectedPartId);
-    setSelectedPartId('');
-    setshowDeletePopup(false);
-  };
-
-  const handleShowDeletePopup = () => {
-    if (!selectedPartId) {
-      alert('Please select a part');
-      setSelectedPartId('');
-      return;
-    }
-    setshowDeletePopup(true);
   };
 
   return (
@@ -317,26 +239,9 @@ const CatalogManager = () => {
         {/* TOP TOOLBAR */}
         <div className={styles.maincontainer}>
           <div className={styles.topToolbar}>
-            <div className={styles.toolbarRight}>
-              <div className={styles.toolbarRightContent}>
-                <span>Catalog Type</span>
-                <select
-                  className={styles.dropdown}
-                  value={catalogType}
-                  onChange={(e) => setCatalogType(e.target.value)}
-                >
-                  {catalogTypes.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className={styles.dividerLine} />
             <div className={styles.toolbarLeft}>
               <div className={styles.toolbarLeftContent}>
-                <span>Part</span>
+                <span>Catalog Part</span>
                 <select
                   className={styles.dropdown}
                   value={selectedCatalog?.id || ''}
@@ -363,6 +268,22 @@ const CatalogManager = () => {
                 </div>
               </div>
             </div>
+            <div className={styles.toolbarRight}>
+              <div className={styles.toolbarRightContent}>
+                <span>Catalog Type</span>
+                <select
+                  className={styles.dropdown}
+                  value={catalogType}
+                  onChange={(e) => setCatalogType(e.target.value)}
+                >
+                  {catalogTypes.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -377,10 +298,10 @@ const CatalogManager = () => {
                 <div className={styles.buttonContainer}>
                   <button
                     className={styles.deleteButtonRule}
-                    onClick={() => handleShowDeletePopup()}
+                    onClick={handleDeleteCatalog}
                   >
                     <img
-                      src={deleteIconOne.src}
+                      src={deleteIcon.src}
                       alt=""
                       className={styles.deleteIconButton}
                     />{' '}
@@ -420,19 +341,11 @@ const CatalogManager = () => {
                         ? ruleParts.map((part) => (
                             <tr
                               key={part.id}
-                              className={
-                                selectedPartId === part.id
-                                  ? styles.selectedRow
-                                  : ''
-                              }
                               onDragOver={(e) => e.preventDefault()}
                               onDrop={(e) => {
                                 const materialId =
                                   e.dataTransfer.getData('materialId');
                                 handleAssignMaterial(part.id, materialId);
-                              }}
-                              onClick={() => {
-                                setSelectedPartId(part.id);
                               }}
                             >
                               <td>{part.name}</td>
@@ -474,7 +387,7 @@ const CatalogManager = () => {
                         {isEditingName ? (
                           <input
                             type="text"
-                            value={selectedCatalog?.name}
+                            value={name}
                             onChange={(e) => setName(e.target.value)}
                             onBlur={handleBlur(setIsEditingName)}
                             onKeyDown={(e) =>
@@ -494,7 +407,7 @@ const CatalogManager = () => {
                         {isEditingDescription ? (
                           <input
                             type="text"
-                            value={selectedCatalog?.description}
+                            value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             onBlur={handleBlur(setIsEditingDescription)}
                             onKeyDown={(e) =>
@@ -505,48 +418,6 @@ const CatalogManager = () => {
                           <p onClick={() => setIsEditingDescription(true)}>
                             {selectedCatalog?.description}
                           </p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
                         )}
                       </td>
                     </tr>
@@ -597,17 +468,9 @@ const CatalogManager = () => {
                         <tr
                           key={row.id}
                           draggable
-                          className={
-                            selectedMaterialId === row.id
-                              ? styles.selectedRow
-                              : ''
-                          }
                           onDragStart={(e) =>
                             e.dataTransfer.setData('materialId', row.id)
                           }
-                          onClick={() => {
-                            setSelectedMaterialId(row.id);
-                          }}
                         >
                           <td>{row.name}</td>
                           <td>{row.description}</td>
@@ -620,13 +483,6 @@ const CatalogManager = () => {
                     )}
                   </tbody>
                 </table>
-              </div>
-              <div
-                className={styles.addMaterialDesign}
-                onClick={() => handleAssignMaterialButton()}
-              >
-                <img src={addMaterialIcon.src}></img>
-                Assign Material to Part
               </div>
             </div>
           </div>
@@ -682,54 +538,6 @@ const CatalogManager = () => {
                 onClick={handleCreateCatalog}
               >
                 continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showDeletePopup && (
-        <div
-          className={styles.deletepopupOverlay}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (e.target === e.currentTarget) {
-              setshowDeletePopup(false);
-            }
-          }}
-        >
-          <div className={styles.deletepopup}>
-            <img
-              src={deletepopupicon.src}
-              alt="deletepopupicon"
-              className={styles.deletepopupicon}
-            />
-
-            <img
-              src={close.src}
-              alt="close"
-              onClick={() => setshowDeletePopup(false)}
-              className={styles.close}
-            />
-
-            <div className={styles.right_side}>
-              <h2>Delete Design</h2>
-              <p className={styles.deletemassage}>
-                Are you sure you want to delete this design? This action cannot
-                be undone.
-              </p>
-            </div>
-            <div className={styles.deleteButtonGrop}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setshowDeletePopup(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.deleteButton}
-                onClick={handleDeleteAssignMaterial}
-              >
-                Delete
               </button>
             </div>
           </div>
