@@ -26,7 +26,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
     }
 
 
-    const withMandatoryNameColumn = (columns: any[]) => {
+    const withMandatoryNameColumn = (columns: { key: string; label: string; sortable: boolean }[]) => {
         const nameColumn = { key: 'material_name', label: 'Name', sortable: true };
         const hasNameColumn = columns.some(col => col.key === 'material_name');
 
