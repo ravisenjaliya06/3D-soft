@@ -11,7 +11,6 @@ interface MaterialTableProps {
     onSort: (column: string) => void
 }
 
-
 export const MaterialTable: React.FC<MaterialTableProps> = ({
     materials,
     activeCategory,
@@ -26,9 +25,24 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
         return value.toString()
     }
 
+
+    const withMandatoryNameColumn = (columns: { key: string; label: string; sortable: boolean }[]) => {
+        const nameColumn = { key: 'material_name', label: 'Name', sortable: true };
+        const hasNameColumn = columns.some(col => col.key === 'material_name');
+
+        if (hasNameColumn) {
+            return columns;
+        } else {
+            return [nameColumn, ...columns];
+        }
+    }
+
     if (!activeCategory || !CATEGORY_TABS[activeCategory]) {
         return <div>Please select a category</div>
     }
+
+    const activeTabObject = CATEGORY_TABS[activeCategory].find((t) => t.id === activeTab);
+    const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
     return (
         <div className={styles.tableContainer}>
@@ -49,31 +63,25 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             <table className={styles.dataTable}>
                 <thead>
                     <tr>
-                        {activeTab &&
-                            CATEGORY_TABS[activeCategory]
-                                .find((t) => t.id === activeTab)
-                                ?.columns.map((column) => (
-                                    <th
-                                        key={column.key}
-                                        className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ""}`}
-                                        onClick={() => column.sortable && onSort(column.key)}
-                                    >
-                                        {column.label}
-                                    </th>
-                                ))}
+                        {columns.map((column) => (
+                            <th
+                                key={column.key}
+                                className={`${styles.tableHeader} ${column.sortable ? styles.sortable : ""}`}
+                                onClick={() => column.sortable && onSort(column.key)}
+                            >
+                                {column.label}
+                            </th>
+                        ))}
                     </tr>
                 </thead>
                 <tbody>
                     {materials.map((row) => (
                         <tr key={row.id} className={styles.tableRow}>
-                            {activeTab &&
-                                CATEGORY_TABS[activeCategory]
-                                    .find((t) => t.id === activeTab)
-                                    ?.columns.map((column) => (
-                                        <td key={column.key} className={styles.tableCell}>
-                                            {getCellValue(row, column.key)}
-                                        </td>
-                                    ))}
+                            {columns.map((column) => (
+                                <td key={column.key} className={styles.tableCell}>
+                                    {getCellValue(row, column.key)}
+                                </td>
+                            ))}
                         </tr>
                     ))}
                 </tbody>
