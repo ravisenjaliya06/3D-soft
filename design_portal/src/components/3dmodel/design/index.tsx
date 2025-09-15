@@ -908,13 +908,17 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
       setHelperTools(true);
       setSelectedObject(hoveredMesh!);
-      newOutline = createOutlineForObject(hoveredMesh! || null);
+      if (!hoveredMesh.name.includes('WALL')) {
+        setHelperTools(false);
+        setSelectedObject(null);
+      }
+      newOutline = createOutlineForObject(hoveredMesh || null);
     }
     if (newOutline) design3D.scene.add(newOutline);
     design3D.renderer.render(design3D.scene, design3D.camera);
   };
 
-  const SELECTABLE_KEYS = ['PLANK', 'DOOR', 'DRAWER', 'INVISIBLEBOX'];
+  const SELECTABLE_KEYS = ['PLANK', 'DOOR', 'DRAWER', 'INVISIBLEBOX', 'WALL'];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
     SELECTABLE_KEYS.some((key) => obj.name.toUpperCase().includes(key));

@@ -5,6 +5,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { initializeMoveHandler } from '../handler/items';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
+import { TEXTURE_MEDIA } from '../handler/constant';
 
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -123,6 +124,24 @@ export const init3DDesign = async (
 
   scene.add(daySky);
 
+  const textureLoader = new THREE.TextureLoader();
+  const wallTexture = textureLoader.load('/img1_0.jpg');
+  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+  wallTexture.repeat.set(2, 1);
+
+  const floorTexture = textureLoader.load('/img2_6.jpg');
+  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(2, 2);
+
+  const stoneTex = textureLoader.load('/img14_64.jpg');
+  stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
+  stoneTex.repeat.set(1.5, 1.5);
+
+  // darker texture for foot platform
+  const kickTex = textureLoader.load('/img14_64.jpg');
+  kickTex.wrapS = kickTex.wrapT = THREE.RepeatWrapping;
+  kickTex.repeat.set(1, 1);
+
   const toggleSky = () => {
     if (isDay) {
       scene.remove(daySky);
@@ -139,6 +158,8 @@ export const init3DDesign = async (
     }
     isDay = !isDay;
   };
+
+  addCTypeWallWithFloor(scene, wallTexture, floorTexture);
 
   const toggleZoomMode = (enable: boolean) => {
     isZoomMode = enable;
@@ -410,8 +431,72 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => {});
+  window.removeEventListener('resize', () => { });
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
+};
+
+const addCTypeWallWithFloor = (scene: THREE.Scene, wallTexture: THREE.Texture, floorTexture: THREE.Texture) => {
+  const wallHeight = 2.7;
+  const wallThickness = 0.05;
+  const wallLength = 5;
+
+  // ---------- Materials ----------
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: wallTexture,
+    side: THREE.DoubleSide
+  });
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: floorTexture,
+    side: THREE.DoubleSide
+  });
+
+  // ---------- Panels ----------
+  // Back wall
+  const centerPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(wallLength - 2 * wallThickness, wallHeight, wallThickness),
+    wallMat
+  );
+  centerPanel.name = 'Center Wall';
+  centerPanel.position.set(0, wallHeight / 2 - 0.61, 0);
+
+  // Left wall
+  const leftPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
+    wallMat
+  );
+  leftPanel.name = 'Left Wall';
+  leftPanel.position.set(
+    -wallLength / 2 + wallThickness / 2,
+    wallHeight / 2 - 0.61,
+    wallLength / 2 - wallThickness / 2
+  );
+
+  // Right wall
+  const rightPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
+    wallMat
+  );
+  rightPanel.name = 'Right Wall';
+  rightPanel.position.set(
+    wallLength / 2 - wallThickness / 2,
+    wallHeight / 2 - 0.61,
+    wallLength / 2 - wallThickness / 2
+  );
+
+  // ---------- Floor ----------
+  // Slightly larger than inside of C so it meets wall edges
+  const floorPanel = new THREE.Mesh(
+    new THREE.PlaneGeometry(wallLength, wallLength),  // square floor
+    floorMat
+  );
+  floorPanel.rotation.x = -Math.PI / 2;          // horizontal
+  floorPanel.position.set(0, -0.59, wallLength / 2 - wallThickness / 2);
+
+  // ---------- Group ----------
+  const cWallGroup = new THREE.Group();
+  cWallGroup.name = 'cWallWithFloor';
+  cWallGroup.add(centerPanel, leftPanel, rightPanel, floorPanel);
+  scene.add(cWallGroup);
 };
