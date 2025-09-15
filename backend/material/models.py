@@ -271,6 +271,40 @@ class CatalogTypeChoices(models.TextChoices):
     SLIDING_DOOR = "Sliding Door"
 
 
+class ConnectionTypesChoices(models.TextChoices):
+    """
+    Connection Types
+    """
+
+    BORE = "Bore"
+    DADO = "Dado"
+    LINEBORE = "Linebore"
+    CONNECTOR = "Connector"
+
+
+class PositionOfHolesChoices(models.TextChoices):
+    """
+    Position of Holes
+    """
+
+    FRONT_AND_REAR_HOLES = "Front and Rear Holes"
+    RUN_FRONT_TO_REAR = "Run Front to Rear"
+    RUN_REAR_TO_FRONT = "Run Rear to Front"
+    BALANCED = "Balanced"
+    FRONT_TO_REAR = "Front to Rear"
+    SPAN = "Span"
+
+
+class DadoConnectionTypesChoices(models.TextChoices):
+    """
+    Dado Connection Types
+    """
+
+    STOP = "Stop"
+    BLIND = "Blind"
+    THROUGH = "Through"
+
+
 class FinishesLibrary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(
@@ -598,8 +632,69 @@ class Properties(models.Model):
     wire_basket_type = models.CharField(
         max_length=100, choices=WireBasketTypesChoices.choices, blank=True, null=True
     )
-    basket_diameter = models.FloatField(default=0.00)  # renamed
+    basket_diameter = models.FloatField(default=0.00)
     screw_center_to_reference = models.FloatField(default=0.00)
+
+    # ---------- Connection ----------
+    connection_type = models.CharField(
+        max_length=100, choices=ConnectionTypesChoices.choices, blank=True, null=True
+    )
+    position_of_holes = models.CharField(
+        max_length=100, choices=PositionOfHolesChoices.choices, blank=True, null=True
+    )
+    # ----- Bore Connection -----
+    primary_hole_diameter = models.FloatField(default=0.00)
+    primary_hole_depth = models.FloatField(default=0.00)
+    primary_hole_center_on_thickness = models.BooleanField(default=False)
+    primary_hole_table_bed_to_hole_center = models.BooleanField(default=False)
+    primary_hole_table_bed_to_hole_center_value = models.FloatField(default=0.00)
+    primary_hole_mitered_part_center_holes = models.BooleanField(default=False)
+    primary_hole_mitered_part_distance_from_face = models.BooleanField(default=False)
+    primary_hole_mitered_part_distance_from_face_value = models.FloatField(default=0.00)
+    horizontal_boring_machine = models.BooleanField(default=False)
+    machine_spindles = models.IntegerField(default=0, blank=True, null=True)
+    position_of_the_first_hole = models.BooleanField(default=False)
+    position_of_the_first_hole_value = models.FloatField(default=0.00)
+    minimum_distance_of_the_first_hole = models.BooleanField(default=False)
+    minimum_distance_of_the_first_hole_value = models.FloatField(default=0.00)
+    spacing_distance_between_holes = models.BooleanField(default=False)
+    spacing_distance_between_holes_value = models.FloatField(default=0.00)
+    max_spacing_distance_between_holes = models.BooleanField(default=False)
+    max_spacing_distance_between_holes_value = models.FloatField(default=0.00)
+    minimum_distance_from_the_last_hole_to_edge = models.FloatField(default=0.00)
+    secondary_hole_diameter = models.FloatField(default=0.00)
+    secondary_hole_depth = models.FloatField(default=0.00)
+
+    # ----- Dado Connection -----
+    dado_connection_type = models.CharField(
+        max_length=100,
+        choices=DadoConnectionTypesChoices.choices,
+        blank=True,
+        null=True,
+    )
+    depth = models.FloatField(default=0.00)
+    width_adjustment = models.FloatField(default=0.00)
+    length_adjustment = models.FloatField(default=0.00)
+    depth_adjustment = models.FloatField(default=0.00)
+
+    blind_dado = models.BooleanField(default=False)
+    front_notch_length = models.FloatField(default=0.00)
+    rear_notch = models.BooleanField(default=False)
+    rear_notch_length = models.FloatField(default=0.00)
+
+    # ----- Linebore Connection -----
+    part_side_clearence = models.FloatField(default=0.00)
+    use_case_holes = models.BooleanField(default=False)
+    bore_required_holes = models.BooleanField(default=False)
+    number_of_holes = models.IntegerField(default=0, blank=True, null=True)
+    hole_diameter = models.FloatField(default=0.00)
+    hole_depth = models.FloatField(default=0.00)
+    front_hole_position_from_front = models.FloatField(default=0.00)
+    front_hole_position_from_rear = models.FloatField(default=0.00)
+    rear_hole_position_from_front = models.FloatField(default=0.00)
+    rear_hole_position_from_rear = models.FloatField(default=0.00)
+    maximun_spacing_between_mid_lines = models.FloatField(default=0.00)
+    holes_spacing = models.FloatField(default=0.00)
 
 
 class MaterialFinish(models.Model):

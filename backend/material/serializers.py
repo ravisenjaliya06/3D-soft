@@ -632,7 +632,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         if not (finish_set == finish_type_set == texture_set):
             raise serializers.ValidationError(
                 {
-                    "non_field_errors": (
+                    "errors": (
                         "finishes, finish_types and textures must contain the same set of names."
                     )
                 }
