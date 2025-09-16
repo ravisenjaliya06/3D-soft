@@ -5,7 +5,6 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { initializeMoveHandler } from '../handler/items';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
-import { TEXTURE_MEDIA } from '../handler/constant';
 
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -84,6 +83,12 @@ export const init3DDesign = async (
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.physicallyCorrectLights = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1; // tweak for brightness
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   mount.appendChild(renderer.domElement);
 
   initializeMoveHandler({ scene, camera, renderer });
@@ -137,10 +142,22 @@ export const init3DDesign = async (
   stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
   stoneTex.repeat.set(1.5, 1.5);
 
-  // darker texture for foot platform
-  const kickTex = textureLoader.load('/img14_64.jpg');
-  kickTex.wrapS = kickTex.wrapT = THREE.RepeatWrapping;
-  kickTex.repeat.set(1, 1);
+  const counterTexture = textureLoader.load('/img14_64.jpg');
+  counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+  counterTexture.repeat.set(2, 1);
+
+  const sunLight = new THREE.DirectionalLight(0xffffff, 3);
+  sunLight.position.set(10, 15, 10);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 2048;
+  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.radius = 4; // softer edge
+  sunLight.shadow.camera.near = 1;
+  sunLight.shadow.camera.far = 50;
+  scene.add(sunLight);
+
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+  scene.add(hemiLight);
 
   const toggleSky = () => {
     if (isDay) {
@@ -160,6 +177,7 @@ export const init3DDesign = async (
   };
 
   addCTypeWallWithFloor(scene, wallTexture, floorTexture);
+  addLShapeKitchenPlatform(scene, counterTexture);
 
   const toggleZoomMode = (enable: boolean) => {
     isZoomMode = enable;
@@ -431,67 +449,83 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
 };
 
-const addCTypeWallWithFloor = (scene: THREE.Scene, wallTexture: THREE.Texture, floorTexture: THREE.Texture) => {
-  const wallHeight = 2.7;
+const addCTypeWallWithFloor = (
+  scene: THREE.Scene,
+  wallTexture: THREE.Texture,
+  floorTexture: THREE.Texture,
+) => {
+  const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
 
   // ---------- Materials ----------
   const wallMat = new THREE.MeshStandardMaterial({
     map: wallTexture,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   });
   const floorMat = new THREE.MeshStandardMaterial({
     map: floorTexture,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   });
 
   // ---------- Panels ----------
   // Back wall
   const centerPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(wallLength - 2 * wallThickness, wallHeight, wallThickness),
-    wallMat
+    new THREE.BoxGeometry(
+      wallLength - 2 * wallThickness,
+      wallHeight,
+      wallThickness,
+    ),
+    wallMat,
   );
   centerPanel.name = 'Center Wall';
+  centerPanel.castShadow = true;
+  centerPanel.receiveShadow = true;
   centerPanel.position.set(0, wallHeight / 2 - 0.61, 0);
 
   // Left wall
   const leftPanel = new THREE.Mesh(
     new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
-    wallMat
+    wallMat,
   );
   leftPanel.name = 'Left Wall';
+  leftPanel.castShadow = true;
+  leftPanel.receiveShadow = true;
   leftPanel.position.set(
     -wallLength / 2 + wallThickness / 2,
     wallHeight / 2 - 0.61,
-    wallLength / 2 - wallThickness / 2
+    wallLength / 2 - wallThickness / 2,
   );
 
   // Right wall
   const rightPanel = new THREE.Mesh(
     new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
-    wallMat
+    wallMat,
   );
   rightPanel.name = 'Right Wall';
+  rightPanel.castShadow = true;
+  rightPanel.receiveShadow = true;
   rightPanel.position.set(
     wallLength / 2 - wallThickness / 2,
     wallHeight / 2 - 0.61,
-    wallLength / 2 - wallThickness / 2
+    wallLength / 2 - wallThickness / 2,
   );
 
   // ---------- Floor ----------
   // Slightly larger than inside of C so it meets wall edges
   const floorPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(wallLength, wallLength),  // square floor
-    floorMat
+    new THREE.PlaneGeometry(wallLength, wallLength), // square floor
+    floorMat,
   );
-  floorPanel.rotation.x = -Math.PI / 2;          // horizontal
+  floorPanel.rotation.x = -Math.PI / 2;
+  floorPanel.castShadow = true;
+  floorPanel.receiveShadow = true;
   floorPanel.position.set(0, -0.59, wallLength / 2 - wallThickness / 2);
 
   // ---------- Group ----------
@@ -499,4 +533,58 @@ const addCTypeWallWithFloor = (scene: THREE.Scene, wallTexture: THREE.Texture, f
   cWallGroup.name = 'cWallWithFloor';
   cWallGroup.add(centerPanel, leftPanel, rightPanel, floorPanel);
   scene.add(cWallGroup);
+};
+
+const addLShapeKitchenPlatform = (
+  scene: THREE.Scene,
+  counterTexture: THREE.Texture,
+) => {
+  // ---- Dimensions ----
+  const platformHeight = 0.7; // 90 cm from floor
+  const countertopThickness = 0.05; // 5 cm thick slab
+  const depth = 0.74; // 60 cm countertop depth
+  const lengthBack = 5; // same as wall length
+  const lengthLeft = 3; // how far it runs along the left wall
+
+  // ---- Material ----
+  const counterMat = new THREE.MeshStandardMaterial({
+    map: counterTexture,
+    roughness: 0.4,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
+  });
+
+  // ---- Back (center) run ----
+  const backCounter = new THREE.Mesh(
+    new THREE.BoxGeometry(lengthBack, countertopThickness, depth),
+    counterMat,
+  );
+  backCounter.name = 'Back Counter';
+  backCounter.castShadow = true;
+  backCounter.receiveShadow = true;
+  backCounter.position.set(
+    0,
+    platformHeight + countertopThickness / 2,
+    depth / 2,
+  );
+
+  // ---- Left run ----
+  const leftCounter = new THREE.Mesh(
+    new THREE.BoxGeometry(depth, countertopThickness, lengthLeft),
+    counterMat,
+  );
+  leftCounter.name = 'Left Counter';
+  leftCounter.castShadow = true;
+  leftCounter.receiveShadow = true;
+  leftCounter.position.set(
+    -lengthBack / 2 + depth / 1.7,
+    platformHeight + countertopThickness / 2,
+    lengthLeft / 2 + depth,
+  );
+
+  // ---- Group and add to scene ----
+  const lKitchenGroup = new THREE.Group();
+  lKitchenGroup.name = 'LShapeKitchenPlatform';
+  lKitchenGroup.add(backCounter, leftCounter);
+  scene.add(lKitchenGroup);
 };
