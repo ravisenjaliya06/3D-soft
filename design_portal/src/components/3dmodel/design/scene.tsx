@@ -83,7 +83,6 @@ export const init3DDesign = async (
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.physicallyCorrectLights = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1; // tweak for brightness
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -100,10 +99,10 @@ export const init3DDesign = async (
   scene.add(grid);
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
   directionalLight.position.set(10, 10, 10);
   scene.add(directionalLight);
 
