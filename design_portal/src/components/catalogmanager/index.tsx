@@ -307,7 +307,6 @@ const CatalogManager = () => {
     setshowDeletePopup(true);
   };
 
-
   return (
     <div className={styles.container}>
       <Sidebar />
@@ -419,29 +418,29 @@ const CatalogManager = () => {
                     <tbody>
                       {ruleParts.length > 0
                         ? ruleParts.map((part) => (
-                          <tr
-                            key={part.id}
-                            className={
-                              selectedPartId === part.id
-                                ? styles.selectedRow
-                                : ''
-                            }
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              const materialId =
-                                e.dataTransfer.getData('materialId');
-                              handleAssignMaterial(part.id, materialId);
-                            }}
-                            onClick={() => {
-                              setSelectedPartId(part.id);
-                            }}
-                          >
-                            <td>{part.name}</td>
-                            <td>
-                              {part.material?.name || 'NO MATERIAL ASSIGNED'}
-                            </td>
-                          </tr>
-                        ))
+                            <tr
+                              key={part.id}
+                              className={
+                                selectedPartId === part.id
+                                  ? styles.selectedRow
+                                  : ''
+                              }
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                const materialId =
+                                  e.dataTransfer.getData('materialId');
+                                handleAssignMaterial(part.id, materialId);
+                              }}
+                              onClick={() => {
+                                setSelectedPartId(part.id);
+                              }}
+                            >
+                              <td>{part.name}</td>
+                              <td>
+                                {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                              </td>
+                            </tr>
+                          ))
                         : null}
 
                       {/* Fill remaining rows up to 8 */}
@@ -519,7 +518,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
@@ -533,7 +532,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
@@ -547,7 +546,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
