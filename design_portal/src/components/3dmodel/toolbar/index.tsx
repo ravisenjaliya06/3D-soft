@@ -459,6 +459,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+    {
+      option: 'Add Base Cabinets',
+      icon: texture,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addBaseCabinetsUnderPlatform === 'function') {
+          threeDView.addBaseCabinetsUnderPlatform();
+        }
+      },
+      isActive: false,
+    },
   ];
 
   const viewTools = [
@@ -472,6 +482,36 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }
       },
       isActive: isExlightActive,
+    },
+    {
+      option: 'Full Kitchen',
+      icon: texture,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
+          threeDView.addFullKitchenSetup();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Load Sink GLB',
+      icon: texture,
+      onClick: () => {
+        if (threeDView && typeof threeDView.loadSinkModel === 'function') {
+          threeDView.loadSinkModel('/sink.glb');
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Load Handle GLB',
+      icon: texture,
+      onClick: () => {
+        if (threeDView && typeof threeDView.loadHandleModel === 'function') {
+          threeDView.loadHandleModel('/door_handle.glb');
+        }
+      },
+      isActive: false,
     },
   ];
 
