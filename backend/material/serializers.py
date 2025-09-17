@@ -707,6 +707,56 @@ class MaterialSerializer(serializers.ModelSerializer):
         material.refresh_from_db()
         return material
 
+    def update(
+        self: "MaterialSerializer", instance: Material, validated_data: dict
+    ) -> Material:
+        # Pop nested data
+        properties_data = validated_data.pop("properties", None)
+        finishes_data = validated_data.pop("finishes", [])
+        finish_types_data = validated_data.pop("finish_types", [])
+        textures_data = validated_data.pop("textures", [])
+
+        # Update main Material fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Update properties if properties exist
+        if properties_data and hasattr(instance, "properties"):
+            material_id = instance.id
+            Properties.objects.filter(material=material_id).update(**properties_data)
+
+        # Update finishes
+        if finishes_data:
+            recieve_finishes = self.initial_data["finishes"]
+            for finish in recieve_finishes:
+                finish_id_obj = finish.get("id")
+                updated_finish = finish.get("finish")
+                MaterialFinish.objects.filter(id=finish_id_obj).update(
+                    finish=updated_finish
+                )
+
+        # Update finish_types
+        if finish_types_data:
+            receive_finish_types = self.initial_data["finish_types"]
+            for finish_type in receive_finish_types:
+                finish_type_id = finish_type.get("id")
+                updated_finish_type = finish_type.get("finish_type")
+                MaterialFinishType.objects.filter(id=finish_type_id).update(
+                    finish_type=updated_finish_type
+                )
+
+        # Update textures
+        if textures_data:
+            recieve_textures = self.initial_data["textures"]
+            for texture in recieve_textures:
+                texture_id = texture.get("id")
+                updated_texture = texture.get("texture")
+                MaterialTexture.objects.filter(id=texture_id).update(
+                    texture=updated_texture
+                )
+        instance.save()
+        return instance
+
 
 class CatalogRulePartSerializer(serializers.ModelSerializer):
     material = serializers.SerializerMethodField()
