@@ -763,7 +763,17 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CatalogRuleParts
-        fields = ["id", "name", "material", "height", "width", "length", "depth", "position", "handle_position"]
+        fields = [
+            "id",
+            "name",
+            "material",
+            "height",
+            "width",
+            "length",
+            "depth",
+            "position",
+            "handle_position",
+        ]
 
     def get_material(self: "CatalogRulePartSerializer", obj: CatalogRuleParts) -> dict:
         if obj.material:
@@ -814,7 +824,17 @@ class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CatalogRuleParts
-        fields = ["id", "name", "material_id", "height", "width", "length", "depth", "position", "handle_position"]
+        fields = [
+            "id",
+            "name",
+            "material_id",
+            "height",
+            "width",
+            "length",
+            "depth",
+            "position",
+            "handle_position",
+        ]
         read_only_fields = ["id", "name"]
 
     def update(
@@ -840,7 +860,7 @@ class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
             instance.material = material
 
         for field, value in validated_data.items():
-            setattr(instance, field, value)        
+            setattr(instance, field, value)
 
         instance.save()
         return instance
