@@ -82,7 +82,7 @@ export const init3DDesign = async (
   const stars = new THREE.Points(starGeometry, starMaterial);
 
   // Renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1406,7 +1406,12 @@ export const addDoorOnInvisibleBox = async (
     face.position.set(boxMesh.position.x, boxMesh.position.y, frontZ);
   }
   face.castShadow = true;
-  scene.add(face);
+  // Group door
+  const doorGroup = new THREE.Group();
+  doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
+  (doorGroup as any).userData = { ...(doorGroup as any).userData, type: 'DOOR', upward: false };
+  scene.add(doorGroup);
+  doorGroup.attach(face);
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
@@ -1422,7 +1427,33 @@ export const addDoorOnInvisibleBox = async (
     }
     handle.name = `Handle_for_${boxMesh.name}`;
     scene.add(handle);
+    doorGroup.attach(handle);
   }
+  // Add simple hinges on the hinge side
+  const hingeMat = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6, roughness: 0.3 });
+  const hingeRadius = 0.007;
+  const hingeLen = 0.04;
+  const hingeTop = new THREE.Mesh(new THREE.CylinderGeometry(hingeRadius, hingeRadius, hingeLen, 12), hingeMat);
+  const hingeBottom = hingeTop.clone();
+  hingeTop.rotation.z = Math.PI / 2;
+  hingeBottom.rotation.z = Math.PI / 2;
+  if (isSide) {
+    const hx = face.position.x; // hinge on face X edge
+    const hz = boxMesh.position.z - (d / 2) + 0.03; // near inner edge
+    hingeTop.position.set(hx, boxMesh.position.y + (h / 2) - 0.08, hz);
+    hingeBottom.position.set(hx, boxMesh.position.y - (h / 2) + 0.08, hz);
+  } else {
+    const hz = face.position.z;
+    const hx = boxMesh.position.x - (w / 2) + 0.01; // left edge by default
+    hingeTop.position.set(hx, boxMesh.position.y + (h / 2) - 0.08, hz);
+    hingeBottom.position.set(hx, boxMesh.position.y - (h / 2) + 0.08, hz);
+  }
+  hingeTop.name = `DoorHinge_Top_for_${boxMesh.name}`;
+  hingeBottom.name = `DoorHinge_Bottom_for_${boxMesh.name}`;
+  scene.add(hingeTop);
+  scene.add(hingeBottom);
+  doorGroup.attach(hingeTop);
+  doorGroup.attach(hingeBottom);
 };
 
 export const addDrawersOnInvisibleBox = async (
@@ -1439,9 +1470,17 @@ export const addDrawersOnInvisibleBox = async (
   const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
   const gutter = 0.0; // no gaps between drawers
   const eachH = h / drawers;
+  const drawerType = (boxMesh.userData && (boxMesh.userData as any).drawerType) || 'basket'; // 'basket' | 'fivePlank'
+  const thickness = 0.018;
   await ensureHandleLoaded();
   for (let i = 0; i < drawers; i++) {
     const yCenter = boxMesh.position.y - h / 2 + eachH * (i + 0.5);
+    // Drawer group root
+    const drawerGroup = new THREE.Group();
+    drawerGroup.name = `Drawer_${i}_for_${boxMesh.name}`;
+    (drawerGroup as any).userData = { ...(drawerGroup as any).userData, type: 'DRAWER' };
+    scene.add(drawerGroup);
+
     // Drawer face
     const face = new THREE.Mesh(
       isSide
@@ -1458,6 +1497,7 @@ export const addDrawersOnInvisibleBox = async (
       face.position.set(boxMesh.position.x, yCenter, frontZ);
     }
     scene.add(face);
+    drawerGroup.attach(face);
     // Handle
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
@@ -1474,14 +1514,49 @@ export const addDrawersOnInvisibleBox = async (
       }
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
       scene.add(handle);
+      drawerGroup.attach(handle);
     }
-    // Wire basket inside
-    const basketGeom = new THREE.BoxGeometry(w - 0.06, eachH - 0.06, d - 0.08);
-    const edges = new THREE.EdgesGeometry(basketGeom);
-    const basket = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
-    basket.name = `WireBasket_${i}_for_${boxMesh.name}`;
-    basket.position.set(boxMesh.position.x, yCenter, boxMesh.position.z);
-    scene.add(basket);
+    if (drawerType === 'fivePlank') {
+      // Build five-plank drawer box (left, right, back, front inner panel, bottom)
+      const innerW = Math.max(w - 2 * thickness - 0.02, 0.1);
+      const innerD = Math.max(d - 0.06, 0.2);
+      const innerH = Math.max(eachH - 0.06, 0.12);
+      const baseY = yCenter;
+      // Left/Right sides (thickness x innerH x innerD)
+      const sideMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
+      const leftSide = new THREE.Mesh(new THREE.BoxGeometry(thickness, innerH, innerD), sideMat);
+      const rightSide = new THREE.Mesh(new THREE.BoxGeometry(thickness, innerH, innerD), sideMat);
+      leftSide.position.set(boxMesh.position.x - innerW / 2, baseY, boxMesh.position.z);
+      rightSide.position.set(boxMesh.position.x + innerW / 2, baseY, boxMesh.position.z);
+      leftSide.name = `DrawerSide_L_${i}_for_${boxMesh.name}`;
+      rightSide.name = `DrawerSide_R_${i}_for_${boxMesh.name}`;
+      scene.add(leftSide); drawerGroup.attach(leftSide);
+      scene.add(rightSide); drawerGroup.attach(rightSide);
+      // Back panel (innerW x innerH x thickness)
+      const back = new THREE.Mesh(new THREE.BoxGeometry(innerW, innerH, thickness), sideMat);
+      back.position.set(boxMesh.position.x, baseY, boxMesh.position.z - innerD / 2);
+      back.name = `DrawerBack_${i}_for_${boxMesh.name}`;
+      scene.add(back); drawerGroup.attach(back);
+      // Front inner panel (inside behind face)
+      const frontInner = new THREE.Mesh(new THREE.BoxGeometry(innerW, innerH, thickness), sideMat);
+      frontInner.position.set(boxMesh.position.x, baseY, boxMesh.position.z + innerD / 2 - thickness);
+      frontInner.name = `DrawerFrontInner_${i}_for_${boxMesh.name}`;
+      scene.add(frontInner); drawerGroup.attach(frontInner);
+      // Bottom (innerW x thickness x innerD)
+      const bottom = new THREE.Mesh(new THREE.BoxGeometry(innerW, thickness, innerD), sideMat);
+      bottom.position.set(boxMesh.position.x, baseY - (innerH / 2) + thickness / 2, boxMesh.position.z);
+      bottom.name = `DrawerBottom_${i}_for_${boxMesh.name}`;
+      scene.add(bottom); drawerGroup.attach(bottom);
+    } else {
+      // Wire basket inside (legacy type)
+      const basketGeom = new THREE.BoxGeometry(w - 0.06, eachH - 0.06, d - 0.08);
+      const edges = new THREE.EdgesGeometry(basketGeom);
+      const basket = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+      basket.name = `WireBasket_${i}_for_${boxMesh.name}`;
+      basket.position.set(boxMesh.position.x, yCenter, boxMesh.position.z);
+      scene.add(basket);
+      drawerGroup.attach(basket);
+    }
     // Drawer channels (left/right rails)
     const railH = 0.02;
     const railT = 0.005;
@@ -1499,6 +1574,8 @@ export const addDrawersOnInvisibleBox = async (
       farRail.position.set(boxMesh.position.x, yCenter, farZ);
       scene.add(nearRail);
       scene.add(farRail);
+      drawerGroup.attach(nearRail);
+      drawerGroup.attach(farRail);
     } else {
       const railLen = Math.max(d - 0.06, 0.2);
       const leftRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
@@ -1509,6 +1586,8 @@ export const addDrawersOnInvisibleBox = async (
       rightRail.position.set(boxMesh.position.x + w / 2 - railT / 2 - 0.01, yCenter, boxMesh.position.z);
       scene.add(leftRail);
       scene.add(rightRail);
+      drawerGroup.attach(leftRail);
+      drawerGroup.attach(rightRail);
     }
   }
 };
