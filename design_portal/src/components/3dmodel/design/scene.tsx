@@ -1162,7 +1162,8 @@ export const addPlatformOnWall = (
         new THREE.BoxGeometry(defaultDepth, ibHeight, runLength),
         invisibleMat,
       );
-      invisible.name = `invisibleBox_platform_${wallMesh.name.replace(' ', '').toLowerCase()}`;
+      const wallTag = wallMesh.name === 'Left Wall' ? 'leftwall' : 'rightwall';
+      invisible.name = `invisibleBox_platform_${wallTag}`;
       invisible.position.set(
         top.position.x,
         floorY + ibHeight / 2,
@@ -1185,17 +1186,25 @@ export const addVerticalPlanksInsideBox = (
 ) => {
   if (!boxMesh || count <= 0) return;
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
-  const width = params.width as number;
-  const height = params.height as number;
-  const depth = params.depth as number;
+  const width = params.width as number;   // X span of box
+  const height = params.height as number; // Y span of box
+  const depth = params.depth as number;   // Z span of box
 
   const center = boxMesh.position.clone();
   const thickness = 0.018; // 18mm
   const edgeClearance = Math.max(0.01, thickness); // keep away from corners
-  const innerWidth = width - 2 * edgeClearance;
-  if (innerWidth <= thickness) return;
 
-  const interval = innerWidth / (count + 1);
+  // Detect orientation: for left/right wall platform boxes, distribute planks along Z (wall length)
+  const isSideWallBox =
+    boxMesh.name.includes('platform_leftwall') ||
+    boxMesh.name.includes('platform_rightwall');
+
+  // For center wall: divide along X (width). For side wall: divide along Z (depth)
+  const span = isSideWallBox ? depth : width;
+  const innerSpan = span - 2 * edgeClearance;
+  if (innerSpan <= thickness) return;
+
+  const interval = innerSpan / (count + 1);
   const parent = boxMesh.parent ?? scene;
 
   const plankMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
@@ -1208,13 +1217,31 @@ export const addVerticalPlanksInsideBox = (
   }
 
   for (let i = 1; i <= count; i++) {
-    const xLocal = -width / 2 + edgeClearance + interval * i; // relative to box center
-    const plank = new THREE.Mesh(new THREE.BoxGeometry(thickness, height, depth), plankMat);
-    plank.castShadow = true;
-    plank.receiveShadow = true;
-    plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
-    plank.position.set(center.x + xLocal, center.y, center.z);
-    parent.add(plank);
+    if (isSideWallBox) {
+      // Side wall: divide along Z. Plank is thin in Z, full in X
+      const zLocal = -depth / 2 + edgeClearance + interval * i;
+      const plank = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, thickness),
+        plankMat,
+      );
+      plank.castShadow = true;
+      plank.receiveShadow = true;
+      plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      plank.position.set(center.x, center.y, center.z + zLocal);
+      parent.add(plank);
+    } else {
+      // Center wall: divide along X (existing behavior)
+      const xLocal = -width / 2 + edgeClearance + interval * i;
+      const plank = new THREE.Mesh(
+        new THREE.BoxGeometry(thickness, height, depth),
+        plankMat,
+      );
+      plank.castShadow = true;
+      plank.receiveShadow = true;
+      plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      plank.position.set(center.x + xLocal, center.y, center.z);
+      parent.add(plank);
+    }
   }
 
   // Add kitchen skirting (toe kick) along front at floor
@@ -1246,17 +1273,31 @@ export const addVerticalPlanksInsideBox = (
   // Create invisible boxes for compartments between planks (and sides)
   const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
   for (let i = 0; i <= count; i++) {
-    const leftEdgeLocal = -width / 2 + edgeClearance + interval * i;
-    const rightEdgeLocal = leftEdgeLocal + interval;
-    const compWidth = Math.max(interval - thickness, 0.02);
-    const compCenterX = (leftEdgeLocal + rightEdgeLocal) / 2;
-    const inv = new THREE.Mesh(
-      new THREE.BoxGeometry(compWidth, height, depth),
-      invisibleMat,
-    );
-    inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-    inv.position.set(center.x + compCenterX, center.y, center.z);
-    parent.add(inv);
+    if (isSideWallBox) {
+      const nearLocal = -depth / 2 + edgeClearance + interval * i;
+      const farLocal = nearLocal + interval;
+      const compDepth = Math.max(interval - thickness, 0.02);
+      const compCenterZ = (nearLocal + farLocal) / 2;
+      const inv = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, compDepth),
+        invisibleMat,
+      );
+      inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+      inv.position.set(center.x, center.y, center.z + compCenterZ);
+      parent.add(inv);
+    } else {
+      const leftEdgeLocal = -width / 2 + edgeClearance + interval * i;
+      const rightEdgeLocal = leftEdgeLocal + interval;
+      const compWidth = Math.max(interval - thickness, 0.02);
+      const compCenterX = (leftEdgeLocal + rightEdgeLocal) / 2;
+      const inv = new THREE.Mesh(
+        new THREE.BoxGeometry(compWidth, height, depth),
+        invisibleMat,
+      );
+      inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+      inv.position.set(center.x + compCenterX, center.y, center.z);
+      parent.add(inv);
+    }
   }
 };
 
@@ -1347,21 +1388,37 @@ export const addDoorOnInvisibleBox = async (
   const w = params.width as number;
   const h = params.height as number;
   const d = params.depth as number;
-  const frontZ = boxMesh.position.z + d / 2 + 0.01;
+  const isSide = boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
+  const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
   const face = new THREE.Mesh(
-    new THREE.BoxGeometry(w - 0.01, h - 0.01, 0.02),
+    isSide
+      ? new THREE.BoxGeometry(0.02, h - 0.01, d - 0.01)
+      : new THREE.BoxGeometry(w - 0.01, h - 0.01, 0.02),
     new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 }),
   );
   face.name = `Door_for_${boxMesh.name}`;
-  face.position.set(boxMesh.position.x, boxMesh.position.y, frontZ);
+  if (isSide) {
+    const frontX = boxMesh.position.x + dir * (w / 2 + 0.01);
+    face.position.set(frontX, boxMesh.position.y, boxMesh.position.z);
+  } else {
+    const frontZ = boxMesh.position.z + d / 2 + 0.01;
+    face.position.set(boxMesh.position.x, boxMesh.position.y, frontZ);
+  }
   face.castShadow = true;
   scene.add(face);
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
-    // Vertical handle for doors: rotate 90deg to align along Y
+    // Vertical handle for doors
+    handle.rotation.set(0, 0, 0);
     handle.rotation.y = Math.PI / 2;
-    handle.position.set(boxMesh.position.x + w / 2 - 0.05, boxMesh.position.y, frontZ + 0.01);
+    if (isSide) {
+      const frontX = face.position.x;
+      handle.position.set(frontX + dir * 0.005, boxMesh.position.y, boxMesh.position.z);
+    } else {
+      const frontZ = face.position.z;
+      handle.position.set(boxMesh.position.x + w / 2 - 0.05, boxMesh.position.y, frontZ + 0.01);
+    }
     handle.name = `Handle_for_${boxMesh.name}`;
     scene.add(handle);
   }
@@ -1377,7 +1434,8 @@ export const addDrawersOnInvisibleBox = async (
   const w = params.width as number;
   const h = params.height as number;
   const d = params.depth as number;
-  const frontZ = boxMesh.position.z + d / 2 + 0.01;
+  const isSide = boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
+  const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
   const gutter = 0.0; // no gaps between drawers
   const eachH = h / drawers;
   await ensureHandleLoaded();
@@ -1385,20 +1443,34 @@ export const addDrawersOnInvisibleBox = async (
     const yCenter = boxMesh.position.y - h / 2 + eachH * (i + 0.5);
     // Drawer face
     const face = new THREE.Mesh(
-      new THREE.BoxGeometry(w - 0.01, eachH - 0.005, 0.02),
+      isSide
+        ? new THREE.BoxGeometry(0.02, eachH - 0.005, d - 0.01)
+        : new THREE.BoxGeometry(w - 0.01, eachH - 0.005, 0.02),
       new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 }),
     );
     face.name = `DrawerFace_${i}_for_${boxMesh.name}`;
-    face.position.set(boxMesh.position.x, yCenter, frontZ);
+    if (isSide) {
+      const frontX = boxMesh.position.x + dir * (w / 2 + 0.01);
+      face.position.set(frontX, yCenter, boxMesh.position.z);
+    } else {
+      const frontZ = boxMesh.position.z + d / 2 + 0.01;
+      face.position.set(boxMesh.position.x, yCenter, frontZ);
+    }
     scene.add(face);
     // Handle
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
-      // Horizontal handle for drawers: align along X (no rotation or reset)
+      // Horizontal handle for drawers
       handle.rotation.set(0, 0, 0);
       handle.rotation.z = Math.PI / 2;
       handle.rotation.x = -(Math.PI / 2);
-      handle.position.set(boxMesh.position.x, yCenter, frontZ + 0.01);
+      if (isSide) {
+        const frontX = (face.position as THREE.Vector3).x;
+        handle.position.set(frontX + dir * 0.005, yCenter, boxMesh.position.z);
+      } else {
+        const frontZ = (face.position as THREE.Vector3).z;
+        handle.position.set(boxMesh.position.x, yCenter, frontZ + 0.01);
+      }
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
       scene.add(handle);
     }
@@ -1412,15 +1484,30 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer channels (left/right rails)
     const railH = 0.02;
     const railT = 0.005;
-    const railLen = Math.max(d - 0.06, 0.2);
     const railMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.6, roughness: 0.3 });
-    const leftRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
-    const rightRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
-    leftRail.name = `DrawerRail_L_${i}_for_${boxMesh.name}`;
-    rightRail.name = `DrawerRail_R_${i}_for_${boxMesh.name}`;
-    leftRail.position.set(boxMesh.position.x - w / 2 + railT / 2 + 0.01, yCenter, boxMesh.position.z);
-    rightRail.position.set(boxMesh.position.x + w / 2 - railT / 2 - 0.01, yCenter, boxMesh.position.z);
-    scene.add(leftRail);
-    scene.add(rightRail);
+    if (isSide) {
+      // Rails run along X on side walls, mounted at Z sides
+      const railLenX = Math.max(w - 0.06, 0.2);
+      const nearZ = boxMesh.position.z - d / 2 + railT / 2 + 0.01;
+      const farZ = boxMesh.position.z + d / 2 - railT / 2 - 0.01;
+      const nearRail = new THREE.Mesh(new THREE.BoxGeometry(railLenX, railH, railT), railMat);
+      const farRail = new THREE.Mesh(new THREE.BoxGeometry(railLenX, railH, railT), railMat);
+      nearRail.name = `DrawerRail_N_${i}_for_${boxMesh.name}`;
+      farRail.name = `DrawerRail_F_${i}_for_${boxMesh.name}`;
+      nearRail.position.set(boxMesh.position.x, yCenter, nearZ);
+      farRail.position.set(boxMesh.position.x, yCenter, farZ);
+      scene.add(nearRail);
+      scene.add(farRail);
+    } else {
+      const railLen = Math.max(d - 0.06, 0.2);
+      const leftRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
+      const rightRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
+      leftRail.name = `DrawerRail_L_${i}_for_${boxMesh.name}`;
+      rightRail.name = `DrawerRail_R_${i}_for_${boxMesh.name}`;
+      leftRail.position.set(boxMesh.position.x - w / 2 + railT / 2 + 0.01, yCenter, boxMesh.position.z);
+      rightRail.position.set(boxMesh.position.x + w / 2 - railT / 2 - 0.01, yCenter, boxMesh.position.z);
+      scene.add(leftRail);
+      scene.add(rightRail);
+    }
   }
 };
