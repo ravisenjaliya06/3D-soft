@@ -759,3 +759,10 @@ class CatalogRuleParts(models.Model):
         blank=True,
         related_name="catalog_part_material",
     )
+    # ----- Data Storing Common Fields for Door, Drawer and Plank-----
+    height = models.FloatField(blank=True, null=True)
+    width = models.FloatField(blank=True, null=True)
+    length = models.FloatField(blank=True, null=True)
+    depth = models.FloatField(blank=True, null=True)
+    position = models.CharField(blank=True, null=True)
+    handle_position = models.CharField(blank=True, null=True)
