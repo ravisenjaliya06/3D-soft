@@ -53,6 +53,7 @@ import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { store } from '../store';
 import { addObjectsThunk, togglAlignment } from '../store/dataSlice';
+import { addLShapeKitchenPlatform, addPlatformOnWall, addVerticalPlanksInsideBox, addDoorOnInvisibleBox, addDrawersOnInvisibleBox, addHorizontalPlanksInsideBox } from '../design/scene';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -218,6 +219,43 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       });
     }
   };
+
+  const handleToAddPlatform = () => {
+    const textureLoader = new THREE.TextureLoader();
+    const counterTexture = textureLoader.load('/img14_64.jpg');
+    counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+    counterTexture.repeat.set(2, 1);
+
+    // Prefer selected wall via outline center match; fallback to hovered wall; else fallback to L-shape
+    const scene = threeDView.scene as THREE.Scene;
+    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+    let wallFromSelection: THREE.Mesh | null = null;
+    if (outline) {
+      const outlineCenter = outline.position.clone();
+      const walls: THREE.Mesh[] = [];
+      scene.traverse((o) => {
+        if (o instanceof THREE.Mesh && (o.name === 'Center Wall' || o.name === 'Left Wall' || o.name === 'Right Wall')) {
+          walls.push(o);
+        }
+      });
+      for (const w of walls) {
+        const box = new THREE.Box3().setFromObject(w);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        if (center.distanceTo(outlineCenter) < 1e-3) {
+          wallFromSelection = w;
+          break;
+        }
+      }
+    }
+
+    const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+    const targetWall = wallFromSelection
+      || (hovered && (hovered.name === 'Center Wall' || hovered.name === 'Left Wall' || hovered.name === 'Right Wall') ? hovered : null);
+
+    if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
+    else addLShapeKitchenPlatform(scene, counterTexture);
+  }
 
   const options = [
     { option: 'Home', name: 'Home', icon: img1 },
@@ -459,13 +497,137 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+    // {
+    //   option: 'Add Base Cabinets',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.addBaseCabinetsUnderPlatform === 'function') {
+    //       threeDView.addBaseCabinetsUnderPlatform();
+    //     }
+    //   },
+    //   isActive: false,
+    // },
     {
-      option: 'Add Base Cabinets',
-      icon: texture,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addBaseCabinetsUnderPlatform === 'function') {
-          threeDView.addBaseCabinetsUnderPlatform();
+      option: 'Add Platform',
+      icon: align_dimension,
+      onClick: () => {handleToAddPlatform();},
+      isActive: designTexture,
+    },
+    {
+      option: 'Add Vertical Planks',
+      icon: align_dimension,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        // Determine selected object via outline center; fallback to hovered
+        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        let targetBox: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox')) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          });
         }
+        if (!targetBox) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (hovered && hovered.name.toLowerCase().includes('invisiblebox')) targetBox = hovered;
+        }
+        if (!targetBox) {
+          alert('Select an invisible box under the platform first.');
+          return;
+        }
+        const input = prompt('How many vertical planks to add inside this box?');
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addVerticalPlanksInsideBox(scene, targetBox, num);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Add Horizontal Planks',
+      icon: align_dimension,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        let targetBox: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          });
+        }
+        if (!targetBox) {
+          alert('Select a compartment invisible box first.');
+          return;
+        }
+        const input = prompt('How many horizontal planks (shelves)?');
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addHorizontalPlanksInsideBox(scene, targetBox, num);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Add Door to Box',
+      icon: align_dimension,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        let targetBox: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          });
+        }
+        if (!targetBox) {
+          alert('Select a compartment invisible box first.');
+          return;
+        }
+        await addDoorOnInvisibleBox(scene, targetBox);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Add Drawers to Box',
+      icon: align_dimension,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        let targetBox: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          });
+        }
+        if (!targetBox) {
+          alert('Select a compartment invisible box first.');
+          return;
+        }
+        const input = prompt('How many drawers?');
+        const drawers = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(drawers) || drawers <= 0) return;
+        await addDrawersOnInvisibleBox(scene, targetBox, drawers);
       },
       isActive: false,
     },
@@ -483,16 +645,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: isExlightActive,
     },
-    {
-      option: 'Full Kitchen',
-      icon: texture,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
-          threeDView.addFullKitchenSetup();
-        }
-      },
-      isActive: false,
-    },
+    // {
+    //   option: 'Full Kitchen',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
+    //       threeDView.addFullKitchenSetup();
+    //     }
+    //   },
+    //   isActive: false,
+    // },
     {
       option: 'Load Sink GLB',
       icon: texture,
@@ -503,16 +665,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: false,
     },
-    {
-      option: 'Load Handle GLB',
-      icon: texture,
-      onClick: () => {
-        if (threeDView && typeof threeDView.loadHandleModel === 'function') {
-          threeDView.loadHandleModel('/door_handle.glb');
-        }
-      },
-      isActive: false,
-    },
+    // {
+    //   option: 'Load Handle GLB',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.loadHandleModel === 'function') {
+    //       threeDView.loadHandleModel('/door_handle.glb');
+    //     }
+    //   },
+    //   isActive: false,
+    // },
   ];
 
   const handleAddObject = (name: string) => {
