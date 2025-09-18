@@ -1134,11 +1134,12 @@ export const addPlatformOnWall = (
     }
   } else if (wallMesh.name === 'Left Wall' || wallMesh.name === 'Right Wall') {
     // Wall runs along Z, normal faces +/-X into room
-    const lengthZ = params.height ? (params.depth as number ? (params.height as number) : (params.depth as number)) : (params.depth as number);
     // Use geometry depth as length along Z (BoxGeometry(width, height, depth)) where width is wall thickness for side walls
     const runLength = (wallMesh.geometry as THREE.BoxGeometry).parameters.depth as number;
+    // Trim overlap with center-wall countertop by shortening the run near the back wall by defaultDepth
+    const effectiveRun = Math.max(runLength - defaultDepth, 0.1);
     const top = new THREE.Mesh(
-      new THREE.BoxGeometry(defaultDepth, countertopThickness, runLength),
+      new THREE.BoxGeometry(defaultDepth, countertopThickness, effectiveRun),
       counterMat,
     );
     top.castShadow = true;
@@ -1148,7 +1149,7 @@ export const addPlatformOnWall = (
     top.position.set(
       wallMesh.position.x + dir * (wallW / 2 + defaultDepth / 2),
       platformHeight + countertopThickness / 2,
-      wallMesh.position.z,
+      wallMesh.position.z + (defaultDepth / 2), // push away from back wall by half the trimmed amount
     );
     platformGroup.add(top);
     // Align platform rotation parallel to wall (depth along X, length along Z)
@@ -1159,7 +1160,7 @@ export const addPlatformOnWall = (
     if (ibHeight > 0.001) {
       const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
       const invisible = new THREE.Mesh(
-        new THREE.BoxGeometry(defaultDepth, ibHeight, runLength),
+        new THREE.BoxGeometry(defaultDepth, ibHeight, effectiveRun),
         invisibleMat,
       );
       const wallTag = wallMesh.name === 'Left Wall' ? 'leftwall' : 'rightwall';
