@@ -923,7 +923,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => {});
+  window.removeEventListener('resize', () => { });
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -937,7 +937,6 @@ const addCTypeWallWithFloor = (
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
-
   // ---------- Materials ----------
   const wallMat = new THREE.MeshStandardMaterial({
     map: wallTexture,
@@ -1070,7 +1069,7 @@ export const addPlatformOnWall = (
 ) => {
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
-  const defaultDepth = 0.74;
+  const defaultProtrusion = 0.74; // Fixed protrusion depth/width for new platforms
 
   const counterMat = new THREE.MeshStandardMaterial({
     map: counterTexture,
@@ -1079,11 +1078,11 @@ export const addPlatformOnWall = (
     side: THREE.DoubleSide,
   });
 
-  // Derive wall orientation and length from geometry params
+  // Derive wall geometry params
   const params = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
-  const wallW = params.width as number;  // along X for left/right; along X for center reduced
+  const wallW = params.width as number;
   const wallH = params.height as number;
-  const wallD = params.depth as number;  // thickness
+  const wallD = params.depth as number;
 
   // Create a group to hold the platform
   const platformGroup = new THREE.Group();
@@ -1100,19 +1099,43 @@ export const addPlatformOnWall = (
   }
 
   if (wallMesh.name === 'Center Wall') {
-    // Wall runs along X, normal faces +Z into room
-    const lengthX = wallW;
+    // Compute wall span along X
+    const wallCenterX = wallMesh.position.x;
+    const halfLengthX = wallW / 2;
+    let leftStartX = wallCenterX - halfLengthX;
+    let rightEndX = wallCenterX + halfLengthX;
+
+    // Check for existing side platforms and adjust span
+    const leftPlat = scene.getObjectByName('Counter_LeftWall') as THREE.Mesh | undefined;
+    if (leftPlat) {
+      const leftPlatParams = (leftPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const leftProtrusion = leftPlatParams.width as number;
+      const leftInnerEndX = leftPlat.position.x + (leftProtrusion / 2);
+      leftStartX = Math.max(leftStartX, leftInnerEndX);
+    }
+
+    const rightPlat = scene.getObjectByName('Counter_RightWall') as THREE.Mesh | undefined;
+    if (rightPlat) {
+      const rightPlatParams = (rightPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const rightProtrusion = rightPlatParams.width as number;
+      const rightInnerStartX = rightPlat.position.x - (rightProtrusion / 2);
+      rightEndX = Math.min(rightEndX, rightInnerStartX);
+    }
+
+    const lengthX = Math.max(rightEndX - leftStartX, 0.1);
+    const centerX = (leftStartX + rightEndX) / 2;
+
     const top = new THREE.Mesh(
-      new THREE.BoxGeometry(lengthX, countertopThickness, defaultDepth),
+      new THREE.BoxGeometry(lengthX, countertopThickness, defaultProtrusion),
       counterMat,
     );
     top.castShadow = true;
     top.receiveShadow = true;
     top.name = 'Counter_CenterWall';
     top.position.set(
-      wallMesh.position.x, // centered on wall
+      centerX,
       platformHeight + countertopThickness / 2,
-      wallMesh.position.z + wallD / 2 + defaultDepth / 2,
+      wallMesh.position.z + wallD / 2 + defaultProtrusion / 2,
     );
     platformGroup.add(top);
 
@@ -1121,7 +1144,7 @@ export const addPlatformOnWall = (
     if (ibHeight > 0.001) {
       const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
       const invisible = new THREE.Mesh(
-        new THREE.BoxGeometry(lengthX, ibHeight, defaultDepth),
+        new THREE.BoxGeometry(lengthX, ibHeight, defaultProtrusion),
         invisibleMat,
       );
       invisible.name = 'invisibleBox_platform_center';
@@ -1133,13 +1156,25 @@ export const addPlatformOnWall = (
       platformGroup.add(invisible);
     }
   } else if (wallMesh.name === 'Left Wall' || wallMesh.name === 'Right Wall') {
-    // Wall runs along Z, normal faces +/-X into room
-    // Use geometry depth as length along Z (BoxGeometry(width, height, depth)) where width is wall thickness for side walls
-    const runLength = (wallMesh.geometry as THREE.BoxGeometry).parameters.depth as number;
-    // Trim overlap with center-wall countertop by shortening the run near the back wall by defaultDepth
-    const effectiveRun = Math.max(runLength - defaultDepth, 0.1);
+    // Compute wall span along Z
+    const wallCenterZ = wallMesh.position.z;
+    const halfRunZ = wallD / 2; // wallD is params.depth for sides
+    const minZ = wallCenterZ - halfRunZ;
+    const maxZ = wallCenterZ + halfRunZ;
+
+    // Check for existing back platform and adjust run
+    const backPlat = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | undefined;
+    let startZ = minZ;
+    if (backPlat) {
+      const backPlatParams = (backPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const backProtrusion = backPlatParams.depth as number;
+      startZ = backPlat.position.z + (backProtrusion / 2);
+    }
+    let effectiveRun = Math.max(maxZ - startZ, 0.1);
+    const centerZ = startZ + (effectiveRun / 2);
+
     const top = new THREE.Mesh(
-      new THREE.BoxGeometry(defaultDepth, countertopThickness, effectiveRun),
+      new THREE.BoxGeometry(defaultProtrusion, countertopThickness, effectiveRun),
       counterMat,
     );
     top.castShadow = true;
@@ -1147,20 +1182,18 @@ export const addPlatformOnWall = (
     top.name = `Counter_${wallMesh.name.replace(' ', '')}`;
     const dir = wallMesh.name === 'Left Wall' ? +1 : -1;
     top.position.set(
-      wallMesh.position.x + dir * (wallW / 2 + defaultDepth / 2),
+      wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2),
       platformHeight + countertopThickness / 2,
-      wallMesh.position.z + (defaultDepth / 2), // push away from back wall by half the trimmed amount
+      centerZ,
     );
     platformGroup.add(top);
-    // Align platform rotation parallel to wall (depth along X, length along Z)
-    top.rotation.set(0, 0, 0);
 
     // Invisible box from underside to floor
     const ibHeight = (top.position.y - (countertopThickness / 2)) - floorY;
     if (ibHeight > 0.001) {
       const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
       const invisible = new THREE.Mesh(
-        new THREE.BoxGeometry(defaultDepth, ibHeight, effectiveRun),
+        new THREE.BoxGeometry(defaultProtrusion, ibHeight, effectiveRun),
         invisibleMat,
       );
       const wallTag = wallMesh.name === 'Left Wall' ? 'leftwall' : 'rightwall';
