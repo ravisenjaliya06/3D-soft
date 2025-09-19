@@ -1,13 +1,19 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { initializeMoveHandler } from '../handler/items';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let cachedHandleModel: THREE.Object3D | null = null;
+
+// ===== Dimension helpers (exported) =====
+const DIMENSION_GROUP_PREFIX = 'plank_dimension_group_';
+const DIM_LABEL_PREFIX = 'plank_dim_label_';
+
+const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
 
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -591,24 +597,32 @@ export const init3DDesign = async (
 
   const loadSinkModel = async (url: string) => {
     // Try to find a suitable countertop to place the sink on
-    let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
+    let counterMesh = scene.getObjectByName(
+      'Counter_CenterWall',
+    ) as THREE.Mesh | null;
     if (!counterMesh) {
-      const lShape = scene.getObjectByName('LShapeKitchenPlatform') as THREE.Group | null;
+      const lShape = scene.getObjectByName(
+        'LShapeKitchenPlatform',
+      ) as THREE.Group | null;
       if (lShape) {
-        counterMesh = lShape.children.find((c) => c.name === 'Back Counter') as THREE.Mesh | null;
+        counterMesh = lShape.children.find(
+          (c) => c.name === 'Back Counter',
+        ) as THREE.Mesh | null;
       }
     }
     if (!counterMesh) {
       // Fallback: any mesh named starting with "Counter_"
       scene.traverse((o) => {
-        if (!counterMesh && o instanceof THREE.Mesh && o.name.startsWith('Counter_')) counterMesh = o;
+        if (
+          !counterMesh &&
+          o instanceof THREE.Mesh &&
+          o.name.startsWith('Counter_')
+        )
+          counterMesh = o;
       });
     }
     if (!counterMesh) return;
     const mesh = counterMesh as THREE.Mesh;
-    const p = (mesh.geometry as THREE.BoxGeometry).parameters as any;
-    const counterDepth = p.depth as number;
-    const counterTopY = mesh.position.y + (p.height as number) / 2;
 
     const loader = new GLTFLoader();
     loader.load(
@@ -627,7 +641,10 @@ export const init3DDesign = async (
         box.getSize(size);
         const targetW = 0.8;
         const targetD = 0.45;
-        const scale = Math.min(targetW / Math.max(size.x, 0.0001), targetD / Math.max(size.z, 0.0001));
+        const scale = Math.min(
+          targetW / Math.max(size.x, 0.0001),
+          targetD / Math.max(size.z, 0.0001),
+        );
         model.scale.setScalar(scale);
         // Recompute bounds after scale
         const box2 = new THREE.Box3().setFromObject(model);
@@ -1081,7 +1098,6 @@ export const addPlatformOnWall = (
   // Derive wall geometry params
   const params = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
   const wallW = params.width as number;
-  const wallH = params.height as number;
   const wallD = params.depth as number;
 
   // Create a group to hold the platform
@@ -1090,7 +1106,9 @@ export const addPlatformOnWall = (
 
   // Compute floor Y from existing floor panel
   let floorY = 0;
-  const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
   if (cWallGroup) {
     const floorObj = cWallGroup.children.find(
       (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
@@ -1106,19 +1124,25 @@ export const addPlatformOnWall = (
     let rightEndX = wallCenterX + halfLengthX;
 
     // Check for existing side platforms and adjust span
-    const leftPlat = scene.getObjectByName('Counter_LeftWall') as THREE.Mesh | undefined;
+    const leftPlat = scene.getObjectByName('Counter_LeftWall') as
+      | THREE.Mesh
+      | undefined;
     if (leftPlat) {
-      const leftPlatParams = (leftPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const leftPlatParams = (leftPlat.geometry as THREE.BoxGeometry)
+        .parameters as any;
       const leftProtrusion = leftPlatParams.width as number;
-      const leftInnerEndX = leftPlat.position.x + (leftProtrusion / 2);
+      const leftInnerEndX = leftPlat.position.x + leftProtrusion / 2;
       leftStartX = Math.max(leftStartX, leftInnerEndX);
     }
 
-    const rightPlat = scene.getObjectByName('Counter_RightWall') as THREE.Mesh | undefined;
+    const rightPlat = scene.getObjectByName('Counter_RightWall') as
+      | THREE.Mesh
+      | undefined;
     if (rightPlat) {
-      const rightPlatParams = (rightPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const rightPlatParams = (rightPlat.geometry as THREE.BoxGeometry)
+        .parameters as any;
       const rightProtrusion = rightPlatParams.width as number;
-      const rightInnerStartX = rightPlat.position.x - (rightProtrusion / 2);
+      const rightInnerStartX = rightPlat.position.x - rightProtrusion / 2;
       rightEndX = Math.min(rightEndX, rightInnerStartX);
     }
 
@@ -1140,9 +1164,14 @@ export const addPlatformOnWall = (
     platformGroup.add(top);
 
     // Invisible box from underside to floor
-    const ibHeight = (top.position.y - (countertopThickness / 2)) - floorY;
+    const ibHeight = top.position.y - countertopThickness / 2 - floorY;
     if (ibHeight > 0.001) {
-      const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
+      const invisibleMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+      });
       const invisible = new THREE.Mesh(
         new THREE.BoxGeometry(lengthX, ibHeight, defaultProtrusion),
         invisibleMat,
@@ -1163,18 +1192,25 @@ export const addPlatformOnWall = (
     const maxZ = wallCenterZ + halfRunZ;
 
     // Check for existing back platform and adjust run
-    const backPlat = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | undefined;
+    const backPlat = scene.getObjectByName('Counter_CenterWall') as
+      | THREE.Mesh
+      | undefined;
     let startZ = minZ;
     if (backPlat) {
-      const backPlatParams = (backPlat.geometry as THREE.BoxGeometry).parameters as any;
+      const backPlatParams = (backPlat.geometry as THREE.BoxGeometry)
+        .parameters as any;
       const backProtrusion = backPlatParams.depth as number;
-      startZ = backPlat.position.z + (backProtrusion / 2);
+      startZ = backPlat.position.z + backProtrusion / 2;
     }
-    let effectiveRun = Math.max(maxZ - startZ, 0.1);
-    const centerZ = startZ + (effectiveRun / 2);
+    const effectiveRun = Math.max(maxZ - startZ, 0.1);
+    const centerZ = startZ + effectiveRun / 2;
 
     const top = new THREE.Mesh(
-      new THREE.BoxGeometry(defaultProtrusion, countertopThickness, effectiveRun),
+      new THREE.BoxGeometry(
+        defaultProtrusion,
+        countertopThickness,
+        effectiveRun,
+      ),
       counterMat,
     );
     top.castShadow = true;
@@ -1189,9 +1225,14 @@ export const addPlatformOnWall = (
     platformGroup.add(top);
 
     // Invisible box from underside to floor
-    const ibHeight = (top.position.y - (countertopThickness / 2)) - floorY;
+    const ibHeight = top.position.y - countertopThickness / 2 - floorY;
     if (ibHeight > 0.001) {
-      const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
+      const invisibleMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+      });
       const invisible = new THREE.Mesh(
         new THREE.BoxGeometry(defaultProtrusion, ibHeight, effectiveRun),
         invisibleMat,
@@ -1220,9 +1261,9 @@ export const addVerticalPlanksInsideBox = (
 ) => {
   if (!boxMesh || count <= 0) return;
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
-  const width = params.width as number;   // X span of box
+  const width = params.width as number; // X span of box
   const height = params.height as number; // Y span of box
-  const depth = params.depth as number;   // Z span of box
+  const depth = params.depth as number; // Z span of box
 
   const center = boxMesh.position.clone();
   const thickness = 0.018; // 18mm
@@ -1241,7 +1282,10 @@ export const addVerticalPlanksInsideBox = (
   const interval = innerSpan / (count + 1);
   const parent = boxMesh.parent ?? scene;
 
-  const plankMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
+  const plankMat = new THREE.MeshStandardMaterial({
+    color: 0xd9c7b8,
+    roughness: 0.7,
+  });
 
   // Remove the original container invisible box; we'll create compartment boxes instead
   if (boxMesh.parent) {
@@ -1249,6 +1293,20 @@ export const addVerticalPlanksInsideBox = (
   } else {
     scene.remove(boxMesh);
   }
+
+  // Store compartment config on parent for later refresh
+  parent.userData.compartmentConfig = {
+    isHorizontal: false,
+    isSideWall: isSideWallBox,
+    boundsMin: -span / 2 + edgeClearance,
+    boundsMax: span / 2 - edgeClearance,
+    height: height,
+    perpSize: isSideWallBox ? width : depth,
+    centerY: center.y,
+    centerPerp: isSideWallBox ? center.x : center.z,
+    thickness: thickness,
+    groupName: boxMesh.name,
+  };
 
   for (let i = 1; i <= count; i++) {
     if (isSideWallBox) {
@@ -1280,7 +1338,9 @@ export const addVerticalPlanksInsideBox = (
 
   // Add kitchen skirting (toe kick) along front at floor
   let floorY = 0;
-  const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
   if (cWallGroup) {
     const floorObj = cWallGroup.children.find(
       (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
@@ -1289,7 +1349,10 @@ export const addVerticalPlanksInsideBox = (
   }
   const skirtingHeight = 0.06;
   const skirtingDepth = depth; // full depth
-  const skirtingMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
+  const skirtingMat = new THREE.MeshStandardMaterial({
+    color: 0x555555,
+    roughness: 0.8,
+  });
   const skirting = new THREE.Mesh(
     new THREE.BoxGeometry(width, skirtingHeight, skirtingDepth),
     skirtingMat,
@@ -1297,42 +1360,10 @@ export const addVerticalPlanksInsideBox = (
   skirting.name = `Skirting_for_${boxMesh.name}`;
   skirting.castShadow = true;
   skirting.receiveShadow = true;
-  skirting.position.set(
-    center.x,
-    floorY + skirtingHeight / 2,
-    center.z,
-  );
+  skirting.position.set(center.x, floorY + skirtingHeight / 2, center.z);
   parent.add(skirting);
 
-  // Create invisible boxes for compartments between planks (and sides)
-  const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
-  for (let i = 0; i <= count; i++) {
-    if (isSideWallBox) {
-      const nearLocal = -depth / 2 + edgeClearance + interval * i;
-      const farLocal = nearLocal + interval;
-      const compDepth = Math.max(interval - thickness, 0.02);
-      const compCenterZ = (nearLocal + farLocal) / 2;
-      const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, compDepth),
-        invisibleMat,
-      );
-      inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-      inv.position.set(center.x, center.y, center.z + compCenterZ);
-      parent.add(inv);
-    } else {
-      const leftEdgeLocal = -width / 2 + edgeClearance + interval * i;
-      const rightEdgeLocal = leftEdgeLocal + interval;
-      const compWidth = Math.max(interval - thickness, 0.02);
-      const compCenterX = (leftEdgeLocal + rightEdgeLocal) / 2;
-      const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(compWidth, height, depth),
-        invisibleMat,
-      );
-      inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-      inv.position.set(center.x + compCenterX, center.y, center.z);
-      parent.add(inv);
-    }
-  }
+  refreshInvisibleBoxesForGroup(parent, boxMesh.name);
 };
 
 export const addHorizontalPlanksInsideBox = (
@@ -1352,17 +1383,38 @@ export const addHorizontalPlanksInsideBox = (
   if (innerHeight <= thickness) return;
   const interval = innerHeight / (count + 1);
   const parent = boxMesh.parent ?? scene;
-  const plankMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
+  const plankMat = new THREE.MeshStandardMaterial({
+    color: 0xd9c7b8,
+    roughness: 0.7,
+  });
   // Remove the original container invisible box; we'll create vertical compartments
   if (boxMesh.parent) {
     boxMesh.parent.remove(boxMesh);
   } else {
     scene.remove(boxMesh);
   }
+
+  // Store compartment config on parent for later refresh
+  parent.userData.compartmentConfig = {
+    isHorizontal: true,
+    isSideWall: false, // Horizontal is always along Y, no side wall distinction needed
+    boundsMin: -height / 2 + edgeClearance,
+    boundsMax: height / 2 - edgeClearance,
+    perpSizeX: width,
+    perpSizeZ: depth,
+    centerX: center.x,
+    centerZ: center.z,
+    thickness: thickness,
+    groupName: boxMesh.name,
+  };
+
   const shelfYs: number[] = [];
   for (let i = 1; i <= count; i++) {
     const yLocal = -height / 2 + edgeClearance + interval * i;
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(width, thickness, depth), plankMat);
+    const shelf = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      plankMat,
+    );
     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
     shelf.castShadow = true;
     shelf.receiveShadow = true;
@@ -1370,21 +1422,116 @@ export const addHorizontalPlanksInsideBox = (
     parent.add(shelf);
     shelfYs.push(yLocal);
   }
-  // Create invisible boxes between shelves (and top/bottom)
-  const invisibleMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false });
-  const boundaries: number[] = [-height / 2 + edgeClearance, ...shelfYs.map(v => v + thickness / 2), height / 2 - edgeClearance];
-  const starts: number[] = [-height / 2 + edgeClearance, ...shelfYs.map(v => v - thickness / 2)];
-  for (let i = 0; i < boundaries.length; i++) {
-    const yStart = starts[i];
-    const yEnd = boundaries[i];
-    const hSeg = Math.max(yEnd - yStart, 0);
-    if (hSeg <= 0.01) continue;
-    const inv = new THREE.Mesh(new THREE.BoxGeometry(width, hSeg, depth), invisibleMat);
-    inv.name = `invisibleBox_compartment_h_${i}_for_${boxMesh.name}`;
-    inv.position.set(center.x, center.y + (yStart + yEnd) / 2, center.z);
+
+  refreshInvisibleBoxesForGroup(parent, boxMesh.name);
+};
+
+// New function to refresh invisible boxes after plank movement
+const refreshInvisibleBoxesForGroup = (
+  parent: THREE.Object3D,
+  groupName: string,
+) => {
+  if (!parent.userData.compartmentConfig) return;
+
+  const config = parent.userData.compartmentConfig;
+  if (config.groupName !== groupName) return;
+
+  // Remove existing invisible boxes for this group
+  const toRemove: THREE.Object3D[] = [];
+  parent.traverse((o) => {
+    if (
+      o.name.includes(`invisibleBox_compartment_`) &&
+      o.name.includes(`_for_${groupName}`)
+    ) {
+      toRemove.push(o);
+    }
+  });
+  toRemove.forEach((o) => parent.remove(o));
+
+  // Collect and sort planks
+  const siblings: THREE.Mesh[] = [];
+  const plankKey = config.isHorizontal
+    ? 'HORIZONTAL_PLANK_'
+    : 'VERTICAL_PLANK_';
+  parent.traverse((o) => {
+    if (
+      o instanceof THREE.Mesh &&
+      o.name.includes(plankKey) &&
+      o.name.includes(`_for_${groupName}`)
+    ) {
+      siblings.push(o);
+    }
+  });
+
+  if (siblings.length === 0) return;
+
+  const axis = config.isHorizontal ? 'y' : config.isSideWall ? 'z' : 'x';
+  const plankPoss = siblings.map((p) => p.position[axis]);
+  plankPoss.sort((a, b) => a - b);
+
+  // Calculate compartment starts and ends
+  const plankMins = plankPoss.map((p) => p - config.thickness / 2);
+  const plankMaxs = plankPoss.map((p) => p + config.thickness / 2);
+
+  const starts = [config.boundsMin, ...plankMaxs];
+  const ends = [...plankMins, config.boundsMax];
+
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  });
+
+  for (let i = 0; i < starts.length; i++) {
+    const start = starts[i];
+    const end = ends[i];
+    const compSize = Math.max(end - start, 0.02);
+    if (compSize <= 0.01) continue;
+    const centerAlong = (start + end) / 2;
+
+    let invGeo;
+    if (config.isHorizontal) {
+      invGeo = new THREE.BoxGeometry(
+        config.perpSizeX,
+        compSize,
+        config.perpSizeZ,
+      );
+    } else {
+      invGeo = new THREE.BoxGeometry(
+        config.isSideWall ? config.perpSize : compSize,
+        config.height,
+        config.isSideWall ? compSize : config.perpSize,
+      );
+    }
+    const inv = new THREE.Mesh(invGeo, invisibleMat);
+    inv.name = `invisibleBox_compartment_${i}_for_${groupName}`;
+
+    if (config.isHorizontal) {
+      inv.position.set(config.centerX, centerAlong, config.centerZ);
+    } else {
+      inv.position.set(
+        config.isSideWall ? config.centerPerp : centerAlong,
+        config.centerY,
+        config.isSideWall ? centerAlong : config.centerPerp,
+      );
+    }
     parent.add(inv);
   }
 };
+
+// New function to refresh after plank move
+export function refreshInvisibleBoxesForPlank(
+  scene: THREE.Scene,
+  plank: THREE.Mesh,
+) {
+  const name = plank.name;
+  if (!name.includes('_for_')) return;
+  const groupName = name.split('_for_')[1];
+  if (!groupName) return;
+  if (!plank.parent) return;
+  refreshInvisibleBoxesForGroup(plank.parent, groupName);
+}
 
 export const ensureHandleLoaded = async () => {
   if (cachedHandleModel) return;
@@ -1404,7 +1551,12 @@ export const ensureHandleLoaded = async () => {
         const c = new THREE.Vector3();
         box2.getCenter(c);
         model.position.sub(c);
-        model.traverse((n: any) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+        model.traverse((n: any) => {
+          if (n.isMesh) {
+            n.castShadow = true;
+            n.receiveShadow = true;
+          }
+        });
         cachedHandleModel = model;
         resolve();
       },
@@ -1422,8 +1574,14 @@ export const addDoorOnInvisibleBox = async (
   const w = params.width as number;
   const h = params.height as number;
   const d = params.depth as number;
-  const isSide = boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
-  const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
+  const isSide =
+    boxMesh.name.includes('platform_leftwall') ||
+    boxMesh.name.includes('platform_rightwall');
+  const dir = boxMesh.name.includes('platform_leftwall')
+    ? 1
+    : boxMesh.name.includes('platform_rightwall')
+      ? -1
+      : 0;
   const face = new THREE.Mesh(
     isSide
       ? new THREE.BoxGeometry(0.02, h - 0.01, d - 0.01)
@@ -1448,10 +1606,18 @@ export const addDoorOnInvisibleBox = async (
     handle.rotation.y = Math.PI / 2;
     if (isSide) {
       const frontX = face.position.x;
-      handle.position.set(frontX + dir * 0.005, boxMesh.position.y, boxMesh.position.z);
+      handle.position.set(
+        frontX + dir * 0.005,
+        boxMesh.position.y,
+        boxMesh.position.z,
+      );
     } else {
       const frontZ = face.position.z;
-      handle.position.set(boxMesh.position.x + w / 2 - 0.05, boxMesh.position.y, frontZ + 0.01);
+      handle.position.set(
+        boxMesh.position.x + w / 2 - 0.05,
+        boxMesh.position.y,
+        frontZ + 0.01,
+      );
     }
     handle.name = `Handle_for_${boxMesh.name}`;
     scene.add(handle);
@@ -1468,9 +1634,14 @@ export const addDrawersOnInvisibleBox = async (
   const w = params.width as number;
   const h = params.height as number;
   const d = params.depth as number;
-  const isSide = boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
-  const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
-  const gutter = 0.0; // no gaps between drawers
+  const isSide =
+    boxMesh.name.includes('platform_leftwall') ||
+    boxMesh.name.includes('platform_rightwall');
+  const dir = boxMesh.name.includes('platform_leftwall')
+    ? 1
+    : boxMesh.name.includes('platform_rightwall')
+      ? -1
+      : 0;
   const eachH = h / drawers;
   await ensureHandleLoaded();
   for (let i = 0; i < drawers; i++) {
@@ -1511,21 +1682,34 @@ export const addDrawersOnInvisibleBox = async (
     // Wire basket inside
     const basketGeom = new THREE.BoxGeometry(w - 0.06, eachH - 0.06, d - 0.08);
     const edges = new THREE.EdgesGeometry(basketGeom);
-    const basket = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+    const basket = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0xffffff }),
+    );
     basket.name = `WireBasket_${i}_for_${boxMesh.name}`;
     basket.position.set(boxMesh.position.x, yCenter, boxMesh.position.z);
     scene.add(basket);
     // Drawer channels (left/right rails)
     const railH = 0.02;
     const railT = 0.005;
-    const railMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.6, roughness: 0.3 });
+    const railMat = new THREE.MeshStandardMaterial({
+      color: 0x999999,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
     if (isSide) {
       // Rails run along X on side walls, mounted at Z sides
       const railLenX = Math.max(w - 0.06, 0.2);
       const nearZ = boxMesh.position.z - d / 2 + railT / 2 + 0.01;
       const farZ = boxMesh.position.z + d / 2 - railT / 2 - 0.01;
-      const nearRail = new THREE.Mesh(new THREE.BoxGeometry(railLenX, railH, railT), railMat);
-      const farRail = new THREE.Mesh(new THREE.BoxGeometry(railLenX, railH, railT), railMat);
+      const nearRail = new THREE.Mesh(
+        new THREE.BoxGeometry(railLenX, railH, railT),
+        railMat,
+      );
+      const farRail = new THREE.Mesh(
+        new THREE.BoxGeometry(railLenX, railH, railT),
+        railMat,
+      );
       nearRail.name = `DrawerRail_N_${i}_for_${boxMesh.name}`;
       farRail.name = `DrawerRail_F_${i}_for_${boxMesh.name}`;
       nearRail.position.set(boxMesh.position.x, yCenter, nearZ);
@@ -1534,14 +1718,483 @@ export const addDrawersOnInvisibleBox = async (
       scene.add(farRail);
     } else {
       const railLen = Math.max(d - 0.06, 0.2);
-      const leftRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
-      const rightRail = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, railLen), railMat);
+      const leftRail = new THREE.Mesh(
+        new THREE.BoxGeometry(railT, railH, railLen),
+        railMat,
+      );
+      const rightRail = new THREE.Mesh(
+        new THREE.BoxGeometry(railT, railH, railLen),
+        railMat,
+      );
       leftRail.name = `DrawerRail_L_${i}_for_${boxMesh.name}`;
       rightRail.name = `DrawerRail_R_${i}_for_${boxMesh.name}`;
-      leftRail.position.set(boxMesh.position.x - w / 2 + railT / 2 + 0.01, yCenter, boxMesh.position.z);
-      rightRail.position.set(boxMesh.position.x + w / 2 - railT / 2 - 0.01, yCenter, boxMesh.position.z);
+      leftRail.position.set(
+        boxMesh.position.x - w / 2 + railT / 2 + 0.01,
+        yCenter,
+        boxMesh.position.z,
+      );
+      rightRail.position.set(
+        boxMesh.position.x + w / 2 - railT / 2 - 0.01,
+        yCenter,
+        boxMesh.position.z,
+      );
       scene.add(leftRail);
       scene.add(rightRail);
     }
   }
 };
+
+function createTextSprite(label: string): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  canvas.width = 1024;
+  canvas.height = 256;
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = 'rgba(0,0,0,1)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'black';
+  ctx.font = 'bold 160px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.24, 0.06, 1); // scene scale
+  return sprite;
+}
+
+function addTick(
+  group: THREE.Group,
+  a: THREE.Vector3,
+  dir: THREE.Vector3,
+  size = 0.02,
+) {
+  const p1 = a.clone().addScaledVector(dir, size / 2);
+  const p2 = a.clone().addScaledVector(dir, -size / 2);
+  const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x222222,
+    depthTest: false,
+  });
+  const line = new THREE.Line(geo, mat);
+  group.add(line);
+}
+
+function addDimLine(
+  group: THREE.Group,
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  viewOffsetDir: THREE.Vector3,
+  label: string,
+  meta?: {
+    axis: 'x' | 'y' | 'z';
+    side: 'min' | 'max';
+    ref: number; // world position reference plane in meters
+    targetUuid: string;
+  },
+) {
+  // Offset the dimension away from surface for readability
+  const offset = 0.03;
+  const s = start.clone().addScaledVector(viewOffsetDir, offset);
+  const e = end.clone().addScaledVector(viewOffsetDir, offset);
+  const geo = new THREE.BufferGeometry().setFromPoints([s, e]);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x111111,
+    depthTest: false,
+  });
+  const line = new THREE.Line(geo, mat);
+  group.add(line);
+  // Extension ticks at ends
+  const axis = e.clone().sub(s).normalize();
+  const tickDir = new THREE.Vector3().crossVectors(
+    axis,
+    new THREE.Vector3(0, 1, 0),
+  );
+  if (tickDir.lengthSq() < 1e-6) {
+    // if parallel to Y, use X for cross
+    tickDir.set(1, 0, 0);
+  }
+  tickDir.normalize();
+  addTick(group, s, tickDir);
+  addTick(group, e, tickDir);
+
+  // Label sprite at mid
+  const mid = s.clone().lerp(e, 0.5);
+  const sprite = createTextSprite(label);
+  sprite.name =
+    DIM_LABEL_PREFIX + (meta?.side || '') + '_' + (meta?.axis || '');
+  if (meta) sprite.userData.dimMeta = meta;
+  sprite.position.copy(mid);
+  group.add(sprite);
+  return sprite;
+}
+
+function getAABB(mesh: THREE.Object3D): THREE.Box3 {
+  const box = new THREE.Box3();
+  return box.setFromObject(mesh);
+}
+
+function overlapsOnAxes(
+  a: THREE.Box3,
+  b: THREE.Box3,
+  axes: Array<'x' | 'y' | 'z'>,
+): boolean {
+  for (const axis of axes) {
+    if (axis === 'x' && (a.max.x < b.min.x || a.min.x > b.max.x)) return false;
+    if (axis === 'y' && (a.max.y < b.min.y || a.min.y > b.max.y)) return false;
+    if (axis === 'z' && (a.max.z < b.min.z || a.min.z > b.max.z)) return false;
+  }
+  return true;
+}
+
+function findNearestAlongAxis(
+  scene: THREE.Scene,
+  self: THREE.Object3D,
+  selfBox: THREE.Box3,
+  axis: 'x' | 'y' | 'z',
+  overlapAxes: Array<'x' | 'y' | 'z'>,
+) {
+  let minPos: number | null = null;
+  let maxPos: number | null = null;
+  let minBox: THREE.Box3 | null = null;
+  let maxBox: THREE.Box3 | null = null;
+
+  const selfMin = selfBox.min[axis];
+
+  const selfMax = selfBox.max[axis];
+
+  scene.traverse((o) => {
+    if (o === self || !(o instanceof THREE.Mesh)) return;
+    const b = getAABB(o);
+    if (!overlapsOnAxes(selfBox, b, overlapAxes)) return;
+    // Negative direction (left/bottom/near along axis)
+    if (b.max[axis] <= selfMin) {
+      if (minPos === null || b.max[axis] > (minPos as number)) {
+        minPos = b.max[axis];
+        minBox = b;
+      }
+    }
+    // Positive direction (right/top/far)
+    if (b.min[axis] >= selfMax) {
+      if (maxPos === null || b.min[axis] < (maxPos as number)) {
+        maxPos = b.min[axis];
+        maxBox = b;
+      }
+    }
+  });
+
+  return { minPos, maxPos, minBox, maxBox };
+}
+
+export function clearPlankDimensions(scene: THREE.Scene, mesh: THREE.Object3D) {
+  const name = DIMENSION_GROUP_PREFIX + mesh.uuid;
+  const existing = scene.getObjectByName(name) as THREE.Group | null;
+  if (existing) {
+    scene.remove(existing);
+    existing.traverse((n: any) => {
+      if (n.geometry) n.geometry.dispose?.();
+      if (n.material) {
+        if (Array.isArray(n.material))
+          n.material.forEach((m: any) => m.dispose?.());
+        else n.material.dispose?.();
+      }
+      if (n.material?.map) n.material.map.dispose?.();
+    });
+  }
+}
+
+export function clearAllPlankDimensions(scene: THREE.Scene) {
+  const toRemove: THREE.Object3D[] = [];
+  scene.traverse((o) => {
+    if (o.name && o.name.startsWith(DIMENSION_GROUP_PREFIX)) {
+      toRemove.push(o);
+    }
+  });
+  toRemove.forEach((g) => {
+    scene.remove(g);
+    g.traverse?.((n: any) => {
+      if (n.geometry) n.geometry.dispose?.();
+      if (n.material) {
+        if (Array.isArray(n.material))
+          n.material.forEach((m: any) => m.dispose?.());
+        else n.material.dispose?.();
+      }
+      if (n.material?.map) n.material.map.dispose?.();
+    });
+  });
+}
+
+export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
+  // Clear previous for this mesh
+  clearPlankDimensions(scene, mesh);
+  const group = new THREE.Group();
+  group.name = DIMENSION_GROUP_PREFIX + mesh.uuid;
+
+  const box = getAABB(mesh);
+  // Determine orientation by thickness axis
+  const params = (mesh.geometry as any).parameters || {};
+  const w = params.width as number | undefined;
+  const h = params.height as number | undefined;
+  const d = params.depth as number | undefined;
+
+  // Fallback if geometry parameters missing
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const width = w ?? size.x;
+  const height = h ?? size.y;
+  const depth = d ?? size.z;
+
+  // Horizontal shelf -> thin in Y
+  // Vertical (center-wall) -> thin in X; Vertical (side-wall) -> thin in Z
+  const isHorizontal = height < width && height < depth;
+  const isThinX = width <= depth && !isHorizontal;
+  const isThinZ = depth < width && !isHorizontal;
+
+  if (isHorizontal) {
+    // Measure to bottom/top along Y where X and Z projections overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'y', [
+      'x',
+      'z',
+    ]);
+    if (minPos !== null) {
+      const dist = mm(box.min.y - (minPos as number));
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        minPos as number,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        box.min.y,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(1, 0, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'y',
+          side: 'min',
+          ref: minPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.y);
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        box.max.y,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        maxPos as number,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(1, 0, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'y',
+          side: 'max',
+          ref: maxPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+  } else if (isThinX) {
+    // Vertical plank with thickness in X -> measure left/right along X with Y,Z overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'x', [
+      'y',
+      'z',
+    ]);
+    if (minPos !== null) {
+      const dist = mm(box.min.x - (minPos as number));
+      const s = new THREE.Vector3(
+        minPos as number,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        box.min.x,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(0, 1, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'x',
+          side: 'min',
+          ref: minPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.x);
+      const s = new THREE.Vector3(
+        box.max.x,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        maxPos as number,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(0, 1, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'x',
+          side: 'max',
+          ref: maxPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+  } else if (isThinZ) {
+    // Vertical plank with thickness in Z -> measure near/far along Z with X,Y overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'z', [
+      'x',
+      'y',
+    ]);
+    const offsetSign = mesh.position.x < 0 ? 1 : -1;
+    const viewOffsetDir = new THREE.Vector3(offsetSign, 0, 0);
+    if (minPos !== null) {
+      const dist = mm(box.min.z - (minPos as number));
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        minPos as number,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        box.min.z,
+      );
+      addDimLine(group, s, e, viewOffsetDir, `${dist.toFixed(1)} mm`, {
+        axis: 'z',
+        side: 'min',
+        ref: minPos as number,
+        targetUuid: mesh.uuid,
+      });
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.z);
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        box.max.z,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        maxPos as number,
+      );
+      addDimLine(group, s, e, viewOffsetDir, `${dist.toFixed(1)} mm`, {
+        axis: 'z',
+        side: 'max',
+        ref: maxPos as number,
+        targetUuid: mesh.uuid,
+      });
+    }
+  }
+
+  if (group.children.length > 0) {
+    scene.add(group);
+  }
+}
+export function enablePlankDimensionEditing(view: ThreeDView) {
+  const onClick = (event: MouseEvent) => {
+    const rect = view.renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(mouse, view.camera);
+    // Only sprites
+    const sprites: THREE.Object3D[] = [];
+    view.scene.traverse((o) => {
+      if (o instanceof THREE.Sprite && o.name.startsWith(DIM_LABEL_PREFIX)) {
+        sprites.push(o);
+      }
+    });
+    const hits = ray.intersectObjects(sprites, true);
+    if (!hits.length) return;
+    const sprite = hits[0].object as THREE.Sprite & { userData: any };
+    const meta = sprite.userData?.dimMeta as
+      | {
+        axis: 'x' | 'y' | 'z';
+        side: 'min' | 'max';
+        ref: number;
+        targetUuid: string;
+      }
+      | undefined;
+    if (!meta) return;
+
+    const target = view.scene.getObjectByProperty(
+      'uuid',
+      meta.targetUuid,
+    ) as THREE.Mesh | null;
+    if (!target) return;
+    const box = new THREE.Box3().setFromObject(target);
+    const currentDistanceM = ((): number => {
+      if (meta.axis === 'x')
+        return meta.side === 'min'
+          ? box.min.x - meta.ref
+          : meta.ref - box.max.x;
+      if (meta.axis === 'y')
+        return meta.side === 'min'
+          ? box.min.y - meta.ref
+          : meta.ref - box.max.y;
+      return meta.side === 'min' ? box.min.z - meta.ref : meta.ref - box.max.z;
+    })();
+    const currentMm = Math.max(0, currentDistanceM * 1000);
+    const input = prompt('Enter new distance (mm):', currentMm.toFixed(1));
+    if (!input) return;
+    const newMm = parseFloat(input);
+    if (!Number.isFinite(newMm) || newMm < 0) return;
+    const newM = newMm / 1000;
+
+    // Compute required delta translation along axis so that that new distance is achieved
+    const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
+    const currentFace = ((): number => {
+      if (meta.axis === 'x') return meta.side === 'min' ? box.min.x : box.max.x;
+      if (meta.axis === 'y') return meta.side === 'min' ? box.min.y : box.max.y;
+      return meta.side === 'min' ? box.min.z : box.max.z;
+    })();
+    const delta = desiredFace - currentFace;
+
+    if (meta.axis === 'x') target.position.x += delta;
+    else if (meta.axis === 'y') target.position.y += delta;
+    else target.position.z += delta;
+
+    // Refresh dimensions for the moved plank
+    showPlankDimensions(view.scene, target);
+
+    // Refresh invisible boxes for the affected group
+    refreshInvisibleBoxesForPlank(view.scene, target);
+
+    view.renderer.render(view.scene, view.camera);
+  };
+
+  view.renderer.domElement.addEventListener('dblclick', onClick);
+}
