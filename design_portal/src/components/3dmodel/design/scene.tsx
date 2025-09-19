@@ -918,6 +918,11 @@ export const init3DDesign = async (
     // addBaseCabinetsUnderPlatform,
     // addFullKitchenSetup,
     loadSinkModel,
+    // exportRenderPNG: (options?: { width?: number; height?: number; filename?: string; download?: boolean }) => {
+    //   exportRenderPNG(renderer, scene, camera, options);
+    // },
+    addUpperCabinetsAbovePlatform,
+    // addChimneyWithGlassCabinets,
     // loadHandleModel,
   };
 };
@@ -1622,5 +1627,272 @@ export const addDrawersOnInvisibleBox = async (
       drawerGroup.attach(leftRail);
       drawerGroup.attach(rightRail);
     }
+  }
+};
+
+export const addUpperCabinetsAbovePlatform = async (
+  scene: THREE.Scene,
+  platformMesh: THREE.Mesh,
+  count: number,
+) => {
+  if (count <= 0) return;
+  
+  const params = (platformMesh.geometry as THREE.BoxGeometry).parameters as any;
+  const platformW = params.width as number;
+  const platformH = params.height as number;
+  const platformD = params.depth as number;
+  const platformTopY = platformMesh.position.y + platformH / 2;
+  
+  // Upper cabinet dimensions
+  const upperHeight = 0.7; // 700mm tall
+  const upperDepth = 0.35; // 350mm deep
+  const upperBottomY = platformTopY + 0.55; // 550mm above platform
+  
+  // Determine platform orientation and cabinet placement
+  const isSidePlatform = platformMesh.name.includes('LeftWall') || platformMesh.name.includes('RightWall');
+  const isLeftWall = platformMesh.name.includes('LeftWall');
+  const isRightWall = platformMesh.name.includes('RightWall');
+  
+  // Find the corresponding wall to position cabinets against
+  let targetWall: THREE.Mesh | null = null;
+  if (isSidePlatform) {
+    if (isLeftWall) {
+      targetWall = scene.getObjectByName('Left Wall') as THREE.Mesh | null;
+    } else if (isRightWall) {
+      targetWall = scene.getObjectByName('Right Wall') as THREE.Mesh | null;
+    }
+  } else {
+    targetWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  }
+  
+  if (!targetWall) {
+    console.warn('Could not find target wall for upper cabinets');
+    return;
+  }
+  
+  // Calculate cabinet dimensions and spacing
+  let cabinetWidth, cabinetSpacing;
+  
+  if (isSidePlatform) {
+    // Side platform: cabinets run along Z (wall length)
+    cabinetWidth = platformD; // Use platform depth as cabinet width
+    cabinetSpacing = cabinetWidth / count;
+  } else {
+    // Center platform: cabinets run along X (wall width)
+    cabinetWidth = platformW;
+    cabinetSpacing = cabinetWidth / count;
+  }
+  
+  await ensureHandleLoaded();
+  
+  // Create upper cabinets group
+  const upperGroup = new THREE.Group();
+  upperGroup.name = `UpperCabinets_${platformMesh.name}`;
+  scene.add(upperGroup);
+  
+  for (let i = 0; i < count; i++) {
+    // Cabinet carcass (five-plank construction)
+    const carcassMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
+    const thickness = 0.018; // 18mm
+    
+    const cabinetGroup = new THREE.Group();
+    cabinetGroup.name = `UpperCabinet_${i}_for_${platformMesh.name}`;
+    (cabinetGroup as any).userData = { ...(cabinetGroup as any).userData, type: 'UPPER_CABINET' };
+    
+    // Calculate cabinet position for this iteration
+    let cabinetX: number, cabinetZ: number;
+    
+    if (isSidePlatform) {
+      // For side platforms, position cabinets against the side wall
+      if (isLeftWall) {
+        // Position against left wall - cabinet back touches wall
+        const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+        const wallThickness = wallParams.depth as number;
+        cabinetX = targetWall.position.x + wallThickness / 2 + upperDepth / 2;
+        cabinetZ = platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+      } else if (isRightWall) {
+        // Position against right wall - cabinet back touches wall
+        const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+        const wallThickness = wallParams.depth as number;
+        cabinetX = targetWall.position.x - wallThickness / 2 - upperDepth / 2;
+        cabinetZ = platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+      } else {
+        // Fallback for side platform
+        cabinetX = platformMesh.position.x;
+        cabinetZ = platformMesh.position.z;
+      }
+    } else {
+      // For center platform, position cabinets against the center wall
+      const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+      const wallThickness = wallParams.depth as number;
+      cabinetX = platformMesh.position.x - platformW / 2 + cabinetSpacing * (i + 0.5);
+      cabinetZ = targetWall.position.z + wallThickness / 2 + upperDepth / 2;
+    }
+    
+    // Five-plank carcass construction
+    const actualCabinetWidth = cabinetSpacing - 0.02; // small gap between cabinets
+    
+    // Calculate plank positions based on cabinet orientation
+    let leftPlankX, rightPlankX, bottomPlankX, topPlankX, backPlankX;
+    let leftPlankZ, rightPlankZ, bottomPlankZ, topPlankZ, backPlankZ;
+    
+    if (isSidePlatform) {
+      // For side platforms, planks are oriented along Z axis
+      leftPlankX = cabinetX;
+      rightPlankX = cabinetX;
+      bottomPlankX = cabinetX;
+      topPlankX = cabinetX;
+      backPlankX = cabinetX;
+      
+      leftPlankZ = cabinetZ - actualCabinetWidth / 2 + thickness / 2;
+      rightPlankZ = cabinetZ + actualCabinetWidth / 2 - thickness / 2;
+      bottomPlankZ = cabinetZ;
+      topPlankZ = cabinetZ;
+      backPlankZ = cabinetZ;
+    } else {
+      // For center platform, planks are oriented along X axis
+      leftPlankX = cabinetX - actualCabinetWidth / 2 + thickness / 2;
+      rightPlankX = cabinetX + actualCabinetWidth / 2 - thickness / 2;
+      bottomPlankX = cabinetX;
+      topPlankX = cabinetX;
+      backPlankX = cabinetX;
+      
+      leftPlankZ = cabinetZ;
+      rightPlankZ = cabinetZ;
+      bottomPlankZ = cabinetZ;
+      topPlankZ = cabinetZ;
+      backPlankZ = cabinetZ;
+    }
+    
+    // Left plank
+    const leftPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
+      carcassMat
+    );
+    leftPlank.position.set(
+      leftPlankX,
+      upperBottomY + upperHeight / 2,
+      leftPlankZ
+    );
+    leftPlank.castShadow = true;
+    leftPlank.receiveShadow = true;
+    leftPlank.name = `UpperLeftPlank_${i}`;
+    
+    // Right plank
+    const rightPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
+      carcassMat
+    );
+    rightPlank.position.set(
+      rightPlankX,
+      upperBottomY + upperHeight / 2,
+      rightPlankZ
+    );
+    rightPlank.castShadow = true;
+    rightPlank.receiveShadow = true;
+    rightPlank.name = `UpperRightPlank_${i}`;
+    
+    // Bottom plank
+    const bottomPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
+      carcassMat
+    );
+    bottomPlank.position.set(
+      bottomPlankX,
+      upperBottomY + thickness / 2,
+      bottomPlankZ
+    );
+    bottomPlank.castShadow = true;
+    bottomPlank.receiveShadow = true;
+    bottomPlank.name = `UpperBottomPlank_${i}`;
+    
+    // Top plank
+    const topPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
+      carcassMat
+    );
+    topPlank.position.set(
+      topPlankX,
+      upperBottomY + upperHeight - thickness / 2,
+      topPlankZ
+    );
+    topPlank.castShadow = true;
+    topPlank.receiveShadow = true;
+    topPlank.name = `UpperTopPlank_${i}`;
+    
+    // Back plank - positioned to touch the wall
+    const backPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, upperHeight - thickness * 2, thickness),
+      carcassMat
+    );
+    
+    if (isSidePlatform) {
+      // For side platforms, back plank touches the side wall
+      if (isLeftWall) {
+        backPlankX = targetWall.position.x + (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 + thickness / 2;
+      } else {
+        backPlankX = targetWall.position.x - (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 - thickness / 2;
+      }
+      backPlankZ = cabinetZ;
+    } else {
+      // For center platform, back plank touches the center wall
+      backPlankX = cabinetX;
+      backPlankZ = targetWall.position.z + (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 + thickness / 2;
+    }
+    
+    backPlank.position.set(
+      backPlankX,
+      upperBottomY + upperHeight / 2,
+      backPlankZ
+    );
+    backPlank.castShadow = true;
+    backPlank.receiveShadow = true;
+    backPlank.name = `UpperBackPlank_${i}`;
+    
+    // Add planks to cabinet group
+    cabinetGroup.add(leftPlank, rightPlank, bottomPlank, topPlank, backPlank);
+    
+    // Create single door (full width, opens bottom to top)
+    const doorWidth = actualCabinetWidth - thickness * 2 - 0.01;
+    const doorHeight = upperHeight - thickness * 2 - 0.01;
+    const doorThickness = 0.02;
+    
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 });
+    
+    // Single door
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
+      doorMat
+    );
+    door.position.set(
+      cabinetX,
+      upperBottomY + upperHeight / 2,
+      cabinetZ + upperDepth / 2 + doorThickness / 2
+    );
+    door.castShadow = true;
+    door.receiveShadow = true;
+    door.name = `UpperDoor_${i}`;
+    
+    // Add door to cabinet group
+    cabinetGroup.add(door);
+    
+    // Add handle to door (positioned for bottom-to-top opening)
+    if (cachedHandleModel) {
+      const handle = cachedHandleModel.clone(true);
+      handle.traverse((n: any) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+      
+      // Position handle at bottom of door for bottom-to-top opening
+      const handleX = cabinetX;
+      const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
+      const handleZ = cabinetZ + upperDepth / 2 + doorThickness + 0.01;
+      
+      handle.position.set(handleX, handleY, handleZ);
+      handle.name = `UpperHandle_${i}`;
+      
+      cabinetGroup.add(handle);
+    }
+    
+    // Add cabinet to upper group
+    upperGroup.add(cabinetGroup);
   }
 };
