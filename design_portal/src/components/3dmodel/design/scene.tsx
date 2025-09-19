@@ -1469,16 +1469,26 @@ export const addDoorOnInvisibleBox = async (
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
-    // Vertical handle for doors
-    handle.rotation.set(0, 0, 0);
-    handle.rotation.y = Math.PI / 2;
+    
     if (isSide) {
+      // For side walls, handle should be positioned on the door face and rotated properly
       const frontX = face.position.x;
-      handle.position.set(frontX + dir * 0.005, boxMesh.position.y, boxMesh.position.z);
+      // Position handle in left corner of the door
+      handle.position.set(frontX + dir * 0.01, face.position.y - h / 2 + 0.1, face.position.z - d / 2 + 0.1);
+      // Rotate handle to be perpendicular to the door face for side walls
+      handle.rotation.set(0, 0, 0);
+      // For side walls, the door face is vertical, so handle should be horizontal
+      handle.rotation.z = Math.PI / 2; // Rotate around Z axis to make handle horizontal
+      handle.rotation.y = Math.PI / 2; // Rotate around Y axis for side wall orientation
     } else {
+      // For center walls, handle positioned in left corner of the door
       const frontZ = face.position.z;
-      handle.position.set(boxMesh.position.x + w / 2 - 0.05, boxMesh.position.y, frontZ + 0.01);
+      handle.position.set(face.position.x - w / 2 + 0.1, face.position.y, frontZ + 0.01);
+      // Standard vertical handle rotation for center walls
+      handle.rotation.set(0, 0, 0);
+      handle.rotation.y = Math.PI / 2;
     }
+    
     handle.name = `Handle_for_${boxMesh.name}`;
     scene.add(handle);
     doorGroup.attach(handle);
@@ -1539,17 +1549,25 @@ export const addDrawersOnInvisibleBox = async (
     // Handle
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
-      // Horizontal handle for drawers
-      handle.rotation.set(0, 0, 0);
-      handle.rotation.z = Math.PI / 2;
-      handle.rotation.x = -(Math.PI / 2);
+      
       if (isSide) {
+        // For side walls, position handle on the drawer face
         const frontX = (face.position as THREE.Vector3).x;
-        handle.position.set(frontX + dir * 0.005, yCenter, boxMesh.position.z);
+        handle.position.set(frontX + dir * 0.01, face.position.y, face.position.z);
+        // Rotate handle for side wall orientation
+        handle.rotation.set(0, 0, 0);
+        // For side walls, the drawer face is vertical, so handle should be horizontal
+        handle.rotation.z = Math.PI / 2; // Rotate around Z axis to make handle horizontal
+        handle.rotation.y = Math.PI / 2; // Rotate around Y axis for side wall orientation
       } else {
+        // For center walls, horizontal handle for drawers
         const frontZ = (face.position as THREE.Vector3).z;
-        handle.position.set(boxMesh.position.x, yCenter, frontZ + 0.01);
+        handle.position.set(face.position.x, face.position.y, frontZ + 0.01);
+        handle.rotation.set(0, 0, 0);
+        handle.rotation.z = Math.PI / 2;
+        handle.rotation.x = -(Math.PI / 2);
       }
+      
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
       scene.add(handle);
       drawerGroup.attach(handle);
