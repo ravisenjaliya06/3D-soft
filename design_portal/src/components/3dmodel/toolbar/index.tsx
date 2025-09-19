@@ -37,18 +37,17 @@ import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { DesignProps } from '../interface';
 
+import door from '@/assets/toolbar/door-icon.svg';
+import drawer from '@/assets/toolbar/drawer.svg';
+import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
+import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import texture_3 from '@/assets/toolbar/texture/dark_brown.jpg';
 import texture_4 from '@/assets/toolbar/texture/grossy_brown.jpg';
 import texture_1 from '@/assets/toolbar/texture/light_brown.jpg';
 import texture_2 from '@/assets/toolbar/texture/light_wood.jpg';
 import texture_5 from '@/assets/toolbar/texture/off_white.jpg';
 import texture_6 from '@/assets/toolbar/texture/wood.jpg';
-import door from '@/assets/toolbar/door-icon.svg';
-import drawer from '@/assets/toolbar/drawer.svg';
-import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
 import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
-import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
-import kitchen_cabinet from '@/assets/toolbar/kitchen-cabinet-icon.svg';
 import { useRouter } from 'next/router';
 import React from 'react';
 import {
@@ -57,8 +56,8 @@ import {
   addHorizontalPlanksInsideBox,
   addLShapeKitchenPlatform,
   addPlatformOnWall,
-  addVerticalPlanksInsideBox,
   addUpperCabinetsAbovePlatform,
+  addVerticalPlanksInsideBox,
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -458,7 +457,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   };
 
   const handleCabinetItemSelect = (item) => {
-    console.log(item, "item");
+    console.log(item, 'item');
     setSelectedCabinetItem(item);
     setQuantityValue(1);
     setCreateCompanyPopup(true);
@@ -682,44 +681,61 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: false,
     },
-     {
-       option: "Cabinet",
-       icon: texture,
-       onClick: () => handleCabinetClick(),
-     },
-     {
-       option: 'Add Upper Cabinets',
-       icon: align_dimension,
-       onClick: async () => {
-         const scene = threeDView.scene as THREE.Scene;
-         const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
-         let targetPlatform: THREE.Mesh | null = null;
-         if (outline) {
-           const outlineCenter = outline.position.clone();
-           scene.traverse((o) => {
-             if (o instanceof THREE.Mesh && (o.name.startsWith('Counter_') || o.name === 'Back Counter' || o.name === 'Left Counter' || o.name === 'Right Counter')) {
-               const b = new THREE.Box3().setFromObject(o);
-               const c = new THREE.Vector3();
-               b.getCenter(c);
-               if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
-             }
-           });
-         }
-         if (!targetPlatform) {
-           const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-           if (hovered && (hovered.name.startsWith('Counter_') || hovered.name === 'Back Counter' || hovered.name === 'Left Counter' || hovered.name === 'Right Counter')) targetPlatform = hovered;
-         }
-         if (!targetPlatform) {
-           alert('Select a platform/counter first.');
-           return;
-         }
-         const input = prompt('How many upper cabinets to add above this platform?');
-         const num = parseInt((input || '').trim(), 10);
-         if (!Number.isFinite(num) || num <= 0) return;
-         addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
-       },
-       isActive: false,
-     },
+    {
+      option: 'Cabinet',
+      icon: texture,
+      onClick: () => handleCabinetClick(),
+    },
+    {
+      option: 'Add Upper Cabinets',
+      icon: align_dimension,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
+        let targetPlatform: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (
+              o instanceof THREE.Mesh &&
+              (o.name.startsWith('Counter_') ||
+                o.name === 'Back Counter' ||
+                o.name === 'Left Counter' ||
+                o.name === 'Right Counter')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
+            }
+          });
+        }
+        if (!targetPlatform) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (
+            hovered &&
+            (hovered.name.startsWith('Counter_') ||
+              hovered.name === 'Back Counter' ||
+              hovered.name === 'Left Counter' ||
+              hovered.name === 'Right Counter')
+          )
+            targetPlatform = hovered;
+        }
+        if (!targetPlatform) {
+          alert('Select a platform/counter first.');
+          return;
+        }
+        const input = prompt(
+          'How many upper cabinets to add above this platform?',
+        );
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      },
+      isActive: false,
+    },
   ];
 
   const viewTools = [
@@ -813,12 +829,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   }, []);
 
   const iconMap = {
-  "Drawer": drawer.src,
-  "Sliding Door": door.src,
-  "Door": door.src,
-  "Horizontal Plank": horizontal_plank.src,
-  "Vertical Plank": vertical_plank.src,
-};
+    Drawer: drawer.src,
+    'Sliding Door': door.src,
+    Door: door.src,
+    'Horizontal Plank': horizontal_plank.src,
+    'Vertical Plank': vertical_plank.src,
+  };
 
   return (
     <>
