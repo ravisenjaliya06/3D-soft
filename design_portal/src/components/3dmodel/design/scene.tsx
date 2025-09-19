@@ -656,7 +656,7 @@ export const init3DDesign = async (
         box2.getCenter(center);
         model.position.sub(center);
         // Place on counter slightly inset from front edge
-        model.position.x = mesh.position.x;
+        model.position.x = mesh.position.x - 2;
         model.position.y = 0.52;
         model.position.z = mesh.position.z;
         // model.rotation.y = Math.PI / 2;
