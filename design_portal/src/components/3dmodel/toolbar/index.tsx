@@ -13,10 +13,12 @@ import styles from './toolbar.module.css';
 import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
 import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
 import createicon from '@/assets/createicon.svg';
+import sink from '@/assets/toolbar/5996079.png';
 import catalog from '@/assets/toolbar/catalog.svg';
 import align_dimension from '@/assets/toolbar/dimension-align.svg';
 import exlight from '@/assets/toolbar/exlight.svg';
 import hide from '@/assets/toolbar/hide.svg';
+import cabinet from '@/assets/toolbar/images.jpg';
 import measure from '@/assets/toolbar/measure.svg';
 import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
@@ -528,16 +530,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     {
       option: 'Furniture',
       icon: catalog,
-      onClick: () => {
-        if (localStorage.getItem('cupboard') === 'true') {
-          setcatalogMenu(false);
-        } else {
-          setcatalogMenu((catalogMenu) => !catalogMenu);
-        }
-        setparts(false);
-        setmaterial(false);
-        setdesignTexture(false);
-      },
+      // onClick: () => {
+      //   if (localStorage.getItem('cupboard') === 'true') {
+      //     setcatalogMenu(false);
+      //   } else {
+      //     setcatalogMenu((catalogMenu) => !catalogMenu);
+      //   }
+      //   setparts(false);
+      //   setmaterial(false);
+      //   setdesignTexture(false);
+      // },
+      onClick: () => handleCabinetClick(),
       isActive: catalogMenu,
     },
     {
@@ -605,8 +608,45 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+  ];
+
+  const viewTools = [
     {
-      option: 'Add Vertical Planks',
+      option: 'Exlight',
+      icon: exlight,
+      onClick: () => {
+        if (threeDView) {
+          threeDView.toggleSky();
+          setIsExlightActive((prev) => !prev);
+        }
+      },
+      isActive: isExlightActive,
+    },
+    // {
+    //   option: 'Full Kitchen',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
+    //       threeDView.addFullKitchenSetup();
+    //     }
+    //   },
+    //   isActive: false,
+    // },
+    // {
+    //   option: 'Load Handle GLB',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.loadHandleModel === 'function') {
+    //       threeDView.loadHandleModel('/door_handle.glb');
+    //     }
+    //   },
+    //   isActive: false,
+    // },
+  ];
+
+  const alwaysFields = [
+    {
+      option: 'Vertical Planks',
       icon: vertical_plank,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
@@ -648,7 +688,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: false,
     },
     {
-      option: 'Add Horizontal Planks',
+      option: 'Horizontal Planks',
       icon: horizontal_plank,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
@@ -681,14 +721,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: false,
     },
+    // {
+    //   option: 'Cabinet',
+    //   icon: texture,
+    //   // onClick: () => handleCabinetClick(),
+    // },
     {
-      option: 'Cabinet',
-      icon: texture,
-      onClick: () => handleCabinetClick(),
-    },
-    {
-      option: 'Add Upper Cabinets',
-      icon: align_dimension,
+      option: 'Upper Cabinets',
+      icon: cabinet,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         const outline = scene.children.find((o) =>
@@ -736,33 +776,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: false,
     },
-  ];
-
-  const viewTools = [
-    {
-      option: 'Exlight',
-      icon: exlight,
-      onClick: () => {
-        if (threeDView) {
-          threeDView.toggleSky();
-          setIsExlightActive((prev) => !prev);
-        }
-      },
-      isActive: isExlightActive,
-    },
-    // {
-    //   option: 'Full Kitchen',
-    //   icon: texture,
-    //   onClick: () => {
-    //     if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
-    //       threeDView.addFullKitchenSetup();
-    //     }
-    //   },
-    //   isActive: false,
-    // },
     {
       option: 'Load Sink GLB',
-      icon: texture,
+      icon: sink,
       onClick: () => {
         if (threeDView && typeof threeDView.loadSinkModel === 'function') {
           threeDView.loadSinkModel('/sink.glb');
@@ -770,16 +786,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: false,
     },
-    // {
-    //   option: 'Load Handle GLB',
-    //   icon: texture,
-    //   onClick: () => {
-    //     if (threeDView && typeof threeDView.loadHandleModel === 'function') {
-    //       threeDView.loadHandleModel('/door_handle.glb');
-    //     }
-    //   },
-    //   isActive: false,
-    // },
   ];
 
   const handleAddObject = (name: string) => {
@@ -930,6 +936,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
               {activeOption === 'Cabinet' && (
                 <div className={styles.activegroup_tools_group}>
+                  {alwaysFields.map(({ option, onClick, icon }) => (
+                    <div
+                      key={option}
+                      className={styles.activegroup_tools}
+                      onClick={onClick}
+                      title={option}
+                    >
+                      <img
+                        src={icon.src} // fallback if type not found
+                        alt={`${option} icon`}
+                      />
+                      <span>{option}</span>
+                    </div>
+                  ))}
                   {cabinetItems.map((item) => (
                     <div
                       key={item.id}
