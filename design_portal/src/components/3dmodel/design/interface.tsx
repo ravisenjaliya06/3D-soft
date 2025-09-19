@@ -17,6 +17,13 @@ export interface ThreeDView {
   // addBaseCabinetsUnderPlatform: () => void;
   // addFullKitchenSetup: () => Promise<void>;
   loadSinkModel: (url: string) => Promise<void>;
+  // exportRenderPNG: (options?: { width?: number; height?: number; filename?: string; download?: boolean }) => void;
+  addUpperCabinetsAbovePlatform: (
+    scene: THREE.Scene,
+    platformMesh: THREE.Mesh,
+    count: number,
+  ) => Promise<void>;
+  // addChimneyWithGlassCabinets: (scene: THREE.Scene, platformMesh: THREE.Mesh) => Promise<void>;
   // loadHandleModel: (url: string) => Promise<void>;
 }
 
