@@ -12,6 +12,7 @@ import styles from './toolbar.module.css';
 // home toolbar
 import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
 import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
+import createicon from '@/assets/createicon.svg';
 import catalog from '@/assets/toolbar/catalog.svg';
 import align_dimension from '@/assets/toolbar/dimension-align.svg';
 import exlight from '@/assets/toolbar/exlight.svg';
@@ -19,7 +20,6 @@ import hide from '@/assets/toolbar/hide.svg';
 import measure from '@/assets/toolbar/measure.svg';
 import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
-import createicon from '@/assets/createicon.svg';
 import InputField from '@/components/inputfields/InputField';
 
 // catalog modal photo
@@ -32,9 +32,7 @@ import {
 // parts
 import close from '@/assets/catalog/close.svg';
 import part_1 from '@/assets/catalog/parts/part_1.svg';
-import part_3 from '@/assets/catalog/parts/part_3.svg';
 import part_4 from '@/assets/catalog/parts/part_4.svg';
-import part_5 from '@/assets/catalog/parts/part_5.svg';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { DesignProps } from '../interface';
@@ -53,6 +51,14 @@ import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import kitchen_cabinet from '@/assets/toolbar/kitchen-cabinet-icon.svg';
 import { useRouter } from 'next/router';
 import React from 'react';
+import {
+  addDoorOnInvisibleBox,
+  addDrawersOnInvisibleBox,
+  addHorizontalPlanksInsideBox,
+  addLShapeKitchenPlatform,
+  addPlatformOnWall,
+  addVerticalPlanksInsideBox,
+} from '../design/scene';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
@@ -228,14 +234,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     // Prefer selected wall via outline center match; fallback to hovered wall; else fallback to L-shape
     const scene = threeDView.scene as THREE.Scene;
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
     console.log('outline', outline);
     let wallFromSelection: THREE.Mesh | null = null;
     if (outline) {
       const outlineCenter = outline.position.clone();
       const walls: THREE.Mesh[] = [];
       scene.traverse((o) => {
-        if (o instanceof THREE.Mesh && (o.name === 'Center Wall' || o.name === 'Left Wall' || o.name === 'Right Wall')) {
+        if (
+          o instanceof THREE.Mesh &&
+          (o.name === 'Center Wall' ||
+            o.name === 'Left Wall' ||
+            o.name === 'Right Wall')
+        ) {
           walls.push(o);
         }
       });
@@ -251,11 +264,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
 
     const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-    const targetWall = wallFromSelection
-      || (hovered && (hovered.name === 'Center Wall' || hovered.name === 'Left Wall' || hovered.name === 'Right Wall') ? hovered : null);
+    const targetWall =
+      wallFromSelection ||
+      (hovered &&
+      (hovered.name === 'Center Wall' ||
+        hovered.name === 'Left Wall' ||
+        hovered.name === 'Right Wall')
+        ? hovered
+        : null);
     if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
     else addLShapeKitchenPlatform(scene, counterTexture);
-  }
+  };
 
   const options = [
     { option: 'Home', name: 'Home', icon: img1 },
@@ -425,15 +444,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const fetchCabinetItem = async () => {
     const cabinetResponse = await commonService.getWithQueryParam(
       'material',
-      'catalog');
+      'catalog',
+    );
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
-      console.log(cabinetResponse.data, "cabinetResponse.data");
+      console.log(cabinetResponse.data, 'cabinetResponse.data');
       setCabinetItems(cabinetResponse.data);
     }
-  }
+  };
   const handleCabinetClick = () => {
-    setActiveOption("Cabinet");
-    setActiveOptionName("Cabinet");
+    setActiveOption('Cabinet');
+    setActiveOptionName('Cabinet');
     fetchCabinetItem();
   };
 
@@ -451,12 +471,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
 
     const scene = threeDView.scene as THREE.Scene;
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
     if (outline) {
       const outlineCenter = outline.position.clone();
       scene.traverse((o) => {
-        if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+        if (
+          o instanceof THREE.Mesh &&
+          o.name.toLowerCase().includes('invisiblebox_compartment')
+        ) {
           const b = new THREE.Box3().setFromObject(o);
           const c = new THREE.Vector3();
           b.getCenter(c);
@@ -466,7 +491,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
     if (!targetBox) {
       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (hovered && hovered.name.toLowerCase().includes('invisiblebox_compartment')) targetBox = hovered;
+      if (
+        hovered &&
+        hovered.name.toLowerCase().includes('invisiblebox_compartment')
+      )
+        targetBox = hovered;
     }
     if (!targetBox) {
       alert('Select a compartment invisible box first.');
@@ -477,7 +506,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     if (['Door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, num, selectedCabinetItem);
     } else if (itemType === 'Drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num, selectedCabinetItem);
+      await addDrawersOnInvisibleBox(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+      );
     }
 
     setCreateCompanyPopup(false);
@@ -489,8 +523,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
-  }
-
+  };
 
   const homeTools = [
     {
@@ -568,7 +601,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     {
       option: 'Add Platform',
       icon: platform,
-      onClick: () => { handleToAddPlatform(); },
+      onClick: () => {
+        handleToAddPlatform();
+      },
       isActive: designTexture,
     },
     {
@@ -577,12 +612,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         // Determine selected object via outline center; fallback to hovered
-        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
         let targetBox: THREE.Mesh | null = null;
         if (outline) {
           const outlineCenter = outline.position.clone();
           scene.traverse((o) => {
-            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox')) {
+            if (
+              o instanceof THREE.Mesh &&
+              o.name.toLowerCase().includes('invisiblebox')
+            ) {
               const b = new THREE.Box3().setFromObject(o);
               const c = new THREE.Vector3();
               b.getCenter(c);
@@ -592,13 +632,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }
         if (!targetBox) {
           const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-          if (hovered && hovered.name.toLowerCase().includes('invisiblebox')) targetBox = hovered;
+          if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
+            targetBox = hovered;
         }
         if (!targetBox) {
           alert('Select an invisible box under the platform first.');
           return;
         }
-        const input = prompt('How many vertical planks to add inside this box?');
+        const input = prompt(
+          'How many vertical planks to add inside this box?',
+        );
         const num = parseInt((input || '').trim(), 10);
         if (!Number.isFinite(num) || num <= 0) return;
         addVerticalPlanksInsideBox(scene, targetBox, num);
@@ -610,12 +653,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       icon: horizontal_plank,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
-        const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
         let targetBox: THREE.Mesh | null = null;
         if (outline) {
           const outlineCenter = outline.position.clone();
           scene.traverse((o) => {
-            if (o instanceof THREE.Mesh && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+            if (
+              o instanceof THREE.Mesh &&
+              o.name.toLowerCase().includes('invisiblebox_compartment')
+            ) {
               const b = new THREE.Box3().setFromObject(o);
               const c = new THREE.Vector3();
               b.getCenter(c);
@@ -687,7 +735,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: isExlightActive,
     },
     // {
-    //   option: 'Full Kitchen',   
+    //   option: 'Full Kitchen',
     //   icon: texture,
     //   onClick: () => {
     //     if (threeDView && typeof threeDView.addFullKitchenSetup === 'function') {
@@ -758,7 +806,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => { };
+      const getMinifixData = async () => {};
     };
 
     fetchCatalogItems();
@@ -807,7 +855,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           </div>
         </div>
 
-
         {isToolOpen && (
           <div className={styles.activegroup_tools_container}>
             <div className={styles.activegroup}>
@@ -815,8 +862,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               <img
                 src={tool_part_line.src}
                 className={styles.active_tool_part_line}
-
-
                 alt="active group"
               />
               {activeOption === 'Home' && (
@@ -825,8 +870,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -848,8 +894,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -865,7 +912,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                 </div>
               )}
 
-              {activeOption === "Cabinet" && (
+              {activeOption === 'Cabinet' && (
                 <div className={styles.activegroup_tools_group}>
                   {cabinetItems.map((item) => (
                     <div
@@ -883,7 +930,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ))}
                 </div>
               )}
-
             </div>
           </div>
         )}
@@ -966,16 +1012,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -22,7 +22,13 @@ import { setScene } from '../store/sceneSlice';
 import HelperTools from './HelperTools';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
-import { cleanupThreeDView, init3DDesign } from './scene';
+import {
+  cleanupThreeDView,
+  clearAllPlankDimensions,
+  enablePlankDimensionEditing,
+  init3DDesign,
+  showPlankDimensions,
+} from './scene';
 
 export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];
@@ -243,6 +249,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         setLocalDesign3D(threeDView);
         setDesign3D(threeDView);
         dispatch(setScene(threeDView.scene));
+        enablePlankDimensionEditing(threeDView);
         const handler = new MoveHandler({
           scene: threeDView.scene,
           camera: threeDView.camera as THREE.PerspectiveCamera,
@@ -870,12 +877,19 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
   const handleObjectSelection = () => {
     removeExistingLines();
+    if (design3D) {
+      clearAllPlankDimensions(design3D.scene);
+    }
     if (!design3D) return;
 
     let newOutline: THREE.LineSegments | null = null;
-    const hoveredMesh = store.getState().data.hoverdMesh;
+    const hoveredMesh = store.getState().data
+      .hoverdMesh as unknown as THREE.Mesh | null;
     const selectedObjectId = store.getState().data.selectedObject;
     const selectedChildObjectId = store.getState().data.selectedChildObject;
+    console.log('Hovered Mesh on Click:', hoveredMesh);
+    console.log('Selected Object ID:', selectedObjectId);
+    console.log('Selected Child Object ID:', selectedChildObjectId);
 
     if (!hoveredMesh) {
       dispatch(setobjectSelected(null));
@@ -907,7 +921,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     } else {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
       setHelperTools(true);
-      setSelectedObject(hoveredMesh!);
+      setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
         setHelperTools(false);
         setSelectedObject(null);
@@ -915,6 +929,27 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       newOutline = createOutlineForObject(hoveredMesh || null);
     }
     if (newOutline) design3D.scene.add(newOutline);
+
+    // If a plank is selected, show CAD-like dimensions
+    const tryShowDims = (m: THREE.Object3D | null) => {
+      if (!design3D || !m) return;
+      const name = m.name.toUpperCase();
+      if (
+        name.includes('VERTICAL_PLANK') ||
+        name.includes('HORIZONTAL_PLANK')
+      ) {
+        if (m instanceof THREE.Mesh) {
+          showPlankDimensions(design3D.scene, m);
+        }
+      }
+    };
+
+    const hoveredObj = hoveredMesh as unknown as THREE.Object3D | null;
+    if (hoveredMesh instanceof THREE.Mesh) {
+      tryShowDims(hoveredMesh);
+    } else if (hoveredObj?.parent instanceof THREE.Mesh) {
+      tryShowDims(hoveredObj.parent);
+    }
     design3D.renderer.render(design3D.scene, design3D.camera);
   };
 
@@ -974,7 +1009,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         } else if (
           hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
           (hoveredMesh as THREE.Mesh)?.userData.objectId ===
-          selectedInvisibleBoxId
+            selectedInvisibleBoxId
         ) {
           hoveredMesh = hitsSelectable[2].object as THREE.Mesh;
         }
@@ -1338,9 +1373,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
-  const handleLock = () => { };
+  const handleLock = () => {};
 
-  const handleUnlock = () => { };
+  const handleUnlock = () => {};
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1375,7 +1410,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => { }}
+          onComplete={() => {}}
         />
       )}
     </div>

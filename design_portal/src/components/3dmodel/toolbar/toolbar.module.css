@@ -532,6 +532,7 @@
   border-radius: 0.5rem;
   cursor: pointer;
 }
+
 .scrollContainer {
   max-height: 8rem;
   overflow-y: auto;
@@ -545,10 +546,12 @@
 .scrollContainer::-webkit-scrollbar {
   width: 0.37rem;
 }
+
 .scrollContainer::-webkit-scrollbar-thumb {
   background-color: #ccc;
   border-radius: 0.18rem;
 }
+
 .catalogbox,
 .partsbox,
 .materialbox {
@@ -719,6 +722,7 @@
   border: 0.063rem solid var(--primary-color);
   font-weight: 500;
 }
+
 .alignDropdown {
   display: flex;
   flex-direction: column;
@@ -762,6 +766,7 @@
   color: var(--primary-color);
   font-weight: 2rem;
 }
+
 .successMessage {
   color: var(--primary-green);
   margin-top: 0.8rem;
