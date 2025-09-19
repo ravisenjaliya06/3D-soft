@@ -1116,6 +1116,12 @@ import texture_1 from '@/assets/toolbar/texture/light_brown.jpg';
 import texture_2 from '@/assets/toolbar/texture/light_wood.jpg';
 import texture_5 from '@/assets/toolbar/texture/off_white.jpg';
 import texture_6 from '@/assets/toolbar/texture/wood.jpg';
+import door from '@/assets/toolbar/door-icon.svg';
+import drawer from '@/assets/toolbar/drawer.svg';
+import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
+import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
+import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
+import kitchen_cabinet from '@/assets/toolbar/kitchen-cabinet-icon.svg';
 import { useRouter } from 'next/router';
 import React from 'react';
 import {
@@ -1631,13 +1637,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     // },
     {
       option: 'Add Platform',
-      icon: align_dimension,
+      icon: platform,
       onClick: () => { handleToAddPlatform(); },
       isActive: designTexture,
     },
     {
       option: 'Add Vertical Planks',
-      icon: align_dimension,
+      icon: vertical_plank,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         // Determine selected object via outline center; fallback to hovered
@@ -1671,7 +1677,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Add Horizontal Planks',
-      icon: align_dimension,
+      icon: horizontal_plank,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
@@ -1700,7 +1706,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: "Cabinet",
-      icon: texture,
+      icon: kitchen_cabinet,
       onClick: () => handleCabinetClick(),
     }
   ];
@@ -1794,6 +1800,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     fetchCatalogItems();
   }, []);
+
+  const iconMap = {
+  "Drawer": drawer.src,
+  "Sliding Door": door.src,
+  "Door": door.src,
+  "Horizontal Plank": horizontal_plank.src,
+  "Vertical Plank": vertical_plank.src,
+};
 
   return (
     <>
@@ -1895,8 +1909,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       key={item.id}
                       className={styles.activegroup_tools}
                       onClick={() => handleCabinetItemSelect(item)}
+                      title={item.description}
                     >
-                      <img src={texture.src} alt="cabinet icon" />
+                      <img
+                        src={iconMap[item.type] || drawer.src} // fallback if type not found
+                        alt={`${item.type} icon`}
+                      />
                       <span>{item.name}</span>
                     </div>
                   ))}
