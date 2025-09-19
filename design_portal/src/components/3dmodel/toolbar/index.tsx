@@ -58,6 +58,7 @@ import {
   addLShapeKitchenPlatform,
   addPlatformOnWall,
   addVerticalPlanksInsideBox,
+  addUpperCabinetsAbovePlatform,
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -67,7 +68,6 @@ import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { store } from '../store';
 import { addObjectsThunk, togglAlignment } from '../store/dataSlice';
-import { addLShapeKitchenPlatform, addPlatformOnWall, addVerticalPlanksInsideBox, addDoorOnInvisibleBox, addDrawersOnInvisibleBox, addHorizontalPlanksInsideBox, addUpperCabinetsAbovePlatform, addChimneyWithGlassCabinets } from '../design/scene';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();

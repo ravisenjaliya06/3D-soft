@@ -1524,6 +1524,11 @@ const refreshInvisibleBoxesForGroup = (
     depthWrite: false,
   });
 
+  // Calculate height above skirting (exclude skirting area)
+  const skirtingHeight = 0.06;
+  const heightAboveSkirting = config.height - skirtingHeight;
+  const plankY = config.centerY + skirtingHeight / 2; // Position above skirting
+
   for (let i = 0; i < starts.length; i++) {
     const start = starts[i];
     const end = ends[i];
@@ -1541,7 +1546,7 @@ const refreshInvisibleBoxesForGroup = (
     } else {
       invGeo = new THREE.BoxGeometry(
         config.isSideWall ? config.perpSize : compSize,
-        config.height,
+        heightAboveSkirting, // Use height above skirting instead of full height
         config.isSideWall ? compSize : config.perpSize,
       );
     }
@@ -1553,7 +1558,7 @@ const refreshInvisibleBoxesForGroup = (
     } else {
       inv.position.set(
         config.isSideWall ? config.centerPerp : centerAlong,
-        config.centerY,
+        plankY, // Position above skirting
         config.isSideWall ? centerAlong : config.centerPerp,
       );
     }
@@ -1655,7 +1660,7 @@ export const addDoorOnInvisibleBox = async (
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
-    
+
     if (isSide) {
       // For side walls, handle should be positioned on the door face and rotated properly
       const frontX = face.position.x;
@@ -1674,7 +1679,7 @@ export const addDoorOnInvisibleBox = async (
       handle.rotation.set(0, 0, 0);
       handle.rotation.y = Math.PI / 2;
     }
-    
+
     handle.name = `Handle_for_${boxMesh.name}`;
     scene.add(handle);
     doorGroup.attach(handle);
@@ -1723,9 +1728,9 @@ export const addDrawersOnInvisibleBox = async (
         ? new THREE.BoxGeometry(0.02, eachH - 0.005, d - 0.01)
         : new THREE.BoxGeometry(w - 0.01, eachH - 0.005, 0.02),
       new THREE.MeshStandardMaterial({
-      map: drawerTexture,
-      side: THREE.DoubleSide,
-    })
+        map: drawerTexture,
+        side: THREE.DoubleSide,
+      })
     );
     face.name = `DrawerFace_${i}_for_${boxMesh.name}`;
     if (isSide) {
@@ -1740,7 +1745,7 @@ export const addDrawersOnInvisibleBox = async (
     // Handle
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
-      
+
       if (isSide) {
         // For side walls, position handle on the drawer face
         const frontX = (face.position as THREE.Vector3).x;
@@ -1758,7 +1763,7 @@ export const addDrawersOnInvisibleBox = async (
         handle.rotation.z = Math.PI / 2;
         handle.rotation.x = -(Math.PI / 2);
       }
-      
+
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
       scene.add(handle);
       drawerGroup.attach(handle);
@@ -1860,3 +1865,736 @@ export const addDrawersOnInvisibleBox = async (
     }
   }
 };
+
+
+export const addUpperCabinetsAbovePlatform = async (
+  scene: THREE.Scene,
+  platformMesh: THREE.Mesh,
+  count: number,
+) => {
+  if (count <= 0) return;
+
+  const params = (platformMesh.geometry as THREE.BoxGeometry).parameters as any;
+  const platformW = params.width as number;
+  const platformH = params.height as number;
+  const platformD = params.depth as number;
+  const platformTopY = platformMesh.position.y + platformH / 2;
+
+  // Upper cabinet dimensions
+  const upperHeight = 0.7; // 700mm tall
+  const upperDepth = 0.35; // 350mm deep
+  const upperBottomY = platformTopY + 0.55; // 550mm above platform
+
+  // Determine platform orientation and cabinet placement
+  const isSidePlatform = platformMesh.name.includes('LeftWall') || platformMesh.name.includes('RightWall');
+  const isLeftWall = platformMesh.name.includes('LeftWall');
+  const isRightWall = platformMesh.name.includes('RightWall');
+
+  // Find the corresponding wall to position cabinets against
+  let targetWall: THREE.Mesh | null = null;
+  if (isSidePlatform) {
+    if (isLeftWall) {
+      targetWall = scene.getObjectByName('Left Wall') as THREE.Mesh | null;
+    } else if (isRightWall) {
+      targetWall = scene.getObjectByName('Right Wall') as THREE.Mesh | null;
+    }
+  } else {
+    targetWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  }
+
+  if (!targetWall) {
+    console.warn('Could not find target wall for upper cabinets');
+    return;
+  }
+
+  // Calculate cabinet dimensions and spacing
+  let cabinetWidth, cabinetSpacing;
+
+  if (isSidePlatform) {
+    // Side platform: cabinets run along Z (wall length)
+    cabinetWidth = platformD; // Use platform depth as cabinet width
+    cabinetSpacing = cabinetWidth / count;
+  } else {
+    // Center platform: cabinets run along X (wall width)
+    cabinetWidth = platformW;
+    cabinetSpacing = cabinetWidth / count;
+  }
+
+  await ensureHandleLoaded();
+
+  // Create upper cabinets group
+  const upperGroup = new THREE.Group();
+  upperGroup.name = `UpperCabinets_${platformMesh.name}`;
+  scene.add(upperGroup);
+
+  for (let i = 0; i < count; i++) {
+    // Cabinet carcass (five-plank construction)
+    const carcassMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
+    const thickness = 0.018; // 18mm
+
+    const cabinetGroup = new THREE.Group();
+    cabinetGroup.name = `UpperCabinet_${i}_for_${platformMesh.name}`;
+    (cabinetGroup as any).userData = { ...(cabinetGroup as any).userData, type: 'UPPER_CABINET' };
+
+    // Calculate cabinet position for this iteration
+    let cabinetX: number, cabinetZ: number;
+
+    if (isSidePlatform) {
+      // For side platforms, position cabinets against the side wall
+      if (isLeftWall) {
+        // Position against left wall - cabinet back touches wall
+        const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+        const wallThickness = wallParams.depth as number;
+        cabinetX = targetWall.position.x + wallThickness / 2 + upperDepth / 2;
+        cabinetZ = platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+      } else if (isRightWall) {
+        // Position against right wall - cabinet back touches wall
+        const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+        const wallThickness = wallParams.depth as number;
+        cabinetX = targetWall.position.x - wallThickness / 2 - upperDepth / 2;
+        cabinetZ = platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+      } else {
+        // Fallback for side platform
+        cabinetX = platformMesh.position.x;
+        cabinetZ = platformMesh.position.z;
+      }
+    } else {
+      // For center platform, position cabinets against the center wall
+      const wallParams = (targetWall.geometry as THREE.BoxGeometry).parameters as any;
+      const wallThickness = wallParams.depth as number;
+      cabinetX = platformMesh.position.x - platformW / 2 + cabinetSpacing * (i + 0.5);
+      cabinetZ = targetWall.position.z + wallThickness / 2 + upperDepth / 2;
+    }
+
+    // Five-plank carcass construction
+    const actualCabinetWidth = cabinetSpacing - 0.02; // small gap between cabinets
+
+    // Calculate plank positions based on cabinet orientation
+    let leftPlankX, rightPlankX, bottomPlankX, topPlankX, backPlankX;
+    let leftPlankZ, rightPlankZ, bottomPlankZ, topPlankZ, backPlankZ;
+
+    if (isSidePlatform) {
+      // For side platforms, planks are oriented along Z axis
+      leftPlankX = cabinetX;
+      rightPlankX = cabinetX;
+      bottomPlankX = cabinetX;
+      topPlankX = cabinetX;
+      backPlankX = cabinetX;
+
+      leftPlankZ = cabinetZ - actualCabinetWidth / 2 + thickness / 2;
+      rightPlankZ = cabinetZ + actualCabinetWidth / 2 - thickness / 2;
+      bottomPlankZ = cabinetZ;
+      topPlankZ = cabinetZ;
+      backPlankZ = cabinetZ;
+    } else {
+      // For center platform, planks are oriented along X axis
+      leftPlankX = cabinetX - actualCabinetWidth / 2 + thickness / 2;
+      rightPlankX = cabinetX + actualCabinetWidth / 2 - thickness / 2;
+      bottomPlankX = cabinetX;
+      topPlankX = cabinetX;
+      backPlankX = cabinetX;
+
+      leftPlankZ = cabinetZ;
+      rightPlankZ = cabinetZ;
+      bottomPlankZ = cabinetZ;
+      topPlankZ = cabinetZ;
+      backPlankZ = cabinetZ;
+    }
+
+    // Left plank
+    const leftPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
+      carcassMat
+    );
+    leftPlank.position.set(
+      leftPlankX,
+      upperBottomY + upperHeight / 2,
+      leftPlankZ
+    );
+    leftPlank.castShadow = true;
+    leftPlank.receiveShadow = true;
+    leftPlank.name = `UpperLeftPlank_${i}`;
+
+    // Right plank
+    const rightPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
+      carcassMat
+    );
+    rightPlank.position.set(
+      rightPlankX,
+      upperBottomY + upperHeight / 2,
+      rightPlankZ
+    );
+    rightPlank.castShadow = true;
+    rightPlank.receiveShadow = true;
+    rightPlank.name = `UpperRightPlank_${i}`;
+
+    // Bottom plank
+    const bottomPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
+      carcassMat
+    );
+    bottomPlank.position.set(
+      bottomPlankX,
+      upperBottomY + thickness / 2,
+      bottomPlankZ
+    );
+    bottomPlank.castShadow = true;
+    bottomPlank.receiveShadow = true;
+    bottomPlank.name = `UpperBottomPlank_${i}`;
+
+    // Top plank
+    const topPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
+      carcassMat
+    );
+    topPlank.position.set(
+      topPlankX,
+      upperBottomY + upperHeight - thickness / 2,
+      topPlankZ
+    );
+    topPlank.castShadow = true;
+    topPlank.receiveShadow = true;
+    topPlank.name = `UpperTopPlank_${i}`;
+
+    // Back plank - positioned to touch the wall
+    const backPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, upperHeight - thickness * 2, thickness),
+      carcassMat
+    );
+
+    if (isSidePlatform) {
+      // For side platforms, back plank touches the side wall
+      if (isLeftWall) {
+        backPlankX = targetWall.position.x + (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 + thickness / 2;
+      } else {
+        backPlankX = targetWall.position.x - (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 - thickness / 2;
+      }
+      backPlankZ = cabinetZ;
+    } else {
+      // For center platform, back plank touches the center wall
+      backPlankX = cabinetX;
+      backPlankZ = targetWall.position.z + (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 + thickness / 2;
+    }
+
+    backPlank.position.set(
+      backPlankX,
+      upperBottomY + upperHeight / 2,
+      backPlankZ
+    );
+    backPlank.castShadow = true;
+    backPlank.receiveShadow = true;
+    backPlank.name = `UpperBackPlank_${i}`;
+
+    // Add planks to cabinet group
+    cabinetGroup.add(leftPlank, rightPlank, bottomPlank, topPlank, backPlank);
+
+    // Create single door (full width, opens bottom to top)
+    const doorWidth = actualCabinetWidth - thickness * 2 - 0.01;
+    const doorHeight = upperHeight - thickness * 2 - 0.01;
+    const doorThickness = 0.02;
+
+    const textureLoader = new THREE.TextureLoader();
+    const wallTexture = textureLoader.load('/Texture0004.jpg');
+    wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+    wallTexture.repeat.set(2, 1);
+
+    const doorMat = new THREE.MeshStandardMaterial({
+      map: wallTexture,
+      side: THREE.DoubleSide,
+    });
+
+    // Single door
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
+      doorMat
+    );
+    door.position.set(
+      cabinetX,
+      upperBottomY + upperHeight / 2,
+      cabinetZ + upperDepth / 2 + doorThickness / 2
+    );
+    door.castShadow = true;
+    door.receiveShadow = true;
+    door.name = `UpperDoor_${i}`;
+
+    // Add door to cabinet group
+    cabinetGroup.add(door);
+
+    // Add handle to door (positioned for bottom-to-top opening)
+    if (cachedHandleModel) {
+      const handle = cachedHandleModel.clone(true);
+      handle.traverse((n: any) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+
+      // Position handle at bottom of door for bottom-to-top opening
+      const handleX = cabinetX;
+      const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
+      const handleZ = cabinetZ + upperDepth / 2 - 0.01; // At the front face of the door
+
+      handle.position.set(handleX, handleY, handleZ);
+      handle.rotation.x = -(Math.PI / 2);
+      handle.rotation.z = Math.PI / 2;
+      handle.name = `UpperHandle_${i}`;
+
+      cabinetGroup.add(handle);
+    }
+
+    // Add cabinet to upper group
+    upperGroup.add(cabinetGroup);
+  }
+};
+
+function createTextSprite(label: string): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  canvas.width = 1024;
+  canvas.height = 256;
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = 'rgba(0,0,0,1)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'black';
+  ctx.font = 'bold 160px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.24, 0.06, 1); // scene scale
+  return sprite;
+}
+
+function addTick(
+  group: THREE.Group,
+  a: THREE.Vector3,
+  dir: THREE.Vector3,
+  size = 0.02,
+) {
+  const p1 = a.clone().addScaledVector(dir, size / 2);
+  const p2 = a.clone().addScaledVector(dir, -size / 2);
+  const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x222222,
+    depthTest: false,
+  });
+  const line = new THREE.Line(geo, mat);
+  group.add(line);
+}
+
+function addDimLine(
+  group: THREE.Group,
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  viewOffsetDir: THREE.Vector3,
+  label: string,
+  meta?: {
+    axis: 'x' | 'y' | 'z';
+    side: 'min' | 'max';
+    ref: number; // world position reference plane in meters
+    targetUuid: string;
+  },
+) {
+  // Offset the dimension away from surface for readability
+  const offset = 0.03;
+  const s = start.clone().addScaledVector(viewOffsetDir, offset);
+  const e = end.clone().addScaledVector(viewOffsetDir, offset);
+  const geo = new THREE.BufferGeometry().setFromPoints([s, e]);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x111111,
+    depthTest: false,
+  });
+  const line = new THREE.Line(geo, mat);
+  group.add(line);
+  // Extension ticks at ends
+  const axis = e.clone().sub(s).normalize();
+  const tickDir = new THREE.Vector3().crossVectors(
+    axis,
+    new THREE.Vector3(0, 1, 0),
+  );
+  if (tickDir.lengthSq() < 1e-6) {
+    // if parallel to Y, use X for cross
+    tickDir.set(1, 0, 0);
+  }
+  tickDir.normalize();
+  addTick(group, s, tickDir);
+  addTick(group, e, tickDir);
+
+  // Label sprite at mid
+  const mid = s.clone().lerp(e, 0.5);
+  const sprite = createTextSprite(label);
+  sprite.name =
+    DIM_LABEL_PREFIX + (meta?.side || '') + '_' + (meta?.axis || '');
+  if (meta) sprite.userData.dimMeta = meta;
+  sprite.position.copy(mid);
+  group.add(sprite);
+  return sprite;
+}
+
+function getAABB(mesh: THREE.Object3D): THREE.Box3 {
+  const box = new THREE.Box3();
+  return box.setFromObject(mesh);
+}
+
+function overlapsOnAxes(
+  a: THREE.Box3,
+  b: THREE.Box3,
+  axes: Array<'x' | 'y' | 'z'>,
+): boolean {
+  for (const axis of axes) {
+    if (axis === 'x' && (a.max.x < b.min.x || a.min.x > b.max.x)) return false;
+    if (axis === 'y' && (a.max.y < b.min.y || a.min.y > b.max.y)) return false;
+    if (axis === 'z' && (a.max.z < b.min.z || a.min.z > b.max.z)) return false;
+  }
+  return true;
+}
+
+function findNearestAlongAxis(
+  scene: THREE.Scene,
+  self: THREE.Object3D,
+  selfBox: THREE.Box3,
+  axis: 'x' | 'y' | 'z',
+  overlapAxes: Array<'x' | 'y' | 'z'>,
+) {
+  let minPos: number | null = null;
+  let maxPos: number | null = null;
+  let minBox: THREE.Box3 | null = null;
+  let maxBox: THREE.Box3 | null = null;
+
+  const selfMin = selfBox.min[axis];
+
+  const selfMax = selfBox.max[axis];
+
+  scene.traverse((o) => {
+    if (o === self || !(o instanceof THREE.Mesh)) return;
+    const b = getAABB(o);
+    if (!overlapsOnAxes(selfBox, b, overlapAxes)) return;
+    // Negative direction (left/bottom/near along axis)
+    if (b.max[axis] <= selfMin) {
+      if (minPos === null || b.max[axis] > (minPos as number)) {
+        minPos = b.max[axis];
+        minBox = b;
+      }
+    }
+    // Positive direction (right/top/far)
+    if (b.min[axis] >= selfMax) {
+      if (maxPos === null || b.min[axis] < (maxPos as number)) {
+        maxPos = b.min[axis];
+        maxBox = b;
+      }
+    }
+  });
+
+  return { minPos, maxPos, minBox, maxBox };
+}
+
+export function clearPlankDimensions(scene: THREE.Scene, mesh: THREE.Object3D) {
+  const name = DIMENSION_GROUP_PREFIX + mesh.uuid;
+  const existing = scene.getObjectByName(name) as THREE.Group | null;
+  if (existing) {
+    scene.remove(existing);
+    existing.traverse((n: any) => {
+      if (n.geometry) n.geometry.dispose?.();
+      if (n.material) {
+        if (Array.isArray(n.material))
+          n.material.forEach((m: any) => m.dispose?.());
+        else n.material.dispose?.();
+      }
+      if (n.material?.map) n.material.map.dispose?.();
+    });
+  }
+}
+
+export function clearAllPlankDimensions(scene: THREE.Scene) {
+  const toRemove: THREE.Object3D[] = [];
+  scene.traverse((o) => {
+    if (o.name && o.name.startsWith(DIMENSION_GROUP_PREFIX)) {
+      toRemove.push(o);
+    }
+  });
+  toRemove.forEach((g) => {
+    scene.remove(g);
+    g.traverse?.((n: any) => {
+      if (n.geometry) n.geometry.dispose?.();
+      if (n.material) {
+        if (Array.isArray(n.material))
+          n.material.forEach((m: any) => m.dispose?.());
+        else n.material.dispose?.();
+      }
+      if (n.material?.map) n.material.map.dispose?.();
+    });
+  });
+}
+
+export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
+  // Clear previous for this mesh
+  clearPlankDimensions(scene, mesh);
+  const group = new THREE.Group();
+  group.name = DIMENSION_GROUP_PREFIX + mesh.uuid;
+
+  const box = getAABB(mesh);
+  // Determine orientation by thickness axis
+  const params = (mesh.geometry as any).parameters || {};
+  const w = params.width as number | undefined;
+  const h = params.height as number | undefined;
+  const d = params.depth as number | undefined;
+
+  // Fallback if geometry parameters missing
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const width = w ?? size.x;
+  const height = h ?? size.y;
+  const depth = d ?? size.z;
+
+  // Horizontal shelf -> thin in Y
+  // Vertical (center-wall) -> thin in X; Vertical (side-wall) -> thin in Z
+  const isHorizontal = height < width && height < depth;
+  const isThinX = width <= depth && !isHorizontal;
+  const isThinZ = depth < width && !isHorizontal;
+
+  if (isHorizontal) {
+    // Measure to bottom/top along Y where X and Z projections overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'y', [
+      'x',
+      'z',
+    ]);
+    if (minPos !== null) {
+      const dist = mm(box.min.y - (minPos as number));
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        minPos as number,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        box.min.y,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(1, 0, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'y',
+          side: 'min',
+          ref: minPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.y);
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        box.max.y,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        maxPos as number,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(1, 0, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'y',
+          side: 'max',
+          ref: maxPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+  } else if (isThinX) {
+    // Vertical plank with thickness in X -> measure left/right along X with Y,Z overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'x', [
+      'y',
+      'z',
+    ]);
+    if (minPos !== null) {
+      const dist = mm(box.min.x - (minPos as number));
+      const s = new THREE.Vector3(
+        minPos as number,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        box.min.x,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(0, 1, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'x',
+          side: 'min',
+          ref: minPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.x);
+      const s = new THREE.Vector3(
+        box.max.x,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      const e = new THREE.Vector3(
+        maxPos as number,
+        (box.min.y + box.max.y) / 2,
+        (box.min.z + box.max.z) / 2,
+      );
+      addDimLine(
+        group,
+        s,
+        e,
+        new THREE.Vector3(0, 1, 0),
+        `${dist.toFixed(1)} mm`,
+        {
+          axis: 'x',
+          side: 'max',
+          ref: maxPos as number,
+          targetUuid: mesh.uuid,
+        },
+      );
+    }
+  } else if (isThinZ) {
+    // Vertical plank with thickness in Z -> measure near/far along Z with X,Y overlap
+    const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'z', [
+      'x',
+      'y',
+    ]);
+    const offsetSign = mesh.position.x < 0 ? 1 : -1;
+    const viewOffsetDir = new THREE.Vector3(offsetSign, 0, 0);
+    if (minPos !== null) {
+      const dist = mm(box.min.z - (minPos as number));
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        minPos as number,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        box.min.z,
+      );
+      addDimLine(group, s, e, viewOffsetDir, `${dist.toFixed(1)} mm`, {
+        axis: 'z',
+        side: 'min',
+        ref: minPos as number,
+        targetUuid: mesh.uuid,
+      });
+    }
+    if (maxPos !== null) {
+      const dist = mm((maxPos as number) - box.max.z);
+      const s = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        box.max.z,
+      );
+      const e = new THREE.Vector3(
+        (box.min.x + box.max.x) / 2,
+        (box.min.y + box.max.y) / 2,
+        maxPos as number,
+      );
+      addDimLine(group, s, e, viewOffsetDir, `${dist.toFixed(1)} mm`, {
+        axis: 'z',
+        side: 'max',
+        ref: maxPos as number,
+        targetUuid: mesh.uuid,
+      });
+    }
+  }
+
+  if (group.children.length > 0) {
+    scene.add(group);
+  }
+}
+export function enablePlankDimensionEditing(view: ThreeDView) {
+  const onClick = (event: MouseEvent) => {
+    const rect = view.renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(mouse, view.camera);
+    // Only sprites
+    const sprites: THREE.Object3D[] = [];
+    view.scene.traverse((o) => {
+      if (o instanceof THREE.Sprite && o.name.startsWith(DIM_LABEL_PREFIX)) {
+        sprites.push(o);
+      }
+    });
+    const hits = ray.intersectObjects(sprites, true);
+    if (!hits.length) return;
+    const sprite = hits[0].object as THREE.Sprite & { userData: any };
+    const meta = sprite.userData?.dimMeta as
+      | {
+        axis: 'x' | 'y' | 'z';
+        side: 'min' | 'max';
+        ref: number;
+        targetUuid: string;
+      }
+      | undefined;
+    if (!meta) return;
+
+    const target = view.scene.getObjectByProperty(
+      'uuid',
+      meta.targetUuid,
+    ) as THREE.Mesh | null;
+    if (!target) return;
+    const box = new THREE.Box3().setFromObject(target);
+    const currentDistanceM = ((): number => {
+      if (meta.axis === 'x')
+        return meta.side === 'min'
+          ? box.min.x - meta.ref
+          : meta.ref - box.max.x;
+      if (meta.axis === 'y')
+        return meta.side === 'min'
+          ? box.min.y - meta.ref
+          : meta.ref - box.max.y;
+      return meta.side === 'min' ? box.min.z - meta.ref : meta.ref - box.max.z;
+    })();
+    const currentMm = Math.max(0, currentDistanceM * 1000);
+    const input = prompt('Enter new distance (mm):', currentMm.toFixed(1));
+    if (!input) return;
+    const newMm = parseFloat(input);
+    if (!Number.isFinite(newMm) || newMm < 0) return;
+    const newM = newMm / 1000;
+
+    // Compute required delta translation along axis so that that new distance is achieved
+    const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
+    const currentFace = ((): number => {
+      if (meta.axis === 'x') return meta.side === 'min' ? box.min.x : box.max.x;
+      if (meta.axis === 'y') return meta.side === 'min' ? box.min.y : box.max.y;
+      return meta.side === 'min' ? box.min.z : box.max.z;
+    })();
+    const delta = desiredFace - currentFace;
+
+    if (meta.axis === 'x') target.position.x += delta;
+    else if (meta.axis === 'y') target.position.y += delta;
+    else target.position.z += delta;
+
+    // Refresh dimensions for the moved plank
+    showPlankDimensions(view.scene, target);
+
+    // Refresh invisible boxes for the affected group
+    refreshInvisibleBoxesForPlank(view.scene, target);
+
+    view.renderer.render(view.scene, view.camera);
+  };
+
+  view.renderer.domElement.addEventListener('dblclick', onClick);
+}
