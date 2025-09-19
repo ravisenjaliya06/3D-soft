@@ -132,9 +132,9 @@ export const init3DDesign = async (
   scene.add(daySky);
 
   const textureLoader = new THREE.TextureLoader();
-  const wallTexture = textureLoader.load('/img1_0.jpg');
+  const wallTexture = textureLoader.load('/WallTexture.jpg');
   wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-  wallTexture.repeat.set(2, 1);
+  wallTexture.repeat.set(1, 1);
 
   const floorTexture = textureLoader.load('/img2_6.jpg');
   floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
@@ -1255,30 +1255,37 @@ export const addVerticalPlanksInsideBox = (
     scene.remove(boxMesh);
   }
 
+  // Calculate height above skirting
+  const skirtingHeight = 0.06;
+  const heightAboveSkirting = height - skirtingHeight;
+  const plankY = center.y + skirtingHeight / 2; // Position above skirting
+
   for (let i = 1; i <= count; i++) {
     if (isSideWallBox) {
       // Side wall: divide along Z. Plank is thin in Z, full in X
       const zLocal = -depth / 2 + edgeClearance + interval * i;
       const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, thickness),
+        new THREE.BoxGeometry(width, heightAboveSkirting, thickness),
         plankMat,
       );
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
-      plank.position.set(center.x, center.y, center.z + zLocal);
+      // Position plank above skirting
+      plank.position.set(center.x, plankY, center.z + zLocal + 0.01);
       parent.add(plank);
     } else {
       // Center wall: divide along X (existing behavior)
       const xLocal = -width / 2 + edgeClearance + interval * i;
       const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(thickness, height, depth),
+        new THREE.BoxGeometry(thickness, heightAboveSkirting, depth),
         plankMat,
       );
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
-      plank.position.set(center.x + xLocal, center.y, center.z);
+      // Position plank above skirting
+      plank.position.set(center.x + xLocal, plankY, center.z + 0.01);
       parent.add(plank);
     }
   }
@@ -1292,7 +1299,6 @@ export const addVerticalPlanksInsideBox = (
     ) as THREE.Mesh | undefined;
     if (floorObj) floorY = floorObj.position.y;
   }
-  const skirtingHeight = 0.06;
   const skirtingDepth = depth; // full depth
   const skirtingMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
   const skirting = new THREE.Mesh(
@@ -1318,11 +1324,12 @@ export const addVerticalPlanksInsideBox = (
       const compDepth = Math.max(interval - thickness, 0.02);
       const compCenterZ = (nearLocal + farLocal) / 2;
       const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, compDepth),
+        new THREE.BoxGeometry(width, heightAboveSkirting, compDepth),
         invisibleMat,
       );
       inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-      inv.position.set(center.x, center.y, center.z + compCenterZ);
+      // Position compartment above skirting to match plank positioning
+      inv.position.set(center.x, plankY, center.z + compCenterZ + 0.01);
       parent.add(inv);
     } else {
       const leftEdgeLocal = -width / 2 + edgeClearance + interval * i;
@@ -1330,11 +1337,12 @@ export const addVerticalPlanksInsideBox = (
       const compWidth = Math.max(interval - thickness, 0.02);
       const compCenterX = (leftEdgeLocal + rightEdgeLocal) / 2;
       const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(compWidth, height, depth),
+        new THREE.BoxGeometry(compWidth, heightAboveSkirting, depth),
         invisibleMat,
       );
       inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-      inv.position.set(center.x + compCenterX, center.y, center.z);
+      // Position compartment above skirting to match plank positioning
+      inv.position.set(center.x + compCenterX, plankY, center.z + 0.01);
       parent.add(inv);
     }
   }
@@ -1419,6 +1427,7 @@ export const ensureHandleLoaded = async () => {
   });
 };
 
+
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -1429,11 +1438,18 @@ export const addDoorOnInvisibleBox = async (
   const d = params.depth as number;
   const isSide = boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
   const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
+  const textureLoader = new THREE.TextureLoader();
+  const doorTexture = textureLoader.load('/Texture0004.jpg');
+  doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
+  doorTexture.repeat.set(2, 1);
   const face = new THREE.Mesh(
     isSide
       ? new THREE.BoxGeometry(0.02, h - 0.01, d - 0.01)
       : new THREE.BoxGeometry(w - 0.01, h - 0.01, 0.02),
-    new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 }),
+    new THREE.MeshStandardMaterial({
+      map: doorTexture,
+      side: THREE.DoubleSide,
+    })
   );
   face.name = `Door_for_${boxMesh.name}`;
   if (isSide) {
@@ -1467,31 +1483,6 @@ export const addDoorOnInvisibleBox = async (
     scene.add(handle);
     doorGroup.attach(handle);
   }
-  // Add simple hinges on the hinge side
-  const hingeMat = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6, roughness: 0.3 });
-  const hingeRadius = 0.007;
-  const hingeLen = 0.04;
-  const hingeTop = new THREE.Mesh(new THREE.CylinderGeometry(hingeRadius, hingeRadius, hingeLen, 12), hingeMat);
-  const hingeBottom = hingeTop.clone();
-  hingeTop.rotation.z = Math.PI / 2;
-  hingeBottom.rotation.z = Math.PI / 2;
-  if (isSide) {
-    const hx = face.position.x; // hinge on face X edge
-    const hz = boxMesh.position.z - (d / 2) + 0.03; // near inner edge
-    hingeTop.position.set(hx, boxMesh.position.y + (h / 2) - 0.08, hz);
-    hingeBottom.position.set(hx, boxMesh.position.y - (h / 2) + 0.08, hz);
-  } else {
-    const hz = face.position.z;
-    const hx = boxMesh.position.x - (w / 2) + 0.01; // left edge by default
-    hingeTop.position.set(hx, boxMesh.position.y + (h / 2) - 0.08, hz);
-    hingeBottom.position.set(hx, boxMesh.position.y - (h / 2) + 0.08, hz);
-  }
-  hingeTop.name = `DoorHinge_Top_for_${boxMesh.name}`;
-  hingeBottom.name = `DoorHinge_Bottom_for_${boxMesh.name}`;
-  scene.add(hingeTop);
-  scene.add(hingeBottom);
-  doorGroup.attach(hingeTop);
-  doorGroup.attach(hingeBottom);
 };
 
 export const addDrawersOnInvisibleBox = async (
@@ -1508,7 +1499,8 @@ export const addDrawersOnInvisibleBox = async (
   const dir = boxMesh.name.includes('platform_leftwall') ? 1 : (boxMesh.name.includes('platform_rightwall') ? -1 : 0);
   const gutter = 0.0; // no gaps between drawers
   const eachH = h / drawers;
-  const drawerType = (boxMesh.userData && (boxMesh.userData as any).drawerType) || 'basket'; // 'basket' | 'fivePlank'
+  // const drawerType = (boxMesh.userData && (boxMesh.userData as any).drawerType) || 'basket';
+  const drawerType = 'fivePlank';
   const thickness = 0.018;
   await ensureHandleLoaded();
   for (let i = 0; i < drawers; i++) {
@@ -1519,12 +1511,20 @@ export const addDrawersOnInvisibleBox = async (
     (drawerGroup as any).userData = { ...(drawerGroup as any).userData, type: 'DRAWER' };
     scene.add(drawerGroup);
 
+    const textureLoader = new THREE.TextureLoader();
+    const drawerTexture = textureLoader.load('/Texture0004.jpg');
+    drawerTexture.wrapS = drawerTexture.wrapT = THREE.RepeatWrapping;
+    drawerTexture.repeat.set(2, 1);
+
     // Drawer face
     const face = new THREE.Mesh(
       isSide
         ? new THREE.BoxGeometry(0.02, eachH - 0.005, d - 0.01)
         : new THREE.BoxGeometry(w - 0.01, eachH - 0.005, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({
+      map: drawerTexture,
+      side: THREE.DoubleSide,
+    })
     );
     face.name = `DrawerFace_${i}_for_${boxMesh.name}`;
     if (isSide) {
@@ -1636,23 +1636,23 @@ export const addUpperCabinetsAbovePlatform = async (
   count: number,
 ) => {
   if (count <= 0) return;
-  
+
   const params = (platformMesh.geometry as THREE.BoxGeometry).parameters as any;
   const platformW = params.width as number;
   const platformH = params.height as number;
   const platformD = params.depth as number;
   const platformTopY = platformMesh.position.y + platformH / 2;
-  
+
   // Upper cabinet dimensions
   const upperHeight = 0.7; // 700mm tall
   const upperDepth = 0.35; // 350mm deep
   const upperBottomY = platformTopY + 0.55; // 550mm above platform
-  
+
   // Determine platform orientation and cabinet placement
   const isSidePlatform = platformMesh.name.includes('LeftWall') || platformMesh.name.includes('RightWall');
   const isLeftWall = platformMesh.name.includes('LeftWall');
   const isRightWall = platformMesh.name.includes('RightWall');
-  
+
   // Find the corresponding wall to position cabinets against
   let targetWall: THREE.Mesh | null = null;
   if (isSidePlatform) {
@@ -1664,15 +1664,15 @@ export const addUpperCabinetsAbovePlatform = async (
   } else {
     targetWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
   }
-  
+
   if (!targetWall) {
     console.warn('Could not find target wall for upper cabinets');
     return;
   }
-  
+
   // Calculate cabinet dimensions and spacing
   let cabinetWidth, cabinetSpacing;
-  
+
   if (isSidePlatform) {
     // Side platform: cabinets run along Z (wall length)
     cabinetWidth = platformD; // Use platform depth as cabinet width
@@ -1682,26 +1682,26 @@ export const addUpperCabinetsAbovePlatform = async (
     cabinetWidth = platformW;
     cabinetSpacing = cabinetWidth / count;
   }
-  
+
   await ensureHandleLoaded();
-  
+
   // Create upper cabinets group
   const upperGroup = new THREE.Group();
   upperGroup.name = `UpperCabinets_${platformMesh.name}`;
   scene.add(upperGroup);
-  
+
   for (let i = 0; i < count; i++) {
     // Cabinet carcass (five-plank construction)
     const carcassMat = new THREE.MeshStandardMaterial({ color: 0xd9c7b8, roughness: 0.7 });
     const thickness = 0.018; // 18mm
-    
+
     const cabinetGroup = new THREE.Group();
     cabinetGroup.name = `UpperCabinet_${i}_for_${platformMesh.name}`;
     (cabinetGroup as any).userData = { ...(cabinetGroup as any).userData, type: 'UPPER_CABINET' };
-    
+
     // Calculate cabinet position for this iteration
     let cabinetX: number, cabinetZ: number;
-    
+
     if (isSidePlatform) {
       // For side platforms, position cabinets against the side wall
       if (isLeftWall) {
@@ -1728,14 +1728,14 @@ export const addUpperCabinetsAbovePlatform = async (
       cabinetX = platformMesh.position.x - platformW / 2 + cabinetSpacing * (i + 0.5);
       cabinetZ = targetWall.position.z + wallThickness / 2 + upperDepth / 2;
     }
-    
+
     // Five-plank carcass construction
     const actualCabinetWidth = cabinetSpacing - 0.02; // small gap between cabinets
-    
+
     // Calculate plank positions based on cabinet orientation
     let leftPlankX, rightPlankX, bottomPlankX, topPlankX, backPlankX;
     let leftPlankZ, rightPlankZ, bottomPlankZ, topPlankZ, backPlankZ;
-    
+
     if (isSidePlatform) {
       // For side platforms, planks are oriented along Z axis
       leftPlankX = cabinetX;
@@ -1743,7 +1743,7 @@ export const addUpperCabinetsAbovePlatform = async (
       bottomPlankX = cabinetX;
       topPlankX = cabinetX;
       backPlankX = cabinetX;
-      
+
       leftPlankZ = cabinetZ - actualCabinetWidth / 2 + thickness / 2;
       rightPlankZ = cabinetZ + actualCabinetWidth / 2 - thickness / 2;
       bottomPlankZ = cabinetZ;
@@ -1756,14 +1756,14 @@ export const addUpperCabinetsAbovePlatform = async (
       bottomPlankX = cabinetX;
       topPlankX = cabinetX;
       backPlankX = cabinetX;
-      
+
       leftPlankZ = cabinetZ;
       rightPlankZ = cabinetZ;
       bottomPlankZ = cabinetZ;
       topPlankZ = cabinetZ;
       backPlankZ = cabinetZ;
     }
-    
+
     // Left plank
     const leftPlank = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
@@ -1777,7 +1777,7 @@ export const addUpperCabinetsAbovePlatform = async (
     leftPlank.castShadow = true;
     leftPlank.receiveShadow = true;
     leftPlank.name = `UpperLeftPlank_${i}`;
-    
+
     // Right plank
     const rightPlank = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
@@ -1791,7 +1791,7 @@ export const addUpperCabinetsAbovePlatform = async (
     rightPlank.castShadow = true;
     rightPlank.receiveShadow = true;
     rightPlank.name = `UpperRightPlank_${i}`;
-    
+
     // Bottom plank
     const bottomPlank = new THREE.Mesh(
       new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
@@ -1805,7 +1805,7 @@ export const addUpperCabinetsAbovePlatform = async (
     bottomPlank.castShadow = true;
     bottomPlank.receiveShadow = true;
     bottomPlank.name = `UpperBottomPlank_${i}`;
-    
+
     // Top plank
     const topPlank = new THREE.Mesh(
       new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, thickness, upperDepth),
@@ -1819,13 +1819,13 @@ export const addUpperCabinetsAbovePlatform = async (
     topPlank.castShadow = true;
     topPlank.receiveShadow = true;
     topPlank.name = `UpperTopPlank_${i}`;
-    
+
     // Back plank - positioned to touch the wall
     const backPlank = new THREE.Mesh(
       new THREE.BoxGeometry(actualCabinetWidth - thickness * 2, upperHeight - thickness * 2, thickness),
       carcassMat
     );
-    
+
     if (isSidePlatform) {
       // For side platforms, back plank touches the side wall
       if (isLeftWall) {
@@ -1839,7 +1839,7 @@ export const addUpperCabinetsAbovePlatform = async (
       backPlankX = cabinetX;
       backPlankZ = targetWall.position.z + (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 + thickness / 2;
     }
-    
+
     backPlank.position.set(
       backPlankX,
       upperBottomY + upperHeight / 2,
@@ -1848,17 +1848,25 @@ export const addUpperCabinetsAbovePlatform = async (
     backPlank.castShadow = true;
     backPlank.receiveShadow = true;
     backPlank.name = `UpperBackPlank_${i}`;
-    
+
     // Add planks to cabinet group
     cabinetGroup.add(leftPlank, rightPlank, bottomPlank, topPlank, backPlank);
-    
+
     // Create single door (full width, opens bottom to top)
     const doorWidth = actualCabinetWidth - thickness * 2 - 0.01;
     const doorHeight = upperHeight - thickness * 2 - 0.01;
     const doorThickness = 0.02;
-    
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0xb97a57, roughness: 0.6 });
-    
+
+    const textureLoader = new THREE.TextureLoader();
+    const wallTexture = textureLoader.load('/Texture0004.jpg');
+    wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+    wallTexture.repeat.set(2, 1);
+
+    const doorMat = new THREE.MeshStandardMaterial({
+      map: wallTexture,
+      side: THREE.DoubleSide,
+    });
+
     // Single door
     const door = new THREE.Mesh(
       new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
@@ -1872,26 +1880,28 @@ export const addUpperCabinetsAbovePlatform = async (
     door.castShadow = true;
     door.receiveShadow = true;
     door.name = `UpperDoor_${i}`;
-    
+
     // Add door to cabinet group
     cabinetGroup.add(door);
-    
+
     // Add handle to door (positioned for bottom-to-top opening)
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
       handle.traverse((n: any) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-      
+
       // Position handle at bottom of door for bottom-to-top opening
       const handleX = cabinetX;
       const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-      const handleZ = cabinetZ + upperDepth / 2 + doorThickness + 0.01;
-      
+      const handleZ = cabinetZ + upperDepth / 2 - 0.01; // At the front face of the door
+
       handle.position.set(handleX, handleY, handleZ);
+      handle.rotation.x = -(Math.PI / 2);
+      handle.rotation.z = Math.PI / 2;
       handle.name = `UpperHandle_${i}`;
-      
+
       cabinetGroup.add(handle);
     }
-    
+
     // Add cabinet to upper group
     upperGroup.add(cabinetGroup);
   }
