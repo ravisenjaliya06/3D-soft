@@ -1004,12 +1004,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       if (hitsSelectable.length > 0) {
         hoveredMesh = hitsSelectable[0].object as THREE.Mesh;
-        if (hoveredMesh?.userData.objectId === selectedChildObjectId) {
+        if (
+          hoveredMesh?.userData.objectId === selectedChildObjectId &&
+          hitsSelectable.length > 1
+        ) {
           hoveredMesh = hitsSelectable[1].object as THREE.Mesh;
         } else if (
           hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
           (hoveredMesh as THREE.Mesh)?.userData.objectId ===
-            selectedInvisibleBoxId
+          selectedInvisibleBoxId
         ) {
           hoveredMesh = hitsSelectable[2].object as THREE.Mesh;
         }
@@ -1373,9 +1376,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
-  const handleLock = () => {};
+  const handleLock = () => { };
 
-  const handleUnlock = () => {};
+  const handleUnlock = () => { };
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1410,7 +1413,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => {}}
+          onComplete={() => { }}
         />
       )}
     </div>
