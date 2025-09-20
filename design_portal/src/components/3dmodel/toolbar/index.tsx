@@ -59,6 +59,7 @@ import {
   addLShapeKitchenPlatform,
   addPlatformOnWall,
   addUpperCabinetsAbovePlatform,
+  addDoubleDoorUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
 } from '../design/scene';
 import {
@@ -773,6 +774,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         const num = parseInt((input || '').trim(), 10);
         if (!Number.isFinite(num) || num <= 0) return;
         addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Double Door Upper Cabinets',
+      icon: cabinet,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
+        let targetPlatform: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (
+              o instanceof THREE.Mesh &&
+              (o.name.startsWith('Counter_') ||
+                o.name === 'Back Counter' ||
+                o.name === 'Left Counter' ||
+                o.name === 'Right Counter')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
+            }
+          });
+        }
+        if (!targetPlatform) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (
+            hovered &&
+            (hovered.name.startsWith('Counter_') ||
+              hovered.name === 'Back Counter' ||
+              hovered.name === 'Left Counter' ||
+              hovered.name === 'Right Counter')
+          )
+            targetPlatform = hovered;
+        }
+        if (!targetPlatform) {
+          alert('Select a platform/counter first.');
+          return;
+        }
+        const input = prompt(
+          'How many double door upper cabinets to add above this platform?',
+        );
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addDoubleDoorUpperCabinetsAbovePlatform(scene, targetPlatform, num);
       },
       isActive: false,
     },
