@@ -310,17 +310,21 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const handleOpenCloseClick = () => {
     design3D?.scene.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-      if (child.name.includes('DOOR')) {
+      // if (!(child instanceof THREE.Mesh)) return;
+      if (child.name.includes('Door') && child instanceof THREE.Mesh) {
+        // child.userData.openDirection = 'left';
         const direction = child.userData.openDirection;
-        if (direction && direction !== 'none') {
+        if (direction) {
           toggleDoor(child);
         }
       }
 
-      if (child.name.endsWith('DRAWER')) {
-        toggleDrawer(child);
+      if (child.name.includes('Drawer')) {
+        toggleDrawer(child as THREE.Mesh);
       }
+      // if (child.name.includes('Object')) {
+      //   toggleDrawerHandle(child);
+      // }
     });
   };
 

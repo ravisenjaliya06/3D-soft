@@ -22,6 +22,12 @@ export interface ThreeDView {
     scene: THREE.Scene,
     platformMesh: THREE.Mesh,
     count: number,
+    doorType?: 'single' | 'double',
+  ) => Promise<void>;
+  addDoubleDoorUpperCabinetsAbovePlatform: (
+    scene: THREE.Scene,
+    platformMesh: THREE.Mesh,
+    count: number,
   ) => Promise<void>;
   // addChimneyWithGlassCabinets: (scene: THREE.Scene, platformMesh: THREE.Mesh) => Promise<void>;
   // loadHandleModel: (url: string) => Promise<void>;
