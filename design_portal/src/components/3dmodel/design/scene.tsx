@@ -2310,10 +2310,12 @@ export const addUpperCabinetsAbovePlatform = async (
       leftDoor.castShadow = true;
       leftDoor.receiveShadow = true;
       leftDoor.name = `UpperLeftDoor_${i}`;
+      leftDoor.userData.openDirection = 'left';
       
       rightDoor.castShadow = true;
       rightDoor.receiveShadow = true;
       rightDoor.name = `UpperRightDoor_${i}`;
+      rightDoor.userData.openDirection = 'right';
 
       // Add doors to cabinet group
       cabinetGroup.add(leftDoor, rightDoor);
@@ -2357,6 +2359,7 @@ export const addUpperCabinetsAbovePlatform = async (
       door.castShadow = true;
       door.receiveShadow = true;
       door.name = `UpperDoor_${i}`;
+      door.userData.openDirection = 'top';
 
       // Add door to cabinet group
       cabinetGroup.add(door);
