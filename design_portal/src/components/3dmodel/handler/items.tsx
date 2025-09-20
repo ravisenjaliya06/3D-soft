@@ -1947,19 +1947,20 @@ export function toggleDoor(child: THREE.Mesh) {
 
   // Traverse parents to detect wall placement
   let obj: THREE.Object3D | null = child;
-  let wallType: "center" | "leftwall" | "rightwall" | null = null;
+  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
 
   while (obj && !wallType) {
-    if (obj.name.toLowerCase().includes("center")) wallType = "center";
-    else if (obj.name.toLowerCase().includes("leftwall")) wallType = "leftwall";
-    else if (obj.name.toLowerCase().includes("rightwall")) wallType = "rightwall";
+    if (obj.name.toLowerCase().includes('center')) wallType = 'center';
+    else if (obj.name.toLowerCase().includes('leftwall')) wallType = 'leftwall';
+    else if (obj.name.toLowerCase().includes('rightwall'))
+      wallType = 'rightwall';
     obj = obj.parent;
   }
 
   child.geometry.computeBoundingBox();
   const bbox = child.geometry.boundingBox;
   if (!bbox) {
-    console.error("Bounding Box is Null");
+    console.error('Bounding Box is Null');
     return;
   }
 
@@ -1967,36 +1968,36 @@ export function toggleDoor(child: THREE.Mesh) {
   let pivotOffsetY = 0;
 
   // Default openDirection comes from userData (left, right, top, bottom)
-  let type: "left" | "right" | "top" | "bottom" = child.userData.openDirection;
+  let type: 'left' | 'right' | 'top' | 'bottom' = child.userData.openDirection;
 
   // Adjust open direction based on wall type
-  if (wallType === "leftwall") {
+  if (wallType === 'leftwall') {
     // Left wall doors usually swing along +X axis
-    if (type === "left") type = "left";
-    else if (type === "right") type = "right";
-  } else if (wallType === "rightwall") {
+    if (type === 'left') type = 'left';
+    else if (type === 'right') type = 'right';
+  } else if (wallType === 'rightwall') {
     // Right wall doors usually swing along -X axis
-    if (type === "left") type = "right";
-    else if (type === "right") type = "left";
-  } else if (wallType === "center") {
+    if (type === 'left') type = 'right';
+    else if (type === 'right') type = 'left';
+  } else if (wallType === 'center') {
     // Center wall → default directions (front open/close)
     type = type;
   }
 
   switch (type) {
-    case "left":
+    case 'left':
       pivotOffsetX = bbox.min.x;
       pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
       break;
-    case "right":
+    case 'right':
       pivotOffsetX = bbox.max.x;
       pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
       break;
-    case "top":
+    case 'top':
       pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
       pivotOffsetY = bbox.max.y;
       break;
-    case "bottom":
+    case 'bottom':
       pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
       pivotOffsetY = bbox.min.y;
       break;
@@ -2010,16 +2011,16 @@ export function toggleDoor(child: THREE.Mesh) {
   const targetRotation = { x: 0, y: 0, z: 0 };
 
   switch (type) {
-    case "left":
+    case 'left':
       targetRotation.y = isClosed ? -Math.PI / 2.5 : 0;
       break;
-    case "right":
+    case 'right':
       targetRotation.y = isClosed ? Math.PI / 2.5 : 0;
       break;
-    case "top":
+    case 'top':
       targetRotation.x = isClosed ? -Math.PI / 3 : 0;
       break;
-    case "bottom":
+    case 'bottom':
       targetRotation.x = isClosed ? Math.PI / 3 : 0;
       break;
   }
@@ -2029,7 +2030,7 @@ export function toggleDoor(child: THREE.Mesh) {
     y: targetRotation.y,
     z: targetRotation.z,
     duration: 1,
-    ease: "power2.inOut",
+    ease: 'power2.inOut',
   });
 
   child.userData.isClosed = !isClosed;
@@ -2043,26 +2044,26 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
 
   // Traverse parents to detect wall placement
   let obj: THREE.Object3D | null = child;
-  let wallType: "center" | "leftwall" | "rightwall" | null = null;
+  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
 
   while (obj && !wallType) {
     // const n = obj.name.toLowerCase();
-    if (obj.name.includes("center")) wallType = "center";
-    else if (obj.name.includes("leftwall")) wallType = "leftwall";
-    else if (obj.name.includes("rightwall")) wallType = "rightwall";
+    if (obj.name.includes('center')) wallType = 'center';
+    else if (obj.name.includes('leftwall')) wallType = 'leftwall';
+    else if (obj.name.includes('rightwall')) wallType = 'rightwall';
     obj = obj.parent;
   }
 
   // Decide direction based on wall type
   let direction = new THREE.Vector3();
   switch (wallType) {
-    case "center":
+    case 'center':
       direction.set(0, 0, 1);
       break;
-    case "leftwall":
+    case 'leftwall':
       direction.set(1, 0, 0); // push outward along X+
       break;
-    case "rightwall":
+    case 'rightwall':
       direction.set(-1, 0, 0); // push outward along X-
       break;
     default:
@@ -2082,7 +2083,7 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
     y: targetPos.y,
     z: targetPos.z,
     duration: 1,
-    ease: "power2.inOut",
+    ease: 'power2.inOut',
   });
 
   child.userData.isClosed = !isClosed;

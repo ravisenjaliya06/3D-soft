@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { toggleDoor, toggleDrawer, toggleDrawerHandle } from '../handler/items';
+import { toggleDoor, toggleDrawer } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
@@ -170,8 +170,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         setSuccessMessage(
           'Settings updated successfully! Minifix spacing updated to ' +
-          minifixDistance +
-          'mm',
+            minifixDistance +
+            'mm',
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {

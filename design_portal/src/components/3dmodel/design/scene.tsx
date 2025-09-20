@@ -2247,19 +2247,19 @@ export const addUpperCabinetsAbovePlatform = async (
     if (doorType === 'double') {
       // Create two doors for double door cabinet
       const doorWidth = (actualCabinetWidth - thickness * 2 - 0.01) / 2 - 0.005; // Split width with small gap
-      
+
       // Left door
       const leftDoor = new THREE.Mesh(
         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
         doorMat,
       );
-      
+
       // Right door
       const rightDoor = new THREE.Mesh(
         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
         doorMat,
       );
-      
+
       if (isSidePlatform) {
         // For side walls, doors should be positioned on the front face (facing into the room)
         if (isLeftWall) {
@@ -2306,12 +2306,12 @@ export const addUpperCabinetsAbovePlatform = async (
         // leftDoor.rotation.y = Math.PI / 2;
         // rightDoor.rotation.y = Math.PI / 2;
       }
-      
+
       leftDoor.castShadow = true;
       leftDoor.receiveShadow = true;
       leftDoor.name = `UpperLeftDoor_${i}`;
       leftDoor.userData.openDirection = 'left';
-      
+
       rightDoor.castShadow = true;
       rightDoor.receiveShadow = true;
       rightDoor.name = `UpperRightDoor_${i}`;
@@ -2326,7 +2326,7 @@ export const addUpperCabinetsAbovePlatform = async (
         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
         doorMat,
       );
-      
+
       if (isSidePlatform) {
         // For side walls, door should be positioned on the front face (facing into the room)
         if (isLeftWall) {
@@ -2355,7 +2355,7 @@ export const addUpperCabinetsAbovePlatform = async (
         );
         // No rotation needed for center wall doors
       }
-      
+
       door.castShadow = true;
       door.receiveShadow = true;
       door.name = `UpperDoor_${i}`;
@@ -2371,8 +2371,8 @@ export const addUpperCabinetsAbovePlatform = async (
         // Create handles for both doors
         const leftHandle = cachedHandleModel.clone(true);
         const rightHandle = cachedHandleModel.clone(true);
-        
-        [leftHandle, rightHandle].forEach(handle => {
+
+        [leftHandle, rightHandle].forEach((handle) => {
           handle.traverse((n: any) => {
             if (n.isMesh) {
               n.castShadow = true;
@@ -2385,24 +2385,42 @@ export const addUpperCabinetsAbovePlatform = async (
           // For side walls, position handles on the door faces
           if (isLeftWall) {
             // Left wall: handles on the right side of the doors
-            const handleX = cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
+            const handleX =
+              cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
             const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-            
-            leftHandle.position.set(handleX, handleY, cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4);
-            rightHandle.position.set(handleX, handleY, cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4);
-            
+
+            leftHandle.position.set(
+              handleX,
+              handleY,
+              cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            );
+            rightHandle.position.set(
+              handleX,
+              handleY,
+              cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            );
+
             leftHandle.rotation.set(0, 0, 0);
             leftHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
             rightHandle.rotation.set(0, 0, 0);
             rightHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
           } else if (isRightWall) {
             // Right wall: handles on the left side of the doors
-            const handleX = cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
+            const handleX =
+              cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
             const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-            
-            leftHandle.position.set(handleX, handleY, cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4);
-            rightHandle.position.set(handleX, handleY, cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4);
-            
+
+            leftHandle.position.set(
+              handleX,
+              handleY,
+              cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            );
+            rightHandle.position.set(
+              handleX,
+              handleY,
+              cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            );
+
             leftHandle.rotation.set(0, 0, 0);
             leftHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
             rightHandle.rotation.set(0, 0, 0);
@@ -2412,10 +2430,18 @@ export const addUpperCabinetsAbovePlatform = async (
           // For center wall, position handles at bottom of doors
           const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
           const handleZ = cabinetZ + upperDepth / 2 - 0.01; // At the front face of the door
-          
-          leftHandle.position.set(cabinetX - (actualCabinetWidth - thickness * 2 - 0.01) / 4, handleY, handleZ);
-          rightHandle.position.set(cabinetX + (actualCabinetWidth - thickness * 2 - 0.01) / 4, handleY, handleZ);
-          
+
+          leftHandle.position.set(
+            cabinetX - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            handleY,
+            handleZ,
+          );
+          rightHandle.position.set(
+            cabinetX + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
+            handleY,
+            handleZ,
+          );
+
           leftHandle.rotation.x = -(Math.PI / 2);
           leftHandle.rotation.z = Math.PI / 2;
           rightHandle.rotation.x = -(Math.PI / 2);
@@ -2439,7 +2465,8 @@ export const addUpperCabinetsAbovePlatform = async (
           // For side walls, position handle on the door face
           if (isLeftWall) {
             // Left wall: handle on the right side of the door
-            const handleX = cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
+            const handleX =
+              cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
             const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
             const handleZ = cabinetZ;
             handle.position.set(handleX, handleY, handleZ);
@@ -2447,7 +2474,8 @@ export const addUpperCabinetsAbovePlatform = async (
             handle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
           } else if (isRightWall) {
             // Right wall: handle on the left side of the door
-            const handleX = cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
+            const handleX =
+              cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
             const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
             const handleZ = cabinetZ;
             handle.position.set(handleX, handleY, handleZ);

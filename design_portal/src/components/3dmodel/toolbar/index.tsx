@@ -54,12 +54,12 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import {
   addDoorOnInvisibleBox,
+  addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addLShapeKitchenPlatform,
   addPlatformOnWall,
   addUpperCabinetsAbovePlatform,
-  addDoubleDoorUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
 } from '../design/scene';
 import {
