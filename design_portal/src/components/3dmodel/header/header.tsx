@@ -320,7 +320,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       }
 
       if (child.name.includes('Drawer')) {
-        toggleDrawer(child);
+        toggleDrawer(child as THREE.Mesh);
       }
       // if (child.name.includes('Object')) {
       //   toggleDrawerHandle(child);
