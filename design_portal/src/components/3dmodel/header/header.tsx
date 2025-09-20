@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { toggleDoor, toggleDrawer } from '../handler/items';
+import { toggleDoor, toggleDrawer, toggleDrawerHandle } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
@@ -170,8 +170,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         setSuccessMessage(
           'Settings updated successfully! Minifix spacing updated to ' +
-            minifixDistance +
-            'mm',
+          minifixDistance +
+          'mm',
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {
@@ -310,17 +310,21 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const handleOpenCloseClick = () => {
     design3D?.scene.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-      if (child.name.includes('DOOR')) {
+      // if (!(child instanceof THREE.Mesh)) return;
+      if (child.name.includes('Door') && child instanceof THREE.Mesh) {
+        // child.userData.openDirection = 'left';
         const direction = child.userData.openDirection;
-        if (direction && direction !== 'none') {
+        if (direction) {
           toggleDoor(child);
         }
       }
 
-      if (child.name.endsWith('DRAWER')) {
+      if (child.name.includes('Drawer')) {
         toggleDrawer(child);
       }
+      // if (child.name.includes('Object')) {
+      //   toggleDrawerHandle(child);
+      // }
     });
   };
 

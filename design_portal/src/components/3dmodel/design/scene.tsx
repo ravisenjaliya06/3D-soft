@@ -1460,6 +1460,7 @@ export const addDoorOnInvisibleBox = async (
     face.position.set(boxMesh.position.x, boxMesh.position.y, frontZ);
   }
   face.castShadow = true;
+  face.userData.openDirection = 'right';
   // Group door
   const doorGroup = new THREE.Group();
   doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
@@ -1879,6 +1880,7 @@ export const addUpperCabinetsAbovePlatform = async (
     );
     door.castShadow = true;
     door.receiveShadow = true;
+    door.userData.openDirection = 'top';
     door.name = `UpperDoor_${i}`;
 
     // Add door to cabinet group
