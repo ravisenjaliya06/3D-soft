@@ -1268,6 +1268,8 @@ export const addVerticalPlanksInsideBox = (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
+  selectedCabinetItem: any = null,
+  apiResponseDataArray: any[] = [],
 ) => {
   if (!boxMesh || count <= 0) return;
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
@@ -1334,6 +1336,12 @@ export const addVerticalPlanksInsideBox = (
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      plank.userData = {
+        ...plank.userData,
+        type: 'VERTICAL_PLANK',
+        ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+        ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
+      };
       // Position plank above skirting
       plank.position.set(center.x, plankY, center.z + zLocal + 0.01);
       parent.add(plank);
@@ -1347,6 +1355,12 @@ export const addVerticalPlanksInsideBox = (
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      plank.userData = {
+        ...plank.userData,
+        type: 'VERTICAL_PLANK',
+        ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+        ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
+      };
       // Position plank above skirting
       plank.position.set(center.x + xLocal, plankY, center.z + 0.01);
       parent.add(plank);
@@ -1421,6 +1435,8 @@ export const addHorizontalPlanksInsideBox = (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
+  selectedCabinetItem: any = null,
+  apiResponseDataArray: any[] = [],
 ) => {
   if (!boxMesh || count <= 0) return;
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
@@ -1469,6 +1485,12 @@ export const addHorizontalPlanksInsideBox = (
     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
     shelf.castShadow = true;
     shelf.receiveShadow = true;
+    shelf.userData = {
+      ...shelf.userData,
+      type: 'HORIZONTAL_PLANK',
+      ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+      ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
+    };
     shelf.position.set(center.x, center.y + yLocal, center.z);
     parent.add(shelf);
     shelfYs.push(yLocal);
@@ -1625,6 +1647,9 @@ export const ensureHandleLoaded = async () => {
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
+  count: number = 1,
+  selectedCabinetItem: any = null,
+  apiResponseDataArray: any[] = [],
 ) => {
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
   const w = params.width as number;
@@ -1668,6 +1693,8 @@ export const addDoorOnInvisibleBox = async (
     ...(doorGroup as any).userData,
     type: 'DOOR',
     upward: false,
+    ...(apiResponseDataArray[0] && { apiData: apiResponseDataArray[0] }),
+    ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
   };
   scene.add(doorGroup);
   doorGroup.attach(face);
@@ -1712,6 +1739,8 @@ export const addDrawersOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   drawers: number,
+  selectedCabinetItem: any = null,
+  apiResponseDataArray: any[] = [],
 ) => {
   if (drawers <= 0) return;
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
@@ -1739,6 +1768,8 @@ export const addDrawersOnInvisibleBox = async (
     (drawerGroup as any).userData = {
       ...(drawerGroup as any).userData,
       type: 'DRAWER',
+      ...(apiResponseDataArray[i] && { apiData: apiResponseDataArray[i] }),
+      ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
     };
     scene.add(drawerGroup);
 

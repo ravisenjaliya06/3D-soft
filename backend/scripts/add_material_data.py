@@ -1359,6 +1359,48 @@ CATALOG = [
             },
         ],
     },
+    {
+        "type": "Plank",
+        "name": "Vertical Plank",
+        "description": "Vertical Plank",
+        "catalog_rules": [
+            {
+                "name": "Molding",
+                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
+            },
+            {
+                "name": "Banding",
+                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
+            },
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
+                ],
+            },
+        ],
+    },
+    {
+        "type": "Plank",
+        "name": "Horizontal Plank",
+        "description": "Horizontal Plank",
+        "catalog_rules": [
+            {
+                "name": "Molding",
+                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
+            },
+            {
+                "name": "Banding",
+                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
+            },
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
+                ],
+            },
+        ],
+    },
 ]
 
 

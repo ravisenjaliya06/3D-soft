@@ -22,6 +22,7 @@ from .models import (
     MountPlateHoles,
     Properties,
 )
+from .utils import create_duplicate_catalog
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -375,6 +376,12 @@ class WireBasketSerializer(ValidationMixin, serializers.ModelSerializer):
         ]
 
 
+class ConnectionSerializer(ValidationMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Properties
+        fields = "__all__"
+
+
 class MaterialFactorySerializer:
     @staticmethod
     def get_material_serializer(
@@ -399,6 +406,7 @@ class MaterialFactorySerializer:
             MaterialTypes.SLIDING_DOOR_RAIL.value: SlidingDoorRailSerializer,
             MaterialTypes.SLIDING_DOOR_ROLLER.value: SlidingDoorRollerSerializer,
             MaterialTypes.WIRE_BASKET.value: WireBasketSerializer,
+            MaterialTypes.CONNECTION.value: ConnectionSerializer,
         }
 
         if material_type not in serializer_mapping:
@@ -782,9 +790,14 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Catalog
-        fields = ["id", "type", "name", "description", "catalog_rule"]
+        fields = ["id", "type", "name", "description", "design", "catalog_rule"]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
+        request = self.context["request"]
+        design_id = request.data.get("design_id")
+        catalog_id = self.context["view"].kwargs.get("catalog_id")
+        if design_id and catalog_id:
+            return create_duplicate_catalog(design_id, catalog_id)
         new_catalog = Catalog.objects.create(**validated_data)
 
         template_catalog = Catalog.objects.filter(

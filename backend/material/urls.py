@@ -81,4 +81,9 @@ urlpatterns = [
         CatalogRulePartsListView.as_view(),
         name="catalog-rule-parts",
     ),
+    path(
+        "catalog/<uuid:catalog_id>/design/",
+        CatalogViewSet.as_view({"post": "create"}),
+        name="catalog-design-list",
+    ),
 ]
