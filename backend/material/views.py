@@ -81,7 +81,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
     def get_queryset(self: "CatalogViewSet") -> QuerySet[Catalog]:
         catalog_type = self.request.query_params.get("type")
         qs = Catalog.objects.filter(
-            organization=self.request.user.selected_organization
+            organization=self.request.user.selected_organization, design__isnull=True
         )
         if catalog_type:
             qs = qs.filter(type=catalog_type)

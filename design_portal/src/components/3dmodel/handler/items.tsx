@@ -1973,8 +1973,8 @@ export function toggleDoor(child: THREE.Mesh) {
   // Adjust open direction based on wall type
   if (wallType === 'leftwall') {
     // Left wall doors usually swing along +X axis
-    if (type === 'left') type = 'left';
-    else if (type === 'right') type = 'right';
+    if (type === 'left') type = 'right';
+    else if (type === 'right') type = 'left';
   } else if (wallType === 'rightwall') {
     // Right wall doors usually swing along -X axis
     if (type === 'left') type = 'right';

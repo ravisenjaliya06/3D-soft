@@ -5,6 +5,7 @@ import uuid
 from django.db import models
 
 # App imports
+from design.models import Design
 from umaboy.models import Organization
 
 
@@ -266,6 +267,7 @@ class CatalogTypeChoices(models.TextChoices):
     Catalog Type
     """
 
+    PLANK = "Plank"
     DOOR = "Door"
     DRAWER = "Drawer"
     SLIDING_DOOR = "Sliding Door"
@@ -736,6 +738,13 @@ class Catalog(models.Model):
     type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
+    design = models.ForeignKey(
+        Design,
+        on_delete=models.CASCADE,
+        related_name="catalogs_design",
+        null=True,
+        blank=True,
+    )
 
 
 class CatalogRules(models.Model):
