@@ -28,8 +28,6 @@ const Sidebar: React.FC = () => {
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
   const [rotationZ, setRotationZ] = useState(0);
-  const [selectedObjectApiData, setSelectedObjectApiData] = useState<any>(null);
-  const [showRawApiData, setShowRawApiData] = useState(false);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -82,35 +80,6 @@ const Sidebar: React.FC = () => {
       setRotationZ(selectedObject.rotationZ!);
     }
   }, [selectedObject]);
-
-  // Get API data from selected object's userData
-  useEffect(() => {
-    if (selectedObjectId || selectedChildObjectId) {
-      const selectedMesh = scene.children.find(
-        (child) => child.userData.objectId === selectedObjectId || child.userData.objectId === selectedChildObjectId
-      );
-      
-      if (selectedMesh) {
-        // Check if the selected mesh has API data
-        if (selectedMesh.userData.apiData) {
-          setSelectedObjectApiData(selectedMesh.userData.apiData);
-        } else {
-          // If the selected mesh doesn't have API data, check its children
-          let apiDataFound = null;
-          selectedMesh.traverse((child) => {
-            if (child.userData.apiData && !apiDataFound) {
-              apiDataFound = child.userData.apiData;
-            }
-          });
-          setSelectedObjectApiData(apiDataFound);
-        }
-      } else {
-        setSelectedObjectApiData(null);
-      }
-    } else {
-      setSelectedObjectApiData(null);
-    }
-  }, [selectedObjectId, selectedChildObjectId, scene]);
 
   useEffect(() => {
     const selected = scene.children.find(
@@ -899,89 +868,6 @@ const Sidebar: React.FC = () => {
                 )}
 
               {/* API Data Section */}
-              {selectedObjectApiData && (
-                <div className={style.field_group_title_div}>
-                  <p className={style.field_group_title}>API Data</p>
-                </div>
-              )}
-              {selectedObjectApiData && (
-                <div className={style.field_group_div}>
-                  <div className={style.api_data_container}>
-                    <div className={style.api_data_item}>
-                      <span className={style.api_data_label}>ID:</span>
-                      <span className={style.api_data_value}>{selectedObjectApiData.id || 'N/A'}</span>
-                    </div>
-                    <div className={style.api_data_item}>
-                      <span className={style.api_data_label}>Type:</span>
-                      <span className={style.api_data_value}>{selectedObjectApiData.type || 'N/A'}</span>
-                    </div>
-                    <div className={style.api_data_item}>
-                      <span className={style.api_data_label}>Name:</span>
-                      <span className={style.api_data_value}>{selectedObjectApiData.name || 'N/A'}</span>
-                    </div>
-                    <div className={style.api_data_item}>
-                      <span className={style.api_data_label}>Description:</span>
-                      <span className={style.api_data_value}>{selectedObjectApiData.description || 'N/A'}</span>
-                    </div>
-                    <div className={style.api_data_item}>
-                      <span className={style.api_data_label}>Design ID:</span>
-                      <span className={style.api_data_value}>{selectedObjectApiData.design_id || 'N/A'}</span>
-                    </div>
-                    {selectedObjectApiData.created_at && (
-                      <div className={style.api_data_item}>
-                        <span className={style.api_data_label}>Created:</span>
-                        <span className={style.api_data_value}>
-                          {new Date(selectedObjectApiData.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {selectedObjectApiData.updated_at && (
-                      <div className={style.api_data_item}>
-                        <span className={style.api_data_label}>Updated:</span>
-                        <span className={style.api_data_value}>
-                          {new Date(selectedObjectApiData.updated_at).toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {/* Display any additional fields */}
-                    {Object.keys(selectedObjectApiData).map((key) => {
-                      if (!['id', 'type', 'name', 'description', 'design_id', 'created_at', 'updated_at'].includes(key)) {
-                        return (
-                          <div key={key} className={style.api_data_item}>
-                            <span className={style.api_data_label}>{key}:</span>
-                            <span className={style.api_data_value}>
-                              {typeof selectedObjectApiData[key] === 'object' 
-                                ? JSON.stringify(selectedObjectApiData[key])
-                                : selectedObjectApiData[key] || 'N/A'
-                              }
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                    
-                    {/* Raw API Data Toggle */}
-                    <div className={style.api_data_item}>
-                      <button
-                        className={style.toggle_raw_data_btn}
-                        onClick={() => setShowRawApiData(!showRawApiData)}
-                      >
-                        {showRawApiData ? 'Hide' : 'Show'} Raw Data
-                      </button>
-                    </div>
-                    
-                    {/* Raw API Data Display */}
-                    {showRawApiData && (
-                      <div className={style.raw_api_data}>
-                        <pre className={style.raw_api_data_pre}>
-                          {JSON.stringify(selectedObjectApiData, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </>

@@ -454,26 +454,32 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const addCabinetItemToDesign = async (catalogId: string, itemData: {
-    type: string;
-    name: string;
-    description: string;
-    design_id: string;
-  }) => {
+  const addCabinetItemToDesign = async (
+    catalogId: string,
+    itemData: {
+      type: string;
+      name: string;
+      description: string;
+      design_id: string;
+    },
+  ) => {
     const payload = {
       type: itemData.type,
       name: itemData.name,
       description: itemData.description,
       design_id: itemData.design_id,
-    }
+    };
     try {
       const response = await commonService.post(
         `material/catalog/${catalogId}`,
         'design',
-        payload
+        payload,
       );
       if (response.status === 200 || response.status === 201) {
-        console.log('Cabinet item added to design successfully:', response.data);
+        console.log(
+          'Cabinet item added to design successfully:',
+          response.data,
+        );
         return response.data;
       }
     } catch (error) {
@@ -504,29 +510,37 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       o.name.startsWith('outline-'),
     ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
-    
+
     // Determine target box based on item type
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
-    
+
     if (outline) {
       const outlineCenter = outline.position.clone();
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           // For planks, use different invisible box types
           if (itemType === 'Plank') {
-            if (itemName === 'Vertical Plank' && o.name.toLowerCase().includes('invisiblebox')) {
+            if (
+              itemName === 'Vertical Plank' &&
+              o.name.toLowerCase().includes('invisiblebox')
+            ) {
               const b = new THREE.Box3().setFromObject(o);
               const c = new THREE.Vector3();
               b.getCenter(c);
               if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            } else if (itemName === 'Horizontal Plank' && o.name.toLowerCase().includes('invisiblebox_compartment')) {
+            } else if (
+              itemName === 'Horizontal Plank' &&
+              o.name.toLowerCase().includes('invisiblebox_compartment')
+            ) {
               const b = new THREE.Box3().setFromObject(o);
               const c = new THREE.Vector3();
               b.getCenter(c);
               if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
             }
-          } else if (o.name.toLowerCase().includes('invisiblebox_compartment')) {
+          } else if (
+            o.name.toLowerCase().includes('invisiblebox_compartment')
+          ) {
             // For doors and drawers, use compartment invisible boxes
             const b = new THREE.Box3().setFromObject(o);
             const c = new THREE.Vector3();
@@ -536,28 +550,37 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }
       });
     }
-    
+
     if (!targetBox) {
       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
       if (hovered) {
         if (itemType === 'Plank') {
-          if (itemName === 'Vertical Plank' && hovered.name.toLowerCase().includes('invisiblebox')) {
+          if (
+            itemName === 'Vertical Plank' &&
+            hovered.name.toLowerCase().includes('invisiblebox')
+          ) {
             targetBox = hovered;
-          } else if (itemName === 'Horizontal Plank' && hovered.name.toLowerCase().includes('invisiblebox_compartment')) {
+          } else if (
+            itemName === 'Horizontal Plank' &&
+            hovered.name.toLowerCase().includes('invisiblebox_compartment')
+          ) {
             targetBox = hovered;
           }
-        } else if (hovered.name.toLowerCase().includes('invisiblebox_compartment')) {
+        } else if (
+          hovered.name.toLowerCase().includes('invisiblebox_compartment')
+        ) {
           targetBox = hovered;
         }
       }
     }
-    
+
     if (!targetBox) {
-      const errorMessage = itemType === 'Plank' 
-        ? (itemName === 'Vertical Plank' 
-          ? 'Select an invisible box under the platform first.' 
-          : 'Select a compartment invisible box first.')
-        : 'Select a compartment invisible box first.';
+      const errorMessage =
+        itemType === 'Plank'
+          ? itemName === 'Vertical Plank'
+            ? 'Select an invisible box under the platform first.'
+            : 'Select a compartment invisible box first.'
+          : 'Select a compartment invisible box first.';
       alert(errorMessage);
       return;
     }
@@ -565,38 +588,66 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     // Handle different item types and make individual API calls for each item
     const designId = window.location.pathname.split('/')[2];
     const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
-    
+
     // Collect all API responses for the items
     const apiResponses = [];
-    
+
     // Make API calls for each item
     for (let i = 0; i < num; i++) {
       try {
         const itemData = {
           type: itemType,
           name: `${itemName} ${i + 1}`,
-          description: selectedCabinetItem.description || `${itemName} description`,
-          design_id: designId
+          description:
+            selectedCabinetItem.description || `${itemName} description`,
+          design_id: designId,
         };
-        
+
         const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
         apiResponses.push(apiResponse);
       } catch (error) {
-        console.error(`Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`, error);
+        console.error(
+          `Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`,
+          error,
+        );
         apiResponses.push(null); // Add null for failed API calls
       }
     }
-    
+
     // Now add the 3D objects with API response data
     if (['Door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, num, selectedCabinetItem, apiResponses);
+      await addDoorOnInvisibleBox(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
     } else if (itemType === 'Drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num, selectedCabinetItem, apiResponses);
+      await addDrawersOnInvisibleBox(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
     } else if (itemType === 'Plank') {
       if (itemName === 'Vertical Plank') {
-        await addVerticalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem, apiResponses);
+        await addVerticalPlanksInsideBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          apiResponses,
+        );
       } else if (itemName === 'Horizontal Plank') {
-        await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem, apiResponses);
+        await addHorizontalPlanksInsideBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          apiResponses,
+        );
       }
     }
 
@@ -1074,7 +1125,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       title={item.description}
                     >
                       <img
-                        src={iconMap[item.name] || iconMap[item.type] || drawer.src} // fallback if type not found
+                        src={
+                          iconMap[item.name] || iconMap[item.type] || drawer.src
+                        } // fallback if type not found
                         alt={`${item.type} icon`}
                       />
                       <span>{item.name}</span>

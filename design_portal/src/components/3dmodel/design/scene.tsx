@@ -1339,7 +1339,9 @@ export const addVerticalPlanksInsideBox = (
       plank.userData = {
         ...plank.userData,
         type: 'VERTICAL_PLANK',
-        ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+        ...(apiResponseDataArray[i - 1] && {
+          apiData: apiResponseDataArray[i - 1],
+        }),
         ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
       };
       // Position plank above skirting
@@ -1358,7 +1360,9 @@ export const addVerticalPlanksInsideBox = (
       plank.userData = {
         ...plank.userData,
         type: 'VERTICAL_PLANK',
-        ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+        ...(apiResponseDataArray[i - 1] && {
+          apiData: apiResponseDataArray[i - 1],
+        }),
         ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
       };
       // Position plank above skirting
@@ -1488,7 +1492,9 @@ export const addHorizontalPlanksInsideBox = (
     shelf.userData = {
       ...shelf.userData,
       type: 'HORIZONTAL_PLANK',
-      ...(apiResponseDataArray[i - 1] && { apiData: apiResponseDataArray[i - 1] }),
+      ...(apiResponseDataArray[i - 1] && {
+        apiData: apiResponseDataArray[i - 1],
+      }),
       ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
     };
     shelf.position.set(center.x, center.y + yLocal, center.z);
