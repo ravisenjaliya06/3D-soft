@@ -950,7 +950,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1429,43 +1429,35 @@ export const addHorizontalPlanksInsideBox = (
   count: number,
 ) => {
   if (!boxMesh || count <= 0) return;
-  const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
-  const width = params.width as number;
-  const height = params.height as number;
-  const depth = params.depth as number;
-  const center = boxMesh.position.clone();
+
+  // Get actual size of box, safer than relying on .parameters
+  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const center = new THREE.Vector3();
+  bbox.getCenter(center);
+
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
+
   const thickness = 0.018;
   const edgeClearance = Math.max(0.01, thickness);
   const innerHeight = height - 2 * edgeClearance;
   if (innerHeight <= thickness) return;
+
   const interval = innerHeight / (count + 1);
   const parent = boxMesh.parent ?? scene;
+
   const plankMat = new THREE.MeshStandardMaterial({
     color: 0xd9c7b8,
     roughness: 0.7,
   });
-  // Remove the original container invisible box; we'll create vertical compartments
-  if (boxMesh.parent) {
-    boxMesh.parent.remove(boxMesh);
-  } else {
-    scene.remove(boxMesh);
-  }
 
-  // Store compartment config on parent for later refresh
-  parent.userData.compartmentConfig = {
-    isHorizontal: true,
-    isSideWall: false,
-    boundsMin: -height / 2 + edgeClearance,
-    boundsMax: height / 2 - edgeClearance,
-    perpSizeX: width,
-    perpSizeZ: depth,
-    centerX: center.x,
-    centerZ: center.z,
-    thickness: thickness,
-    groupName: boxMesh.name,
-  };
+  // Remove old invisible box
+  if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
+  else scene.remove(boxMesh);
 
-  const shelfYs: number[] = [];
   for (let i = 1; i <= count; i++) {
     const yLocal = -height / 2 + edgeClearance + interval * i;
     const shelf = new THREE.Mesh(
@@ -1473,17 +1465,40 @@ export const addHorizontalPlanksInsideBox = (
       plankMat,
     );
     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
-    // Add userData to help with dimension detection
     shelf.userData.isHorizontalPlank = true;
-    shelf.userData.isSideWall = false; // Horizontal planks are always for center wall
+
     shelf.castShadow = true;
     shelf.receiveShadow = true;
-    shelf.position.set(center.x, center.y + yLocal, center.z);
+
+    // Place relative to box center
+    shelf.position.set(center.x, center.y + yLocal + 0.01, center.z);
     parent.add(shelf);
-    shelfYs.push(yLocal);
   }
 
-  refreshInvisibleBoxesForGroup(parent, boxMesh.name);
+  // 🔹 Create invisible boxes between shelves (like vertical planks do)
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  });
+
+  for (let i = 0; i <= count; i++) {
+    const bottomY = -height / 2 + edgeClearance + interval * i;
+    const topY = bottomY + interval;
+    const compHeight = Math.max(interval - thickness, 0.02);
+    const compCenterY = (bottomY + topY) / 2;
+
+    const inv = new THREE.Mesh(
+      new THREE.BoxGeometry(width, compHeight, depth),
+      invisibleMat,
+    );
+    inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+    inv.position.set(center.x, center.y + compCenterY, center.z);
+    parent.add(inv);
+  }
+
+  refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
 
 // New function to refresh invisible boxes after plank movement
@@ -1954,13 +1969,6 @@ export const addDrawersOnInvisibleBox = async (
   }
 };
 
-/**
- * Creates upper cabinets above a platform with configurable door type
- * @param scene - The Three.js scene
- * @param platformMesh - The platform/counter mesh to place cabinets above
- * @param count - Number of cabinets to create
- * @param doorType - Type of doors: 'single' for one door per cabinet, 'double' for two doors per cabinet
- */
 export const addUpperCabinetsAbovePlatform = async (
   scene: THREE.Scene,
   platformMesh: THREE.Mesh,
@@ -3105,11 +3113,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 

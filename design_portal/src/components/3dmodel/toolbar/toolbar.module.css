@@ -179,17 +179,20 @@
 }
 
 .activegroup_tools_container {
-  position: absolute;
-  z-index: 5;
-  /* Lower than catalog */
+  position: fixed;
+  /* instead of absolute */
+  top: 4rem;
+  /* replace margin-top */
+  left: 3.8rem;
+  /* replace margin-left */
   width: 9rem;
-  height: 90vh;
-  margin-left: 3.8rem;
-  margin-top: 4rem;
+  height: calc(100vh - 4rem);
   background: var(--primary-white);
   border: 0.063rem solid var(--border-color);
   border-radius: 0rem 0.7rem 0.7rem 0rem;
   overflow-y: auto;
+  z-index: 100;
+  /* lower than popup */
   transition: transform 0.3s ease-in-out;
 }
 
