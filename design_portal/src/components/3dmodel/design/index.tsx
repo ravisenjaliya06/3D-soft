@@ -1004,7 +1004,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       if (hitsSelectable.length > 0) {
         hoveredMesh = hitsSelectable[0].object as THREE.Mesh;
-        if (hoveredMesh?.userData.objectId === selectedChildObjectId) {
+        if (
+          hoveredMesh?.userData.objectId === selectedChildObjectId &&
+          hitsSelectable.length > 1
+        ) {
           hoveredMesh = hitsSelectable[1].object as THREE.Mesh;
         } else if (
           hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
