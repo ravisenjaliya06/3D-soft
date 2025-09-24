@@ -3,31 +3,29 @@ import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { updateObjectInScene } from '../handler/updateHandler';
-import { MINIFIX_STANDARDS } from '../minifix/calculator';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
+import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+
   const [doorPosition, setDoorPosition] = useState('None');
-  const [showAdvancedContent, setShowAdvancedContent] = useState(false);
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
   const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [edgeBandingVisible, setEdgeBandingVisible] = useState(false);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const [depth, setDepth] = useState(0);
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
   const [rotationZ, setRotationZ] = useState(0);
+  const [showMaterialPopup, setShowMaterialPopup] = useState(false);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -70,6 +68,7 @@ const Sidebar: React.FC = () => {
       setNavOpen(true);
     }
   }, [selectedObjectId, selectedChildObjectId]);
+
   useEffect(() => {
     if (selectedObject) {
       setWidth(selectedObject.width);
@@ -81,20 +80,20 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject]);
 
-  useEffect(() => {
-    const selected = scene.children.find(
-      (child) => child.userData.objectId === selectedObject?.id,
-    );
-    if (selected && selected instanceof THREE.Mesh) {
-      const edgeBandingChildren = selected?.children.filter((child) =>
-        child.children.forEach((child) =>
-          child.name.startsWith('edge_banding'),
-        ),
-      );
-      const anyVisible = edgeBandingChildren?.some((child) => child.visible);
-      setEdgeBandingVisible(anyVisible!);
-    }
-  }, [selectedObject]);
+  // useEffect(() => {
+  //   const selected = scene.children.find(
+  //     (child) => child.userData.objectId === selectedObject?.id,
+  //   );
+  //   if (selected && selected instanceof THREE.Mesh) {
+  //     const edgeBandingChildren = selected?.children.filter((child) =>
+  //       child.children.forEach((child) =>
+  //         child.name.startsWith('edge_banding'),
+  //       ),
+  //     );
+  //     const anyVisible = edgeBandingChildren?.some((child) => child.visible);
+  //     setEdgeBandingVisible(anyVisible!);
+  //   }
+  // }, [selectedObject]);
 
   useEffect(() => {
     if (isSidebarOpen) {
@@ -122,20 +121,20 @@ const Sidebar: React.FC = () => {
   const toggleBasic = () => {
     setIsBasicOpen(!isBasicOpen);
   };
-  const toggleAdvanced = () => {
-    if (!isBasicOpen) {
-      return;
-    }
-    const newState = !isAdvancedOpen;
-    setIsAdvancedOpen(newState);
+  // const toggleAdvanced = () => {
+  //   if (!isBasicOpen) {
+  //     return;
+  //   }
+  //   const newState = !isAdvancedOpen;
+  //   setIsAdvancedOpen(newState);
 
-    if (newState) {
-      setTimeout(() => {
-        setShowAdvancedContent(true);
-      }, 300);
-      setShowAdvancedContent(false);
-    }
-  };
+  //   if (newState) {
+  //     setTimeout(() => {
+  //       setShowAdvancedContent(true);
+  //     }, 300);
+  //     setShowAdvancedContent(false);
+  //   }
+  // };
 
   const handleNavigation = () => {
     setSettingOpen(false);
@@ -145,23 +144,23 @@ const Sidebar: React.FC = () => {
   const validateNumericInput = (value: number): number | null =>
     isNaN(value) || value < 0 ? null : value;
 
-  const handleEdgeBandingToggle = () => {
-    const selected = scene.children.find(
-      (child) => child.userData.objectId === selectedObject?.id,
-    );
+  // const handleEdgeBandingToggle = () => {
+  //   const selected = scene.children.find(
+  //     (child) => child.userData.objectId === selectedObject?.id,
+  //   );
 
-    const newVisibility = !edgeBandingVisible;
+  //   const newVisibility = !edgeBandingVisible;
 
-    selected?.children.forEach((child) => {
-      child.children.forEach((edgeBandingChild) => {
-        if (edgeBandingChild.name.startsWith('edge_banding')) {
-          edgeBandingChild.visible = newVisibility;
-        }
-      });
-    });
+  //   selected?.children.forEach((child) => {
+  //     child.children.forEach((edgeBandingChild) => {
+  //       if (edgeBandingChild.name.startsWith('edge_banding')) {
+  //         edgeBandingChild.visible = newVisibility;
+  //       }
+  //     });
+  //   });
 
-    setEdgeBandingVisible(newVisibility);
-  };
+  //   setEdgeBandingVisible(newVisibility);
+  // };
 
   const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWidth(Number(e.target.value));
@@ -453,50 +452,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const handleSubtractMinifix = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const currentSpacing =
-      selectedObject.minifixSpacing || MINIFIX_STANDARDS.SPACING;
-    const newSpacing = Math.max(5, currentSpacing - 1);
-
-    updateObjectInScene(
-      selectedObject.id,
-      { minifixSpacing: newSpacing },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-  };
-
-  const handleIncrementMinifix = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const currentSpacing =
-      selectedObject.minifixSpacing || MINIFIX_STANDARDS.SPACING;
-    const newSpacing = currentSpacing + 1;
-
-    updateObjectInScene(
-      selectedObject.id,
-      { minifixSpacing: newSpacing },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-  };
-
-  const handleMinifixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newSpacing = validateNumericInput(Number(e.target.value));
-    if (newSpacing !== null && newSpacing >= 5) {
-      updateObjectInScene(
-        selectedObject.id,
-        { minifixSpacing: newSpacing },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
   const handleDoorPositionChange = (position: string) => {
     scene.traverse((child) => {
       if (child.userData.objectId === selectedObject?.id) {
@@ -507,6 +462,10 @@ const Sidebar: React.FC = () => {
 
   const handleHandlePositionChange = (position: string) => {
     console.warn('handleHandlePositionChange', position);
+  };
+
+  const handleMaterialChange = () => {
+    setShowMaterialPopup(true);
   };
 
   return (
@@ -552,7 +511,8 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
           )}
-          {!isQuickHideActive && isSettingOpen && selectedObject && (
+          {/* {!isQuickHideActive && isSettingOpen && selectedObject && ( */}
+          {isSettingOpen && (
             <div className={style.field_main_div}>
               <div className={style.field_group_title_div}>
                 <img
@@ -736,7 +696,16 @@ const Sidebar: React.FC = () => {
                       +
                     </button>
                   </div>
+
                   <div className={style.field_group1}>
+                    <p>Change Material</p>
+                    <button
+                      onClick={handleMaterialChange}
+                      className={style.btn_matirialchange}
+                      disabled={isQuickHideActive}
+                    ></button>
+                  </div>
+                  {/* <div className={style.field_group1}>
                     <p>Edge Banding:</p>
                     <label className={style.toggleSwitch}>
                       <input
@@ -773,11 +742,11 @@ const Sidebar: React.FC = () => {
                     >
                       +
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               )}
               {/* Advanced Section */}
-              <div className={style.field_group_title_div}>
+              {/* <div className={style.field_group_title_div}>
                 <img
                   src={isAdvancedOpen ? up_arrow.src : down_arrow.src}
                   alt="toggle_arrow"
@@ -785,90 +754,94 @@ const Sidebar: React.FC = () => {
                   style={{ cursor: 'pointer' }}
                 />
                 <p className={style.field_group_title}>Advanced</p>
-              </div>
+              </div> */}
 
-              {!isQuickHideActive &&
-                isSettingOpen &&
-                isBasicOpen &&
-                isAdvancedOpen &&
-                showAdvancedContent && (
-                  <div className={style.field_group_div}>
-                    {/* Door Position */}
-                    <div className={style.field_group}>
-                      <p>Door Position</p>
-                      <select
-                        value={doorPosition}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDoorPosition(value);
-                          handleDoorPositionChange(value);
-                        }}
-                        disabled={isQuickHideActive}
+              {!isQuickHideActive && isSettingOpen && isBasicOpen && (
+                <div className={style.field_group_div}>
+                  {/* Door Position */}
+                  <div className={style.field_group}>
+                    <p>Door Position</p>
+                    <select
+                      value={doorPosition}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setDoorPosition(value);
+                        handleDoorPositionChange(value);
+                      }}
+                      disabled={isQuickHideActive}
+                    >
+                      <option value="None">None</option>
+                      <option value="Left">Left</option>
+                      <option value="Right">Right</option>
+                      <option value="Top">Top</option>
+                      <option value="Bottom">Bottom</option>
+                    </select>
+                  </div>
+
+                  {/* Dropdown Handle 3x3 grid */}
+                  {/* Dropdown Handle (click to open/close) */}
+                  <div className={style.field_group}>
+                    <p>Handle</p>
+                    <div className={style.handle_dropdown_wrapper}>
+                      <div
+                        className={style.dropdown_like_select}
+                        onClick={() => setIsHandleDropdownOpen((prev) => !prev)}
                       >
-                        <option value="None">None</option>
-                        <option value="Left">Left</option>
-                        <option value="Right">Right</option>
-                        <option value="Top">Top</option>
-                        <option value="Bottom">Bottom</option>
-                      </select>
-                    </div>
-
-                    {/* Dropdown Handle 3x3 grid */}
-                    {/* Dropdown Handle (click to open/close) */}
-                    <div className={style.field_group}>
-                      <p>Handle</p>
-                      <div className={style.handle_dropdown_wrapper}>
-                        <div
-                          className={style.dropdown_like_select}
-                          onClick={() =>
-                            setIsHandleDropdownOpen((prev) => !prev)
-                          }
-                        >
-                          {selectedHandle}
-                          <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
-                        </div>
-
-                        {isHandleDropdownOpen && (
-                          <div className={style.dropdown_grid}>
-                            {[
-                              'Top-Left',
-                              'Top-Center',
-                              'Top-Right',
-                              'Middle-Left',
-                              'Center',
-                              'Middle-Right',
-                              'Bottom-Left',
-                              'Bottom-Center',
-                              'Bottom-Right',
-                            ].map((label, index) => (
-                              <div
-                                key={index}
-                                className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
-                                onClick={() => {
-                                  setSelectedHandle(label);
-                                  setIsHandleDropdownOpen(false);
-                                  handleHandlePositionChange(label);
-                                  if (selectedObject && !isQuickHideActive) {
-                                    updateObjectInScene(
-                                      selectedObject.id,
-                                      { handlePosition: label },
-                                      scene,
-                                      dispatch,
-                                      selectedObject,
-                                    );
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
+                        {selectedHandle}
+                        <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
                       </div>
+
+                      {isHandleDropdownOpen && (
+                        <div className={style.dropdown_grid}>
+                          {[
+                            'Top-Left',
+                            'Top-Center',
+                            'Top-Right',
+                            'Middle-Left',
+                            'Center',
+                            'Middle-Right',
+                            'Bottom-Left',
+                            'Bottom-Center',
+                            'Bottom-Right',
+                          ].map((label, index) => (
+                            <div
+                              key={index}
+                              className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
+                              onClick={() => {
+                                setSelectedHandle(label);
+                                setIsHandleDropdownOpen(false);
+                                handleHandlePositionChange(label);
+                                if (selectedObject && !isQuickHideActive) {
+                                  updateObjectInScene(
+                                    selectedObject.id,
+                                    { handlePosition: label },
+                                    scene,
+                                    dispatch,
+                                    selectedObject,
+                                  );
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
+              )}
             </div>
           )}
         </>
+      )}
+      {showMaterialPopup && (
+        <MaterialChangePopup
+          onClose={() => setShowMaterialPopup(false)}
+          onSave={(selectedMaterials) => {
+            // Handle material change logic here
+            console.log('Selected materials:', selectedMaterials);
+            setShowMaterialPopup(false);
+          }}
+        />
       )}
     </div>
   );

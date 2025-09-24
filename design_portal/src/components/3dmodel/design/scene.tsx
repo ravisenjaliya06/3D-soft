@@ -1334,6 +1334,9 @@ export const addVerticalPlanksInsideBox = (
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      // Add userData to help with dimension detection
+      plank.userData.isVerticalPlank = true;
+      plank.userData.isSideWall = isSideWallBox;
       // Position plank above skirting
       plank.position.set(center.x, plankY, center.z + zLocal + 0.01);
       parent.add(plank);
@@ -1347,6 +1350,9 @@ export const addVerticalPlanksInsideBox = (
       plank.castShadow = true;
       plank.receiveShadow = true;
       plank.name = `VERTICAL_PLANK_${i}_for_${boxMesh.name}`;
+      // Add userData to help with dimension detection
+      plank.userData.isVerticalPlank = true;
+      plank.userData.isSideWall = isSideWallBox;
       // Position plank above skirting
       plank.position.set(center.x + xLocal, plankY, center.z + 0.01);
       parent.add(plank);
@@ -1423,43 +1429,35 @@ export const addHorizontalPlanksInsideBox = (
   count: number,
 ) => {
   if (!boxMesh || count <= 0) return;
-  const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
-  const width = params.width as number;
-  const height = params.height as number;
-  const depth = params.depth as number;
-  const center = boxMesh.position.clone();
+
+  // Get actual size of box, safer than relying on .parameters
+  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const center = new THREE.Vector3();
+  bbox.getCenter(center);
+
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
+
   const thickness = 0.018;
   const edgeClearance = Math.max(0.01, thickness);
   const innerHeight = height - 2 * edgeClearance;
   if (innerHeight <= thickness) return;
+
   const interval = innerHeight / (count + 1);
   const parent = boxMesh.parent ?? scene;
+
   const plankMat = new THREE.MeshStandardMaterial({
     color: 0xd9c7b8,
     roughness: 0.7,
   });
-  // Remove the original container invisible box; we'll create vertical compartments
-  if (boxMesh.parent) {
-    boxMesh.parent.remove(boxMesh);
-  } else {
-    scene.remove(boxMesh);
-  }
 
-  // Store compartment config on parent for later refresh
-  parent.userData.compartmentConfig = {
-    isHorizontal: true,
-    isSideWall: false, // Horizontal is always along Y, no side wall distinction needed
-    boundsMin: -height / 2 + edgeClearance,
-    boundsMax: height / 2 - edgeClearance,
-    perpSizeX: width,
-    perpSizeZ: depth,
-    centerX: center.x,
-    centerZ: center.z,
-    thickness: thickness,
-    groupName: boxMesh.name,
-  };
+  // Remove old invisible box
+  if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
+  else scene.remove(boxMesh);
 
-  const shelfYs: number[] = [];
   for (let i = 1; i <= count; i++) {
     const yLocal = -height / 2 + edgeClearance + interval * i;
     const shelf = new THREE.Mesh(
@@ -1467,14 +1465,40 @@ export const addHorizontalPlanksInsideBox = (
       plankMat,
     );
     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
+    shelf.userData.isHorizontalPlank = true;
+
     shelf.castShadow = true;
     shelf.receiveShadow = true;
-    shelf.position.set(center.x, center.y + yLocal, center.z);
+
+    // Place relative to box center
+    shelf.position.set(center.x, center.y + yLocal + 0.01, center.z);
     parent.add(shelf);
-    shelfYs.push(yLocal);
   }
 
-  refreshInvisibleBoxesForGroup(parent, boxMesh.name);
+  // 🔹 Create invisible boxes between shelves (like vertical planks do)
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  });
+
+  for (let i = 0; i <= count; i++) {
+    const bottomY = -height / 2 + edgeClearance + interval * i;
+    const topY = bottomY + interval;
+    const compHeight = Math.max(interval - thickness, 0.02);
+    const compCenterY = (bottomY + topY) / 2;
+
+    const inv = new THREE.Mesh(
+      new THREE.BoxGeometry(width, compHeight, depth),
+      invisibleMat,
+    );
+    inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+    inv.position.set(center.x, center.y + compCenterY, center.z);
+    parent.add(inv);
+  }
+
+  refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
 
 // New function to refresh invisible boxes after plank movement
@@ -1945,13 +1969,6 @@ export const addDrawersOnInvisibleBox = async (
   }
 };
 
-/**
- * Creates upper cabinets above a platform with configurable door type
- * @param scene - The Three.js scene
- * @param platformMesh - The platform/counter mesh to place cabinets above
- * @param count - Number of cabinets to create
- * @param doorType - Type of doors: 'single' for one door per cabinet, 'double' for two doors per cabinet
- */
 export const addUpperCabinetsAbovePlatform = async (
   scene: THREE.Scene,
   platformMesh: THREE.Mesh,
@@ -2041,16 +2058,18 @@ export const addUpperCabinetsAbovePlatform = async (
           .parameters as any;
         const wallThickness = wallParams.width as number; // For side walls, thickness is along X axis
         cabinetX = targetWall.position.x + wallThickness / 2 + upperDepth / 2;
+        // Position cabinets along the platform's Z-axis (wall length)
         cabinetZ =
-          platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+          platformMesh.position.z + (i - (count - 1) / 2) * cabinetSpacing;
       } else if (isRightWall) {
         // Position against right wall - cabinet back touches wall
         const wallParams = (targetWall.geometry as THREE.BoxGeometry)
           .parameters as any;
         const wallThickness = wallParams.width as number; // For side walls, thickness is along X axis
         cabinetX = targetWall.position.x - wallThickness / 2 - upperDepth / 2;
+        // Position cabinets along the platform's Z-axis (wall length)
         cabinetZ =
-          platformMesh.position.z - platformD / 2 + cabinetSpacing * (i + 0.5);
+          platformMesh.position.z + (i - (count - 1) / 2) * cabinetSpacing;
       } else {
         // Fallback for side platform
         cabinetX = platformMesh.position.x;
@@ -2604,11 +2623,51 @@ function addDimLine(
   return sprite;
 }
 
-function getAABB(mesh: THREE.Object3D): THREE.Box3 {
-  const box = new THREE.Box3();
-  return box.setFromObject(mesh);
-}
+const EPS = 1e-6;
 
+function getAABB(obj: THREE.Object3D) {
+  // ensure world matrices are up-to-date before computing the box
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  box.setFromObject(obj);
+  return box;
+}
+function isHelperOrInvisible(o: THREE.Object3D) {
+  // skip anything not visible in the scene graph
+  if (!o.visible) return true;
+
+  // userData markers (set these when creating helpers/invisible boxes)
+  if (o.userData?.isInvisibleBox || o.userData?.isHelper || o.userData?.helper)
+    return true;
+
+  // name-based checks (case-insensitive)
+  if (
+    o.name &&
+    /invisible|helper|ghost|outline|dimension|skirting/i.test(o.name)
+  )
+    return true;
+
+  // material-based checks (handles fully transparent helper meshes)
+  // support both single material and material arrays
+  const mats = (o as any).material
+    ? Array.isArray((o as any).material)
+      ? (o as any).material
+      : [(o as any).material]
+    : [];
+  if (mats.length) {
+    const allHidden = mats.every(
+      (m: any) =>
+        (m && m.visible === false) ||
+        (m &&
+          m.transparent &&
+          typeof m.opacity === 'number' &&
+          m.opacity <= 0.01),
+    );
+    if (allHidden) return true;
+  }
+
+  return false;
+}
 function overlapsOnAxes(
   a: THREE.Box3,
   b: THREE.Box3,
@@ -2628,37 +2687,159 @@ function findNearestAlongAxis(
   selfBox: THREE.Box3,
   axis: 'x' | 'y' | 'z',
   overlapAxes: Array<'x' | 'y' | 'z'>,
+  debug = false,
 ) {
+  // make sure whole scene has correct matrices
+  scene.updateMatrixWorld(true);
+
   let minPos: number | null = null;
   let maxPos: number | null = null;
   let minBox: THREE.Box3 | null = null;
   let maxBox: THREE.Box3 | null = null;
 
-  const selfMin = selfBox.min[axis];
+  let minWallPos: number | null = null;
+  let maxWallPos: number | null = null;
 
+  const selfMin = selfBox.min[axis];
   const selfMax = selfBox.max[axis];
 
+  // compute world center of self to detect side walls robustly
+  const selfCenter = new THREE.Vector3();
+  selfBox.getCenter(selfCenter);
+
+  // heuristics for side-wall behaviour (use world center)
+  const isSideWallPlank =
+    self.name.toLowerCase().includes('platform_leftwall') ||
+    self.name.toLowerCase().includes('platform_rightwall') ||
+    self.userData?.isSideWall === true ||
+    (axis === 'z' && Math.abs(selfCenter.x) > 0.5); // far from center (world units)
+
+  // helper to test axis-overlap
+  const overlapsOnAxesLocal = (
+    a: THREE.Box3,
+    b: THREE.Box3,
+    axes: Array<'x' | 'y' | 'z'>,
+  ) => {
+    for (const ax of axes) {
+      if (ax === 'x' && (a.max.x <= b.min.x + EPS || a.min.x >= b.max.x - EPS))
+        return false;
+      if (ax === 'y' && (a.max.y <= b.min.y + EPS || a.min.y >= b.max.y - EPS))
+        return false;
+      if (ax === 'z' && (a.max.z <= b.min.z + EPS || a.min.z >= b.max.z - EPS))
+        return false;
+    }
+    return true;
+  };
+
+  // Check if object is a wall (highest priority)
+  const isWallObject = (o: THREE.Object3D): boolean => {
+    const name = (o.name || '').toLowerCase();
+    return (
+      name.includes('wall') ||
+      name.includes('cwall') ||
+      name.includes('back wall') ||
+      name.includes('left wall') ||
+      name.includes('right wall') ||
+      name.includes('center wall')
+    );
+  };
+
+  // Check if object is a plank (lower priority than walls)
+  const isPlankObject = (o: THREE.Object3D): boolean => {
+    const name = (o.name || '').toLowerCase();
+    return (
+      name.includes('plank') ||
+      name.includes('VERTICAL_PLANK') ||
+      name.includes('HORIZONTAL_PLANK')
+    );
+  };
+
+  // walk scene and look for potential reference objects
   scene.traverse((o) => {
-    if (o === self || !(o instanceof THREE.Mesh)) return;
+    if (o === self) return;
+    if (!(o instanceof THREE.Mesh || (o as any).isMesh)) return;
+
+    // robustly ignore helpers / invisible boxes
+    if (isHelperOrInvisible(o)) return;
+
     const b = getAABB(o);
-    if (!overlapsOnAxes(selfBox, b, overlapAxes)) return;
-    // Negative direction (left/bottom/near along axis)
-    if (b.max[axis] <= selfMin) {
-      if (minPos === null || b.max[axis] > (minPos as number)) {
-        minPos = b.max[axis];
-        minBox = b;
+    const isWall = isWallObject(o);
+    const isPlank = isPlankObject(o);
+
+    // must project-overlap on the specified axes
+    if (!overlapsOnAxesLocal(selfBox, b, overlapAxes)) return;
+
+    // negative direction candidate (object entirely on the negative side)
+    if (b.max[axis] <= selfMin - EPS) {
+      // WALLS have highest priority
+      if (isWall) {
+        if (minWallPos === null || b.max[axis] > minWallPos) {
+          minWallPos = b.max[axis];
+        }
+      }
+      // Only consider planks if no wall found yet
+      else if (isPlank && minWallPos === null) {
+        if (minPos === null || b.max[axis] > minPos) {
+          minPos = b.max[axis];
+          minBox = b;
+        }
+      }
+      // Other objects (counters, platforms, etc.) have lowest priority
+      else if (!isPlank && minWallPos === null && minPos === null) {
+        if (minPos === null || b.max[axis] > minPos) {
+          minPos = b.max[axis];
+          minBox = b;
+        }
       }
     }
-    // Positive direction (right/top/far)
-    if (b.min[axis] >= selfMax) {
-      if (maxPos === null || b.min[axis] < (maxPos as number)) {
-        maxPos = b.min[axis];
-        maxBox = b;
+
+    // positive direction candidate
+    if (b.min[axis] >= selfMax + EPS) {
+      // WALLS have highest priority
+      if (isWall) {
+        if (maxWallPos === null || b.min[axis] < maxWallPos) {
+          maxWallPos = b.min[axis];
+        }
       }
+      // Only consider planks if no wall found yet
+      else if (isPlank && maxWallPos === null) {
+        if (maxPos === null || b.min[axis] < maxPos) {
+          maxPos = b.min[axis];
+          maxBox = b;
+        }
+      }
+      // Other objects have lowest priority
+      else if (!isPlank && maxWallPos === null && maxPos === null) {
+        if (maxPos === null || b.min[axis] < maxPos) {
+          maxPos = b.min[axis];
+          maxBox = b;
+        }
+      }
+    }
+
+    if (debug) {
+      console.log(
+        'candidate',
+        o.name,
+        'isWall:',
+        isWall,
+        'isPlank:',
+        isPlank,
+        'b.min',
+        b.min[axis],
+        'b.max',
+        b.max[axis],
+      );
     }
   });
 
-  return { minPos, maxPos, minBox, maxBox };
+  // Return wall positions if found, otherwise plank positions, otherwise other positions
+  return {
+    minPos: minWallPos !== null ? minWallPos : minPos !== null ? minPos : null,
+    maxPos: maxWallPos !== null ? maxWallPos : maxPos !== null ? maxPos : null,
+    minBox: minWallPos !== null ? null : minBox, // Don't return box for walls
+    maxBox: maxWallPos !== null ? null : maxBox, // Don't return box for walls
+  };
 }
 
 export function clearPlankDimensions(scene: THREE.Scene, mesh: THREE.Object3D) {
@@ -2711,6 +2892,8 @@ export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
   const w = params.width as number | undefined;
   const h = params.height as number | undefined;
   const d = params.depth as number | undefined;
+  const center = new THREE.Vector3();
+  box.getCenter(center);
 
   // Fallback if geometry parameters missing
   const size = new THREE.Vector3();
@@ -2719,11 +2902,16 @@ export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
   const height = h ?? size.y;
   const depth = d ?? size.z;
 
-  // Horizontal shelf -> thin in Y
-  // Vertical (center-wall) -> thin in X; Vertical (side-wall) -> thin in Z
+  // Determine plank orientation and wall type
   const isHorizontal = height < width && height < depth;
   const isThinX = width <= depth && !isHorizontal;
   const isThinZ = depth < width && !isHorizontal;
+
+  const isSideWallPlank =
+    mesh.name.toLowerCase().includes('platform_leftwall') ||
+    mesh.name.toLowerCase().includes('platform_rightwall') ||
+    mesh.userData?.isSideWall === true ||
+    (isThinZ && Math.abs(center.x) > 0.5);
 
   if (isHorizontal) {
     // Measure to bottom/top along Y where X and Z projections overlap
@@ -2843,12 +3031,23 @@ export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
     }
   } else if (isThinZ) {
     // Vertical plank with thickness in Z -> measure near/far along Z with X,Y overlap
+    // For side walls, we need to find reference points differently
     const { minPos, maxPos } = findNearestAlongAxis(scene, mesh, box, 'z', [
       'x',
       'y',
     ]);
-    const offsetSign = mesh.position.x < 0 ? 1 : -1;
-    const viewOffsetDir = new THREE.Vector3(offsetSign, 0, 0);
+
+    // Determine view offset direction based on wall position
+    let viewOffsetDir: THREE.Vector3;
+    if (isSideWallPlank) {
+      // For side walls, offset perpendicular to the wall (along X axis)
+      const offsetSign = mesh.position.x < 0 ? -1 : 1; // Left wall: offset left, Right wall: offset right
+      viewOffsetDir = new THREE.Vector3(offsetSign, 0, 0);
+    } else {
+      // For back wall, offset along Z axis
+      viewOffsetDir = new THREE.Vector3(0, 0, 1);
+    }
+
     if (minPos !== null) {
       const dist = mm(box.min.z - (minPos as number));
       const s = new THREE.Vector3(
