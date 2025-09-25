@@ -2196,9 +2196,34 @@ const AddMaterialPopup: React.FC<Props> = ({
         unit_of_issue: formData.unitOfIssue || '',
         default_cost: formData.defaultCost || 0,
         sell_price: formData.sellPrice || 0,
-        length: formData.length || 0,
-        width: formData.width || 0,
         thickness: formData.thickness || 0,
+        length_trim: formData.lengthTrim || 0,
+        eslimate: formData.eslimate || false,
+        default_tax_rate: formData.defaultTaxRate || 0,
+        default_markup: formData.defaultMarkup || 0,
+        waste: formData.waste || 0,
+        sales_tax: formData.salesTax || false,
+        // cnc_minimize_back_chip: formData.cncMinimizeBackChip || false,
+        // cnc_feed_rate_percent: formData.cncFeedRatePercent || 0,
+        // cnc_optimize: formData.cncOptimize || false,
+        // maximum_spacing: formData.maximumSpacing || 0,
+        // opening_angle: formData.openingAngle || 0,
+        // inset: formData.inset || 0,
+        // hinge_type: formData.hingeType || '',
+        // vertical_overlay: formData.verticalOverlay || 0,
+        // door_edge_to_reference_point: formData.doorEdgeToReferencePoint || 0,
+        // horizontal_overlay: formData.horizontalOverlay || 0,
+        // door_end_to_hinge: formData.doorEndToHinge || 0,
+        // anchor_holes_cup_to_anchor: formData.anchorHolesCupToAnchor || 0,
+        // roll_out_clearance: formData.rollOutClearance || 0,
+        // cup_depth: formData.cupDepth || 0,
+        // anchor_holes_depth: formData.anchorHolesDepth || 0,
+        // cup_diameter: formData.cupDiameter || 0,
+        // anchor_holes_spacing: formData.anchorHolesSpacing || 0,
+
+
+
+
         ...(formData.height && { height: formData.height }),
         ...(formData.drawerType && { drawer_type: formData.drawerType }),
       },
@@ -2206,7 +2231,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       finish_types: [],
       textures: [],
     };
-
+    console.log('Final Data to submit:', finalData);
     const response = await commonService.post(
       'material',
       `company/${companyState}/material`,
