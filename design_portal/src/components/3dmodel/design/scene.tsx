@@ -950,7 +950,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1275,8 +1275,7 @@ export const addVerticalPlanksInsideBox = (
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
   const width = params.width as number; // X span of box
   const height = params.height as number; // Y span of box
-  const depth = params.depth as number; // Z span of 
-
+  const depth = params.depth as number; // Z span of
 
   const center = boxMesh.position.clone();
   const thickness = 0.018; // 18mm
@@ -3127,11 +3126,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 
