@@ -745,6 +745,11 @@ class Catalog(models.Model):
         null=True,
         blank=True,
     )
+    height = models.FloatField(blank=True, null=True)
+    width = models.FloatField(blank=True, null=True)
+    length = models.FloatField(blank=True, null=True)
+    depth = models.FloatField(blank=True, null=True)
+    position = models.CharField(max_length=100, blank=True, null=True)
 
 
 class CatalogRules(models.Model):

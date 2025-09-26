@@ -790,7 +790,7 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Catalog
-        fields = ["id", "type", "name", "description", "design", "catalog_rule"]
+        fields = ["id", "type", "name", "description", "design", "catalog_rule", "height", "width", "length", "depth", "position"]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
