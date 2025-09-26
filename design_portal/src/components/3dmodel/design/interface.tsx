@@ -14,6 +14,23 @@ export interface ThreeDView {
   toggleSky: () => void;
   isDay: boolean;
   isZoomMode: boolean;
+  // addBaseCabinetsUnderPlatform: () => void;
+  // addFullKitchenSetup: () => Promise<void>;
+  loadSinkModel: (url: string) => Promise<void>;
+  // exportRenderPNG: (options?: { width?: number; height?: number; filename?: string; download?: boolean }) => void;
+  addUpperCabinetsAbovePlatform: (
+    scene: THREE.Scene,
+    platformMesh: THREE.Mesh,
+    count: number,
+    doorType?: 'single' | 'double',
+  ) => Promise<void>;
+  addDoubleDoorUpperCabinetsAbovePlatform: (
+    scene: THREE.Scene,
+    platformMesh: THREE.Mesh,
+    count: number,
+  ) => Promise<void>;
+  // addChimneyWithGlassCabinets: (scene: THREE.Scene, platformMesh: THREE.Mesh) => Promise<void>;
+  // loadHandleModel: (url: string) => Promise<void>;
 }
 
 export const itemType = {

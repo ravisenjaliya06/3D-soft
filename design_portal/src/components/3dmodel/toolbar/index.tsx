@@ -12,13 +12,17 @@ import styles from './toolbar.module.css';
 // home toolbar
 import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
 import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
+import createicon from '@/assets/createicon.svg';
+import sink from '@/assets/toolbar/5996079.png';
 import catalog from '@/assets/toolbar/catalog.svg';
 import align_dimension from '@/assets/toolbar/dimension-align.svg';
 import exlight from '@/assets/toolbar/exlight.svg';
 import hide from '@/assets/toolbar/hide.svg';
+import cabinet from '@/assets/toolbar/images.jpg';
 import measure from '@/assets/toolbar/measure.svg';
 import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
+import InputField from '@/components/inputfields/InputField';
 
 // catalog modal photo
 import {
@@ -30,21 +34,34 @@ import {
 // parts
 import close from '@/assets/catalog/close.svg';
 import part_1 from '@/assets/catalog/parts/part_1.svg';
-import part_3 from '@/assets/catalog/parts/part_3.svg';
 import part_4 from '@/assets/catalog/parts/part_4.svg';
-import part_5 from '@/assets/catalog/parts/part_5.svg';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { DesignProps } from '../interface';
 
+import door from '@/assets/toolbar/door-icon.svg';
+import drawer from '@/assets/toolbar/drawer.svg';
+import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
+import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import texture_3 from '@/assets/toolbar/texture/dark_brown.jpg';
 import texture_4 from '@/assets/toolbar/texture/grossy_brown.jpg';
 import texture_1 from '@/assets/toolbar/texture/light_brown.jpg';
 import texture_2 from '@/assets/toolbar/texture/light_wood.jpg';
 import texture_5 from '@/assets/toolbar/texture/off_white.jpg';
 import texture_6 from '@/assets/toolbar/texture/wood.jpg';
+import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
 import { useRouter } from 'next/router';
 import React from 'react';
+import {
+  addDoorOnInvisibleBox,
+  addDoubleDoorUpperCabinetsAbovePlatform,
+  addDrawersOnInvisibleBox,
+  addHorizontalPlanksInsideBox,
+  addLShapeKitchenPlatform,
+  addPlatformOnWall,
+  addUpperCabinetsAbovePlatform,
+  addVerticalPlanksInsideBox,
+} from '../design/scene';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
@@ -85,6 +102,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [activeCatalogTab, setActiveCatalogTab] = useState('furniture');
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [designTexture, setdesignTexture] = useState(false);
+  const [cabinetItems, setCabinetItems] = useState([]);
+  const [createCompanyPopup, setCreateCompanyPopup] = useState(false);
+  const [selectedCabinetItem, setSelectedCabinetItem] = useState(null);
+  const [quantityValue, setQuantityValue] = useState(1);
 
   const designTextureModal = [
     {
@@ -147,18 +168,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           type: typeChoices.PART,
           item: partChoices.HORIZONTAL_PLANK,
         };
-      } else if (name === partChoices.DRAWER) {
-        data = {
-          action: actionChoices.ADD_OBJECT,
-          type: typeChoices.PART,
-          item: partChoices.DRAWER,
-        };
-      } else if (name === partChoices.DOOR) {
-        data = {
-          action: actionChoices.ADD_OBJECT,
-          type: typeChoices.PART,
-          item: partChoices.DOOR,
-        };
       }
       if (data) {
         const updatedScene = await objectHandler(
@@ -219,6 +228,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
+  const handleToAddPlatform = () => {
+    const textureLoader = new THREE.TextureLoader();
+    const counterTexture = textureLoader.load('/img14_64.jpg');
+    counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+    counterTexture.repeat.set(10, 1);
+
+    // Prefer selected wall via outline center match; fallback to hovered wall; else fallback to L-shape
+    const scene = threeDView.scene as THREE.Scene;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
+    console.log('outline', outline);
+    let wallFromSelection: THREE.Mesh | null = null;
+    if (outline) {
+      const outlineCenter = outline.position.clone();
+      const walls: THREE.Mesh[] = [];
+      scene.traverse((o) => {
+        if (
+          o instanceof THREE.Mesh &&
+          (o.name === 'Center Wall' ||
+            o.name === 'Left Wall' ||
+            o.name === 'Right Wall')
+        ) {
+          walls.push(o);
+        }
+      });
+      for (const w of walls) {
+        const box = new THREE.Box3().setFromObject(w);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        if (center.distanceTo(outlineCenter) < 1e-3) {
+          wallFromSelection = w;
+          break;
+        }
+      }
+    }
+
+    const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+    const targetWall =
+      wallFromSelection ||
+      (hovered &&
+      (hovered.name === 'Center Wall' ||
+        hovered.name === 'Left Wall' ||
+        hovered.name === 'Right Wall')
+        ? hovered
+        : null);
+    if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
+    else addLShapeKitchenPlatform(scene, counterTexture);
+  };
+
   const options = [
     { option: 'Home', name: 'Home', icon: img1 },
     { option: 'View', name: 'View', icon: img2 },
@@ -232,22 +291,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       onClick: () => handlePartClick(partChoices.VERTICAL_PLANK),
     },
     {
-      option: 'part_3',
-      name: 'Single Drawer',
-      icon: part_3,
-      onClick: () => handlePartClick(partChoices.DRAWER),
-    },
-    {
       option: 'part_4',
       name: 'Horizontal Plank',
       icon: part_4,
       onClick: () => handlePartClick(partChoices.HORIZONTAL_PLANK),
-    },
-    {
-      option: 'part_5',
-      name: 'Penal door',
-      icon: part_5,
-      onClick: () => handlePartClick(partChoices.DOOR),
     },
   ];
 
@@ -396,20 +443,240 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
   ];
 
+  const fetchCabinetItem = async () => {
+    const cabinetResponse = await commonService.getWithQueryParam(
+      'material',
+      'catalog',
+    );
+    if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
+      console.log(cabinetResponse.data, 'cabinetResponse.data');
+      setCabinetItems(cabinetResponse.data);
+    }
+  };
+
+  const addCabinetItemToDesign = async (
+    catalogId: string,
+    itemData: {
+      type: string;
+      name: string;
+      description: string;
+      design_id: string;
+    },
+  ) => {
+    const payload = {
+      type: itemData.type,
+      name: itemData.name,
+      description: itemData.description,
+      design_id: itemData.design_id,
+    };
+    try {
+      const response = await commonService.post(
+        `material/catalog/${catalogId}`,
+        'design',
+        payload,
+      );
+      if (response.status === 200 || response.status === 201) {
+        console.log(
+          'Cabinet item added to design successfully:',
+          response.data,
+        );
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error adding cabinet item to design:', error);
+      throw error;
+    }
+  };
+  const handleCabinetClick = () => {
+    setActiveOption('Cabinet');
+    setActiveOptionName('Cabinet');
+    fetchCabinetItem();
+  };
+
+  const handleCabinetItemSelect = (item) => {
+    setSelectedCabinetItem(item);
+    setQuantityValue(1);
+    setCreateCompanyPopup(true);
+  };
+
+  const onAddItems = async () => {
+    const num = parseInt(quantityValue.toString(), 10);
+    if (!Number.isFinite(num) || num <= 0) {
+      return;
+    }
+
+    const scene = threeDView.scene as THREE.Scene;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
+    let targetBox: THREE.Mesh | null = null;
+
+    // Determine target box based on item type
+    const itemType = selectedCabinetItem.type;
+    const itemName = selectedCabinetItem.name;
+
+    if (outline) {
+      const outlineCenter = outline.position.clone();
+      scene.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          // For planks, use different invisible box types
+          if (itemType === 'Plank') {
+            if (
+              itemName === 'Vertical Plank' &&
+              o.name.toLowerCase().includes('invisiblebox')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            } else if (
+              itemName === 'Horizontal Plank' &&
+              o.name.toLowerCase().includes('invisiblebox_compartment')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          } else if (
+            o.name.toLowerCase().includes('invisiblebox_compartment')
+          ) {
+            // For doors and drawers, use compartment invisible boxes
+            const b = new THREE.Box3().setFromObject(o);
+            const c = new THREE.Vector3();
+            b.getCenter(c);
+            if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+          }
+        }
+      });
+    }
+
+    if (!targetBox) {
+      const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+      if (hovered) {
+        if (itemType === 'Plank') {
+          if (
+            itemName === 'Vertical Plank' &&
+            hovered.name.toLowerCase().includes('invisiblebox')
+          ) {
+            targetBox = hovered;
+          } else if (
+            itemName === 'Horizontal Plank' &&
+            hovered.name.toLowerCase().includes('invisiblebox_compartment')
+          ) {
+            targetBox = hovered;
+          }
+        } else if (
+          hovered.name.toLowerCase().includes('invisiblebox_compartment')
+        ) {
+          targetBox = hovered;
+        }
+      }
+    }
+
+    if (!targetBox) {
+      const errorMessage =
+        itemType === 'Plank'
+          ? itemName === 'Vertical Plank'
+            ? 'Select an invisible box under the platform first.'
+            : 'Select a compartment invisible box first.'
+          : 'Select a compartment invisible box first.';
+      alert(errorMessage);
+      return;
+    }
+
+    // Handle different item types and make individual API calls for each item
+    const designId = window.location.pathname.split('/')[2];
+    const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
+
+    // Collect all API responses for the items
+    const apiResponses = [];
+
+    // Make API calls for each item
+    for (let i = 0; i < num; i++) {
+      try {
+        const itemData = {
+          type: itemType,
+          name: `${itemName} ${i + 1}`,
+          description:
+            selectedCabinetItem.description || `${itemName} description`,
+          design_id: designId,
+        };
+
+        const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
+        apiResponses.push(apiResponse);
+      } catch (error) {
+        console.error(
+          `Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`,
+          error,
+        );
+        apiResponses.push(null); // Add null for failed API calls
+      }
+    }
+
+    // Now add the 3D objects with API response data
+    if (['Door', 'Sliding Door'].includes(itemType)) {
+      await addDoorOnInvisibleBox(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
+    } else if (itemType === 'Drawer') {
+      await addDrawersOnInvisibleBox(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
+    } else if (itemType === 'Plank') {
+      if (itemName === 'Vertical Plank') {
+        await addVerticalPlanksInsideBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          apiResponses,
+        );
+      } else if (itemName === 'Horizontal Plank') {
+        await addHorizontalPlanksInsideBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          apiResponses,
+        );
+      }
+    }
+
+    setCreateCompanyPopup(false);
+    setSelectedCabinetItem(null);
+    setQuantityValue(1);
+  };
+
+  const onClose = () => {
+    setCreateCompanyPopup(false);
+    setSelectedCabinetItem(null);
+    setQuantityValue(1);
+  };
+
   const homeTools = [
     {
       option: 'Furniture',
       icon: catalog,
-      onClick: () => {
-        if (localStorage.getItem('cupboard') === 'true') {
-          setcatalogMenu(false);
-        } else {
-          setcatalogMenu((catalogMenu) => !catalogMenu);
-        }
-        setparts(false);
-        setmaterial(false);
-        setdesignTexture(false);
-      },
+      // onClick: () => {
+      //   if (localStorage.getItem('cupboard') === 'true') {
+      //     setcatalogMenu(false);
+      //   } else {
+      //     setcatalogMenu((catalogMenu) => !catalogMenu);
+      //   }
+      //   setparts(false);
+      //   setmaterial(false);
+      //   setdesignTexture(false);
+      // },
+      onClick: () => handleCabinetClick(),
       isActive: catalogMenu,
     },
     {
@@ -459,6 +726,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+    // {
+    //   option: 'Add Base Cabinets',
+    //   icon: texture,
+    //   onClick: () => {
+    //     if (threeDView && typeof threeDView.addBaseCabinetsUnderPlatform === 'function') {
+    //       threeDView.addBaseCabinetsUnderPlatform();
+    //     }
+    //   },
+    //   isActive: false,
+    // },
+    {
+      option: 'Add Platform',
+      icon: platform,
+      onClick: () => {
+        handleToAddPlatform();
+      },
+      isActive: designTexture,
+    },
   ];
 
   const viewTools = [
@@ -472,6 +757,200 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }
       },
       isActive: isExlightActive,
+    },
+  ];
+
+  const alwaysFields = [
+    // {
+    //   option: 'Vertical Planks',
+    //   icon: vertical_plank,
+    //   onClick: async () => {
+    //     const scene = threeDView.scene as THREE.Scene;
+    //     // Determine selected object via outline center; fallback to hovered
+    //     const outline = scene.children.find((o) =>
+    //       o.name.startsWith('outline-'),
+    //     ) as THREE.Object3D | undefined;
+    //     let targetBox: THREE.Mesh | null = null;
+    //     if (outline) {
+    //       const outlineCenter = outline.position.clone();
+    //       scene.traverse((o) => {
+    //         if (
+    //           o instanceof THREE.Mesh &&
+    //           o.name.toLowerCase().includes('invisiblebox')
+    //         ) {
+    //           const b = new THREE.Box3().setFromObject(o);
+    //           const c = new THREE.Vector3();
+    //           b.getCenter(c);
+    //           if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+    //         }
+    //       });
+    //     }
+    //     if (!targetBox) {
+    //       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+    //       if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
+    //         targetBox = hovered;
+    //     }
+    //     if (!targetBox) {
+    //       alert('Select an invisible box under the platform first.');
+    //       return;
+    //     }
+    //     const input = prompt(
+    //       'How many vertical planks to add inside this box?',
+    //     );
+    //     const num = parseInt((input || '').trim(), 10);
+    //     if (!Number.isFinite(num) || num <= 0) return;
+    //     addVerticalPlanksInsideBox(scene, targetBox, num);
+    //   },
+    //   isActive: false,
+    // },
+    // {
+    //   option: 'Horizontal Planks',
+    //   icon: horizontal_plank,
+    //   onClick: async () => {
+    //     const scene = threeDView.scene as THREE.Scene;
+    //     const outline = scene.children.find((o) =>
+    //       o.name.startsWith('outline-'),
+    //     ) as THREE.Object3D | undefined;
+    //     let targetBox: THREE.Mesh | null = null;
+    //     if (outline) {
+    //       const outlineCenter = outline.position.clone();
+    //       scene.traverse((o) => {
+    //         if (
+    //           o instanceof THREE.Mesh &&
+    //           o.name.toLowerCase().includes('invisiblebox_compartment')
+    //         ) {
+    //           const b = new THREE.Box3().setFromObject(o);
+    //           const c = new THREE.Vector3();
+    //           b.getCenter(c);
+    //           if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+    //         }
+    //       });
+    //     }
+    //     if (!targetBox) {
+    //       alert('Select a compartment invisible box first.');
+    //       return;
+    //     }
+    //     const input = prompt('How many horizontal planks (shelves)?');
+    //     const num = parseInt((input || '').trim(), 10);
+    //     if (!Number.isFinite(num) || num <= 0) return;
+    //     addHorizontalPlanksInsideBox(scene, targetBox, num);
+    //   },
+    //   isActive: false,
+    // },
+    // {
+    //   option: 'Cabinet',
+    //   icon: texture,
+    //   // onClick: () => handleCabinetClick(),
+    // },
+    {
+      option: 'Upper Cabinets',
+      icon: cabinet,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
+        let targetPlatform: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (
+              o instanceof THREE.Mesh &&
+              (o.name.startsWith('Counter_') ||
+                o.name === 'Back Counter' ||
+                o.name === 'Left Counter' ||
+                o.name === 'Right Counter')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
+            }
+          });
+        }
+        if (!targetPlatform) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (
+            hovered &&
+            (hovered.name.startsWith('Counter_') ||
+              hovered.name === 'Back Counter' ||
+              hovered.name === 'Left Counter' ||
+              hovered.name === 'Right Counter')
+          )
+            targetPlatform = hovered;
+        }
+        if (!targetPlatform) {
+          alert('Select a platform/counter first.');
+          return;
+        }
+        const input = prompt(
+          'How many upper cabinets to add above this platform?',
+        );
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Double Door Upper Cabinets',
+      icon: cabinet,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
+        let targetPlatform: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (
+              o instanceof THREE.Mesh &&
+              (o.name.startsWith('Counter_') ||
+                o.name === 'Back Counter' ||
+                o.name === 'Left Counter' ||
+                o.name === 'Right Counter')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
+            }
+          });
+        }
+        if (!targetPlatform) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (
+            hovered &&
+            (hovered.name.startsWith('Counter_') ||
+              hovered.name === 'Back Counter' ||
+              hovered.name === 'Left Counter' ||
+              hovered.name === 'Right Counter')
+          )
+            targetPlatform = hovered;
+        }
+        if (!targetPlatform) {
+          alert('Select a platform/counter first.');
+          return;
+        }
+        const input = prompt(
+          'How many double door upper cabinets to add above this platform?',
+        );
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addDoubleDoorUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      },
+      isActive: false,
+    },
+    {
+      option: 'Load Sink GLB',
+      icon: sink,
+      onClick: () => {
+        if (threeDView && typeof threeDView.loadSinkModel === 'function') {
+          threeDView.loadSinkModel('/sink.glb');
+        }
+      },
+      isActive: false,
     },
   ];
 
@@ -520,6 +999,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     fetchCatalogItems();
   }, []);
+
+  const iconMap = {
+    Drawer: drawer.src,
+    'Sliding Door': door.src,
+    Door: door.src,
+    'Horizontal Plank': horizontal_plank.src,
+    'Vertical Plank': vertical_plank.src,
+    Plank: vertical_plank.src,
+  };
 
   return (
     <>
@@ -588,6 +1076,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   )}
                 </div>
               )}
+
               {activeOption === 'View' && (
                 <div className={styles.activegroup_tools_group}>
                   {viewTools.map(
@@ -609,6 +1098,41 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       </div>
                     ),
                   )}
+                </div>
+              )}
+
+              {activeOption === 'Cabinet' && (
+                <div className={styles.activegroup_tools_group}>
+                  {alwaysFields.map(({ option, onClick, icon }) => (
+                    <div
+                      key={option}
+                      className={styles.activegroup_tools}
+                      onClick={onClick}
+                      title={option}
+                    >
+                      <img
+                        src={icon.src} // fallback if type not found
+                        alt={`${option} icon`}
+                      />
+                      <span>{option}</span>
+                    </div>
+                  ))}
+                  {cabinetItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={styles.activegroup_tools}
+                      onClick={() => handleCabinetItemSelect(item)}
+                      title={item.description}
+                    >
+                      <img
+                        src={
+                          iconMap[item.name] || iconMap[item.type] || drawer.src
+                        } // fallback if type not found
+                        alt={`${item.type} icon`}
+                      />
+                      <span>{item.name}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -790,7 +1314,59 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           </div>
         </div>
       )}
-
+      {createCompanyPopup && selectedCabinetItem && (
+        <div className={styles.createpopupOverlay}>
+          <div className={styles.createpopup}>
+            <img
+              src={createicon.src || '/placeholder.svg'}
+              className={styles.createicon}
+              alt="createicon"
+            />
+            <img
+              src={close.src || '/placeholder.svg'}
+              className={styles.createclose}
+              alt="close"
+              onClick={onClose}
+            />
+            <div className={styles.create_right_side}>
+              <h2>Add {selectedCabinetItem.name}</h2>
+              <p>Enter the number of {selectedCabinetItem.name} to add.</p>
+              <form
+                className={styles.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onAddItems();
+                }}
+              >
+                <div className={styles.createinputGroup}>
+                  <InputField
+                    mediumField={true}
+                    className={styles.inputField}
+                    borderColor="var(--primary-color-grey-2)"
+                    value={quantityValue}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setQuantityValue(e.target.value)
+                    }
+                    placeholder="Enter quantity"
+                    label={`Quantity for ${selectedCabinetItem.name}`}
+                  />
+                </div>
+              </form>
+            </div>
+            <div className={styles.createButtonGrop}>
+              <button className={styles.cancelcreateButton} onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                className={styles.createcontinueButton}
+                onClick={onAddItems}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Blank Cupboard Popup */}
       {blankCupboardPopup && (
         <div className={styles.popupOverlay}>

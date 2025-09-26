@@ -179,17 +179,20 @@
 }
 
 .activegroup_tools_container {
-  position: absolute;
-  z-index: 5;
-  /* Lower than catalog */
+  position: fixed;
+  /* instead of absolute */
+  top: 4rem;
+  /* replace margin-top */
+  left: 3.8rem;
+  /* replace margin-left */
   width: 9rem;
-  height: 90vh;
-  margin-left: 3.8rem;
-  margin-top: 4rem;
+  height: calc(100vh - 4rem);
   background: var(--primary-white);
   border: 0.063rem solid var(--border-color);
   border-radius: 0rem 0.7rem 0.7rem 0rem;
   overflow-y: auto;
+  z-index: 100;
+  /* lower than popup */
   transition: transform 0.3s ease-in-out;
 }
 
@@ -532,6 +535,7 @@
   border-radius: 0.5rem;
   cursor: pointer;
 }
+
 .scrollContainer {
   max-height: 8rem;
   overflow-y: auto;
@@ -545,10 +549,12 @@
 .scrollContainer::-webkit-scrollbar {
   width: 0.37rem;
 }
+
 .scrollContainer::-webkit-scrollbar-thumb {
   background-color: #ccc;
   border-radius: 0.18rem;
 }
+
 .catalogbox,
 .partsbox,
 .materialbox {
@@ -719,6 +725,7 @@
   border: 0.063rem solid var(--primary-color);
   font-weight: 500;
 }
+
 .alignDropdown {
   display: flex;
   flex-direction: column;
@@ -762,10 +769,126 @@
   color: var(--primary-color);
   font-weight: 2rem;
 }
+
 .successMessage {
   color: var(--primary-green);
   margin-top: 0.8rem;
   font-weight: 500;
   font-family: var(--font-family);
   text-align: center;
+}
+
+.createpopupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.createpopup {
+  background: white;
+  width: 20rem;
+  border-radius: 0.4rem;
+  position: relative;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  height: auto;
+  align-items: start;
+  padding: 0.4rem;
+}
+
+.createicon {
+  margin-top: 0.3rem;
+  margin-left: 0.7rem;
+  width: 2.7rem;
+  height: 2.7rem;
+}
+
+.createclose {
+  width: 1.1rem;
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  cursor: pointer;
+}
+
+.create_right_side {
+  display: flex;
+  flex-direction: column;
+  text-align: start;
+}
+
+.create_right_side h2 {
+  margin-top: 0.4rem;
+  margin-left: 1rem;
+  font-family: var(--font-family);
+  color: var(--primary-color);
+  font-weight: 545;
+  width: 12rem;
+  height: 1rem;
+  margin-bottom: 0rem;
+  font-size: 1rem;
+}
+
+.create_right_side p {
+  margin-left: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-gray);
+  font-size: 0.7rem;
+  font-family: var(--font-family);
+  margin-top: 0.4rem;
+}
+
+.createinputGroup {
+  margin-left: 1rem;
+}
+
+.createButtonGrop {
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  margin-top: 0rem;
+  display: flex;
+}
+
+.cancelcreateButton {
+  width: 23rem;
+  height: 2.2rem;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--primary-color);
+  border: 0.063rem solid var(--primary-color);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  letter-spacing: 0.03rem;
+
+  &:hover {
+    background-color: var(--primary-hover);
+    color: var(--primary-color);
+  }
+}
+
+.createcontinueButton {
+  width: 23rem;
+  height: 2.2rem;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 400;
+  background-color: var(--primary-color);
+  color: var(--primary-white);
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  letter-spacing: 0.03rem;
+
+  &:hover {
+    background-color: var(--primary-hover);
+    border: 0.063rem solid var(--primary-color);
+    color: var(--primary-color);
+  }
 }

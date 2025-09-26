@@ -73,6 +73,7 @@ const CatalogManager = () => {
 
   // ---------- DROPDOWN DATA ----------
   const catalogTypes = [
+    { value: 'Plank', label: 'Plank' },
     { value: 'Door', label: 'Door' },
     { value: 'Drawer', label: 'Drawer' },
     { value: 'Sliding Door', label: 'Sliding Door' },
@@ -97,6 +98,7 @@ const CatalogManager = () => {
     'Sliding Door Rail',
     'Sliding Door Roller',
     'Wire Basket',
+    'Connection',
   ];
 
   // ---------- UTILS ----------
