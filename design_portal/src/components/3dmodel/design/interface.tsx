@@ -43,6 +43,7 @@ export const itemType = {
   VERTICAL: 'VERTICAL',
   HORIZONTAL: 'HORIZONTAL',
   INVISIBLE_BOX: 'invisibleBox',
+  Drawer: 'Drawer',
 };
 
 export interface HelperToolsProps {

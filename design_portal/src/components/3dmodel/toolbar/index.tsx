@@ -476,10 +476,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         payload,
       );
       if (response.status === 200 || response.status === 201) {
-        console.log(
-          'Cabinet item added to design successfully:',
-          response.data,
-        );
         return response.data;
       }
     } catch (error) {
