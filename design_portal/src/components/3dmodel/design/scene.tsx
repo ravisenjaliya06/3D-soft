@@ -4,6 +4,8 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { initializeMoveHandler } from '../handler/items';
+import { store } from '../store';
+import { updateObject } from '../store/dataSlice';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 
@@ -950,7 +952,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1275,8 +1277,7 @@ export const addVerticalPlanksInsideBox = (
   const params = (boxMesh.geometry as THREE.BoxGeometry).parameters as any;
   const width = params.width as number; // X span of box
   const height = params.height as number; // Y span of box
-  const depth = params.depth as number; // Z span of 
-
+  const depth = params.depth as number; // Z span of
 
   const center = boxMesh.position.clone();
   const thickness = 0.018; // 18mm
@@ -1340,6 +1341,52 @@ export const addVerticalPlanksInsideBox = (
       // Add userData to help with dimension detection
       plank.userData.isVerticalPlank = true;
       plank.userData.isSideWall = isSideWallBox;
+      plank.userData.dimensions = {
+        width: width,
+        height: heightAboveSkirting,
+        depth: thickness,
+      };
+      // Attach API response per created plank (index-aligned) and selected item context
+      if (apiResponseDataArray && apiResponseDataArray[i - 1]) {
+        plank.userData.apiData = apiResponseDataArray[i - 1];
+        // Also expose a flat objectId on userData (separate from apiData)
+        const apiI = apiResponseDataArray[i - 1] as any;
+        plank.userData.objectId =
+          apiI?.id ??
+          apiI?.objectId ??
+          (apiI?.data && apiI.data.id) ??
+          undefined;
+        // Mirror api data to Redux store object if exists
+        try {
+          const objInStore = store
+            .getState()
+            .data.objects.find((o) => o.id === plank.userData.objectId);
+          if (objInStore) {
+            const rules = plank.userData?.apiData?.rules;
+            const dims = plank.userData?.dimensions;
+            store.dispatch(
+              updateObject({
+                ...objInStore,
+                apiData: plank.userData.apiData,
+                rules,
+                ...(dims && {
+                  width: dims.width,
+                  height: dims.height,
+                  depth: dims.depth,
+                }),
+                position: {
+                  x: (plank.position as any).x,
+                  y: (plank.position as any).y,
+                  z: (plank.position as any).z,
+                },
+              } as any),
+            );
+          }
+        } catch {}
+      }
+      if (selectedCabinetItem) {
+        plank.userData.cabinetItem = selectedCabinetItem;
+      }
       // Position plank above skirting
       plank.position.set(center.x, plankY, center.z + zLocal + 0.01);
       parent.add(plank);
@@ -1356,6 +1403,52 @@ export const addVerticalPlanksInsideBox = (
       // Add userData to help with dimension detection
       plank.userData.isVerticalPlank = true;
       plank.userData.isSideWall = isSideWallBox;
+      plank.userData.dimensions = {
+        width: thickness,
+        height: heightAboveSkirting,
+        depth: depth,
+      };
+      // Attach API response per created plank (index-aligned) and selected item context
+      if (apiResponseDataArray && apiResponseDataArray[i - 1]) {
+        plank.userData.apiData = apiResponseDataArray[i - 1];
+        // Also expose a flat objectId on userData (separate from apiData)
+        const apiI = apiResponseDataArray[i - 1] as any;
+        plank.userData.objectId =
+          apiI?.id ??
+          apiI?.objectId ??
+          (apiI?.data && apiI.data.id) ??
+          undefined;
+        // Mirror api data to Redux store object if exists
+        try {
+          const objInStore = store
+            .getState()
+            .data.objects.find((o) => o.id === plank.userData.objectId);
+          if (objInStore) {
+            const rules = plank.userData?.apiData?.rules;
+            const dims = plank.userData?.dimensions;
+            store.dispatch(
+              updateObject({
+                ...objInStore,
+                apiData: plank.userData.apiData,
+                rules,
+                ...(dims && {
+                  width: dims.width,
+                  height: dims.height,
+                  depth: dims.depth,
+                }),
+                position: {
+                  x: (plank.position as any).x,
+                  y: (plank.position as any).y,
+                  z: (plank.position as any).z,
+                },
+              } as any),
+            );
+          }
+        } catch {}
+      }
+      if (selectedCabinetItem) {
+        plank.userData.cabinetItem = selectedCabinetItem;
+      }
       // Position plank above skirting
       plank.position.set(center.x + xLocal, plankY, center.z + 0.01);
       parent.add(plank);
@@ -1406,6 +1499,13 @@ export const addVerticalPlanksInsideBox = (
         invisibleMat,
       );
       inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+      // Tag compartment type for downstream selection/placement logic
+      inv.userData.type = 'INVISIBLE_COMPARTMENT';
+      inv.userData.dimensions = {
+        width: width,
+        height: heightAboveSkirting,
+        depth: compDepth,
+      };
       // Position compartment above skirting to match plank positioning
       inv.position.set(center.x, plankY, center.z + compCenterZ + 0.01);
       parent.add(inv);
@@ -1419,6 +1519,13 @@ export const addVerticalPlanksInsideBox = (
         invisibleMat,
       );
       inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+      // Tag compartment type for downstream selection/placement logic
+      inv.userData.type = 'INVISIBLE_COMPARTMENT';
+      inv.userData.dimensions = {
+        width: compWidth,
+        height: heightAboveSkirting,
+        depth: depth,
+      };
       // Position compartment above skirting to match plank positioning
       inv.position.set(center.x + compCenterX, plankY, center.z + 0.01);
       parent.add(inv);
@@ -1471,6 +1578,49 @@ export const addHorizontalPlanksInsideBox = (
     );
     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
     shelf.userData.isHorizontalPlank = true;
+    shelf.userData.dimensions = {
+      width: width,
+      height: thickness,
+      depth: depth,
+    };
+    // Attach API response per created shelf (index-aligned) and selected item context
+    if (apiResponseDataArray && apiResponseDataArray[i - 1]) {
+      shelf.userData.apiData = apiResponseDataArray[i - 1];
+      // Also expose a flat objectId on userData (separate from apiData)
+      const apiI = apiResponseDataArray[i - 1] as any;
+      shelf.userData.objectId =
+        apiI?.id ?? apiI?.objectId ?? (apiI?.data && apiI.data.id) ?? undefined;
+      // Mirror api data to Redux store object if exists
+      try {
+        const objInStore = store
+          .getState()
+          .data.objects.find((o) => o.id === shelf.userData.objectId);
+        if (objInStore) {
+          const rules = shelf.userData?.apiData?.rules;
+          const dims = shelf.userData?.dimensions;
+          store.dispatch(
+            updateObject({
+              ...objInStore,
+              apiData: shelf.userData.apiData,
+              rules,
+              ...(dims && {
+                width: dims.width,
+                height: dims.height,
+                depth: dims.depth,
+              }),
+              position: {
+                x: (shelf.position as any).x,
+                y: (shelf.position as any).y,
+                z: (shelf.position as any).z,
+              },
+            } as any),
+          );
+        }
+      } catch {}
+    }
+    if (selectedCabinetItem) {
+      shelf.userData.cabinetItem = selectedCabinetItem;
+    }
 
     shelf.castShadow = true;
     shelf.receiveShadow = true;
@@ -1703,6 +1853,48 @@ export const addDoorOnInvisibleBox = async (
     ...(apiResponseDataArray[0] && { apiData: apiResponseDataArray[0] }),
     ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
   };
+  // Store dimensions for easy access on the group (face geometry dimensions)
+  (doorGroup as any).userData.dimensions = isSide
+    ? { width: 0.02, height: h - 0.01, depth: d - 0.01 }
+    : { width: w - 0.01, height: h - 0.01, depth: 0.02 };
+  // Also expose a flat objectId on userData (separate from apiData)
+  if (apiResponseDataArray && apiResponseDataArray[0]) {
+    const api0 = apiResponseDataArray[0] as any;
+    (doorGroup as any).userData.objectId =
+      api0?.id ?? api0?.objectId ?? (api0?.data && api0.data.id) ?? undefined;
+  }
+  // Dispatch apiData to Redux store object if available
+  try {
+    const objId = (doorGroup as any).userData.objectId;
+    if (objId) {
+      const objInStore = store
+        .getState()
+        .data.objects.find((o) => o.id === objId);
+      if (objInStore) {
+        const rules = (doorGroup as any).userData?.apiData?.rules;
+        const dims = (doorGroup as any).userData?.dimensions;
+        store.dispatch(
+          updateObject({
+            ...objInStore,
+            apiData: (doorGroup as any).userData.apiData,
+            rules,
+            ...(dims && {
+              width: dims.width,
+              height: dims.height,
+              depth: dims.depth,
+            }),
+            position: {
+              x: doorGroup.position.x,
+              y: doorGroup.position.y,
+              z: doorGroup.position.z,
+            },
+          } as any),
+        );
+      }
+    }
+  } catch (e) {
+    // no-op
+  }
   scene.add(doorGroup);
   doorGroup.attach(face);
   await ensureHandleLoaded();
@@ -1778,6 +1970,46 @@ export const addDrawersOnInvisibleBox = async (
       ...(apiResponseDataArray[i] && { apiData: apiResponseDataArray[i] }),
       ...(selectedCabinetItem && { cabinetItem: selectedCabinetItem }),
     };
+    // Face dimensions stored on group for convenience
+    (drawerGroup as any).userData.dimensions = isSide
+      ? { width: 0.02, height: eachH - 0.005, depth: d - 0.01 }
+      : { width: w - 0.01, height: eachH - 0.005, depth: 0.02 };
+    // Also expose a flat objectId on userData (separate from apiData)
+    if (apiResponseDataArray && apiResponseDataArray[i]) {
+      const apiI = apiResponseDataArray[i] as any;
+      (drawerGroup as any).userData.objectId =
+        apiI?.id ?? apiI?.objectId ?? (apiI?.data && apiI.data.id) ?? undefined;
+    }
+    // Dispatch apiData to Redux store object if available
+    try {
+      const objId = (drawerGroup as any).userData.objectId;
+      if (objId) {
+        const objInStore = store
+          .getState()
+          .data.objects.find((o) => o.id === objId);
+        if (objInStore) {
+          const rules = (drawerGroup as any).userData?.apiData?.rules;
+          const dims = (drawerGroup as any).userData?.dimensions;
+          store.dispatch(
+            updateObject({
+              ...objInStore,
+              apiData: (drawerGroup as any).userData.apiData,
+              rules,
+              ...(dims && {
+                width: dims.width,
+                height: dims.height,
+                depth: dims.depth,
+              }),
+              position: {
+                x: drawerGroup.position.x,
+                y: drawerGroup.position.y,
+                z: drawerGroup.position.z,
+              },
+            } as any),
+          );
+        }
+      }
+    } catch {}
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -3127,11 +3359,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 

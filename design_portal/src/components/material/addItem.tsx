@@ -2221,9 +2221,6 @@ const AddMaterialPopup: React.FC<Props> = ({
         // cup_diameter: formData.cupDiameter || 0,
         // anchor_holes_spacing: formData.anchorHolesSpacing || 0,
 
-
-
-
         ...(formData.height && { height: formData.height }),
         ...(formData.drawerType && { drawer_type: formData.drawerType }),
       },

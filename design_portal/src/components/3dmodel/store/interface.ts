@@ -39,6 +39,9 @@ export interface Object3D {
   minifixConnections?: MinifixConnection[];
   minifixHoles?: MinifixHole[];
   handlePosition?: string;
+  // Optional server/API enrichment
+  apiData?: [];
+  rules?: [];
 }
 
 // New interfaces for API requests
