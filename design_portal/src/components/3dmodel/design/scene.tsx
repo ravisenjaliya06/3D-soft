@@ -936,6 +936,10 @@ export const init3DDesign = async (
     toggleZoomMode,
     isZoomMode,
     toggle2DMode,
+    addSimpleCabinet: () => addSimpleCabinet(scene),
+    addSimpleTVUnit: () => addSimpleTVUnit(scene),
+    addSimpleTable: () => addSimpleTable(scene),
+    addComputerDesk: () => addComputerDesk(scene),
     // addBaseCabinetsUnderPlatform,
     // addFullKitchenSetup,
     loadSinkModel,
@@ -950,7 +954,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => {});
+  window.removeEventListener('resize', () => { });
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1087,6 +1091,516 @@ export const addLShapeKitchenPlatform = (
   lKitchenGroup.name = 'LShapeKitchenPlatform';
   lKitchenGroup.add(backCounter, leftCounter);
   scene.add(lKitchenGroup);
+};
+
+export const addSimpleCabinet = (scene: THREE.Scene) => {
+  // Standard cabinet dimensions in meters
+  const width = 0.6; // 600mm
+  const height = 0.7; // 700mm
+  const depth = 0.4; // 400mm
+  const thickness = 0.018; // 18mm board
+
+  // Base Y (floor)
+  let floorY = 0;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
+  if (cWallGroup) {
+    const floorObj = cWallGroup.children.find(
+      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+    ) as THREE.Mesh | undefined;
+    if (floorObj) floorY = floorObj.position.y;
+  }
+
+  // Find Center Wall to place cabinet against
+  const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  let placeX = 0;
+  let placeZ = depth / 2 + 0.02; // fallback slightly away from origin
+  if (centerWall) {
+    const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;
+    const wallDepth = params.depth as number;
+    // Cabinet center Z so that its back sits just in front of the wall
+    placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
+  }
+
+  // Texture
+  const textureLoader = new THREE.TextureLoader();
+  const woodTex = textureLoader.load('/textures/light_wood.jpg');
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+  woodTex.repeat.set(2, 1);
+
+  const plankMat = new THREE.MeshStandardMaterial({
+    map: woodTex,
+    roughness: 0.6,
+    metalness: 0.0,
+  });
+
+  const group = new THREE.Group();
+  group.name = 'SimpleCabinet';
+  // Position group so bottom sits on floor
+  group.position.set(placeX, floorY + height / 2, placeZ);
+
+  // Left side panel (thickness x height x depth)
+  const left = new THREE.Mesh(
+    new THREE.BoxGeometry(thickness, height, depth),
+    plankMat,
+  );
+  left.castShadow = true;
+  left.receiveShadow = true;
+  left.name = 'Cabinet_Left';
+  left.position.set(-(width / 2 - thickness / 2), 0, 0);
+
+  // Right side panel
+  const right = new THREE.Mesh(
+    new THREE.BoxGeometry(thickness, height, depth),
+    plankMat,
+  );
+  right.castShadow = true;
+  right.receiveShadow = true;
+  right.name = 'Cabinet_Right';
+  right.position.set(width / 2 - thickness / 2, 0, 0);
+
+  // Bottom panel (width - 2t x thickness x depth)
+  const bottom = new THREE.Mesh(
+    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
+    plankMat,
+  );
+  bottom.castShadow = true;
+  bottom.receiveShadow = true;
+  bottom.name = 'Cabinet_Bottom';
+  bottom.position.set(0, -(height / 2 - thickness / 2), 0);
+
+  // Top panel
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
+    plankMat,
+  );
+  top.castShadow = true;
+  top.receiveShadow = true;
+  top.name = 'Cabinet_Top';
+  top.position.set(0, height / 2 - thickness / 2, 0);
+
+  // Back panel (width - 2t x height - 2t x thickness)
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      width - thickness * 2,
+      height - thickness * 2,
+      thickness,
+    ),
+    plankMat,
+  );
+  back.castShadow = true;
+  back.receiveShadow = true;
+  back.name = 'Cabinet_Back';
+  back.position.set(0, 0, -(depth / 2 - thickness / 2));
+
+  group.add(left, right, bottom, top, back);
+  scene.add(group);
+};
+
+export const addSimpleTVUnit = (scene: THREE.Scene) => {
+  // Dimensions (meters) approximating reference image
+  const width = 1.6; // base span 1600mm
+  const baseHeight = 0.26; // base box height
+  const depth = 0.35; // 350mm
+  const thickness = 0.018; // 18mm boards
+  const gap = 0.04; // gap between base and vertical/shelves
+  const panelHeight = 1.0; // right vertical panel height
+  const topShelfDepth = 0.25;
+  const smallShelfDepth = 0.25;
+  const smallShelfWidth = 0.35;
+  const numCubbies = 4;
+
+  // Base Y (floor)
+  let floorY = 0;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
+  if (cWallGroup) {
+    const floorObj = cWallGroup.children.find(
+      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+    ) as THREE.Mesh | undefined;
+    if (floorObj) floorY = floorObj.position.y;
+  }
+
+  // Place against Center Wall if available
+  const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  let placeX = 0;
+  let placeZ = depth / 2 + 0.02;
+  if (centerWall) {
+    const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;
+    const wallDepth = params.depth as number;
+    placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
+  }
+
+  // Texture (reuse light wood)
+  const textureLoader = new THREE.TextureLoader();
+  const darkTex = textureLoader.load('/textures/wood_6.jpg');
+  darkTex.wrapS = darkTex.wrapT = THREE.RepeatWrapping;
+  darkTex.repeat.set(3, 1);
+  const whiteTex = textureLoader.load('/textures/off_white.jpg');
+  whiteTex.wrapS = whiteTex.wrapT = THREE.RepeatWrapping;
+  whiteTex.repeat.set(1, 1);
+  const darkMat = new THREE.MeshStandardMaterial({
+    map: darkTex,
+    roughness: 0.6,
+    metalness: 0.0,
+  });
+  const whiteMat = new THREE.MeshStandardMaterial({
+    map: whiteTex,
+    roughness: 0.5,
+    metalness: 0.0,
+  });
+
+  const group = new THREE.Group();
+  group.name = 'SimpleTVUnit';
+  group.position.set(placeX, floorY + baseHeight / 2, placeZ);
+
+  // ===== Bottom unit: five-plank dark carcass with white top and 4 cubbies =====
+  const bLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(thickness, baseHeight, depth),
+    darkMat,
+  );
+  bLeft.castShadow = true;
+  bLeft.receiveShadow = true;
+  bLeft.name = 'TVUnit_Base_Left';
+  bLeft.position.set(-(width / 2 - thickness / 2), 0, 0);
+
+  const bRight = new THREE.Mesh(
+    new THREE.BoxGeometry(thickness, baseHeight, depth),
+    darkMat,
+  );
+  bRight.castShadow = true;
+  bRight.receiveShadow = true;
+  bRight.name = 'TVUnit_Base_Right';
+  bRight.position.set(width / 2 - thickness / 2, 0, 0);
+
+  const bBottom = new THREE.Mesh(
+    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
+    darkMat,
+  );
+  bBottom.castShadow = true;
+  bBottom.receiveShadow = true;
+  bBottom.name = 'TVUnit_Base_Bottom';
+  bBottom.position.set(0, -(baseHeight / 2 - thickness / 2), 0);
+
+  // White top board on base
+  const bTop = new THREE.Mesh(
+    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
+    whiteMat,
+  );
+  bTop.castShadow = true;
+  bTop.receiveShadow = true;
+  bTop.name = 'TVUnit_Base_Top';
+  bTop.position.set(0, baseHeight / 2 - thickness / 2, 0);
+
+  // Internal dark dividers to create cubbies
+  const cubbyWidth = (width - thickness * 2) / numCubbies;
+  const dividers: THREE.Mesh[] = [];
+  for (let i = 1; i < numCubbies; i++) {
+    const x = -width / 2 + thickness + cubbyWidth * i;
+    const div = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        thickness,
+        baseHeight - thickness * 2,
+        depth - thickness * 2,
+      ),
+      darkMat,
+    );
+    div.castShadow = true;
+    div.receiveShadow = true;
+    div.name = `TVUnit_Base_Divider_${i}`;
+    div.position.set(x, 0, 0);
+    dividers.push(div);
+  }
+
+  group.add(bLeft, bRight, bBottom, bTop, ...dividers);
+
+  // ===== Upper C-type frame above the bottom unit =====
+  // Right vertical dark panel (full depth)
+  const vPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(thickness, panelHeight, depth),
+    darkMat,
+  );
+  vPanel.castShadow = true;
+  vPanel.receiveShadow = true;
+  vPanel.name = 'TVUnit_RightPanel';
+  vPanel.position.set(
+    width / 2 - thickness / 2,
+    baseHeight / 2 + gap + panelHeight / 2,
+    0,
+  );
+
+  // Long white top shelf spanning across
+  const tShelf = new THREE.Mesh(
+    new THREE.BoxGeometry(width, thickness, topShelfDepth),
+    whiteMat,
+  );
+  tShelf.castShadow = true;
+  tShelf.receiveShadow = true;
+  tShelf.name = 'TVUnit_TopShelf';
+  tShelf.position.set(
+    0,
+    baseHeight / 2 + gap + panelHeight - thickness / 2,
+    depth / 2 - topShelfDepth / 2,
+  );
+
+  // Small white shelves on the right panel
+  const smallShelvesY = [0.2, 0.45, 0.7]; // normalized along panel height
+  const sShelves: THREE.Mesh[] = [];
+  smallShelvesY.forEach((ratio, idx) => {
+    const y = baseHeight / 2 + gap + ratio * panelHeight;
+    const s = new THREE.Mesh(
+      new THREE.BoxGeometry(smallShelfWidth, thickness, smallShelfDepth),
+      whiteMat,
+    );
+    s.castShadow = true;
+    s.receiveShadow = true;
+    s.name = `TVUnit_Shelf_${idx}`;
+    // mount to the left of the right panel
+    s.position.set(
+      width / 2 - thickness - smallShelfWidth / 2,
+      y,
+      depth / 2 - smallShelfDepth / 2,
+    );
+    sShelves.push(s);
+  });
+
+  group.add(vPanel, tShelf, ...sShelves);
+  scene.add(group);
+};
+
+export const addSimpleTable = (scene: THREE.Scene) => {
+  // Simple rectangular dining/working table
+  const topWidth = 1.2; // 1200mm
+  const topDepth = 0.7; // 700mm
+  const topThickness = 0.03; // 30mm slab
+  const legThickness = 0.06; // 60mm square legs
+  const height = 0.75; // 750mm table height
+
+  // Base Y from floor
+  let floorY = 0;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
+  if (cWallGroup) {
+    const floorObj = cWallGroup.children.find(
+      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+    ) as THREE.Mesh | undefined;
+    if (floorObj) floorY = floorObj.position.y;
+  }
+
+  // Texture/material
+  const textureLoader = new THREE.TextureLoader();
+  const woodTex = textureLoader.load('/textures/light_wood.jpg');
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+  woodTex.repeat.set(2, 1);
+  const woodMat = new THREE.MeshStandardMaterial({
+    map: woodTex,
+    roughness: 0.55,
+    metalness: 0.0,
+  });
+
+  const group = new THREE.Group();
+  group.name = 'SimpleTable';
+
+  // Place roughly center of room, a bit in front of back wall
+  const backWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  let centerZ = 0.8;
+  if (backWall) {
+    const params = (backWall.geometry as THREE.BoxGeometry).parameters as any;
+    centerZ =
+      backWall.position.z + (params.depth as number) / 2 + topDepth / 2 + 0.6;
+  }
+  group.position.set(0, floorY, centerZ);
+
+  // Table top
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(topWidth, topThickness, topDepth),
+    woodMat,
+  );
+  top.castShadow = true;
+  top.receiveShadow = true;
+  top.name = 'Table_Top';
+  top.position.set(0, height - topThickness / 2, 0);
+
+  // Legs positions
+  const halfW = topWidth / 2 - legThickness / 2 - 0.02;
+  const halfD = topDepth / 2 - legThickness / 2 - 0.02;
+  const legPositions = [
+    [-halfW, 0, -halfD],
+    [halfW, 0, -halfD],
+    [-halfW, 0, halfD],
+    [halfW, 0, halfD],
+  ];
+  const legs: THREE.Mesh[] = [];
+  legPositions.forEach((p, i) => {
+    const leg = new THREE.Mesh(
+      new THREE.BoxGeometry(legThickness, height - topThickness, legThickness),
+      woodMat,
+    );
+    leg.castShadow = true;
+    leg.receiveShadow = true;
+    leg.name = `Table_Leg_${i}`;
+    leg.position.set(p[0], (height - topThickness) / 2, p[2]);
+    legs.push(leg);
+  });
+
+  group.add(top, ...legs);
+  scene.add(group);
+};
+
+export const addComputerDesk = (scene: THREE.Scene) => {
+  // Dimensions approximating the provided desk image (meters)
+  const deskWidth = 1.4; // overall width
+  const deskDepth = 0.55; // main top depth
+  const deskHeight = 0.74; // top height
+  const plank = 0.018; // 18mm
+  const returnWidth = 0.5; // right return / storage width
+
+  // Floor reference
+  let floorY = 0;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
+  if (cWallGroup) {
+    const floorObj = cWallGroup.children.find(
+      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+    ) as THREE.Mesh | undefined;
+    if (floorObj) floorY = floorObj.position.y;
+  }
+
+  // Textures/materials: walnut/dark for carcass, light/white for fronts
+  const tl = new THREE.TextureLoader();
+  const carcTex = tl.load('/textures/wood_6.jpg');
+  carcTex.wrapS = carcTex.wrapT = THREE.RepeatWrapping;
+  carcTex.repeat.set(2, 1);
+  const frontTex = tl.load('/textures/off_white.jpg');
+  frontTex.wrapS = frontTex.wrapT = THREE.RepeatWrapping;
+  const carcMat = new THREE.MeshStandardMaterial({
+    map: carcTex,
+    roughness: 0.6,
+  });
+  const frontMat = new THREE.MeshStandardMaterial({
+    map: frontTex,
+    roughness: 0.45,
+  });
+
+  const group = new THREE.Group();
+  group.name = 'ComputerDesk';
+
+  // Place near back wall
+  const backWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+  let centerZ = 0.7;
+  if (backWall) {
+    const p = (backWall.geometry as THREE.BoxGeometry).parameters as any;
+    centerZ =
+      backWall.position.z + (p.depth as number) / 2 + deskDepth / 2 + 0.15;
+  }
+  group.position.set(0, floorY, centerZ);
+
+  // Main desktop slab
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(deskWidth, plank * 2, deskDepth),
+    carcMat,
+  );
+  top.castShadow = true;
+  top.receiveShadow = true;
+  top.name = 'Desk_Top';
+  top.position.set(0, deskHeight - plank, 0);
+
+  // Left leg panel (open knee space)
+  const leftLeg = new THREE.Mesh(
+    new THREE.BoxGeometry(plank, deskHeight, deskDepth),
+    carcMat,
+  );
+  leftLeg.position.set(-deskWidth / 2 + plank / 2, deskHeight / 2, 0);
+  leftLeg.name = 'Desk_LeftLeg';
+  leftLeg.castShadow = true;
+  leftLeg.receiveShadow = true;
+
+  // Right storage tower base footprint
+  const towerOuterW = returnWidth;
+  const towerOuterD = deskDepth;
+  const towerOuterH = deskHeight + 0.9; // taller than top
+
+  const towerLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(plank, towerOuterH, towerOuterD),
+    carcMat,
+  );
+  const towerRight = new THREE.Mesh(
+    new THREE.BoxGeometry(plank, towerOuterH, towerOuterD),
+    carcMat,
+  );
+  const towerBack = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      towerOuterW - plank * 2,
+      towerOuterH - plank * 2,
+      plank,
+    ),
+    carcMat,
+  );
+  const towerBottom = new THREE.Mesh(
+    new THREE.BoxGeometry(towerOuterW - plank * 2, plank, towerOuterD),
+    carcMat,
+  );
+  const towerTop = new THREE.Mesh(
+    new THREE.BoxGeometry(towerOuterW - plank * 2, plank, towerOuterD),
+    carcMat,
+  );
+  towerLeft.position.set(
+    deskWidth / 2 - towerOuterW + plank / 2,
+    towerOuterH / 2,
+    0,
+  );
+  towerRight.position.set(deskWidth / 2 - plank / 2, towerOuterH / 2, 0);
+  towerBack.position.set(
+    deskWidth / 2 - towerOuterW / 2,
+    towerOuterH / 2,
+    -towerOuterD / 2 + plank / 2,
+  );
+  towerBottom.position.set(deskWidth / 2 - towerOuterW / 2, plank / 2, 0);
+  towerTop.position.set(
+    deskWidth / 2 - towerOuterW / 2,
+    towerOuterH - plank / 2,
+    0,
+  );
+
+  // Open shelf under top (binders area)
+  const shelfClearH = 0.3;
+  const midShelf = new THREE.Mesh(
+    new THREE.BoxGeometry(towerOuterW - plank * 2, plank, towerOuterD),
+    carcMat,
+  );
+  midShelf.position.set(
+    deskWidth / 2 - towerOuterW / 2,
+    deskHeight + shelfClearH - plank / 2,
+    0,
+  );
+
+  // Open tower lower bay (drawers removed) — keep space empty for simplicity
+
+  // Tall door removed — keep the upper tower bay open
+
+  // Top over tower (continuous desktop look)
+  const retTop = new THREE.Mesh(
+    new THREE.BoxGeometry(towerOuterW, plank * 2, deskDepth),
+    carcMat,
+  );
+  retTop.position.set(deskWidth / 2 - towerOuterW / 2, deskHeight - plank, 0);
+
+  group.add(
+    top,
+    leftLeg,
+    towerLeft,
+    towerRight,
+    towerBack,
+    towerBottom,
+    towerTop,
+    midShelf,
+    retTop,
+  );
+  scene.add(group);
 };
 
 export const addPlatformOnWall = (
@@ -3126,11 +3640,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-          axis: 'x' | 'y' | 'z';
-          side: 'min' | 'max';
-          ref: number;
-          targetUuid: string;
-        }
+        axis: 'x' | 'y' | 'z';
+        side: 'min' | 'max';
+        ref: number;
+        targetUuid: string;
+      }
       | undefined;
     if (!meta) return;
 

@@ -68,7 +68,6 @@ const AddMaterialPopup: React.FC<Props> = ({
     'Wire Basket',
   ];
 
-  // Common pricing step for all material types
   const pricingStep: PopupStep = {
     title: 'Pricing Details',
     fields: [

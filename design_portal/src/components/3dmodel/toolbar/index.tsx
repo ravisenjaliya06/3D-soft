@@ -269,9 +269,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-      (hovered.name === 'Center Wall' ||
-        hovered.name === 'Left Wall' ||
-        hovered.name === 'Right Wall')
+        (hovered.name === 'Center Wall' ||
+          hovered.name === 'Left Wall' ||
+          hovered.name === 'Right Wall')
         ? hovered
         : null);
     if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
@@ -744,6 +744,46 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+    {
+      option: 'Simple Cabinet',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleCabinet === 'function') {
+          threeDView.addSimpleCabinet();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'TV Unit',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleTVUnit === 'function') {
+          threeDView.addSimpleTVUnit();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Table',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleTable === 'function') {
+          threeDView.addSimpleTable();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Computer Desk',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addComputerDesk === 'function') {
+          threeDView.addComputerDesk();
+        }
+      },
+      isActive: false,
+    },
   ];
 
   const viewTools = [
@@ -994,7 +1034,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => {};
+      const getMinifixData = async () => { };
     };
 
     fetchCatalogItems();
@@ -1059,9 +1099,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1083,9 +1122,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1217,16 +1255,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>
