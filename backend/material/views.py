@@ -77,6 +77,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
 class CatalogViewSet(viewsets.ModelViewSet):
     serializer_class = CatalogSerializer
+    lookup_field = "id"
 
     def get_queryset(self: "CatalogViewSet") -> QuerySet[Catalog]:
         catalog_type = self.request.query_params.get("type")
@@ -89,18 +90,6 @@ class CatalogViewSet(viewsets.ModelViewSet):
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)
-
-    def update(
-        self: "CatalogViewSet", instance: Catalog, validated_data: dict
-    ) -> Catalog:
-        material_id = validated_data.get("material_id")
-        if material_id:
-            material = Material.objects.get(
-                id=material_id, organization=self.request.user.selected_organization
-            )
-            instance.material = material
-            instance.save()
-        return instance
 
 
 class CatalogRulePartsListView(generics.ListAPIView):

@@ -790,9 +790,13 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
 
 
 class CatalogRuleSerializer(serializers.ModelSerializer):
+    rule_parts = CatalogRulePartSerializer(
+        many=True, read_only=True, source="catalog_rule_parts"
+    )
+
     class Meta:
         model = CatalogRules
-        fields = ["id", "name"]
+        fields = ["id", "name", "rule_parts"]
 
 
 class CatalogSerializer(serializers.ModelSerializer):
@@ -800,7 +804,19 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Catalog
-        fields = ["id", "type", "name", "description", "design", "catalog_rule"]
+        fields = [
+            "id",
+            "type",
+            "name",
+            "description",
+            "design",
+            "catalog_rule",
+            "height",
+            "width",
+            "length",
+            "depth",
+            "position",
+        ]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
@@ -828,6 +844,55 @@ class CatalogSerializer(serializers.ModelSerializer):
                     )
 
         return new_catalog
+
+    def update(
+        self: "CatalogSerializer", instance: Catalog, validated_data: Dict[str, str]
+    ) -> Catalog:
+        """
+        Update Catalog + nested CatalogRules + nested CatalogRuleParts.
+        Name is read-only (handled by validate_name above).
+        """
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
+
+        for field, value in validated_data.items():
+            if field != "name":
+                setattr(instance, field, value)
+        instance.save()
+
+        for rule_data in catalog_rules_data:
+            rule_id = rule_data.get("id")
+            if not rule_id:
+                continue
+
+            rule = instance.catalog_rule.get(pk=rule_id)
+
+            rule.name = rule.name
+            rule.save()
+
+            parts_data = rule_data.get("rule_parts", [])
+            for part_data in parts_data:
+                part_id = part_data.get("id")
+                if not part_id:
+                    continue
+                part = rule.catalog_rule_parts.get(pk=part_id)
+
+                for field in [
+                    "height",
+                    "width",
+                    "length",
+                    "depth",
+                    "position",
+                    "handle_position",
+                ]:
+                    if field in part_data:
+                        setattr(part, field, part_data[field])
+
+                if "material" in part_data and part_data["material"]:
+                    part.material_id = part_data["material"]["id"]
+
+                part.save()
+
+        return instance
 
 
 class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
