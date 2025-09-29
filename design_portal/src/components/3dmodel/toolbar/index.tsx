@@ -69,7 +69,7 @@ import {
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { store } from '../store';
-import { addObjectsThunk, togglAlignment } from '../store/dataSlice';
+import { addObjects, addObjectsThunk, togglAlignment } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -461,18 +461,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       name: string;
       description: string;
       design_id: string;
+      width?: number;
+      height?: number;
+      depth?: number;
+      position?: string; // backend expects string
     },
   ) => {
     const payload = {
       type: itemData.type,
       name: itemData.name,
       description: itemData.description,
-      design_id: itemData.design_id,
+      design: itemData.design_id,
+      // Optional spatial metadata for backend consumption
+      width: itemData.width,
+      height: itemData.height,
+      depth: itemData.depth,
+      position: itemData.position,
     };
     try {
       const response = await commonService.post(
-        `material/catalog/${catalogId}`,
-        'design',
+        `material/catalog`,
+        '',
         payload,
       );
       if (response.status === 200 || response.status === 201) {
@@ -589,6 +598,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const apiResponses = [];
 
     // Make API calls for each item
+    // Compute target box dimensions and center position once
+    const bbox = new THREE.Box3().setFromObject(targetBox);
+    const bboxSize = new THREE.Vector3();
+    const bboxCenter = new THREE.Vector3();
+    bbox.getSize(bboxSize);
+    bbox.getCenter(bboxCenter);
     for (let i = 0; i < num; i++) {
       try {
         const itemData = {
@@ -597,10 +612,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           description:
             selectedCabinetItem.description || `${itemName} description`,
           design_id: designId,
+          width: bboxSize.x,
+          height: bboxSize.y,
+          depth: bboxSize.z,
+          position: { x: bboxCenter.x, y: bboxCenter.y, z: bboxCenter.z },
         };
 
         const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
+        console.log(apiResponse, "apiResponse")
         apiResponses.push(apiResponse);
+        dispatch(addObjects(apiResponses));
       } catch (error) {
         console.error(
           `Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`,

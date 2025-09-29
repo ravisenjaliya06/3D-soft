@@ -9,6 +9,7 @@ import { RootState } from '../store';
 import { Object3D } from '../store/interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
+import * as THREE from 'three';
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
@@ -26,6 +27,7 @@ const Sidebar: React.FC = () => {
   const [rotationY, setRotationY] = useState(0);
   const [rotationZ, setRotationZ] = useState(0);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('#ffffff');
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -461,11 +463,114 @@ const Sidebar: React.FC = () => {
   };
 
   const handleHandlePositionChange = (position: string) => {
-    console.warn('handleHandlePositionChange', position);
+    if (!scene) return;
+    // Determine selected door object id (prefer child selection)
+    const targetId = selectedChildObjectId || selectedObjectId;
+    if (!targetId) return;
+
+    // Find the door mesh in the scene by objectId
+    let doorMesh: any = null;
+    scene.traverse((node: any) => {
+      if (!doorMesh && node && node.userData && node.userData.objectId === targetId) {
+        doorMesh = node;
+      }
+    });
+    if (!doorMesh) return;
+
+    // Try to locate a child that represents the handle
+    let handleMesh: any = null;
+    doorMesh.traverse((child: any) => {
+      const name = (child?.name || '').toLowerCase();
+      if (!handleMesh && (name.includes('handle') || name.includes('knob'))) {
+        handleMesh = child;
+      }
+    });
+    // If no explicit child found, bail out
+    if (!handleMesh) return;
+
+    // Compute door world bounding box
+    const box = new THREE.Box3().setFromObject(doorMesh);
+    const min = box.min.clone();
+    const max = box.max.clone();
+    const mid = new THREE.Vector3(
+      (min.x + max.x) / 2,
+      (min.y + max.y) / 2,
+      (min.z + max.z) / 2,
+    );
+
+    const pickX = (label: string) => {
+      if (label.endsWith('Left')) return min.x;
+      if (label.endsWith('Right')) return max.x;
+      return mid.x; // Center
+    };
+    const pickY = (label: string) => {
+      if (label.startsWith('Top')) return max.y;
+      if (label.startsWith('Bottom')) return min.y;
+      return mid.y; // Middle
+    };
+    const pickZ = () => max.z; // front face
+
+    const label = position as string;
+    const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
+    // Nudge the handle a bit outwards so it is not z-fighting with the door surface
+    const outward = new THREE.Vector3(0, 0, 0.01);
+    targetWorld.add(outward);
+
+    // Convert to door local space and set handle's local position
+    const targetLocal = doorMesh.worldToLocal(targetWorld.clone());
+    handleMesh.position.copy(targetLocal);
+    if (handleMesh.updateMatrixWorld) handleMesh.updateMatrixWorld(true);
   };
 
   const handleMaterialChange = () => {
     setShowMaterialPopup(true);
+  };
+
+  const applyColorToSelected = () => {
+    if (!scene) return;
+    const targetId = selectedChildObjectId || selectedObjectId;
+    if (!targetId) return;
+
+    const color = new THREE.Color(selectedColor);
+
+    scene.traverse((child: any) => {
+      if (child && child.userData && child.userData.objectId === targetId) {
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((m: any) => {
+            if (m && typeof m.clone === 'function') {
+              const cloned = m.clone();
+              if (cloned.map) cloned.map = null;
+              if (cloned.color) cloned.color.set(color);
+              return cloned;
+            }
+            return new THREE.MeshPhongMaterial({ color });
+          });
+        } else if (child.material) {
+          if (child.material.color) {
+            if (child.material.map) child.material.map = null;
+            child.material.color.set(color);
+            child.material.needsUpdate = true;
+          } else {
+            child.material = new THREE.MeshPhongMaterial({ color });
+          }
+        } else {
+          child.material = new THREE.MeshPhongMaterial({ color });
+        }
+      }
+    });
+
+    const obj = selectedChildObjectId
+      ? objects.find((o) => o.id === selectedChildObjectId)
+      : objects.find((o) => o.id === selectedObjectId!);
+    if (obj) {
+      updateObjectInScene(
+        obj.id,
+        { material: { type: 'COLOR', value: selectedColor } },
+        scene,
+        dispatch,
+        obj as any,
+      );
+    }
   };
 
   return (
@@ -705,6 +810,23 @@ const Sidebar: React.FC = () => {
                       disabled={isQuickHideActive}
                     ></button>
                   </div>
+                  <div className={style.field_group1}>
+                    <p>Color</p>
+                    <input
+                      type="color"
+                      value={selectedColor}
+                      onChange={(e) => setSelectedColor(e.target.value)}
+                      disabled={isQuickHideActive}
+                      className={style.color_input}
+                    />
+                    <button
+                      onClick={applyColorToSelected}
+                      className={style.btn_incrdec}
+                      disabled={isQuickHideActive}
+                    >
+                      Apply
+                    </button>
+                  </div>
                   {/* <div className={style.field_group1}>
                     <p>Edge Banding:</p>
                     <label className={style.toggleSwitch}>
@@ -841,6 +963,7 @@ const Sidebar: React.FC = () => {
             console.log('Selected materials:', selectedMaterials);
             setShowMaterialPopup(false);
           }}
+          rules={(selectedObject as any)?.catalog_rule || []}
         />
       )}
     </div>
