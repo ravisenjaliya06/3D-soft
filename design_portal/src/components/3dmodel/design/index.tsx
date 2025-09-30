@@ -953,7 +953,18 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     design3D.renderer.render(design3D.scene, design3D.camera);
   };
 
-  const SELECTABLE_KEYS = ['PLANK', 'DOOR', 'DRAWER', 'INVISIBLEBOX', 'WALL', 'CABINET', 'COMPUTER', 'TABLE', 'TVUNIT'];
+  const SELECTABLE_KEYS = [
+    'PLANK',
+    'DOOR',
+    'DRAWER',
+    'INVISIBLEBOX',
+    'WALL',
+    'CABINET',
+    'COMPUTER',
+    'TABLE',
+    'TVUNIT',
+    'UPPERCABINET',
+  ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
     SELECTABLE_KEYS.some((key) => obj.name.toUpperCase().includes(key));
@@ -1012,7 +1023,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         } else if (
           hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
           (hoveredMesh as THREE.Mesh)?.userData.objectId ===
-          selectedInvisibleBoxId
+            selectedInvisibleBoxId
         ) {
           hoveredMesh = hitsSelectable[2].object as THREE.Mesh;
         }
@@ -1376,9 +1387,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
-  const handleLock = () => { };
+  const handleLock = () => {};
 
-  const handleUnlock = () => { };
+  const handleUnlock = () => {};
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1413,7 +1424,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => { }}
+          onComplete={() => {}}
         />
       )}
     </div>
