@@ -10,6 +10,7 @@ import { RootState } from '../store';
 import { Object3D } from '../store/interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
+import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg'
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
@@ -867,14 +868,6 @@ const Sidebar: React.FC = () => {
                   </div>
 
                   <div className={style.field_group1}>
-                    <p>Change Material</p>
-                    <button
-                      onClick={handleMaterialChange}
-                      className={style.btn_matirialchange}
-                      disabled={isQuickHideActive}
-                    ></button>
-                  </div>
-                  <div className={style.field_group1}>
                     <p>Color</p>
                     <input
                       type="color"
@@ -932,10 +925,19 @@ const Sidebar: React.FC = () => {
                       disabled={isQuickHideActive}
                     />
                   </div>
+                  <div className={style.field_group1}>
+                    {/* <p>Change Material</p> */}
+                    <button
+                      onClick={handleMaterialChange}
+                      className={style.btn_matirialchange}
+                      disabled={isQuickHideActive}
+                    >Change Material</button>
+                    <img src={mouse_svg.src} alt="" />
+                  </div>
                 </div>
               )}
 
-              {!isQuickHideActive && isSettingOpen && isBasicOpen && (
+              {!isQuickHideActive && isSettingOpen && isBasicOpen && itemType.DOOR && (
                 <div className={style.field_group_div}>
                   {/* Door Position */}
                   <div className={style.field_group}>

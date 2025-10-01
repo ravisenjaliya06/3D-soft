@@ -62,6 +62,9 @@ import {
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
   addVerticalPlanksToBox,
+  addSimpleCabinet,
+  addSimpleTVUnit,
+  addSimpleTable,
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -274,9 +277,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-      (hovered.name === 'Center Wall' ||
-        hovered.name === 'Left Wall' ||
-        hovered.name === 'Right Wall')
+        (hovered.name === 'Center Wall' ||
+          hovered.name === 'Left Wall' ||
+          hovered.name === 'Right Wall')
         ? hovered
         : null);
     if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
@@ -503,7 +506,99 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     fetchCabinetItem();
   };
 
-  const handleCabinetItemSelect = (item) => {
+  const handleCabinetItemSelect = async (item) => {
+    // For Cabinet items: no quantity popup, no target selection; create via API and add directly
+    if (item?.type === 'Cabinet') {
+      try {
+        const scene = threeDView.scene as THREE.Scene;
+        const designId = window.location.pathname.split('/')[2];
+        const catalogId = item.catalog_id || item.id;
+        const lowerName = (item?.name || '').toLowerCase();
+
+        // Determine default dimensions and placement similar to scene helpers
+        let width = 0.6;
+        let height = 0.7;
+        let depth = 0.4;
+        if (lowerName.includes('tv')) {
+          // Simple TV unit
+          width = 1.6;
+          const baseHeight = 0.26;
+          const panelHeight = 1.0;
+          height = baseHeight + panelHeight; // 1.26
+          const unitDepth = 0.35;
+          const topShelfDepth = 0.25;
+          depth = Math.max(unitDepth, topShelfDepth); // 0.35
+        } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
+          // Computer desk
+          width = 1.4;
+          depth = 0.55;
+          height = 0.74;
+        } else if (lowerName.includes('table')) {
+          // Simple table
+          width = 1.5;
+          depth = 0.7;
+          height = 0.75;
+        } else {
+          // Simple cabinet defaults already set
+        }
+
+        // Floor Y
+        let floorY = 0;
+        const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+        if (cWallGroup) {
+          const floorObj = cWallGroup.children.find(
+            (o: any) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+          ) as THREE.Mesh | undefined;
+          if (floorObj) floorY = floorObj.position.y;
+        }
+
+        // Place against Center Wall if available
+        const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+        let placeX = 0;
+        let placeZ = depth / 2 + 0.02;
+        if (centerWall) {
+          const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;
+          const wallDepth = params.depth as number;
+          placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
+        }
+        const position = { x: placeX, y: floorY + height / 2, z: placeZ };
+
+        // Create API call
+        try {
+          const apiResponse = await addCabinetItemToDesign(catalogId, {
+            type: 'Cabinet',
+            name: item.name,
+            description: item.description || `${item.name} description`,
+            design_id: designId,
+            width,
+            height,
+            depth,
+            position,
+          });
+          if (apiResponse) {
+            dispatch(addObjects([apiResponse]));
+          }
+        } catch (apiErr) {
+          console.error('Cabinet create API failed', apiErr);
+        }
+
+        // Add to scene immediately
+        if (lowerName.includes('tv')) {
+          if (typeof threeDView.addSimpleTVUnit === 'function') threeDView.addSimpleTVUnit();
+        } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
+          if (typeof threeDView.addComputerDesk === 'function') threeDView.addComputerDesk();
+        } else if (lowerName.includes('table')) {
+          if (typeof threeDView.addSimpleTable === 'function') threeDView.addSimpleTable();
+        } else {
+          if (typeof threeDView.addSimpleCabinet === 'function') threeDView.addSimpleCabinet();
+        }
+      } catch (e) {
+        console.error('Failed to add cabinet directly to scene', e);
+      }
+      return;
+    }
+
+    // Default flow (non-cabinet): show quantity popup
     setSelectedCabinetItem(item);
     setQuantityValue(1);
     setCreateCompanyPopup(true);
@@ -667,6 +762,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           apiResponses,
         );
       }
+    } else if (itemType === 'Cabinet' && itemName === 'Simple Cabinet') {
+      await addSimpleCabinet(scene, targetBox, num, selectedCabinetItem, apiResponses);
+    } else if (itemType === 'Cabinet' && itemName === 'Tv Unit') {
+      await addSimpleTVUnit(scene, targetBox, num, selectedCabinetItem, apiResponses);
+    } else if (itemType === 'Cabinet' && itemName === 'Computer Desk') {
+      await addComputerDesk(scene, targetBox, num, selectedCabinetItem, apiResponses);
     }
 
     setCreateCompanyPopup(false);
@@ -1052,7 +1153,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => {};
+      const getMinifixData = async () => { };
     };
 
     fetchCatalogItems();
@@ -1117,9 +1218,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1141,9 +1241,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1275,16 +1374,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>

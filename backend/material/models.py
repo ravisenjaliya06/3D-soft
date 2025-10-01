@@ -271,6 +271,7 @@ class CatalogTypeChoices(models.TextChoices):
     DOOR = "Door"
     DRAWER = "Drawer"
     SLIDING_DOOR = "Sliding Door"
+    CABINET = "Cabinet"
 
 
 class ConnectionTypesChoices(models.TextChoices):
