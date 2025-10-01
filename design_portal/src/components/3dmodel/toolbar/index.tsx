@@ -70,7 +70,11 @@ import {
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { store } from '../store';
-import { addObjects, addObjectsThunk, togglAlignment } from '../store/dataSlice';
+import {
+  addObjects,
+  addObjectsThunk,
+  togglAlignment,
+} from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -616,7 +620,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         };
 
         const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
-        console.log(apiResponse, "apiResponse")
+        console.log(apiResponse, 'apiResponse');
         apiResponses.push(apiResponse);
         dispatch(addObjects(apiResponses));
       } catch (error) {

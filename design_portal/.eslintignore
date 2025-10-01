@@ -24,3 +24,5 @@ src/components/catalogmanager/index.tsx
 src/components/material/types.ts
 src/components/material/utils/materialMapper.ts
 src/components/3dmodel/design/scene.tsx
+src/components/3dmodel/sidebar/sidebar.tsx
+src/components/3dmodel/sidebar/MaterialChangePopup.tsx

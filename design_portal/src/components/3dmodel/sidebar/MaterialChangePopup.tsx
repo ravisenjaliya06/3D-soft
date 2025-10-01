@@ -1,9 +1,9 @@
 import close from '@/assets/design/close.svg';
 import tableicon from '@/assets/sidebar/tabledata.svg';
+import commonService from '@/services/CommonService';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './MaterialChangePopup.module.css';
-import commonService from '@/services/CommonService';
 
 interface RulePartMaterial {
   id?: string;
@@ -47,7 +47,8 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
     null,
   );
   const [materialData, setMaterialData] = useState<any[]>([]);
-  const [selectedMaterialType, setSelectedMaterialType] = useState<string>('Banding');
+  const [selectedMaterialType, setSelectedMaterialType] =
+    useState<string>('Banding');
   const [materialSearch, setMaterialSearch] = useState<string>('');
 
   // Derive current rule and parts list from props
@@ -60,16 +61,10 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   // Fetch materials once
   React.useEffect(() => {
     const getMaterial = async () => {
-      try {
-        const response: { status: number; data: any[] } = await commonService.get(
-          'material',
-          '',
-        );
-        if (response.status === 200) {
-          setMaterialData(response.data);
-        }
-      } catch (err) {
-        // swallow
+      const response: { status: number; data: any[] } =
+        await commonService.get('material', '');
+      if (response.status === 200) {
+        setMaterialData(response.data);
       }
     };
     getMaterial();
@@ -101,15 +96,20 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   const discoveredTypes = Array.from(
     new Set((materialData || []).map((m) => m.type).filter(Boolean)),
   ) as string[];
-  const materialTypes = discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
+  const materialTypes =
+    discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
 
   // Filtered materials by type and search
   const filteredMaterials = (materialData || [])
-    .filter((m) => (selectedMaterialType ? m.type === selectedMaterialType : true))
+    .filter((m) =>
+      selectedMaterialType ? m.type === selectedMaterialType : true,
+    )
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-          (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+        (m.description || '')
+          .toLowerCase()
+          .includes(materialSearch.toLowerCase())
         : true,
     );
 
@@ -155,7 +155,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   };
 
   const handleSave = () => {
-    const assigned = partsData.map((p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`);
+    const assigned = partsData.map(
+      (p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`,
+    );
     onSave(assigned);
     onClose();
   };
@@ -306,17 +308,18 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
           <div className={styles.leftTabs}>
             <span className={styles.doorLabel}>Rules</span>
             <div className={styles.tabs}>
-              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map((tab) => (
-                <button
-                  key={tab}
-                  className={`${styles.tab} ${
-                    activeTab === tab ? styles.activeTab : ''
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map(
+                (tab) => (
+                  <button
+                    key={tab}
+                    className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''
+                      }`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -326,7 +329,16 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
-              {(rules.length ? rules : [{ name: 'Banding', id: 'banding', rule_parts: [] } as CatalogRule]).map((r) => (
+              {(rules.length
+                ? rules
+                : [
+                  {
+                    name: 'Banding',
+                    id: 'banding',
+                    rule_parts: [],
+                  } as CatalogRule,
+                ]
+              ).map((r) => (
                 <option key={r.id} value={r.name}>
                   {r.name}
                 </option>

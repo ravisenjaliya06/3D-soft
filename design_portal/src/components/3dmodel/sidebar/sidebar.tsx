@@ -3,13 +3,13 @@ import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
-import * as THREE from 'three';
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
@@ -76,7 +76,7 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject) {
-      console.log(selectedObject, "selectedObject");
+      console.log(selectedObject, 'selectedObject');
       setWidth(selectedObject.width);
       setHeight(selectedObject.height);
       setDepth(selectedObject.depth);
@@ -289,15 +289,12 @@ const Sidebar: React.FC = () => {
     setPosZ(Number(e.target.value));
   };
 
-  const commitPositionUpdate = (
-    axis: 'x' | 'y' | 'z',
-    value: number,
-  ) => {
+  const commitPositionUpdate = (axis: 'x' | 'y' | 'z', value: number) => {
     if (!selectedObject || isQuickHideActive) return;
     const next = {
-      x: axis === 'x' ? value : selectedObject.position?.x ?? 0,
-      y: axis === 'y' ? value : selectedObject.position?.y ?? 0,
-      z: axis === 'z' ? value : selectedObject.position?.z ?? 0,
+      x: axis === 'x' ? value : (selectedObject.position?.x ?? 0),
+      y: axis === 'y' ? value : (selectedObject.position?.y ?? 0),
+      z: axis === 'z' ? value : (selectedObject.position?.z ?? 0),
     };
     updateObjectInScene(
       selectedObject.id,
@@ -522,7 +519,12 @@ const Sidebar: React.FC = () => {
     // Find the door mesh in the scene by objectId
     let doorMesh: any = null;
     scene.traverse((node: any) => {
-      if (!doorMesh && node && node.userData && node.userData.objectId === targetId) {
+      if (
+        !doorMesh &&
+        node &&
+        node.userData &&
+        node.userData.objectId === targetId
+      ) {
         doorMesh = node;
       }
     });
@@ -591,7 +593,11 @@ const Sidebar: React.FC = () => {
 
     let targetMesh: any = null;
     scene.traverse((child: any) => {
-      if (!targetMesh && child?.isMesh && child?.userData?.objectId === targetId) {
+      if (
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === targetId
+      ) {
         targetMesh = child;
       }
     });
@@ -888,43 +894,43 @@ const Sidebar: React.FC = () => {
 
                   {/* Position Controls */}
                   <div className={style.field_group1}>
-                  <p>Position X:</p>
-                  <input
-                    id="position-x"
-                    name="positionX"
-                    // type="number"
-                    value={posX}
-                    onChange={handlePosXChange}
-                    onKeyDown={handlePosXKeyDown}
-                    onBlur={handlePosXBlur}
-                    disabled={isQuickHideActive}
-                  />
+                    <p>Position X:</p>
+                    <input
+                      id="position-x"
+                      name="positionX"
+                      // type="number"
+                      value={posX}
+                      onChange={handlePosXChange}
+                      onKeyDown={handlePosXKeyDown}
+                      onBlur={handlePosXBlur}
+                      disabled={isQuickHideActive}
+                    />
                   </div>
                   <div className={style.field_group1}>
-                  <p>Position Y:</p>
-                  <input
-                    id="position-y"
-                    name="positionY"
-                    // type="number"
-                    value={posY}
-                    onChange={handlePosYChange}
-                    onKeyDown={handlePosYKeyDown}
-                    onBlur={handlePosYBlur}
-                    disabled={isQuickHideActive}
-                  />
+                    <p>Position Y:</p>
+                    <input
+                      id="position-y"
+                      name="positionY"
+                      // type="number"
+                      value={posY}
+                      onChange={handlePosYChange}
+                      onKeyDown={handlePosYKeyDown}
+                      onBlur={handlePosYBlur}
+                      disabled={isQuickHideActive}
+                    />
                   </div>
                   <div className={style.field_group1}>
-                  <p>Position Z:</p>
-                  <input
-                    id="position-z"
-                    name="positionZ"
-                    // type="number"
-                    value={posZ}
-                    onChange={handlePosZChange}
-                    onKeyDown={handlePosZKeyDown}
-                    onBlur={handlePosZBlur}
-                    disabled={isQuickHideActive}
-                  />
+                    <p>Position Z:</p>
+                    <input
+                      id="position-z"
+                      name="positionZ"
+                      // type="number"
+                      value={posZ}
+                      onChange={handlePosZChange}
+                      onKeyDown={handlePosZKeyDown}
+                      onBlur={handlePosZBlur}
+                      disabled={isQuickHideActive}
+                    />
                   </div>
                 </div>
               )}
