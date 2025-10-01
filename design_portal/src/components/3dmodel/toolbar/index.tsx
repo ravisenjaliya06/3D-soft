@@ -56,11 +56,12 @@ import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
-  addHorizontalPlanksInsideBox,
+  addHorizontalPlanksToBox,
   addLShapeKitchenPlatform,
   addPlatformOnWall,
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
+  addVerticalPlanksToBox,
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -536,16 +537,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
             } else if (
               itemName === 'Horizontal Plank' &&
-              o.name.toLowerCase().includes('invisiblebox_compartment')
+              o.name.toLowerCase().includes('invisiblebox')
             ) {
               const b = new THREE.Box3().setFromObject(o);
               const c = new THREE.Vector3();
               b.getCenter(c);
               if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
             }
-          } else if (
-            o.name.toLowerCase().includes('invisiblebox_compartment')
-          ) {
+          } else if (o.name.toLowerCase().includes('invisiblebox')) {
             // For doors and drawers, use compartment invisible boxes
             const b = new THREE.Box3().setFromObject(o);
             const c = new THREE.Vector3();
@@ -567,13 +566,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             targetBox = hovered;
           } else if (
             itemName === 'Horizontal Plank' &&
-            hovered.name.toLowerCase().includes('invisiblebox_compartment')
+            hovered.name.toLowerCase().includes('invisiblebox')
           ) {
             targetBox = hovered;
           }
-        } else if (
-          hovered.name.toLowerCase().includes('invisiblebox_compartment')
-        ) {
+        } else if (hovered.name.toLowerCase().includes('invisiblebox')) {
           targetBox = hovered;
         }
       }
@@ -658,7 +655,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           apiResponses,
         );
       } else if (itemName === 'Horizontal Plank') {
-        await addHorizontalPlanksInsideBox(
+        await addHorizontalPlanksToBox(
           scene,
           targetBox,
           num,
@@ -761,6 +758,46 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
+    {
+      option: 'Simple Cabinet',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleCabinet === 'function') {
+          threeDView.addSimpleCabinet();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'TV Unit',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleTVUnit === 'function') {
+          threeDView.addSimpleTVUnit();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Table',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addSimpleTable === 'function') {
+          threeDView.addSimpleTable();
+        }
+      },
+      isActive: false,
+    },
+    {
+      option: 'Computer Desk',
+      icon: cabinet,
+      onClick: () => {
+        if (threeDView && typeof threeDView.addComputerDesk === 'function') {
+          threeDView.addComputerDesk();
+        }
+      },
+      isActive: false,
+    },
   ];
 
   const viewTools = [
@@ -778,48 +815,48 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   ];
 
   const alwaysFields = [
-    // {
-    //   option: 'Vertical Planks',
-    //   icon: vertical_plank,
-    //   onClick: async () => {
-    //     const scene = threeDView.scene as THREE.Scene;
-    //     // Determine selected object via outline center; fallback to hovered
-    //     const outline = scene.children.find((o) =>
-    //       o.name.startsWith('outline-'),
-    //     ) as THREE.Object3D | undefined;
-    //     let targetBox: THREE.Mesh | null = null;
-    //     if (outline) {
-    //       const outlineCenter = outline.position.clone();
-    //       scene.traverse((o) => {
-    //         if (
-    //           o instanceof THREE.Mesh &&
-    //           o.name.toLowerCase().includes('invisiblebox')
-    //         ) {
-    //           const b = new THREE.Box3().setFromObject(o);
-    //           const c = new THREE.Vector3();
-    //           b.getCenter(c);
-    //           if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-    //         }
-    //       });
-    //     }
-    //     if (!targetBox) {
-    //       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-    //       if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
-    //         targetBox = hovered;
-    //     }
-    //     if (!targetBox) {
-    //       alert('Select an invisible box under the platform first.');
-    //       return;
-    //     }
-    //     const input = prompt(
-    //       'How many vertical planks to add inside this box?',
-    //     );
-    //     const num = parseInt((input || '').trim(), 10);
-    //     if (!Number.isFinite(num) || num <= 0) return;
-    //     addVerticalPlanksInsideBox(scene, targetBox, num);
-    //   },
-    //   isActive: false,
-    // },
+    {
+      option: 'Vertical Planks',
+      icon: vertical_plank,
+      onClick: async () => {
+        const scene = threeDView.scene as THREE.Scene;
+        // Determine selected object via outline center; fallback to hovered
+        const outline = scene.children.find((o) =>
+          o.name.startsWith('outline-'),
+        ) as THREE.Object3D | undefined;
+        let targetBox: THREE.Mesh | null = null;
+        if (outline) {
+          const outlineCenter = outline.position.clone();
+          scene.traverse((o) => {
+            if (
+              o instanceof THREE.Mesh &&
+              o.name.toLowerCase().includes('invisiblebox')
+            ) {
+              const b = new THREE.Box3().setFromObject(o);
+              const c = new THREE.Vector3();
+              b.getCenter(c);
+              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+            }
+          });
+        }
+        if (!targetBox) {
+          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+          if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
+            targetBox = hovered;
+        }
+        if (!targetBox) {
+          alert('Select an invisible box under the platform first.');
+          return;
+        }
+        const input = prompt(
+          'How many vertical planks to add inside this box?',
+        );
+        const num = parseInt((input || '').trim(), 10);
+        if (!Number.isFinite(num) || num <= 0) return;
+        addVerticalPlanksToBox(scene, targetBox, num);
+      },
+      isActive: false,
+    },
     // {
     //   option: 'Horizontal Planks',
     //   icon: horizontal_plank,
@@ -850,7 +887,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     //     const input = prompt('How many horizontal planks (shelves)?');
     //     const num = parseInt((input || '').trim(), 10);
     //     if (!Number.isFinite(num) || num <= 0) return;
-    //     addHorizontalPlanksInsideBox(scene, targetBox, num);
+    //     addHorizontalPlanksToBox(scene, targetBox, num);
     //   },
     //   isActive: false,
     // },
