@@ -44,7 +44,7 @@ export interface Object3D {
   minifixHoles?: MinifixHole[];
   handlePosition?: string;
   // Optional server/API enrichment
-  apiData?: ApiData[];
+  apiData?: ApiData;
   rules?: [];
 }
 
