@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
+import { rescaleByObjectId } from '../design/scene';
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
@@ -347,6 +348,10 @@ const Sidebar: React.FC = () => {
 
   const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
     if (!scene) return;
+    // First proportionally rescale children of the container to match new dims
+    try {
+      rescaleByObjectId(scene as any, objectId);
+    } catch {}
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child: any) => {
       if (
@@ -625,7 +630,7 @@ const Sidebar: React.FC = () => {
     const label = position as string;
     const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
     // Nudge the handle a bit outwards so it is not z-fighting with the door surface
-    const outward = new THREE.Vector3(0, 0, 0.01);
+    const outward = new THREE.Vector3(0, 0, 0);
     targetWorld.add(outward);
 
     // Convert to door local space and set handle's local position

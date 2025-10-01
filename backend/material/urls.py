@@ -78,7 +78,7 @@ urlpatterns = [
     ),
     path(
         "catalog/part/<uuid:id>/",
-        CatalogRulePartsViewSet.as_view({"put": "update_material"}),
+        CatalogRulePartsViewSet.as_view({"put": "update"}),
         name="catalog-parts",
     ),
     path(
