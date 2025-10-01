@@ -531,37 +531,44 @@ const Sidebar: React.FC = () => {
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
 
-    const color = new THREE.Color(selectedColor);
-
-    scene.traverse((child: any) => {
-      if (child && child.userData && child.userData.objectId === targetId) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map((m: any) => {
-            if (m && typeof m.clone === 'function') {
-              const cloned = m.clone();
-              if (cloned.map) cloned.map = null;
-              if (cloned.color) cloned.color.set(color);
-              return cloned;
-            }
-            return new THREE.MeshPhongMaterial({ color });
-          });
-        } else if (child.material) {
-          if (child.material.color) {
-            if (child.material.map) child.material.map = null;
-            child.material.color.set(color);
-            child.material.needsUpdate = true;
-          } else {
-            child.material = new THREE.MeshPhongMaterial({ color });
-          }
-        } else {
-          child.material = new THREE.MeshPhongMaterial({ color });
-        }
-      }
-    });
-
+    // Only update the single selected object; block doors/drawers
     const obj = selectedChildObjectId
       ? objects.find((o) => o.id === selectedChildObjectId)
       : objects.find((o) => o.id === selectedObjectId!);
+    const nameLower = (obj?.name || '').toLowerCase();
+    if (nameLower.includes('door') || nameLower.includes('drawer')) return;
+
+    let targetMesh: any = null;
+    scene.traverse((child: any) => {
+      if (!targetMesh && child?.isMesh && child?.userData?.objectId === targetId) {
+        targetMesh = child;
+      }
+    });
+    if (!targetMesh) return;
+
+    const color = new THREE.Color(selectedColor);
+    if (Array.isArray(targetMesh.material)) {
+      targetMesh.material = targetMesh.material.map((m: any) => {
+        if (m && typeof m.clone === 'function') {
+          const cloned = m.clone();
+          if (cloned.map) cloned.map = null;
+          if (cloned.color) cloned.color.set(color);
+          return cloned;
+        }
+        return new THREE.MeshPhongMaterial({ color });
+      });
+    } else if (targetMesh.material) {
+      if (targetMesh.material.color) {
+        if (targetMesh.material.map) targetMesh.material.map = null;
+        targetMesh.material.color.set(color);
+        targetMesh.material.needsUpdate = true;
+      } else {
+        targetMesh.material = new THREE.MeshPhongMaterial({ color });
+      }
+    } else {
+      targetMesh.material = new THREE.MeshPhongMaterial({ color });
+    }
+
     if (obj) {
       updateObjectInScene(
         obj.id,
