@@ -26,6 +26,9 @@ const Sidebar: React.FC = () => {
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
   const [rotationZ, setRotationZ] = useState(0);
+  const [posX, setPosX] = useState(0);
+  const [posY, setPosY] = useState(0);
+  const [posZ, setPosZ] = useState(0);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#ffffff');
 
@@ -73,12 +76,16 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject) {
+      console.log(selectedObject, "selectedObject");
       setWidth(selectedObject.width);
       setHeight(selectedObject.height);
       setDepth(selectedObject.depth);
       setRotationX(selectedObject.rotationX!);
       setRotationY(selectedObject.rotationY!);
       setRotationZ(selectedObject.rotationZ!);
+      setPosX(selectedObject.apiData?.position?.x ?? 0);
+      setPosY(selectedObject.apiData?.position?.y ?? 0);
+      setPosZ(selectedObject.apiData?.position?.z ?? 0);
     }
   }, [selectedObject]);
 
@@ -270,6 +277,50 @@ const Sidebar: React.FC = () => {
       }
     }
   };
+
+  // Position handlers
+  const handlePosXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosX(Number(e.target.value));
+  };
+  const handlePosYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosY(Number(e.target.value));
+  };
+  const handlePosZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosZ(Number(e.target.value));
+  };
+
+  const commitPositionUpdate = (
+    axis: 'x' | 'y' | 'z',
+    value: number,
+  ) => {
+    if (!selectedObject || isQuickHideActive) return;
+    const next = {
+      x: axis === 'x' ? value : selectedObject.position?.x ?? 0,
+      y: axis === 'y' ? value : selectedObject.position?.y ?? 0,
+      z: axis === 'z' ? value : selectedObject.position?.z ?? 0,
+    };
+    updateObjectInScene(
+      selectedObject.id,
+      { position: next },
+      scene,
+      dispatch,
+      selectedObject,
+    );
+  };
+
+  const handlePosXKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('x', posX);
+  };
+  const handlePosYKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('y', posY);
+  };
+  const handlePosZKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('z', posZ);
+  };
+
+  const handlePosXBlur = () => commitPositionUpdate('x', posX);
+  const handlePosYBlur = () => commitPositionUpdate('y', posY);
+  const handlePosZBlur = () => commitPositionUpdate('z', posZ);
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value, min, max } = e.target;
@@ -623,7 +674,7 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
           )}
-          {/* {!isQuickHideActive && isSettingOpen && selectedObject && ( */}
+          {/* Settings panel */}
           {isSettingOpen && (
             <div className={style.field_main_div}>
               <div className={style.field_group_title_div}>
@@ -834,56 +885,49 @@ const Sidebar: React.FC = () => {
                       Apply
                     </button>
                   </div>
-                  {/* <div className={style.field_group1}>
-                    <p>Edge Banding:</p>
-                    <label className={style.toggleSwitch}>
-                      <input
-                        type="checkbox"
-                        checked={edgeBandingVisible}
-                        onChange={handleEdgeBandingToggle}
-                      />
-                      <span className={style.slider}></span>
-                    </label>
+
+                  {/* Position Controls */}
+                  <div className={style.field_group1}>
+                  <p>Position X:</p>
+                  <input
+                    id="position-x"
+                    name="positionX"
+                    // type="number"
+                    value={posX}
+                    onChange={handlePosXChange}
+                    onKeyDown={handlePosXKeyDown}
+                    onBlur={handlePosXBlur}
+                    disabled={isQuickHideActive}
+                  />
                   </div>
                   <div className={style.field_group1}>
-                    <p>Minifix Distance:</p>
-                    <button
-                      onClick={handleSubtractMinifix}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="5"
-                      value={
-                        selectedObject?.minifixSpacing ||
-                        MINIFIX_STANDARDS.SPACING
-                      }
-                      onChange={handleMinifixChange}
-                      disabled={isQuickHideActive}
-                    />
-                    <button
-                      onClick={handleIncrementMinifix}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
-                  </div> */}
+                  <p>Position Y:</p>
+                  <input
+                    id="position-y"
+                    name="positionY"
+                    // type="number"
+                    value={posY}
+                    onChange={handlePosYChange}
+                    onKeyDown={handlePosYKeyDown}
+                    onBlur={handlePosYBlur}
+                    disabled={isQuickHideActive}
+                  />
+                  </div>
+                  <div className={style.field_group1}>
+                  <p>Position Z:</p>
+                  <input
+                    id="position-z"
+                    name="positionZ"
+                    // type="number"
+                    value={posZ}
+                    onChange={handlePosZChange}
+                    onKeyDown={handlePosZKeyDown}
+                    onBlur={handlePosZBlur}
+                    disabled={isQuickHideActive}
+                  />
+                  </div>
                 </div>
               )}
-              {/* Advanced Section */}
-              {/* <div className={style.field_group_title_div}>
-                <img
-                  src={isAdvancedOpen ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                  onClick={toggleAdvanced}
-                  style={{ cursor: 'pointer' }}
-                />
-                <p className={style.field_group_title}>Advanced</p>
-              </div> */}
 
               {!isQuickHideActive && isSettingOpen && isBasicOpen && (
                 <div className={style.field_group_div}>
