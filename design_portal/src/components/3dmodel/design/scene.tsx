@@ -686,9 +686,9 @@ export const addLShapeKitchenPlatform = (
 
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   // Standard cabinet dimensions in meters
-  const width = 6; // 600mm
-  const height = 7; // 700mm
-  const depth = 0.8; // 400mm
+  const width = 1.5; // 600mm
+  const height = 2; // 700mm
+  const depth = 0.4; // 400mm
   const thickness = 0.018; // 18mm board
 
   // Base Y (floor)
@@ -740,6 +740,12 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   );
   cabinetContainer.name = 'SimpleCabinet';
   cabinetContainer.userData.isInvisibleBox = true; // treated as helper/invisible by utilities
+  // Track base and last known dimensions for proportional rescaling later
+  (cabinetContainer as any).userData = {
+    ...(cabinetContainer as any).userData,
+    baseDims: { width, height, depth },
+    lastDims: { width, height, depth },
+  };
   // Position container so bottom sits on floor
   cabinetContainer.position.set(placeX, floorY + height / 2, placeZ);
 
@@ -889,6 +895,12 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
   );
   container.name = 'SimpleTVUnit';
   container.userData.isInvisibleBox = true;
+  // Track base and last known dimensions for proportional rescaling later
+  (container as any).userData = {
+    ...(container as any).userData,
+    baseDims: { width, height: overallHeight, depth: overallDepth },
+    lastDims: { width, height: overallHeight, depth: overallDepth },
+  };
   // Place so bottom touches floor (container is centered by geometry)
   container.position.set(placeX, floorY + overallHeight / 2, placeZ);
   // Children were authored around base center at y = floorY + baseHeight/2
@@ -1073,6 +1085,12 @@ export const addSimpleTable = (scene: THREE.Scene) => {
   );
   container.name = 'SimpleTable';
   container.userData.isInvisibleBox = true;
+  // Track base and last known dimensions for proportional rescaling later
+  (container as any).userData = {
+    ...(container as any).userData,
+    baseDims: { width: topWidth, height, depth: topDepth },
+    lastDims: { width: topWidth, height, depth: topDepth },
+  };
 
   // Place roughly center of room, a bit in front of back wall
   const backWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
@@ -1196,6 +1214,12 @@ export const addComputerDesk = (scene: THREE.Scene) => {
   );
   container.name = 'ComputerDesk';
   container.userData.isInvisibleBox = true;
+  // Track base and last known dimensions for proportional rescaling later
+  (container as any).userData = {
+    ...(container as any).userData,
+    baseDims: { width: deskWidth, height: overallHeight, depth: deskDepth },
+    lastDims: { width: deskWidth, height: overallHeight, depth: deskDepth },
+  };
 
   // Place near back wall
   const backWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
@@ -2493,6 +2517,66 @@ export function refreshInvisibleBoxesForPlank(
   if (!groupName) return;
   if (!plank.parent) return;
   refreshInvisibleBoxesForGroup(plank.parent, groupName);
+}
+
+// Proportionally rescale and reposition children of a container when its geometry changes
+export function rescaleChildrenForContainer(container: THREE.Mesh) {
+  const params = (container.geometry as THREE.BoxGeometry).parameters as any;
+  const newDims = {
+    width: params.width as number,
+    height: params.height as number,
+    depth: params.depth as number,
+  };
+  const userData: any = (container as any).userData || {};
+  const last = userData.lastDims || newDims;
+  const sx = (newDims.width || 1) / (last.width || 1);
+  const sy = (newDims.height || 1) / (last.height || 1);
+  const sz = (newDims.depth || 1) / (last.depth || 1);
+
+  if (Math.abs(sx - 1) < 1e-6 && Math.abs(sy - 1) < 1e-6 && Math.abs(sz - 1) < 1e-6) {
+    return;
+  }
+
+  container.children.forEach((child) => {
+    // Only scale real meshes; skip invisible helper boxes so they can be rebuilt precisely
+    const isMesh = (child as any).isMesh || child instanceof THREE.Mesh;
+    if (!isMesh) return;
+    const name = (child.name || '').toLowerCase();
+    if (name.startsWith('invisiblebox')) return;
+
+    // Scale local position
+    child.position.set(child.position.x * sx, child.position.y * sy, child.position.z * sz);
+    // Scale mesh uniformly per axis (relative to previous scale)
+    const m = child as THREE.Mesh;
+    m.scale.set(m.scale.x * sx, m.scale.y * sy, m.scale.z * sz);
+  });
+
+  // Update lastDims to current
+  (container as any).userData = {
+    ...userData,
+    lastDims: { ...newDims },
+  };
+}
+
+// Find container by objectId and rescale its children proportionally
+export function rescaleByObjectId(scene: THREE.Scene, objectId: string) {
+  let container: THREE.Mesh | null = null;
+  scene.traverse((o: any) => {
+    if (container) return;
+    if (o && o.isMesh && o.userData && o.userData.objectId === objectId) {
+      const n = (o.name || '').toLowerCase();
+      if (
+        n === 'simplecabinet'.toLowerCase() ||
+        n === 'simpletvunit'.toLowerCase() ||
+        n === 'simpletable'.toLowerCase() ||
+        n === 'computerdesk'.toLowerCase()
+      ) {
+        container = o as THREE.Mesh;
+      }
+    }
+  });
+  if (!container) return;
+  rescaleChildrenForContainer(container);
 }
 
 export const ensureHandleLoaded = async () => {
