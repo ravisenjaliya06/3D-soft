@@ -77,6 +77,7 @@ import {
   addObjects,
   addObjectsThunk,
   togglAlignment,
+  setobjectSelected,
 } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
@@ -472,7 +473,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       width?: number;
       height?: number;
       depth?: number;
-      position?: string; // backend expects string
+      position?: { x: number; y: number; z: number };
+      parts?: Array<{
+        name: string;
+        width: number;
+        height: number;
+        depth: number;
+      }>;
     },
   ) => {
     const payload = {
@@ -485,6 +492,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       height: itemData.height,
       depth: itemData.depth,
       position: itemData.position,
+      parts: itemData.parts,
     };
     try {
       const response = await commonService.post(
@@ -519,6 +527,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         let width = 0.6;
         let height = 0.7;
         let depth = 0.4;
+        let parts: Array<{ name: string; width: number; height: number; depth: number }> = [];
         if (lowerName.includes('tv')) {
           // Simple TV unit
           width = 1.6;
@@ -528,18 +537,38 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           const unitDepth = 0.35;
           const topShelfDepth = 0.25;
           depth = Math.max(unitDepth, topShelfDepth); // 0.35
+          parts = [
+            { name: 'Base', width, height: baseHeight, depth: unitDepth },
+            { name: 'RightPanel', width: 0.018, height: panelHeight, depth: unitDepth },
+          ];
         } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
           // Computer desk
           width = 1.4;
           depth = 0.55;
           height = 0.74;
+          parts = [
+            { name: 'Top', width, height: 0.03, depth },
+            { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
+          ];
         } else if (lowerName.includes('table')) {
           // Simple table
           width = 1.5;
           depth = 0.7;
           height = 0.75;
+          parts = [
+            { name: 'Top', width, height: 0.03, depth },
+            { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
+          ];
         } else {
           // Simple cabinet defaults already set
+          const thickness = 0.018;
+          parts = [
+            { name: 'LEFT_PLANK', width: thickness, height, depth },
+            { name: 'RIGHT_PLANK', width: thickness, height, depth },
+            { name: 'BOTTOM_PLANK', width: Math.max(width - thickness * 2, 0.02), height: thickness, depth },
+            { name: 'TOP_PLANK', width: Math.max(width - thickness * 2, 0.02), height: thickness, depth },
+            { name: 'BACK_PLANK', width: Math.max(width - thickness * 2, 0.02), height: Math.max(height - thickness * 2, 0.02), depth: thickness },
+          ];
         }
 
         // Floor Y
@@ -564,8 +593,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         const position = { x: placeX, y: floorY + height / 2, z: placeZ };
 
         // Create API call
+        let apiResponse: any = null;
         try {
-          const apiResponse = await addCabinetItemToDesign(catalogId, {
+          apiResponse = await addCabinetItemToDesign(catalogId, {
             type: 'Cabinet',
             name: item.name,
             description: item.description || `${item.name} description`,
@@ -574,9 +604,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             height,
             depth,
             position,
+            parts,
           });
           if (apiResponse) {
             dispatch(addObjects([apiResponse]));
+            if (apiResponse.id) {
+              dispatch(setobjectSelected(apiResponse.id));
+            }
           }
         } catch (apiErr) {
           console.error('Cabinet create API failed', apiErr);
@@ -592,6 +626,39 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         } else {
           if (typeof threeDView.addSimpleCabinet === 'function') threeDView.addSimpleCabinet();
         }
+
+        // Annotate the newly created container with API metadata
+        try {
+          const containerName = lowerName.includes('tv')
+            ? 'SimpleTVUnit'
+            : lowerName.includes('computer') || lowerName.includes('desk')
+            ? 'ComputerDesk'
+            : lowerName.includes('table')
+            ? 'SimpleTable'
+            : 'SimpleCabinet';
+          const candidates: THREE.Mesh[] = [] as any;
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name === containerName) {
+              candidates.push(o);
+            }
+          });
+          if (candidates.length > 0) {
+            const pick = candidates.reduce((best, cur) => {
+              const dCur = cur.position.distanceTo(
+                new THREE.Vector3(position.x, position.y, position.z),
+              );
+              if (!best) return { node: cur, dist: dCur } as any;
+              return dCur < best.dist ? { node: cur, dist: dCur } : best;
+            }, null as any);
+            if (pick?.node) {
+              pick.node.userData = {
+                ...(pick.node.userData || {}),
+                objectId: apiResponse?.id,
+                apiData: apiResponse || undefined,
+              };
+            }
+          }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
