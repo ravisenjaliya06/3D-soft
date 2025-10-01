@@ -1193,6 +1193,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     'Horizontal Plank': horizontal_plank.src,
     'Vertical Plank': vertical_plank.src,
     Plank: vertical_plank.src,
+    Cabinet: cabinet.src,
   };
 
   return (
