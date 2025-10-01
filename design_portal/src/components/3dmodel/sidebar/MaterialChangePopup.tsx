@@ -1,58 +1,162 @@
 import close from '@/assets/design/close.svg';
 import tableicon from '@/assets/sidebar/tabledata.svg';
-import type React from 'react';
-import { useState } from 'react';
+import commonService from '@/services/CommonService';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './MaterialChangePopup.module.css';
+
+interface RulePartMaterial {
+  id?: string;
+  name?: string;
+}
+
+interface RulePart {
+  id: string;
+  name?: string;
+  material?: RulePartMaterial;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  depth?: number | null;
+  position?: unknown;
+  handle_position?: unknown;
+}
+
+interface CatalogRule {
+  id: string;
+  name: string;
+  rule_parts: RulePart[];
+}
 
 interface MaterialChangePopupProps {
   onClose: () => void;
   onSave: (selectedMaterials: string[]) => void;
+  rules?: CatalogRule[];
 }
 
 export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   onClose,
   onSave,
+  rules = [],
 }) => {
-  const [activeTab, setActiveTab] = useState('Banding');
-  const [selectedCategory, setSelectedCategory] = useState('Banding');
+  const initialTab = rules.length > 0 ? rules[0].name : 'Banding';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [selectedCategory, setSelectedCategory] = useState(initialTab);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(
     null,
   );
-  const [partsData, setPartsData] = useState([
-    { id: '1', part: 'Door Edge Banding', material: 'PVC Wood grain' },
-    { id: '2', part: 'Door Edge Banding', material: 'PVC Wood grain' },
-    { id: '3', part: 'Door Edge Banding', material: 'PVC Wood grain' },
-    { id: '4', part: 'Door Edge Banding', material: 'PVC Wood grain' },
-  ]);
+  const [materialData, setMaterialData] = useState<any[]>([]);
+  const [selectedMaterialType, setSelectedMaterialType] =
+    useState<string>('Banding');
+  const [materialSearch, setMaterialSearch] = useState<string>('');
 
-  const materialData = [
-    { id: '1', name: 'Elder ven EB', company: 'company 1' },
-    { id: '2', name: 'Elder ven EB', company: 'company 2' },
-    { id: '3', name: 'Elder ven EB', company: 'company 3' },
-    { id: '4', name: 'Elder ven EB', company: 'company 4' },
+  // Derive current rule and parts list from props
+  const currentRule = rules.find((r) => r.name === activeTab) || rules[0];
+  const currentParts: RulePart[] = currentRule?.rule_parts || [];
+
+  // Keep editable parts state mirroring current rule parts
+  const [partsData, setPartsData] = useState<RulePart[]>(currentParts);
+
+  // Fetch materials once
+  React.useEffect(() => {
+    const getMaterial = async () => {
+      const response: { status: number; data: any[] } =
+        await commonService.get('material', '');
+      if (response.status === 200) {
+        setMaterialData(response.data);
+      }
+    };
+    getMaterial();
+  }, []);
+
+  // Build material type options (fallback to a default list)
+  const defaultMaterialTypes = [
+    'Banding',
+    'Board Stock',
+    'Caster',
+    'Connector',
+    'Drawer Guide',
+    'Hinge',
+    'Hinge Plate',
+    'Laminate',
+    'Leg',
+    'Leg Leveler',
+    'Miscellaneous',
+    'Molding',
+    'Panel Stock',
+    'Pull',
+    'Rod',
+    'Sliding Door Rail',
+    'Sliding Door Roller',
+    'Wire Basket',
+    'Connection',
   ];
 
-  const handleAssignMaterial = (partId: string, materialId: string) => {
+  const discoveredTypes = Array.from(
+    new Set((materialData || []).map((m) => m.type).filter(Boolean)),
+  ) as string[];
+  const materialTypes =
+    discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
+
+  // Filtered materials by type and search
+  const filteredMaterials = (materialData || [])
+    .filter((m) =>
+      selectedMaterialType ? m.type === selectedMaterialType : true,
+    )
+    .filter((m) =>
+      materialSearch
+        ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
+        (m.description || '')
+          .toLowerCase()
+          .includes(materialSearch.toLowerCase())
+        : true,
+    );
+
+  // Whenever the active rule changes, refresh partsData
+  React.useEffect(() => {
+    const next = (currentRule?.rule_parts || []) as RulePart[];
+    setPartsData(next);
+    setSelectedPartId(null);
+    setSelectedMaterialId(null);
+  }, [activeTab]);
+
+  const handleAssignMaterial = async (partId: string, materialId: string) => {
     const material = materialData.find((m) => m.id === materialId);
     if (!material) return;
 
+    // optimistic update
     setPartsData((prev) =>
       prev.map((part) =>
-        part.id === partId ? { ...part, material: material.name } : part,
+        part.id === partId
+          ? { ...part, material: { id: material.id, name: material.name } }
+          : part,
       ),
     );
+
+    try {
+      const response: { status: number } = await commonService.put(
+        'material',
+        `catalog/part/${partId}`,
+        { material_id: materialId },
+      );
+      if (response.status === 200) {
+        setSelectedPartId(null);
+        setSelectedMaterialId(null);
+      }
+    } catch (err) {
+      // revert on error
+      setPartsData((prev) =>
+        prev.map((part) =>
+          part.id === partId ? { ...part, material: undefined } : part,
+        ),
+      );
+    }
   };
 
   const handleSave = () => {
-    // Collect assigned materials
-    const assigned = Object.entries(partsData).reduce(
-      (acc, [part, material]) => {
-        acc.push(`${part}: ${material}`);
-        return acc;
-      },
-      [] as string[],
+    const assigned = partsData.map(
+      (p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`,
     );
     onSave(assigned);
     onClose();
@@ -202,19 +306,20 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
         {/* Top Section (Tabs + Dropdown) */}
         <div className={styles.topSection}>
           <div className={styles.leftTabs}>
-            <span className={styles.doorLabel}>Door</span>
+            <span className={styles.doorLabel}>Rules</span>
             <div className={styles.tabs}>
-              {['Banding', 'Frame', 'Molding', 'Panel'].map((tab) => (
-                <button
-                  key={tab}
-                  className={`${styles.tab} ${
-                    activeTab === tab ? styles.activeTab : ''
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map(
+                (tab) => (
+                  <button
+                    key={tab}
+                    className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''
+                      }`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -224,8 +329,20 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
-              <option value="Banding">Banding</option>
-              <option value="Other">Other</option>
+              {(rules.length
+                ? rules
+                : [
+                  {
+                    name: 'Banding',
+                    id: 'banding',
+                    rule_parts: [],
+                  } as CatalogRule,
+                ]
+              ).map((r) => (
+                <option key={r.id} value={r.name}>
+                  {r.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -258,11 +375,11 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                     <td>
                       <div className={styles.partlItem}>
                         <img src={tableicon.src} alt="" />
-                        {part.part}
+                        {part.name || 'Part'}
                       </div>
                     </td>
 
-                    <td>{part.material}</td>
+                    <td>{part.material?.name || '-'}</td>
                   </tr>
                 ))}
 
@@ -281,6 +398,28 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
 
           {/* Right Table (Materials) */}
           <div className={styles.rightTable}>
+            <div className={styles.righttopbar}>
+              <select
+                className={styles.dropdown}
+                value={selectedMaterialType}
+                onChange={(e) => setSelectedMaterialType(e.target.value)}
+              >
+                {materialTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              <div className={styles.searchContainer}>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className={styles.searchInput}
+                  value={materialSearch}
+                  onChange={(e) => setMaterialSearch(e.target.value)}
+                />
+              </div>
+            </div>
             <table className={styles.materialTable}>
               <thead>
                 <tr>
@@ -289,7 +428,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {materialData.map((item) => (
+                {filteredMaterials.map((item) => (
                   <tr
                     key={item.id}
                     draggable
@@ -307,7 +446,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                         {item.name}
                       </div>
                     </td>
-                    <td>{item.company}</td>
+                    <td>{item.description || ''}</td>
                   </tr>
                 ))}
                 {Array.from({ length: Math.max(0, 50 - partsData.length) }).map(

@@ -13,6 +13,10 @@ export interface Material {
   value: string;
 }
 
+export interface ApiData {
+  position: Position;
+}
+
 export interface Object3D {
   x?: undefined;
   y?: undefined;
@@ -40,7 +44,7 @@ export interface Object3D {
   minifixHoles?: MinifixHole[];
   handlePosition?: string;
   // Optional server/API enrichment
-  apiData?: [];
+  apiData?: ApiData;
   rules?: [];
 }
 

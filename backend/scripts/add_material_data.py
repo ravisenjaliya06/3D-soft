@@ -1401,6 +1401,96 @@ CATALOG = [
             },
         ],
     },
+    {
+        "type": "Cabinet",
+        "name": "Simple Cabinet",
+        "description": "Simple Cabinet",
+        "catalog_rules": [
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply"},
+                ],
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {"name": "Right and Top Panel", "material": ""},
+                    {"name": "Left and Top Panel", "material": ""},
+                    {"name": "Right and Bottom Panel", "material": ""},
+                    {"name": "Left and Bottom Panel", "material": ""},
+                    {"name": "Back and Top Panel", "material": ""},
+                    {"name": "Back and Left Panel", "material": ""},
+                    {"name": "Back and Right Panel", "material": ""},
+                    {"name": "Back and Bottom Panel", "material": ""},
+                ],
+            },
+        ],
+    },
+    {
+        "type": "Cabinet",
+        "name": "Computer Desk",
+        "description": "Computer Desk",
+        "catalog_rules": [
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Base Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Middle Vertical Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Middle Horizontal Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                ],
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {"name": "Middle Vertical and Right Panel", "material": ""},
+                    {"name": "Middle Vertical and Top Panel", "material": ""},
+                    {"name": "Middle Vertical and Bottom Panel", "material": ""},
+                    {"name": "Middle Vertical and Middle Horizontal Panel", "material": ""},
+                    {"name": "Base and Right Panel", "material": ""},
+                    {"name": "Base and Left Panel", "material": ""},
+                ],
+            },
+        ],
+    },
+    {
+        "type": "Cabinet",
+        "name": "Tv Unit",
+        "description": "Tv Unit",
+        "catalog_rules": [
+            {
+                "name": "Panel",
+                "rules_parts": [
+                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Middle Horizontal Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horiziontal Panel 3", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel 1", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel 2", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel 3", "material": "3/4 1s Poplar Ply"},
+                ],
+            },
+            {
+                "name": "Connections",
+                "rules_parts": [
+                    {"name": "Top and Right Panel", "material": ""},
+                    {"name": "Middle Horizontal and Right Panel", "material": ""},
+                    {"name": "Right and Bottom Panel", "material": ""},
+                ],
+            },
+        ],
+    },
 ]
 
 

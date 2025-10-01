@@ -77,6 +77,7 @@ const CatalogManager = () => {
     { value: 'Door', label: 'Door' },
     { value: 'Drawer', label: 'Drawer' },
     { value: 'Sliding Door', label: 'Sliding Door' },
+    { value: 'Cabinet', label: 'Cabinet' },
   ];
 
   const materialTypes = [

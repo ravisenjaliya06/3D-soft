@@ -3,12 +3,14 @@ import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
+import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg'
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
@@ -25,7 +27,11 @@ const Sidebar: React.FC = () => {
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
   const [rotationZ, setRotationZ] = useState(0);
+  const [posX, setPosX] = useState(0);
+  const [posY, setPosY] = useState(0);
+  const [posZ, setPosZ] = useState(0);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('#ffffff');
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -71,12 +77,16 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject) {
+      console.log(selectedObject, 'selectedObject');
       setWidth(selectedObject.width);
       setHeight(selectedObject.height);
       setDepth(selectedObject.depth);
       setRotationX(selectedObject.rotationX!);
       setRotationY(selectedObject.rotationY!);
       setRotationZ(selectedObject.rotationZ!);
+      setPosX(selectedObject.apiData?.position?.x ?? 0);
+      setPosY(selectedObject.apiData?.position?.y ?? 0);
+      setPosZ(selectedObject.apiData?.position?.z ?? 0);
     }
   }, [selectedObject]);
 
@@ -268,6 +278,47 @@ const Sidebar: React.FC = () => {
       }
     }
   };
+
+  // Position handlers
+  const handlePosXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosX(Number(e.target.value));
+  };
+  const handlePosYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosY(Number(e.target.value));
+  };
+  const handlePosZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPosZ(Number(e.target.value));
+  };
+
+  const commitPositionUpdate = (axis: 'x' | 'y' | 'z', value: number) => {
+    if (!selectedObject || isQuickHideActive) return;
+    const next = {
+      x: axis === 'x' ? value : (selectedObject.position?.x ?? 0),
+      y: axis === 'y' ? value : (selectedObject.position?.y ?? 0),
+      z: axis === 'z' ? value : (selectedObject.position?.z ?? 0),
+    };
+    updateObjectInScene(
+      selectedObject.id,
+      { position: next },
+      scene,
+      dispatch,
+      selectedObject,
+    );
+  };
+
+  const handlePosXKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('x', posX);
+  };
+  const handlePosYKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('y', posY);
+  };
+  const handlePosZKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitPositionUpdate('z', posZ);
+  };
+
+  const handlePosXBlur = () => commitPositionUpdate('x', posX);
+  const handlePosYBlur = () => commitPositionUpdate('y', posY);
+  const handlePosZBlur = () => commitPositionUpdate('z', posZ);
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value, min, max } = e.target;
@@ -461,11 +512,130 @@ const Sidebar: React.FC = () => {
   };
 
   const handleHandlePositionChange = (position: string) => {
-    console.warn('handleHandlePositionChange', position);
+    if (!scene) return;
+    // Determine selected door object id (prefer child selection)
+    const targetId = selectedChildObjectId || selectedObjectId;
+    if (!targetId) return;
+
+    // Find the door mesh in the scene by objectId
+    let doorMesh: any = null;
+    scene.traverse((node: any) => {
+      if (
+        !doorMesh &&
+        node &&
+        node.userData &&
+        node.userData.objectId === targetId
+      ) {
+        doorMesh = node;
+      }
+    });
+    if (!doorMesh) return;
+
+    // Try to locate a child that represents the handle
+    let handleMesh: any = null;
+    doorMesh.traverse((child: any) => {
+      const name = (child?.name || '').toLowerCase();
+      if (!handleMesh && (name.includes('handle') || name.includes('knob'))) {
+        handleMesh = child;
+      }
+    });
+    // If no explicit child found, bail out
+    if (!handleMesh) return;
+
+    // Compute door world bounding box
+    const box = new THREE.Box3().setFromObject(doorMesh);
+    const min = box.min.clone();
+    const max = box.max.clone();
+    const mid = new THREE.Vector3(
+      (min.x + max.x) / 2,
+      (min.y + max.y) / 2,
+      (min.z + max.z) / 2,
+    );
+
+    const pickX = (label: string) => {
+      if (label.endsWith('Left')) return min.x;
+      if (label.endsWith('Right')) return max.x;
+      return mid.x; // Center
+    };
+    const pickY = (label: string) => {
+      if (label.startsWith('Top')) return max.y;
+      if (label.startsWith('Bottom')) return min.y;
+      return mid.y; // Middle
+    };
+    const pickZ = () => max.z; // front face
+
+    const label = position as string;
+    const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
+    // Nudge the handle a bit outwards so it is not z-fighting with the door surface
+    const outward = new THREE.Vector3(0, 0, 0.01);
+    targetWorld.add(outward);
+
+    // Convert to door local space and set handle's local position
+    const targetLocal = doorMesh.worldToLocal(targetWorld.clone());
+    handleMesh.position.copy(targetLocal);
+    if (handleMesh.updateMatrixWorld) handleMesh.updateMatrixWorld(true);
   };
 
   const handleMaterialChange = () => {
     setShowMaterialPopup(true);
+  };
+
+  const applyColorToSelected = () => {
+    if (!scene) return;
+    const targetId = selectedChildObjectId || selectedObjectId;
+    if (!targetId) return;
+
+    // Only update the single selected object; block doors/drawers
+    const obj = selectedChildObjectId
+      ? objects.find((o) => o.id === selectedChildObjectId)
+      : objects.find((o) => o.id === selectedObjectId!);
+    const nameLower = (obj?.name || '').toLowerCase();
+    if (nameLower.includes('door') || nameLower.includes('drawer')) return;
+
+    let targetMesh: any = null;
+    scene.traverse((child: any) => {
+      if (
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === targetId
+      ) {
+        targetMesh = child;
+      }
+    });
+    if (!targetMesh) return;
+
+    const color = new THREE.Color(selectedColor);
+    if (Array.isArray(targetMesh.material)) {
+      targetMesh.material = targetMesh.material.map((m: any) => {
+        if (m && typeof m.clone === 'function') {
+          const cloned = m.clone();
+          if (cloned.map) cloned.map = null;
+          if (cloned.color) cloned.color.set(color);
+          return cloned;
+        }
+        return new THREE.MeshPhongMaterial({ color });
+      });
+    } else if (targetMesh.material) {
+      if (targetMesh.material.color) {
+        if (targetMesh.material.map) targetMesh.material.map = null;
+        targetMesh.material.color.set(color);
+        targetMesh.material.needsUpdate = true;
+      } else {
+        targetMesh.material = new THREE.MeshPhongMaterial({ color });
+      }
+    } else {
+      targetMesh.material = new THREE.MeshPhongMaterial({ color });
+    }
+
+    if (obj) {
+      updateObjectInScene(
+        obj.id,
+        { material: { type: 'COLOR', value: selectedColor } },
+        scene,
+        dispatch,
+        obj as any,
+      );
+    }
   };
 
   return (
@@ -511,7 +681,7 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
           )}
-          {/* {!isQuickHideActive && isSettingOpen && selectedObject && ( */}
+          {/* Settings panel */}
           {isSettingOpen && (
             <div className={style.field_main_div}>
               <div className={style.field_group_title_div}>
@@ -698,65 +868,76 @@ const Sidebar: React.FC = () => {
                   </div>
 
                   <div className={style.field_group1}>
-                    <p>Change Material</p>
+                    <p>Color</p>
+                    <input
+                      type="color"
+                      value={selectedColor}
+                      onChange={(e) => setSelectedColor(e.target.value)}
+                      disabled={isQuickHideActive}
+                      className={style.color_input}
+                    />
+                    <button
+                      onClick={applyColorToSelected}
+                      className={style.btn_incrdec}
+                      disabled={isQuickHideActive}
+                    >
+                      Apply
+                    </button>
+                  </div>
+
+                  {/* Position Controls */}
+                  <div className={style.field_group1}>
+                    <p>Position X:</p>
+                    <input
+                      id="position-x"
+                      name="positionX"
+                      // type="number"
+                      value={posX}
+                      onChange={handlePosXChange}
+                      onKeyDown={handlePosXKeyDown}
+                      onBlur={handlePosXBlur}
+                      disabled={isQuickHideActive}
+                    />
+                  </div>
+                  <div className={style.field_group1}>
+                    <p>Position Y:</p>
+                    <input
+                      id="position-y"
+                      name="positionY"
+                      // type="number"
+                      value={posY}
+                      onChange={handlePosYChange}
+                      onKeyDown={handlePosYKeyDown}
+                      onBlur={handlePosYBlur}
+                      disabled={isQuickHideActive}
+                    />
+                  </div>
+                  <div className={style.field_group1}>
+                    <p>Position Z:</p>
+                    <input
+                      id="position-z"
+                      name="positionZ"
+                      // type="number"
+                      value={posZ}
+                      onChange={handlePosZChange}
+                      onKeyDown={handlePosZKeyDown}
+                      onBlur={handlePosZBlur}
+                      disabled={isQuickHideActive}
+                    />
+                  </div>
+                  <div className={style.field_group1}>
+                    {/* <p>Change Material</p> */}
                     <button
                       onClick={handleMaterialChange}
                       className={style.btn_matirialchange}
                       disabled={isQuickHideActive}
-                    ></button>
+                    >Change Material</button>
+                    <img src={mouse_svg.src} alt="" />
                   </div>
-                  {/* <div className={style.field_group1}>
-                    <p>Edge Banding:</p>
-                    <label className={style.toggleSwitch}>
-                      <input
-                        type="checkbox"
-                        checked={edgeBandingVisible}
-                        onChange={handleEdgeBandingToggle}
-                      />
-                      <span className={style.slider}></span>
-                    </label>
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Minifix Distance:</p>
-                    <button
-                      onClick={handleSubtractMinifix}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="5"
-                      value={
-                        selectedObject?.minifixSpacing ||
-                        MINIFIX_STANDARDS.SPACING
-                      }
-                      onChange={handleMinifixChange}
-                      disabled={isQuickHideActive}
-                    />
-                    <button
-                      onClick={handleIncrementMinifix}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
-                  </div> */}
                 </div>
               )}
-              {/* Advanced Section */}
-              {/* <div className={style.field_group_title_div}>
-                <img
-                  src={isAdvancedOpen ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                  onClick={toggleAdvanced}
-                  style={{ cursor: 'pointer' }}
-                />
-                <p className={style.field_group_title}>Advanced</p>
-              </div> */}
 
-              {!isQuickHideActive && isSettingOpen && isBasicOpen && (
+              {!isQuickHideActive && isSettingOpen && isBasicOpen && itemType.DOOR && (
                 <div className={style.field_group_div}>
                   {/* Door Position */}
                   <div className={style.field_group}>
@@ -841,6 +1022,7 @@ const Sidebar: React.FC = () => {
             console.log('Selected materials:', selectedMaterials);
             setShowMaterialPopup(false);
           }}
+          rules={(selectedObject as any)?.catalog_rule || []}
         />
       )}
     </div>
