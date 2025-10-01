@@ -711,7 +711,7 @@ const Sidebar: React.FC = () => {
                       onChange={handleWidthChange}
                       onKeyDown={handleWidthKeyDown}
                       onBlur={handleBlur}
-                      min={5}
+                      min={0}
                       disabled={isHorizontalPlank || isDisabled}
                     />
                     <button
@@ -738,7 +738,7 @@ const Sidebar: React.FC = () => {
                       onChange={handleHeightChange}
                       onKeyDown={handleHeightKeyDown}
                       onBlur={handleBlur}
-                      min={5}
+                      min={0}
                       disabled={isVerticalPlank || isDisabled}
                     />
                     <button
@@ -765,7 +765,7 @@ const Sidebar: React.FC = () => {
                       onChange={handleDepthChange}
                       onKeyDown={handleDepthKeyDown}
                       onBlur={handleBlur}
-                      min={5}
+                      min={0}
                       max={parentObject?.depth}
                       disabled={isQuickHideActive}
                     />
