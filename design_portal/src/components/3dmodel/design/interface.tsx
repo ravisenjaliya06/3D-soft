@@ -14,6 +14,10 @@ export interface ThreeDView {
   toggleSky: () => void;
   isDay: boolean;
   isZoomMode: boolean;
+  addSimpleCabinet: () => void;
+  addSimpleTVUnit: () => void;
+  addSimpleTable: () => void;
+  addComputerDesk: () => void;
   // addBaseCabinetsUnderPlatform: () => void;
   // addFullKitchenSetup: () => Promise<void>;
   loadSinkModel: (url: string) => Promise<void>;
