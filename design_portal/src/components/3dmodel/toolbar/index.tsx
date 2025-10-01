@@ -593,8 +593,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         const position = { x: placeX, y: floorY + height / 2, z: placeZ };
 
         // Create API call
+        let apiResponse: any = null;
         try {
-          const apiResponse = await addCabinetItemToDesign(catalogId, {
+          apiResponse = await addCabinetItemToDesign(catalogId, {
             type: 'Cabinet',
             name: item.name,
             description: item.description || `${item.name} description`,
@@ -625,6 +626,39 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         } else {
           if (typeof threeDView.addSimpleCabinet === 'function') threeDView.addSimpleCabinet();
         }
+
+        // Annotate the newly created container with API metadata
+        try {
+          const containerName = lowerName.includes('tv')
+            ? 'SimpleTVUnit'
+            : lowerName.includes('computer') || lowerName.includes('desk')
+            ? 'ComputerDesk'
+            : lowerName.includes('table')
+            ? 'SimpleTable'
+            : 'SimpleCabinet';
+          const candidates: THREE.Mesh[] = [] as any;
+          scene.traverse((o) => {
+            if (o instanceof THREE.Mesh && o.name === containerName) {
+              candidates.push(o);
+            }
+          });
+          if (candidates.length > 0) {
+            const pick = candidates.reduce((best, cur) => {
+              const dCur = cur.position.distanceTo(
+                new THREE.Vector3(position.x, position.y, position.z),
+              );
+              if (!best) return { node: cur, dist: dCur } as any;
+              return dCur < best.dist ? { node: cur, dist: dCur } : best;
+            }, null as any);
+            if (pick?.node) {
+              pick.node.userData = {
+                ...(pick.node.userData || {}),
+                objectId: apiResponse?.id,
+                apiData: apiResponse || undefined,
+              };
+            }
+          }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }

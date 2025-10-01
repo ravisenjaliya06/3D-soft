@@ -178,7 +178,7 @@ const Sidebar: React.FC = () => {
   const handleWidthKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
       const newWidth = validateNumericInput(width);
-      if (newWidth !== null && newWidth >= 5) {
+      if (newWidth !== null) {
         updateObjectInScene(
           selectedObject.id,
           { width: newWidth },
@@ -186,6 +186,7 @@ const Sidebar: React.FC = () => {
           dispatch,
           selectedObject,
         );
+        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
       }
     }
   };
@@ -203,6 +204,7 @@ const Sidebar: React.FC = () => {
           dispatch,
           selectedObject,
         );
+        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
       }
     }
   };
@@ -221,6 +223,7 @@ const Sidebar: React.FC = () => {
           dispatch,
           selectedObject,
         );
+        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
       }
     }
   };
@@ -304,6 +307,7 @@ const Sidebar: React.FC = () => {
       dispatch,
       selectedObject,
     );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
   };
 
   const handlePosXKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -338,6 +342,54 @@ const Sidebar: React.FC = () => {
       dispatch,
       selectedObject,
     );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+  };
+
+  const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
+    if (!scene) return;
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((child: any) => {
+      if (
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === objectId
+      ) {
+        targetMesh = child as THREE.Mesh;
+      }
+    });
+    if (!targetMesh) return;
+    const mesh = targetMesh as any;
+    if (mesh.name !== 'SimpleCabinet') return;
+    const params = (mesh.geometry as THREE.BoxGeometry)
+      .parameters as any;
+    const width = params.width as number;
+    const height = params.height as number;
+    const depth = params.depth as number;
+    const thickness = 0.018;
+    const existing = (mesh.children.find(
+      (c: any) => c && c.name === 'invisibleBox_cabinet',
+    ) || null) as any as THREE.Mesh | null;
+    if (existing) {
+      mesh.remove(existing);
+      (existing as any).geometry?.dispose?.();
+    }
+    const invMat = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.0,
+      depthWrite: false,
+    });
+    const innerW = Math.max(width - thickness * 2, 0.02);
+    const innerH = Math.max(height - thickness * 2, 0.02);
+    const innerD = Math.max(depth - thickness * 2, 0.02);
+    const invCab = new THREE.Mesh(
+      new THREE.BoxGeometry(innerW, innerH, innerD),
+      invMat,
+    );
+    invCab.name = 'invisibleBox_cabinet';
+    invCab.userData.isInvisibleBox = true;
+    invCab.position.set(0, 0, 0);
+    mesh.add(invCab);
   };
 
   // Increment and decrement handlers
@@ -352,6 +404,7 @@ const Sidebar: React.FC = () => {
         dispatch,
         selectedObject,
       );
+      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
     }
   };
 
@@ -365,6 +418,7 @@ const Sidebar: React.FC = () => {
       dispatch,
       selectedObject,
     );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
   };
 
   const handleSubtractHeight = () => {
@@ -378,6 +432,7 @@ const Sidebar: React.FC = () => {
         dispatch,
         selectedObject,
       );
+      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
     }
   };
 
@@ -391,6 +446,7 @@ const Sidebar: React.FC = () => {
       dispatch,
       selectedObject,
     );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
   };
 
   const handleSubtractDepth = () => {
@@ -404,6 +460,7 @@ const Sidebar: React.FC = () => {
         dispatch,
         selectedObject,
       );
+      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
     }
   };
 
@@ -417,6 +474,7 @@ const Sidebar: React.FC = () => {
       dispatch,
       selectedObject,
     );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
   };
 
   const handleSubtractX = () => {

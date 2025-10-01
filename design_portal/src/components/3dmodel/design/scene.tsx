@@ -686,9 +686,9 @@ export const addLShapeKitchenPlatform = (
 
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   // Standard cabinet dimensions in meters
-  const width = 0.6; // 600mm
-  const height = 0.7; // 700mm
-  const depth = 0.4; // 400mm
+  const width = 6; // 600mm
+  const height = 7; // 700mm
+  const depth = 0.8; // 400mm
   const thickness = 0.018; // 18mm board
 
   // Base Y (floor)
