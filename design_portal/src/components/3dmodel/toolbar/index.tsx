@@ -930,46 +930,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
-    {
-      option: 'Simple Cabinet',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleCabinet === 'function') {
-          threeDView.addSimpleCabinet();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'TV Unit',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleTVUnit === 'function') {
-          threeDView.addSimpleTVUnit();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'Table',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleTable === 'function') {
-          threeDView.addSimpleTable();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'Computer Desk',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addComputerDesk === 'function') {
-          threeDView.addComputerDesk();
-        }
-      },
-      isActive: false,
-    },
   ];
 
   const viewTools = [
@@ -1233,6 +1193,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     'Horizontal Plank': horizontal_plank.src,
     'Vertical Plank': vertical_plank.src,
     Plank: vertical_plank.src,
+    Cabinet: cabinet.src,
   };
 
   return (
