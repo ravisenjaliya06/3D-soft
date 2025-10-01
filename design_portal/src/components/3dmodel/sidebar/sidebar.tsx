@@ -625,7 +625,7 @@ const Sidebar: React.FC = () => {
     const label = position as string;
     const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
     // Nudge the handle a bit outwards so it is not z-fighting with the door surface
-    const outward = new THREE.Vector3(0, 0, 0.01);
+    const outward = new THREE.Vector3(0, 0, 0);
     targetWorld.add(outward);
 
     // Convert to door local space and set handle's local position
