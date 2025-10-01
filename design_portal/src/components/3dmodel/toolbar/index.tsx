@@ -683,6 +683,35 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
 
+    const getOrCreateInternalBox = (container: THREE.Mesh): THREE.Mesh => {
+      // Try find existing child invisible box
+      const existing = (container.children || []).find(
+        (c: any) => typeof c.name === 'string' && c.name.toLowerCase().startsWith('invisiblebox'),
+      ) as THREE.Mesh | undefined;
+      if (existing) return existing;
+      // Create a new internal invisible box using container geometry params
+      const params = (container.geometry as THREE.BoxGeometry).parameters as any;
+      const width = params.width as number;
+      const height = params.height as number;
+      const depth = params.depth as number;
+      const thickness = 0.018;
+      const invW = Math.max(width - thickness * 2, 0.02);
+      const invH = Math.max(height - thickness * 2, 0.02);
+      const invD = Math.max(depth - thickness * 2, 0.02);
+      const invMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+      });
+      const inv = new THREE.Mesh(new THREE.BoxGeometry(invW, invH, invD), invMat);
+      inv.name = 'invisibleBox_auto';
+      (inv as any).userData.isInvisibleBox = true;
+      inv.position.set(0, 0, 0);
+      container.add(inv);
+      return inv;
+    };
+
     // Determine target box based on item type
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
@@ -723,52 +752,37 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     if (!targetBox) {
       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (hovered) {
-        if (itemType === 'Plank') {
-          if (
-            itemName === 'Vertical Plank' &&
-            hovered.name.toLowerCase().includes('invisiblebox')
-          ) {
-            targetBox = hovered;
-          } else if (
-            itemName === 'Horizontal Plank' &&
-            hovered.name.toLowerCase().includes('invisiblebox')
-          ) {
-            targetBox = hovered;
-          }
-        } else if (hovered.name.toLowerCase().includes('invisiblebox')) {
-          targetBox = hovered;
-        }
+      if (hovered && typeof hovered.name === 'string' && hovered.name.toLowerCase().includes('invisiblebox')) {
+        targetBox = hovered;
       }
     }
 
-    // Fallback: use selected container's internal invisible box if none picked
+    // Final fallback: use selected container (or selected child’s parent) and auto-create internal box
     if (!targetBox) {
+      const selectedChildObjectId = store.getState().data.selectedChildObject as string | null;
       const selectedObjectId = store.getState().data.selectedObject as string | null;
-      if (selectedObjectId) {
-        const candidates: THREE.Mesh[] = [] as any;
+      let container: THREE.Mesh | null = null;
+      if (selectedChildObjectId) {
         scene.traverse((o: any) => {
-          if (o && o.isMesh && o.userData && o.userData.objectId === selectedObjectId) {
-            const childInv = (o.children || []).find((c: any) =>
-              typeof c.name === 'string' && c.name.toLowerCase().startsWith('invisiblebox'),
-            );
-            if (childInv) candidates.push(childInv as THREE.Mesh);
+          if (!container && o && o.isMesh && o.userData && o.userData.objectId === selectedChildObjectId) {
+            container = (o.parent && (o.parent as any).isMesh) ? (o.parent as THREE.Mesh) : o as THREE.Mesh;
           }
         });
-        if (candidates.length > 0) targetBox = candidates[0];
+      }
+      if (!container && selectedObjectId) {
+        scene.traverse((o: any) => {
+          if (!container && o && o.isMesh && o.userData && o.userData.objectId === selectedObjectId) {
+            container = o as THREE.Mesh;
+          }
+        });
+      }
+      if (container) {
+        targetBox = getOrCreateInternalBox(container);
       }
     }
 
-    if (!targetBox) {
-      const errorMessage =
-        itemType === 'Plank'
-          ? itemName === 'Vertical Plank'
-            ? 'Select an invisible box under the platform first.'
-            : 'Select a compartment invisible box first.'
-          : 'Select a compartment invisible box first.';
-      alert(errorMessage);
-      return;
-    }
+    // If still nothing, abort silently (no blocking alert)
+    if (!targetBox) return;
 
     // Handle different item types and make individual API calls for each item
     const designId = window.location.pathname.split('/')[2];
