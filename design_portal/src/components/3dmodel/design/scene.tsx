@@ -9,6 +9,15 @@ import { updateObject } from '../store/dataSlice';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 
+import {
+  setobjectSelected,
+  setSelectedChildObject,
+  setHoverdMesh,
+} from '../store/dataSlice';
+
+
+import { removeExistingLines } from '.';
+
 let cachedHandleModel: THREE.Object3D | null = null;
 
 // ===== Dimension helpers (exported) =====
@@ -16,6 +25,7 @@ const DIMENSION_GROUP_PREFIX = 'plank_dimension_group_';
 const DIM_LABEL_PREFIX = 'plank_dim_label_';
 
 const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
+
 const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -545,7 +555,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => {});
+  window.removeEventListener('resize', () => { });
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1584,6 +1594,10 @@ export const addPlatformOnWall = (
   }
 
   scene.add(platformGroup);
+  store.dispatch(setobjectSelected(null));
+  store.dispatch(setSelectedChildObject(null));
+  store.dispatch(setHoverdMesh(null));
+  removeExistingLines();
 };
 
 export const addVerticalPlanksInsideBox = (
@@ -1707,7 +1721,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch {}
+        } catch { }
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1769,7 +1783,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch {}
+        } catch { }
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1944,7 +1958,7 @@ export const addHorizontalPlanksInsideBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2102,7 +2116,7 @@ export const addVerticalPlanksToBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       plank.userData.cabinetItem = selectedCabinetItem;
@@ -2261,7 +2275,7 @@ export const addHorizontalPlanksToBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2774,7 +2788,7 @@ export const addDrawersOnInvisibleBox = async (
           );
         }
       }
-    } catch {}
+    } catch { }
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -4166,11 +4180,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-          axis: 'x' | 'y' | 'z';
-          side: 'min' | 'max';
-          ref: number;
-          targetUuid: string;
-        }
+        axis: 'x' | 'y' | 'z';
+        side: 'min' | 'max';
+        ref: number;
+        targetUuid: string;
+      }
       | undefined;
     if (!meta) return;
 
@@ -4222,3 +4236,7 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
   view.renderer.domElement.addEventListener('dblclick', onClick);
 }
+function dispatch(arg0: { payload: string | null; type: "data/setobjectSelected"; }) {
+  throw new Error('Function not implemented.');
+}
+
