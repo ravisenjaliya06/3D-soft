@@ -10,11 +10,10 @@ import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 
 import {
+  setHoverdMesh,
   setobjectSelected,
   setSelectedChildObject,
-  setHoverdMesh,
 } from '../store/dataSlice';
-
 
 import { removeExistingLines } from '.';
 
@@ -555,7 +554,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1626,10 +1625,12 @@ export const addPlatformOnWall = (
   platformGroup.name = `Platform_${wallMesh?.name}`;
 
   let floorY = 0;
-  const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+  const cWallGroup = scene.getObjectByName(
+    'cWallWithFloor',
+  ) as THREE.Group | null;
   if (cWallGroup) {
     const floorObj = cWallGroup.children.find(
-      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry
+      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
     ) as THREE.Mesh | undefined;
     if (floorObj) floorY = floorObj.position.y;
   }
@@ -1640,10 +1641,15 @@ export const addPlatformOnWall = (
     height: number;
     depth: number;
     position: { x: number; y: number; z: number };
-    data: { rotation: { x: number; y: number; z: number }, wall: string };
+    data: { rotation: { x: number; y: number; z: number }; wall: string };
   }> = [];
 
-  const createPlatformMesh = (geom: THREE.BoxGeometry, mat: THREE.Material, name: string, pos: THREE.Vector3) => {
+  const createPlatformMesh = (
+    geom: THREE.BoxGeometry,
+    mat: THREE.Material,
+    name: string,
+    pos: THREE.Vector3,
+  ) => {
     const mesh = new THREE.Mesh(geom, mat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -1659,10 +1665,13 @@ export const addPlatformOnWall = (
       depth,
       position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
       data: {
-        rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+        rotation: {
+          x: mesh.rotation.x,
+          y: mesh.rotation.y,
+          z: mesh.rotation.z,
+        },
         wall: wallMesh?.name || '',
       },
-
     });
 
     return mesh;
@@ -1675,28 +1684,49 @@ export const addPlatformOnWall = (
     let leftStartX = wallCenterX - halfLengthX;
     let rightEndX = wallCenterX + halfLengthX;
 
-    const leftPlat = scene.getObjectByName('Counter_LeftWall') as THREE.Mesh | undefined;
+    const leftPlat = scene.getObjectByName('Counter_LeftWall') as
+      | THREE.Mesh
+      | undefined;
     if (leftPlat) {
-      const leftProtrusion = (leftPlat.geometry as THREE.BoxGeometry).parameters.width as number;
-      leftStartX = Math.max(leftStartX, leftPlat.position.x + leftProtrusion / 2);
+      const leftProtrusion = (leftPlat.geometry as THREE.BoxGeometry).parameters
+        .width as number;
+      leftStartX = Math.max(
+        leftStartX,
+        leftPlat.position.x + leftProtrusion / 2,
+      );
     }
 
-    const rightPlat = scene.getObjectByName('Counter_RightWall') as THREE.Mesh | undefined;
+    const rightPlat = scene.getObjectByName('Counter_RightWall') as
+      | THREE.Mesh
+      | undefined;
     if (rightPlat) {
-      const rightProtrusion = (rightPlat.geometry as THREE.BoxGeometry).parameters.width as number;
-      rightEndX = Math.min(rightEndX, rightPlat.position.x - rightProtrusion / 2);
+      const rightProtrusion = (rightPlat.geometry as THREE.BoxGeometry)
+        .parameters.width as number;
+      rightEndX = Math.min(
+        rightEndX,
+        rightPlat.position.x - rightProtrusion / 2,
+      );
     }
 
     const lengthX = Math.max(rightEndX - leftStartX, 0.1);
     const centerX = (leftStartX + rightEndX) / 2;
 
-    const topGeom = new THREE.BoxGeometry(lengthX, countertopThickness, defaultProtrusion);
+    const topGeom = new THREE.BoxGeometry(
+      lengthX,
+      countertopThickness,
+      defaultProtrusion,
+    );
     const topPos = new THREE.Vector3(
       centerX,
       platformHeight + countertopThickness / 2,
-      wallMesh.position.z + wallD / 2 + defaultProtrusion / 2
+      wallMesh.position.z + wallD / 2 + defaultProtrusion / 2,
     );
-    const topMesh = createPlatformMesh(topGeom, counterMat, 'Counter_CenterWall', topPos);
+    const topMesh = createPlatformMesh(
+      topGeom,
+      counterMat,
+      'Counter_CenterWall',
+      topPos,
+    );
 
     // Invisible box from underside to floor (center wall)
     const ibHeight = topMesh.position.y - countertopThickness / 2 - floorY;
@@ -1719,32 +1749,52 @@ export const addPlatformOnWall = (
         height: ibHeight,
         depth: defaultProtrusion,
       };
-      invisible.position.set(topMesh.position.x, floorY + ibHeight / 2, topMesh.position.z);
+      invisible.position.set(
+        topMesh.position.x,
+        floorY + ibHeight / 2,
+        topMesh.position.z,
+      );
       platformGroup.add(invisible);
     }
-
-  } else if (wallMesh?.name === 'Left Wall' || wallMesh?.name === 'Right Wall') {
+  } else if (
+    wallMesh?.name === 'Left Wall' ||
+    wallMesh?.name === 'Right Wall'
+  ) {
     const wallCenterZ = wallMesh.position.z;
     const halfRunZ = wallD / 2;
     const minZ = wallCenterZ - halfRunZ;
     const maxZ = wallCenterZ + halfRunZ;
 
-    const backPlat = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | undefined;
+    const backPlat = scene.getObjectByName('Counter_CenterWall') as
+      | THREE.Mesh
+      | undefined;
     let startZ = minZ;
     if (backPlat) {
-      startZ = backPlat.position.z + ((backPlat.geometry as THREE.BoxGeometry).parameters.depth as number) / 2;
+      startZ =
+        backPlat.position.z +
+        ((backPlat.geometry as THREE.BoxGeometry).parameters.depth as number) /
+          2;
     }
     const effectiveRun = Math.max(maxZ - startZ, 0.1);
     const centerZ = startZ + effectiveRun / 2;
 
     const dir = wallMesh.name === 'Left Wall' ? +1 : -1;
-    const topGeom = new THREE.BoxGeometry(defaultProtrusion, countertopThickness, effectiveRun);
+    const topGeom = new THREE.BoxGeometry(
+      defaultProtrusion,
+      countertopThickness,
+      effectiveRun,
+    );
     const topPos = new THREE.Vector3(
       wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2),
       platformHeight + countertopThickness / 2,
-      centerZ
+      centerZ,
     );
-    const topMesh = createPlatformMesh(topGeom, counterMat, `Counter_${wallMesh.name.replace(' ', '')}`, topPos);
+    const topMesh = createPlatformMesh(
+      topGeom,
+      counterMat,
+      `Counter_${wallMesh.name.replace(' ', '')}`,
+      topPos,
+    );
 
     // Invisible box from underside to floor (side walls)
     const ibHeight = topMesh.position.y - countertopThickness / 2 - floorY;
@@ -1768,10 +1818,13 @@ export const addPlatformOnWall = (
         height: ibHeight,
         depth: effectiveRun,
       };
-      invisible.position.set(topMesh.position.x, floorY + ibHeight / 2, topMesh.position.z);
+      invisible.position.set(
+        topMesh.position.x,
+        floorY + ibHeight / 2,
+        topMesh.position.z,
+      );
       platformGroup.add(invisible);
     }
-
   } else {
     return [];
   }
@@ -1783,7 +1836,6 @@ export const addPlatformOnWall = (
   removeExistingLines();
   return addedMeshes; // Only the visible countertop meshes
 };
-
 
 export const addVerticalPlanksInsideBox = (
   scene: THREE.Scene,
@@ -1906,7 +1958,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1968,7 +2020,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -2143,7 +2195,7 @@ export const addHorizontalPlanksInsideBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2301,7 +2353,7 @@ export const addVerticalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       plank.userData.cabinetItem = selectedCabinetItem;
@@ -2460,7 +2512,7 @@ export const addHorizontalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2973,7 +3025,7 @@ export const addDrawersOnInvisibleBox = async (
           );
         }
       }
-    } catch { }
+    } catch {}
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -4365,11 +4417,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 
@@ -4421,7 +4473,9 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
   view.renderer.domElement.addEventListener('dblclick', onClick);
 }
-function dispatch(arg0: { payload: string | null; type: "data/setobjectSelected"; }) {
+function dispatch(arg0: {
+  payload: string | null;
+  type: 'data/setobjectSelected';
+}) {
   throw new Error('Function not implemented.');
 }
-

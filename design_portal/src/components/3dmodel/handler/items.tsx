@@ -4,17 +4,17 @@ import gsap from 'gsap';
 import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import {
-  addPlatformOnWall,
-  addSimpleCabinet,
-  addSimpleTVUnit,
-  addSimpleTable,
-  addComputerDesk,
-} from '../design/scene';
-import {
   applyEdgeBanding,
   convertDataToGeometry,
   createDesign,
 } from '../catalog/object-creator';
+import {
+  addComputerDesk,
+  addPlatformOnWall,
+  addSimpleCabinet,
+  addSimpleTable,
+  addSimpleTVUnit,
+} from '../design/scene';
 import {
   generateMinifixSystem,
   PlankData,
@@ -260,37 +260,45 @@ async function loadDesignObjects(
 ): Promise<Object3D[]> {
   try {
     const response: { status: number; data: CatalogResponse[] } =
-      await commonService.getWithQueryParam('material', 'catalog', 'design_id', designId);
-      if (response.status === 200 && response.data) {
-        const data = response.data;
-        const createdObjects: Object3D[] = [];
+      await commonService.getWithQueryParam(
+        'material',
+        'catalog',
+        'design_id',
+        designId,
+      );
+    if (response.status === 200 && response.data) {
+      const data = response.data;
+      const createdObjects: Object3D[] = [];
 
-        // Re-create all known types using existing helpers, tagging userData.objectId
-        data.forEach((item) => {
-          try {
-            const nameLower = (item?.name || '').toLowerCase();
-            if (item.type === 'Platform') {
-              const wall = scene.getObjectByName(item.additional_data?.wall);
-              const meshes = addPlatformOnWall(scene, wall as any);
-              // Tag created platform meshes with object id if possible
-              meshes?.forEach?.(() => {});
-            } else if (item.type === 'Cabinet') {
-              if (nameLower.includes('tv')) {
-                addSimpleTVUnit(scene);
-              } else if (nameLower.includes('computer') || nameLower.includes('desk')) {
-                addComputerDesk(scene);
-              } else if (nameLower.includes('table')) {
-                addSimpleTable(scene);
-              } else {
-                addSimpleCabinet(scene);
-              }
+      // Re-create all known types using existing helpers, tagging userData.objectId
+      data.forEach((item) => {
+        try {
+          const nameLower = (item?.name || '').toLowerCase();
+          if (item.type === 'Platform') {
+            const wall = scene.getObjectByName(item.additional_data?.wall);
+            const meshes = addPlatformOnWall(scene, wall as any);
+            // Tag created platform meshes with object id if possible
+            meshes?.forEach?.(() => {});
+          } else if (item.type === 'Cabinet') {
+            if (nameLower.includes('tv')) {
+              addSimpleTVUnit(scene);
+            } else if (
+              nameLower.includes('computer') ||
+              nameLower.includes('desk')
+            ) {
+              addComputerDesk(scene);
+            } else if (nameLower.includes('table')) {
+              addSimpleTable(scene);
+            } else {
+              addSimpleCabinet(scene);
             }
-          } catch (e) {
-            console.error('Failed to recreate item on refresh', item, e);
           }
-        });
-        return data as unknown as Object3D[];
-      }
+        } catch (e) {
+          console.error('Failed to recreate item on refresh', item, e);
+        }
+      });
+      return data as unknown as Object3D[];
+    }
     // if (response.status === 200 && response.data) {
     //   const responseData: CatalogResponse[] = response.data;
     //   const allObjects: Object3D[] = [];

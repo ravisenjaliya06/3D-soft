@@ -25,7 +25,6 @@ import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
 import InputField from '@/components/inputfields/InputField';
 import { removeExistingLines } from '../design/index';
 
-
 // catalog modal photo
 import {
   TEXTURE_MEDIA,
@@ -77,10 +76,10 @@ import { store } from '../store';
 import {
   addObjects,
   addObjectsThunk,
+  setHoverdMesh,
+  setSelectedChildObject,
   setobjectSelected,
   togglAlignment,
-  setSelectedChildObject,
-  setHoverdMesh,
 } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
@@ -249,12 +248,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const scene = threeDView.scene as THREE.Scene;
     let wallFromSelection: THREE.Mesh | null = null;
 
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as THREE.Object3D | undefined;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
     if (outline) {
       const outlineCenter = outline.position.clone();
       const walls: THREE.Mesh[] = [];
       scene.traverse((o) => {
-        if (o instanceof THREE.Mesh && ['Center Wall', 'Left Wall', 'Right Wall'].includes(o.name)) walls.push(o);
+        if (
+          o instanceof THREE.Mesh &&
+          ['Center Wall', 'Left Wall', 'Right Wall'].includes(o.name)
+        )
+          walls.push(o);
       });
       for (const w of walls) {
         const box = new THREE.Box3().setFromObject(w);
@@ -270,7 +275,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
     const targetWall =
       wallFromSelection ||
-      (hovered && ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name) ? hovered : null);
+      (hovered &&
+      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+        ? hovered
+        : null);
 
     let platformData: any[] = [];
     if (targetWall) {
@@ -303,7 +311,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       }
     }
   };
-
 
   const options = [
     { option: 'Home', name: 'Home', icon: img1 },
@@ -726,7 +733,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch { }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -1243,7 +1250,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => { };
+      const getMinifixData = async () => {};
     };
 
     fetchCatalogItems();
@@ -1310,8 +1317,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1333,8 +1341,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1466,16 +1475,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>
