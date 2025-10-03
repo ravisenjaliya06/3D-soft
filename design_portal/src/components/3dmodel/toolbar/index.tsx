@@ -460,9 +460,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     );
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          console.log(cabinetResponse.data, 'cabinetResponse.data');
-        }
+        console.log(cabinetResponse.data, 'cabinetResponse.data');
       }
       setCabinetItems(cabinetResponse.data);
     }
