@@ -289,7 +289,9 @@ export function createLineCreator(
       .putObjectData('design', designId, 'object', payload)
       .then((response) => {
         if ((response as ResponseStatus).status === 200) {
-          console.log('Line saved to database:', objectId);
+          if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+            console.log('Line saved to database:', objectId);
+          }
         } else {
           console.error('Failed to save line to database');
         }

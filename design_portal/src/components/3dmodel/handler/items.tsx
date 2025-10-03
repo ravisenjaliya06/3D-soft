@@ -716,7 +716,9 @@ async function create(
           mainObject.child = childObjects?.map((child) => child.id) || [];
 
           catalogMap[entry.name || ''] = [mainObject, ...(childObjects || [])];
-          console.log('catalogMap', catalogMap);
+          if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+            console.log('catalogMap', catalogMap);
+          }
           allObjects.push(mainObject, ...(childObjects || []));
 
           if (!entry.parent) {
@@ -1083,9 +1085,11 @@ async function createItem(
                   patchResponse.status === 200 ||
                   patchResponse.status === 201
                 ) {
-                  console.log(
-                    'Minifix data updated in database after adding new plank',
-                  );
+                  if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                    console.log(
+                      'Minifix data updated in database after adding new plank',
+                    );
+                  }
                 } else {
                   console.error(
                     'Failed to update Minifix data in database:',
@@ -1680,7 +1684,9 @@ async function moveObject(
                 cupboardResponse.status === 200 ||
                 cupboardResponse.status === 201
               ) {
-                console.log('✅ Cupboard & planks updated');
+                if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                  console.log('✅ Cupboard & planks updated');
+                }
               } else {
                 console.error(
                   '❌ Failed to update cupboard:',
@@ -1740,7 +1746,9 @@ async function moveObject(
                     ],
                   },
                 };
-                console.log('drawerPayload', drawerPayload);
+                if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                  console.log('drawerPayload', drawerPayload);
+                }
                 const drawerResponse = await commonService.put(
                   'design',
                   `${designId}/object`,
@@ -1751,7 +1759,9 @@ async function moveObject(
                   drawerResponse.status === 200 ||
                   drawerResponse.status === 201
                 ) {
-                  console.log(`✅ Drawer ${drawer.name} updated`);
+                  if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                    console.log(`✅ Drawer ${drawer.name} updated`);
+                  }
                 } else {
                   console.error(
                     `❌ Failed to update drawer ${drawer.name}:`,

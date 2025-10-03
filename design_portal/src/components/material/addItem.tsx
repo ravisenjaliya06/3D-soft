@@ -41,7 +41,9 @@ const AddMaterialPopup: React.FC<Props> = ({
   companyState,
   handleGetCompanyMaterials,
 }) => {
-  console.log(companyState);
+  if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+    console.log(companyState);
+  }
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
@@ -2654,7 +2656,9 @@ const AddMaterialPopup: React.FC<Props> = ({
       ...prev,
       [key]: value,
     }));
-    console.log(formData, 'formdata');
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(formData, 'formdata');
+    }
     // Set material type when selected in first step
     if (key === 'type' && currentStep === 0) {
       setSelectedMaterialType(value as string);
@@ -3057,7 +3061,9 @@ const AddMaterialPopup: React.FC<Props> = ({
       textures,
     };
 
-    console.log('Final Data to submit:', finalData);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('Final Data to submit:', finalData);
+    }
 
     try {
       const response = await commonService.post(

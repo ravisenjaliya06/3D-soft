@@ -78,7 +78,9 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject) {
-      console.log(selectedObject, 'selectedObject');
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log(selectedObject, 'selectedObject');
+      }
       setWidth(selectedObject.width);
       setHeight(selectedObject.height);
       setDepth(selectedObject.depth);
@@ -1088,7 +1090,9 @@ const Sidebar: React.FC = () => {
           onClose={() => setShowMaterialPopup(false)}
           onSave={(selectedMaterials) => {
             // Handle material change logic here
-            console.log('Selected materials:', selectedMaterials);
+            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+              console.log('Selected materials:', selectedMaterials);
+            }
             setShowMaterialPopup(false);
           }}
           rules={(selectedObject as any)?.catalog_rule || []}
