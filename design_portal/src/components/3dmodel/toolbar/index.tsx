@@ -59,12 +59,11 @@ import {
   addHorizontalPlanksToBox,
   addLShapeKitchenPlatform,
   addPlatformOnWall,
+  addSimpleCabinet,
+  addSimpleTVUnit,
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
   addVerticalPlanksToBox,
-  addSimpleCabinet,
-  addSimpleTVUnit,
-  addSimpleTable,
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -76,8 +75,8 @@ import { store } from '../store';
 import {
   addObjects,
   addObjectsThunk,
-  togglAlignment,
   setobjectSelected,
+  togglAlignment,
 } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
@@ -527,7 +526,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         let width = 0.6;
         let height = 0.7;
         let depth = 0.4;
-        let parts: Array<{ name: string; width: number; height: number; depth: number }> = [];
+        let parts: Array<{
+          name: string;
+          width: number;
+          height: number;
+          depth: number;
+        }> = [];
         if (lowerName.includes('tv')) {
           // Simple TV unit
           width = 1.6;
@@ -539,9 +543,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           depth = Math.max(unitDepth, topShelfDepth); // 0.35
           parts = [
             { name: 'Base', width, height: baseHeight, depth: unitDepth },
-            { name: 'RightPanel', width: 0.018, height: panelHeight, depth: unitDepth },
+            {
+              name: 'RightPanel',
+              width: 0.018,
+              height: panelHeight,
+              depth: unitDepth,
+            },
           ];
-        } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
+        } else if (
+          lowerName.includes('computer') ||
+          lowerName.includes('desk')
+        ) {
           // Computer desk
           width = 1.4;
           depth = 0.55;
@@ -565,28 +577,49 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           parts = [
             { name: 'LEFT_PLANK', width: thickness, height, depth },
             { name: 'RIGHT_PLANK', width: thickness, height, depth },
-            { name: 'BOTTOM_PLANK', width: Math.max(width - thickness * 2, 0.02), height: thickness, depth },
-            { name: 'TOP_PLANK', width: Math.max(width - thickness * 2, 0.02), height: thickness, depth },
-            { name: 'BACK_PLANK', width: Math.max(width - thickness * 2, 0.02), height: Math.max(height - thickness * 2, 0.02), depth: thickness },
+            {
+              name: 'BOTTOM_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: thickness,
+              depth,
+            },
+            {
+              name: 'TOP_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: thickness,
+              depth,
+            },
+            {
+              name: 'BACK_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: Math.max(height - thickness * 2, 0.02),
+              depth: thickness,
+            },
           ];
         }
 
         // Floor Y
         let floorY = 0;
-        const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+        const cWallGroup = scene.getObjectByName(
+          'cWallWithFloor',
+        ) as THREE.Group | null;
         if (cWallGroup) {
           const floorObj = cWallGroup.children.find(
-            (o: any) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
+            (o: any) =>
+              (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
           ) as THREE.Mesh | undefined;
           if (floorObj) floorY = floorObj.position.y;
         }
 
         // Place against Center Wall if available
-        const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
+        const centerWall = scene.getObjectByName(
+          'Center Wall',
+        ) as THREE.Mesh | null;
         let placeX = 0;
         let placeZ = depth / 2 + 0.02;
         if (centerWall) {
-          const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;
+          const params = (centerWall.geometry as THREE.BoxGeometry)
+            .parameters as any;
           const wallDepth = params.depth as number;
           placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
         }
@@ -618,13 +651,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
         // Add to scene immediately
         if (lowerName.includes('tv')) {
-          if (typeof threeDView.addSimpleTVUnit === 'function') threeDView.addSimpleTVUnit();
-        } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
-          if (typeof threeDView.addComputerDesk === 'function') threeDView.addComputerDesk();
+          if (typeof threeDView.addSimpleTVUnit === 'function')
+            threeDView.addSimpleTVUnit();
+        } else if (
+          lowerName.includes('computer') ||
+          lowerName.includes('desk')
+        ) {
+          if (typeof threeDView.addComputerDesk === 'function')
+            threeDView.addComputerDesk();
         } else if (lowerName.includes('table')) {
-          if (typeof threeDView.addSimpleTable === 'function') threeDView.addSimpleTable();
+          if (typeof threeDView.addSimpleTable === 'function')
+            threeDView.addSimpleTable();
         } else {
-          if (typeof threeDView.addSimpleCabinet === 'function') threeDView.addSimpleCabinet();
+          if (typeof threeDView.addSimpleCabinet === 'function')
+            threeDView.addSimpleCabinet();
         }
 
         // Annotate the newly created container with API metadata
@@ -632,10 +672,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           const containerName = lowerName.includes('tv')
             ? 'SimpleTVUnit'
             : lowerName.includes('computer') || lowerName.includes('desk')
-            ? 'ComputerDesk'
-            : lowerName.includes('table')
-            ? 'SimpleTable'
-            : 'SimpleCabinet';
+              ? 'ComputerDesk'
+              : lowerName.includes('table')
+                ? 'SimpleTable'
+                : 'SimpleCabinet';
           const candidates: THREE.Mesh[] = [] as any;
           scene.traverse((o) => {
             if (o instanceof THREE.Mesh && o.name === containerName) {
@@ -658,7 +698,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch {}
+        } catch { }
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -682,6 +722,41 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       o.name.startsWith('outline-'),
     ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
+
+    const getOrCreateInternalBox = (container: THREE.Mesh): THREE.Mesh => {
+      // Try find existing child invisible box
+      const existing = (container.children || []).find(
+        (c: any) =>
+          typeof c.name === 'string' &&
+          c.name.toLowerCase().startsWith('invisiblebox'),
+      ) as THREE.Mesh | undefined;
+      if (existing) return existing;
+      // Create a new internal invisible box using container geometry params
+      const params = (container.geometry as THREE.BoxGeometry)
+        .parameters as any;
+      const width = params.width as number;
+      const height = params.height as number;
+      const depth = params.depth as number;
+      const thickness = 0.018;
+      const invW = Math.max(width - thickness * 2, 0.02);
+      const invH = Math.max(height - thickness * 2, 0.02);
+      const invD = Math.max(depth - thickness * 2, 0.02);
+      const invMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+      });
+      const inv = new THREE.Mesh(
+        new THREE.BoxGeometry(invW, invH, invD),
+        invMat,
+      );
+      inv.name = 'invisibleBox_auto';
+      (inv as any).userData.isInvisibleBox = true;
+      inv.position.set(0, 0, 0);
+      container.add(inv);
+      return inv;
+    };
 
     // Determine target box based on item type
     const itemType = selectedCabinetItem.type;
@@ -723,35 +798,59 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     if (!targetBox) {
       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (hovered) {
-        if (itemType === 'Plank') {
-          if (
-            itemName === 'Vertical Plank' &&
-            hovered.name.toLowerCase().includes('invisiblebox')
-          ) {
-            targetBox = hovered;
-          } else if (
-            itemName === 'Horizontal Plank' &&
-            hovered.name.toLowerCase().includes('invisiblebox')
-          ) {
-            targetBox = hovered;
-          }
-        } else if (hovered.name.toLowerCase().includes('invisiblebox')) {
-          targetBox = hovered;
-        }
+      if (
+        hovered &&
+        typeof hovered.name === 'string' &&
+        hovered.name.toLowerCase().includes('invisiblebox')
+      ) {
+        targetBox = hovered;
       }
     }
 
+    // Final fallback: use selected container (or selected child’s parent) and auto-create internal box
     if (!targetBox) {
-      const errorMessage =
-        itemType === 'Plank'
-          ? itemName === 'Vertical Plank'
-            ? 'Select an invisible box under the platform first.'
-            : 'Select a compartment invisible box first.'
-          : 'Select a compartment invisible box first.';
-      alert(errorMessage);
-      return;
+      const selectedChildObjectId = store.getState().data
+        .selectedChildObject as string | null;
+      const selectedObjectId = store.getState().data.selectedObject as
+        | string
+        | null;
+      let container: THREE.Mesh | null = null;
+      if (selectedChildObjectId) {
+        scene.traverse((o: any) => {
+          if (
+            !container &&
+            o &&
+            o.isMesh &&
+            o.userData &&
+            o.userData.objectId === selectedChildObjectId
+          ) {
+            container =
+              o.parent && (o.parent as any).isMesh
+                ? (o.parent as THREE.Mesh)
+                : (o as THREE.Mesh);
+          }
+        });
+      }
+      if (!container && selectedObjectId) {
+        scene.traverse((o: any) => {
+          if (
+            !container &&
+            o &&
+            o.isMesh &&
+            o.userData &&
+            o.userData.objectId === selectedObjectId
+          ) {
+            container = o as THREE.Mesh;
+          }
+        });
+      }
+      if (container) {
+        targetBox = getOrCreateInternalBox(container);
+      }
     }
+
+    // If still nothing, abort silently (no blocking alert)
+    if (!targetBox) return;
 
     // Handle different item types and make individual API calls for each item
     const designId = window.location.pathname.split('/')[2];
@@ -812,15 +911,26 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         apiResponses,
       );
     } else if (itemType === 'Plank') {
-      if (itemName === 'Vertical Plank') {
-        await addVerticalPlanksInsideBox(
-          scene,
-          targetBox,
-          num,
-          selectedCabinetItem,
-          apiResponses,
-        );
-      } else if (itemName === 'Horizontal Plank') {
+      const nameLower = (itemName || '').toLowerCase();
+      if (nameLower.includes('vertical')) {
+        if (nameLower.includes('common')) {
+          await addVerticalPlanksToBox(
+            scene,
+            targetBox,
+            num,
+            selectedCabinetItem,
+            apiResponses,
+          );
+        } else {
+          await addVerticalPlanksInsideBox(
+            scene,
+            targetBox,
+            num,
+            selectedCabinetItem,
+            apiResponses,
+          );
+        }
+      } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksToBox(
           scene,
           targetBox,
@@ -830,11 +940,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         );
       }
     } else if (itemType === 'Cabinet' && itemName === 'Simple Cabinet') {
-      await addSimpleCabinet(scene, targetBox, num, selectedCabinetItem, apiResponses);
+      await addSimpleCabinet(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
     } else if (itemType === 'Cabinet' && itemName === 'Tv Unit') {
-      await addSimpleTVUnit(scene, targetBox, num, selectedCabinetItem, apiResponses);
+      await addSimpleTVUnit(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
     } else if (itemType === 'Cabinet' && itemName === 'Computer Desk') {
-      await addComputerDesk(scene, targetBox, num, selectedCabinetItem, apiResponses);
+      await addComputerDesk(
+        scene,
+        targetBox,
+        num,
+        selectedCabinetItem,
+        apiResponses,
+      );
     }
 
     setCreateCompanyPopup(false);
@@ -930,46 +1058,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       },
       isActive: designTexture,
     },
-    {
-      option: 'Simple Cabinet',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleCabinet === 'function') {
-          threeDView.addSimpleCabinet();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'TV Unit',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleTVUnit === 'function') {
-          threeDView.addSimpleTVUnit();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'Table',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addSimpleTable === 'function') {
-          threeDView.addSimpleTable();
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'Computer Desk',
-      icon: cabinet,
-      onClick: () => {
-        if (threeDView && typeof threeDView.addComputerDesk === 'function') {
-          threeDView.addComputerDesk();
-        }
-      },
-      isActive: false,
-    },
   ];
 
   const viewTools = [
@@ -987,48 +1075,48 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   ];
 
   const alwaysFields = [
-    {
-      option: 'Vertical Planks',
-      icon: vertical_plank,
-      onClick: async () => {
-        const scene = threeDView.scene as THREE.Scene;
-        // Determine selected object via outline center; fallback to hovered
-        const outline = scene.children.find((o) =>
-          o.name.startsWith('outline-'),
-        ) as THREE.Object3D | undefined;
-        let targetBox: THREE.Mesh | null = null;
-        if (outline) {
-          const outlineCenter = outline.position.clone();
-          scene.traverse((o) => {
-            if (
-              o instanceof THREE.Mesh &&
-              o.name.toLowerCase().includes('invisiblebox')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            }
-          });
-        }
-        if (!targetBox) {
-          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-          if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
-            targetBox = hovered;
-        }
-        if (!targetBox) {
-          alert('Select an invisible box under the platform first.');
-          return;
-        }
-        const input = prompt(
-          'How many vertical planks to add inside this box?',
-        );
-        const num = parseInt((input || '').trim(), 10);
-        if (!Number.isFinite(num) || num <= 0) return;
-        addVerticalPlanksToBox(scene, targetBox, num);
-      },
-      isActive: false,
-    },
+    // {
+    //   option: 'Vertical Planks',
+    //   icon: vertical_plank,
+    //   onClick: async () => {
+    //     const scene = threeDView.scene as THREE.Scene;
+    //     // Determine selected object via outline center; fallback to hovered
+    //     const outline = scene.children.find((o) =>
+    //       o.name.startsWith('outline-'),
+    //     ) as THREE.Object3D | undefined;
+    //     let targetBox: THREE.Mesh | null = null;
+    //     if (outline) {
+    //       const outlineCenter = outline.position.clone();
+    //       scene.traverse((o) => {
+    //         if (
+    //           o instanceof THREE.Mesh &&
+    //           o.name.toLowerCase().includes('invisiblebox')
+    //         ) {
+    //           const b = new THREE.Box3().setFromObject(o);
+    //           const c = new THREE.Vector3();
+    //           b.getCenter(c);
+    //           if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
+    //         }
+    //       });
+    //     }
+    //     if (!targetBox) {
+    //       const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+    //       if (hovered && hovered.name.toLowerCase().includes('invisiblebox'))
+    //         targetBox = hovered;
+    //     }
+    //     if (!targetBox) {
+    //       alert('Select an invisible box under the platform first.');
+    //       return;
+    //     }
+    //     const input = prompt(
+    //       'How many vertical planks to add inside this box?',
+    //     );
+    //     const num = parseInt((input || '').trim(), 10);
+    //     if (!Number.isFinite(num) || num <= 0) return;
+    //     addVerticalPlanksToBox(scene, targetBox, num);
+    //   },
+    //   isActive: false,
+    // },
     // {
     //   option: 'Horizontal Planks',
     //   icon: horizontal_plank,
@@ -1067,7 +1155,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     //   option: 'Cabinet',
     //   icon: texture,
     //   // onClick: () => handleCabinetClick(),
-    // },
+    // }, 
     {
       option: 'Upper Cabinets',
       icon: cabinet,
@@ -1233,6 +1321,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     'Horizontal Plank': horizontal_plank.src,
     'Vertical Plank': vertical_plank.src,
     Plank: vertical_plank.src,
+    Cabinet: cabinet.src,
   };
 
   return (
