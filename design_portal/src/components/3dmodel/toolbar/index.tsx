@@ -1171,7 +1171,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     //   option: 'Cabinet',
     //   icon: texture,
     //   // onClick: () => handleCabinetClick(),
-    // }, 
+    // },
     {
       option: 'Upper Cabinets',
       icon: cabinet,

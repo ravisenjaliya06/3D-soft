@@ -555,7 +555,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -631,7 +631,11 @@ const addCTypeWallWithFloor = (
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
   floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, toAvoidOverlap, wallLength / 2 - wallThickness / 2);
+  floorPanel.position.set(
+    0,
+    toAvoidOverlap,
+    wallLength / 2 - wallThickness / 2,
+  );
 
   // ---------- Group ----------
   const cWallGroup = new THREE.Group();
@@ -1717,7 +1721,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1779,7 +1783,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1954,7 +1958,7 @@ export const addHorizontalPlanksInsideBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2112,7 +2116,7 @@ export const addVerticalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       plank.userData.cabinetItem = selectedCabinetItem;
@@ -2271,7 +2275,7 @@ export const addHorizontalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2784,7 +2788,7 @@ export const addDrawersOnInvisibleBox = async (
           );
         }
       }
-    } catch { }
+    } catch {}
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -2995,8 +2999,7 @@ export const addDrawersOnInvisibleBox = async (
         center.z,
       );
       rightRail.position.set(
-        center.x + w / 2 - railT / 2 - 0.01
-        ,
+        center.x + w / 2 - railT / 2 - 0.01,
         yCenter,
         center.z,
       );
@@ -4177,11 +4180,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 
