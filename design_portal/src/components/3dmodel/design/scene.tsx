@@ -555,7 +555,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => {});
+  window.removeEventListener('resize', () => { });
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -1721,7 +1721,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch {}
+        } catch { }
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1783,7 +1783,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch {}
+        } catch { }
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -1958,7 +1958,7 @@ export const addHorizontalPlanksInsideBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2116,7 +2116,7 @@ export const addVerticalPlanksToBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       plank.userData.cabinetItem = selectedCabinetItem;
@@ -2275,7 +2275,7 @@ export const addHorizontalPlanksToBox = (
             } as any),
           );
         }
-      } catch {}
+      } catch { }
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2788,7 +2788,7 @@ export const addDrawersOnInvisibleBox = async (
           );
         }
       }
-    } catch {}
+    } catch { }
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -4180,11 +4180,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-          axis: 'x' | 'y' | 'z';
-          side: 'min' | 'max';
-          ref: number;
-          targetUuid: string;
-        }
+        axis: 'x' | 'y' | 'z';
+        side: 'min' | 'max';
+        ref: number;
+        targetUuid: string;
+      }
       | undefined;
     if (!meta) return;
 

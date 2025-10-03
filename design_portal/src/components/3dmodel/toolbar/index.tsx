@@ -982,8 +982,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     dispatch(setSelectedChildObject(null));
     dispatch(setHoverdMesh(null));
     removeExistingLines();
-
-
   };
 
   const onClose = () => {
