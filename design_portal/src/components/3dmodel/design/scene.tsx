@@ -16,7 +16,7 @@ const DIMENSION_GROUP_PREFIX = 'plank_dimension_group_';
 const DIM_LABEL_PREFIX = 'plank_dim_label_';
 
 const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
-
+const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
 export const init3DDesign = async (
   mount: HTMLDivElement,
 ): Promise<ThreeDView> => {
@@ -559,7 +559,6 @@ const addCTypeWallWithFloor = (
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
-  const floorOffset = 0.01; // so floor sits just up y=0.01 to avoid overlap grid
   // ---------- Materials ----------
   const wallMat = new THREE.MeshStandardMaterial({
     map: wallTexture,
@@ -622,7 +621,7 @@ const addCTypeWallWithFloor = (
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
   floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, floorOffset, wallLength / 2 - wallThickness / 2);
+  floorPanel.position.set(0, toAvoidOverlap, wallLength / 2 - wallThickness / 2);
 
   // ---------- Group ----------
   const cWallGroup = new THREE.Group();
@@ -2626,9 +2625,9 @@ export const addDoorOnInvisibleBox = async (
   // Set face position in world, then attach and convert to local
   let worldFacePos = worldCenter.clone();
   if (isSide) {
-    worldFacePos.x += dir * (w / 2 + 0.01);
+    worldFacePos.x += dir * (w / 2 + toAvoidOverlap);
   } else {
-    worldFacePos.z += d / 2 + 0.01;
+    worldFacePos.z += d / 2 + toAvoidOverlap;
   }
   parent.add(face);
   face.position.copy(parent.worldToLocal(worldFacePos));
@@ -2648,7 +2647,7 @@ export const addDoorOnInvisibleBox = async (
     // Decide margin for handle from edge
     const marginX = 0.04; // 40mm
     const marginY = 0.1; // 100mm from bottom for tall doors
-    const offsetZ = doorSize.z / 2 + 0.01;
+    const offsetZ = doorSize.z / 2 + toAvoidOverlap;
 
     let worldHandlePos = new THREE.Vector3();
 
@@ -2982,7 +2981,8 @@ export const addDrawersOnInvisibleBox = async (
         center.z,
       );
       rightRail.position.set(
-        center.x + w / 2 - railT / 2 - 0.01,
+        center.x + w / 2 - railT / 2 - 0.01
+        ,
         yCenter,
         center.z,
       );
