@@ -1252,6 +1252,11 @@ MATERIAL = [
 
 CATALOG = [
     {
+        "type": "Platform",
+        "name": "Kitchen Platform",
+        "description": "Kitchen Platform",
+    },
+    {
         "type": "Door",
         "name": "Default Door",
         "description": "Default Door",

@@ -4,6 +4,13 @@ import gsap from 'gsap';
 import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import {
+  addPlatformOnWall,
+  addSimpleCabinet,
+  addSimpleTVUnit,
+  addSimpleTable,
+  addComputerDesk,
+} from '../design/scene';
+import {
   applyEdgeBanding,
   convertDataToGeometry,
   createDesign,
@@ -26,6 +33,8 @@ import {
 } from './interface';
 import { MoveHandler } from './moveHandler';
 import { updateObjectInDatabase } from './updateHandler';
+// import { addPlatformOnWall } from '@/components/3dmodel/design/scene';
+
 let moveHandler: MoveHandler | null = null;
 
 function initializeMoveHandler(options: {
@@ -251,334 +260,364 @@ async function loadDesignObjects(
 ): Promise<Object3D[]> {
   try {
     const response: { status: number; data: CatalogResponse[] } =
-      await commonService.get('design', `${designId}/object`);
-    if (response.status === 200 && response.data) {
-      const responseData: CatalogResponse[] = response.data;
-      const allObjects: Object3D[] = [];
-      const idSet = new Set<string>();
-      const parentEntries = responseData.filter((entry) => !entry.parent);
-      for (const parentEntry of parentEntries) {
-        if (idSet.has(parentEntry.id)) {
-          console.warn(`Duplicate ID detected: ${parentEntry.id}, skipping`);
-          continue;
-        }
-        idSet.add(parentEntry.id);
+      await commonService.getWithQueryParam('material', 'catalog', 'design_id', designId);
+      if (response.status === 200 && response.data) {
+        const data = response.data;
+        const createdObjects: Object3D[] = [];
 
-        let parentDataList = [];
-
-        if (
-          parentEntry.design_catalog_items &&
-          parentEntry.design_catalog_items.length > 0
-        ) {
-          parentDataList = parentEntry.design_catalog_items.map((item) => ({
-            ...item.data,
-            position: item.data?.position || { x: 0, y: 0, z: 0 },
-          }));
-        } else if (parentEntry.data) {
-          parentDataList = [
-            {
-              ...parentEntry.data,
-              position: parentEntry.data?.position || { x: 0, y: 0, z: 0 },
-            },
-          ];
-        } else {
-          console.error(
-            'No items or data found for parent entry:',
-            parentEntry.name,
-          );
-          continue;
-        }
-        const parentConvertedData = convertDataToGeometry(parentDataList);
-        const parentThreeDObject = createDesign(parentConvertedData, 'MAX');
-        const parentPosition = parentEntry.data?.position || {
-          x: 0,
-          y: 0,
-          z: 0,
-        };
-        parentThreeDObject.position.set(
-          parentPosition.x,
-          parentPosition.y,
-          parentPosition.z,
-        );
-        parentThreeDObject.scale.set(0.01, 0.01, 0.01);
-        parentThreeDObject.name = parentEntry.name || '';
-        parentThreeDObject.userData.objectId = parentEntry.id;
-        parentThreeDObject.userData.type = parentEntry.data?.catalog_type || '';
-
-        // Handle child entries (e.g., FIRST_DRAWER, SECOND_DRAWER)
-        const childEntries = responseData.filter(
-          (entry) => entry.parent === parentEntry.id,
-        );
-
-        const childObjects: Object3D[] = [];
-
-        const parentCatalogItems =
-          parentEntry.design_catalog_items?.map((item) => {
-            return {
-              id: item.id,
-              name: item.data?.name || item.name || '',
-              width: item.data?.width || 0,
-              height: item.data?.height || 0,
-              depth: item.data?.depth || 0,
-              altitude: item.data?.altitude || 0,
-              position: item.data?.position || { x: 0, y: 0, z: 0 },
-              material: item.data?.material || {
-                type: 'TEXTURE',
-                value: 'default',
-              },
-              parent: parentEntry.id,
-              child: item.data?.child || [],
-              grooves: item.data?.grooves || [],
-              catalog_type: item.data?.catalog_type || '',
-              layer: item.data?.layer || 0,
-              plankSize: item.data?.plankSize || 2,
-              // 🔧 LOAD MINIFIX HOLES FROM DATABASE
-              minifixConnections: item.data?.minifixConnections || [],
-              minifixHoles: item.data?.minifixHoles || [],
-            };
-          }) || [];
-
-        childObjects.push(...parentCatalogItems);
-
-        for (const childEntry of childEntries) {
-          if (idSet.has(childEntry.id)) {
-            console.warn(`Duplicate ID detected: ${childEntry.id}, skipping`);
-            continue;
-          }
-          idSet.add(childEntry.id);
-
-          let childDataList = [];
-          if (
-            childEntry.design_catalog_items &&
-            childEntry.design_catalog_items.length > 0
-          ) {
-            childDataList = childEntry.design_catalog_items.map((item) => ({
-              ...item.data,
-              position: item.data?.position || { x: 0, y: 0, z: 0 },
-              name: item.data?.name || item.name || '',
-            }));
-          } else if (childEntry.data) {
-            childDataList = [
-              {
-                ...childEntry.data,
-                position: childEntry.data?.position || { x: 0, y: 0, z: 0 },
-                name: childEntry.data?.name || childEntry.name || '',
-              },
-            ];
-          } else {
-            console.error(
-              'No items or data found for child entry:',
-              childEntry.name,
-            );
-            continue;
-          }
-          const childConvertedData = convertDataToGeometry(childDataList);
-          const childThreeDObject = createDesign(childConvertedData, 'MAX');
-          const childPosition = childEntry.data?.position || {
-            x: 0,
-            y: 0,
-            z: 0,
-          };
-          childThreeDObject.position.set(
-            childPosition.x,
-            childPosition.y,
-            childPosition.z,
-          );
-
-          childThreeDObject.children.forEach((plank) => {
-            if (plank.userData.isDrowerPlank) {
-              const plankData = childDataList.find(
-                (item) => item.name === plank.name,
-              );
-              if (plankData) {
-                plank.position.set(
-                  plankData.position.x,
-                  plankData.position.y,
-                  plankData.position.z,
-                );
+        // Re-create all known types using existing helpers, tagging userData.objectId
+        data.forEach((item) => {
+          try {
+            const nameLower = (item?.name || '').toLowerCase();
+            if (item.type === 'Platform') {
+              const wall = scene.getObjectByName(item.additional_data?.wall);
+              const meshes = addPlatformOnWall(scene, wall as any);
+              // Tag created platform meshes with object id if possible
+              meshes?.forEach?.(() => {});
+            } else if (item.type === 'Cabinet') {
+              if (nameLower.includes('tv')) {
+                addSimpleTVUnit(scene);
+              } else if (nameLower.includes('computer') || nameLower.includes('desk')) {
+                addComputerDesk(scene);
+              } else if (nameLower.includes('table')) {
+                addSimpleTable(scene);
+              } else {
+                addSimpleCabinet(scene);
               }
             }
-          });
-
-          childThreeDObject.scale.set(1, 1, 1);
-          childThreeDObject.name = childEntry.name || '';
-          childThreeDObject.userData.objectId = childEntry.id;
-          childThreeDObject.userData.type = childEntry.data?.catalog_type || '';
-
-          childThreeDObject.updateMatrix();
-          childThreeDObject.updateMatrixWorld(true);
-
-          parentThreeDObject.add(childThreeDObject);
-
-          const childObjectMetadata: Object3D = {
-            id: childEntry.id,
-            name: childEntry.name || '',
-            width: childEntry.data?.width || 0,
-            height: childEntry.data?.height || 0,
-            depth: childEntry.data?.depth || 0,
-            altitude: childEntry.data?.altitude || 0,
-            position: childPosition,
-            material: childEntry.data?.material || {
-              type: 'TEXTURE',
-              value: 'default',
-            },
-            parent: parentEntry.id,
-            child:
-              childEntry.design_catalog_items?.map((item) => item.id) || [],
-            grooves: childEntry.data?.grooves || [],
-            layer: childEntry.data?.layer || 0,
-            rotationX: childEntry.data?.rotationX || 0,
-            rotationY: childEntry.data?.rotationY || 0,
-            rotationZ: childEntry.data?.rotationZ || 0,
-            plankSize: childEntry.data?.plankSize || 2,
-            catalog_type: childEntry.data?.catalog_type || '',
-            minifixHoles: childEntry.data?.minifixHoles || [],
-            minifixConnections: childEntry.data?.minifixConnections || [],
-          };
-
-          const childCatalogItems =
-            childEntry.design_catalog_items?.map((item) => {
-              if (idSet.has(item.id)) {
-                console.warn(
-                  `Duplicate item ID detected: ${item.id}, generating new ID`,
-                );
-                item.id = crypto.randomUUID();
-              }
-              idSet.add(item.id);
-              return {
-                id: item.id,
-                name: item.data?.name || item.name || '',
-                width: item.data?.width || 0,
-                height: item.data?.height || 0,
-                depth: item.data?.depth || 0,
-                altitude: item.data?.altitude || 0,
-                position: item.data?.position || { x: 0, y: 0, z: 0 },
-                material: item.data?.material || {
-                  type: 'TEXTURE',
-                  value: 'default',
-                },
-                parent: childEntry.id,
-                child: item.data?.child || [],
-                grooves: item.data?.grooves || [],
-                layer: item.data?.layer || 0,
-                plankSize: item.data?.plankSize || 2,
-                minifixHoles: item.data?.minifixHoles || [],
-                minifixConnections: item.data?.minifixConnections || [],
-              };
-            }) || [];
-
-          childObjects.push(childObjectMetadata, ...childCatalogItems);
-        }
-
-        // Generate compartments
-        if (
-          !parentThreeDObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
-          !parentThreeDObject.name.includes(PLANK.VERTICAL_PLANK)
-        ) {
-          const compartments = generateCompartmentsFromPlanks(
-            parentDataList as PlankDataItem[],
-          );
-          compartments.forEach((compartment, index) => {
-            const geometry = new THREE.BoxGeometry(
-              compartment.width,
-              compartment.height,
-              compartment.depth,
-            );
-            const material = new THREE.MeshBasicMaterial({
-              transparent: true,
-              opacity: 0,
-            });
-            const box = new THREE.Mesh(geometry, material);
-            box.position.set(
-              compartment.position.x,
-              compartment.position.y,
-              compartment.position.z,
-            );
-            box.name = 'invisibleBox';
-            box.userData = {
-              objectId: `invisibleBox_${index}_${parentEntry.id}`,
-            };
-            parentThreeDObject.add(box);
-          });
-        }
-
-        // Assign userData.objectId to all objects, similar to moveObject
-        const objectList: Object3D[] = [
-          {
-            id: parentEntry.id,
-            name: parentEntry.name || '',
-            width: parentEntry.data?.width || 0,
-            height: parentEntry.data?.height || 0,
-            depth: parentEntry.data?.depth || 0,
-            altitude: parentEntry.data?.altitude || 0,
-            position: parentPosition,
-            material: parentEntry.data?.material || {
-              type: 'TEXTURE',
-              value: 'default',
-            },
-            parent: null,
-            child: [
-              ...childEntries.map((child) => child.id),
-              ...(parentEntry.design_catalog_items?.map((item) => item.id) ||
-                []),
-            ],
-            grooves: parentEntry.data?.grooves || [],
-            layer: parentEntry.data?.layer || 0,
-            rotationX: parentEntry.data?.rotationX || 0,
-            rotationY: parentEntry.data?.rotationY || 0,
-            rotationZ: parentEntry.data?.rotationZ || 0,
-            plankSize: parentEntry.data?.plankSize || 2,
-            // 🔧 LOAD MINIFIX DATA FROM DATABASE
-            minifixConnections: parentEntry.data?.minifixConnections || [],
-            minifixSpacing: parentEntry.data?.minifixSpacing,
-            minifixHoles: parentEntry.data?.minifixHoles || [],
-          },
-          ...childObjects,
-        ];
-
-        // Assign IDs by traversing parentThreeDObject
-        objectList.forEach((obj) => {
-          let targetObject: THREE.Object3D | undefined;
-          parentThreeDObject.traverse((child) => {
-            if (child.name === obj.name) {
-              targetObject = child;
-            }
-          });
-
-          if (targetObject) {
-            targetObject.userData.objectId = obj.id;
-          } else if (obj.name !== '') {
-            console.warn(
-              `No 3D object found for ${obj.name} with ID ${obj.id}`,
-            );
+          } catch (e) {
+            console.error('Failed to recreate item on refresh', item, e);
           }
         });
-
-        visualizeMinifixConnections(
-          parentEntry.data?.minifixConnections || [],
-          parentThreeDObject,
-        );
-        parentThreeDObject.updateMatrix();
-        parentThreeDObject.updateMatrixWorld(true);
-        scene.add(parentThreeDObject);
-
-        allObjects.push(...objectList);
+        return data as unknown as Object3D[];
       }
+    // if (response.status === 200 && response.data) {
+    //   const responseData: CatalogResponse[] = response.data;
+    //   const allObjects: Object3D[] = [];
+    //   const idSet = new Set<string>();
+    //   const parentEntries = responseData.filter((entry) => !entry.parent);
+    //   for (const parentEntry of parentEntries) {
+    //     if (idSet.has(parentEntry.id)) {
+    //       console.warn(`Duplicate ID detected: ${parentEntry.id}, skipping`);
+    //       continue;
+    //     }
+    //     idSet.add(parentEntry.id);
 
-      if (moveHandler) {
-        const movableObjects = allObjects
-          .map((obj) => {
-            return scene.getObjectByName(obj.name);
-          })
-          .filter((obj) => obj !== undefined);
+    //     let parentDataList = [];
 
-        moveHandler.movableObjects = movableObjects;
-      }
-      return allObjects;
-    } else {
-      console.error('Failed to load design objects:', response);
-      return [];
-    }
+    //     if (
+    //       parentEntry.design_catalog_items &&
+    //       parentEntry.design_catalog_items.length > 0
+    //     ) {
+    //       parentDataList = parentEntry.design_catalog_items.map((item) => ({
+    //         ...item.data,
+    //         position: item.data?.position || { x: 0, y: 0, z: 0 },
+    //       }));
+    //     } else if (parentEntry.data) {
+    //       parentDataList = [
+    //         {
+    //           ...parentEntry.data,
+    //           position: parentEntry.data?.position || { x: 0, y: 0, z: 0 },
+    //         },
+    //       ];
+    //     } else {
+    //       console.error(
+    //         'No items or data found for parent entry:',
+    //         parentEntry.name,
+    //       );
+    //       continue;
+    //     }
+    //     const parentConvertedData = convertDataToGeometry(parentDataList);
+    //     const parentThreeDObject = createDesign(parentConvertedData, 'MAX');
+    //     const parentPosition = parentEntry.data?.position || {
+    //       x: 0,
+    //       y: 0,
+    //       z: 0,
+    //     };
+    //     parentThreeDObject.position.set(
+    //       parentPosition.x,
+    //       parentPosition.y,
+    //       parentPosition.z,
+    //     );
+    //     parentThreeDObject.scale.set(0.01, 0.01, 0.01);
+    //     parentThreeDObject.name = parentEntry.name || '';
+    //     parentThreeDObject.userData.objectId = parentEntry.id;
+    //     parentThreeDObject.userData.type = parentEntry.data?.catalog_type || '';
+
+    //     // Handle child entries (e.g., FIRST_DRAWER, SECOND_DRAWER)
+    //     const childEntries = responseData.filter(
+    //       (entry) => entry.parent === parentEntry.id,
+    //     );
+
+    //     const childObjects: Object3D[] = [];
+
+    //     const parentCatalogItems =
+    //       parentEntry.design_catalog_items?.map((item) => {
+    //         return {
+    //           id: item.id,
+    //           name: item.data?.name || item.name || '',
+    //           width: item.data?.width || 0,
+    //           height: item.data?.height || 0,
+    //           depth: item.data?.depth || 0,
+    //           altitude: item.data?.altitude || 0,
+    //           position: item.data?.position || { x: 0, y: 0, z: 0 },
+    //           material: item.data?.material || {
+    //             type: 'TEXTURE',
+    //             value: 'default',
+    //           },
+    //           parent: parentEntry.id,
+    //           child: item.data?.child || [],
+    //           grooves: item.data?.grooves || [],
+    //           catalog_type: item.data?.catalog_type || '',
+    //           layer: item.data?.layer || 0,
+    //           plankSize: item.data?.plankSize || 2,
+    //           // 🔧 LOAD MINIFIX HOLES FROM DATABASE
+    //           minifixConnections: item.data?.minifixConnections || [],
+    //           minifixHoles: item.data?.minifixHoles || [],
+    //         };
+    //       }) || [];
+
+    //     childObjects.push(...parentCatalogItems);
+
+    //     for (const childEntry of childEntries) {
+    //       if (idSet.has(childEntry.id)) {
+    //         console.warn(`Duplicate ID detected: ${childEntry.id}, skipping`);
+    //         continue;
+    //       }
+    //       idSet.add(childEntry.id);
+
+    //       let childDataList = [];
+    //       if (
+    //         childEntry.design_catalog_items &&
+    //         childEntry.design_catalog_items.length > 0
+    //       ) {
+    //         childDataList = childEntry.design_catalog_items.map((item) => ({
+    //           ...item.data,
+    //           position: item.data?.position || { x: 0, y: 0, z: 0 },
+    //           name: item.data?.name || item.name || '',
+    //         }));
+    //       } else if (childEntry.data) {
+    //         childDataList = [
+    //           {
+    //             ...childEntry.data,
+    //             position: childEntry.data?.position || { x: 0, y: 0, z: 0 },
+    //             name: childEntry.data?.name || childEntry.name || '',
+    //           },
+    //         ];
+    //       } else {
+    //         console.error(
+    //           'No items or data found for child entry:',
+    //           childEntry.name,
+    //         );
+    //         continue;
+    //       }
+    //       const childConvertedData = convertDataToGeometry(childDataList);
+    //       const childThreeDObject = createDesign(childConvertedData, 'MAX');
+    //       const childPosition = childEntry.data?.position || {
+    //         x: 0,
+    //         y: 0,
+    //         z: 0,
+    //       };
+    //       childThreeDObject.position.set(
+    //         childPosition.x,
+    //         childPosition.y,
+    //         childPosition.z,
+    //       );
+
+    //       childThreeDObject.children.forEach((plank) => {
+    //         if (plank.userData.isDrowerPlank) {
+    //           const plankData = childDataList.find(
+    //             (item) => item.name === plank.name,
+    //           );
+    //           if (plankData) {
+    //             plank.position.set(
+    //               plankData.position.x,
+    //               plankData.position.y,
+    //               plankData.position.z,
+    //             );
+    //           }
+    //         }
+    //       });
+
+    //       childThreeDObject.scale.set(1, 1, 1);
+    //       childThreeDObject.name = childEntry.name || '';
+    //       childThreeDObject.userData.objectId = childEntry.id;
+    //       childThreeDObject.userData.type = childEntry.data?.catalog_type || '';
+
+    //       childThreeDObject.updateMatrix();
+    //       childThreeDObject.updateMatrixWorld(true);
+
+    //       parentThreeDObject.add(childThreeDObject);
+
+    //       const childObjectMetadata: Object3D = {
+    //         id: childEntry.id,
+    //         name: childEntry.name || '',
+    //         width: childEntry.data?.width || 0,
+    //         height: childEntry.data?.height || 0,
+    //         depth: childEntry.data?.depth || 0,
+    //         altitude: childEntry.data?.altitude || 0,
+    //         position: childPosition,
+    //         material: childEntry.data?.material || {
+    //           type: 'TEXTURE',
+    //           value: 'default',
+    //         },
+    //         parent: parentEntry.id,
+    //         child:
+    //           childEntry.design_catalog_items?.map((item) => item.id) || [],
+    //         grooves: childEntry.data?.grooves || [],
+    //         layer: childEntry.data?.layer || 0,
+    //         rotationX: childEntry.data?.rotationX || 0,
+    //         rotationY: childEntry.data?.rotationY || 0,
+    //         rotationZ: childEntry.data?.rotationZ || 0,
+    //         plankSize: childEntry.data?.plankSize || 2,
+    //         catalog_type: childEntry.data?.catalog_type || '',
+    //         minifixHoles: childEntry.data?.minifixHoles || [],
+    //         minifixConnections: childEntry.data?.minifixConnections || [],
+    //       };
+
+    //       const childCatalogItems =
+    //         childEntry.design_catalog_items?.map((item) => {
+    //           if (idSet.has(item.id)) {
+    //             console.warn(
+    //               `Duplicate item ID detected: ${item.id}, generating new ID`,
+    //             );
+    //             item.id = crypto.randomUUID();
+    //           }
+    //           idSet.add(item.id);
+    //           return {
+    //             id: item.id,
+    //             name: item.data?.name || item.name || '',
+    //             width: item.data?.width || 0,
+    //             height: item.data?.height || 0,
+    //             depth: item.data?.depth || 0,
+    //             altitude: item.data?.altitude || 0,
+    //             position: item.data?.position || { x: 0, y: 0, z: 0 },
+    //             material: item.data?.material || {
+    //               type: 'TEXTURE',
+    //               value: 'default',
+    //             },
+    //             parent: childEntry.id,
+    //             child: item.data?.child || [],
+    //             grooves: item.data?.grooves || [],
+    //             layer: item.data?.layer || 0,
+    //             plankSize: item.data?.plankSize || 2,
+    //             minifixHoles: item.data?.minifixHoles || [],
+    //             minifixConnections: item.data?.minifixConnections || [],
+    //           };
+    //         }) || [];
+
+    //       childObjects.push(childObjectMetadata, ...childCatalogItems);
+    //     }
+
+    //     // Generate compartments
+    //     if (
+    //       !parentThreeDObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
+    //       !parentThreeDObject.name.includes(PLANK.VERTICAL_PLANK)
+    //     ) {
+    //       const compartments = generateCompartmentsFromPlanks(
+    //         parentDataList as PlankDataItem[],
+    //       );
+    //       compartments.forEach((compartment, index) => {
+    //         const geometry = new THREE.BoxGeometry(
+    //           compartment.width,
+    //           compartment.height,
+    //           compartment.depth,
+    //         );
+    //         const material = new THREE.MeshBasicMaterial({
+    //           transparent: true,
+    //           opacity: 0,
+    //         });
+    //         const box = new THREE.Mesh(geometry, material);
+    //         box.position.set(
+    //           compartment.position.x,
+    //           compartment.position.y,
+    //           compartment.position.z,
+    //         );
+    //         box.name = 'invisibleBox';
+    //         box.userData = {
+    //           objectId: `invisibleBox_${index}_${parentEntry.id}`,
+    //         };
+    //         parentThreeDObject.add(box);
+    //       });
+    //     }
+
+    //     // Assign userData.objectId to all objects, similar to moveObject
+    //     const objectList: Object3D[] = [
+    //       {
+    //         id: parentEntry.id,
+    //         name: parentEntry.name || '',
+    //         width: parentEntry.data?.width || 0,
+    //         height: parentEntry.data?.height || 0,
+    //         depth: parentEntry.data?.depth || 0,
+    //         altitude: parentEntry.data?.altitude || 0,
+    //         position: parentPosition,
+    //         material: parentEntry.data?.material || {
+    //           type: 'TEXTURE',
+    //           value: 'default',
+    //         },
+    //         parent: null,
+    //         child: [
+    //           ...childEntries.map((child) => child.id),
+    //           ...(parentEntry.design_catalog_items?.map((item) => item.id) ||
+    //             []),
+    //         ],
+    //         grooves: parentEntry.data?.grooves || [],
+    //         layer: parentEntry.data?.layer || 0,
+    //         rotationX: parentEntry.data?.rotationX || 0,
+    //         rotationY: parentEntry.data?.rotationY || 0,
+    //         rotationZ: parentEntry.data?.rotationZ || 0,
+    //         plankSize: parentEntry.data?.plankSize || 2,
+    //         // 🔧 LOAD MINIFIX DATA FROM DATABASE
+    //         minifixConnections: parentEntry.data?.minifixConnections || [],
+    //         minifixSpacing: parentEntry.data?.minifixSpacing,
+    //         minifixHoles: parentEntry.data?.minifixHoles || [],
+    //       },
+    //       ...childObjects,
+    //     ];
+
+    //     // Assign IDs by traversing parentThreeDObject
+    //     objectList.forEach((obj) => {
+    //       let targetObject: THREE.Object3D | undefined;
+    //       parentThreeDObject.traverse((child) => {
+    //         if (child.name === obj.name) {
+    //           targetObject = child;
+    //         }
+    //       });
+
+    //       if (targetObject) {
+    //         targetObject.userData.objectId = obj.id;
+    //       } else if (obj.name !== '') {
+    //         console.warn(
+    //           `No 3D object found for ${obj.name} with ID ${obj.id}`,
+    //         );
+    //       }
+    //     });
+
+    //     visualizeMinifixConnections(
+    //       parentEntry.data?.minifixConnections || [],
+    //       parentThreeDObject,
+    //     );
+    //     parentThreeDObject.updateMatrix();
+    //     parentThreeDObject.updateMatrixWorld(true);
+    //     scene.add(parentThreeDObject);
+
+    //     allObjects.push(...objectList);
+    //   }
+
+    //   if (moveHandler) {
+    //     const movableObjects = allObjects
+    //       .map((obj) => {
+    //         return scene.getObjectByName(obj.name);
+    //       })
+    //       .filter((obj) => obj !== undefined);
+
+    //     moveHandler.movableObjects = movableObjects;
+    //   }
+    //   return allObjects;
+    // } else {
+    //   console.error('Failed to load design objects:', response);
+    //   return [];
+    // }
   } catch (error) {
     console.error('Error loading design objects:', error);
     return [];
