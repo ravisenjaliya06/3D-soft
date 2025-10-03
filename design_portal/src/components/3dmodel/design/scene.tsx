@@ -1858,128 +1858,128 @@ export const addVerticalPlanksInsideBox = (
   }
 };
 
-// export const addHorizontalPlanksInsideBox = (
-//   scene: THREE.Scene,
-//   boxMesh: THREE.Mesh,
-//   count: number,
-//   selectedCabinetItem: any = null,
-//   apiResponseDataArray: any[] = [],
-// ) => {
-//   if (!boxMesh || count <= 0) return;
+export const addHorizontalPlanksInsideBox = (
+  scene: THREE.Scene,
+  boxMesh: THREE.Mesh,
+  count: number,
+  selectedCabinetItem: any = null,
+  apiResponseDataArray: any[] = [],
+) => {
+  if (!boxMesh || count <= 0) return;
 
-//   // Get actual size of box, safer than relying on .parameters
-//   const bbox = new THREE.Box3().setFromObject(boxMesh);
-//   const size = new THREE.Vector3();
-//   bbox.getSize(size);
-//   const center = new THREE.Vector3();
-//   bbox.getCenter(center);
+  // Get actual size of box, safer than relying on .parameters
+  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const center = new THREE.Vector3();
+  bbox.getCenter(center);
 
-//   const width = size.x;
-//   const height = size.y;
-//   const depth = size.z;
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
 
-//   const thickness = 0.018;
-//   const edgeClearance = Math.max(0.01, thickness);
-//   const innerHeight = height - 2 * edgeClearance;
-//   if (innerHeight <= thickness) return;
+  const thickness = 0.018;
+  const edgeClearance = Math.max(0.01, thickness);
+  const innerHeight = height - 2 * edgeClearance;
+  if (innerHeight <= thickness) return;
 
-//   const interval = innerHeight / (count + 1);
-//   const parent = boxMesh.parent ?? scene;
+  const interval = innerHeight / (count + 1);
+  const parent = boxMesh.parent ?? scene;
 
-//   const plankMat = new THREE.MeshStandardMaterial({
-//     color: 0xd9c7b8,
-//     roughness: 0.7,
-//   });
+  const plankMat = new THREE.MeshStandardMaterial({
+    color: 0xd9c7b8,
+    roughness: 0.7,
+  });
 
-//   // Remove old invisible box
-//   if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
-//   else scene.remove(boxMesh);
+  // Remove old invisible box
+  if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
+  else scene.remove(boxMesh);
 
-//   for (let i = 1; i <= count; i++) {
-//     const yLocal = -height / 2 + edgeClearance + interval * i;
-//     const shelf = new THREE.Mesh(
-//       new THREE.BoxGeometry(width, thickness, depth),
-//       plankMat,
-//     );
-//     shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
-//     shelf.userData.isHorizontalPlank = true;
-//     shelf.userData.dimensions = {
-//       width: width,
-//       height: thickness,
-//       depth: depth,
-//     };
-//     // Attach API response per created shelf (index-aligned) and selected item context
-//     if (apiResponseDataArray && apiResponseDataArray[i - 1]) {
-//       shelf.userData.apiData = apiResponseDataArray[i - 1];
-//       // Also expose a flat objectId on userData (separate from apiData)
-//       const apiI = apiResponseDataArray[i - 1] as any;
-//       shelf.userData.objectId =
-//         apiI?.id ?? apiI?.objectId ?? (apiI?.data && apiI.data.id) ?? undefined;
-//       // Mirror api data to Redux store object if exists
-//       try {
-//         const objInStore = store
-//           .getState()
-//           .data.objects.find((o) => o.id === shelf.userData.objectId);
-//         if (objInStore) {
-//           const rules = shelf.userData?.apiData?.rules;
-//           const dims = shelf.userData?.dimensions;
-//           store.dispatch(
-//             updateObject({
-//               ...objInStore,
-//               apiData: shelf.userData.apiData,
-//               rules,
-//               ...(dims && {
-//                 width: dims.width,
-//                 height: dims.height,
-//                 depth: dims.depth,
-//               }),
-//               position: {
-//                 x: shelf.position.x,
-//                 y: shelf.position.y,
-//                 z: shelf.position.z,
-//               },
-//             } as any),
-//           );
-//         }
-//       } catch { }
-//     }
-//     if (selectedCabinetItem) {
-//       shelf.userData.cabinetItem = selectedCabinetItem;
-//     }
+  for (let i = 1; i <= count; i++) {
+    const yLocal = -height / 2 + edgeClearance + interval * i;
+    const shelf = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      plankMat,
+    );
+    shelf.name = `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`;
+    shelf.userData.isHorizontalPlank = true;
+    shelf.userData.dimensions = {
+      width: width,
+      height: thickness,
+      depth: depth,
+    };
+    // Attach API response per created shelf (index-aligned) and selected item context
+    if (apiResponseDataArray && apiResponseDataArray[i - 1]) {
+      shelf.userData.apiData = apiResponseDataArray[i - 1];
+      // Also expose a flat objectId on userData (separate from apiData)
+      const apiI = apiResponseDataArray[i - 1] as any;
+      shelf.userData.objectId =
+        apiI?.id ?? apiI?.objectId ?? (apiI?.data && apiI.data.id) ?? undefined;
+      // Mirror api data to Redux store object if exists
+      try {
+        const objInStore = store
+          .getState()
+          .data.objects.find((o) => o.id === shelf.userData.objectId);
+        if (objInStore) {
+          const rules = shelf.userData?.apiData?.rules;
+          const dims = shelf.userData?.dimensions;
+          store.dispatch(
+            updateObject({
+              ...objInStore,
+              apiData: shelf.userData.apiData,
+              rules,
+              ...(dims && {
+                width: dims.width,
+                height: dims.height,
+                depth: dims.depth,
+              }),
+              position: {
+                x: shelf.position.x,
+                y: shelf.position.y,
+                z: shelf.position.z,
+              },
+            } as any),
+          );
+        }
+      } catch { }
+    }
+    if (selectedCabinetItem) {
+      shelf.userData.cabinetItem = selectedCabinetItem;
+    }
 
-//     shelf.castShadow = true;
-//     shelf.receiveShadow = true;
+    shelf.castShadow = true;
+    shelf.receiveShadow = true;
 
-//     // Place relative to box center
-//     shelf.position.set(center.x, center.y + yLocal, center.z);
-//     parent.add(shelf);
-//   }
+    // Place relative to box center
+    shelf.position.set(center.x, center.y + yLocal, center.z);
+    parent.add(shelf);
+  }
 
-//   // 🔹 Create invisible boxes between shelves (like vertical planks do)
-//   const invisibleMat = new THREE.MeshBasicMaterial({
-//     color: 0x000000,
-//     transparent: true,
-//     opacity: 0.0,
-//     depthWrite: false,
-//   });
+  // 🔹 Create invisible boxes between shelves (like vertical planks do)
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  });
 
-//   for (let i = 0; i <= count; i++) {
-//     const bottomY = -height / 2 + edgeClearance + interval * i;
-//     const topY = bottomY + interval;
-//     const compHeight = Math.max(interval - thickness, 0.02);
-//     const compCenterY = (bottomY + topY) / 2;
+  for (let i = 0; i <= count; i++) {
+    const bottomY = -height / 2 + edgeClearance + interval * i;
+    const topY = bottomY + interval;
+    const compHeight = Math.max(interval - thickness, 0.02);
+    const compCenterY = (bottomY + topY) / 2;
 
-//     const inv = new THREE.Mesh(
-//       new THREE.BoxGeometry(width, compHeight, depth),
-//       invisibleMat,
-//     );
-//     inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-//     inv.position.set(center.x, center.y + compCenterY, center.z);
-//     parent.add(inv);
-//   }
+    const inv = new THREE.Mesh(
+      new THREE.BoxGeometry(width, compHeight, depth),
+      invisibleMat,
+    );
+    inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
+    inv.position.set(center.x, center.y + compCenterY, center.z);
+    parent.add(inv);
+  }
 
-//   refreshInvisibleBoxesForPlank(scene, boxMesh);
-// };
+  refreshInvisibleBoxesForPlank(scene, boxMesh);
+};
 
 export const addVerticalPlanksToBox = (
   scene: THREE.Scene,
@@ -2309,106 +2309,7 @@ export const addHorizontalPlanksToBox = (
 
   refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
-// const refreshInvisibleBoxesForGroup = (
-//   parent: THREE.Object3D,
-//   groupName: string,
-// ) => {
-//   if (!parent.userData.compartmentConfig) return;
 
-//   const config = parent.userData.compartmentConfig;
-//   if (config.groupName !== groupName) return;
-
-//   // Remove existing invisible boxes for this group
-//   const toRemove: THREE.Object3D[] = [];
-//   parent.traverse((o) => {
-//     if (
-//       o.name.includes(`invisibleBox_compartment_`) &&
-//       o.name.includes(`_for_${groupName}`)
-//     ) {
-//       toRemove.push(o);
-//     }
-//   });
-//   toRemove.forEach((o) => parent.remove(o));
-
-//   // Collect and sort planks
-//   const siblings: THREE.Mesh[] = [];
-//   const plankKey = config.isHorizontal
-//     ? 'HORIZONTAL_PLANK_'
-//     : 'VERTICAL_PLANK_';
-//   parent.traverse((o) => {
-//     if (
-//       o instanceof THREE.Mesh &&
-//       o.name.includes(plankKey) &&
-//       o.name.includes(`_for_${groupName}`)
-//     ) {
-//       siblings.push(o);
-//     }
-//   });
-
-//   if (siblings.length === 0) return;
-
-//   const axis = config.isHorizontal ? 'y' : config.isSideWall ? 'z' : 'x';
-//   const plankPoss = siblings.map((p) => p.position[axis]);
-//   plankPoss.sort((a, b) => a - b);
-
-//   // Calculate compartment starts and ends (local)
-//   const plankMins = plankPoss.map((p) => p - config.thickness / 2);
-//   const plankMaxs = plankPoss.map((p) => p + config.thickness / 2);
-
-//   const starts = [config.boundsMin, ...plankMaxs];
-//   const ends = [...plankMins, config.boundsMax];
-
-//   const invisibleMat = new THREE.MeshBasicMaterial({
-//     color: 0x000000,
-//     transparent: true,
-//     opacity: 0.0,
-//     depthWrite: false,
-//   });
-
-//   const skirtingHeight = config.skirtingHeight || 0;
-//   const heightAboveSkirting = config.height - skirtingHeight;
-//   const plankY = config.centerY + skirtingHeight / 2;
-
-//   for (let i = 0; i < starts.length; i++) {
-//     const start = starts[i];
-//     const end = ends[i];
-//     const compSize = Math.max(end - start, 0.02);
-//     if (compSize <= 0.01) continue;
-//     const centerAlong = (start + end) / 2;
-
-//     let invGeo;
-//     if (config.isHorizontal) {
-//       invGeo = new THREE.BoxGeometry(
-//         config.perpSizeX || config.perpSize,
-//         compSize,
-//         config.perpSizeZ || config.perpSize,
-//       );
-//     } else {
-//       invGeo = new THREE.BoxGeometry(
-//         config.isSideWall ? config.perpSize : compSize,
-//         heightAboveSkirting,
-//         config.isSideWall ? compSize : config.perpSize,
-//       );
-//     }
-//     const inv = new THREE.Mesh(invGeo, invisibleMat);
-//     inv.name = `invisibleBox_compartment_${i}_for_${groupName}`;
-
-//     // Set local position
-//     if (config.isHorizontal) {
-//       inv.position.set(config.centerX || 0, centerAlong, config.centerZ || 0);
-//     } else {
-//       inv.position.set(
-//         config.isSideWall ? config.centerPerp || 0 : centerAlong,
-//         plankY,
-//         config.isSideWall ? centerAlong : config.centerPerp || 0,
-//       );
-//     }
-//     parent.add(inv);
-//   }
-// };
-// New function to refresh invisible boxes after plank movement
-
-// General function to add vertical planks to any invisible box
 const refreshInvisibleBoxesForGroup = (
   parent: THREE.Object3D,
   groupName: string,
@@ -2898,36 +2799,6 @@ export const addDrawersOnInvisibleBox = async (
     }
     scene.add(face);
     drawerGroup.attach(face);
-    // Handle
-    // if (cachedHandleModel) {
-    //   const handle = cachedHandleModel.clone(true);
-
-    //   if (isSide) {
-    //     // For side walls, position handle on the drawer face
-    //     const frontX = (face.position as THREE.Vector3).x;
-    //     handle.position.set(
-    //       frontX + dir * 0.01,
-    //       face.position.y,
-    //       face.position.z,
-    //     );
-    //     // Rotate handle for side wall orientation
-    //     handle.rotation.set(0, 0, 0);
-    //     // For side walls, the drawer face is vertical, so handle should be horizontal
-    //     handle.rotation.z = Math.PI / 2; // Rotate around Z axis to make handle horizontal
-    //     handle.rotation.y = Math.PI / 2; // Rotate around Y axis for side wall orientation
-    //   } else {
-    //     // For center walls, horizontal handle for drawers
-    //     const frontZ = (face.position as THREE.Vector3).z;
-    //     handle.position.set(face.position.x, face.position.y, frontZ + 0.01);
-    //     handle.rotation.set(0, 0, 0);
-    //     handle.rotation.z = Math.PI / 2;
-    //     handle.rotation.x = -(Math.PI / 2);
-    //   }
-
-    //   handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
-    //   scene.add(handle);
-    //   drawerGroup.attach(handle);
-    // }
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
       handle.traverse((n: any) => {
@@ -3120,592 +2991,6 @@ export const addDrawersOnInvisibleBox = async (
     }
   }
 };
-
-// export const addUpperCabinetsAbovePlatform = async (
-//   scene: THREE.Scene,
-//   platformMesh: THREE.Mesh,
-//   count: number,
-//   doorType: 'single' | 'double' = 'single',
-// ) => {
-//   if (count <= 0) return;
-
-//   const params = (platformMesh.geometry as THREE.BoxGeometry).parameters as any;
-//   const platformW = params.width as number;
-//   const platformH = params.height as number;
-//   const platformD = params.depth as number;
-//   const platformTopY = platformMesh.position.y + platformH / 2;
-
-//   // Upper cabinet dimensions
-//   const upperHeight = 0.7; // 700mm tall
-//   const upperDepth = 0.35; // 350mm deep
-//   const upperBottomY = platformTopY + 0.55; // 550mm above platform
-
-//   // Determine platform orientation and cabinet placement
-//   const isSidePlatform =
-//     platformMesh.name.includes('LeftWall') ||
-//     platformMesh.name.includes('RightWall');
-//   const isLeftWall = platformMesh.name.includes('LeftWall');
-//   const isRightWall = platformMesh.name.includes('RightWall');
-
-//   // Find the corresponding wall to position cabinets against
-//   let targetWall: THREE.Mesh | null = null;
-//   if (isSidePlatform) {
-//     if (isLeftWall) {
-//       targetWall = scene.getObjectByName('Left Wall') as THREE.Mesh | null;
-//     } else if (isRightWall) {
-//       targetWall = scene.getObjectByName('Right Wall') as THREE.Mesh | null;
-//     }
-//   } else {
-//     targetWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
-//   }
-
-//   if (!targetWall) {
-//     console.warn('Could not find target wall for upper cabinets');
-//     return;
-//   }
-
-//   // Calculate cabinet dimensions and spacing
-//   let cabinetWidth, cabinetSpacing;
-
-//   if (isSidePlatform) {
-//     // Side platform: cabinets run along Z (wall length)
-//     cabinetWidth = platformD; // Use platform depth as cabinet width
-//     cabinetSpacing = cabinetWidth / count;
-//   } else {
-//     // Center platform: cabinets run along X (wall width)
-//     cabinetWidth = platformW;
-//     cabinetSpacing = cabinetWidth / count;
-//   }
-
-//   await ensureHandleLoaded();
-
-//   // Create upper cabinets group
-//   const upperGroup = new THREE.Group();
-//   upperGroup.name = `UpperCabinets_${platformMesh.name}`;
-//   scene.add(upperGroup);
-
-//   const invisibleMat = new THREE.MeshBasicMaterial({
-//     color: 0x000000,
-//     transparent: true,
-//     opacity: 0.0,
-//     depthWrite: false,
-//   });
-
-//   for (let i = 0; i < count; i++) {
-//     // Cabinet carcass (five-plank construction)
-//     const carcassMat = new THREE.MeshStandardMaterial({
-//       color: 0xd9c7b8,
-//       roughness: 0.7,
-//     });
-//     const thickness = 0.018; // 18mm
-
-//     const cabinetGroup = new THREE.Group();
-//     cabinetGroup.name = `UpperCabinet_${i}_for_${platformMesh.name}`;
-//     (cabinetGroup as any).userData = {
-//       ...(cabinetGroup as any).userData,
-//       type: 'UPPER_CABINET',
-//     };
-
-//     // Calculate cabinet position for this iteration
-//     let cabinetX: number, cabinetZ: number;
-
-//     if (isSidePlatform) {
-//       // For side platforms, position cabinets against the side wall
-//       if (isLeftWall) {
-//         // Position against left wall - cabinet back touches wall
-//         const wallParams = (targetWall.geometry as THREE.BoxGeometry)
-//           .parameters as any;
-//         const wallThickness = wallParams.width as number; // For side walls, thickness is along X axis
-//         cabinetX = targetWall.position.x + wallThickness / 2 + upperDepth / 2;
-//         // Position cabinets along the platform's Z-axis (wall length)
-//         cabinetZ =
-//           platformMesh.position.z + (i - (count - 1) / 2) * cabinetSpacing;
-//       } else if (isRightWall) {
-//         // Position against right wall - cabinet back touches wall
-//         const wallParams = (targetWall.geometry as THREE.BoxGeometry)
-//           .parameters as any;
-//         const wallThickness = wallParams.width as number; // For side walls, thickness is along X axis
-//         cabinetX = targetWall.position.x - wallThickness / 2 - upperDepth / 2;
-//         // Position cabinets along the platform's Z-axis (wall length)
-//         cabinetZ =
-//           platformMesh.position.z + (i - (count - 1) / 2) * cabinetSpacing;
-//       } else {
-//         // Fallback for side platform
-//         cabinetX = platformMesh.position.x;
-//         cabinetZ = platformMesh.position.z;
-//       }
-//     } else {
-//       // For center platform, position cabinets against the center wall
-//       const wallParams = (targetWall.geometry as THREE.BoxGeometry)
-//         .parameters as any;
-//       const wallThickness = wallParams.depth as number;
-//       cabinetX =
-//         platformMesh.position.x - platformW / 2 + cabinetSpacing * (i + 0.5);
-//       cabinetZ = targetWall.position.z + wallThickness / 2 + upperDepth / 2;
-//     }
-
-//     // Five-plank carcass construction
-//     const actualCabinetWidth = cabinetSpacing - 0.02; // small gap between cabinets
-
-//     // Calculate plank positions based on cabinet orientation
-//     let leftPlankX, rightPlankX, bottomPlankX, topPlankX, backPlankX;
-//     let leftPlankZ, rightPlankZ, bottomPlankZ, topPlankZ, backPlankZ;
-
-//     if (isSidePlatform) {
-//       // For side platforms, planks are oriented along Z axis
-//       leftPlankX = cabinetX;
-//       rightPlankX = cabinetX;
-//       bottomPlankX = cabinetX;
-//       topPlankX = cabinetX;
-//       backPlankX = cabinetX;
-
-//       leftPlankZ = cabinetZ - actualCabinetWidth / 2 + thickness / 2;
-//       rightPlankZ = cabinetZ + actualCabinetWidth / 2 - thickness / 2;
-//       bottomPlankZ = cabinetZ;
-//       topPlankZ = cabinetZ;
-//       backPlankZ = cabinetZ;
-//     } else {
-//       // For center platform, planks are oriented along X axis
-//       leftPlankX = cabinetX - actualCabinetWidth / 2 + thickness / 2;
-//       rightPlankX = cabinetX + actualCabinetWidth / 2 - thickness / 2;
-//       bottomPlankX = cabinetX;
-//       topPlankX = cabinetX;
-//       backPlankX = cabinetX;
-
-//       leftPlankZ = cabinetZ;
-//       rightPlankZ = cabinetZ;
-//       bottomPlankZ = cabinetZ;
-//       topPlankZ = cabinetZ;
-//       backPlankZ = cabinetZ;
-//     }
-
-//     // Left plank
-//     const leftPlank = new THREE.Mesh(
-//       new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
-//       carcassMat,
-//     );
-//     leftPlank.position.set(
-//       leftPlankX,
-//       upperBottomY + upperHeight / 2,
-//       leftPlankZ,
-//     );
-//     // Only rotate for side platforms
-//     if (isSidePlatform) {
-//       leftPlank.rotation.y = Math.PI / 2;
-//     }
-//     leftPlank.castShadow = true;
-//     leftPlank.receiveShadow = true;
-//     leftPlank.name = `UpperLeftPlank_${i}`;
-
-//     // Right plank
-//     const rightPlank = new THREE.Mesh(
-//       new THREE.BoxGeometry(thickness, upperHeight, upperDepth),
-//       carcassMat,
-//     );
-//     rightPlank.position.set(
-//       rightPlankX,
-//       upperBottomY + upperHeight / 2,
-//       rightPlankZ,
-//     );
-//     // Only rotate for side platforms
-//     if (isSidePlatform) {
-//       rightPlank.rotation.y = Math.PI / 2;
-//     }
-//     rightPlank.castShadow = true;
-//     rightPlank.receiveShadow = true;
-//     rightPlank.name = `UpperRightPlank_${i}`;
-
-//     // Bottom plank
-//     const bottomPlank = new THREE.Mesh(
-//       new THREE.BoxGeometry(
-//         actualCabinetWidth - thickness * 2,
-//         thickness,
-//         upperDepth,
-//       ),
-//       carcassMat,
-//     );
-//     bottomPlank.position.set(
-//       bottomPlankX,
-//       upperBottomY + thickness / 2,
-//       bottomPlankZ,
-//     );
-//     // Only rotate for side platforms
-//     if (isSidePlatform) {
-//       bottomPlank.rotation.y = Math.PI / 2;
-//     }
-//     bottomPlank.castShadow = true;
-//     bottomPlank.receiveShadow = true;
-//     bottomPlank.name = `UpperBottomPlank_${i}`;
-
-//     // Top plank
-//     const topPlank = new THREE.Mesh(
-//       new THREE.BoxGeometry(
-//         actualCabinetWidth - thickness * 2,
-//         thickness,
-//         upperDepth,
-//       ),
-//       carcassMat,
-//     );
-//     topPlank.position.set(
-//       topPlankX,
-//       upperBottomY + upperHeight - thickness / 2,
-//       topPlankZ,
-//     );
-//     // Only rotate for side platforms
-//     if (isSidePlatform) {
-//       topPlank.rotation.y = Math.PI / 2;
-//     }
-//     topPlank.castShadow = true;
-//     topPlank.receiveShadow = true;
-//     topPlank.name = `UpperTopPlank_${i}`;
-
-//     // Back plank - positioned to touch the wall
-//     const backPlank = new THREE.Mesh(
-//       new THREE.BoxGeometry(
-//         actualCabinetWidth - thickness * 2,
-//         upperHeight - thickness * 2,
-//         thickness,
-//       ),
-//       carcassMat,
-//     );
-
-//     if (isSidePlatform) {
-//       // For side platforms, back plank touches the side wall
-//       if (isLeftWall) {
-//         backPlankX =
-//           targetWall.position.x +
-//           (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 +
-//           thickness / 2;
-//       } else {
-//         backPlankX =
-//           targetWall.position.x -
-//           (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 -
-//           thickness / 2;
-//       }
-//       backPlankZ = cabinetZ;
-//     } else {
-//       // For center platform, back plank touches the center wall
-//       backPlankX = cabinetX;
-//       backPlankZ =
-//         targetWall.position.z +
-//         (targetWall.geometry as THREE.BoxGeometry).parameters.depth / 2 +
-//         thickness / 2;
-//     }
-
-//     backPlank.position.set(
-//       backPlankX,
-//       upperBottomY + upperHeight / 2,
-//       backPlankZ,
-//     );
-//     // Only rotate for side platforms
-//     if (isSidePlatform) {
-//       backPlank.rotation.y = Math.PI / 2;
-//     }
-//     backPlank.castShadow = true;
-//     backPlank.receiveShadow = true;
-//     backPlank.name = `UpperBackPlank_${i}`;
-
-//     // Add planks to cabinet group
-//     cabinetGroup.add(leftPlank, rightPlank, bottomPlank, topPlank, backPlank);
-//     // Add invisible box inside the cabinet
-//     const innerW = actualCabinetWidth - 2 * thickness;
-//     const innerH = upperHeight - 2 * thickness;
-//     const innerD = upperDepth - 2 * thickness;
-//     let inv: THREE.Mesh;
-//     if (isSidePlatform) {
-//       inv = new THREE.Mesh(
-//         new THREE.BoxGeometry(innerD, innerH, innerW),
-//         invisibleMat,
-//       );
-//     } else {
-//       inv = new THREE.Mesh(
-//         new THREE.BoxGeometry(innerW, innerH, innerD),
-//         invisibleMat,
-//       );
-//     }
-//     inv.name = `invisibleBox_uppercabinet_${i}`;
-//     inv.userData.isInvisibleBox = true;
-//     inv.userData.type = 'INVISIBLE_COMPARTMENT';
-//     inv.userData.dimensions = {
-//       width: isSidePlatform ? innerD : innerW,
-//       height: innerH,
-//       depth: isSidePlatform ? innerW : innerD,
-//     };
-//     inv.position.set(cabinetX, upperBottomY + upperHeight / 2, cabinetZ);
-//     cabinetGroup.add(inv);
-
-//     // Create door(s) based on door type
-//     const doorHeight = upperHeight - thickness * 2 - 0.01;
-//     const doorThickness = 0.02;
-
-//     const textureLoader = new THREE.TextureLoader();
-//     const wallTexture = textureLoader.load('/Texture0004.jpg');
-//     wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-//     wallTexture.repeat.set(2, 1);
-
-//     const doorMat = new THREE.MeshStandardMaterial({
-//       map: wallTexture,
-//       side: THREE.DoubleSide,
-//     });
-
-//     if (doorType === 'double') {
-//       // Create two doors for double door cabinet
-//       const doorWidth = (actualCabinetWidth - thickness * 2 - 0.01) / 2 - 0.005; // Split width with small gap
-
-//       // Left door
-//       const leftDoor = new THREE.Mesh(
-//         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
-//         doorMat,
-//       );
-
-//       // Right door
-//       const rightDoor = new THREE.Mesh(
-//         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
-//         doorMat,
-//       );
-
-//       if (isSidePlatform) {
-//         // For side walls, doors should be positioned on the front face (facing into the room)
-//         if (isLeftWall) {
-//           // Left wall: doors face right (positive X direction)
-//           leftDoor.position.set(
-//             cabinetX + upperDepth / 2 + doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ - doorWidth / 2 - 0.0025, // Left side
-//           );
-//           rightDoor.position.set(
-//             cabinetX + upperDepth / 2 + doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ + doorWidth / 2 + 0.0025, // Right side
-//           );
-//           leftDoor.rotation.y = Math.PI / 2;
-//           rightDoor.rotation.y = Math.PI / 2;
-//         } else if (isRightWall) {
-//           // Right wall: doors face left (negative X direction)
-//           leftDoor.position.set(
-//             cabinetX - upperDepth / 2 - doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ - doorWidth / 2 - 0.0025, // Left side
-//           );
-//           rightDoor.position.set(
-//             cabinetX - upperDepth / 2 - doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ + doorWidth / 2 + 0.0025, // Right side
-//           );
-//           leftDoor.rotation.y = Math.PI / 2;
-//           rightDoor.rotation.y = Math.PI / 2;
-//         }
-//       } else {
-//         // For center wall, doors face forward (positive Z direction)
-//         leftDoor.position.set(
-//           cabinetX - doorWidth / 2 - 0.0025, // Left side
-//           upperBottomY + upperHeight / 2,
-//           cabinetZ + upperDepth / 2 + doorThickness / 2,
-//         );
-//         rightDoor.position.set(
-//           cabinetX + doorWidth / 2 + 0.0025, // Right side
-//           upperBottomY + upperHeight / 2,
-//           cabinetZ + upperDepth / 2 + doorThickness / 2,
-//         );
-//         // leftDoor.rotation.y = Math.PI / 2;
-//         // rightDoor.rotation.y = Math.PI / 2;
-//       }
-
-//       leftDoor.castShadow = true;
-//       leftDoor.receiveShadow = true;
-//       leftDoor.name = `UpperLeftDoor_${i}`;
-//       leftDoor.userData.openDirection = 'left';
-
-//       rightDoor.castShadow = true;
-//       rightDoor.receiveShadow = true;
-//       rightDoor.name = `UpperRightDoor_${i}`;
-//       rightDoor.userData.openDirection = 'right';
-
-//       // Add doors to cabinet group
-//       cabinetGroup.add(leftDoor, rightDoor);
-//     } else {
-//       // Single door (original behavior)
-//       const doorWidth = actualCabinetWidth - thickness * 2 - 0.01;
-//       const door = new THREE.Mesh(
-//         new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness),
-//         doorMat,
-//       );
-
-//       if (isSidePlatform) {
-//         // For side walls, door should be positioned on the front face (facing into the room)
-//         if (isLeftWall) {
-//           // Left wall: door faces right (positive X direction)
-//           door.position.set(
-//             cabinetX + upperDepth / 2 + doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ,
-//           );
-//           door.rotation.y = Math.PI / 2;
-//         } else if (isRightWall) {
-//           // Right wall: door faces left (negative X direction)
-//           door.position.set(
-//             cabinetX - upperDepth / 2 - doorThickness / 2,
-//             upperBottomY + upperHeight / 2,
-//             cabinetZ,
-//           );
-//           door.rotation.y = Math.PI / 2;
-//         }
-//       } else {
-//         // For center wall, door faces forward (positive Z direction)
-
-//         door.position.set(
-//           cabinetX,
-//           upperBottomY + upperHeight / 2,
-//           cabinetZ + upperDepth / 2 + doorThickness / 2,
-//         );
-//         // No rotation needed for center wall doors
-//       }
-
-//       door.castShadow = true;
-//       door.receiveShadow = true;
-//       door.name = `UpperDoor_${i}`;
-//       door.userData.openDirection = 'top';
-
-//       // Add door to cabinet group
-//       cabinetGroup.add(door);
-//     }
-
-//     // Add handle(s) to door(s) (positioned for bottom-to-top opening)
-//     // if (cachedHandleModel) {
-//     //   if (doorType === 'double') {
-//     //     // Create handles for both doors
-//     //     const leftHandle = cachedHandleModel.clone(true);
-//     //     const rightHandle = cachedHandleModel.clone(true);
-
-//     //     [leftHandle, rightHandle].forEach((handle) => {
-//     //       handle.traverse((n: any) => {
-//     //         if (n.isMesh) {
-//     //           n.castShadow = true;
-//     //           n.receiveShadow = true;
-//     //         }
-//     //       });
-//     //     });
-
-//     //     if (isSidePlatform) {
-//     //       // For side walls, position handles on the door faces
-//     //       if (isLeftWall) {
-//     //         // Left wall: handles on the right side of the doors
-//     //         const handleX =
-//     //           cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
-//     //         const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-
-//     //         leftHandle.position.set(
-//     //           handleX,
-//     //           handleY,
-//     //           cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         );
-//     //         rightHandle.position.set(
-//     //           handleX,
-//     //           handleY,
-//     //           cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         );
-
-//     //         leftHandle.rotation.set(0, 0, 0);
-//     //         leftHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //         rightHandle.rotation.set(0, 0, 0);
-//     //         rightHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //       } else if (isRightWall) {
-//     //         // Right wall: handles on the left side of the doors
-//     //         const handleX =
-//     //           cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
-//     //         const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-
-//     //         leftHandle.position.set(
-//     //           handleX,
-//     //           handleY,
-//     //           cabinetZ - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         );
-//     //         rightHandle.position.set(
-//     //           handleX,
-//     //           handleY,
-//     //           cabinetZ + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         );
-
-//     //         leftHandle.rotation.set(0, 0, 0);
-//     //         leftHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //         rightHandle.rotation.set(0, 0, 0);
-//     //         rightHandle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //       }
-//     //     } else {
-//     //       // For center wall, position handles at bottom of doors
-//     //       const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-//     //       const handleZ = cabinetZ + upperDepth / 2 - 0.01; // At the front face of the door
-
-//     //       leftHandle.position.set(
-//     //         cabinetX - (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         handleY,
-//     //         handleZ,
-//     //       );
-//     //       rightHandle.position.set(
-//     //         cabinetX + (actualCabinetWidth - thickness * 2 - 0.01) / 4,
-//     //         handleY,
-//     //         handleZ,
-//     //       );
-
-//     //       leftHandle.rotation.x = -(Math.PI / 2);
-//     //       leftHandle.rotation.z = Math.PI / 2;
-//     //       rightHandle.rotation.x = -(Math.PI / 2);
-//     //       rightHandle.rotation.z = Math.PI / 2;
-//     //     }
-
-//     //     leftHandle.name = `UpperLeftHandle_${i}`;
-//     //     rightHandle.name = `UpperRightHandle_${i}`;
-//     //     cabinetGroup.add(leftHandle, rightHandle);
-//     //   } else {
-//     //     // Single door handle (original behavior)
-//     //     const handle = cachedHandleModel.clone(true);
-//     //     handle.traverse((n: any) => {
-//     //       if (n.isMesh) {
-//     //         n.castShadow = true;
-//     //         n.receiveShadow = true;
-//     //       }
-//     //     });
-
-//     //     if (isSidePlatform) {
-//     //       // For side walls, position handle on the door face
-//     //       if (isLeftWall) {
-//     //         // Left wall: handle on the right side of the door
-//     //         const handleX =
-//     //           cabinetX + upperDepth / 2 + doorThickness / 2 + 0.01;
-//     //         const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-//     //         const handleZ = cabinetZ;
-//     //         handle.position.set(handleX, handleY, handleZ);
-//     //         handle.rotation.set(0, 0, 0);
-//     //         handle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //       } else if (isRightWall) {
-//     //         // Right wall: handle on the left side of the door
-//     //         const handleX =
-//     //           cabinetX - upperDepth / 2 - doorThickness / 2 - 0.01;
-//     //         const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-//     //         const handleZ = cabinetZ;
-//     //         handle.position.set(handleX, handleY, handleZ);
-//     //         handle.rotation.set(0, 0, 0);
-//     //         handle.rotation.z = Math.PI / 2; // Horizontal handle for side wall
-//     //       }
-//     //     } else {
-//     //       // For center wall, position handle at bottom of door
-//     //       const handleX = cabinetX;
-//     //       const handleY = upperBottomY + thickness + 0.1; // Near bottom of door
-//     //       const handleZ = cabinetZ + upperDepth / 2 - 0.01; // At the front face of the door
-//     //       handle.position.set(handleX, handleY, handleZ);
-//     //       handle.rotation.x = -(Math.PI / 2);
-//     //       handle.rotation.z = Math.PI / 2;
-//     //     }
-
-//     //     handle.name = `UpperHandle_${i}`;
-//     //     cabinetGroup.add(handle);
-//     //   }
-//     // }
-
-//     // Add cabinet to upper group
-//     upperGroup.add(cabinetGroup);
-//   }
-// };
 
 export const addUpperCabinetsAbovePlatform = async (
   scene: THREE.Scene,
