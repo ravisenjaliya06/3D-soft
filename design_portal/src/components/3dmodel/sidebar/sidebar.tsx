@@ -1,5 +1,6 @@
 import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
 import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
+import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,7 +12,6 @@ import { RootState } from '../store';
 import { Object3D } from '../store/interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
-import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg'
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
@@ -365,8 +365,7 @@ const Sidebar: React.FC = () => {
     if (!targetMesh) return;
     const mesh = targetMesh as any;
     if (mesh.name !== 'SimpleCabinet') return;
-    const params = (mesh.geometry as THREE.BoxGeometry)
-      .parameters as any;
+    const params = (mesh.geometry as THREE.BoxGeometry).parameters as any;
     const width = params.width as number;
     const height = params.height as number;
     const depth = params.depth as number;
@@ -994,85 +993,92 @@ const Sidebar: React.FC = () => {
                       onClick={handleMaterialChange}
                       className={style.btn_matirialchange}
                       disabled={isQuickHideActive}
-                    >Change Material</button>
+                    >
+                      Change Material
+                    </button>
                     <img src={mouse_svg.src} alt="" />
                   </div>
                 </div>
               )}
 
-              {!isQuickHideActive && isSettingOpen && isBasicOpen && itemType.DOOR && (
-                <div className={style.field_group_div}>
-                  {/* Door Position */}
-                  <div className={style.field_group}>
-                    <p>Door Position</p>
-                    <select
-                      value={doorPosition}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setDoorPosition(value);
-                        handleDoorPositionChange(value);
-                      }}
-                      disabled={isQuickHideActive}
-                    >
-                      <option value="None">None</option>
-                      <option value="Left">Left</option>
-                      <option value="Right">Right</option>
-                      <option value="Top">Top</option>
-                      <option value="Bottom">Bottom</option>
-                    </select>
-                  </div>
-
-                  {/* Dropdown Handle 3x3 grid */}
-                  {/* Dropdown Handle (click to open/close) */}
-                  <div className={style.field_group}>
-                    <p>Handle</p>
-                    <div className={style.handle_dropdown_wrapper}>
-                      <div
-                        className={style.dropdown_like_select}
-                        onClick={() => setIsHandleDropdownOpen((prev) => !prev)}
+              {!isQuickHideActive &&
+                isSettingOpen &&
+                isBasicOpen &&
+                itemType.DOOR && (
+                  <div className={style.field_group_div}>
+                    {/* Door Position */}
+                    <div className={style.field_group}>
+                      <p>Door Position</p>
+                      <select
+                        value={doorPosition}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setDoorPosition(value);
+                          handleDoorPositionChange(value);
+                        }}
+                        disabled={isQuickHideActive}
                       >
-                        {selectedHandle}
-                        <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
-                      </div>
+                        <option value="None">None</option>
+                        <option value="Left">Left</option>
+                        <option value="Right">Right</option>
+                        <option value="Top">Top</option>
+                        <option value="Bottom">Bottom</option>
+                      </select>
+                    </div>
 
-                      {isHandleDropdownOpen && (
-                        <div className={style.dropdown_grid}>
-                          {[
-                            'Top-Left',
-                            'Top-Center',
-                            'Top-Right',
-                            'Middle-Left',
-                            'Center',
-                            'Middle-Right',
-                            'Bottom-Left',
-                            'Bottom-Center',
-                            'Bottom-Right',
-                          ].map((label, index) => (
-                            <div
-                              key={index}
-                              className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
-                              onClick={() => {
-                                setSelectedHandle(label);
-                                setIsHandleDropdownOpen(false);
-                                handleHandlePositionChange(label);
-                                if (selectedObject && !isQuickHideActive) {
-                                  updateObjectInScene(
-                                    selectedObject.id,
-                                    { handlePosition: label },
-                                    scene,
-                                    dispatch,
-                                    selectedObject,
-                                  );
-                                }
-                              }}
-                            />
-                          ))}
+                    {/* Dropdown Handle 3x3 grid */}
+                    {/* Dropdown Handle (click to open/close) */}
+                    <div className={style.field_group}>
+                      <p>Handle</p>
+                      <div className={style.handle_dropdown_wrapper}>
+                        <div
+                          className={style.dropdown_like_select}
+                          onClick={() =>
+                            setIsHandleDropdownOpen((prev) => !prev)
+                          }
+                        >
+                          {selectedHandle}
+                          <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
                         </div>
-                      )}
+
+                        {isHandleDropdownOpen && (
+                          <div className={style.dropdown_grid}>
+                            {[
+                              'Top-Left',
+                              'Top-Center',
+                              'Top-Right',
+                              'Middle-Left',
+                              'Center',
+                              'Middle-Right',
+                              'Bottom-Left',
+                              'Bottom-Center',
+                              'Bottom-Right',
+                            ].map((label, index) => (
+                              <div
+                                key={index}
+                                className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
+                                onClick={() => {
+                                  setSelectedHandle(label);
+                                  setIsHandleDropdownOpen(false);
+                                  handleHandlePositionChange(label);
+                                  if (selectedObject && !isQuickHideActive) {
+                                    updateObjectInScene(
+                                      selectedObject.id,
+                                      { handlePosition: label },
+                                      scene,
+                                      dispatch,
+                                      selectedObject,
+                                    );
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </>

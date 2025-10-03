@@ -61,8 +61,10 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   // Fetch materials once
   React.useEffect(() => {
     const getMaterial = async () => {
-      const response: { status: number; data: any[] } =
-        await commonService.get('material', '');
+      const response: { status: number; data: any[] } = await commonService.get(
+        'material',
+        '',
+      );
       if (response.status === 200) {
         setMaterialData(response.data);
       }
@@ -107,9 +109,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-        (m.description || '')
-          .toLowerCase()
-          .includes(materialSearch.toLowerCase())
+          (m.description || '')
+            .toLowerCase()
+            .includes(materialSearch.toLowerCase())
         : true,
     );
 
@@ -312,8 +314,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                 (tab) => (
                   <button
                     key={tab}
-                    className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''
-                      }`}
+                    className={`${styles.tab} ${
+                      activeTab === tab ? styles.activeTab : ''
+                    }`}
                     onClick={() => setActiveTab(tab)}
                   >
                     {tab}
@@ -332,12 +335,12 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
               {(rules.length
                 ? rules
                 : [
-                  {
-                    name: 'Banding',
-                    id: 'banding',
-                    rule_parts: [],
-                  } as CatalogRule,
-                ]
+                    {
+                      name: 'Banding',
+                      id: 'banding',
+                      rule_parts: [],
+                    } as CatalogRule,
+                  ]
               ).map((r) => (
                 <option key={r.id} value={r.name}>
                   {r.name}

@@ -559,6 +559,7 @@ const addCTypeWallWithFloor = (
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
+  const floorOffset = 0.01; // so floor sits just up y=0.01 to avoid overlap grid
   // ---------- Materials ----------
   const wallMat = new THREE.MeshStandardMaterial({
     map: wallTexture,
@@ -582,7 +583,7 @@ const addCTypeWallWithFloor = (
   centerPanel.name = 'Center Wall';
   centerPanel.castShadow = true;
   centerPanel.receiveShadow = true;
-  centerPanel.position.set(0, wallHeight / 2 - 0.61, 0);
+  centerPanel.position.set(0, wallHeight / 2, 0);
 
   // Left wall
   const leftPanel = new THREE.Mesh(
@@ -594,7 +595,7 @@ const addCTypeWallWithFloor = (
   leftPanel.receiveShadow = true;
   leftPanel.position.set(
     -wallLength / 2 + wallThickness / 2,
-    wallHeight / 2 - 0.61,
+    wallHeight / 2,
     wallLength / 2 - wallThickness / 2,
   );
 
@@ -608,7 +609,7 @@ const addCTypeWallWithFloor = (
   rightPanel.receiveShadow = true;
   rightPanel.position.set(
     wallLength / 2 - wallThickness / 2,
-    wallHeight / 2 - 0.61,
+    wallHeight / 2,
     wallLength / 2 - wallThickness / 2,
   );
 
@@ -621,7 +622,7 @@ const addCTypeWallWithFloor = (
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
   floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, -0.59, wallLength / 2 - wallThickness / 2);
+  floorPanel.position.set(0, floorOffset, wallLength / 2 - wallThickness / 2);
 
   // ---------- Group ----------
   const cWallGroup = new THREE.Group();
@@ -2533,7 +2534,11 @@ export function rescaleChildrenForContainer(container: THREE.Mesh) {
   const sy = (newDims.height || 1) / (last.height || 1);
   const sz = (newDims.depth || 1) / (last.depth || 1);
 
-  if (Math.abs(sx - 1) < 1e-6 && Math.abs(sy - 1) < 1e-6 && Math.abs(sz - 1) < 1e-6) {
+  if (
+    Math.abs(sx - 1) < 1e-6 &&
+    Math.abs(sy - 1) < 1e-6 &&
+    Math.abs(sz - 1) < 1e-6
+  ) {
     return;
   }
 
@@ -2545,7 +2550,11 @@ export function rescaleChildrenForContainer(container: THREE.Mesh) {
     if (name.startsWith('invisiblebox')) return;
 
     // Scale local position
-    child.position.set(child.position.x * sx, child.position.y * sy, child.position.z * sz);
+    child.position.set(
+      child.position.x * sx,
+      child.position.y * sy,
+      child.position.z * sz,
+    );
     // Scale mesh uniformly per axis (relative to previous scale)
     const m = child as THREE.Mesh;
     m.scale.set(m.scale.x * sx, m.scale.y * sy, m.scale.z * sz);
@@ -4022,7 +4031,10 @@ export const addUpperCabinetsAbovePlatform = async (
     });
 
     // Cabinet front position (for flush door placement)
-    let cabinetFrontX: number, cabinetFrontZ: number, normalAxis: 'x' | 'z', normalSign: 1 | -1;
+    let cabinetFrontX: number,
+      cabinetFrontZ: number,
+      normalAxis: 'x' | 'z',
+      normalSign: 1 | -1;
 
     if (isSidePlatform) {
       normalAxis = 'x';
@@ -4047,13 +4059,21 @@ export const addUpperCabinetsAbovePlatform = async (
 
       // Left door
       const leftDoor = new THREE.Mesh(
-        new THREE.BoxGeometry(isSidePlatform ? doorHeight : doorWidth, isSidePlatform ? doorWidth : doorHeight, doorThickness),
+        new THREE.BoxGeometry(
+          isSidePlatform ? doorHeight : doorWidth,
+          isSidePlatform ? doorWidth : doorHeight,
+          doorThickness,
+        ),
         doorMat,
       );
 
       // Right door
       const rightDoor = new THREE.Mesh(
-        new THREE.BoxGeometry(isSidePlatform ? doorHeight : doorWidth, isSidePlatform ? doorWidth : doorHeight, doorThickness),
+        new THREE.BoxGeometry(
+          isSidePlatform ? doorHeight : doorWidth,
+          isSidePlatform ? doorWidth : doorHeight,
+          doorThickness,
+        ),
         doorMat,
       );
 
@@ -4132,8 +4152,10 @@ export const addUpperCabinetsAbovePlatform = async (
           const leftHandleBox = new THREE.Box3().setFromObject(leftHandle);
           const rightHandleBox = new THREE.Box3().setFromObject(rightHandle);
 
-          const baseOffsetLeft = normalSign > 0 ? leftHandleBox.min.x : -leftHandleBox.max.x;
-          const baseOffsetRight = normalSign > 0 ? rightHandleBox.min.x : -rightHandleBox.max.x;
+          const baseOffsetLeft =
+            normalSign > 0 ? leftHandleBox.min.x : -leftHandleBox.max.x;
+          const baseOffsetRight =
+            normalSign > 0 ? rightHandleBox.min.x : -rightHandleBox.max.x;
 
           const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
 
@@ -4158,8 +4180,10 @@ export const addUpperCabinetsAbovePlatform = async (
           const leftHandleBox = new THREE.Box3().setFromObject(leftHandle);
           const rightHandleBox = new THREE.Box3().setFromObject(rightHandle);
 
-          const baseOffsetLeft = normalSign > 0 ? leftHandleBox.min.z : -leftHandleBox.max.z;
-          const baseOffsetRight = normalSign > 0 ? rightHandleBox.min.z : -rightHandleBox.max.z;
+          const baseOffsetLeft =
+            normalSign > 0 ? leftHandleBox.min.z : -leftHandleBox.max.z;
+          const baseOffsetRight =
+            normalSign > 0 ? rightHandleBox.min.z : -rightHandleBox.max.z;
 
           const doorFrontZ = cabinetFrontZ + (doorThickness / 2) * normalSign;
 
@@ -4183,7 +4207,11 @@ export const addUpperCabinetsAbovePlatform = async (
       // Single door
       const doorWidth = actualCabinetWidth - thickness * 2 - epsilon; // Perfect fit with minimal epsilon
       const door = new THREE.Mesh(
-        new THREE.BoxGeometry(isSidePlatform ? doorHeight : doorWidth, isSidePlatform ? doorWidth : doorHeight, doorThickness),
+        new THREE.BoxGeometry(
+          isSidePlatform ? doorHeight : doorWidth,
+          isSidePlatform ? doorWidth : doorHeight,
+          doorThickness,
+        ),
         doorMat,
       );
 
@@ -4229,7 +4257,8 @@ export const addUpperCabinetsAbovePlatform = async (
           handle.updateMatrixWorld(true);
           const handleBox = new THREE.Box3().setFromObject(handle);
 
-          const baseOffset = normalSign > 0 ? handleBox.min.x : -handleBox.max.x;
+          const baseOffset =
+            normalSign > 0 ? handleBox.min.x : -handleBox.max.x;
           const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
 
           handle.position.set(
@@ -4243,7 +4272,8 @@ export const addUpperCabinetsAbovePlatform = async (
           handle.updateMatrixWorld(true);
           const handleBox = new THREE.Box3().setFromObject(handle);
 
-          const baseOffset = normalSign > 0 ? handleBox.min.z : -handleBox.max.z;
+          const baseOffset =
+            normalSign > 0 ? handleBox.min.z : -handleBox.max.z;
           const doorFrontZ = cabinetFrontZ + (doorThickness / 2) * normalSign;
 
           handle.position.set(
