@@ -23,6 +23,8 @@ import measure from '@/assets/toolbar/measure.svg';
 import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
 import InputField from '@/components/inputfields/InputField';
+import { removeExistingLines } from '../design/index';
+
 
 // catalog modal photo
 import {
@@ -77,6 +79,8 @@ import {
   addObjectsThunk,
   setobjectSelected,
   togglAlignment,
+  setSelectedChildObject,
+  setHoverdMesh,
 } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
@@ -968,6 +972,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
+    // clear selection state in redux (important)
+    dispatch(setobjectSelected(null));
+    dispatch(setSelectedChildObject(null));
+    dispatch(setHoverdMesh(null));
+
+    if (typeof removeExistingLines === 'function') {
+      removeExistingLines();
+    } else {
+      scene.traverse((child) => {
+        if (child.name && child.name.startsWith('outline-')) {
+          if (child.parent) {
+            child.parent.remove(child);
+          }
+        }
+      });
+    }
+
+    // also remove any hover outline object that might remain (defensive)
+    scene.traverse((child) => {
+      if (child.name === 'hover_outline' || child.name === 'selected_outline') {
+        if (child.parent) child.parent.remove(child);
+      }
+    });
+
+    // force a render so changes appear immediately
+    if (threeDView && threeDView.renderer && threeDView.camera) {
+      threeDView.renderer.render(threeDView.scene, threeDView.camera);
+    }
   };
 
   const onClose = () => {
