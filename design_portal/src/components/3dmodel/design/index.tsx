@@ -86,15 +86,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isAlignmentActive = useAppSelector(
     (state) => state.data.isAlignmentActive,
   );
-  const selectedObjectIdFromStore = useAppSelector(
-    (state) => state.data.selectedObject,
-  );
-  const selectedChildObjectIdFromStore = useAppSelector(
-    (state) => state.data.selectedChildObject,
-  );
-  const hoveredMeshFromStore = useAppSelector(
-    (state) => state.data.hoverdMesh,
-  );
 
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
@@ -120,7 +111,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const minifixMarkersRef = useRef<Map<THREE.Mesh, THREE.Object3D[]>>(
     new Map(),
   );
-
 
   const showAlignmentDistances = useCallback(() => {
     if (!design3D) return;
@@ -332,48 +322,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   }, [sceneFromState, design3D]);
 
-  useEffect(() => {
-    // if both store selections are null -> clear local selection UI
-    if (!design3D) return;
-
-    if (!selectedObjectIdFromStore && !selectedChildObjectIdFromStore) {
-      // remove selection outline if any
-      try {
-        if (outline) {
-          design3D.scene.remove(outline);
-          if (outline.geometry) outline.geometry.dispose();
-          if (outline.material instanceof THREE.Material) outline.material.dispose();
-          setOutline(null);
-        }
-
-        // clear local mesh reference so helper tools hide
-        setSelectedObject(null);
-        setHelperTools(false);
-
-        // remove hover outline (if present)
-        if (hoverOutlineRef.current) {
-          design3D.scene.remove(hoverOutlineRef.current);
-          hoverOutlineRef.current.geometry?.dispose();
-          if (hoverOutlineRef.current.material instanceof THREE.Material)
-            hoverOutlineRef.current.material.dispose();
-          hoverOutlineRef.current = null;
-        }
-
-        // also remove any outline-* boxes (defensive)
-        removeExistingLines();
-
-        // re-render to reflect changes immediately
-        design3D.renderer.render(design3D.scene, design3D.camera);
-      } catch (err) {
-        console.warn('Error clearing selection UI', err);
-      }
-    }
-  }, [
-    selectedObjectIdFromStore,
-    selectedChildObjectIdFromStore,
-    design3D,
-    outline,
-  ]);
   const createAlignDimension = (message: string, position: THREE.Vector3) => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -917,6 +865,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       );
       wireframe.position.copy(center);
       wireframe.rotation.copy(object.rotation);
+
       wireframe.name = `outline-${object.id}`;
 
       return wireframe;
@@ -938,11 +887,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       .hoverdMesh as unknown as THREE.Mesh | null;
     const selectedObjectId = store.getState().data.selectedObject;
     const selectedChildObjectId = store.getState().data.selectedChildObject;
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log('Hovered Mesh on Click:', hoveredMesh);
-      console.log('Selected Object ID:', selectedObjectId);
-      console.log('Selected Child Object ID:', selectedChildObjectId);
-    }
+    console.log('Hovered Mesh on Click:', hoveredMesh);
+    console.log('Selected Object ID:', selectedObjectId);
+    console.log('Selected Child Object ID:', selectedChildObjectId);
 
     if (!hoveredMesh) {
       dispatch(setobjectSelected(null));
@@ -1101,7 +1048,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     },
     [design3D, isQuickHideActive, isMeasurementActive, dispatch],
   );
-
 
   useEffect(() => {
     if (isMeasurementActive && design3D && hoverOutlineRef.current) {
