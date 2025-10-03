@@ -251,7 +251,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const outline = scene.children.find((o) =>
       o.name.startsWith('outline-'),
     ) as THREE.Object3D | undefined;
-    console.log('outline', outline);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('outline', outline);
+    }
     let wallFromSelection: THREE.Mesh | null = null;
     if (outline) {
       const outlineCenter = outline.position.clone();
@@ -281,9 +283,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-        (hovered.name === 'Center Wall' ||
-          hovered.name === 'Left Wall' ||
-          hovered.name === 'Right Wall')
+      (hovered.name === 'Center Wall' ||
+        hovered.name === 'Left Wall' ||
+        hovered.name === 'Right Wall')
         ? hovered
         : null);
     if (targetWall) addPlatformOnWall(scene, targetWall, counterTexture);
@@ -461,7 +463,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       'catalog',
     );
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
-      console.log(cabinetResponse.data, 'cabinetResponse.data');
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log(cabinetResponse.data, 'cabinetResponse.data');
+      }
       setCabinetItems(cabinetResponse.data);
     }
   };
@@ -702,7 +706,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch { }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -885,7 +889,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         };
 
         const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
-        console.log(apiResponse, 'apiResponse');
+        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          console.log(apiResponse, 'apiResponse');
+        }
         apiResponses.push(apiResponse);
         dispatch(addObjects(apiResponses));
       } catch (error) {
@@ -1340,7 +1346,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => { };
+      const getMinifixData = async () => {};
     };
 
     fetchCatalogItems();
@@ -1406,8 +1412,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1429,8 +1436,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1562,16 +1570,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -298,7 +298,9 @@ export function createCircleCreator(
       payload,
     );
     if (response.status === 200) {
-      console.log('Circle saved to database:', objectId);
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log('Circle saved to database:', objectId);
+      }
     } else {
       console.error('Failed to save circle to database');
     }

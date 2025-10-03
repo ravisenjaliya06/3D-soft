@@ -938,9 +938,11 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       .hoverdMesh as unknown as THREE.Mesh | null;
     const selectedObjectId = store.getState().data.selectedObject;
     const selectedChildObjectId = store.getState().data.selectedChildObject;
-    console.log('Hovered Mesh on Click:', hoveredMesh);
-    console.log('Selected Object ID:', selectedObjectId);
-    console.log('Selected Child Object ID:', selectedChildObjectId);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('Hovered Mesh on Click:', hoveredMesh);
+      console.log('Selected Object ID:', selectedObjectId);
+      console.log('Selected Child Object ID:', selectedChildObjectId);
+    }
 
     if (!hoveredMesh) {
       dispatch(setobjectSelected(null));

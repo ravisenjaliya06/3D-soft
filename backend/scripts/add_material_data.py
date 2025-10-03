@@ -1465,7 +1465,10 @@ CATALOG = [
                     {"name": "Middle Vertical Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Middle Horizontal Panel", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Middle Horizontal Panel",
+                        "material": "3/4 1s Poplar Ply",
+                    },
                     {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
                 ],
             },
@@ -1475,7 +1478,10 @@ CATALOG = [
                     {"name": "Middle Vertical and Right Panel", "material": ""},
                     {"name": "Middle Vertical and Top Panel", "material": ""},
                     {"name": "Middle Vertical and Bottom Panel", "material": ""},
-                    {"name": "Middle Vertical and Middle Horizontal Panel", "material": ""},
+                    {
+                        "name": "Middle Vertical and Middle Horizontal Panel",
+                        "material": "",
+                    },
                     {"name": "Base and Right Panel", "material": ""},
                     {"name": "Base and Left Panel", "material": ""},
                 ],
@@ -1492,7 +1498,10 @@ CATALOG = [
                 "rules_parts": [
                     {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Middle Horizontal Panel", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Middle Horizontal Panel",
+                        "material": "3/4 1s Poplar Ply",
+                    },
                     {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
                     {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
@@ -1727,6 +1736,7 @@ def create_catalog_data() -> None:
                 organization=org,
                 type=catalog_data["type"],
                 name=catalog_data["name"],
+                design=None,
                 defaults={"description": catalog_data.get("description", "")},
             )
 

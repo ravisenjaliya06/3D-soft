@@ -729,7 +729,9 @@ export function Box2(faces: Face[]) {
           lineMesh.userData.points.b,
         ]);
       }
-      console.log(lineMap, 'lineMap');
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log(lineMap, 'lineMap');
+      }
     }
 
     // Attach userData
