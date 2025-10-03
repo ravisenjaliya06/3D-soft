@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+# App imports
+
 # Local imports
 from .models import (
     Catalog,
@@ -800,6 +802,7 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
 
 
 class CatalogSerializer(serializers.ModelSerializer):
+    design = serializers.CharField(source="design.id", read_only=True)
     catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
 
     class Meta:
