@@ -2,7 +2,7 @@ import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
 import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
 import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
@@ -15,6 +15,8 @@ import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const [isBasicOpen, setIsBasicOpen] = useState(true);
+
+  const [subMenu, setSubMenu] = useState<string | null>('basic');
 
   const [doorPosition, setDoorPosition] = useState('None');
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
@@ -32,7 +34,8 @@ const Sidebar: React.FC = () => {
   const [posY, setPosY] = useState(0);
   const [posZ, setPosZ] = useState(0);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#ffffff');
+  const [selectedColor, setSelectedColor] = useState('#392579');
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -93,24 +96,10 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject]);
 
-  // useEffect(() => {
-  //   const selected = scene.children.find(
-  //     (child) => child.userData.objectId === selectedObject?.id,
-  //   );
-  //   if (selected && selected instanceof THREE.Mesh) {
-  //     const edgeBandingChildren = selected?.children.filter((child) =>
-  //       child.children.forEach((child) =>
-  //         child.name.startsWith('edge_banding'),
-  //       ),
-  //     );
-  //     const anyVisible = edgeBandingChildren?.some((child) => child.visible);
-  //     setEdgeBandingVisible(anyVisible!);
-  //   }
-  // }, [selectedObject]);
-
   useEffect(() => {
     if (isSidebarOpen) {
-      setIsBasicOpen(true);
+      // setIsBasicOpen(true);
+      setSubMenu('basic');
     }
   }, [isSidebarOpen]);
 
@@ -120,6 +109,13 @@ const Sidebar: React.FC = () => {
       setNavOpen(true);
     }
   }, [isQuickHideActive]);
+
+  useEffect(() => {
+    // Set initial background color
+    if (colorInputRef.current) {
+      colorInputRef.current.style.backgroundColor = selectedColor;
+    }
+  }, []);
 
   const handleSetting = () => {
     if (isQuickHideActive) return;
@@ -131,23 +127,14 @@ const Sidebar: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleBasic = () => {
-    setIsBasicOpen(!isBasicOpen);
+  const toggleSubMenu = (value: string) => {
+    if (subMenu === value) {
+      setSubMenu(null);
+    } else {
+      // Otherwise, open the clicked submenu
+      setSubMenu(value);
+    }
   };
-  // const toggleAdvanced = () => {
-  //   if (!isBasicOpen) {
-  //     return;
-  //   }
-  //   const newState = !isAdvancedOpen;
-  //   setIsAdvancedOpen(newState);
-
-  //   if (newState) {
-  //     setTimeout(() => {
-  //       setShowAdvancedContent(true);
-  //     }, 300);
-  //     setShowAdvancedContent(false);
-  //   }
-  // };
 
   const handleNavigation = () => {
     setSettingOpen(false);
@@ -156,24 +143,6 @@ const Sidebar: React.FC = () => {
 
   const validateNumericInput = (value: number): number | null =>
     isNaN(value) || value < 0 ? null : value;
-
-  // const handleEdgeBandingToggle = () => {
-  //   const selected = scene.children.find(
-  //     (child) => child.userData.objectId === selectedObject?.id,
-  //   );
-
-  //   const newVisibility = !edgeBandingVisible;
-
-  //   selected?.children.forEach((child) => {
-  //     child.children.forEach((edgeBandingChild) => {
-  //       if (edgeBandingChild.name.startsWith('edge_banding')) {
-  //         edgeBandingChild.visible = newVisibility;
-  //       }
-  //     });
-  //   });
-
-  //   setEdgeBandingVisible(newVisibility);
-  // };
 
   const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWidth(Number(e.target.value));
@@ -644,7 +613,12 @@ const Sidebar: React.FC = () => {
     setShowMaterialPopup(true);
   };
 
-  const applyColorToSelected = () => {
+  const applyColorToSelected = (value: string, update?: string) => {
+    setSelectedColor(value);
+    if (colorInputRef.current) {
+      colorInputRef.current.style.backgroundColor = value;
+    }
+
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
@@ -691,7 +665,7 @@ const Sidebar: React.FC = () => {
       targetMesh.material = new THREE.MeshPhongMaterial({ color });
     }
 
-    if (obj) {
+    if (obj && update) {
       updateObjectInScene(
         obj.id,
         { material: { type: 'COLOR', value: selectedColor } },
@@ -734,6 +708,7 @@ const Sidebar: React.FC = () => {
               Navigation
             </button>
           </div>
+          <hr></hr>
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>
@@ -746,18 +721,34 @@ const Sidebar: React.FC = () => {
             </div>
           )}
           {/* Settings panel */}
-          {isSettingOpen && (
+          {isSettingOpen && !selectedObject && (
+            <p
+              style={{
+                margin: '1rem',
+                textAlign: 'center',
+                color: '#392579',
+                marginTop: '2rem',
+                fontSize: '0.8rem',
+              }}
+            >
+              No Item Selected
+            </p>
+          )}
+
+          {isSettingOpen && selectedObject && (
             <div className={style.field_main_div}>
-              <div className={style.field_group_title_div}>
+              <div
+                className={style.field_group_title_div}
+                onClick={() => toggleSubMenu('basic')}
+                style={{ cursor: 'pointer' }}
+              >
                 <img
-                  src={isBasicOpen ? up_arrow.src : down_arrow.src}
+                  src={subMenu === 'basic' ? up_arrow.src : down_arrow.src}
                   alt="toggle_arrow"
-                  onClick={toggleBasic}
-                  style={{ cursor: 'pointer' }}
                 />
                 <p className={style.field_group_title}>Basic</p>
               </div>
-              {isBasicOpen && (
+              {subMenu === 'basic' && (
                 <div className={style.field_group_div}>
                   <div className={style.field_group}>
                     <p>Width</p>
@@ -769,7 +760,7 @@ const Sidebar: React.FC = () => {
                       -
                     </button>
                     <input
-                      // type="number"
+                      type="number"
                       name="width"
                       value={width}
                       onChange={handleWidthChange}
@@ -777,6 +768,7 @@ const Sidebar: React.FC = () => {
                       onBlur={handleBlur}
                       min={0}
                       disabled={isHorizontalPlank || isDisabled}
+                      className={style.number_input}
                     />
                     <button
                       onClick={handleIncrementWidth}
@@ -796,7 +788,7 @@ const Sidebar: React.FC = () => {
                       -
                     </button>
                     <input
-                      // type="number"
+                      type="number"
                       name="height"
                       value={height}
                       onChange={handleHeightChange}
@@ -804,6 +796,7 @@ const Sidebar: React.FC = () => {
                       onBlur={handleBlur}
                       min={0}
                       disabled={isVerticalPlank || isDisabled}
+                      className={style.number_input}
                     />
                     <button
                       onClick={handleIncrementHeight}
@@ -823,7 +816,7 @@ const Sidebar: React.FC = () => {
                       -
                     </button>
                     <input
-                      // type="number"
+                      type="number"
                       name="depth"
                       value={depth}
                       onChange={handleDepthChange}
@@ -832,6 +825,7 @@ const Sidebar: React.FC = () => {
                       min={0}
                       max={parentObject?.depth}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
                     <button
                       onClick={handleIncrementDepth}
@@ -841,6 +835,23 @@ const Sidebar: React.FC = () => {
                       +
                     </button>
                   </div>
+                </div>
+              )}
+
+              <div
+                className={style.field_group_title_div}
+                onClick={() => toggleSubMenu('rotation')}
+                style={{ cursor: 'pointer' }}
+              >
+                <img
+                  src={subMenu === 'rotation' ? up_arrow.src : down_arrow.src}
+                  alt="toggle_arrow"
+                />
+                <p className={style.field_group_title}>Rotation</p>
+              </div>
+
+              {subMenu === 'rotation' && (
+                <div className={style.field_group_div}>
                   <div className={style.field_group1}>
                     <p>Rotate X:</p>
                     <button
@@ -855,12 +866,14 @@ const Sidebar: React.FC = () => {
                       name="rotationX"
                       min={0}
                       max={360}
-                      // type="number"
+                      type="number"
+                      defaultValue={0}
                       value={rotationX}
                       onChange={handleRotationXChange}
                       onKeyDown={handleRotationXKeyDown}
                       onBlur={handleBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
                     <button
                       onClick={handleIncrementX}
@@ -884,12 +897,14 @@ const Sidebar: React.FC = () => {
                       name="rotationY"
                       min={0}
                       max={360}
-                      // type="number"
+                      type="number"
+                      defaultValue={0}
                       value={rotationY}
                       onChange={handleRotationYChange}
                       onKeyDown={handleRotationYKeyDown}
                       onBlur={handleBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
 
                     <button
@@ -914,12 +929,14 @@ const Sidebar: React.FC = () => {
                       name="rotationZ"
                       min={0}
                       max={360}
-                      // type="number"
+                      type="number"
+                      defaultValue={0}
                       value={rotationZ}
                       onChange={handleRotationZChange}
                       onKeyDown={handleRotationZKeyDown}
                       onBlur={handleBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
 
                     <button
@@ -930,37 +947,35 @@ const Sidebar: React.FC = () => {
                       +
                     </button>
                   </div>
+                </div>
+              )}
 
-                  <div className={style.field_group1}>
-                    <p>Color</p>
-                    <input
-                      type="color"
-                      value={selectedColor}
-                      onChange={(e) => setSelectedColor(e.target.value)}
-                      disabled={isQuickHideActive}
-                      className={style.color_input}
-                    />
-                    <button
-                      onClick={applyColorToSelected}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      Apply
-                    </button>
-                  </div>
+              <div
+                className={style.field_group_title_div}
+                onClick={() => toggleSubMenu('position')}
+                style={{ cursor: 'pointer' }}
+              >
+                <img
+                  src={subMenu === 'position' ? up_arrow.src : down_arrow.src}
+                  alt="toggle_arrow"
+                />
+                <p className={style.field_group_title}>Position</p>
+              </div>
 
-                  {/* Position Controls */}
+              {subMenu === 'position' && (
+                <div className={style.field_group_div}>
                   <div className={style.field_group1}>
                     <p>Position X:</p>
                     <input
                       id="position-x"
                       name="positionX"
-                      // type="number"
+                      type="number"
                       value={posX}
                       onChange={handlePosXChange}
                       onKeyDown={handlePosXKeyDown}
                       onBlur={handlePosXBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
                   </div>
                   <div className={style.field_group1}>
@@ -968,12 +983,13 @@ const Sidebar: React.FC = () => {
                     <input
                       id="position-y"
                       name="positionY"
-                      // type="number"
+                      type="number"
                       value={posY}
                       onChange={handlePosYChange}
                       onKeyDown={handlePosYKeyDown}
                       onBlur={handlePosYBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
                   </div>
                   <div className={style.field_group1}>
@@ -981,31 +997,68 @@ const Sidebar: React.FC = () => {
                     <input
                       id="position-z"
                       name="positionZ"
-                      // type="number"
+                      type="number"
                       value={posZ}
                       onChange={handlePosZChange}
                       onKeyDown={handlePosZKeyDown}
                       onBlur={handlePosZBlur}
                       disabled={isQuickHideActive}
+                      className={style.number_input}
                     />
                   </div>
-                  <div className={style.field_group1}>
-                    {/* <p>Change Material</p> */}
+                </div>
+              )}
+
+              <div
+                className={style.field_group_title_div}
+                onClick={() => toggleSubMenu('material')}
+                style={{ cursor: 'pointer' }}
+              >
+                <img
+                  src={subMenu === 'material' ? up_arrow.src : down_arrow.src}
+                  alt="toggle_arrow"
+                />
+                <p className={style.field_group_title}>Material</p>
+              </div>
+              {subMenu === 'material' && (
+                <div className={style.field_group_div}>
+                  <div
+                    className={style.field_group1}
+                    onClick={handleMaterialChange}
+                  >
                     <button
-                      onClick={handleMaterialChange}
-                      className={style.btn_matirialchange}
+                      className={style.btn_material_change}
                       disabled={isQuickHideActive}
                     >
                       Change Material
                     </button>
-                    <img src={mouse_svg.src} alt="" />
+                    <img
+                      src={mouse_svg.src}
+                      alt=""
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div className={style.field_group1}>
+                    <p>Color</p>
+                    <input
+                      type="color"
+                      ref={colorInputRef}
+                      value={selectedColor}
+                      onChange={(e) => applyColorToSelected(e.target.value)}
+                      onBlur={() => {
+                        // This is triggered when user clicks outside the color picker
+                        applyColorToSelected(selectedColor, 'extraValue');
+                      }}
+                      disabled={isQuickHideActive}
+                      className={style.color_input}
+                    />
                   </div>
                 </div>
               )}
 
               {!isQuickHideActive &&
                 isSettingOpen &&
-                isBasicOpen &&
+                subMenu === 'door' &&
                 itemType.DOOR && (
                   <div className={style.field_group_div}>
                     {/* Door Position */}

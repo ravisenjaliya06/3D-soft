@@ -6,7 +6,7 @@
   height: 92vh;
   position: absolute;
   right: 0;
-  z-index: 1;
+  z-index: 10;
   border-radius: 1rem 1rem 0rem 0rem;
   overflow-y: auto;
   bottom: 0;
@@ -108,16 +108,21 @@
   margin: 1rem 0 0 1rem;
 }
 
+.field_main_div {
+  margin: 1.3rem;
+}
+
 .field_group_title_div {
   display: flex;
   align-items: center;
-  margin: 0.5rem 0 0 0.3rem;
+  margin: 0.5rem 0 0 0;
 }
 
 .field_group_title_div img {
   width: 1rem;
   height: 1rem;
   position: relative;
+  margin-left: -0.3rem;
 }
 
 .field_group_title {
@@ -125,11 +130,7 @@
   font-size: 0.7rem;
   font-weight: bold;
   color: var(--primary-color);
-  margin: 0 0 0 0.3rem;
-}
-
-.field_group_div {
-  margin: 0.5rem 0 0 0rem;
+  margin: 0;
 }
 
 .field_group,
@@ -137,7 +138,9 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  margin: 0 0 0 0.7rem;
+  margin: 0;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .field_group1 img {
@@ -211,7 +214,7 @@
   width: auto;
   height: 1.5rem;
   display: flex;
-  gap: 1.5rem;
+  gap: 2.8rem;
   justify-content: center;
   margin-top: 0.4rem;
 }
@@ -327,6 +330,7 @@
   color: var(--primary-color);
   letter-spacing: 0.04rem;
   width: 7rem;
+  margin: 0;
 }
 
 .btn_incrdec {
@@ -459,25 +463,18 @@ input:checked + .slider:before {
   border: 0.125rem solid var(--border-color);
 }
 
-.btn_matirialchange {
-  width: 6.5rem;
-  margin-top: 0.3rem;
-  margin-left: 2rem;
+.btn_material_change {
   /* small square */
   height: 2rem;
-  background-color: #2c2c2c;
   border: none;
-  border-radius: 0.3rem;
   /* light rounding */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-family: var(--font-family);
-  font-size: 0.7rem;
   color: var(--primary-color);
   background-color: transparent;
+  padding: 0;
 }
 
 .btn_matirialchange:hover:not(:disabled) {
@@ -489,4 +486,51 @@ input:checked + .slider:before {
   background-color: #555;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.color_input {
+  padding: 0 !important;
+  -webkit-appearance: none; /* Remove default styling in Chrome/Safari */
+  width: 1.7rem !important;
+  height: 1.1rem !important;
+  background: var(--primary-color);
+  cursor: pointer;
+  padding: 0 !important;
+  outline: none;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.color_input::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+}
+
+/* Firefox color swatch */
+.color_input::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+}
+
+/* Hover effect */
+.color_input:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+}
+
+.number_input {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.number_input::-webkit-outer-spin-button,
+.number_input::-webkit-inner-spin-button {
+  -webkit-appearance: none; /* Chrome, Safari, Edge */
+  margin: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: none;
 }
