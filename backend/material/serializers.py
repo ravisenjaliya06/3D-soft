@@ -802,14 +802,11 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
 
 
 class CatalogSerializer(serializers.ModelSerializer):
-<<<<<<< Updated upstream
-=======
     design = serializers.PrimaryKeyRelatedField(
         queryset=Design.objects.all(),
         required=False,
         allow_null=True
     )
->>>>>>> Stashed changes
     catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
 
     class Meta:

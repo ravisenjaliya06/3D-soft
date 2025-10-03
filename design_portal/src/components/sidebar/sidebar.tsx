@@ -95,9 +95,8 @@ const Sidebar = () => {
                 <img
                   src={dashboard.src}
                   alt="Dashboard"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'dashboard' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'dashboard' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Dashboard
               </li>
@@ -115,9 +114,8 @@ const Sidebar = () => {
                 <img
                   src={mes.src}
                   alt="MES"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'mes' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'mes' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 MES
               </li>
@@ -135,9 +133,8 @@ const Sidebar = () => {
                 <img
                   src={material.src}
                   alt="Material"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'material' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'material' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Material
               </li>
@@ -157,9 +154,8 @@ const Sidebar = () => {
                 <img
                   src={catalogmanager.src}
                   alt="Catalog Manager"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Catalog Manager
               </li>
@@ -177,9 +173,8 @@ const Sidebar = () => {
                 <img
                   src={design.src}
                   alt="design"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'designs' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'designs' ? styles.icon_adjusted : ''
+                    }`}
                 />
                 Design
               </li>
@@ -201,9 +196,8 @@ const Sidebar = () => {
                   <img
                     src={Setting.src}
                     alt="settings"
-                    className={`${styles.sidebar_icon} ${
-                      activeItem === 'settings' ? styles.icon_adjusted : ''
-                    }`}
+                    className={`${styles.sidebar_icon} ${activeItem === 'settings' ? styles.icon_adjusted : ''
+                      }`}
                   />
                   Settings
                 </li>
@@ -247,9 +241,8 @@ const Sidebar = () => {
                 <img
                   src={dashboard.src}
                   alt="Dashboard"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'dashboard' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'dashboard' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -267,9 +260,8 @@ const Sidebar = () => {
                 <img
                   src={mes.src}
                   alt="MES"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'mes' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'mes' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -287,9 +279,8 @@ const Sidebar = () => {
                 <img
                   src={material.src}
                   alt="Material"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'material' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'material' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -309,9 +300,8 @@ const Sidebar = () => {
                 <img
                   src={catalogmanager.src}
                   alt="Catalog Manager"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <li
@@ -329,9 +319,8 @@ const Sidebar = () => {
                 <img
                   src={design.src}
                   alt="design"
-                  className={`${styles.sidebar_icon} ${
-                    activeItem === 'designs' ? styles.icon_adjusted : ''
-                  }`}
+                  className={`${styles.sidebar_icon} ${activeItem === 'designs' ? styles.icon_adjusted : ''
+                    }`}
                 />
               </li>
               <div className={styles.userhelp}>

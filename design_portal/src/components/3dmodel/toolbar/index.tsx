@@ -23,6 +23,8 @@ import measure from '@/assets/toolbar/measure.svg';
 import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
 import InputField from '@/components/inputfields/InputField';
+import { removeExistingLines } from '../design/index';
+
 
 // catalog modal photo
 import {
@@ -77,6 +79,8 @@ import {
   addObjectsThunk,
   setobjectSelected,
   togglAlignment,
+  setSelectedChildObject,
+  setHoverdMesh,
 } from '../store/dataSlice';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
@@ -994,6 +998,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
+    dispatch(setobjectSelected(null));
+    dispatch(setSelectedChildObject(null));
+    dispatch(setHoverdMesh(null));
+    removeExistingLines();
   };
 
   const onClose = () => {

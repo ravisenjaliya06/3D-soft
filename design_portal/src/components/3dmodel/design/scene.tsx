@@ -9,6 +9,15 @@ import { updateObject } from '../store/dataSlice';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 
+import {
+  setobjectSelected,
+  setSelectedChildObject,
+  setHoverdMesh,
+} from '../store/dataSlice';
+
+
+import { removeExistingLines } from '.';
+
 let cachedHandleModel: THREE.Object3D | null = null;
 
 // ===== Dimension helpers (exported) =====
@@ -16,6 +25,7 @@ const DIMENSION_GROUP_PREFIX = 'plank_dimension_group_';
 const DIM_LABEL_PREFIX = 'plank_dim_label_';
 
 const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
+
 const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -621,7 +631,11 @@ const addCTypeWallWithFloor = (
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
   floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, toAvoidOverlap, wallLength / 2 - wallThickness / 2);
+  floorPanel.position.set(
+    0,
+    toAvoidOverlap,
+    wallLength / 2 - wallThickness / 2,
+  );
 
   // ---------- Group ----------
   const cWallGroup = new THREE.Group();
@@ -1763,6 +1777,10 @@ export const addPlatformOnWall = (
   }
 
   scene.add(platformGroup);
+  store.dispatch(setobjectSelected(null));
+  store.dispatch(setSelectedChildObject(null));
+  store.dispatch(setHoverdMesh(null));
+  removeExistingLines();
   return addedMeshes; // Only the visible countertop meshes
 };
 
@@ -3166,8 +3184,7 @@ export const addDrawersOnInvisibleBox = async (
         center.z,
       );
       rightRail.position.set(
-        center.x + w / 2 - railT / 2 - 0.01
-        ,
+        center.x + w / 2 - railT / 2 - 0.01,
         yCenter,
         center.z,
       );
@@ -4404,3 +4421,7 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
   view.renderer.domElement.addEventListener('dblclick', onClick);
 }
+function dispatch(arg0: { payload: string | null; type: "data/setobjectSelected"; }) {
+  throw new Error('Function not implemented.');
+}
+
