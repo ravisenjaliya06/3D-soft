@@ -1058,7 +1058,7 @@ const Sidebar: React.FC = () => {
 
               {!isQuickHideActive &&
                 isSettingOpen &&
-                subMenu === 'door' &&
+                subMenu === 'material' &&
                 itemType.DOOR && (
                   <div className={style.field_group_div}>
                     {/* Door Position */}
