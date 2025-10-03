@@ -1727,6 +1727,7 @@ def create_catalog_data() -> None:
                 organization=org,
                 type=catalog_data["type"],
                 name=catalog_data["name"],
+                design=None,
                 defaults={"description": catalog_data.get("description", "")},
             )
 
