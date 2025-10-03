@@ -20,7 +20,6 @@ import {
   PlankDataItem,
   UpdatedItemData,
 } from './interface';
-import { generateCompartmentsFromPlanks } from './items';
 
 function getDesignId(): string | null {
   const url = window.location.href;
