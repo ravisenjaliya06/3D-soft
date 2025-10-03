@@ -418,7 +418,9 @@ export function createArcCreator(
       .putObjectData('design', designId, 'object', payload)
       .then((response) => {
         if ((response as ResponseStatus).status === 200) {
-          console.log('Arc saved to database:', objectId);
+          if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+            console.log('Arc saved to database:', objectId);
+          }
         } else {
           console.error('Failed to save arc to database');
         }
