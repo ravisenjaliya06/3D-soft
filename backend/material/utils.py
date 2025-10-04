@@ -130,10 +130,10 @@ def duplicate_material(material: Material) -> Material:
     return material_copy
 
 
-def duplicate_properties(prop: Properties, material_copy: Material):
+def duplicate_properties(prop: Properties, material_copy: Material) -> Properties:
     """Duplicate Properties object with mount holes + plate holes"""
     # First duplicate related mount holes (if exist)
-    def clone_hole(hole):
+    def clone_hole(hole: MountHoles) -> MountHoles | None:
         if hole:
             return MountHoles.objects.create(
                 top_reference=hole.top_reference,
@@ -146,7 +146,7 @@ def duplicate_properties(prop: Properties, material_copy: Material):
             )
         return None
 
-    def clone_plate_hole(hole):
+    def clone_plate_hole(hole: MountPlateHoles) -> MountPlateHoles | None:
         if hole:
             return MountPlateHoles.objects.create(
                 horizontal_offset=hole.horizontal_offset,
@@ -156,11 +156,24 @@ def duplicate_properties(prop: Properties, material_copy: Material):
             )
         return None
 
-    new_prop = Properties.objects.create(
-        **{field.name: getattr(prop, field.name) for field in Properties._meta.fields 
-        if field.name not in ('id', 'material', 'front_mount_holes', 'back_mount_holes', 
-                                'bottom_mount_holes', 'mount_plate_hole_one', 'mount_plate_hole_two',
-                                'mount_plate_hole_third', 'mount_plate_hole_forth', 'mount_plate_hole_fifth')},
+    return Properties.objects.create(
+        **{
+            field.name: getattr(prop, field.name)
+            for field in Properties._meta.fields
+            if field.name
+            not in (
+                "id",
+                "material",
+                "front_mount_holes",
+                "back_mount_holes",
+                "bottom_mount_holes",
+                "mount_plate_hole_one",
+                "mount_plate_hole_two",
+                "mount_plate_hole_third",
+                "mount_plate_hole_forth",
+                "mount_plate_hole_fifth",
+            )
+        },
         material=material_copy,
         front_mount_holes=clone_hole(prop.front_mount_holes),
         back_mount_holes=clone_hole(prop.back_mount_holes),
@@ -171,4 +184,3 @@ def duplicate_properties(prop: Properties, material_copy: Material):
         mount_plate_hole_forth=clone_plate_hole(prop.mount_plate_hole_forth),
         mount_plate_hole_fifth=clone_plate_hole(prop.mount_plate_hole_fifth),
     )
-    return new_prop
