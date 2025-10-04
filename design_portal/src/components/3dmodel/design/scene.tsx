@@ -4473,9 +4473,3 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
   view.renderer.domElement.addEventListener('dblclick', onClick);
 }
-function dispatch(arg0: {
-  payload: string | null;
-  type: 'data/setobjectSelected';
-}) {
-  throw new Error('Function not implemented.');
-}

@@ -44,12 +44,6 @@ import door from '@/assets/toolbar/door-icon.svg';
 import drawer from '@/assets/toolbar/drawer.svg';
 import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
 import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
-import texture_3 from '@/assets/toolbar/texture/dark_brown.jpg';
-import texture_4 from '@/assets/toolbar/texture/grossy_brown.jpg';
-import texture_1 from '@/assets/toolbar/texture/light_brown.jpg';
-import texture_2 from '@/assets/toolbar/texture/light_wood.jpg';
-import texture_5 from '@/assets/toolbar/texture/off_white.jpg';
-import texture_6 from '@/assets/toolbar/texture/wood.jpg';
 import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
 import { useRouter } from 'next/router';
 import React from 'react';
@@ -118,38 +112,38 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [selectedCabinetItem, setSelectedCabinetItem] = useState(null);
   const [quantityValue, setQuantityValue] = useState(1);
 
-  const designTextureModal = [
-    {
-      name: 'Texture 1',
-      image: texture_1,
-      onClick: () => applyTexture('texture_1'),
-    },
-    {
-      name: 'Texture 2',
-      image: texture_2,
-      onClick: () => applyTexture('texture_2'),
-    },
-    {
-      name: 'Texture 3',
-      image: texture_3,
-      onClick: () => applyTexture('texture_3'),
-    },
-    {
-      name: 'Texture 4',
-      image: texture_4,
-      onClick: () => applyTexture('texture_4'),
-    },
-    {
-      name: 'Texture 5',
-      image: texture_5,
-      onClick: () => applyTexture('texture_5'),
-    },
-    {
-      name: 'Texture 6',
-      image: texture_6,
-      onClick: () => applyTexture('texture_6'),
-    },
-  ];
+  // const designTextureModal = [
+  //   {
+  //     name: 'Texture 1',
+  //     image: texture_1,
+  //     onClick: () => applyTexture('texture_1'),
+  //   },
+  //   {
+  //     name: 'Texture 2',
+  //     image: texture_2,
+  //     onClick: () => applyTexture('texture_2'),
+  //   },
+  //   {
+  //     name: 'Texture 3',
+  //     image: texture_3,
+  //     onClick: () => applyTexture('texture_3'),
+  //   },
+  //   {
+  //     name: 'Texture 4',
+  //     image: texture_4,
+  //     onClick: () => applyTexture('texture_4'),
+  //   },
+  //   {
+  //     name: 'Texture 5',
+  //     image: texture_5,
+  //     onClick: () => applyTexture('texture_5'),
+  //   },
+  //   {
+  //     name: 'Texture 6',
+  //     image: texture_6,
+  //     onClick: () => applyTexture('texture_6'),
+  //   },
+  // ];
 
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
