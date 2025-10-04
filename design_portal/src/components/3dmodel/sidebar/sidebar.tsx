@@ -2,6 +2,7 @@ import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
 import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
 import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
+import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -36,6 +37,51 @@ const Sidebar: React.FC = () => {
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
+  const [isTextureListOpen, setIsTextureListOpen] = useState(false);
+
+  const materialModal = [
+    {
+      option: 'materal_0',
+      name: 'Dark Brown',
+      image: TEXTURE_MEDIA.WOOD,
+    },
+    {
+      option: 'materal_1',
+      name: 'Dark Brown',
+      image: TEXTURE_MEDIA.WOOD_1,
+    },
+    {
+      option: 'materal_2',
+      name: 'Light Wood',
+      image: TEXTURE_MEDIA.WOOD_2,
+    },
+    {
+      option: 'materal_3',
+      name: 'Off White',
+      image: TEXTURE_MEDIA.WOOD_3,
+    },
+    {
+      option: 'materal_4',
+      name: 'Glossy Brown',
+      image: TEXTURE_MEDIA.WOOD_4,
+    },
+    {
+      option: 'materal_5',
+      name: 'Light Brown',
+      image: TEXTURE_MEDIA.WOOD_5,
+    },
+    {
+      option: 'materal_6',
+      name: 'Wood',
+      image: TEXTURE_MEDIA.WOOD_6,
+    },
+    {
+      option: 'materal_7',
+      name: 'Wood',
+      image: TEXTURE_MEDIA.WOOD_7,
+    },
+  ];
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector(
@@ -116,6 +162,12 @@ const Sidebar: React.FC = () => {
       colorInputRef.current.style.backgroundColor = selectedColor;
     }
   }, []);
+
+  const handleTextureSelect = (texturePath: string) => {
+    setSelectedTexture(texturePath);
+    applyTextureToSelected(texturePath, 'updateTexture');
+    setIsTextureListOpen(false);
+  };
 
   const handleSetting = () => {
     if (isQuickHideActive) return;
@@ -466,6 +518,9 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const toggleTextureList = () => {
+    setIsTextureListOpen((prev) => !prev);
+  };
   const handleIncrementX = () => {
     if (!selectedObject || isQuickHideActive) return;
     const newRotationX = (selectedObject.rotationX || 0) + 1;
@@ -676,6 +731,76 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const applyTextureToSelected = (texturePath: string, update?: string) => {
+    if (!scene) return;
+
+    const targetId = selectedChildObjectId || selectedObjectId;
+    if (!targetId) return;
+
+    const obj = selectedChildObjectId
+      ? objects.find((o) => o.id === selectedChildObjectId)
+      : objects.find((o) => o.id === selectedObjectId!);
+
+    let targetMesh: any = null;
+    scene.traverse((child: any) => {
+      if (!targetMesh && child?.userData?.objectId === targetId) {
+        targetMesh = child;
+      }
+    });
+    if (!targetMesh) return;
+
+    // Load and apply texture
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load(texturePath, () => {
+      // Ensure texture is applied after loading
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2, 1); // Adjust repeat as needed for your objects
+      texture.needsUpdate = true;
+
+      targetMesh.traverse((child: any) => {
+        if (child.isMesh) {
+          if (Array.isArray(child.material)) {
+            child.material = child.material.map((m: any) => {
+              if (m && typeof m.clone === 'function') {
+                const cloned = m.clone();
+                cloned.map = texture;
+                cloned.roughness = 0.6;
+                cloned.metalness = 0.0;
+                cloned.needsUpdate = true;
+                return cloned;
+              }
+              return new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.6,
+                metalness: 0.0,
+              });
+            });
+          } else if (child.material) {
+            child.material.map = texture;
+            child.material.roughness = 0.6;
+            child.material.metalness = 0.0;
+            child.material.needsUpdate = true;
+          } else {
+            child.material = new THREE.MeshStandardMaterial({
+              map: texture,
+              roughness: 0.6,
+              metalness: 0.0,
+            });
+          }
+        }
+      });
+
+      if (obj && update) {
+        updateObjectInScene(
+          obj.id,
+          { material: { type: 'TEXTURE', value: texturePath } },
+          scene,
+          dispatch,
+          obj as any,
+        );
+      }
+    });
+  };
   return (
     <div className={isSidebarOpen ? style.sidebar : style.sidebar_open}>
       <div
@@ -1052,6 +1177,35 @@ const Sidebar: React.FC = () => {
                       disabled={isQuickHideActive}
                       className={style.color_input}
                     />
+                  </div>
+                  <div className={style.field_group1}>
+                    <p>Texture</p>
+                    <button
+                      className={style.btn_material_change}
+                      onClick={toggleTextureList}
+                      disabled={isQuickHideActive}
+                    >
+                      Change Texture
+                    </button>
+                    {isTextureListOpen && (
+                      <div className={style.texture_list}>
+                        {materialModal.map((material) => (
+                          <div
+                            key={material.option}
+                            className={style.texture_item}
+                            onClick={() => handleTextureSelect(material.image)}
+                            title={material.name}
+                          >
+                            <img
+                              src={material.image}
+                              alt={material.name}
+                              className={style.texture_thumbnail}
+                            />
+                            <p>{material.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -53,7 +53,9 @@ const Login = () => {
 
     localStorage.clear();
     Cookies.remove('token');
+    console.log('Submitting login form with data,', formData);
     const response = await CommonService.post('user', 'login', formData);
+    console.log('Login response:', response);
     if (response.status === 200) {
       localStorage.setItem('token', response.data.payload.access);
       Cookies.set('token', response.data.payload.access);
