@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from design.models import Design
+
 # Local imports
 from .models import (
     Catalog,
@@ -800,7 +802,11 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
 
 
 class CatalogSerializer(serializers.ModelSerializer):
-    design = serializers.CharField(source="design.id", read_only=True)
+    design = serializers.PrimaryKeyRelatedField(
+        queryset=Design.objects.all(),
+        required=False,
+        allow_null=True
+    )
     catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -817,6 +823,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             "length",
             "depth",
             "position",
+            "additional_data",
         ]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
@@ -824,7 +831,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         if design_id and catalog_id:
-            return create_duplicate_catalog(design_id, catalog_id)
+            return create_duplicate_catalog(design_id, catalog_id, validated_data)
         new_catalog = Catalog.objects.create(**validated_data)
 
         template_catalog = Catalog.objects.filter(
