@@ -157,82 +157,82 @@ const findAllChildrenIds = (
 
 export const removeObjectWithHistory =
   (id: string, mesh: THREE.Mesh): AppThunk =>
-    (dispatch, getState) => {
-      const state = getState().data;
-      const objectToRemove = state.objects.find((obj) => obj.id === id);
+  (dispatch, getState) => {
+    const state = getState().data;
+    const objectToRemove = state.objects.find((obj) => obj.id === id);
 
-      if (objectToRemove) {
-        const childrenIds = findAllChildrenIds(id, state.objects);
-        dispatch(removeObject(id));
-        childrenIds.forEach((childId) => {
-          dispatch(removeObject(childId));
-        });
+    if (objectToRemove) {
+      const childrenIds = findAllChildrenIds(id, state.objects);
+      dispatch(removeObject(id));
+      childrenIds.forEach((childId) => {
+        dispatch(removeObject(childId));
+      });
 
-        if (isMainObject(objectToRemove)) {
+      if (isMainObject(objectToRemove)) {
+        dispatch(
+          addToHistory({
+            id: uuidv4(),
+            type: 'REMOVE',
+            data: {
+              object: objectToRemove,
+              mesh,
+              childObjects: state.objects.filter((obj) =>
+                childrenIds.includes(obj.id),
+              ),
+            },
+          }),
+        );
+      }
+    } else {
+      console.warn(`Cannot find object with ID: ${id} to remove`);
+    }
+  };
+
+export const addObjectsThunk =
+  (name: string): AppThunk =>
+  async (dispatch, getState) => {
+    const catalog = getState().catalog;
+    const data = getState().data.objects;
+    const scene = getState().scene.scene;
+    try {
+      dispatch(setCreationCancelHint(true));
+      const result = await Item.moveObject(
+        name,
+        catalog,
+        scene,
+        dispatch,
+        data,
+      );
+      dispatch(setCreationCancelHint(false));
+      if (
+        result?.threeDObject &&
+        result?.createResult &&
+        'objectsList' in result.createResult
+      ) {
+        const objectsList = result.createResult.objectsList;
+        dispatch(addElement(result.threeDObject));
+
+        const { mainObjects, childObjects } = findObjects(objectsList);
+        for (const obj of mainObjects) {
           dispatch(
             addToHistory({
               id: uuidv4(),
-              type: 'REMOVE',
+              type: 'ADD',
               data: {
-                object: objectToRemove,
-                mesh,
-                childObjects: state.objects.filter((obj) =>
-                  childrenIds.includes(obj.id),
-                ),
+                object: obj,
+                mesh: result.threeDObject,
+                childObjects: childObjects,
               },
             }),
           );
         }
       } else {
-        console.warn(`Cannot find object with ID: ${id} to remove`);
       }
-    };
-
-export const addObjectsThunk =
-  (name: string): AppThunk =>
-    async (dispatch, getState) => {
-      const catalog = getState().catalog;
-      const data = getState().data.objects;
-      const scene = getState().scene.scene;
-      try {
-        dispatch(setCreationCancelHint(true));
-        const result = await Item.moveObject(
-          name,
-          catalog,
-          scene,
-          dispatch,
-          data,
-        );
-        dispatch(setCreationCancelHint(false));
-        if (
-          result?.threeDObject &&
-          result?.createResult &&
-          'objectsList' in result.createResult
-        ) {
-          const objectsList = result.createResult.objectsList;
-          dispatch(addElement(result.threeDObject));
-
-          const { mainObjects, childObjects } = findObjects(objectsList);
-          for (const obj of mainObjects) {
-            dispatch(
-              addToHistory({
-                id: uuidv4(),
-                type: 'ADD',
-                data: {
-                  object: obj,
-                  mesh: result.threeDObject,
-                  childObjects: childObjects,
-                },
-              }),
-            );
-          }
-        } else {
-        }
-      } catch (Error) {
-        dispatch(setCreationCancelHint(false));
-        console.error('Error during object creation:', Error);
-      }
-    };
+    } catch (Error) {
+      dispatch(setCreationCancelHint(false));
+      console.error('Error during object creation:', Error);
+    }
+  };
 
 export const copyObjectsThunk = createAsyncThunk(
   'data/copyObjects',

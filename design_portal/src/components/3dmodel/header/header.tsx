@@ -170,8 +170,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         setSuccessMessage(
           'Settings updated successfully! Minifix spacing updated to ' +
-          minifixDistance +
-          'mm',
+            minifixDistance +
+            'mm',
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {
