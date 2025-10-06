@@ -151,9 +151,9 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionChange =
     (dim: 'width' | 'height' | 'depth') =>
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
-      };
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
+    };
 
   const handleDimensionCommit = (
     dim: 'width' | 'height' | 'depth',
@@ -170,11 +170,11 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionKeyDown =
     (dim: 'width' | 'height' | 'depth') =>
-      (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-          handleDimensionCommit(dim, dimensions[dim]);
-        }
-      };
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleDimensionCommit(dim, dimensions[dim]);
+      }
+    };
 
   const handleDimensionBlur = (dim: 'width' | 'height' | 'depth') => () => {
     handleDimensionCommit(dim, dimensions[dim]);
@@ -229,7 +229,7 @@ const Sidebar: React.FC = () => {
     if (!scene) return;
     try {
       rescaleByObjectId(scene as any, objectId);
-    } catch { }
+    } catch {}
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child: any) => {
       if (
@@ -486,6 +486,126 @@ const Sidebar: React.FC = () => {
   const toggleTextureList = () => {
     setIsTextureListOpen((prev) => !prev);
   };
+  const sideBarMenuConfig = [
+    {
+      subMenu: 'basic',
+      title: 'Basic',
+      fields: [
+        {
+          label: 'Width',
+          name: 'width',
+          type: 'number',
+          value: dimensions.width,
+          min: 0,
+          disabled: isHorizontalPlank || isDisabled,
+          onChange: handleDimensionChange('width'),
+          onKeyDown: handleDimensionKeyDown('width'),
+          onBlur: handleDimensionBlur('width'),
+        },
+        {
+          label: 'Height',
+          name: 'height',
+          type: 'number',
+          value: dimensions.height,
+          min: 5,
+          disabled: isVerticalPlank || isDisabled,
+          onChange: handleDimensionChange('height'),
+          onKeyDown: handleDimensionKeyDown('height'),
+          onBlur: handleDimensionBlur('height'),
+        },
+        {
+          label: 'Depth',
+          name: 'depth',
+          type: 'number',
+          value: dimensions.depth,
+          min: 5,
+          max: parentObject?.depth,
+          disabled: isQuickHideActive,
+          onChange: handleDimensionChange('depth'),
+          onKeyDown: handleDimensionKeyDown('depth'),
+          onBlur: handleDimensionBlur('depth'),
+        },
+      ],
+    },
+    {
+      subMenu: 'rotation',
+      title: 'Rotation',
+      fields: [
+        {
+          label: 'Rotate X ',
+          name: 'rotationX',
+          type: 'number',
+          value: rotations.x,
+          min: 0,
+          max: 360,
+          disabled: isQuickHideActive,
+          onChange: handleRotationChange('x'),
+          onKeyDown: handleRotationKeyDown('x'),
+          onBlur: handleRotationBlur('x'),
+        },
+        {
+          label: 'Rotate Y ',
+          name: 'rotationY',
+          type: 'number',
+          value: rotations.y,
+          min: 0,
+          max: 360,
+          disabled: isQuickHideActive,
+          onChange: handleRotationChange('y'),
+          onKeyDown: handleRotationKeyDown('y'),
+          onBlur: handleRotationBlur('y'),
+        },
+        {
+          label: 'Rotate Z ',
+          name: 'rotationZ',
+          type: 'number',
+          value: rotations.z,
+          min: 0,
+          max: 360,
+          disabled: isQuickHideActive,
+          onChange: handleRotationChange('z'),
+          onKeyDown: handleRotationKeyDown('z'),
+          onBlur: handleRotationBlur('z'),
+        },
+      ],
+    },
+    {
+      subMenu: 'position',
+      title: 'Position',
+      fields: [
+        {
+          label: 'Position X',
+          name: 'positionX',
+          type: 'number',
+          value: positions.x,
+          disabled: isQuickHideActive,
+          onChange: handlePositionChange('x'),
+          onKeyDown: handlePositionKeyDown('x'),
+          onBlur: handlePositionBlur('x'),
+        },
+        {
+          label: 'Position Y',
+          name: 'positionY',
+          type: 'number',
+          value: positions.y,
+          disabled: isQuickHideActive,
+          onChange: handlePositionChange('y'),
+          onKeyDown: handlePositionKeyDown('y'),
+          onBlur: handlePositionBlur('y'),
+        },
+        {
+          label: 'Position Z',
+          name: 'positionZ',
+          type: 'number',
+          value: positions.z,
+          disabled: isQuickHideActive,
+          onChange: handlePositionChange('z'),
+          onKeyDown: handlePositionKeyDown('z'),
+          onBlur: handlePositionBlur('z'),
+        },
+      ],
+    },
+  ];
 
   return (
     <div className={isSidebarOpen ? style.sidebar : style.sidebar_open}>
@@ -546,184 +666,45 @@ const Sidebar: React.FC = () => {
           )}
           {isSettingOpen && selectedObject && (
             <div className={style.field_main_div}>
-              <div
-                className={style.field_group_title_div}
-                onClick={() => toggleSubMenu('basic')}
-                style={{ cursor: 'pointer' }}
-              >
-                <img
-                  src={subMenu === 'basic' ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                />
-                <p className={style.field_group_title}>Basic</p>
-              </div>
-              {subMenu === 'basic' && (
-                <div className={style.field_group_div}>
-                  <div className={style.field_group}>
-                    <p>Width</p>
-                    <input
-                      type="number"
-                      name="width"
-                      value={dimensions.width}
-                      onChange={handleDimensionChange('width')}
-                      onKeyDown={handleDimensionKeyDown('width')}
-                      onBlur={handleDimensionBlur('width')}
-                      min={0}
-                      disabled={isHorizontalPlank || isDisabled}
-                      className={style.number_input}
+              {sideBarMenuConfig.map((menu) => (
+                <div key={menu.subMenu}>
+                  <div
+                    className={style.field_group_title_div}
+                    onClick={() => toggleSubMenu(menu.subMenu)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <img
+                      src={
+                        subMenu === menu.subMenu ? up_arrow.src : down_arrow.src
+                      }
+                      alt="toggle_arrow"
                     />
+                    <p className={style.field_group_title}>{menu.title}</p>
                   </div>
-                  <div className={style.field_group}>
-                    <p>Height</p>
-                    <input
-                      type="number"
-                      name="height"
-                      value={dimensions.height}
-                      onChange={handleDimensionChange('height')}
-                      onKeyDown={handleDimensionKeyDown('height')}
-                      onBlur={handleDimensionBlur('height')}
-                      min={5}
-                      disabled={isVerticalPlank || isDisabled}
-                      className={style.number_input}
-                    />
-                  </div>
-                  <div className={style.field_group}>
-                    <p>Depth</p>
-                    <input
-                      type="number"
-                      name="depth"
-                      value={dimensions.depth}
-                      onChange={handleDimensionChange('depth')}
-                      onKeyDown={handleDimensionKeyDown('depth')}
-                      onBlur={handleDimensionBlur('depth')}
-                      min={5}
-                      max={parentObject?.depth}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
+                  {subMenu === menu.subMenu && (
+                    <div className={style.field_group_div}>
+                      {menu.fields.map((field, index) => (
+                        <div key={index} className={style.field_group1}>
+                          <p>{field.label}</p>
+                          <div className={style.input_with_unit}>
+                            <input
+                              id={field.name}
+                              name={field.name}
+                              type={field.type}
+                              value={field.value}
+                              disabled={field.disabled}
+                              onChange={field.onChange}
+                              onKeyDown={field.onKeyDown}
+                              onBlur={field.onBlur}
+                              className={style.number_input}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-              <div
-                className={style.field_group_title_div}
-                onClick={() => toggleSubMenu('rotation')}
-                style={{ cursor: 'pointer' }}
-              >
-                <img
-                  src={subMenu === 'rotation' ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                />
-                <p className={style.field_group_title}>Rotation</p>
-              </div>
-              {subMenu === 'rotation' && (
-                <div className={style.field_group_div}>
-                  <div className={style.field_group1}>
-                    <p>Rotate X:</p>
-                    <input
-                      id="rotate-x"
-                      name="rotationX"
-                      min={0}
-                      max={360}
-                      type="number"
-                      value={rotations.x}
-                      onChange={handleRotationChange('x')}
-                      onKeyDown={handleRotationKeyDown('x')}
-                      onBlur={handleRotationBlur('x')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Rotate Y:</p>
-                    <input
-                      id="rotate-y"
-                      name="rotationY"
-                      min={0}
-                      max={360}
-                      type="number"
-                      value={rotations.y}
-                      onChange={handleRotationChange('y')}
-                      onKeyDown={handleRotationKeyDown('y')}
-                      onBlur={handleRotationBlur('y')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Rotate Z:</p>
-                    <input
-                      id="rotate-z"
-                      name="rotationZ"
-                      min={0}
-                      max={360}
-                      type="number"
-                      value={rotations.z}
-                      onChange={handleRotationChange('z')}
-                      onKeyDown={handleRotationKeyDown('z')}
-                      onBlur={handleRotationBlur('z')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                </div>
-              )}
-              <div
-                className={style.field_group_title_div}
-                onClick={() => toggleSubMenu('position')}
-                style={{ cursor: 'pointer' }}
-              >
-                <img
-                  src={subMenu === 'position' ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                />
-                <p className={style.field_group_title}>Position</p>
-              </div>
-              {subMenu === 'position' && (
-                <div className={style.field_group_div}>
-                  <div className={style.field_group1}>
-                    <p>Position X:</p>
-                    <input
-                      id="position-x"
-                      name="positionX"
-                      type="number"
-                      value={positions.x}
-                      onChange={handlePositionChange('x')}
-                      onKeyDown={handlePositionKeyDown('x')}
-                      onBlur={handlePositionBlur('x')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Position Y:</p>
-                    <input
-                      id="position-y"
-                      name="positionY"
-                      type="number"
-                      value={positions.y}
-                      onChange={handlePositionChange('y')}
-                      onKeyDown={handlePositionKeyDown('y')}
-                      onBlur={handlePositionBlur('y')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Position Z:</p>
-                    <input
-                      id="position-z"
-                      name="positionZ"
-                      type="number"
-                      value={positions.z}
-                      onChange={handlePositionChange('z')}
-                      onKeyDown={handlePositionKeyDown('z')}
-                      onBlur={handlePositionBlur('z')}
-                      disabled={isQuickHideActive}
-                      className={style.number_input}
-                    />
-                  </div>
-                </div>
-              )}
+              ))}
               <div
                 className={style.field_group_title_div}
                 onClick={() => toggleSubMenu('material')}
