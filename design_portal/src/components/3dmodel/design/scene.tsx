@@ -26,6 +26,7 @@ const DIM_LABEL_PREFIX = 'plank_dim_label_';
 const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
 
 const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
+
 export const init3DDesign = async (
   mount: HTMLDivElement,
 ): Promise<ThreeDView> => {
@@ -540,16 +541,9 @@ export const init3DDesign = async (
     addSimpleTVUnit: () => addSimpleTVUnit(scene),
     addSimpleTable: () => addSimpleTable(scene),
     addComputerDesk: () => addComputerDesk(scene),
-    // addBaseCabinetsUnderPlatform,
-    // addFullKitchenSetup,
     loadSinkModel,
-    // exportRenderPNG: (options?: { width?: number; height?: number; filename?: string; download?: boolean }) => {
-    //   exportRenderPNG(renderer, scene, camera, options);
-    // },
     addUpperCabinetsAbovePlatform,
     addDoubleDoorUpperCabinetsAbovePlatform,
-    // addChimneyWithGlassCabinets,
-    // loadHandleModel,
   };
 };
 
@@ -1465,180 +1459,6 @@ export const addComputerDesk = (scene: THREE.Scene) => {
   scene.add(container);
 };
 
-// export const addPlatformOnWall = (
-//   scene: THREE.Scene,
-//   wallMesh: THREE.Mesh,
-//   counterTexture: THREE.Texture,
-// ) => {
-//   const platformHeight = 0.7;
-//   const countertopThickness = 0.05;
-//   const defaultProtrusion = 0.74; // Fixed protrusion depth/width for new platforms
-
-//   const counterMat = new THREE.MeshStandardMaterial({
-//     map: counterTexture,
-//     roughness: 0.4,
-//     metalness: 0.0,
-//     side: THREE.DoubleSide,
-//   });
-
-//   // Derive wall geometry params
-//   const params = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
-//   const wallW = params.width as number;
-//   const wallD = params.depth as number;
-
-//   // Create a group to hold the platform
-//   const platformGroup = new THREE.Group();
-//   platformGroup.name = `Platform_${wallMesh.name}`;
-
-//   // Compute floor Y from existing floor panel
-//   let floorY = 0;
-//   const cWallGroup = scene.getObjectByName(
-//     'cWallWithFloor',
-//   ) as THREE.Group | null;
-//   if (cWallGroup) {
-//     const floorObj = cWallGroup.children.find(
-//       (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
-//     ) as THREE.Mesh | undefined;
-//     if (floorObj) floorY = floorObj.position.y;
-//   }
-
-//   if (wallMesh.name === 'Center Wall') {
-//     // Compute wall span along X
-//     const wallCenterX = wallMesh.position.x;
-//     const halfLengthX = wallW / 2;
-//     let leftStartX = wallCenterX - halfLengthX;
-//     let rightEndX = wallCenterX + halfLengthX;
-
-//     // Check for existing side platforms and adjust span
-//     const leftPlat = scene.getObjectByName('Counter_LeftWall') as
-//       | THREE.Mesh
-//       | undefined;
-//     if (leftPlat) {
-//       const leftPlatParams = (leftPlat.geometry as THREE.BoxGeometry)
-//         .parameters as any;
-//       const leftProtrusion = leftPlatParams.width as number;
-//       const leftInnerEndX = leftPlat.position.x + leftProtrusion / 2;
-//       leftStartX = Math.max(leftStartX, leftInnerEndX);
-//     }
-
-//     const rightPlat = scene.getObjectByName('Counter_RightWall') as
-//       | THREE.Mesh
-//       | undefined;
-//     if (rightPlat) {
-//       const rightPlatParams = (rightPlat.geometry as THREE.BoxGeometry)
-//         .parameters as any;
-//       const rightProtrusion = rightPlatParams.width as number;
-//       const rightInnerStartX = rightPlat.position.x - rightProtrusion / 2;
-//       rightEndX = Math.min(rightEndX, rightInnerStartX);
-//     }
-
-//     const lengthX = Math.max(rightEndX - leftStartX, 0.1);
-//     const centerX = (leftStartX + rightEndX) / 2;
-
-//     const top = new THREE.Mesh(
-//       new THREE.BoxGeometry(lengthX, countertopThickness, defaultProtrusion),
-//       counterMat,
-//     );
-//     top.castShadow = true;
-//     top.receiveShadow = true;
-//     top.name = 'Counter_CenterWall';
-//     top.position.set(
-//       centerX,
-//       platformHeight + countertopThickness / 2,
-//       wallMesh.position.z + wallD / 2 + defaultProtrusion / 2,
-//     );
-//     platformGroup.add(top);
-
-//     // Invisible box from underside to floor
-//     const ibHeight = top.position.y - countertopThickness / 2 - floorY;
-//     if (ibHeight > 0.001) {
-//       const invisibleMat = new THREE.MeshBasicMaterial({
-//         color: 0x000000,
-//         transparent: true,
-//         opacity: 0.0,
-//         depthWrite: false,
-//       });
-//       const invisible = new THREE.Mesh(
-//         new THREE.BoxGeometry(lengthX, ibHeight, defaultProtrusion),
-//         invisibleMat,
-//       );
-//       invisible.name = 'invisibleBox_platform_center';
-//       invisible.position.set(
-//         top.position.x,
-//         floorY + ibHeight / 2,
-//         top.position.z,
-//       );
-//       platformGroup.add(invisible);
-//     }
-//   } else if (wallMesh.name === 'Left Wall' || wallMesh.name === 'Right Wall') {
-//     // Compute wall span along Z
-//     const wallCenterZ = wallMesh.position.z;
-//     const halfRunZ = wallD / 2; // wallD is params.depth for sides
-//     const minZ = wallCenterZ - halfRunZ;
-//     const maxZ = wallCenterZ + halfRunZ;
-
-//     // Check for existing back platform and adjust run
-//     const backPlat = scene.getObjectByName('Counter_CenterWall') as
-//       | THREE.Mesh
-//       | undefined;
-//     let startZ = minZ;
-//     if (backPlat) {
-//       const backPlatParams = (backPlat.geometry as THREE.BoxGeometry)
-//         .parameters as any;
-//       const backProtrusion = backPlatParams.depth as number;
-//       startZ = backPlat.position.z + backProtrusion / 2;
-//     }
-//     const effectiveRun = Math.max(maxZ - startZ, 0.1);
-//     const centerZ = startZ + effectiveRun / 2;
-
-//     const top = new THREE.Mesh(
-//       new THREE.BoxGeometry(
-//         defaultProtrusion,
-//         countertopThickness,
-//         effectiveRun,
-//       ),
-//       counterMat,
-//     );
-//     top.castShadow = true;
-//     top.receiveShadow = true;
-//     top.name = `Counter_${wallMesh.name.replace(' ', '')}`;
-//     const dir = wallMesh.name === 'Left Wall' ? +1 : -1;
-//     top.position.set(
-//       wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2),
-//       platformHeight + countertopThickness / 2,
-//       centerZ,
-//     );
-//     platformGroup.add(top);
-
-//     // Invisible box from underside to floor
-//     const ibHeight = top.position.y - countertopThickness / 2 - floorY;
-//     if (ibHeight > 0.001) {
-//       const invisibleMat = new THREE.MeshBasicMaterial({
-//         color: 0x000000,
-//         transparent: true,
-//         opacity: 0.0,
-//         depthWrite: false,
-//       });
-//       const invisible = new THREE.Mesh(
-//         new THREE.BoxGeometry(defaultProtrusion, ibHeight, effectiveRun),
-//         invisibleMat,
-//       );
-//       const wallTag = wallMesh.name === 'Left Wall' ? 'leftwall' : 'rightwall';
-//       invisible.name = `invisibleBox_platform_${wallTag}`;
-//       invisible.position.set(
-//         top.position.x,
-//         floorY + ibHeight / 2,
-//         top.position.z,
-//       );
-//       platformGroup.add(invisible);
-//     }
-//   } else {
-//     return;
-//   }
-
-//   scene.add(platformGroup);
-// };
-
 export const addPlatformOnWall = (
   scene: THREE.Scene,
   wallMesh: THREE.Mesh | null,
@@ -2460,6 +2280,7 @@ export const addVerticalPlanksToBox = (
     inv.position.copy(parent.worldToLocal(worldPos));
   }
 };
+
 export const addHorizontalPlanksToBox = (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -3109,7 +2930,6 @@ export const addDrawersOnInvisibleBox = async (
       handle.position.set(0, 0, 0);
 
       if (isSide) {
-        const normalAxis = 'x';
         const normalSign = dir;
         handle.rotation.set(0, 0, 0);
         handle.rotation.z = Math.PI / 2;
@@ -3129,8 +2949,6 @@ export const addDrawersOnInvisibleBox = async (
           face.position.z,
         );
       } else {
-        const normalAxis = 'z';
-        const normalSign = dir; // 1 for +Z
         handle.rotation.set(0, 0, 0);
         handle.rotation.z = Math.PI / 2;
         handle.rotation.x = -(Math.PI / 2);
@@ -4016,18 +3834,6 @@ function isHelperOrInvisible(o: THREE.Object3D) {
 
   return false;
 }
-function overlapsOnAxes(
-  a: THREE.Box3,
-  b: THREE.Box3,
-  axes: Array<'x' | 'y' | 'z'>,
-): boolean {
-  for (const axis of axes) {
-    if (axis === 'x' && (a.max.x < b.min.x || a.min.x > b.max.x)) return false;
-    if (axis === 'y' && (a.max.y < b.min.y || a.min.y > b.max.y)) return false;
-    if (axis === 'z' && (a.max.z < b.min.z || a.min.z > b.max.z)) return false;
-  }
-  return true;
-}
 
 function findNearestAlongAxis(
   scene: THREE.Scene,
@@ -4054,13 +3860,6 @@ function findNearestAlongAxis(
   // compute world center of self to detect side walls robustly
   const selfCenter = new THREE.Vector3();
   selfBox.getCenter(selfCenter);
-
-  // heuristics for side-wall behaviour (use world center)
-  const isSideWallPlank =
-    self.name.toLowerCase().includes('platform_leftwall') ||
-    self.name.toLowerCase().includes('platform_rightwall') ||
-    self.userData?.isSideWall === true ||
-    (axis === 'z' && Math.abs(selfCenter.x) > 0.5); // far from center (world units)
 
   // helper to test axis-overlap
   const overlapsOnAxesLocal = (
