@@ -15,72 +15,35 @@ import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
-  const [isBasicOpen, setIsBasicOpen] = useState(true);
-
-  const [subMenu, setSubMenu] = useState<string | null>('basic');
-
-  const [doorPosition, setDoorPosition] = useState('None');
-  const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
-  const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [width, setWidth] = useState(0);
-  const [height, setHeight] = useState(0);
-  const [depth, setDepth] = useState(0);
-  const [rotationX, setRotationX] = useState(0);
-  const [rotationY, setRotationY] = useState(0);
-  const [rotationZ, setRotationZ] = useState(0);
-  const [posX, setPosX] = useState(0);
-  const [posY, setPosY] = useState(0);
-  const [posZ, setPosZ] = useState(0);
+  const [subMenu, setSubMenu] = useState<string | null>('basic');
+  const [doorPosition, setDoorPosition] = useState('None');
+  const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
+  const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
+  const [dimensions, setDimensions] = useState({
+    width: 0,
+    height: 0,
+    depth: 0,
+  });
+  const [rotations, setRotations] = useState({ x: 0, y: 0, z: 0 });
+  const [positions, setPositions] = useState({ x: 0, y: 0, z: 0 });
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   const materialModal = [
-    {
-      option: 'materal_0',
-      name: 'Dark Brown',
-      image: TEXTURE_MEDIA.WOOD,
-    },
-    {
-      option: 'materal_1',
-      name: 'Dark Brown',
-      image: TEXTURE_MEDIA.WOOD_1,
-    },
-    {
-      option: 'materal_2',
-      name: 'Light Wood',
-      image: TEXTURE_MEDIA.WOOD_2,
-    },
-    {
-      option: 'materal_3',
-      name: 'Off White',
-      image: TEXTURE_MEDIA.WOOD_3,
-    },
-    {
-      option: 'materal_4',
-      name: 'Glossy Brown',
-      image: TEXTURE_MEDIA.WOOD_4,
-    },
-    {
-      option: 'materal_5',
-      name: 'Light Brown',
-      image: TEXTURE_MEDIA.WOOD_5,
-    },
-    {
-      option: 'materal_6',
-      name: 'Wood',
-      image: TEXTURE_MEDIA.WOOD_6,
-    },
-    {
-      option: 'materal_7',
-      name: 'Wood',
-      image: TEXTURE_MEDIA.WOOD_7,
-    },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
   ];
 
   const dispatch = useDispatch();
@@ -97,7 +60,6 @@ const Sidebar: React.FC = () => {
   );
   const isDisabled = isQuickHideActive;
 
-  // Determine the selected object (prioritize child object if selected)
   let selectedObject: Object3D | null | undefined;
   if (selectedChildObjectId) {
     selectedObject = objects.find((obj) => obj.id === selectedChildObjectId);
@@ -130,21 +92,26 @@ const Sidebar: React.FC = () => {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
         console.log(selectedObject, 'selectedObject');
       }
-      setWidth(selectedObject.width);
-      setHeight(selectedObject.height);
-      setDepth(selectedObject.depth);
-      setRotationX(selectedObject.rotationX!);
-      setRotationY(selectedObject.rotationY!);
-      setRotationZ(selectedObject.rotationZ!);
-      setPosX(selectedObject.apiData?.position?.x ?? 0);
-      setPosY(selectedObject.apiData?.position?.y ?? 0);
-      setPosZ(selectedObject.apiData?.position?.z ?? 0);
+      setDimensions({
+        width: selectedObject.width,
+        height: selectedObject.height,
+        depth: selectedObject.depth,
+      });
+      setRotations({
+        x: selectedObject.rotationX!,
+        y: selectedObject.rotationY!,
+        z: selectedObject.rotationZ!,
+      });
+      setPositions({
+        x: selectedObject.apiData?.position?.x ?? 0,
+        y: selectedObject.apiData?.position?.y ?? 0,
+        z: selectedObject.apiData?.position?.z ?? 0,
+      });
     }
   }, [selectedObject]);
 
   useEffect(() => {
     if (isSidebarOpen) {
-      // setIsBasicOpen(true);
       setSubMenu('basic');
     }
   }, [isSidebarOpen]);
@@ -157,224 +124,112 @@ const Sidebar: React.FC = () => {
   }, [isQuickHideActive]);
 
   useEffect(() => {
-    // Set initial background color
     if (colorInputRef.current) {
       colorInputRef.current.style.backgroundColor = selectedColor;
     }
   }, []);
 
-  const handleTextureSelect = (texturePath: string) => {
-    setSelectedTexture(texturePath);
-    applyTextureToSelected(texturePath, 'updateTexture');
-    setIsTextureListOpen(false);
+  const validateNumericInput = (
+    value: number,
+    min: number = 0,
+    max: number = Infinity,
+  ): number | null => {
+    return isNaN(value) || value < min || value > max ? null : value;
   };
 
-  const handleSetting = () => {
-    if (isQuickHideActive) return;
-    setSettingOpen(true);
-    setNavOpen(false);
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const toggleSubMenu = (value: string) => {
-    if (subMenu === value) {
-      setSubMenu(null);
-    } else {
-      // Otherwise, open the clicked submenu
-      setSubMenu(value);
-    }
-  };
-
-  const handleNavigation = () => {
-    setSettingOpen(false);
-    setNavOpen(true);
-  };
-
-  const validateNumericInput = (value: number): number | null =>
-    isNaN(value) || value < 0 ? null : value;
-
-  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWidth(Number(e.target.value));
-  };
-  const handleWidthKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newWidth = validateNumericInput(width);
-      if (newWidth !== null) {
-        updateObjectInScene(
-          selectedObject.id,
-          { width: newWidth },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-      }
-    }
-  };
-
-  const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setHeight(Number(e.target.value));
-  const handleHeightKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newHeight = validateNumericInput(height);
-      if (newHeight !== null && newHeight >= 5) {
-        updateObjectInScene(
-          selectedObject.id,
-          { height: newHeight },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-      }
-    }
-  };
-
-  const handleDepthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDepth(Number(e.target.value));
-  };
-  const handleDepthKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newDepth = validateNumericInput(depth);
-      if (newDepth !== null && newDepth >= 5) {
-        updateObjectInScene(
-          selectedObject.id,
-          { depth: newDepth },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-        tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-      }
-    }
-  };
-
-  const handleRotationXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRotationX(Number(e.target.value));
-  };
-  const handleRotationXKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newRotationX = validateNumericInput(rotationX);
-      if (newRotationX !== null && newRotationX >= 0 && newRotationX <= 360) {
-        updateObjectInScene(
-          selectedObject.id,
-          { rotationX: newRotationX },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-      }
-    }
-  };
-
-  const handleRotationYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRotationY(Number(e.target.value));
-  };
-  const handleRotationYKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newRotationY = validateNumericInput(rotationY);
-      if (newRotationY !== null && newRotationY >= 0 && newRotationY <= 360) {
-        updateObjectInScene(
-          selectedObject.id,
-          { rotationY: newRotationY },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-      }
-    }
-  };
-
-  const handleRotationZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRotationZ(Number(e.target.value));
-  };
-  const handleRotationZKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedObject && !isQuickHideActive) {
-      const newRotationZ = validateNumericInput(rotationZ);
-      if (newRotationZ !== null && newRotationZ >= 0 && newRotationZ <= 360) {
-        updateObjectInScene(
-          selectedObject.id,
-          { rotationZ: newRotationZ },
-          scene,
-          dispatch,
-          selectedObject,
-        );
-      }
-    }
-  };
-
-  // Position handlers
-  const handlePosXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPosX(Number(e.target.value));
-  };
-  const handlePosYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPosY(Number(e.target.value));
-  };
-  const handlePosZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPosZ(Number(e.target.value));
-  };
-
-  const commitPositionUpdate = (axis: 'x' | 'y' | 'z', value: number) => {
+  const updateObject = (updates: Partial<Object3D>) => {
     if (!selectedObject || isQuickHideActive) return;
-    const next = {
-      x: axis === 'x' ? value : (selectedObject.position?.x ?? 0),
-      y: axis === 'y' ? value : (selectedObject.position?.y ?? 0),
-      z: axis === 'z' ? value : (selectedObject.position?.z ?? 0),
+    updateObjectInScene(
+      selectedObject.id,
+      updates,
+      scene,
+      dispatch,
+      selectedObject,
+    );
+    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+  };
+
+  const handleDimensionChange =
+    (dim: 'width' | 'height' | 'depth') =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
+      };
+
+  const handleDimensionCommit = (
+    dim: 'width' | 'height' | 'depth',
+    value: number,
+  ) => {
+    const min = dim === 'width' ? 0 : 5;
+    const max =
+      dim === 'depth' && parentObject?.depth ? parentObject.depth : Infinity;
+    const validated = validateNumericInput(value, min, max);
+    if (validated !== null) {
+      updateObject({ [dim]: validated });
+    }
+  };
+
+  const handleDimensionKeyDown =
+    (dim: 'width' | 'height' | 'depth') =>
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+          handleDimensionCommit(dim, dimensions[dim]);
+        }
+      };
+
+  const handleDimensionBlur = (dim: 'width' | 'height' | 'depth') => () => {
+    handleDimensionCommit(dim, dimensions[dim]);
+  };
+
+  const handleRotationChange =
+    (axis: 'x' | 'y' | 'z') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setRotations((prev) => ({ ...prev, [axis]: Number(e.target.value) }));
     };
-    updateObjectInScene(
-      selectedObject.id,
-      { position: next },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+
+  const handleRotationCommit = (axis: 'x' | 'y' | 'z', value: number) => {
+    const validated = validateNumericInput(value, 0, 360);
+    if (validated !== null) {
+      updateObject({ [`rotation${axis.toUpperCase()}`]: validated });
+    }
   };
 
-  const handlePosXKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') commitPositionUpdate('x', posX);
+  const handleRotationKeyDown =
+    (axis: 'x' | 'y' | 'z') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleRotationCommit(axis, rotations[axis]);
+      }
+    };
+
+  const handleRotationBlur = (axis: 'x' | 'y' | 'z') => () => {
+    handleRotationCommit(axis, rotations[axis]);
   };
-  const handlePosYKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') commitPositionUpdate('y', posY);
+
+  const handlePositionChange =
+    (axis: 'x' | 'y' | 'z') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPositions((prev) => ({ ...prev, [axis]: Number(e.target.value) }));
+    };
+
+  const handlePositionCommit = (axis: 'x' | 'y' | 'z', value: number) => {
+    if (!selectedObject || isQuickHideActive) return;
+    const newPosition = { ...selectedObject.position, [axis]: value };
+    updateObject({ position: newPosition });
   };
-  const handlePosZKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') commitPositionUpdate('z', posZ);
-  };
 
-  const handlePosXBlur = () => commitPositionUpdate('x', posX);
-  const handlePosYBlur = () => commitPositionUpdate('y', posY);
-  const handlePosZBlur = () => commitPositionUpdate('z', posZ);
+  const handlePositionKeyDown =
+    (axis: 'x' | 'y' | 'z') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handlePositionCommit(axis, positions[axis]);
+      }
+    };
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value, min, max } = e.target;
-    const partsValue = validateNumericInput(Number(value));
-
-    if (!selectedObject || isQuickHideActive || partsValue === null) return;
-
-    const minValue = min !== '' ? parseFloat(min) : -Infinity;
-    const maxValue = max !== '' ? parseFloat(max) : Infinity;
-
-    if (partsValue < minValue || partsValue > maxValue) return;
-
-    updateObjectInScene(
-      selectedObject.id,
-      { [name]: partsValue },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+  const handlePositionBlur = (axis: 'x' | 'y' | 'z') => () => {
+    handlePositionCommit(axis, positions[axis]);
   };
 
   const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
     if (!scene) return;
-    // First proportionally rescale children of the container to match new dims
     try {
       rescaleByObjectId(scene as any, objectId);
-    } catch {}
+    } catch { }
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child: any) => {
       if (
@@ -419,176 +274,29 @@ const Sidebar: React.FC = () => {
     mesh.add(invCab);
   };
 
-  // Increment and decrement handlers
-  const handleSubtractWidth = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newWidth = (selectedObject.width || 0) - 1;
-    if (newWidth >= 5) {
-      updateObjectInScene(
-        selectedObject.id,
-        { width: newWidth },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-    }
+  const handleTextureSelect = (texturePath: string) => {
+    setSelectedTexture(texturePath);
+    applyTextureToSelected(texturePath, 'updateTexture');
+    setIsTextureListOpen(false);
   };
 
-  const handleIncrementWidth = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newWidth = (selectedObject.width || 0) + 1;
-    updateObjectInScene(
-      selectedObject.id,
-      { width: newWidth },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+  const handleSetting = () => {
+    if (isQuickHideActive) return;
+    setSettingOpen(true);
+    setNavOpen(false);
   };
 
-  const handleSubtractHeight = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newHeight = (selectedObject.height || 0) - 1;
-    if (newHeight >= 5) {
-      updateObjectInScene(
-        selectedObject.id,
-        { height: newHeight },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-    }
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleIncrementHeight = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newHeight = (selectedObject.height || 0) + 1;
-    updateObjectInScene(
-      selectedObject.id,
-      { height: newHeight },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
+  const toggleSubMenu = (value: string) => {
+    setSubMenu(subMenu === value ? null : value);
   };
 
-  const handleSubtractDepth = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newDepth = (selectedObject.depth || 0) - 1;
-    if (newDepth >= 5) {
-      updateObjectInScene(
-        selectedObject.id,
-        { depth: newDepth },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-      tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-    }
-  };
-
-  const handleIncrementDepth = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newDepth = (selectedObject.depth || 0) + 1;
-    updateObjectInScene(
-      selectedObject.id,
-      { depth: newDepth },
-      scene,
-      dispatch,
-      selectedObject,
-    );
-    tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
-  };
-
-  const handleSubtractX = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationX = (selectedObject.rotationX || 0) - 1;
-    if (newRotationX >= 0) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationX: newRotationX },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
-  const toggleTextureList = () => {
-    setIsTextureListOpen((prev) => !prev);
-  };
-  const handleIncrementX = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationX = (selectedObject.rotationX || 0) + 1;
-    if (newRotationX <= 360) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationX: newRotationX },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
-  const handleSubtractY = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationY = (selectedObject.rotationY || 0) - 1;
-    if (newRotationY >= 0) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationY: newRotationY },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
-  const handleIncrementY = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationY = (selectedObject.rotationY || 0) + 1;
-    if (newRotationY <= 360) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationY: newRotationY },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
-  const handleSubtractZ = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationZ = (selectedObject.rotationZ || 0) - 1;
-    if (newRotationZ >= 0) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationZ: newRotationZ },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
-  };
-
-  const handleIncrementZ = () => {
-    if (!selectedObject || isQuickHideActive) return;
-    const newRotationZ = (selectedObject.rotationZ || 0) + 1;
-    if (newRotationZ <= 360) {
-      updateObjectInScene(
-        selectedObject.id,
-        { rotationZ: newRotationZ },
-        scene,
-        dispatch,
-        selectedObject,
-      );
-    }
+  const handleNavigation = () => {
+    setSettingOpen(false);
+    setNavOpen(true);
   };
 
   const handleDoorPositionChange = (position: string) => {
@@ -601,11 +309,8 @@ const Sidebar: React.FC = () => {
 
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
-    // Determine selected door object id (prefer child selection)
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
-
-    // Find the door mesh in the scene by objectId
     let doorMesh: any = null;
     scene.traverse((node: any) => {
       if (
@@ -618,8 +323,6 @@ const Sidebar: React.FC = () => {
       }
     });
     if (!doorMesh) return;
-
-    // Try to locate a child that represents the handle
     let handleMesh: any = null;
     doorMesh.traverse((child: any) => {
       const name = (child?.name || '').toLowerCase();
@@ -627,10 +330,7 @@ const Sidebar: React.FC = () => {
         handleMesh = child;
       }
     });
-    // If no explicit child found, bail out
     if (!handleMesh) return;
-
-    // Compute door world bounding box
     const box = new THREE.Box3().setFromObject(doorMesh);
     const min = box.min.clone();
     const max = box.max.clone();
@@ -639,26 +339,21 @@ const Sidebar: React.FC = () => {
       (min.y + max.y) / 2,
       (min.z + max.z) / 2,
     );
-
     const pickX = (label: string) => {
       if (label.endsWith('Left')) return min.x;
       if (label.endsWith('Right')) return max.x;
-      return mid.x; // Center
+      return mid.x;
     };
     const pickY = (label: string) => {
       if (label.startsWith('Top')) return max.y;
       if (label.startsWith('Bottom')) return min.y;
-      return mid.y; // Middle
+      return mid.y;
     };
-    const pickZ = () => max.z; // front face
-
+    const pickZ = () => max.z;
     const label = position as string;
     const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
-    // Nudge the handle a bit outwards so it is not z-fighting with the door surface
     const outward = new THREE.Vector3(0, 0, 0);
     targetWorld.add(outward);
-
-    // Convert to door local space and set handle's local position
     const targetLocal = doorMesh.worldToLocal(targetWorld.clone());
     handleMesh.position.copy(targetLocal);
     if (handleMesh.updateMatrixWorld) handleMesh.updateMatrixWorld(true);
@@ -673,18 +368,14 @@ const Sidebar: React.FC = () => {
     if (colorInputRef.current) {
       colorInputRef.current.style.backgroundColor = value;
     }
-
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
-
-    // Only update the single selected object; block doors/drawers
     const obj = selectedChildObjectId
       ? objects.find((o) => o.id === selectedChildObjectId)
       : objects.find((o) => o.id === selectedObjectId!);
     const nameLower = (obj?.name || '').toLowerCase();
     if (nameLower.includes('door') || nameLower.includes('drawer')) return;
-
     let targetMesh: any = null;
     scene.traverse((child: any) => {
       if (
@@ -696,8 +387,7 @@ const Sidebar: React.FC = () => {
       }
     });
     if (!targetMesh) return;
-
-    const color = new THREE.Color(selectedColor);
+    const color = new THREE.Color(value);
     if (Array.isArray(targetMesh.material)) {
       targetMesh.material = targetMesh.material.map((m: any) => {
         if (m && typeof m.clone === 'function') {
@@ -719,11 +409,10 @@ const Sidebar: React.FC = () => {
     } else {
       targetMesh.material = new THREE.MeshPhongMaterial({ color });
     }
-
     if (obj && update) {
       updateObjectInScene(
         obj.id,
-        { material: { type: 'COLOR', value: selectedColor } },
+        { material: { type: 'COLOR', value } },
         scene,
         dispatch,
         obj as any,
@@ -733,14 +422,11 @@ const Sidebar: React.FC = () => {
 
   const applyTextureToSelected = (texturePath: string, update?: string) => {
     if (!scene) return;
-
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
-
     const obj = selectedChildObjectId
       ? objects.find((o) => o.id === selectedChildObjectId)
       : objects.find((o) => o.id === selectedObjectId!);
-
     let targetMesh: any = null;
     scene.traverse((child: any) => {
       if (!targetMesh && child?.userData?.objectId === targetId) {
@@ -748,15 +434,11 @@ const Sidebar: React.FC = () => {
       }
     });
     if (!targetMesh) return;
-
-    // Load and apply texture
     const textureLoader = new THREE.TextureLoader();
     const texture = textureLoader.load(texturePath, () => {
-      // Ensure texture is applied after loading
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(2, 1); // Adjust repeat as needed for your objects
+      texture.repeat.set(2, 1);
       texture.needsUpdate = true;
-
       targetMesh.traverse((child: any) => {
         if (child.isMesh) {
           if (Array.isArray(child.material)) {
@@ -789,7 +471,6 @@ const Sidebar: React.FC = () => {
           }
         }
       });
-
       if (obj && update) {
         updateObjectInScene(
           obj.id,
@@ -801,6 +482,11 @@ const Sidebar: React.FC = () => {
       }
     });
   };
+
+  const toggleTextureList = () => {
+    setIsTextureListOpen((prev) => !prev);
+  };
+
   return (
     <div className={isSidebarOpen ? style.sidebar : style.sidebar_open}>
       <div
@@ -833,7 +519,7 @@ const Sidebar: React.FC = () => {
               Navigation
             </button>
           </div>
-          <hr></hr>
+          <hr />
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>
@@ -845,7 +531,6 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
           )}
-          {/* Settings panel */}
           {isSettingOpen && !selectedObject && (
             <p
               style={{
@@ -859,7 +544,6 @@ const Sidebar: React.FC = () => {
               No Item Selected
             </p>
           )}
-
           {isSettingOpen && selectedObject && (
             <div className={style.field_main_div}>
               <div
@@ -877,92 +561,49 @@ const Sidebar: React.FC = () => {
                 <div className={style.field_group_div}>
                   <div className={style.field_group}>
                     <p>Width</p>
-                    <button
-                      onClick={handleSubtractWidth}
-                      className={style.btn_incrdec}
-                      disabled={isHorizontalPlank || isDisabled}
-                    >
-                      -
-                    </button>
                     <input
                       type="number"
                       name="width"
-                      value={width}
-                      onChange={handleWidthChange}
-                      onKeyDown={handleWidthKeyDown}
-                      onBlur={handleBlur}
+                      value={dimensions.width}
+                      onChange={handleDimensionChange('width')}
+                      onKeyDown={handleDimensionKeyDown('width')}
+                      onBlur={handleDimensionBlur('width')}
                       min={0}
                       disabled={isHorizontalPlank || isDisabled}
                       className={style.number_input}
                     />
-                    <button
-                      onClick={handleIncrementWidth}
-                      className={style.btn_incrdec}
-                      disabled={isHorizontalPlank || isDisabled}
-                    >
-                      +
-                    </button>
                   </div>
                   <div className={style.field_group}>
                     <p>Height</p>
-                    <button
-                      onClick={handleSubtractHeight}
-                      className={style.btn_incrdec}
-                      disabled={isVerticalPlank || isDisabled}
-                    >
-                      -
-                    </button>
                     <input
                       type="number"
                       name="height"
-                      value={height}
-                      onChange={handleHeightChange}
-                      onKeyDown={handleHeightKeyDown}
-                      onBlur={handleBlur}
-                      min={0}
+                      value={dimensions.height}
+                      onChange={handleDimensionChange('height')}
+                      onKeyDown={handleDimensionKeyDown('height')}
+                      onBlur={handleDimensionBlur('height')}
+                      min={5}
                       disabled={isVerticalPlank || isDisabled}
                       className={style.number_input}
                     />
-                    <button
-                      onClick={handleIncrementHeight}
-                      className={style.btn_incrdec}
-                      disabled={isVerticalPlank || isDisabled}
-                    >
-                      +
-                    </button>
                   </div>
                   <div className={style.field_group}>
                     <p>Depth</p>
-                    <button
-                      onClick={handleSubtractDepth}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
                     <input
                       type="number"
                       name="depth"
-                      value={depth}
-                      onChange={handleDepthChange}
-                      onKeyDown={handleDepthKeyDown}
-                      onBlur={handleBlur}
-                      min={0}
+                      value={dimensions.depth}
+                      onChange={handleDimensionChange('depth')}
+                      onKeyDown={handleDimensionKeyDown('depth')}
+                      onBlur={handleDimensionBlur('depth')}
+                      min={5}
                       max={parentObject?.depth}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
-                    <button
-                      onClick={handleIncrementDepth}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
                   </div>
                 </div>
               )}
-
               <div
                 className={style.field_group_title_div}
                 onClick={() => toggleSubMenu('rotation')}
@@ -974,107 +615,58 @@ const Sidebar: React.FC = () => {
                 />
                 <p className={style.field_group_title}>Rotation</p>
               </div>
-
               {subMenu === 'rotation' && (
                 <div className={style.field_group_div}>
                   <div className={style.field_group1}>
                     <p>Rotate X:</p>
-                    <button
-                      onClick={handleSubtractX}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
                     <input
                       id="rotate-x"
                       name="rotationX"
                       min={0}
                       max={360}
                       type="number"
-                      defaultValue={0}
-                      value={rotationX}
-                      onChange={handleRotationXChange}
-                      onKeyDown={handleRotationXKeyDown}
-                      onBlur={handleBlur}
+                      value={rotations.x}
+                      onChange={handleRotationChange('x')}
+                      onKeyDown={handleRotationKeyDown('x')}
+                      onBlur={handleRotationBlur('x')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
-                    <button
-                      onClick={handleIncrementX}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
                   </div>
                   <div className={style.field_group1}>
                     <p>Rotate Y:</p>
-                    <button
-                      onClick={handleSubtractY}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
                     <input
                       id="rotate-y"
                       name="rotationY"
                       min={0}
                       max={360}
                       type="number"
-                      defaultValue={0}
-                      value={rotationY}
-                      onChange={handleRotationYChange}
-                      onKeyDown={handleRotationYKeyDown}
-                      onBlur={handleBlur}
+                      value={rotations.y}
+                      onChange={handleRotationChange('y')}
+                      onKeyDown={handleRotationKeyDown('y')}
+                      onBlur={handleRotationBlur('y')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
-
-                    <button
-                      onClick={handleIncrementY}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
                   </div>
                   <div className={style.field_group1}>
                     <p>Rotate Z:</p>
-                    <button
-                      onClick={handleSubtractZ}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      -
-                    </button>
                     <input
                       id="rotate-z"
                       name="rotationZ"
                       min={0}
                       max={360}
                       type="number"
-                      defaultValue={0}
-                      value={rotationZ}
-                      onChange={handleRotationZChange}
-                      onKeyDown={handleRotationZKeyDown}
-                      onBlur={handleBlur}
+                      value={rotations.z}
+                      onChange={handleRotationChange('z')}
+                      onKeyDown={handleRotationKeyDown('z')}
+                      onBlur={handleRotationBlur('z')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
-
-                    <button
-                      onClick={handleIncrementZ}
-                      className={style.btn_incrdec}
-                      disabled={isQuickHideActive}
-                    >
-                      +
-                    </button>
                   </div>
                 </div>
               )}
-
               <div
                 className={style.field_group_title_div}
                 onClick={() => toggleSubMenu('position')}
@@ -1086,7 +678,6 @@ const Sidebar: React.FC = () => {
                 />
                 <p className={style.field_group_title}>Position</p>
               </div>
-
               {subMenu === 'position' && (
                 <div className={style.field_group_div}>
                   <div className={style.field_group1}>
@@ -1095,10 +686,10 @@ const Sidebar: React.FC = () => {
                       id="position-x"
                       name="positionX"
                       type="number"
-                      value={posX}
-                      onChange={handlePosXChange}
-                      onKeyDown={handlePosXKeyDown}
-                      onBlur={handlePosXBlur}
+                      value={positions.x}
+                      onChange={handlePositionChange('x')}
+                      onKeyDown={handlePositionKeyDown('x')}
+                      onBlur={handlePositionBlur('x')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
@@ -1109,10 +700,10 @@ const Sidebar: React.FC = () => {
                       id="position-y"
                       name="positionY"
                       type="number"
-                      value={posY}
-                      onChange={handlePosYChange}
-                      onKeyDown={handlePosYKeyDown}
-                      onBlur={handlePosYBlur}
+                      value={positions.y}
+                      onChange={handlePositionChange('y')}
+                      onKeyDown={handlePositionKeyDown('y')}
+                      onBlur={handlePositionBlur('y')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
@@ -1123,17 +714,16 @@ const Sidebar: React.FC = () => {
                       id="position-z"
                       name="positionZ"
                       type="number"
-                      value={posZ}
-                      onChange={handlePosZChange}
-                      onKeyDown={handlePosZKeyDown}
-                      onBlur={handlePosZBlur}
+                      value={positions.z}
+                      onChange={handlePositionChange('z')}
+                      onKeyDown={handlePositionKeyDown('z')}
+                      onBlur={handlePositionBlur('z')}
                       disabled={isQuickHideActive}
                       className={style.number_input}
                     />
                   </div>
                 </div>
               )}
-
               <div
                 className={style.field_group_title_div}
                 onClick={() => toggleSubMenu('material')}
@@ -1170,10 +760,9 @@ const Sidebar: React.FC = () => {
                       ref={colorInputRef}
                       value={selectedColor}
                       onChange={(e) => applyColorToSelected(e.target.value)}
-                      onBlur={() => {
-                        // This is triggered when user clicks outside the color picker
-                        applyColorToSelected(selectedColor, 'extraValue');
-                      }}
+                      onBlur={() =>
+                        applyColorToSelected(selectedColor, 'extraValue')
+                      }
                       disabled={isQuickHideActive}
                       className={style.color_input}
                     />
@@ -1209,13 +798,11 @@ const Sidebar: React.FC = () => {
                   </div>
                 </div>
               )}
-
               {!isQuickHideActive &&
                 isSettingOpen &&
                 subMenu === 'material' &&
                 itemType.DOOR && (
                   <div className={style.field_group_div}>
-                    {/* Door Position */}
                     <div className={style.field_group}>
                       <p>Door Position</p>
                       <select
@@ -1234,9 +821,6 @@ const Sidebar: React.FC = () => {
                         <option value="Bottom">Bottom</option>
                       </select>
                     </div>
-
-                    {/* Dropdown Handle 3x3 grid */}
-                    {/* Dropdown Handle (click to open/close) */}
                     <div className={style.field_group}>
                       <p>Handle</p>
                       <div className={style.handle_dropdown_wrapper}>
@@ -1249,7 +833,6 @@ const Sidebar: React.FC = () => {
                           {selectedHandle}
                           <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
                         </div>
-
                         {isHandleDropdownOpen && (
                           <div className={style.dropdown_grid}>
                             {[
@@ -1296,7 +879,6 @@ const Sidebar: React.FC = () => {
         <MaterialChangePopup
           onClose={() => setShowMaterialPopup(false)}
           onSave={(selectedMaterials) => {
-            // Handle material change logic here
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
               console.log('Selected materials:', selectedMaterials);
             }
