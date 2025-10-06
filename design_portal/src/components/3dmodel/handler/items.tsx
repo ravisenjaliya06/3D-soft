@@ -695,7 +695,6 @@ async function loadDesignObjects(
               addSimpleTable(scene);
               createdMesh = scene.getObjectByName('SimpleTable');
             } else if (nameLower.includes('plank')) {
-              console.log(item, 'item 123456879');
               // Create plank directly from API data
               if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
                 console.log(
@@ -1493,15 +1492,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                  {
-                    id: normalizedData.id,
-                    name: normalizedData.name,
-                    width: normalizedData.width,
-                    height: normalizedData.height,
-                    depth: normalizedData.depth,
-                    position: normalizedData.position,
-                  },
-                ]
+                {
+                  id: normalizedData.id,
+                  name: normalizedData.name,
+                  width: normalizedData.width,
+                  height: normalizedData.height,
+                  depth: normalizedData.depth,
+                  position: normalizedData.position,
+                },
+              ]
               : [],
           );
 
