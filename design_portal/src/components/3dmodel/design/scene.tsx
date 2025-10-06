@@ -697,6 +697,38 @@ export const addLShapeKitchenPlatform = (
   scene.add(lKitchenGroup);
 };
 
+function createMeshObject(part: any) {
+  const geometry = new THREE.BoxGeometry(
+    part.dimensions.width,
+    part.dimensions.height,
+    part.dimensions.depth,
+  );
+
+  const materialProps = part.material;
+  const material = new THREE.MeshStandardMaterial(materialProps);
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = part.name || 'unnamed_plank';
+
+  if (part.position) {
+    mesh.position.set(
+      part.position.x || 0,
+      part.position.y || 0,
+      part.position.z || 0,
+    );
+  }
+
+  if (part.rotation) {
+    mesh.rotation.set(
+      THREE.MathUtils.degToRad(part.rotation.x || 0),
+      THREE.MathUtils.degToRad(part.rotation.y || 0),
+      THREE.MathUtils.degToRad(part.rotation.z || 0),
+    );
+  }
+
+  return mesh;
+}
+
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   // Standard cabinet dimensions in meters
   const width = 1.5; // 600mm
@@ -733,11 +765,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
   woodTex.repeat.set(2, 1);
 
-  const plankMat = new THREE.MeshStandardMaterial({
-    map: woodTex,
-    roughness: 0.6,
-    metalness: 0.0,
-  });
+  const plankMaterialProps = { map: woodTex, roughness: 0.6, metalness: 0 };
 
   // Create a parent Mesh container that represents the overall cabinet size
   // This gives us a single mesh with width/height/depth while keeping planks as children
@@ -752,93 +780,109 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     invisibleMat,
   );
   cabinetContainer.name = 'SimpleCabinet';
-  cabinetContainer.userData.isInvisibleBox = true; // treated as helper/invisible by utilities
-  // Track base and last known dimensions for proportional rescaling later
-  (cabinetContainer as any).userData = {
-    ...(cabinetContainer as any).userData,
-    baseDims: { width, height, depth },
-    lastDims: { width, height, depth },
-  };
-  // Position container so bottom sits on floor
+  cabinetContainer.userData.isInvisibleBox = true;
+  cabinetContainer.userData.baseDims = { width, height, depth };
+  cabinetContainer.userData.lastDims = { width, height, depth };
   cabinetContainer.position.set(placeX, floorY + height / 2, placeZ);
 
-  // Left side panel (thickness x height x depth)
-  const left = new THREE.Mesh(
-    new THREE.BoxGeometry(thickness, height, depth),
-    plankMat,
-  );
-  left.castShadow = true;
-  left.receiveShadow = true;
-  left.name = 'LEFT_PLANK';
-  left.position.set(-(width / 2 - thickness / 2), 0, 0);
+  const leftPart = {
+    name: 'LEFT_PLANK',
+    dimensions: { width: thickness, height: height, depth: depth },
+    position: { x: -(width / 2 - thickness / 2), y: 0, z: 0 },
+    material: plankMaterialProps,
+  };
+  const left = createMeshObject(leftPart);
+  if (left) {
+    left.castShadow = true;
+    left.receiveShadow = true;
+    cabinetContainer.add(left);
+  }
+  const rightPart = {
+    name: 'RIGHT_PLANK',
+    dimensions: { width: thickness, height: height, depth: depth },
+    position: { x: width / 2 - thickness / 2, y: 0, z: 0 },
+    material: plankMaterialProps,
+  };
+  const right = createMeshObject(rightPart);
+  if (right) {
+    right.castShadow = true;
+    right.receiveShadow = true;
+    cabinetContainer.add(right);
+  }
 
-  // Right side panel
-  const right = new THREE.Mesh(
-    new THREE.BoxGeometry(thickness, height, depth),
-    plankMat,
-  );
-  right.castShadow = true;
-  right.receiveShadow = true;
-  right.name = 'RIGHT_PLANK';
-  right.position.set(width / 2 - thickness / 2, 0, 0);
+  const bottomPart = {
+    name: 'BOTTOM_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
+    position: { x: 0, y: -(height / 2 - thickness / 2), z: 0 },
+    material: plankMaterialProps,
+  };
+  const bottom = createMeshObject(bottomPart);
+  if (bottom) {
+    bottom.castShadow = true;
+    bottom.receiveShadow = true;
+    cabinetContainer.add(bottom);
+  }
 
-  // Bottom panel (width - 2t x thickness x depth)
-  const bottom = new THREE.Mesh(
-    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
-    plankMat,
-  );
-  bottom.castShadow = true;
-  bottom.receiveShadow = true;
-  bottom.name = 'BOTTOM_PLANK';
-  bottom.position.set(0, -(height / 2 - thickness / 2), 0);
+  const topPart = {
+    name: 'TOP_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
+    position: { x: 0, y: height / 2 - thickness / 2, z: 0 },
+    material: plankMaterialProps,
+  };
+  const top = createMeshObject(topPart);
+  if (top) {
+    top.castShadow = true;
+    top.receiveShadow = true;
+    cabinetContainer.add(top);
+  }
 
-  // Top panel
-  const top = new THREE.Mesh(
-    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
-    plankMat,
-  );
-  top.castShadow = true;
-  top.receiveShadow = true;
-  top.name = 'TOP_PLANK';
-  top.position.set(0, height / 2 - thickness / 2, 0);
-
-  // Back panel (width - 2t x height - 2t x thickness)
-  const back = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      width - thickness * 2,
-      height - thickness * 2,
-      thickness,
-    ),
-    plankMat,
-  );
-  back.castShadow = true;
-  back.receiveShadow = true;
-  back.name = 'BACK_PLANK';
-  back.position.set(0, 0, -(depth / 2 - thickness / 2));
-
-  cabinetContainer.add(left, right, bottom, top, back);
-  // Invisible volume inside cabinet carcass so vertical/horizontal planks can be added later
-  const invisibleMatCab = new THREE.MeshBasicMaterial({
+  const backPart = {
+    name: 'BACK_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: height - thickness * 2,
+      depth: thickness,
+    },
+    position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
+    material: plankMaterialProps,
+  };
+  const back = createMeshObject(backPart);
+  if (back) {
+    back.castShadow = true;
+    back.receiveShadow = true;
+    cabinetContainer.add(back);
+  }
+  const invisibleMaterialProps = {
     color: 0x000000,
     transparent: true,
     opacity: 0.0,
     depthWrite: false,
-  });
-  const invCab = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.max(width - thickness * 2, 0.02),
-      Math.max(height - thickness * 2, 0.02),
-      Math.max(depth - thickness * 2, 0.02),
-    ),
-    invisibleMatCab,
-  );
-  invCab.name = 'invisibleBox_cabinet';
-  invCab.userData.isInvisibleBox = true;
-  invCab.position.set(0, 0, 0);
-  cabinetContainer.add(invCab);
+  };
+  const invPart = {
+    name: 'invisibleBox_cabinet',
+    dimensions: {
+      width: Math.max(width - thickness * 2, 0.02),
+      height: Math.max(height - thickness * 2, 0.02),
+      depth: Math.max(depth - thickness * 2, 0.02),
+    },
+    position: { x: 0, y: 0, z: 0 },
+    material: invisibleMaterialProps,
+  };
+  const invCab = createMeshObject(invPart);
+  if (invCab) {
+    invCab.userData.isInvisibleBox = true;
+    cabinetContainer.add(invCab);
+  }
   scene.add(cabinetContainer);
 };
-
 export const addSimpleTVUnit = (scene: THREE.Scene) => {
   // Dimensions (meters) approximating reference image
   const width = 1.6; // base span 1600mm

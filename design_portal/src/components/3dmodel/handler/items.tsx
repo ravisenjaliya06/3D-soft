@@ -1492,15 +1492,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                {
-                  id: normalizedData.id,
-                  name: normalizedData.name,
-                  width: normalizedData.width,
-                  height: normalizedData.height,
-                  depth: normalizedData.depth,
-                  position: normalizedData.position,
-                },
-              ]
+                  {
+                    id: normalizedData.id,
+                    name: normalizedData.name,
+                    width: normalizedData.width,
+                    height: normalizedData.height,
+                    depth: normalizedData.depth,
+                    position: normalizedData.position,
+                  },
+                ]
               : [],
           );
 
