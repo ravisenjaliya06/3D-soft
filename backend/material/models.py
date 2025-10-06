@@ -272,6 +272,7 @@ class CatalogTypeChoices(models.TextChoices):
     DRAWER = "Drawer"
     SLIDING_DOOR = "Sliding Door"
     CABINET = "Cabinet"
+    PLATFORM = "Platform"
 
 
 class ConnectionTypesChoices(models.TextChoices):
@@ -751,6 +752,7 @@ class Catalog(models.Model):
     length = models.FloatField(blank=True, null=True)
     depth = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
+    additional_data = models.JSONField(blank=True, null=True)
 
 
 class CatalogRules(models.Model):
