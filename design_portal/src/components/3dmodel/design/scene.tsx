@@ -554,7 +554,7 @@ export const init3DDesign = async (
 };
 
 export const cleanupThreeDView = (view: ThreeDView) => {
-  window.removeEventListener('resize', () => { });
+  window.removeEventListener('resize', () => {});
   if (view.mount && view.renderer.domElement) {
     view.mount.removeChild(view.renderer.domElement);
   }
@@ -698,25 +698,23 @@ export const addLShapeKitchenPlatform = (
 };
 
 function createMeshObject(part: any) {
-  console.log("part", part);
   const geometry = new THREE.BoxGeometry(
     part.dimensions.width,
     part.dimensions.height,
-    part.dimensions.depth
+    part.dimensions.depth,
   );
 
-
-  const materialProps = part.material
+  const materialProps = part.material;
   const material = new THREE.MeshStandardMaterial(materialProps);
 
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = part.name || "unnamed_plank";
+  mesh.name = part.name || 'unnamed_plank';
 
   if (part.position) {
     mesh.position.set(
       part.position.x || 0,
       part.position.y || 0,
-      part.position.z || 0
+      part.position.z || 0,
     );
   }
 
@@ -724,7 +722,7 @@ function createMeshObject(part: any) {
     mesh.rotation.set(
       THREE.MathUtils.degToRad(part.rotation.x || 0),
       THREE.MathUtils.degToRad(part.rotation.y || 0),
-      THREE.MathUtils.degToRad(part.rotation.z || 0)
+      THREE.MathUtils.degToRad(part.rotation.z || 0),
     );
   }
 
@@ -788,10 +786,10 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   cabinetContainer.position.set(placeX, floorY + height / 2, placeZ);
 
   const leftPart = {
-    name: "LEFT_PLANK",
+    name: 'LEFT_PLANK',
     dimensions: { width: thickness, height: height, depth: depth },
     position: { x: -(width / 2 - thickness / 2), y: 0, z: 0 },
-    material: plankMaterialProps
+    material: plankMaterialProps,
   };
   const left = createMeshObject(leftPart);
   if (left) {
@@ -800,10 +798,10 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     cabinetContainer.add(left);
   }
   const rightPart = {
-    name: "RIGHT_PLANK",
+    name: 'RIGHT_PLANK',
     dimensions: { width: thickness, height: height, depth: depth },
     position: { x: width / 2 - thickness / 2, y: 0, z: 0 },
-    material: plankMaterialProps
+    material: plankMaterialProps,
   };
   const right = createMeshObject(rightPart);
   if (right) {
@@ -813,10 +811,14 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   }
 
   const bottomPart = {
-    name: "BOTTOM_PLANK",
-    dimensions: { width: width - thickness * 2, height: thickness, depth: depth },
+    name: 'BOTTOM_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
     position: { x: 0, y: -(height / 2 - thickness / 2), z: 0 },
-    material: plankMaterialProps
+    material: plankMaterialProps,
   };
   const bottom = createMeshObject(bottomPart);
   if (bottom) {
@@ -826,10 +828,14 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   }
 
   const topPart = {
-    name: "TOP_PLANK",
-    dimensions: { width: width - thickness * 2, height: thickness, depth: depth },
+    name: 'TOP_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
     position: { x: 0, y: height / 2 - thickness / 2, z: 0 },
-    material: plankMaterialProps
+    material: plankMaterialProps,
   };
   const top = createMeshObject(topPart);
   if (top) {
@@ -839,10 +845,14 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   }
 
   const backPart = {
-    name: "BACK_PLANK",
-    dimensions: { width: width - thickness * 2, height: height - thickness * 2, depth: thickness },
+    name: 'BACK_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: height - thickness * 2,
+      depth: thickness,
+    },
     position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
-    material: plankMaterialProps
+    material: plankMaterialProps,
   };
   const back = createMeshObject(backPart);
   if (back) {
@@ -850,16 +860,21 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     back.receiveShadow = true;
     cabinetContainer.add(back);
   }
-  const invisibleMaterialProps = { color: 0x000000, transparent: true, opacity: 0.0, depthWrite: false };
+  const invisibleMaterialProps = {
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  };
   const invPart = {
-    name: "invisibleBox_cabinet",
+    name: 'invisibleBox_cabinet',
     dimensions: {
       width: Math.max(width - thickness * 2, 0.02),
       height: Math.max(height - thickness * 2, 0.02),
-      depth: Math.max(depth - thickness * 2, 0.02)
+      depth: Math.max(depth - thickness * 2, 0.02),
     },
     position: { x: 0, y: 0, z: 0 },
-    material: invisibleMaterialProps
+    material: invisibleMaterialProps,
   };
   const invCab = createMeshObject(invPart);
   if (invCab) {
@@ -1802,7 +1817,7 @@ export const addPlatformOnWall = (
       startZ =
         backPlat.position.z +
         ((backPlat.geometry as THREE.BoxGeometry).parameters.depth as number) /
-        2;
+          2;
     }
     const effectiveRun = Math.max(maxZ - startZ, 0.1);
     const centerZ = startZ + effectiveRun / 2;
@@ -1987,7 +2002,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -2049,7 +2064,7 @@ export const addVerticalPlanksInsideBox = (
               } as any),
             );
           }
-        } catch { }
+        } catch {}
       }
       if (selectedCabinetItem) {
         plank.userData.cabinetItem = selectedCabinetItem;
@@ -2224,7 +2239,7 @@ export const addHorizontalPlanksInsideBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -2382,7 +2397,7 @@ export const addVerticalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       plank.userData.cabinetItem = selectedCabinetItem;
@@ -2541,7 +2556,7 @@ export const addHorizontalPlanksToBox = (
             } as any),
           );
         }
-      } catch { }
+      } catch {}
     }
     if (selectedCabinetItem) {
       shelf.userData.cabinetItem = selectedCabinetItem;
@@ -3054,7 +3069,7 @@ export const addDrawersOnInvisibleBox = async (
           );
         }
       }
-    } catch { }
+    } catch {}
     scene.add(drawerGroup);
 
     const textureLoader = new THREE.TextureLoader();
@@ -4446,11 +4461,11 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const sprite = hits[0].object as THREE.Sprite & { userData: any };
     const meta = sprite.userData?.dimMeta as
       | {
-        axis: 'x' | 'y' | 'z';
-        side: 'min' | 'max';
-        ref: number;
-        targetUuid: string;
-      }
+          axis: 'x' | 'y' | 'z';
+          side: 'min' | 'max';
+          ref: number;
+          targetUuid: string;
+        }
       | undefined;
     if (!meta) return;
 

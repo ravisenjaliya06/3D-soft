@@ -151,9 +151,9 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionChange =
     (dim: 'width' | 'height' | 'depth') =>
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
-      };
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
+    };
 
   const handleDimensionCommit = (
     dim: 'width' | 'height' | 'depth',
@@ -170,11 +170,11 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionKeyDown =
     (dim: 'width' | 'height' | 'depth') =>
-      (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-          handleDimensionCommit(dim, dimensions[dim]);
-        }
-      };
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleDimensionCommit(dim, dimensions[dim]);
+      }
+    };
 
   const handleDimensionBlur = (dim: 'width' | 'height' | 'depth') => () => {
     handleDimensionCommit(dim, dimensions[dim]);
@@ -229,7 +229,7 @@ const Sidebar: React.FC = () => {
     if (!scene) return;
     try {
       rescaleByObjectId(scene as any, objectId);
-    } catch { }
+    } catch {}
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child: any) => {
       if (
