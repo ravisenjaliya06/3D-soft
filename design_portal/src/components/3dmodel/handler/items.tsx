@@ -270,7 +270,9 @@ async function createChildObjectFromCatalogItem(
     let createdMesh: THREE.Object3D | null = null;
 
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(`Creating child object: ${item.name}, type: ${itemType}, parent: ${parentMesh?.name}`);
+      console.log(
+        `Creating child object: ${item.name}, type: ${itemType}, parent: ${parentMesh?.name}`,
+      );
     }
 
     // Create invisible box for positioning
@@ -278,33 +280,33 @@ async function createChildObjectFromCatalogItem(
       new THREE.BoxGeometry(
         item.data?.width || 0.5,
         item.data?.height || 0.5,
-        item.data?.depth || 0.5
+        item.data?.depth || 0.5,
       ),
       new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
-      })
+      }),
     );
     invisibleBox.name = `invisibleBox_${item.id}`;
     invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
-    
+
     // Position relative to parent container
     const parentBbox = new THREE.Box3().setFromObject(parentMesh);
     const parentSize = new THREE.Vector3();
     parentBbox.getSize(parentSize);
-    
+
     // Calculate position relative to parent's center
     const relativePosition = {
       x: (item.data?.position?.x || 0) - parentMesh.position.x,
       y: (item.data?.position?.y || 0) - parentMesh.position.y,
-      z: (item.data?.position?.z || 0) - parentMesh.position.z
+      z: (item.data?.position?.z || 0) - parentMesh.position.z,
     };
-    
+
     invisibleBox.position.set(
       relativePosition.x,
       relativePosition.y,
-      relativePosition.z
+      relativePosition.z,
     );
     parentMesh.add(invisibleBox);
 
@@ -313,33 +315,32 @@ async function createChildObjectFromCatalogItem(
       const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
       doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
       doorTexture.repeat.set(2, 1);
-      
+
       const doorFace = new THREE.Mesh(
         new THREE.BoxGeometry(
           item.data?.width || 0.4,
           item.data?.height || 0.8,
-          0.02
+          0.02,
         ),
         new THREE.MeshStandardMaterial({
           map: doorTexture,
           side: THREE.DoubleSide,
-        })
+        }),
       );
       doorFace.name = `Door_${item.id}`;
       doorFace.userData.openDirection = 'right';
       doorFace.userData.objectId = item.id;
-      
+
       const doorGroup = new THREE.Group();
       doorGroup.name = `DoorGroup_${item.id}`;
       doorGroup.userData.type = 'DOOR';
       doorGroup.userData.objectId = item.id;
       doorGroup.userData.apiData = item;
-      
+
       doorGroup.add(doorFace);
       doorGroup.position.copy(invisibleBox.position);
       parentMesh.add(doorGroup);
       createdMesh = doorGroup;
-
     } else if (itemType === 'Drawer') {
       // Create drawer
       const drawerGroup = new THREE.Group();
@@ -355,27 +356,28 @@ async function createChildObjectFromCatalogItem(
         new THREE.BoxGeometry(
           item.data?.width || 0.4,
           item.data?.height || 0.2,
-          0.02
+          0.02,
         ),
         new THREE.MeshStandardMaterial({
           color: 0xd9c7b8,
           roughness: 0.7,
-        })
+        }),
       );
       drawerFace.name = `DrawerFace_${item.id}`;
       drawerFace.userData.objectId = item.id;
-      
+
       drawerGroup.add(drawerFace);
       drawerGroup.position.copy(invisibleBox.position);
       parentMesh.add(drawerGroup);
       createdMesh = drawerGroup;
-
     } else if (itemType === 'Plank' || nameLower.includes('plank')) {
       // Create plank
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-        console.log(`Creating plank: ${item.name}, type: ${itemType}, dimensions: ${item.data?.width}x${item.data?.height}x${item.data?.depth}`);
+        console.log(
+          `Creating plank: ${item.name}, type: ${itemType}, dimensions: ${item.data?.width}x${item.data?.height}x${item.data?.depth}`,
+        );
       }
-      
+
       const plankMaterial = new THREE.MeshStandardMaterial({
         color: 0xd9c7b8,
         roughness: 0.7,
@@ -387,9 +389,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             0.018, // thickness
             item.data?.height || 0.8,
-            item.data?.depth || 0.4
+            item.data?.depth || 0.4,
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `VerticalPlank_${item.id}`;
       } else if (nameLower.includes('horizontal')) {
@@ -397,9 +399,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             0.018, // thickness
-            item.data?.depth || 0.4
+            item.data?.depth || 0.4,
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `HorizontalPlank_${item.id}`;
       } else {
@@ -407,9 +409,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             item.data?.height || 0.8,
-            0.018 // thickness
+            0.018, // thickness
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `Plank_${item.id}`;
       }
@@ -417,12 +419,15 @@ async function createChildObjectFromCatalogItem(
       plankMesh.userData.objectId = item.id;
       plankMesh.userData.apiData = item;
       plankMesh.position.copy(invisibleBox.position);
-      
+
       parentMesh.add(plankMesh);
       createdMesh = plankMesh;
-      
+
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-        console.log(`Successfully created plank mesh: ${plankMesh.name} at position:`, plankMesh.position);
+        console.log(
+          `Successfully created plank mesh: ${plankMesh.name} at position:`,
+          plankMesh.position,
+        );
       }
     }
 
@@ -472,33 +477,33 @@ async function createChildObjectFromData(
       new THREE.BoxGeometry(
         item.data?.width || 0.5,
         item.data?.height || 0.5,
-        item.data?.depth || 0.5
+        item.data?.depth || 0.5,
       ),
       new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
-      })
+      }),
     );
     invisibleBox.name = `invisibleBox_${item.id}`;
     invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
-    
+
     // Position relative to parent container
     const parentBbox = new THREE.Box3().setFromObject(parentMesh);
     const parentSize = new THREE.Vector3();
     parentBbox.getSize(parentSize);
-    
+
     // Calculate position relative to parent's center
     const relativePosition = {
       x: (item.data?.position?.x || 0) - parentMesh.position.x,
       y: (item.data?.position?.y || 0) - parentMesh.position.y,
-      z: (item.data?.position?.z || 0) - parentMesh.position.z
+      z: (item.data?.position?.z || 0) - parentMesh.position.z,
     };
-    
+
     invisibleBox.position.set(
       relativePosition.x,
       relativePosition.y,
-      relativePosition.z
+      relativePosition.z,
     );
     parentMesh.add(invisibleBox);
 
@@ -507,33 +512,32 @@ async function createChildObjectFromData(
       const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
       doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
       doorTexture.repeat.set(2, 1);
-      
+
       const doorFace = new THREE.Mesh(
         new THREE.BoxGeometry(
           item.data?.width || 0.4,
           item.data?.height || 0.8,
-          0.02
+          0.02,
         ),
         new THREE.MeshStandardMaterial({
           map: doorTexture,
           side: THREE.DoubleSide,
-        })
+        }),
       );
       doorFace.name = `Door_${item.id}`;
       doorFace.userData.openDirection = 'right';
       doorFace.userData.objectId = item.id;
-      
+
       const doorGroup = new THREE.Group();
       doorGroup.name = `DoorGroup_${item.id}`;
       doorGroup.userData.type = 'DOOR';
       doorGroup.userData.objectId = item.id;
       doorGroup.userData.apiData = item;
-      
+
       doorGroup.add(doorFace);
       doorGroup.position.copy(invisibleBox.position);
       parentMesh.add(doorGroup);
       createdMesh = doorGroup;
-
     } else if (itemType === 'Drawer') {
       // Create drawer
       const drawerGroup = new THREE.Group();
@@ -549,21 +553,20 @@ async function createChildObjectFromData(
         new THREE.BoxGeometry(
           item.data?.width || 0.4,
           item.data?.height || 0.2,
-          0.02
+          0.02,
         ),
         new THREE.MeshStandardMaterial({
           color: 0xd9c7b8,
           roughness: 0.7,
-        })
+        }),
       );
       drawerFace.name = `DrawerFace_${item.id}`;
       drawerFace.userData.objectId = item.id;
-      
+
       drawerGroup.add(drawerFace);
       drawerGroup.position.copy(invisibleBox.position);
       parentMesh.add(drawerGroup);
       createdMesh = drawerGroup;
-
     } else if (itemType === 'Plank') {
       // Create plank
       const plankMaterial = new THREE.MeshStandardMaterial({
@@ -577,9 +580,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             0.018, // thickness
             item.data?.height || 0.8,
-            item.data?.depth || 0.4
+            item.data?.depth || 0.4,
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `VerticalPlank_${item.id}`;
       } else if (nameLower.includes('horizontal')) {
@@ -587,9 +590,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             0.018, // thickness
-            item.data?.depth || 0.4
+            item.data?.depth || 0.4,
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `HorizontalPlank_${item.id}`;
       } else {
@@ -597,9 +600,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             item.data?.height || 0.8,
-            0.018 // thickness
+            0.018, // thickness
           ),
-          plankMaterial
+          plankMaterial,
         );
         plankMesh.name = `Plank_${item.id}`;
       }
@@ -607,7 +610,7 @@ async function createChildObjectFromData(
       plankMesh.userData.objectId = item.id;
       plankMesh.userData.apiData = item;
       plankMesh.position.copy(invisibleBox.position);
-      
+
       parentMesh.add(plankMesh);
       createdMesh = plankMesh;
     }
@@ -672,89 +675,99 @@ async function loadDesignObjects(
             const counterTexture = textureLoader.load('/img14_64.jpg');
             counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
             counterTexture.repeat.set(10, 1);
-            const meshes = addPlatformOnWall(scene, wall as any, counterTexture);
+            const meshes = addPlatformOnWall(
+              scene,
+              wall as any,
+              counterTexture,
+            );
             createdMesh = meshes?.[0]; // Get the first platform mesh
-          } 
-          else if (item.type === 'Cabinet') {
+          } else if (item.type === 'Cabinet') {
             if (nameLower.includes('tv')) {
               addSimpleTVUnit(scene);
               createdMesh = scene.getObjectByName('SimpleTVUnit');
-            } 
-            else if (
+            } else if (
               nameLower.includes('computer') ||
               nameLower.includes('desk')
             ) {
               addComputerDesk(scene);
               createdMesh = scene.getObjectByName('ComputerDesk');
-            } 
-            else if (nameLower.includes('table')) {
+            } else if (nameLower.includes('table')) {
               addSimpleTable(scene);
               createdMesh = scene.getObjectByName('SimpleTable');
-             }
-             else if (nameLower.includes('plank')) {
-              console.log(item, "item 123456879");
-               // Create plank directly from API data
-               if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                 console.log(`Creating plank directly from API data: ${item.name}, position:`, item.data?.position, 'dimensions:', item.data?.width, 'x', item.data?.height, 'x', item.data?.depth);
-               }
-               
-               const plankMaterial = new THREE.MeshStandardMaterial({
-                 color: 0xd9c7b8,
-                 roughness: 0.7,
-               });
+            } else if (nameLower.includes('plank')) {
+              // Create plank directly from API data
+              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                console.log(
+                  `Creating plank directly from API data: ${item.name}, position:`,
+                  item.data?.position,
+                  'dimensions:',
+                  item.data?.width,
+                  'x',
+                  item.data?.height,
+                  'x',
+                  item.data?.depth,
+                );
+              }
 
-               let plankMesh: THREE.Mesh;
-               if (nameLower.includes('vertical')) {
-                 plankMesh = new THREE.Mesh(
-                   new THREE.BoxGeometry(
-                     0.018, // thickness
-                     item?.height || 0.8,
-                     item?.depth || 0.4
-                   ),
-                   plankMaterial
-                 );
-                 plankMesh.name = `VerticalPlank_${item.id}`;
-               } else if (nameLower.includes('horizontal')) {
-                 plankMesh = new THREE.Mesh(
-                   new THREE.BoxGeometry(
-                     item?.width || 0.4,
-                     0.018, // thickness
-                     item?.depth || 0.4
-                   ),
-                   plankMaterial
-                 );
-                 plankMesh.name = `HorizontalPlank_${item.id}`;
-               } else {
-                 plankMesh = new THREE.Mesh(
-                   new THREE.BoxGeometry(
-                     item?.width || 0.4,
-                     item?.height || 0.8,
-                     0.018 // thickness
-                   ),
-                   plankMaterial
-                 );
-                 plankMesh.name = `Plank_${item.id}`;
-               }
+              const plankMaterial = new THREE.MeshStandardMaterial({
+                color: 0xd9c7b8,
+                roughness: 0.7,
+              });
 
-               // Set position from API data
-               if (item?.position) {
-                 plankMesh.position.set(
-                   item.position.x,
-                   item.position.y,
-                   item.position.z
-                 );
-               }
+              let plankMesh: THREE.Mesh;
+              if (nameLower.includes('vertical')) {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    0.018, // thickness
+                    item?.height || 0.8,
+                    item?.depth || 0.4,
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `VerticalPlank_${item.id}`;
+              } else if (nameLower.includes('horizontal')) {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    item?.width || 0.4,
+                    0.018, // thickness
+                    item?.depth || 0.4,
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `HorizontalPlank_${item.id}`;
+              } else {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    item?.width || 0.4,
+                    item?.height || 0.8,
+                    0.018, // thickness
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `Plank_${item.id}`;
+              }
 
-               plankMesh.userData.objectId = item.id;
-               plankMesh.userData.apiData = item;
-               scene.add(plankMesh);
-               createdMesh = plankMesh;
-               
-               if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                 console.log(`Successfully created plank mesh: ${plankMesh.name} at position:`, plankMesh.position);
-               }
-             }
-             else {
+              // Set position from API data
+              if (item?.position) {
+                plankMesh.position.set(
+                  item.position.x,
+                  item.position.y,
+                  item.position.z,
+                );
+              }
+
+              plankMesh.userData.objectId = item.id;
+              plankMesh.userData.apiData = item;
+              scene.add(plankMesh);
+              createdMesh = plankMesh;
+
+              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                console.log(
+                  `Successfully created plank mesh: ${plankMesh.name} at position:`,
+                  plankMesh.position,
+                );
+              }
+            } else {
               addSimpleCabinet(scene);
               createdMesh = scene.getObjectByName('SimpleCabinet');
             }
@@ -764,13 +777,13 @@ async function loadDesignObjects(
           if (createdMesh) {
             createdMesh.userData.objectId = item.id;
             createdMesh.userData.apiData = item;
-            
+
             // Set position from API data
             if (item.position) {
               createdMesh.position.set(
                 item.position.x,
                 item.position.y,
-                item.position.z
+                item.position.z,
               );
             }
           }
@@ -840,35 +853,44 @@ async function loadDesignObjects(
   }
 }
 
-async function regenerateInvisibleBoxes(scene: THREE.Scene, objects: Object3D[]) {
+async function regenerateInvisibleBoxes(
+  scene: THREE.Scene,
+  objects: Object3D[],
+) {
   try {
     // Find all cabinet objects
-    const cabinetObjects = objects.filter(obj => 
-      obj.catalog_type === 'Cabinet' && !obj.parent
+    const cabinetObjects = objects.filter(
+      (obj) => obj.catalog_type === 'Cabinet' && !obj.parent,
     );
 
     for (const cabinet of cabinetObjects) {
       const cabinetMesh = scene.children.find(
-        child => child.userData.objectId === cabinet.id
+        (child) => child.userData.objectId === cabinet.id,
       ) as THREE.Mesh;
 
       if (!cabinetMesh) continue;
 
       // Get all planks for this cabinet
-      const plankObjects = objects.filter(obj => 
-        obj.parent === cabinet.id && 
-        (obj.name.includes('Plank') || obj.name.includes('VERTICAL') || obj.name.includes('HORIZONTAL'))
+      const plankObjects = objects.filter(
+        (obj) =>
+          obj.parent === cabinet.id &&
+          (obj.name.includes('Plank') ||
+            obj.name.includes('VERTICAL') ||
+            obj.name.includes('HORIZONTAL')),
       );
 
       if (plankObjects.length > 0) {
         // Remove existing invisible boxes
         const existingBoxes: THREE.Mesh[] = [];
         cabinetMesh.traverse((child) => {
-          if (child.name.includes('invisibleBox') && child instanceof THREE.Mesh) {
+          if (
+            child.name.includes('invisibleBox') &&
+            child instanceof THREE.Mesh
+          ) {
             existingBoxes.push(child);
           }
         });
-        existingBoxes.forEach(box => {
+        existingBoxes.forEach((box) => {
           cabinetMesh.remove(box);
           box.geometry.dispose();
           if (box.material instanceof THREE.Material) {
@@ -877,7 +899,7 @@ async function regenerateInvisibleBoxes(scene: THREE.Scene, objects: Object3D[])
         });
 
         // Generate new compartments
-        const plankDataList: PlankDataItem[] = plankObjects.map(obj => ({
+        const plankDataList: PlankDataItem[] = plankObjects.map((obj) => ({
           id: obj.id,
           name: obj.name,
           width: obj.width,
@@ -887,7 +909,7 @@ async function regenerateInvisibleBoxes(scene: THREE.Scene, objects: Object3D[])
         }));
 
         const compartments = generateCompartmentsFromPlanks(plankDataList);
-        
+
         // Create new invisible boxes
         compartments.forEach((compartment, index) => {
           const geometry = new THREE.BoxGeometry(
@@ -1470,15 +1492,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                  {
-                    id: normalizedData.id,
-                    name: normalizedData.name,
-                    width: normalizedData.width,
-                    height: normalizedData.height,
-                    depth: normalizedData.depth,
-                    position: normalizedData.position,
-                  },
-                ]
+                {
+                  id: normalizedData.id,
+                  name: normalizedData.name,
+                  width: normalizedData.width,
+                  height: normalizedData.height,
+                  depth: normalizedData.depth,
+                  position: normalizedData.position,
+                },
+              ]
               : [],
           );
 
