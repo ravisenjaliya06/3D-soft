@@ -26,6 +26,7 @@ const DIM_LABEL_PREFIX = 'plank_dim_label_';
 const mm = (meters: number) => Math.max(0, meters) * 1000; // meters → millimeters
 
 const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
+
 export const init3DDesign = async (
   mount: HTMLDivElement,
 ): Promise<ThreeDView> => {
@@ -540,16 +541,9 @@ export const init3DDesign = async (
     addSimpleTVUnit: () => addSimpleTVUnit(scene),
     addSimpleTable: () => addSimpleTable(scene),
     addComputerDesk: () => addComputerDesk(scene),
-    // addBaseCabinetsUnderPlatform,
-    // addFullKitchenSetup,
     loadSinkModel,
-    // exportRenderPNG: (options?: { width?: number; height?: number; filename?: string; download?: boolean }) => {
-    //   exportRenderPNG(renderer, scene, camera, options);
-    // },
     addUpperCabinetsAbovePlatform,
     addDoubleDoorUpperCabinetsAbovePlatform,
-    // addChimneyWithGlassCabinets,
-    // loadHandleModel,
   };
 };
 
@@ -697,6 +691,38 @@ export const addLShapeKitchenPlatform = (
   scene.add(lKitchenGroup);
 };
 
+function createMeshObject(part: any) {
+  const geometry = new THREE.BoxGeometry(
+    part.dimensions.width,
+    part.dimensions.height,
+    part.dimensions.depth,
+  );
+
+  const materialProps = part.material;
+  const material = new THREE.MeshStandardMaterial(materialProps);
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = part.name || 'unnamed_plank';
+
+  if (part.position) {
+    mesh.position.set(
+      part.position.x || 0,
+      part.position.y || 0,
+      part.position.z || 0,
+    );
+  }
+
+  if (part.rotation) {
+    mesh.rotation.set(
+      THREE.MathUtils.degToRad(part.rotation.x || 0),
+      THREE.MathUtils.degToRad(part.rotation.y || 0),
+      THREE.MathUtils.degToRad(part.rotation.z || 0),
+    );
+  }
+
+  return mesh;
+}
+
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   // Standard cabinet dimensions in meters
   const width = 1.5; // 600mm
@@ -733,11 +759,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
   woodTex.repeat.set(2, 1);
 
-  const plankMat = new THREE.MeshStandardMaterial({
-    map: woodTex,
-    roughness: 0.6,
-    metalness: 0.0,
-  });
+  const plankMaterialProps = { map: woodTex, roughness: 0.6, metalness: 0 };
 
   // Create a parent Mesh container that represents the overall cabinet size
   // This gives us a single mesh with width/height/depth while keeping planks as children
@@ -752,93 +774,109 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     invisibleMat,
   );
   cabinetContainer.name = 'SimpleCabinet';
-  cabinetContainer.userData.isInvisibleBox = true; // treated as helper/invisible by utilities
-  // Track base and last known dimensions for proportional rescaling later
-  (cabinetContainer as any).userData = {
-    ...(cabinetContainer as any).userData,
-    baseDims: { width, height, depth },
-    lastDims: { width, height, depth },
-  };
-  // Position container so bottom sits on floor
+  cabinetContainer.userData.isInvisibleBox = true;
+  cabinetContainer.userData.baseDims = { width, height, depth };
+  cabinetContainer.userData.lastDims = { width, height, depth };
   cabinetContainer.position.set(placeX, floorY + height / 2, placeZ);
 
-  // Left side panel (thickness x height x depth)
-  const left = new THREE.Mesh(
-    new THREE.BoxGeometry(thickness, height, depth),
-    plankMat,
-  );
-  left.castShadow = true;
-  left.receiveShadow = true;
-  left.name = 'LEFT_PLANK';
-  left.position.set(-(width / 2 - thickness / 2), 0, 0);
+  const leftPart = {
+    name: 'LEFT_PLANK',
+    dimensions: { width: thickness, height: height, depth: depth },
+    position: { x: -(width / 2 - thickness / 2), y: 0, z: 0 },
+    material: plankMaterialProps,
+  };
+  const left = createMeshObject(leftPart);
+  if (left) {
+    left.castShadow = true;
+    left.receiveShadow = true;
+    cabinetContainer.add(left);
+  }
+  const rightPart = {
+    name: 'RIGHT_PLANK',
+    dimensions: { width: thickness, height: height, depth: depth },
+    position: { x: width / 2 - thickness / 2, y: 0, z: 0 },
+    material: plankMaterialProps,
+  };
+  const right = createMeshObject(rightPart);
+  if (right) {
+    right.castShadow = true;
+    right.receiveShadow = true;
+    cabinetContainer.add(right);
+  }
 
-  // Right side panel
-  const right = new THREE.Mesh(
-    new THREE.BoxGeometry(thickness, height, depth),
-    plankMat,
-  );
-  right.castShadow = true;
-  right.receiveShadow = true;
-  right.name = 'RIGHT_PLANK';
-  right.position.set(width / 2 - thickness / 2, 0, 0);
+  const bottomPart = {
+    name: 'BOTTOM_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
+    position: { x: 0, y: -(height / 2 - thickness / 2), z: 0 },
+    material: plankMaterialProps,
+  };
+  const bottom = createMeshObject(bottomPart);
+  if (bottom) {
+    bottom.castShadow = true;
+    bottom.receiveShadow = true;
+    cabinetContainer.add(bottom);
+  }
 
-  // Bottom panel (width - 2t x thickness x depth)
-  const bottom = new THREE.Mesh(
-    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
-    plankMat,
-  );
-  bottom.castShadow = true;
-  bottom.receiveShadow = true;
-  bottom.name = 'BOTTOM_PLANK';
-  bottom.position.set(0, -(height / 2 - thickness / 2), 0);
+  const topPart = {
+    name: 'TOP_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: thickness,
+      depth: depth,
+    },
+    position: { x: 0, y: height / 2 - thickness / 2, z: 0 },
+    material: plankMaterialProps,
+  };
+  const top = createMeshObject(topPart);
+  if (top) {
+    top.castShadow = true;
+    top.receiveShadow = true;
+    cabinetContainer.add(top);
+  }
 
-  // Top panel
-  const top = new THREE.Mesh(
-    new THREE.BoxGeometry(width - thickness * 2, thickness, depth),
-    plankMat,
-  );
-  top.castShadow = true;
-  top.receiveShadow = true;
-  top.name = 'TOP_PLANK';
-  top.position.set(0, height / 2 - thickness / 2, 0);
-
-  // Back panel (width - 2t x height - 2t x thickness)
-  const back = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      width - thickness * 2,
-      height - thickness * 2,
-      thickness,
-    ),
-    plankMat,
-  );
-  back.castShadow = true;
-  back.receiveShadow = true;
-  back.name = 'BACK_PLANK';
-  back.position.set(0, 0, -(depth / 2 - thickness / 2));
-
-  cabinetContainer.add(left, right, bottom, top, back);
-  // Invisible volume inside cabinet carcass so vertical/horizontal planks can be added later
-  const invisibleMatCab = new THREE.MeshBasicMaterial({
+  const backPart = {
+    name: 'BACK_PLANK',
+    dimensions: {
+      width: width - thickness * 2,
+      height: height - thickness * 2,
+      depth: thickness,
+    },
+    position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
+    material: plankMaterialProps,
+  };
+  const back = createMeshObject(backPart);
+  if (back) {
+    back.castShadow = true;
+    back.receiveShadow = true;
+    cabinetContainer.add(back);
+  }
+  const invisibleMaterialProps = {
     color: 0x000000,
     transparent: true,
     opacity: 0.0,
     depthWrite: false,
-  });
-  const invCab = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.max(width - thickness * 2, 0.02),
-      Math.max(height - thickness * 2, 0.02),
-      Math.max(depth - thickness * 2, 0.02),
-    ),
-    invisibleMatCab,
-  );
-  invCab.name = 'invisibleBox_cabinet';
-  invCab.userData.isInvisibleBox = true;
-  invCab.position.set(0, 0, 0);
-  cabinetContainer.add(invCab);
+  };
+  const invPart = {
+    name: 'invisibleBox_cabinet',
+    dimensions: {
+      width: Math.max(width - thickness * 2, 0.02),
+      height: Math.max(height - thickness * 2, 0.02),
+      depth: Math.max(depth - thickness * 2, 0.02),
+    },
+    position: { x: 0, y: 0, z: 0 },
+    material: invisibleMaterialProps,
+  };
+  const invCab = createMeshObject(invPart);
+  if (invCab) {
+    invCab.userData.isInvisibleBox = true;
+    cabinetContainer.add(invCab);
+  }
   scene.add(cabinetContainer);
 };
-
 export const addSimpleTVUnit = (scene: THREE.Scene) => {
   // Dimensions (meters) approximating reference image
   const width = 1.6; // base span 1600mm
@@ -1420,14 +1458,21 @@ export const addComputerDesk = (scene: THREE.Scene) => {
   }
   scene.add(container);
 };
+
 export const addPlatformOnWall = (
   scene: THREE.Scene,
-  wallMesh: THREE.Mesh,
+  wallMesh: THREE.Mesh | null,
   counterTexture: THREE.Texture,
 ) => {
+  if (!counterTexture) {
+    const textureLoader = new THREE.TextureLoader();
+    counterTexture = textureLoader.load('/img14_64.jpg');
+    counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+    counterTexture.repeat.set(10, 1);
+  }
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
-  const defaultProtrusion = 0.74; // Fixed protrusion depth/width for new platforms
+  const defaultProtrusion = 0.74;
 
   const counterMat = new THREE.MeshStandardMaterial({
     map: counterTexture,
@@ -1436,16 +1481,13 @@ export const addPlatformOnWall = (
     side: THREE.DoubleSide,
   });
 
-  // Derive wall geometry params
-  const params = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
+  const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters as any;
   const wallW = params.width as number;
   const wallD = params.depth as number;
 
-  // Create a group to hold the platform
   const platformGroup = new THREE.Group();
-  platformGroup.name = `Platform_${wallMesh.name}`;
+  platformGroup.name = `Platform_${wallMesh?.name}`;
 
-  // Compute floor Y from existing floor panel
   let floorY = 0;
   const cWallGroup = scene.getObjectByName(
     'cWallWithFloor',
@@ -1457,55 +1499,101 @@ export const addPlatformOnWall = (
     if (floorObj) floorY = floorObj.position.y;
   }
 
-  if (wallMesh.name === 'Center Wall') {
-    // Compute wall span along X
+  const addedMeshes: Array<{
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+    position: { x: number; y: number; z: number };
+    data: { rotation: { x: number; y: number; z: number }; wall: string };
+  }> = [];
+
+  const createPlatformMesh = (
+    geom: THREE.BoxGeometry,
+    mat: THREE.Material,
+    name: string,
+    pos: THREE.Vector3,
+  ) => {
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.name = name;
+    mesh.position.copy(pos);
+    platformGroup.add(mesh);
+
+    const { width, height, depth } = geom.parameters as any;
+    addedMeshes.push({
+      name,
+      width,
+      height,
+      depth,
+      position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+      data: {
+        rotation: {
+          x: mesh.rotation.x,
+          y: mesh.rotation.y,
+          z: mesh.rotation.z,
+        },
+        wall: wallMesh?.name || '',
+      },
+    });
+
+    return mesh;
+  };
+
+  // ===== Platform creation logic =====
+  if (wallMesh?.name === 'Center Wall') {
     const wallCenterX = wallMesh.position.x;
     const halfLengthX = wallW / 2;
     let leftStartX = wallCenterX - halfLengthX;
     let rightEndX = wallCenterX + halfLengthX;
 
-    // Check for existing side platforms and adjust span
     const leftPlat = scene.getObjectByName('Counter_LeftWall') as
       | THREE.Mesh
       | undefined;
     if (leftPlat) {
-      const leftPlatParams = (leftPlat.geometry as THREE.BoxGeometry)
-        .parameters as any;
-      const leftProtrusion = leftPlatParams.width as number;
-      const leftInnerEndX = leftPlat.position.x + leftProtrusion / 2;
-      leftStartX = Math.max(leftStartX, leftInnerEndX);
+      const leftProtrusion = (leftPlat.geometry as THREE.BoxGeometry).parameters
+        .width as number;
+      leftStartX = Math.max(
+        leftStartX,
+        leftPlat.position.x + leftProtrusion / 2,
+      );
     }
 
     const rightPlat = scene.getObjectByName('Counter_RightWall') as
       | THREE.Mesh
       | undefined;
     if (rightPlat) {
-      const rightPlatParams = (rightPlat.geometry as THREE.BoxGeometry)
-        .parameters as any;
-      const rightProtrusion = rightPlatParams.width as number;
-      const rightInnerStartX = rightPlat.position.x - rightProtrusion / 2;
-      rightEndX = Math.min(rightEndX, rightInnerStartX);
+      const rightProtrusion = (rightPlat.geometry as THREE.BoxGeometry)
+        .parameters.width as number;
+      rightEndX = Math.min(
+        rightEndX,
+        rightPlat.position.x - rightProtrusion / 2,
+      );
     }
 
     const lengthX = Math.max(rightEndX - leftStartX, 0.1);
     const centerX = (leftStartX + rightEndX) / 2;
 
-    const top = new THREE.Mesh(
-      new THREE.BoxGeometry(lengthX, countertopThickness, defaultProtrusion),
-      counterMat,
+    const topGeom = new THREE.BoxGeometry(
+      lengthX,
+      countertopThickness,
+      defaultProtrusion,
     );
-    top.castShadow = true;
-    top.receiveShadow = true;
-    top.name = 'Counter_CenterWall';
-    top.position.set(
+    const topPos = new THREE.Vector3(
       centerX,
       platformHeight + countertopThickness / 2,
       wallMesh.position.z + wallD / 2 + defaultProtrusion / 2,
     );
-    platformGroup.add(top);
+    const topMesh = createPlatformMesh(
+      topGeom,
+      counterMat,
+      'Counter_CenterWall',
+      topPos,
+    );
 
-    // Invisible box from underside to floor
-    const ibHeight = top.position.y - countertopThickness / 2 - floorY;
+    // Invisible box from underside to floor (center wall)
+    const ibHeight = topMesh.position.y - countertopThickness / 2 - floorY;
     if (ibHeight > 0.001) {
       const invisibleMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
@@ -1518,55 +1606,62 @@ export const addPlatformOnWall = (
         invisibleMat,
       );
       invisible.name = 'invisibleBox_platform_center';
+      invisible.userData.isInvisibleBox = true;
+      invisible.userData.type = 'INVISIBLE_COMPARTMENT';
+      invisible.userData.dimensions = {
+        width: lengthX,
+        height: ibHeight,
+        depth: defaultProtrusion,
+      };
       invisible.position.set(
-        top.position.x,
+        topMesh.position.x,
         floorY + ibHeight / 2,
-        top.position.z,
+        topMesh.position.z,
       );
       platformGroup.add(invisible);
     }
-  } else if (wallMesh.name === 'Left Wall' || wallMesh.name === 'Right Wall') {
-    // Compute wall span along Z
+  } else if (
+    wallMesh?.name === 'Left Wall' ||
+    wallMesh?.name === 'Right Wall'
+  ) {
     const wallCenterZ = wallMesh.position.z;
-    const halfRunZ = wallD / 2; // wallD is params.depth for sides
+    const halfRunZ = wallD / 2;
     const minZ = wallCenterZ - halfRunZ;
     const maxZ = wallCenterZ + halfRunZ;
 
-    // Check for existing back platform and adjust run
     const backPlat = scene.getObjectByName('Counter_CenterWall') as
       | THREE.Mesh
       | undefined;
     let startZ = minZ;
     if (backPlat) {
-      const backPlatParams = (backPlat.geometry as THREE.BoxGeometry)
-        .parameters as any;
-      const backProtrusion = backPlatParams.depth as number;
-      startZ = backPlat.position.z + backProtrusion / 2;
+      startZ =
+        backPlat.position.z +
+        ((backPlat.geometry as THREE.BoxGeometry).parameters.depth as number) /
+          2;
     }
     const effectiveRun = Math.max(maxZ - startZ, 0.1);
     const centerZ = startZ + effectiveRun / 2;
 
-    const top = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        defaultProtrusion,
-        countertopThickness,
-        effectiveRun,
-      ),
-      counterMat,
-    );
-    top.castShadow = true;
-    top.receiveShadow = true;
-    top.name = `Counter_${wallMesh.name.replace(' ', '')}`;
     const dir = wallMesh.name === 'Left Wall' ? +1 : -1;
-    top.position.set(
+    const topGeom = new THREE.BoxGeometry(
+      defaultProtrusion,
+      countertopThickness,
+      effectiveRun,
+    );
+    const topPos = new THREE.Vector3(
       wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2),
       platformHeight + countertopThickness / 2,
       centerZ,
     );
-    platformGroup.add(top);
+    const topMesh = createPlatformMesh(
+      topGeom,
+      counterMat,
+      `Counter_${wallMesh.name.replace(' ', '')}`,
+      topPos,
+    );
 
-    // Invisible box from underside to floor
-    const ibHeight = top.position.y - countertopThickness / 2 - floorY;
+    // Invisible box from underside to floor (side walls)
+    const ibHeight = topMesh.position.y - countertopThickness / 2 - floorY;
     if (ibHeight > 0.001) {
       const invisibleMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
@@ -1580,16 +1675,22 @@ export const addPlatformOnWall = (
       );
       const wallTag = wallMesh.name === 'Left Wall' ? 'leftwall' : 'rightwall';
       invisible.name = `invisibleBox_platform_${wallTag}`;
+      invisible.userData.isInvisibleBox = true;
+      invisible.userData.type = 'INVISIBLE_COMPARTMENT';
+      invisible.userData.dimensions = {
+        width: defaultProtrusion,
+        height: ibHeight,
+        depth: effectiveRun,
+      };
       invisible.position.set(
-        top.position.x,
+        topMesh.position.x,
         floorY + ibHeight / 2,
-        top.position.z,
+        topMesh.position.z,
       );
       platformGroup.add(invisible);
     }
   } else {
-    // Fallback: ignore unknown wall
-    return;
+    return [];
   }
 
   scene.add(platformGroup);
@@ -1597,6 +1698,7 @@ export const addPlatformOnWall = (
   store.dispatch(setSelectedChildObject(null));
   store.dispatch(setHoverdMesh(null));
   removeExistingLines();
+  return addedMeshes; // Only the visible countertop meshes
 };
 
 export const addVerticalPlanksInsideBox = (
@@ -2178,6 +2280,7 @@ export const addVerticalPlanksToBox = (
     inv.position.copy(parent.worldToLocal(worldPos));
   }
 };
+
 export const addHorizontalPlanksToBox = (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -2827,7 +2930,6 @@ export const addDrawersOnInvisibleBox = async (
       handle.position.set(0, 0, 0);
 
       if (isSide) {
-        const normalAxis = 'x';
         const normalSign = dir;
         handle.rotation.set(0, 0, 0);
         handle.rotation.z = Math.PI / 2;
@@ -2847,8 +2949,6 @@ export const addDrawersOnInvisibleBox = async (
           face.position.z,
         );
       } else {
-        const normalAxis = 'z';
-        const normalSign = dir; // 1 for +Z
         handle.rotation.set(0, 0, 0);
         handle.rotation.z = Math.PI / 2;
         handle.rotation.x = -(Math.PI / 2);
@@ -3734,18 +3834,6 @@ function isHelperOrInvisible(o: THREE.Object3D) {
 
   return false;
 }
-function overlapsOnAxes(
-  a: THREE.Box3,
-  b: THREE.Box3,
-  axes: Array<'x' | 'y' | 'z'>,
-): boolean {
-  for (const axis of axes) {
-    if (axis === 'x' && (a.max.x < b.min.x || a.min.x > b.max.x)) return false;
-    if (axis === 'y' && (a.max.y < b.min.y || a.min.y > b.max.y)) return false;
-    if (axis === 'z' && (a.max.z < b.min.z || a.min.z > b.max.z)) return false;
-  }
-  return true;
-}
 
 function findNearestAlongAxis(
   scene: THREE.Scene,
@@ -3772,13 +3860,6 @@ function findNearestAlongAxis(
   // compute world center of self to detect side walls robustly
   const selfCenter = new THREE.Vector3();
   selfBox.getCenter(selfCenter);
-
-  // heuristics for side-wall behaviour (use world center)
-  const isSideWallPlank =
-    self.name.toLowerCase().includes('platform_leftwall') ||
-    self.name.toLowerCase().includes('platform_rightwall') ||
-    self.userData?.isSideWall === true ||
-    (axis === 'z' && Math.abs(selfCenter.x) > 0.5); // far from center (world units)
 
   // helper to test axis-overlap
   const overlapsOnAxesLocal = (

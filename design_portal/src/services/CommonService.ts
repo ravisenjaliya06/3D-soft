@@ -30,7 +30,13 @@ export type RemainingPath =
   | `company/${string}/material`
   | `catalog_rules/${string}/parts`;
 
-type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type`;
+type Param =
+  | 'recent'
+  | 'deleted'
+  | 'project_id'
+  | 'is_custom'
+  | `type`
+  | 'design_id';
 
 type Error = {
   message: string;

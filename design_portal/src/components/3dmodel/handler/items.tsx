@@ -9,6 +9,13 @@ import {
   createDesign,
 } from '../catalog/object-creator';
 import {
+  addComputerDesk,
+  addPlatformOnWall,
+  addSimpleCabinet,
+  addSimpleTable,
+  addSimpleTVUnit,
+} from '../design/scene';
+import {
   generateMinifixSystem,
   PlankData,
   visualizeMinifixConnections,
@@ -26,6 +33,8 @@ import {
 } from './interface';
 import { MoveHandler } from './moveHandler';
 import { updateObjectInDatabase } from './updateHandler';
+// import { addPlatformOnWall } from '@/components/3dmodel/design/scene';
+
 let moveHandler: MoveHandler | null = null;
 
 function initializeMoveHandler(options: {
@@ -245,343 +254,689 @@ export function generateCompartmentsFromPlanks(
   return compartments.filter((comp) => comp.width > 0 && comp.height > 0);
 }
 
+async function createChildObjectFromCatalogItem(
+  item: CatalogItemData,
+  parentMesh: THREE.Object3D | null,
+  scene: THREE.Scene,
+): Promise<Object3D | null> {
+  try {
+    if (!parentMesh) {
+      console.warn('Parent mesh is null for child item', item.id);
+      return null;
+    }
+
+    const nameLower = (item?.name || '').toLowerCase();
+    const itemType = item.data?.catalog_type || '';
+    let createdMesh: THREE.Object3D | null = null;
+
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(
+        `Creating child object: ${item.name}, type: ${itemType}, parent: ${parentMesh?.name}`,
+      );
+    }
+
+    // Create invisible box for positioning
+    const invisibleBox = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        item.data?.width || 0.5,
+        item.data?.height || 0.5,
+        item.data?.depth || 0.5,
+      ),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    invisibleBox.name = `invisibleBox_${item.id}`;
+    invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
+
+    // Position relative to parent container
+    const parentBbox = new THREE.Box3().setFromObject(parentMesh);
+    const parentSize = new THREE.Vector3();
+    parentBbox.getSize(parentSize);
+
+    // Calculate position relative to parent's center
+    const relativePosition = {
+      x: (item.data?.position?.x || 0) - parentMesh.position.x,
+      y: (item.data?.position?.y || 0) - parentMesh.position.y,
+      z: (item.data?.position?.z || 0) - parentMesh.position.z,
+    };
+
+    invisibleBox.position.set(
+      relativePosition.x,
+      relativePosition.y,
+      relativePosition.z,
+    );
+    parentMesh.add(invisibleBox);
+
+    if (itemType === 'Door' || itemType === 'Sliding Door') {
+      // Create door
+      const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
+      doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
+      doorTexture.repeat.set(2, 1);
+
+      const doorFace = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          item.data?.width || 0.4,
+          item.data?.height || 0.8,
+          0.02,
+        ),
+        new THREE.MeshStandardMaterial({
+          map: doorTexture,
+          side: THREE.DoubleSide,
+        }),
+      );
+      doorFace.name = `Door_${item.id}`;
+      doorFace.userData.openDirection = 'right';
+      doorFace.userData.objectId = item.id;
+
+      const doorGroup = new THREE.Group();
+      doorGroup.name = `DoorGroup_${item.id}`;
+      doorGroup.userData.type = 'DOOR';
+      doorGroup.userData.objectId = item.id;
+      doorGroup.userData.apiData = item;
+
+      doorGroup.add(doorFace);
+      doorGroup.position.copy(invisibleBox.position);
+      parentMesh.add(doorGroup);
+      createdMesh = doorGroup;
+    } else if (itemType === 'Drawer') {
+      // Create drawer
+      const drawerGroup = new THREE.Group();
+      drawerGroup.name = `DrawerGroup_${item.id}`;
+      drawerGroup.userData.type = 'DRAWER';
+      drawerGroup.userData.objectId = item.id;
+      drawerGroup.userData.apiData = item;
+      drawerGroup.userData.isClosed = true;
+      drawerGroup.userData.closedPos = invisibleBox.position.clone();
+
+      // Create drawer face
+      const drawerFace = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          item.data?.width || 0.4,
+          item.data?.height || 0.2,
+          0.02,
+        ),
+        new THREE.MeshStandardMaterial({
+          color: 0xd9c7b8,
+          roughness: 0.7,
+        }),
+      );
+      drawerFace.name = `DrawerFace_${item.id}`;
+      drawerFace.userData.objectId = item.id;
+
+      drawerGroup.add(drawerFace);
+      drawerGroup.position.copy(invisibleBox.position);
+      parentMesh.add(drawerGroup);
+      createdMesh = drawerGroup;
+    } else if (itemType === 'Plank' || nameLower.includes('plank')) {
+      // Create plank
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log(
+          `Creating plank: ${item.name}, type: ${itemType}, dimensions: ${item.data?.width}x${item.data?.height}x${item.data?.depth}`,
+        );
+      }
+
+      const plankMaterial = new THREE.MeshStandardMaterial({
+        color: 0xd9c7b8,
+        roughness: 0.7,
+      });
+
+      let plankMesh: THREE.Mesh;
+      if (nameLower.includes('vertical')) {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            0.018, // thickness
+            item.data?.height || 0.8,
+            item.data?.depth || 0.4,
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `VerticalPlank_${item.id}`;
+      } else if (nameLower.includes('horizontal')) {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            item.data?.width || 0.4,
+            0.018, // thickness
+            item.data?.depth || 0.4,
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `HorizontalPlank_${item.id}`;
+      } else {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            item.data?.width || 0.4,
+            item.data?.height || 0.8,
+            0.018, // thickness
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `Plank_${item.id}`;
+      }
+
+      plankMesh.userData.objectId = item.id;
+      plankMesh.userData.apiData = item;
+      plankMesh.position.copy(invisibleBox.position);
+
+      parentMesh.add(plankMesh);
+      createdMesh = plankMesh;
+
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log(
+          `Successfully created plank mesh: ${plankMesh.name} at position:`,
+          plankMesh.position,
+        );
+      }
+    }
+
+    // Convert to Object3D format
+    if (createdMesh) {
+      const object3D: Object3D = {
+        id: item.id,
+        name: item.name || '',
+        width: item.data?.width || 0,
+        height: item.data?.height || 0,
+        depth: item.data?.depth || 0,
+        altitude: item.data?.altitude || 0,
+        position: item.data?.position || { x: 0, y: 0, z: 0 },
+        material: item.data?.material || { type: 'TEXTURE', value: 'default' },
+        parent: item.data?.parent || null,
+        child: item.data?.child || [],
+        grooves: item.data?.grooves || [],
+        catalog_type: item.data?.catalog_type || '',
+        layer: item.data?.layer || 0,
+        rotationX: 0,
+        rotationY: 0,
+        rotationZ: 0,
+      };
+
+      return object3D;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error creating child object from catalog item:', error);
+    return null;
+  }
+}
+
+async function createChildObjectFromData(
+  item: CatalogResponse,
+  parentMesh: THREE.Mesh,
+  scene: THREE.Scene,
+): Promise<Object3D | null> {
+  try {
+    const nameLower = (item?.name || '').toLowerCase();
+    const itemType = item.type || '';
+    let createdMesh: THREE.Object3D | null = null;
+
+    // Create invisible box for positioning
+    const invisibleBox = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        item.data?.width || 0.5,
+        item.data?.height || 0.5,
+        item.data?.depth || 0.5,
+      ),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    invisibleBox.name = `invisibleBox_${item.id}`;
+    invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
+
+    // Position relative to parent container
+    const parentBbox = new THREE.Box3().setFromObject(parentMesh);
+    const parentSize = new THREE.Vector3();
+    parentBbox.getSize(parentSize);
+
+    // Calculate position relative to parent's center
+    const relativePosition = {
+      x: (item.data?.position?.x || 0) - parentMesh.position.x,
+      y: (item.data?.position?.y || 0) - parentMesh.position.y,
+      z: (item.data?.position?.z || 0) - parentMesh.position.z,
+    };
+
+    invisibleBox.position.set(
+      relativePosition.x,
+      relativePosition.y,
+      relativePosition.z,
+    );
+    parentMesh.add(invisibleBox);
+
+    if (itemType === 'Door' || itemType === 'Sliding Door') {
+      // Create door
+      const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
+      doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
+      doorTexture.repeat.set(2, 1);
+
+      const doorFace = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          item.data?.width || 0.4,
+          item.data?.height || 0.8,
+          0.02,
+        ),
+        new THREE.MeshStandardMaterial({
+          map: doorTexture,
+          side: THREE.DoubleSide,
+        }),
+      );
+      doorFace.name = `Door_${item.id}`;
+      doorFace.userData.openDirection = 'right';
+      doorFace.userData.objectId = item.id;
+
+      const doorGroup = new THREE.Group();
+      doorGroup.name = `DoorGroup_${item.id}`;
+      doorGroup.userData.type = 'DOOR';
+      doorGroup.userData.objectId = item.id;
+      doorGroup.userData.apiData = item;
+
+      doorGroup.add(doorFace);
+      doorGroup.position.copy(invisibleBox.position);
+      parentMesh.add(doorGroup);
+      createdMesh = doorGroup;
+    } else if (itemType === 'Drawer') {
+      // Create drawer
+      const drawerGroup = new THREE.Group();
+      drawerGroup.name = `DrawerGroup_${item.id}`;
+      drawerGroup.userData.type = 'DRAWER';
+      drawerGroup.userData.objectId = item.id;
+      drawerGroup.userData.apiData = item;
+      drawerGroup.userData.isClosed = true;
+      drawerGroup.userData.closedPos = invisibleBox.position.clone();
+
+      // Create drawer face
+      const drawerFace = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          item.data?.width || 0.4,
+          item.data?.height || 0.2,
+          0.02,
+        ),
+        new THREE.MeshStandardMaterial({
+          color: 0xd9c7b8,
+          roughness: 0.7,
+        }),
+      );
+      drawerFace.name = `DrawerFace_${item.id}`;
+      drawerFace.userData.objectId = item.id;
+
+      drawerGroup.add(drawerFace);
+      drawerGroup.position.copy(invisibleBox.position);
+      parentMesh.add(drawerGroup);
+      createdMesh = drawerGroup;
+    } else if (itemType === 'Plank') {
+      // Create plank
+      const plankMaterial = new THREE.MeshStandardMaterial({
+        color: 0xd9c7b8,
+        roughness: 0.7,
+      });
+
+      let plankMesh: THREE.Mesh;
+      if (nameLower.includes('vertical')) {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            0.018, // thickness
+            item.data?.height || 0.8,
+            item.data?.depth || 0.4,
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `VerticalPlank_${item.id}`;
+      } else if (nameLower.includes('horizontal')) {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            item.data?.width || 0.4,
+            0.018, // thickness
+            item.data?.depth || 0.4,
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `HorizontalPlank_${item.id}`;
+      } else {
+        plankMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            item.data?.width || 0.4,
+            item.data?.height || 0.8,
+            0.018, // thickness
+          ),
+          plankMaterial,
+        );
+        plankMesh.name = `Plank_${item.id}`;
+      }
+
+      plankMesh.userData.objectId = item.id;
+      plankMesh.userData.apiData = item;
+      plankMesh.position.copy(invisibleBox.position);
+
+      parentMesh.add(plankMesh);
+      createdMesh = plankMesh;
+    }
+
+    // Convert to Object3D format
+    if (createdMesh) {
+      const object3D: Object3D = {
+        id: item.id,
+        name: item.name || '',
+        width: item.data?.width || 0,
+        height: item.data?.height || 0,
+        depth: item.data?.depth || 0,
+        altitude: 0,
+        position: item.data?.position || { x: 0, y: 0, z: 0 },
+        material: item.data?.material || { type: 'TEXTURE', value: 'default' },
+        parent: item.parent || null,
+        child: [],
+        grooves: item.grooves || [],
+        catalog_type: item.data?.catalog_type || '',
+        layer: 0,
+        rotationX: 0,
+        rotationY: 0,
+        rotationZ: 0,
+      };
+
+      return object3D;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error creating child object from data:', error);
+    return null;
+  }
+}
+
 async function loadDesignObjects(
   designId: string,
   scene: THREE.Scene,
 ): Promise<Object3D[]> {
   try {
     const response: { status: number; data: CatalogResponse[] } =
-      await commonService.get('design', `${designId}/object`);
+      await commonService.getWithQueryParam(
+        'material',
+        'catalog',
+        'design_id',
+        designId,
+      );
     if (response.status === 200 && response.data) {
-      const responseData: CatalogResponse[] = response.data;
-      const allObjects: Object3D[] = [];
-      const idSet = new Set<string>();
-      const parentEntries = responseData.filter((entry) => !entry.parent);
-      for (const parentEntry of parentEntries) {
-        if (idSet.has(parentEntry.id)) {
-          console.warn(`Duplicate ID detected: ${parentEntry.id}, skipping`);
-          continue;
-        }
-        idSet.add(parentEntry.id);
+      const data = response.data;
+      const createdObjects: Object3D[] = [];
 
-        let parentDataList = [];
+      // Create all objects (main objects and their child items)
+      for (const item of data) {
+        try {
+          const nameLower = (item?.name || '').toLowerCase();
+          let createdMesh: THREE.Object3D | null = null;
 
-        if (
-          parentEntry.design_catalog_items &&
-          parentEntry.design_catalog_items.length > 0
-        ) {
-          parentDataList = parentEntry.design_catalog_items.map((item) => ({
-            ...item.data,
-            position: item.data?.position || { x: 0, y: 0, z: 0 },
-          }));
-        } else if (parentEntry.data) {
-          parentDataList = [
-            {
-              ...parentEntry.data,
-              position: parentEntry.data?.position || { x: 0, y: 0, z: 0 },
-            },
-          ];
-        } else {
-          console.error(
-            'No items or data found for parent entry:',
-            parentEntry.name,
-          );
-          continue;
-        }
-        const parentConvertedData = convertDataToGeometry(parentDataList);
-        const parentThreeDObject = createDesign(parentConvertedData, 'MAX');
-        const parentPosition = parentEntry.data?.position || {
-          x: 0,
-          y: 0,
-          z: 0,
-        };
-        parentThreeDObject.position.set(
-          parentPosition.x,
-          parentPosition.y,
-          parentPosition.z,
-        );
-        parentThreeDObject.scale.set(0.01, 0.01, 0.01);
-        parentThreeDObject.name = parentEntry.name || '';
-        parentThreeDObject.userData.objectId = parentEntry.id;
-        parentThreeDObject.userData.type = parentEntry.data?.catalog_type || '';
-
-        // Handle child entries (e.g., FIRST_DRAWER, SECOND_DRAWER)
-        const childEntries = responseData.filter(
-          (entry) => entry.parent === parentEntry.id,
-        );
-
-        const childObjects: Object3D[] = [];
-
-        const parentCatalogItems =
-          parentEntry.design_catalog_items?.map((item) => {
-            return {
-              id: item.id,
-              name: item.data?.name || item.name || '',
-              width: item.data?.width || 0,
-              height: item.data?.height || 0,
-              depth: item.data?.depth || 0,
-              altitude: item.data?.altitude || 0,
-              position: item.data?.position || { x: 0, y: 0, z: 0 },
-              material: item.data?.material || {
-                type: 'TEXTURE',
-                value: 'default',
-              },
-              parent: parentEntry.id,
-              child: item.data?.child || [],
-              grooves: item.data?.grooves || [],
-              catalog_type: item.data?.catalog_type || '',
-              layer: item.data?.layer || 0,
-              plankSize: item.data?.plankSize || 2,
-              // 🔧 LOAD MINIFIX HOLES FROM DATABASE
-              minifixConnections: item.data?.minifixConnections || [],
-              minifixHoles: item.data?.minifixHoles || [],
-            };
-          }) || [];
-
-        childObjects.push(...parentCatalogItems);
-
-        for (const childEntry of childEntries) {
-          if (idSet.has(childEntry.id)) {
-            console.warn(`Duplicate ID detected: ${childEntry.id}, skipping`);
-            continue;
-          }
-          idSet.add(childEntry.id);
-
-          let childDataList = [];
-          if (
-            childEntry.design_catalog_items &&
-            childEntry.design_catalog_items.length > 0
-          ) {
-            childDataList = childEntry.design_catalog_items.map((item) => ({
-              ...item.data,
-              position: item.data?.position || { x: 0, y: 0, z: 0 },
-              name: item.data?.name || item.name || '',
-            }));
-          } else if (childEntry.data) {
-            childDataList = [
-              {
-                ...childEntry.data,
-                position: childEntry.data?.position || { x: 0, y: 0, z: 0 },
-                name: childEntry.data?.name || childEntry.name || '',
-              },
-            ];
-          } else {
-            console.error(
-              'No items or data found for child entry:',
-              childEntry.name,
+          // Create main object
+          if (item.type === 'Platform') {
+            const wall = scene.getObjectByName(item.additional_data?.wall);
+            const textureLoader = new THREE.TextureLoader();
+            const counterTexture = textureLoader.load('/img14_64.jpg');
+            counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+            counterTexture.repeat.set(10, 1);
+            const meshes = addPlatformOnWall(
+              scene,
+              wall as any,
+              counterTexture,
             );
-            continue;
-          }
-          const childConvertedData = convertDataToGeometry(childDataList);
-          const childThreeDObject = createDesign(childConvertedData, 'MAX');
-          const childPosition = childEntry.data?.position || {
-            x: 0,
-            y: 0,
-            z: 0,
-          };
-          childThreeDObject.position.set(
-            childPosition.x,
-            childPosition.y,
-            childPosition.z,
-          );
+            createdMesh = meshes?.[0]; // Get the first platform mesh
+          } else if (item.type === 'Cabinet') {
+            if (nameLower.includes('tv')) {
+              addSimpleTVUnit(scene);
+              createdMesh = scene.getObjectByName('SimpleTVUnit');
+            } else if (
+              nameLower.includes('computer') ||
+              nameLower.includes('desk')
+            ) {
+              addComputerDesk(scene);
+              createdMesh = scene.getObjectByName('ComputerDesk');
+            } else if (nameLower.includes('table')) {
+              addSimpleTable(scene);
+              createdMesh = scene.getObjectByName('SimpleTable');
+            } else if (nameLower.includes('plank')) {
+              // Create plank directly from API data
+              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                console.log(
+                  `Creating plank directly from API data: ${item.name}, position:`,
+                  item.data?.position,
+                  'dimensions:',
+                  item.data?.width,
+                  'x',
+                  item.data?.height,
+                  'x',
+                  item.data?.depth,
+                );
+              }
 
-          childThreeDObject.children.forEach((plank) => {
-            if (plank.userData.isDrowerPlank) {
-              const plankData = childDataList.find(
-                (item) => item.name === plank.name,
+              const plankMaterial = new THREE.MeshStandardMaterial({
+                color: 0xd9c7b8,
+                roughness: 0.7,
+              });
+
+              let plankMesh: THREE.Mesh;
+              if (nameLower.includes('vertical')) {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    0.018, // thickness
+                    item?.height || 0.8,
+                    item?.depth || 0.4,
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `VerticalPlank_${item.id}`;
+              } else if (nameLower.includes('horizontal')) {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    item?.width || 0.4,
+                    0.018, // thickness
+                    item?.depth || 0.4,
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `HorizontalPlank_${item.id}`;
+              } else {
+                plankMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(
+                    item?.width || 0.4,
+                    item?.height || 0.8,
+                    0.018, // thickness
+                  ),
+                  plankMaterial,
+                );
+                plankMesh.name = `Plank_${item.id}`;
+              }
+
+              // Set position from API data
+              if (item?.position) {
+                plankMesh.position.set(
+                  item.position.x,
+                  item.position.y,
+                  item.position.z,
+                );
+              }
+
+              plankMesh.userData.objectId = item.id;
+              plankMesh.userData.apiData = item;
+              scene.add(plankMesh);
+              createdMesh = plankMesh;
+
+              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+                console.log(
+                  `Successfully created plank mesh: ${plankMesh.name} at position:`,
+                  plankMesh.position,
+                );
+              }
+            } else {
+              addSimpleCabinet(scene);
+              createdMesh = scene.getObjectByName('SimpleCabinet');
+            }
+          }
+
+          // Tag the created mesh with object ID and set position
+          if (createdMesh) {
+            createdMesh.userData.objectId = item.id;
+            createdMesh.userData.apiData = item;
+
+            // Set position from API data
+            if (item.position) {
+              createdMesh.position.set(
+                item.position.x,
+                item.position.y,
+                item.position.z,
               );
-              if (plankData) {
-                plank.position.set(
-                  plankData.position.x,
-                  plankData.position.y,
-                  plankData.position.z,
-                );
-              }
             }
-          });
+          }
 
-          childThreeDObject.scale.set(1, 1, 1);
-          childThreeDObject.name = childEntry.name || '';
-          childThreeDObject.userData.objectId = childEntry.id;
-          childThreeDObject.userData.type = childEntry.data?.catalog_type || '';
-
-          childThreeDObject.updateMatrix();
-          childThreeDObject.updateMatrixWorld(true);
-
-          parentThreeDObject.add(childThreeDObject);
-
-          const childObjectMetadata: Object3D = {
-            id: childEntry.id,
-            name: childEntry.name || '',
-            width: childEntry.data?.width || 0,
-            height: childEntry.data?.height || 0,
-            depth: childEntry.data?.depth || 0,
-            altitude: childEntry.data?.altitude || 0,
-            position: childPosition,
-            material: childEntry.data?.material || {
-              type: 'TEXTURE',
-              value: 'default',
-            },
-            parent: parentEntry.id,
-            child:
-              childEntry.design_catalog_items?.map((item) => item.id) || [],
-            grooves: childEntry.data?.grooves || [],
-            layer: childEntry.data?.layer || 0,
-            rotationX: childEntry.data?.rotationX || 0,
-            rotationY: childEntry.data?.rotationY || 0,
-            rotationZ: childEntry.data?.rotationZ || 0,
-            plankSize: childEntry.data?.plankSize || 2,
-            catalog_type: childEntry.data?.catalog_type || '',
-            minifixHoles: childEntry.data?.minifixHoles || [],
-            minifixConnections: childEntry.data?.minifixConnections || [],
+          // Convert to Object3D format
+          const object3D: Object3D = {
+            id: item.id,
+            name: item.name || '',
+            width: item?.width || 0,
+            height: item?.height || 0,
+            depth: item?.depth || 0,
+            altitude: 0,
+            position: item?.position || { x: 0, y: 0, z: 0 },
+            material: item?.material || { type: 'TEXTURE', value: 'default' },
+            parent: item.parent || null,
+            child: [],
+            grooves: item.grooves || [],
+            catalog_type: item?.catalog_type || '',
+            layer: 0,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
           };
 
-          const childCatalogItems =
-            childEntry.design_catalog_items?.map((item) => {
-              if (idSet.has(item.id)) {
-                console.warn(
-                  `Duplicate item ID detected: ${item.id}, generating new ID`,
-                );
-                item.id = crypto.randomUUID();
-              }
-              idSet.add(item.id);
-              return {
-                id: item.id,
-                name: item.data?.name || item.name || '',
-                width: item.data?.width || 0,
-                height: item.data?.height || 0,
-                depth: item.data?.depth || 0,
-                altitude: item.data?.altitude || 0,
-                position: item.data?.position || { x: 0, y: 0, z: 0 },
-                material: item.data?.material || {
-                  type: 'TEXTURE',
-                  value: 'default',
-                },
-                parent: childEntry.id,
-                child: item.data?.child || [],
-                grooves: item.data?.grooves || [],
-                layer: item.data?.layer || 0,
-                plankSize: item.data?.plankSize || 2,
-                minifixHoles: item.data?.minifixHoles || [],
-                minifixConnections: item.data?.minifixConnections || [],
-              };
-            }) || [];
+          createdObjects.push(object3D);
 
-          childObjects.push(childObjectMetadata, ...childCatalogItems);
+          // Now create child objects from design_catalog_items
+          // if (item.design_catalog_items && item.design_catalog_items.length > 0) {
+          //   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          //     console.log(`Creating ${item.design_catalog_items.length} child items for ${item.name}:`, item.design_catalog_items);
+          //   }
+          //   for (const childItem of item.design_catalog_items) {
+          //     try {
+          //       // Create child object based on type
+          //       const childObject3D = await createChildObjectFromCatalogItem(childItem, createdMesh, scene);
+          //       if (childObject3D) {
+          //         createdObjects.push(childObject3D);
+          //         object3D.child.push(childObject3D.id);
+          //         if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          //           console.log(`Successfully created child object: ${childItem.name} (${childItem.data?.catalog_type})`);
+          //         }
+          //       } else {
+          //         console.warn(`Failed to create child object: ${childItem.name} (${childItem.data?.catalog_type})`);
+          //       }
+          //     } catch (e) {
+          //       console.error('Failed to recreate child item on refresh', childItem, e);
+          //     }
+          //   }
+          // } else {
+          //   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          //     console.log(`No child items found for ${item.name}`);
+          //   }
+          // }
+        } catch (e) {
+          console.error('Failed to recreate main item on refresh', item, e);
         }
-
-        // Generate compartments
-        if (
-          !parentThreeDObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
-          !parentThreeDObject.name.includes(PLANK.VERTICAL_PLANK)
-        ) {
-          const compartments = generateCompartmentsFromPlanks(
-            parentDataList as PlankDataItem[],
-          );
-          compartments.forEach((compartment, index) => {
-            const geometry = new THREE.BoxGeometry(
-              compartment.width,
-              compartment.height,
-              compartment.depth,
-            );
-            const material = new THREE.MeshBasicMaterial({
-              transparent: true,
-              opacity: 0,
-            });
-            const box = new THREE.Mesh(geometry, material);
-            box.position.set(
-              compartment.position.x,
-              compartment.position.y,
-              compartment.position.z,
-            );
-            box.name = 'invisibleBox';
-            box.userData = {
-              objectId: `invisibleBox_${index}_${parentEntry.id}`,
-            };
-            parentThreeDObject.add(box);
-          });
-        }
-
-        // Assign userData.objectId to all objects, similar to moveObject
-        const objectList: Object3D[] = [
-          {
-            id: parentEntry.id,
-            name: parentEntry.name || '',
-            width: parentEntry.data?.width || 0,
-            height: parentEntry.data?.height || 0,
-            depth: parentEntry.data?.depth || 0,
-            altitude: parentEntry.data?.altitude || 0,
-            position: parentPosition,
-            material: parentEntry.data?.material || {
-              type: 'TEXTURE',
-              value: 'default',
-            },
-            parent: null,
-            child: [
-              ...childEntries.map((child) => child.id),
-              ...(parentEntry.design_catalog_items?.map((item) => item.id) ||
-                []),
-            ],
-            grooves: parentEntry.data?.grooves || [],
-            layer: parentEntry.data?.layer || 0,
-            rotationX: parentEntry.data?.rotationX || 0,
-            rotationY: parentEntry.data?.rotationY || 0,
-            rotationZ: parentEntry.data?.rotationZ || 0,
-            plankSize: parentEntry.data?.plankSize || 2,
-            // 🔧 LOAD MINIFIX DATA FROM DATABASE
-            minifixConnections: parentEntry.data?.minifixConnections || [],
-            minifixSpacing: parentEntry.data?.minifixSpacing,
-            minifixHoles: parentEntry.data?.minifixHoles || [],
-          },
-          ...childObjects,
-        ];
-
-        // Assign IDs by traversing parentThreeDObject
-        objectList.forEach((obj) => {
-          let targetObject: THREE.Object3D | undefined;
-          parentThreeDObject.traverse((child) => {
-            if (child.name === obj.name) {
-              targetObject = child;
-            }
-          });
-
-          if (targetObject) {
-            targetObject.userData.objectId = obj.id;
-          } else if (obj.name !== '') {
-            console.warn(
-              `No 3D object found for ${obj.name} with ID ${obj.id}`,
-            );
-          }
-        });
-
-        visualizeMinifixConnections(
-          parentEntry.data?.minifixConnections || [],
-          parentThreeDObject,
-        );
-        parentThreeDObject.updateMatrix();
-        parentThreeDObject.updateMatrixWorld(true);
-        scene.add(parentThreeDObject);
-
-        allObjects.push(...objectList);
       }
 
-      if (moveHandler) {
-        const movableObjects = allObjects
-          .map((obj) => {
-            return scene.getObjectByName(obj.name);
-          })
-          .filter((obj) => obj !== undefined);
+      // Regenerate invisible boxes for compartments after all objects are loaded
+      await regenerateInvisibleBoxes(scene, createdObjects);
 
-        moveHandler.movableObjects = movableObjects;
-      }
-      return allObjects;
-    } else {
-      console.error('Failed to load design objects:', response);
-      return [];
+      return createdObjects;
     }
   } catch (error) {
     console.error('Error loading design objects:', error);
     return [];
+  }
+}
+
+async function regenerateInvisibleBoxes(
+  scene: THREE.Scene,
+  objects: Object3D[],
+) {
+  try {
+    // Find all cabinet objects
+    const cabinetObjects = objects.filter(
+      (obj) => obj.catalog_type === 'Cabinet' && !obj.parent,
+    );
+
+    for (const cabinet of cabinetObjects) {
+      const cabinetMesh = scene.children.find(
+        (child) => child.userData.objectId === cabinet.id,
+      ) as THREE.Mesh;
+
+      if (!cabinetMesh) continue;
+
+      // Get all planks for this cabinet
+      const plankObjects = objects.filter(
+        (obj) =>
+          obj.parent === cabinet.id &&
+          (obj.name.includes('Plank') ||
+            obj.name.includes('VERTICAL') ||
+            obj.name.includes('HORIZONTAL')),
+      );
+
+      if (plankObjects.length > 0) {
+        // Remove existing invisible boxes
+        const existingBoxes: THREE.Mesh[] = [];
+        cabinetMesh.traverse((child) => {
+          if (
+            child.name.includes('invisibleBox') &&
+            child instanceof THREE.Mesh
+          ) {
+            existingBoxes.push(child);
+          }
+        });
+        existingBoxes.forEach((box) => {
+          cabinetMesh.remove(box);
+          box.geometry.dispose();
+          if (box.material instanceof THREE.Material) {
+            box.material.dispose();
+          }
+        });
+
+        // Generate new compartments
+        const plankDataList: PlankDataItem[] = plankObjects.map((obj) => ({
+          id: obj.id,
+          name: obj.name,
+          width: obj.width,
+          height: obj.height,
+          depth: obj.depth,
+          position: obj.position,
+        }));
+
+        const compartments = generateCompartmentsFromPlanks(plankDataList);
+
+        // Create new invisible boxes
+        compartments.forEach((compartment, index) => {
+          const geometry = new THREE.BoxGeometry(
+            compartment.width,
+            compartment.height,
+            compartment.depth,
+          );
+          const material = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+          });
+          const box = new THREE.Mesh(geometry, material);
+          box.position.set(
+            compartment.position.x,
+            compartment.position.y,
+            compartment.position.z,
+          );
+          box.name = 'invisibleBox';
+          box.userData = {
+            objectId: `invisibleBox_${index}_${cabinet.id}`,
+          };
+          cabinetMesh.add(box);
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error regenerating invisible boxes:', error);
   }
 }
 
@@ -1938,16 +2293,22 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
 export {
   copyObjects,
   create,
+  createChildObjectFromCatalogItem,
+  createChildObjectFromData,
   initializeMoveHandler,
   loadDesignObjects,
   moveObject,
+  regenerateInvisibleBoxes,
 };
 export default {
   initializeMoveHandler,
   loadDesignObjects,
   create,
+  createChildObjectFromCatalogItem,
+  createChildObjectFromData,
   moveObject,
   copyObjects,
+  regenerateInvisibleBoxes,
 };
 
 export function toggleDoor(child: THREE.Mesh) {
