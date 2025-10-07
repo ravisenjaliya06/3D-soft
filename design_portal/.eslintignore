@@ -11,7 +11,6 @@ src/components/3d/toolbar/index.tsx
 src/components/3d/catalog/parts/door.tsx
 src/components/3d/catalog/parts/drawer.tsx
 src/components/designs/index.tsx
-src/components/3dmodel/toolbar/index.tsx
 src/components/3dmodel/customDesign/toolbar/index.tsx
 src/components/3dmodel/catalog/object-creator/index.tsx
 src/components/3d/design/index.tsx
@@ -26,3 +25,4 @@ src/components/material/utils/materialMapper.ts
 src/components/3dmodel/design/scene.tsx
 src/components/3dmodel/sidebar/sidebar.tsx
 src/components/3dmodel/sidebar/MaterialChangePopup.tsx
+# src/components/3dmodel/toolbar/index.tsx

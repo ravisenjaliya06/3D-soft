@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import part_line from '@/assets/3dmodel/part-line.svg';
 import img1 from '@/assets/catalog/toolbaricon/img1.svg';
 import img2 from '@/assets/catalog/toolbaricon/img2.svg';
@@ -34,18 +34,13 @@ import {
 
 // parts
 import close from '@/assets/catalog/close.svg';
-import part_1 from '@/assets/catalog/parts/part_1.svg';
-import part_4 from '@/assets/catalog/parts/part_4.svg';
 import commonService from '@/services/CommonService';
-import { REDIRECT } from '@/services/CommonStatus';
-import { DesignProps } from '../interface';
 
 import door from '@/assets/toolbar/door-icon.svg';
 import drawer from '@/assets/toolbar/drawer.svg';
 import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
 import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
-import { useRouter } from 'next/router';
 import React from 'react';
 import {
   addDoorOnInvisibleBox,
@@ -65,7 +60,7 @@ import {
   updateObjectInDatabase,
 } from '../handler/updateHandler';
 import { useAppDispatch } from '../hooks';
-import { ToolbarProps } from '../interface';
+import { CatalogItem, ToolbarProps } from '../interface';
 import { store } from '../store';
 import {
   addObjects,
@@ -78,8 +73,6 @@ import {
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
-  const router = useRouter();
-  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   const isQuickHideActive = useSelector(
     (state) => state.data.isQuickHideActive,
@@ -94,56 +87,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
   const [catalogMenu, setcatalogMenu] = useState(false);
-  const [parts, setparts] = useState(false);
-  const [material, setmaterial] = useState(false);
-  const [blankCupboardPopup, setBlankCupboardPopup] = useState(false);
-  const [cupboardDimensions, setCupboardDimensions] = useState({
-    width: 120,
-    height: 120,
-  });
   const [furnitureItems, setFurnitureItems] = useState([]);
   const [partItems, setPartItems] = useState([]);
   const [customItems, setCustomItems] = useState([]);
   const [activeCatalogTab, setActiveCatalogTab] = useState('furniture');
   const [isExlightActive, setIsExlightActive] = useState(false);
-  const [designTexture, setdesignTexture] = useState(false);
   const [cabinetItems, setCabinetItems] = useState([]);
   const [createCompanyPopup, setCreateCompanyPopup] = useState(false);
   const [selectedCabinetItem, setSelectedCabinetItem] = useState(null);
   const [quantityValue, setQuantityValue] = useState(1);
-
-  // const designTextureModal = [
-  //   {
-  //     name: 'Texture 1',
-  //     image: texture_1,
-  //     onClick: () => applyTexture('texture_1'),
-  //   },
-  //   {
-  //     name: 'Texture 2',
-  //     image: texture_2,
-  //     onClick: () => applyTexture('texture_2'),
-  //   },
-  //   {
-  //     name: 'Texture 3',
-  //     image: texture_3,
-  //     onClick: () => applyTexture('texture_3'),
-  //   },
-  //   {
-  //     name: 'Texture 4',
-  //     image: texture_4,
-  //     onClick: () => applyTexture('texture_4'),
-  //   },
-  //   {
-  //     name: 'Texture 5',
-  //     image: texture_5,
-  //     onClick: () => applyTexture('texture_5'),
-  //   },
-  //   {
-  //     name: 'Texture 6',
-  //     image: texture_6,
-  //     onClick: () => applyTexture('texture_6'),
-  //   },
-  // ];
 
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
@@ -153,84 +105,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const handleToolToggleClick = () => {
     setIsToolOpen((prevState) => !prevState);
-    setparts(false);
     setcatalogMenu(false);
-    setmaterial(false);
-  };
-
-  const handlePartClick = async (name: string) => {
-    if (DesignProps.scene && DesignProps.setScene) {
-      let data;
-      if (name === partChoices.VERTICAL_PLANK) {
-        data = {
-          action: actionChoices.ADD_OBJECT,
-          type: typeChoices.PART,
-          item: partChoices.VERTICAL_PLANK,
-        };
-      } else if (name === partChoices.HORIZONTAL_PLANK) {
-        data = {
-          action: actionChoices.ADD_OBJECT,
-          type: typeChoices.PART,
-          item: partChoices.HORIZONTAL_PLANK,
-        };
-      }
-      if (data) {
-        const updatedScene = await objectHandler(
-          data,
-          DesignProps,
-          DesignProps.scene,
-          null,
-          DesignProps.selectedObject,
-        );
-        DesignProps.setScene(updatedScene);
-      }
-    }
-  };
-
-  const handleClosePopup = () => {
-    setBlankCupboardPopup(false);
-    setCupboardDimensions({ width: 120, height: 120 });
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCupboardDimensions((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    const data = {
-      action: actionChoices.ADD_OBJECT,
-      type: typeChoices.ITEM,
-      item: itemChoices.CUPBOARD,
-      blankCupboardData: {
-        width: Number(cupboardDimensions.width),
-        height: Number(cupboardDimensions.height),
-      },
-    };
-
-    if (DesignProps.scene && DesignProps.setScene) {
-      const updatedScene = await objectHandler(
-        data,
-        DesignProps,
-        DesignProps.scene,
-        data,
-        DesignProps.selectedObject,
-      );
-      DesignProps.setScene(updatedScene);
-    }
-
-    handleClosePopup();
-  };
-
-  const goToDashboard = () => {
-    if (router) {
-      router.push({
-        pathname: REDIRECT.DASHBOARD,
-      });
-    }
   };
 
   const handleToAddPlatform = async (catalogId: string) => {
@@ -270,7 +145,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
@@ -286,16 +161,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     for (const pdata of platformData) {
       try {
         const designId = window.location.pathname.split('/')[2];
-        const apiResponse = await addCabinetItemToDesign(catalogId, {
-          type: 'Platform',
-          name: pdata.name,
-          width: pdata.width,
-          height: pdata.height,
-          depth: pdata.depth,
-          position: pdata.position,
-          additional_data: pdata.data,
-          design_id: designId,
-        });
+        const apiResponse = await addCabinetItemToDesign(catalogId,
+          {
+            type: 'Platform',
+            name: pdata.name,
+            width: pdata.width,
+            height: pdata.height,
+            depth: pdata.depth,
+            position: pdata.position,
+            additional_data: pdata.data,
+            design_id: designId,
+            description: ''
+          });
         if (apiResponse) {
           dispatch(addObjects([apiResponse]));
           if (apiResponse.id) dispatch(setobjectSelected(apiResponse.id));
@@ -309,21 +186,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const options = [
     { option: 'Home', name: 'Home', icon: img1 },
     { option: 'View', name: 'View', icon: img2 },
-  ];
-
-  const partsModal = [
-    {
-      option: 'part_1',
-      name: 'Vertical Plate',
-      icon: part_1,
-      onClick: () => handlePartClick(partChoices.VERTICAL_PLANK),
-    },
-    {
-      option: 'part_4',
-      name: 'Horizontal Plank',
-      icon: part_4,
-      onClick: () => handlePartClick(partChoices.HORIZONTAL_PLANK),
-    },
   ];
 
   const handleTextureClick = async (name: string) => {
@@ -420,59 +282,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const materialModal = [
-    {
-      option: 'materal_0',
-      name: 'Dark Brown',
-      image: TEXTURE_MEDIA.WOOD,
-      onClick: () => handleTextureClick(textureChoices.WOOD),
-    },
-    {
-      option: 'materal_1',
-      name: 'Dark Brown',
-      image: TEXTURE_MEDIA.WOOD_1,
-      onClick: () => handleTextureClick(textureChoices.WOOD1),
-    },
-    {
-      option: 'materal_2',
-      name: 'Light Wood',
-      image: TEXTURE_MEDIA.WOOD_2,
-      onClick: () => handleTextureClick(textureChoices.WOOD2),
-    },
-    {
-      option: 'materal_3',
-      name: 'Off White',
-      image: TEXTURE_MEDIA.WOOD_3,
-      onClick: () => handleTextureClick(textureChoices.WOOD3),
-    },
-    {
-      option: 'materal_4',
-      name: 'Glossy Brown',
-      image: TEXTURE_MEDIA.WOOD_4,
-      onClick: () => handleTextureClick(textureChoices.WOOD4),
-    },
-    {
-      option: 'materal_5',
-      name: 'Light Brown',
-      image: TEXTURE_MEDIA.WOOD_5,
-      onClick: () => handleTextureClick(textureChoices.WOOD5),
-    },
-    {
-      option: 'materal_6',
-      name: 'Wood',
-      image: TEXTURE_MEDIA.WOOD_6,
-      onClick: () => handleTextureClick(textureChoices.WOOD6),
-    },
-    {
-      option: 'materal_7',
-      name: 'Wood',
-      image: TEXTURE_MEDIA.WOOD_7,
-      onClick: () => handleTextureClick(textureChoices.WOOD7),
-    },
-  ];
-
   const fetchCabinetItem = async () => {
-    const cabinetResponse = await commonService.getWithQueryParam(
+    const cabinetResponse: { status: number; data: any } = await commonService.get(
       'material',
       'catalog',
     );
@@ -537,8 +348,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     fetchCabinetItem();
   };
 
-  const handleCabinetItemSelect = async (item) => {
-    // console.log(item, 'item');
+  const handleCabinetItemSelect = async (item: any) => {
     if (item.type === 'Platform') {
       handleToAddPlatform(item.id);
       return;
@@ -727,7 +537,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch {}
+        } catch { }
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -1015,65 +825,39 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     {
       option: 'Furniture',
       icon: catalog,
-      // onClick: () => {
-      //   if (localStorage.getItem('cupboard') === 'true') {
-      //     setcatalogMenu(false);
-      //   } else {
-      //     setcatalogMenu((catalogMenu) => !catalogMenu);
-      //   }
-      //   setparts(false);
-      //   setmaterial(false);
-      //   setdesignTexture(false);
-      // },
       onClick: () => handleCabinetClick(),
       isActive: catalogMenu,
+      disabled: false,
     },
     {
       option: 'Quick Hide',
       icon: hide,
       onClick: () => {
         dispatch(toggleQuickHide(!isQuickHideActive));
-        setmaterial(false);
-        setparts(false);
         setcatalogMenu(false);
-        setdesignTexture(false);
       },
       isActive: isQuickHideActive,
+      disabled: false,
     },
     {
       option: 'Measure',
       icon: measure,
       onClick: () => {
         dispatch(toggleMeasurement(!isMeasurementActive));
-        setmaterial(false);
-        setparts(false);
         setcatalogMenu(false);
-        setdesignTexture(false);
       },
       isActive: isMeasurementActive,
+      disabled: false,
     },
     {
       option: 'Align Dimension',
       icon: align_dimension,
       onClick: () => {
         dispatch(togglAlignment(!isAlignmentActive));
-        setmaterial(false);
-        setparts(false);
         setcatalogMenu(false);
-        setdesignTexture(false);
       },
       isActive: isAlignmentActive,
-    },
-    {
-      option: 'Texture',
-      icon: texture,
-      onClick: () => {
-        setdesignTexture((prev) => !prev); // Toggle texture panel
-        setmaterial(false);
-        setcatalogMenu(false);
-        setparts(false);
-      },
-      isActive: designTexture,
+      disabled: false,
     },
   ];
 
@@ -1087,6 +871,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           setIsExlightActive((prev) => !prev);
         }
       },
+      disabled: false,
       isActive: isExlightActive,
     },
   ];
@@ -1208,9 +993,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     dispatch(addObjectsThunk(name));
     setcatalogMenu(false);
   };
-  const minifixDataRef = useRef<{
-    [objectId: string]: MinifixConnection[];
-  }>({});
 
   useEffect(() => {
     const fetchCatalogItems = async () => {
@@ -1244,7 +1026,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => {};
+      const getMinifixData = async () => { };
     };
 
     fetchCatalogItems();
@@ -1271,7 +1053,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               src={logo.src}
               className={styles.projectLogo}
               alt="Toolbar Logo"
-              onClick={() => goToDashboard()}
             />
           </div>
           <div className={styles.partLineGroup}>
@@ -1308,12 +1089,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               {activeOption === 'Home' && (
                 <div className={styles.activegroup_tools_group}>
                   {homeTools.map(
-                    ({ option, icon, onClick, disabled, isActive }) => (
+                    ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1335,9 +1115,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1469,103 +1248,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Parts */}
-      {parts && (
-        <div
-          className={`${styles.partcatalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}
-        >
-          <div className={styles.partfirstpart}>
-            <h3>Parts</h3>
-            <img src={close.src} onClick={() => setparts(false)} alt="close" />
-          </div>
-
-          <div className={styles.partsecondpart}>
-            <div className={styles.scrollContainer}>
-              {partsModal.map(({ icon, name, onClick }) => (
-                <div key={name} className={styles.partsbox} onClick={onClick}>
-                  <img src={icon.src} alt="photo" />
-                  <p>{name}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Material */}
-      {material && (
-        <div
-          className={`${styles.materialcatalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}
-        >
-          <div className={styles.materialfirstpart}>
-            <h3>Texture</h3>
-            <img
-              src={close.src}
-              onClick={() => setmaterial(false)}
-              alt="close"
-            />
-          </div>
-
-          <div className={styles.materialescondpart}>
-            <div className={styles.scrollContainer}>
-              {materialModal.map(({ image, name, onClick }) => (
-                <div
-                  key={name}
-                  className={styles.materialbox}
-                  onClick={onClick}
-                >
-                  <img src={image} alt="photo" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      {designTexture && (
-        <div
-          className={`${styles.catalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}
-        >
-          <div className={styles.firstpart}>
-            <h3>Texture</h3>
-            <div className={styles.menuFunctionality}>
-              <img
-                src={close.src}
-                onClick={() => setdesignTexture(false)}
-                alt="close"
-              />
-            </div>
-          </div>
-
-          <div className={styles.secondpart}>
-            <div className={styles.scrollContainer}>
-              {materialModal.map(({ image, name, onClick }) => (
-                <div key={name} className={styles.catalogbox} onClick={onClick}>
-                  <img src={image} alt={name} />
-                  <p>{name}</p>
-                </div>
-              ))}
-              {materialModal.length === 0 && (
-                <div className={styles.noItems}>No textures found</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {createCompanyPopup && selectedCabinetItem && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
@@ -1596,12 +1293,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     className={styles.inputField}
                     borderColor="var(--primary-color-grey-2)"
                     value={quantityValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setQuantityValue(e.target.value)
-                    }
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantityValue(e.target.value)}
                     placeholder="Enter quantity"
-                    label={`Quantity for ${selectedCabinetItem.name}`}
-                  />
+                    label={`Quantity for ${selectedCabinetItem.name}`} error={undefined} />
                 </div>
               </form>
             </div>
@@ -1619,71 +1313,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           </div>
         </div>
       )}
-      {/* Blank Cupboard Popup */}
-      {blankCupboardPopup && (
-        <div className={styles.popupOverlay}>
-          <div className={styles.popupContent}>
-            <div className={styles.popupHeader}>
-              <h3>Create Blank Cupboard</h3>
-              <img
-                src={close.src}
-                onClick={handleClosePopup}
-                alt="close"
-                className={styles.closeButton}
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label htmlFor="width">Width (cm)</label>
-              <input
-                type="number"
-                id="width"
-                name="width"
-                value={cupboardDimensions.width}
-                onChange={handleInputChange}
-                placeholder="Enter width"
-                min={80}
-                max={120}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor="height">Height (cm)</label>
-              <input
-                type="number"
-                id="height"
-                name="height"
-                value={cupboardDimensions.height}
-                onChange={handleInputChange}
-                placeholder="Enter height"
-                min={80}
-                max={120}
-              />
-            </div>
-
-            <div className={styles.buttonGroup}>
-              <button
-                className={`${styles.button} ${styles.cancelButton}`}
-                onClick={handleClosePopup}
-              >
-                Cancel
-              </button>
-              <button
-                className={`${styles.button} ${styles.submitButton}`}
-                onClick={handleSubmit}
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
 
 export default Toolbar;
 
-export const formatName = (name) => {
+export const formatName = (name: string) => {
   if (!name) return '';
   const words = name.replace(/_/g, ' ').split(' ');
   return words
