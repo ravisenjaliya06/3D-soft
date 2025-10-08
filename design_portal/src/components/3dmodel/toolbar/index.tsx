@@ -1026,7 +1026,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }));
         setCustomItems(customDesigns);
       }
-      const getMinifixData = async () => { };
     };
 
     fetchCatalogItems();
