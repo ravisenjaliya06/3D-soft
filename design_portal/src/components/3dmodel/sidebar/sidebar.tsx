@@ -7,7 +7,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
-import { rescaleByObjectId } from '../design/scene';
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
@@ -486,6 +485,73 @@ const Sidebar: React.FC = () => {
   const toggleTextureList = () => {
     setIsTextureListOpen((prev) => !prev);
   };
+  // Proportionally rescale and reposition children of a container when its geometry changes
+  function rescaleChildrenForContainer(container: THREE.Mesh) {
+    const params = (container.geometry as THREE.BoxGeometry).parameters as any;
+    const newDims = {
+      width: params.width as number,
+      height: params.height as number,
+      depth: params.depth as number,
+    };
+    const userData: any = (container as any).userData || {};
+    const last = userData.lastDims || newDims;
+    const sx = (newDims.width || 1) / (last.width || 1);
+    const sy = (newDims.height || 1) / (last.height || 1);
+    const sz = (newDims.depth || 1) / (last.depth || 1);
+
+    if (
+      Math.abs(sx - 1) < 1e-6 &&
+      Math.abs(sy - 1) < 1e-6 &&
+      Math.abs(sz - 1) < 1e-6
+    ) {
+      return;
+    }
+
+    container.children.forEach((child) => {
+      // Only scale real meshes; skip invisible helper boxes so they can be rebuilt precisely
+      const isMesh = (child as any).isMesh || child instanceof THREE.Mesh;
+      if (!isMesh) return;
+      const name = (child.name || '').toLowerCase();
+      if (name.startsWith('invisiblebox')) return;
+
+      // Scale local position
+      child.position.set(
+        child.position.x * sx,
+        child.position.y * sy,
+        child.position.z * sz,
+      );
+      // Scale mesh uniformly per axis (relative to previous scale)
+      const m = child as THREE.Mesh;
+      m.scale.set(m.scale.x * sx, m.scale.y * sy, m.scale.z * sz);
+    });
+
+    // Update lastDims to current
+    (container as any).userData = {
+      ...userData,
+      lastDims: { ...newDims },
+    };
+  }
+
+  // Find container by objectId and rescale its children proportionally
+  function rescaleByObjectId(scene: THREE.Scene, objectId: string) {
+    let container: THREE.Mesh | null = null;
+    scene.traverse((o: any) => {
+      if (container) return;
+      if (o && o.isMesh && o.userData && o.userData.objectId === objectId) {
+        const n = (o.name || '').toLowerCase();
+        if (
+          n === 'simplecabinet'.toLowerCase() ||
+          n === 'simpletvunit'.toLowerCase() ||
+          n === 'simpletable'.toLowerCase() ||
+          n === 'computerdesk'.toLowerCase()
+        ) {
+          container = o as THREE.Mesh;
+        }
+      }
+    });
+    if (!container) return;
+    rescaleChildrenForContainer(container);
+  }
   const sideBarMenuConfig = [
     {
       subMenu: 'basic',

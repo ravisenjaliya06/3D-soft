@@ -16,7 +16,6 @@ export interface ThreeDView {
   isZoomMode: boolean;
   addSimpleCabinet: () => void;
   addSimpleTVUnit: () => void;
-  addSimpleTable: () => void;
   addComputerDesk: () => void;
   // addBaseCabinetsUnderPlatform: () => void;
   // addFullKitchenSetup: () => Promise<void>;

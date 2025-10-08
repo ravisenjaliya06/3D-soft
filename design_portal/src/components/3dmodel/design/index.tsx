@@ -2,6 +2,7 @@ import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
+import { cleanupThreeDView } from '../customDesign/design/scene';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
@@ -23,7 +24,6 @@ import HelperTools from './HelperTools';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import {
-  cleanupThreeDView,
   clearAllPlankDimensions,
   enablePlankDimensionEditing,
   init3DDesign,
