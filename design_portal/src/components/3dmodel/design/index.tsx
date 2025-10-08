@@ -2,6 +2,7 @@ import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
+import { cleanupThreeDView } from '../customDesign/design/scene';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
@@ -28,7 +29,6 @@ import {
   init3DDesign,
   showPlankDimensions,
 } from './scene';
-import { cleanupThreeDView } from '../customDesign/design/scene';
 
 export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];

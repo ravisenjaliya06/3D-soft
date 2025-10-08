@@ -192,28 +192,3 @@ export interface ResponseStatus {
 }
 
 export type PositionKey = 'x' | 'y' | 'z';
-
-interface CatalogPart {
-  name: string;
-  width: number;
-  height: number;
-  depth: number;
-}
-
-interface CatalogItemData {
-  type: string;
-  name: string;
-  description: string;
-  design_id: string;
-  width?: number;
-  height?: number;
-  depth?: number;
-  position?: Position;
-  additional_data?: any;
-  parts?: CatalogPart;
-}
-
-export interface CatalogItem {
-  catalogId: string,
-  itemData: CatalogItemData
-}

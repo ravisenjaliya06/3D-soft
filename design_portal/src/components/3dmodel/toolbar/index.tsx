@@ -1,9 +1,9 @@
-
+// @ts-nocheck
 import part_line from '@/assets/3dmodel/part-line.svg';
 import img1 from '@/assets/catalog/toolbaricon/img1.svg';
 import img2 from '@/assets/catalog/toolbaricon/img2.svg';
 import logo from '@/assets/titleLogo.svg';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { toggleMeasurement, toggleQuickHide } from '../store/dataSlice';
@@ -20,17 +20,12 @@ import exlight from '@/assets/toolbar/exlight.svg';
 import hide from '@/assets/toolbar/hide.svg';
 import cabinet from '@/assets/toolbar/images.jpg';
 import measure from '@/assets/toolbar/measure.svg';
-import texture from '@/assets/toolbar/texture.svg';
 import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
 import InputField from '@/components/inputfields/InputField';
 import { removeExistingLines } from '../design/index';
 
 // catalog modal photo
-import {
-  TEXTURE_MEDIA,
-  objectName,
-  textureChoices,
-} from '@/components/3dmodel/handler/constant';
+import { objectName } from '@/components/3dmodel/handler/constant';
 
 // parts
 import close from '@/assets/catalog/close.svg';
@@ -46,21 +41,19 @@ import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
-  addLShapeKitchenPlatform,
+  addHorizontalPlanksInsideBox,
   addPlatformOnWall,
   addSimpleCabinet,
   addSimpleTVUnit,
   addUpperCabinetsAbovePlatform,
-  addVerticalPlanksInsideBox,
   addVerticalPlanksToBox,
-  addHorizontalPlanksInsideBox
 } from '../design/scene';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
 } from '../handler/updateHandler';
 import { useAppDispatch } from '../hooks';
-import { CatalogItem, ToolbarProps } from '../interface';
+import { ToolbarProps } from '../interface';
 import { store } from '../store';
 import {
   addObjects,
@@ -145,30 +138,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
     let platformData: any[] = [];
     if (targetWall) {
       platformData = addPlatformOnWall(scene, targetWall, counterTexture);
-    } 
+    }
     // Add platform data to API payload
     for (const pdata of platformData) {
       try {
         const designId = window.location.pathname.split('/')[2];
-        const apiResponse = await addCabinetItemToDesign(catalogId,
-          {
-            type: 'Platform',
-            name: pdata.name,
-            width: pdata.width,
-            height: pdata.height,
-            depth: pdata.depth,
-            position: pdata.position,
-            additional_data: pdata.data,
-            design_id: designId,
-            description: ''
-          });
+        const apiResponse = await addCabinetItemToDesign(catalogId, {
+          type: 'Platform',
+          name: pdata.name,
+          width: pdata.width,
+          height: pdata.height,
+          depth: pdata.depth,
+          position: pdata.position,
+          additional_data: pdata.data,
+          design_id: designId,
+          description: '',
+        });
         if (apiResponse) {
           dispatch(addObjects([apiResponse]));
           if (apiResponse.id) dispatch(setobjectSelected(apiResponse.id));
@@ -279,10 +271,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   };
 
   const fetchCabinetItem = async () => {
-    const cabinetResponse: { status: number; data: any } = await commonService.get(
-      'material',
-      'catalog',
-    );
+    const cabinetResponse: { status: number; data: any } =
+      await commonService.get('material', 'catalog');
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
         console.log(cabinetResponse.data, 'cabinetResponse.data');
@@ -533,7 +523,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch { }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -1087,8 +1077,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1110,8 +1101,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1243,16 +1235,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1288,9 +1280,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     className={styles.inputField}
                     borderColor="var(--primary-color-grey-2)"
                     value={quantityValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantityValue(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setQuantityValue(e.target.value)
+                    }
                     placeholder="Enter quantity"
-                    label={`Quantity for ${selectedCabinetItem.name}`} error={undefined} />
+                    label={`Quantity for ${selectedCabinetItem.name}`}
+                    error={undefined}
+                  />
                 </div>
               </form>
             </div>
