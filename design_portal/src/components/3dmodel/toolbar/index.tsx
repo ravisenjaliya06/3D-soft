@@ -51,7 +51,6 @@ import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
-  addHorizontalPlanksToBox,
   addLShapeKitchenPlatform,
   addPlatformOnWall,
   addSimpleCabinet,
@@ -59,6 +58,7 @@ import {
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksInsideBox,
   addVerticalPlanksToBox,
+  addHorizontalPlanksInsideBox
 } from '../design/scene';
 import {
   updateCatalogItemObject,
@@ -277,11 +277,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     let platformData: any[] = [];
     if (targetWall) {
       platformData = addPlatformOnWall(scene, targetWall, counterTexture);
-    } else {
-      // fallback for L-shape
-      platformData = addLShapeKitchenPlatform(scene, counterTexture); // Make sure this also returns similar data
-    }
-
+    } 
     // Add platform data to API payload
     for (const pdata of platformData) {
       try {
@@ -953,7 +949,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             apiResponses,
           );
         } else {
-          await addVerticalPlanksInsideBox(
+          await addVerticalPlanksToBox(
             scene,
             targetBox,
             num,
@@ -962,7 +958,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           );
         }
       } else if (nameLower.includes('horizontal')) {
-        await addHorizontalPlanksToBox(
+        await addHorizontalPlanksInsideBox(
           scene,
           targetBox,
           num,
