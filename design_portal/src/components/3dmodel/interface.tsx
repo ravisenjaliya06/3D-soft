@@ -52,7 +52,7 @@ export interface HeaderProps {
 }
 
 export interface ToolbarProps {
-  threeDView: ThreeDView;
+  threeDView?: ThreeDView;
 }
 
 export interface ComponentData {
