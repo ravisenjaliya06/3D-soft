@@ -55,7 +55,7 @@ export const init3DDesign = async (
   let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera =
     perspectiveCamera;
 
- const {daySky , nightSky, stars} = createSkySet();
+  const { daySky, nightSky, stars } = createSkySet();
 
   // Renderer
   const renderer = new THREE.WebGLRenderer({
@@ -490,7 +490,7 @@ const createSkySet = (): {
   nightSky: Sky;
   stars: THREE.Points;
 } => {
-  // day 
+  // day
   const daySky = new Sky();
   daySky.scale.setScalar(450000);
   const sunDay = new THREE.Vector3();
@@ -505,7 +505,7 @@ const createSkySet = (): {
   daySky.material.uniforms['turbidity'].value = 2;
   daySky.material.uniforms['mieCoefficient'].value = 0.0001;
 
-  // night 
+  // night
   const nightSky = new Sky();
   nightSky.scale.setScalar(450000);
   const sunNight = new THREE.Vector3();
@@ -1282,7 +1282,7 @@ export const addPlatformOnWall = (
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
   const defaultProtrusion = 0.74;
-   const counterMat = new THREE.MeshStandardMaterial({
+  const counterMat = new THREE.MeshStandardMaterial({
     map: counterTexture,
     roughness: 0.4,
     metalness: 0.0,
@@ -1609,15 +1609,16 @@ export const addVerticalPlanksToBox = (
       } catch {}
     }
     const offset = -span / 2 + edgeClearance + interval * i;
-    if (divideAlongX)
-      plank.position.set(center.x + offset, plankY, center.z);
+    if (divideAlongX) plank.position.set(center.x + offset, plankY, center.z);
     else plank.position.set(center.x, plankY, center.z + offset);
 
     parent.add(plank);
   }
   if (isPlatform) {
     let floorY = 0;
-    const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+    const cWallGroup = scene.getObjectByName(
+      'cWallWithFloor',
+    ) as THREE.Group | null;
     if (cWallGroup) {
       const floorObj = cWallGroup.children.find(
         (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
@@ -1653,8 +1654,7 @@ export const addVerticalPlanksToBox = (
     inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
 
     const compOffset = -span / 2 + edgeClearance + interval * i + interval / 2;
-    if (divideAlongX)
-      inv.position.set(center.x + compOffset, plankY, center.z);
+    if (divideAlongX) inv.position.set(center.x + compOffset, plankY, center.z);
     else inv.position.set(center.x, plankY, center.z + compOffset);
 
     inv.userData = {
@@ -1697,7 +1697,7 @@ export const addHorizontalPlanksInsideBox = (
   const interval = innerHeight / (count + 1);
   const parent = boxMesh.parent ?? scene;
 
-  const  localCenter = parent.worldToLocal(center.clone());
+  const localCenter = parent.worldToLocal(center.clone());
 
   const plankMat = new THREE.MeshStandardMaterial({
     color: 0xd9c7b8,
@@ -1724,7 +1724,7 @@ export const addHorizontalPlanksInsideBox = (
   };
 
   for (let i = 1; i <= count; i++) {
-    const yLocal = -innerHeight / 2 +  interval * i;
+    const yLocal = -innerHeight / 2 + interval * i;
     const shelf = new THREE.Mesh(
       new THREE.BoxGeometry(width, thickness, depth),
       plankMat,
@@ -1779,10 +1779,10 @@ export const addHorizontalPlanksInsideBox = (
     shelf.receiveShadow = true;
 
     // Place relative to box center
-     const worldPos =center.clone();
-     worldPos.y += yLocal;
-     parent.add(shelf);
-     shelf.position.copy(parent.worldToLocal(worldPos));
+    const worldPos = center.clone();
+    worldPos.y += yLocal;
+    parent.add(shelf);
+    shelf.position.copy(parent.worldToLocal(worldPos));
   }
 
   // 🔹 Create invisible boxes between shelves (like vertical planks do)
@@ -1794,7 +1794,7 @@ export const addHorizontalPlanksInsideBox = (
   });
 
   for (let i = 0; i <= count; i++) {
-    const bottomY = -innerHeight / 2 +  interval * i;
+    const bottomY = -innerHeight / 2 + interval * i;
     const topY = bottomY + interval;
     const compHeight = Math.max(interval - thickness, 0.02);
     const compCenterY = (bottomY + topY) / 2;
@@ -1804,8 +1804,8 @@ export const addHorizontalPlanksInsideBox = (
       invisibleMat,
     );
     inv.name = `invisibleBox_compartment_${i}_for_${boxMesh.name}`;
-  inv.userData.type = 'INVISIBLE_COMPARTMENT';
-  inv.userData.dimensions = {
+    inv.userData.type = 'INVISIBLE_COMPARTMENT';
+    inv.userData.dimensions = {
       width: width,
       height: compHeight,
       depth: depth,
