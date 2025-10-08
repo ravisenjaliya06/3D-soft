@@ -23,12 +23,12 @@ import HelperTools from './HelperTools';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import {
-  cleanupThreeDView,
   clearAllPlankDimensions,
   enablePlankDimensionEditing,
   init3DDesign,
   showPlankDimensions,
 } from './scene';
+import { cleanupThreeDView } from '../customDesign/design/scene';
 
 export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];
