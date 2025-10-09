@@ -3,6 +3,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { removeExistingLines } from '.';
 import { initializeMoveHandler } from '../handler/items';
 import { store } from '../store';
@@ -14,6 +18,7 @@ import {
 } from '../store/dataSlice';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
+import { createRealisticMaterial } from './loadRealisticScene';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -30,7 +35,7 @@ export const init3DDesign = async (
 ): Promise<ThreeDView> => {
   const scene = new THREE.Scene();
   const perspectiveCamera = new THREE.PerspectiveCamera(
-    80,
+    50,
     window.innerWidth / window.innerHeight,
     0.1,
     1000,
@@ -65,11 +70,9 @@ export const init3DDesign = async (
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   mount.appendChild(renderer.domElement);
 
   initializeMoveHandler({ scene, camera, renderer });
@@ -81,11 +84,16 @@ export const init3DDesign = async (
   scene.add(grid);
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  ambientLight.intensity = 0.8;
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  directionalLight.position.set(10, 10, 10);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  directionalLight.position.set(10, 15, 10);
+  directionalLight.intensity = 0.8;
+  directionalLight.castShadow = true;
+  directionalLight.shadow.mapSize.width = 2048;
+  directionalLight.shadow.mapSize.height = 2048;
   scene.add(directionalLight);
 
   // Orbit Controls
@@ -109,25 +117,6 @@ export const init3DDesign = async (
 
   scene.add(daySky);
 
-  const textureLoader = new THREE.TextureLoader();
-  const wallTexture = textureLoader.load('/WallTexture.jpg');
-  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-  wallTexture.repeat.set(1, 1);
-
-  const floorTexture = textureLoader.load('/img2_6.jpg');
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(2, 2);
-
-  const sunLight = new THREE.DirectionalLight(0xffffff, 3);
-  sunLight.position.set(10, 15, 10);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.radius = 4;
-  sunLight.shadow.camera.near = 1;
-  sunLight.shadow.camera.far = 50;
-  scene.add(sunLight);
-
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
   scene.add(hemiLight);
 
@@ -136,19 +125,15 @@ export const init3DDesign = async (
       scene.remove(daySky);
       scene.add(nightSky);
       scene.add(stars);
-      ambientLight.intensity = 0.5;
-      directionalLight.intensity = 0.2;
     } else {
       scene.remove(nightSky);
       scene.remove(stars);
       scene.add(daySky);
-      ambientLight.intensity = 1.5;
-      directionalLight.intensity = 1;
     }
     isDay = !isDay;
   };
 
-  addCTypeWallWithFloor(scene, wallTexture, floorTexture);
+  addCTypeWallWithFloor(scene);
 
   const loadSinkModel = async (url: string) => {
     let counterMesh = scene.getObjectByName(
@@ -437,10 +422,25 @@ export const init3DDesign = async (
     toggleZoomMode(false);
   };
 
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.1,
+    0.1,
+    0.1,
+  );
+  composer.addPass(bloomPass);
+
+  const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
+  composer.addPass(smaaPass);
+
   const animate = () => {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
+    composer.render();
   };
   animate();
 
@@ -573,22 +573,31 @@ function createMeshObject(part: any) {
 
   return mesh;
 }
-const addCTypeWallWithFloor = (
-  scene: THREE.Scene,
-  wallTexture: THREE.Texture,
-  floorTexture: THREE.Texture,
-) => {
+const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
-  // ---------- Materials ----------
-  const wallMat = new THREE.MeshStandardMaterial({
-    map: wallTexture,
-    side: THREE.DoubleSide,
+  const wallMaterial = await createRealisticMaterial(scene, {
+    textures: {
+      color: '/wall/Bricks092_2K-JPG_Color.jpg',
+      normal: '/wall/Bricks092_2K-JPG_NormalGL.jpg',
+      roughness: '/wall/Bricks092_2K-JPG_Roughness.jpg',
+      ao: '/wall/Bricks092_2K-JPG_AmbientOcclusion.jpg',
+      // displacement: '/wall/Bricks101_4K-JPG_Displacement.jpg',
+    },
+    repeatX: 4,
+    repeatY: 4,
   });
-  const floorMat = new THREE.MeshStandardMaterial({
-    map: floorTexture,
-    side: THREE.DoubleSide,
+
+  const floorMaterial = await createRealisticMaterial(scene, {
+    textures: {
+      color: '/floor/gravel_concrete_04_diff_2k.jpg',
+      normal: '/floor/gravel_concrete_04_disp_2k.png',
+      roughness: '/floor/gravel_concrete_04_arm_2k.jpg',
+      ao: '/floor/gravel_concrete_04_ao_2k.jpg',
+    },
+    repeatX: 5,
+    repeatY: 4,
   });
   // ---------- Panels ----------
   // Back wall
@@ -598,7 +607,7 @@ const addCTypeWallWithFloor = (
       wallHeight,
       wallThickness,
     ),
-    wallMat,
+    wallMaterial,
   );
   centerPanel.name = 'Center Wall';
   centerPanel.castShadow = true;
@@ -608,7 +617,7 @@ const addCTypeWallWithFloor = (
   // Left wall
   const leftPanel = new THREE.Mesh(
     new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
-    wallMat,
+    wallMaterial,
   );
   leftPanel.name = 'Left Wall';
   leftPanel.castShadow = true;
@@ -622,7 +631,7 @@ const addCTypeWallWithFloor = (
   // Right wall
   const rightPanel = new THREE.Mesh(
     new THREE.BoxGeometry(wallThickness, wallHeight, wallLength),
-    wallMat,
+    wallMaterial,
   );
   rightPanel.name = 'Right Wall';
   rightPanel.castShadow = true;
@@ -637,7 +646,7 @@ const addCTypeWallWithFloor = (
   // Slightly larger than inside of C so it meets wall edges
   const floorPanel = new THREE.Mesh(
     new THREE.PlaneGeometry(wallLength, wallLength), // square floor
-    floorMat,
+    floorMaterial,
   );
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
@@ -1268,7 +1277,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
   scene.add(container);
 };
 
-export const addPlatformOnWall = (
+export const addPlatformOnWall = async (
   scene: THREE.Scene,
   wallMesh: THREE.Mesh | null,
   counterTexture: THREE.Texture,
@@ -1282,11 +1291,15 @@ export const addPlatformOnWall = (
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
   const defaultProtrusion = 0.74;
-  const counterMat = new THREE.MeshStandardMaterial({
-    map: counterTexture,
-    roughness: 0.4,
-    metalness: 0.0,
-    side: THREE.DoubleSide,
+  const counterMat = await createRealisticMaterial(scene, {
+    textures: {
+      color: '/platform/Marble012_2K-JPG_Color.jpg',
+      normal: '/platform/Marble012_2K-JPG_NormalDX.jpg',
+      roughness: '/platform/Marble012_2K-JPG_Roughness.jpg',
+      ao: '/platform/Marble012_2K-JPG_NormalDX.jpg',
+    },
+    repeatX: 10,
+    repeatY: 1,
   });
 
   const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters as any;
