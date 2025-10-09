@@ -19,6 +19,7 @@ import {
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { TEXTURES_URLS } from '../constants';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -631,24 +632,13 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallThickness = 0.05;
   const wallLength = 5;
   const wallMaterial = await createRealisticMaterial(scene, {
-    textures: {
-      color: '/wall/Bricks092_2K-JPG_Color.jpg',
-      normal: '/wall/Bricks092_2K-JPG_NormalGL.jpg',
-      roughness: '/wall/Bricks092_2K-JPG_Roughness.jpg',
-      ao: '/wall/Bricks092_2K-JPG_AmbientOcclusion.jpg',
-      // displacement: '/wall/Bricks101_4K-JPG_Displacement.jpg',
-    },
+    textures: TEXTURES_URLS.WALL,
     repeatX: 4,
     repeatY: 4,
   });
 
   const floorMaterial = await createRealisticMaterial(scene, {
-    textures: {
-      color: '/floor/gravel_concrete_04_diff_2k.jpg',
-      normal: '/floor/gravel_concrete_04_disp_2k.png',
-      roughness: '/floor/gravel_concrete_04_arm_2k.jpg',
-      ao: '/floor/gravel_concrete_04_ao_2k.jpg',
-    },
+    textures: TEXTURES_URLS.FLOOR,
     repeatX: 5,
     repeatY: 4,
   });
@@ -1081,16 +1071,6 @@ export const addPlatformOnWall = async (
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
   const defaultProtrusion = 0.74;
-  const counterMat = await createRealisticMaterial(scene, {
-    textures: {
-      color: '/platform/Marble012_2K-JPG_Color.jpg',
-      normal: '/platform/Marble012_2K-JPG_NormalDX.jpg',
-      roughness: '/platform/Marble012_2K-JPG_Roughness.jpg',
-      ao: '/platform/Marble012_2K-JPG_NormalDX.jpg',
-    },
-    repeatX: 10,
-    repeatY: 1,
-  });
 
   const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters as any;
   const wallW = params.width as number;
@@ -1109,6 +1089,12 @@ export const addPlatformOnWall = async (
     position: { x: number; y: number; z: number };
     data: { rotation: { x: number; y: number; z: number }; wall: string };
   }> = [];
+
+  const counterMaterial = await createRealisticMaterial(scene, {
+    textures: TEXTURES_URLS.PLATFORM,
+    repeatX: 10,
+    repeatY: 1,
+  });
 
   function addStaticInvisibleBoxforPlatform(
     platformGroup: THREE.Group,
@@ -1137,18 +1123,6 @@ export const addPlatformOnWall = async (
 
     platformGroup.add(invisible);
   }
-
-  const counterMaterial = {
-      textures: {
-        color: '/platform/Marble012_2K-JPG_Color.jpg',
-        normal: '/wall/Marble012_2K-JPG_NormalGL.jpg',
-        roughness: '/wall/Marble012_2K-JPG_Roughness.jpg',
-        ao: '/wall/Marble012_2K-JPG_AmbientOcclusion.jpg',
-        // displacement: '/wall/Bricks101_4K-JPG_Displacement.jpg',
-      },
-      repeatX: 4,
-      repeatY: 4,
-    }
 
   if (wallMesh?.name === 'Center Wall') {
     const wallCenterX = wallMesh.position.x;
