@@ -672,7 +672,7 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     name: 'Left Wall',
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: -wallLength / 2 + wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
-    material: wallMatProps,
+    material: wallMaterial,
   };
   const leftwall = createMeshObject(leftWallPart);
 
@@ -681,7 +681,7 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     name: 'Right Wall',
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: wallLength / 2 - wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
-    material: wallMatProps,
+    material: wallMaterial,
   };
   const rightwall = createMeshObject(rightwallPart);
 
@@ -697,7 +697,7 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
 
   const cWallGroup = new THREE.Group();
   cWallGroup.name = 'cWallWithFloor';
-  cWallGroup.add(centerWall, leftwall, rightwall, floorPanel);
+  cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
   scene.add(cWallGroup);
 };
 
@@ -1138,6 +1138,18 @@ export const addPlatformOnWall = async (
     platformGroup.add(invisible);
   }
 
+  const counterMaterial = {
+      textures: {
+        color: '/platform/Marble012_2K-JPG_Color.jpg',
+        normal: '/wall/Marble012_2K-JPG_NormalGL.jpg',
+        roughness: '/wall/Marble012_2K-JPG_Roughness.jpg',
+        ao: '/wall/Marble012_2K-JPG_AmbientOcclusion.jpg',
+        // displacement: '/wall/Bricks101_4K-JPG_Displacement.jpg',
+      },
+      repeatX: 4,
+      repeatY: 4,
+    }
+
   if (wallMesh?.name === 'Center Wall') {
     const wallCenterX = wallMesh.position.x;
     const halfLengthX = wallW / 2;
@@ -1163,7 +1175,7 @@ export const addPlatformOnWall = async (
       name: 'Counter_CenterWall',
       dimensions: { width: lengthX, height: countertopThickness, depth: defaultProtrusion },
       position: { x: centerX, y: platformHeight + countertopThickness / 2, z: wallMesh.position.z + wallD / 2 + defaultProtrusion / 2 },
-      material: counterMatProps,
+      material: counterMaterial,
     };
     const topMesh = createMeshObject(topPart);
 
@@ -1210,7 +1222,7 @@ export const addPlatformOnWall = async (
       name: `Counter_${wallMesh.name.replace(' ', '')}`,
       dimensions: { width: defaultProtrusion, height: countertopThickness, depth: effectiveRun },
       position: { x: wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2), y: platformHeight + countertopThickness / 2, z: centerZ },
-      material: counterMatProps,
+      material: counterMaterial,
     };
     const topMesh = createMeshObject(topPart);
 
@@ -1470,7 +1482,7 @@ export const addHorizontalPlanksInsideBox = (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: {...shelf.position},
+            position: { ...shelf.position },
           } as any),
         );
       }
@@ -1585,7 +1597,7 @@ export const addDoorOnInvisibleBox = async (
             height: dims.height,
             depth: dims.depth,
           }),
-          position: {...doorGroup.position},
+          position: { ...doorGroup.position },
         } as any),
       );
     }
@@ -1816,7 +1828,7 @@ export const addDrawersOnInvisibleBox = async (
       const bottom = createMeshObject(bottomPart);
       scene.add(bottom);
       drawerGroup.attach(bottom);
-    } 
+    }
     // Drawer channels
     const railH = 0.02;
     const railT = 0.005;
@@ -1884,7 +1896,7 @@ export const addDrawersOnInvisibleBox = async (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: {...drawerGroup.position},
+            position: { ...drawerGroup.position },
           } as any),
         );
       }
@@ -2678,7 +2690,7 @@ function createDimensionForAxis({ group, mesh, box, scene, mainAxis, secondaryAx
     createDimensionLine(
       group,
       point1,
-      point2, 
+      point2,
       offsetDir,
       `${dist.toFixed(1)} mm`,
       { axis: mainAxis, side: 'max', ref: maxPos, targetUuid: mesh.uuid },
