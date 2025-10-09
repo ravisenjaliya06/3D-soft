@@ -1,5 +1,8 @@
 // @ts-nocheck
-import { TEXTURE_MEDIA, TEXTURE_NAME } from '@/components/3d/utils/constants';
+import {
+  TEXTURE_MEDIA,
+  TEXTURE_NAME,
+} from '@/components/3dmodel/handler/constant';
 import { store } from '@/components/3dmodel/store';
 import * as Three from 'three';
 import {

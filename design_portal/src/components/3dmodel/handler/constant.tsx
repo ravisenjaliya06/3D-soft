@@ -37,3 +37,21 @@ export const textureChoices = {
   WOOD6: 'wood_6',
   WOOD7: 'wood_7',
 };
+
+export const USER_PROFILE_DEFAULT_MEDIA = '/profile/user.png';
+
+export const TEXTURE_NAME = {
+  WOOD: 'wood',
+  LIGHT_WOOD: 'light_wood',
+  DARK_BROWN: 'dark_brown',
+  OFF_WHITE: 'off_white',
+  GROSSY_BROWN: 'grossy_brown',
+  LIGHT_BROWN: 'light_brown',
+  WOOD_1: 'wood_1',
+  WOOD_2: 'wood_2',
+  WOOD_3: 'wood_3',
+  WOOD_4: 'wood_4',
+  WOOD_5: 'wood_5',
+  WOOD_6: 'wood_6',
+  WOOD_7: 'wood_7',
+};
