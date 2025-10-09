@@ -17,7 +17,7 @@ const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [subMenu, setSubMenu] = useState<string | null>('basic');
+  const [subMenu, setSubMenu] = useState<string | null>('basic');                                                                                            
   const [doorPosition, setDoorPosition] = useState('None');
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
   const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
@@ -485,6 +485,7 @@ const Sidebar: React.FC = () => {
   const toggleTextureList = () => {
     setIsTextureListOpen((prev) => !prev);
   };
+
   // Proportionally rescale and reposition children of a container when its geometry changes
   function rescaleChildrenForContainer(container: THREE.Mesh) {
     const params = (container.geometry as THREE.BoxGeometry).parameters as any;
