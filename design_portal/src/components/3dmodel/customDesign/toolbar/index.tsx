@@ -17,7 +17,7 @@ import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
 import exlight from '@/assets/toolbar/exlight.svg';
 
 // catalog modal photo
-import { TEXTURE_MEDIA } from '@/components/3d/utils/constants';
+import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 
 // parts
 import close from '@/assets/catalog/close.svg';

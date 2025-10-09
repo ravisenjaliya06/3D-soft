@@ -198,47 +198,39 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     design3D.renderer.render(design3D.scene, design3D.camera);
   }, [design3D, currentUnitType]);
 
-  // Handle alignment mode
-  useEffect(() => {
-    if (!design3D) return;
+useEffect(() => {
+  if (!design3D) return;
 
-    if (isAlignmentActive) {
-      showAlignmentDistances();
-    } else {
-      alignmentIndicatorsRef.current.forEach((indicator) => {
+  const clearAlignmentIndicators = () => {
+    alignmentIndicatorsRef.current.forEach((indicator) => {
+      if (design3D) {
         design3D.scene.remove(indicator);
-        if (indicator instanceof THREE.Line && indicator.geometry) {
-          indicator.geometry.dispose();
-        }
-        if (indicator instanceof THREE.Sprite && indicator.material) {
-          if (indicator.material.map) indicator.material.map.dispose();
-          indicator.material.dispose();
-        }
-      });
-      alignmentIndicatorsRef.current = [];
-    }
+      }
 
-    return () => {
-      alignmentIndicatorsRef.current.forEach((indicator) => {
-        if (design3D) {
-          design3D.scene.remove(indicator);
-        }
-        if (indicator instanceof THREE.Line && indicator.geometry) {
-          indicator.geometry.dispose();
-        }
-        if (indicator instanceof THREE.Sprite && indicator.material) {
-          if (indicator.material.map) indicator.material.map.dispose();
-          indicator.material.dispose();
-        }
-      });
-      alignmentIndicatorsRef.current = [];
-    };
-  }, [design3D, isAlignmentActive, showAlignmentDistances]);
+      if (indicator instanceof THREE.Line && indicator.geometry) {
+        indicator.geometry.dispose();
+      }
 
-  // This must be inside the component
-  //   debounce(showAlignmentDistances, 100),
-  //   [showAlignmentDistances],
-  // );
+      if (indicator instanceof THREE.Sprite && indicator.material) {
+        if (indicator.material.map) indicator.material.map.dispose();
+        indicator.material.dispose();
+      }
+    });
+
+    alignmentIndicatorsRef.current = [];
+  };
+
+  if (isAlignmentActive) {
+    showAlignmentDistances();
+  } else {
+    clearAlignmentIndicators();
+  }
+
+  return () => {
+    clearAlignmentIndicators();
+  };
+}, [design3D, isAlignmentActive, showAlignmentDistances]);
+
 
   useEffect(() => {
     if (mountRef.current && !design3D) {
@@ -255,11 +247,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           camera: threeDView.camera as THREE.PerspectiveCamera,
           renderer: threeDView.renderer,
           movableObjects: [],
-          // onDragUpdate: (object, position) => {
-          //   if (isAlignmentActive) {
-          //     debouncedShowAlignmentDistances(); // Update alignment dimensions during drag
-          //   }
-          // },
         });
         setMoveHandler(handler);
 
@@ -308,7 +295,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     setDesign3D,
     dispatch,
     isAlignmentActive,
-    // debouncedShowAlignmentDistances,
   ]);
 
   useEffect(() => {
@@ -347,7 +333,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.position.copy(position);
-    sprite.scale.set(0.15, 0.06, 1); // Smaller scale to reduce overlap
+    sprite.scale.set(0.15, 0.06, 1);
     return sprite;
   };
 
@@ -366,7 +352,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
   // Calculate and display distances for alignment
 
-  useEffect(() => {
+   useEffect(() => {
     if (!design3D) return;
     const toggleOutline = () => {
       design3D.scene.traverse((object) => {
@@ -523,12 +509,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                   } else if (isVerticalPlank || isHorizontalPlank) {
                     labelPosition.set(center.x, center.y, box.max.z + 0.05);
                   }
-
-                  // const sprite = createTextSprite(labelText, labelPosition);
-                  // if (sprite) {
-                  //   design3D.scene.add(sprite);
-                  //   labels.push(sprite);
-                  // }
 
                   if (child.geometry) {
                     const edges = new THREE.EdgesGeometry(child.geometry);
