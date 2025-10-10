@@ -144,7 +144,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     let platformData: any[] = [];
     if (targetWall) {
-      platformData = addPlatformOnWall(scene, targetWall, counterTexture);
+      platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
     }
     // Add platform data to API payload
     for (const pdata of platformData) {

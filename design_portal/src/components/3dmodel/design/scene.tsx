@@ -3,6 +3,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { removeExistingLines } from '.';
 import { initializeMoveHandler } from '../handler/items';
 import { store } from '../store';
@@ -14,6 +18,9 @@ import {
 } from '../store/dataSlice';
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
+import { createRealisticMaterial } from './loadRealisticScene';
+import { TEXTURES_URLS } from '../constants';
+import { object } from 'prop-types';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -31,7 +38,7 @@ export const init3DDesign = async (
 ): Promise<ThreeDView> => {
   const scene = new THREE.Scene();
   const perspectiveCamera = new THREE.PerspectiveCamera(
-    80,
+    50,
     window.innerWidth / window.innerHeight,
     0.1,
     1000,
@@ -66,11 +73,9 @@ export const init3DDesign = async (
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   mount.appendChild(renderer.domElement);
 
   initializeMoveHandler({ scene, camera, renderer });
@@ -82,18 +87,24 @@ export const init3DDesign = async (
   scene.add(grid);
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  ambientLight.intensity = 0.8;
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  directionalLight.position.set(10, 10, 10);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  directionalLight.position.set(10, 15, 10);
+  directionalLight.intensity = 0.8;
+  directionalLight.castShadow = true;
+  directionalLight.shadow.mapSize.width = 2048;
+  directionalLight.shadow.mapSize.height = 2048;
   scene.add(directionalLight);
 
   // Orbit Controls
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
+  controls.enableDamping = false;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;
+  controls.enablePan = true;
   controls.target.set(0, 0, 0);
 
   const transformControls = new TransformControls(camera, renderer.domElement);
@@ -110,25 +121,6 @@ export const init3DDesign = async (
 
   scene.add(daySky);
 
-  const textureLoader = new THREE.TextureLoader();
-  const wallTexture = textureLoader.load('/WallTexture.jpg');
-  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-  wallTexture.repeat.set(1, 1);
-
-  const floorTexture = textureLoader.load('/img2_6.jpg');
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(2, 2);
-
-  const sunLight = new THREE.DirectionalLight(0xffffff, 3);
-  sunLight.position.set(10, 15, 10);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.radius = 4;
-  sunLight.shadow.camera.near = 1;
-  sunLight.shadow.camera.far = 50;
-  scene.add(sunLight);
-
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
   scene.add(hemiLight);
 
@@ -137,19 +129,15 @@ export const init3DDesign = async (
       scene.remove(daySky);
       scene.add(nightSky);
       scene.add(stars);
-      ambientLight.intensity = 0.5;
-      directionalLight.intensity = 0.2;
     } else {
       scene.remove(nightSky);
       scene.remove(stars);
       scene.add(daySky);
-      ambientLight.intensity = 1.5;
-      directionalLight.intensity = 1;
     }
     isDay = !isDay;
   };
 
-  addCTypeWallWithFloor(scene, wallTexture, floorTexture);
+  // Walls will be added after design objects load to ensure correct ordering
 
   const loadSinkModel = async (url: string) => {
     let counterMesh = scene.getObjectByName(
@@ -438,10 +426,25 @@ export const init3DDesign = async (
     toggleZoomMode(false);
   };
 
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.1,
+    0.1,
+    0.1,
+  );
+  composer.addPass(bloomPass);
+
+  const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
+  composer.addPass(smaaPass);
+
   const animate = () => {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
+    composer.render();
   };
   animate();
 
@@ -626,50 +629,56 @@ export function createMeshObject(part: any, setShadows: boolean = true, userData
   mesh.userData = { ...mesh.userData, ...userData };
   return mesh;
 }
-
-const addCTypeWallWithFloor = (
-  scene: THREE.Scene,
-  wallTexture: THREE.Texture,
-  floorTexture: THREE.Texture,
-) => {
+export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
+  const wallMaterial = await createRealisticMaterial(scene, {
+    textures: TEXTURES_URLS.WALL,
+    repeatX: 4,
+    repeatY: 4,
+  });
 
-  const wallMatProps = { map: wallTexture, side: THREE.DoubleSide };
-  const floorMatProps = { map: floorTexture, side: THREE.DoubleSide };
-
-  // Center wall part
+  const floorMaterial = await createRealisticMaterial(scene, {
+    textures: TEXTURES_URLS.FLOOR,
+    repeatX: 5,
+    repeatY: 4,
+  });
+  // ---------- Panels ----------
+  // Back wall
   const centerWallPart = {
     name: 'Center Wall',
     dimensions: { width: wallLength - 2 * wallThickness, height: wallHeight, depth: wallThickness },
     position: { x: 0, y: wallHeight / 2, z: 0 },
-    material: wallMatProps,
+    material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
   };
-  const centerWall = createMeshObject(centerWallPart);
+  const centerPanel = createMeshObject(centerWallPart, false, centerWallPart.userData);
 
   // Left wall part
   const leftWallPart = {
     name: 'Left Wall',
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: -wallLength / 2 + wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
-    material: wallMatProps,
+    material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
   };
-  const leftwall = createMeshObject(leftWallPart);
+  const leftwall = createMeshObject(leftWallPart, false, leftWallPart.userData);
 
   // Right wall part
   const rightwallPart = {
     name: 'Right Wall',
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: wallLength / 2 - wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
-    material: wallMatProps,
+    material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
   };
-  const rightwall = createMeshObject(rightwallPart);
+  const rightwall = createMeshObject(rightwallPart, false, rightwallPart.userData);
 
   // Floor (using PlaneGeometry)
   const floorPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(wallLength, wallLength),
-    new THREE.MeshStandardMaterial(floorMatProps),
+    new THREE.PlaneGeometry(wallLength, wallLength), // square floor
+    floorMaterial,
   );
   floorPanel.rotation.x = -Math.PI / 2;
   floorPanel.castShadow = true;
@@ -678,7 +687,7 @@ const addCTypeWallWithFloor = (
 
   const cWallGroup = new THREE.Group();
   cWallGroup.name = 'cWallWithFloor';
-  cWallGroup.add(centerWall, leftwall, rightwall, floorPanel);
+  cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
   scene.add(cWallGroup);
 };
 
@@ -1048,7 +1057,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
   scene.add(container);
 };
 
-export const addPlatformOnWall = (
+export const addPlatformOnWall = async (
   scene: THREE.Scene,
   wallMesh: THREE.Mesh | null,
   counterTexture: THREE.Texture,
@@ -1062,7 +1071,6 @@ export const addPlatformOnWall = (
   const platformHeight = 0.7;
   const countertopThickness = 0.05;
   const defaultProtrusion = 0.74;
-  const counterMatProps = { map: counterTexture, roughness: 0.4, metalness: 0.0, side: THREE.DoubleSide };
 
   const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters as any;
   const wallW = params.width as number;
@@ -1081,6 +1089,13 @@ export const addPlatformOnWall = (
     position: { x: number; y: number; z: number };
     data: { rotation: { x: number; y: number; z: number }; wall: string };
   }> = [];
+
+  const counterMaterial = await createRealisticMaterial(scene, {
+    textures: TEXTURES_URLS.PLATFORM,
+    repeatX: 10,
+    repeatY: 1,
+    rotation: wallMesh?.name === 'Left Wall' || wallMesh?.name === 'Right Wall' ? Math.PI / 2 : null,
+  });
 
   function addStaticInvisibleBoxforPlatform(
     platformGroup: THREE.Group,
@@ -1102,11 +1117,39 @@ export const addPlatformOnWall = (
       },
       `invisibleBox_platform_${nameSuffix}`,
       {
+        objectId: `invisibleBox_platform_${nameSuffix}`,
         type: 'INVISIBLE_COMPARTMENT',
         dimensions: { width: dimensions.width, height: invisibleBoxHeight, depth: dimensions.depth },
       },
     );
 
+    platformGroup.add(invisible);
+  }
+
+  function addAboveInvisibleBoxForPlatform(
+    platformGroup: THREE.Group,
+    topMesh: THREE.Mesh,
+    wallMesh: THREE.Mesh,
+    countertopThickness: number,
+    dimensions: { width: number; depth: number },
+    nameSuffix: string,
+  ) {
+    const wallParams = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
+    const wallHeight = Number(wallParams.height || 0);
+    const topY = topMesh.position.y + countertopThickness / 2;
+    const computedHeight = Math.max(wallHeight - topY, 0.02);
+    const invHeight = computedHeight;
+    const centerY = topMesh.position.y + countertopThickness / 2 + invHeight / 2;
+    const invisible = createInvisibleBox(
+      { width: dimensions.width, height: invHeight, depth: dimensions.depth },
+      { x: topMesh.position.x, y: centerY, z: topMesh.position.z },
+      `invisibleBox_platform_above_${nameSuffix}`,
+      {
+        objectId: `invisibleBox_platform_above_${nameSuffix}`,
+        type: 'INVISIBLE_COMPARTMENT',
+        dimensions: { width: dimensions.width, height: invHeight, depth: dimensions.depth },
+      },
+    );
     platformGroup.add(invisible);
   }
 
@@ -1135,7 +1178,7 @@ export const addPlatformOnWall = (
       name: 'Counter_CenterWall',
       dimensions: { width: lengthX, height: countertopThickness, depth: defaultProtrusion },
       position: { x: centerX, y: platformHeight + countertopThickness / 2, z: wallMesh.position.z + wallD / 2 + defaultProtrusion / 2 },
-      material: counterMatProps,
+      material: counterMaterial,
     };
     const topMesh = createMeshObject(topPart);
 
@@ -1162,6 +1205,16 @@ export const addPlatformOnWall = (
       { width: lengthX, depth: defaultProtrusion },
       'center',
     );
+
+    // Add above-counter invisible box
+    addAboveInvisibleBoxForPlatform(
+      platformGroup,
+      topMesh,
+      wallMesh as THREE.Mesh,
+      countertopThickness,
+      { width: lengthX, depth: defaultProtrusion },
+      'center',
+    );
   } else if (wallMesh?.name === 'Left Wall' || wallMesh?.name === 'Right Wall') {
     const wallCenterZ = wallMesh.position.z;
     const halfRunZ = wallD / 2;
@@ -1182,7 +1235,7 @@ export const addPlatformOnWall = (
       name: `Counter_${wallMesh.name.replace(' ', '')}`,
       dimensions: { width: defaultProtrusion, height: countertopThickness, depth: effectiveRun },
       position: { x: wallMesh.position.x + dir * (wallW / 2 + defaultProtrusion / 2), y: platformHeight + countertopThickness / 2, z: centerZ },
-      material: counterMatProps,
+      material: counterMaterial,
     };
     const topMesh = createMeshObject(topPart);
 
@@ -1205,6 +1258,16 @@ export const addPlatformOnWall = (
       platformGroup,
       topMesh,
       floorY,
+      countertopThickness,
+      { width: defaultProtrusion, depth: effectiveRun },
+      wallTag,
+    );
+
+    // Add above-counter invisible box
+    addAboveInvisibleBoxForPlatform(
+      platformGroup,
+      topMesh,
+      wallMesh as THREE.Mesh,
       countertopThickness,
       { width: defaultProtrusion, depth: effectiveRun },
       wallTag,
@@ -1351,7 +1414,7 @@ export const addVerticalPlanksToBox = (
       compDimensions,
       compPosition,
       `invisibleBox_compartment_${i}_for_${boxMesh.name}`,
-      { type: 'INVISIBLE_COMPARTMENT', dimensions: compDimensions },
+      { objectId: `invisibleBox_compartment_${i}_for_${boxMesh.name}`, type: 'INVISIBLE_COMPARTMENT', dimensions: compDimensions },
     );
     parent.add(invisiblebox);
   }
@@ -1442,7 +1505,7 @@ export const addHorizontalPlanksInsideBox = (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: {...shelf.position},
+            position: { ...shelf.position },
           } as any),
         );
       }
@@ -1557,7 +1620,7 @@ export const addDoorOnInvisibleBox = async (
             height: dims.height,
             depth: dims.depth,
           }),
-          position: {...doorGroup.position},
+          position: { ...doorGroup.position },
         } as any),
       );
     }
@@ -1788,7 +1851,7 @@ export const addDrawersOnInvisibleBox = async (
       const bottom = createMeshObject(bottomPart);
       scene.add(bottom);
       drawerGroup.attach(bottom);
-    } 
+    }
     // Drawer channels
     const railH = 0.02;
     const railT = 0.005;
@@ -1856,14 +1919,13 @@ export const addDrawersOnInvisibleBox = async (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: {...drawerGroup.position},
+            position: { ...drawerGroup.position },
           } as any),
         );
       }
     }
   }
 };
-
 
 export const addUpperCabinetsAbovePlatform = async (
   scene: THREE.Scene,
@@ -2650,7 +2712,7 @@ function createDimensionForAxis({ group, mesh, box, scene, mainAxis, secondaryAx
     createDimensionLine(
       group,
       point1,
-      point2, 
+      point2,
       offsetDir,
       `${dist.toFixed(1)} mm`,
       { axis: mainAxis, side: 'max', ref: maxPos, targetUuid: mesh.uuid },

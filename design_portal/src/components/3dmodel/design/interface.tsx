@@ -32,6 +32,7 @@ export interface ThreeDView {
 }
 
 export const itemType = {
+  WALL: 'WALL',
   CUPBOARD: 'CUPBOARD',
   DOOR: 'DOOR',
   DRAWER: 'DRAWER',

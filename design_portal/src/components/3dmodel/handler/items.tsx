@@ -809,34 +809,6 @@ async function loadDesignObjects(
           };
 
           createdObjects.push(object3D);
-
-          // Now create child objects from design_catalog_items
-          // if (item.design_catalog_items && item.design_catalog_items.length > 0) {
-          //   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          //     console.log(`Creating ${item.design_catalog_items.length} child items for ${item.name}:`, item.design_catalog_items);
-          //   }
-          //   for (const childItem of item.design_catalog_items) {
-          //     try {
-          //       // Create child object based on type
-          //       const childObject3D = await createChildObjectFromCatalogItem(childItem, createdMesh, scene);
-          //       if (childObject3D) {
-          //         createdObjects.push(childObject3D);
-          //         object3D.child.push(childObject3D.id);
-          //         if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          //           console.log(`Successfully created child object: ${childItem.name} (${childItem.data?.catalog_type})`);
-          //         }
-          //       } else {
-          //         console.warn(`Failed to create child object: ${childItem.name} (${childItem.data?.catalog_type})`);
-          //       }
-          //     } catch (e) {
-          //       console.error('Failed to recreate child item on refresh', childItem, e);
-          //     }
-          //   }
-          // } else {
-          //   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          //     console.log(`No child items found for ${item.name}`);
-          //   }
-          // }
         } catch (e) {
           console.error('Failed to recreate main item on refresh', item, e);
         }
