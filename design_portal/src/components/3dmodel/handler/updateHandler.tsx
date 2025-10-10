@@ -573,70 +573,6 @@ export const updateObjectInScene = (
         }
       }
     });
-
-    // Regenerate invisible compartments when dimensions of a non-plank parent change
-    // try {
-    //   const isParentPlank =
-    //     selectedObject.name?.includes(PLANK.HORIZONTAL_PLANK) ||
-    //     selectedObject.name?.includes(PLANK.VERTICAL_PLANK);
-    //   if (!isParentPlank) {
-    //     const objectsToRemove: THREE.Object3D[] = [];
-    //     threeDObject.traverse((child) => {
-    //       if (child.name === 'invisibleBox') {
-    //         objectsToRemove.push(child);
-    //       }
-    //     });
-    //     objectsToRemove.forEach((obj) => {
-    //       threeDObject?.remove(obj);
-    //       if (obj instanceof THREE.Mesh) {
-    //         obj.geometry.dispose();
-    //         if (Array.isArray((obj as any).material)) {
-    //           (obj as any).material.forEach((m: any) => m.dispose?.());
-    //         } else if ((obj as any).material?.dispose) {
-    //           (obj as any).material.dispose();
-    //         }
-    //       }
-    //     });
-
-    //     const allObjectsState = store.getState().data.objects;
-    //     const plankDataList: PlankDataItem[] = allObjectsState
-    //       .filter((obj) => obj.parent === selectedObject.id && itemCheck(obj))
-    //       .map((obj) => ({
-    //         id: obj.id,
-    //         name: obj.name,
-    //         width: obj.width,
-    //         height: obj.height,
-    //         depth: obj.depth,
-    //         position: obj.position,
-    //       }));
-
-    //     const compartments = generateCompartmentsFromPlanks(plankDataList);
-    //     compartments.forEach((compartment, index) => {
-    //       const geometry = new THREE.BoxGeometry(
-    //         compartment.width,
-    //         compartment.height,
-    //         compartment.depth,
-    //       );
-    //       const material = new THREE.MeshBasicMaterial({
-    //         transparent: true,
-    //         opacity: 0,
-    //       });
-    //       const box = new THREE.Mesh(geometry, material);
-    //       box.position.set(
-    //         compartment.position.x,
-    //         compartment.position.y,
-    //         compartment.position.z,
-    //       );
-    //       box.name = 'invisibleBox';
-    //       box.userData = {
-    //         objectId: `invisibleBox_${index}_${selectedObject.id}`,
-    //       };
-    //       threeDObject?.add(box);
-    //     });
-    //   }
-    // } catch (e) {
-    //   console.error('Error regenerating invisible compartments:', e);
-    // }
   }
 
   // Track position changes
@@ -1077,30 +1013,6 @@ export const updateObjectInScene = (
     objectsToRemove.forEach((obj) => {
       threeDObject?.remove(obj);
     });
-
-    // const compartments = generateCompartmentsFromPlanks(plankDataList);
-    // compartments.forEach((compartment, index) => {
-    //   const geometry = new THREE.BoxGeometry(
-    //     compartment.width,
-    //     compartment.height,
-    //     compartment.depth,
-    //   );
-    //   const material = new THREE.MeshBasicMaterial({
-    //     transparent: true,
-    //     opacity: 0,
-    //   });
-    //   const box = new THREE.Mesh(geometry, material);
-    //   box.position.set(
-    //     compartment.position.x,
-    //     compartment.position.y,
-    //     compartment.position.z,
-    //   );
-    //   box.name = 'invisibleBox';
-    //   box.userData = {
-    //     objectId: `invisibleBox_${index}_${selectedObject.id}`,
-    //   };
-    //   threeDObject?.add(box);
-    // });
   }
 
   updateObjectInDatabase(
