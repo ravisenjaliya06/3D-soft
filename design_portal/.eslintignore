@@ -26,3 +26,4 @@ src/components/material/utils/materialMapper.ts
 src/components/3dmodel/design/scene.tsx
 src/components/3dmodel/sidebar/sidebar.tsx
 src/components/3dmodel/sidebar/MaterialChangePopup.tsx
+src/components/3dmodel/design/items.tsx

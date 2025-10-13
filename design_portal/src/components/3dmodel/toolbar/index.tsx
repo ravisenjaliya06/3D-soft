@@ -37,6 +37,7 @@ import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
 import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
 import React from 'react';
+import { addDynamicObject } from '../design/items';
 import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
@@ -397,30 +398,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
           ];
         } else {
-          // Simple cabinet defaults already set
-          const thickness = 0.018;
-          parts = [
-            { name: 'LEFT_PLANK', width: thickness, height, depth },
-            { name: 'RIGHT_PLANK', width: thickness, height, depth },
-            {
-              name: 'BOTTOM_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: thickness,
-              depth,
-            },
-            {
-              name: 'TOP_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: thickness,
-              depth,
-            },
-            {
-              name: 'BACK_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: Math.max(height - thickness * 2, 0.02),
-              depth: thickness,
-            },
-          ];
+          addDynamicObject(scene, item);
         }
 
         // Floor Y

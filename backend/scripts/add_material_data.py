@@ -1431,15 +1431,19 @@ CATALOG = [
         "type": "Cabinet",
         "name": "Simple Cabinet",
         "description": "Simple Cabinet",
+        "width": 1500,
+        "height": 2000,
+        "depth": 400,
+        "thickness": 18,
         "catalog_rules": [
             {
                 "name": "Panel",
                 "rules_parts": [
-                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply", "width": 18, "height": 2000, "depth": 400, "position": { "x": 741, "y": 0, "z": 0 }},
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply", "width": 18, "height": 2000, "depth": 400, "position": { "x": -741, "y": 0, "z": 0 }},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 18, "depth": 400, "position": { "x": 0, "y": 991, "z": 0 }},
+                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 18, "depth": 400, "position": { "x": 0, "y": -991, "z": 0 }},
+                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 1964, "depth": 18, "position": { "x": 0, "y": 0, "z": -191 }},
                 ],
             },
             {
@@ -1742,7 +1746,16 @@ def create_catalog_data() -> None:
                 type=catalog_data["type"],
                 name=catalog_data["name"],
                 design=None,
-                defaults={"description": catalog_data.get("description", "")},
+                defaults={
+                    "width": catalog_data.get("width"),
+                    "height": catalog_data.get("height"),
+                    "length": catalog_data.get("length"),
+                    "depth": catalog_data.get("depth"),
+                    "position": catalog_data.get("position"),
+                    "thickness": catalog_data.get("thickness"),
+                    "additional_data": catalog_data.get("additional_data"),
+                    "description": catalog_data.get("description", "")
+                },
             )
 
             for rule_data in catalog_data.get("catalog_rules", []):
@@ -1760,7 +1773,16 @@ def create_catalog_data() -> None:
                     CatalogRuleParts.objects.update_or_create(
                         catalog_rule=catalog_rule,
                         name=part_data["name"],
-                        defaults={"material": material_obj},
+                        defaults={
+                            "width": part_data.get("width"),
+                            "height": part_data.get("height"),
+                            "length": part_data.get("length"),
+                            "depth": part_data.get("depth"),
+                            "position": part_data.get("position"),
+                            "handle_position": part_data.get("handle_position"),
+                            "thickness": part_data.get("thickness"),
+                            "material": material_obj
+                        },
                     )
 
 

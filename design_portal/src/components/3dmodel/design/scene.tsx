@@ -543,7 +543,7 @@ const createSkySet = (): {
 
   return { daySky, nightSky, stars };
 };
-// Helper function to get floor Y position from scene
+
 function getFloorY(scene: THREE.Scene): number {
   let floorY = 0;
   const cWallGroup = scene.getObjectByName(
@@ -558,12 +558,11 @@ function getFloorY(scene: THREE.Scene): number {
   return floorY;
 }
 
-// Helper function to get placement Z against center wall
 function getPlacementZAgainstCenterWall(
   scene: THREE.Scene,
   depth: number,
 ): number {
-  let placeZ = depth / 2 + 0.02; // fallback
+  let placeZ = depth / 2 + 0.02;
   const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
   if (centerWall) {
     const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;

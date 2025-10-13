@@ -694,83 +694,83 @@ async function loadDesignObjects(
             } else if (nameLower.includes('table')) {
               addSimpleTable(scene);
               createdMesh = scene.getObjectByName('SimpleTable');
-            } else if (nameLower.includes('plank')) {
-              // Create plank directly from API data
-              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                console.log(
-                  `Creating plank directly from API data: ${item.name}, position:`,
-                  item.data?.position,
-                  'dimensions:',
-                  item.data?.width,
-                  'x',
-                  item.data?.height,
-                  'x',
-                  item.data?.depth,
-                );
-              }
-
-              const plankMaterial = new THREE.MeshStandardMaterial({
-                color: 0xd9c7b8,
-                roughness: 0.7,
-              });
-
-              let plankMesh: THREE.Mesh;
-              if (nameLower.includes('vertical')) {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    0.018, // thickness
-                    item?.height || 0.8,
-                    item?.depth || 0.4,
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `VerticalPlank_${item.id}`;
-              } else if (nameLower.includes('horizontal')) {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    item?.width || 0.4,
-                    0.018, // thickness
-                    item?.depth || 0.4,
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `HorizontalPlank_${item.id}`;
-              } else {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    item?.width || 0.4,
-                    item?.height || 0.8,
-                    0.018, // thickness
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `Plank_${item.id}`;
-              }
-
-              // Set position from API data
-              if (item?.position) {
-                plankMesh.position.set(
-                  item.position.x,
-                  item.position.y,
-                  item.position.z,
-                );
-              }
-
-              plankMesh.userData.objectId = item.id;
-              plankMesh.userData.apiData = item;
-              scene.add(plankMesh);
-              createdMesh = plankMesh;
-
-              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                console.log(
-                  `Successfully created plank mesh: ${plankMesh.name} at position:`,
-                  plankMesh.position,
-                );
-              }
-            } else {
-              addSimpleCabinet(scene);
-              createdMesh = scene.getObjectByName('SimpleCabinet');
             }
+          } else if (item.type === 'Plank') {
+            // Create plank directly from API data
+            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+              console.log(
+                `Creating plank directly from API data: ${item.name}, position:`,
+                item.data?.position,
+                'dimensions:',
+                item.data?.width,
+                'x',
+                item.data?.height,
+                'x',
+                item.data?.depth,
+              );
+            }
+
+            const plankMaterial = new THREE.MeshStandardMaterial({
+              color: 0xd9c7b8,
+              roughness: 0.7,
+            });
+
+            let plankMesh: THREE.Mesh;
+            if (nameLower.includes('vertical')) {
+              plankMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                  0.018, // thickness
+                  item?.height || 0.8,
+                  item?.depth || 0.4,
+                ),
+                plankMaterial,
+              );
+              plankMesh.name = `VerticalPlank_${item.id}`;
+            } else if (nameLower.includes('horizontal')) {
+              plankMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                  item?.width || 0.4,
+                  0.018, // thickness
+                  item?.depth || 0.4,
+                ),
+                plankMaterial,
+              );
+              plankMesh.name = `HorizontalPlank_${item.id}`;
+            } else {
+              plankMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                  item?.width || 0.4,
+                  item?.height || 0.8,
+                  0.018, // thickness
+                ),
+                plankMaterial,
+              );
+              plankMesh.name = `Plank_${item.id}`;
+            }
+
+            // Set position from API data
+            if (item?.position) {
+              plankMesh.position.set(
+                item.position.x,
+                item.position.y,
+                item.position.z,
+              );
+            }
+
+            plankMesh.userData.objectId = item.id;
+            plankMesh.userData.apiData = item;
+            scene.add(plankMesh);
+            createdMesh = plankMesh;
+
+            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+              console.log(
+                `Successfully created plank mesh: ${plankMesh.name} at position:`,
+                plankMesh.position,
+              );
+            }
+          } else {
+            addSimpleCabinet(scene);
+            createdMesh = scene.getObjectByName('SimpleCabinet');
           }
 
           // Tag the created mesh with object ID and set position

@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+# App imports
 from design.models import Design
 
 # Local imports
@@ -781,6 +782,7 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "width",
             "length",
             "depth",
+            "thickness",
             "position",
             "handle_position",
         ]
@@ -803,9 +805,7 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     design = serializers.PrimaryKeyRelatedField(
-        queryset=Design.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=Design.objects.all(), required=False, allow_null=True
     )
     catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
 
@@ -822,6 +822,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             "width",
             "length",
             "depth",
+            "thickness",
             "position",
             "additional_data",
         ]

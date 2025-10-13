@@ -3,8 +3,18 @@
 from design.models import Design
 
 # Local imports
-from .models import Catalog, CatalogRuleParts, CatalogRules, Material, MaterialFinish, MaterialFinishType, MaterialTexture, MountHoles, MountPlateHoles, Properties
-
+from .models import (
+    Catalog,
+    CatalogRuleParts,
+    CatalogRules,
+    Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
+    MountHoles,
+    MountPlateHoles,
+    Properties,
+)
 
 # def create_duplicate_catalog(design_id: str, catalog_id: str) -> None:
 #     design = Design.objects.get(id=design_id)
@@ -46,8 +56,11 @@ from .models import Catalog, CatalogRuleParts, CatalogRules, Material, MaterialF
 #                     )
 #                     duplicate_catalog_rule_parts.save()
 
+
 #     return duplicate_catalog
-def create_duplicate_catalog(design_id: str, catalog_id: str, extra_data: dict = None) -> Catalog:
+def create_duplicate_catalog(
+    design_id: str, catalog_id: str, extra_data: dict = None
+) -> Catalog:
     design = Design.objects.get(id=design_id)
     catalog = Catalog.objects.get(id=catalog_id)
 
@@ -68,8 +81,7 @@ def create_duplicate_catalog(design_id: str, catalog_id: str, extra_data: dict =
 
     for rule in catalog.catalog_rule.all():
         duplicate_rule = CatalogRules.objects.create(
-            catalog=duplicate_catalog,
-            name=f"{rule.name} Copy"
+            catalog=duplicate_catalog, name=f"{rule.name} Copy"
         )
 
         for part in rule.catalog_rule_parts.all():
@@ -132,6 +144,7 @@ def duplicate_material(material: Material) -> Material:
 
 def duplicate_properties(prop: Properties, material_copy: Material) -> Properties:
     """Duplicate Properties object with mount holes + plate holes"""
+
     # First duplicate related mount holes (if exist)
     def clone_hole(hole: MountHoles) -> MountHoles | None:
         if hole:
