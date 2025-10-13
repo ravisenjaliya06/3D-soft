@@ -889,13 +889,6 @@ class CatalogSerializer(serializers.ModelSerializer):
                 for field in ["height", "width", "length", "depth", "position", "handle_position"]:
                     if field in part_data and part_data[field] is not None:
                         setattr(matching_part, field, part_data[field])
-
-                material_data = part_data.get("material")
-                if material_data and isinstance(material_data, dict):
-                    matching_part.material_id = material_data.get("id")
-
-                matching_part.save()
-
         return new_catalog
 
     def update(
