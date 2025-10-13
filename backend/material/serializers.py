@@ -793,7 +793,7 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
 
 class CatalogRuleSerializer(serializers.ModelSerializer):
     rule_parts = CatalogRulePartSerializer(
-        many=True, read_only=True, source="catalog_rule_parts"
+        many=True, required=False, source="catalog_rule_parts"
     )
 
     class Meta:
@@ -807,7 +807,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+    catalog_rule = CatalogRuleSerializer(many=True, required=False)
 
     class Meta:
         model = Catalog
@@ -828,10 +828,13 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
+        
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         if design_id and catalog_id:
             return create_duplicate_catalog(design_id, catalog_id, validated_data)
+
         new_catalog = Catalog.objects.create(**validated_data)
 
         template_catalog = Catalog.objects.filter(
@@ -849,7 +852,49 @@ class CatalogSerializer(serializers.ModelSerializer):
                         catalog_rule=new_rule,
                         name=part.name,
                         material=part.material,
+                        height=part.height,
+                        width=part.width,
+                        length=part.length,
+                        depth=part.depth,
+                        position=part.position,
+                        handle_position=part.handle_position,
                     )
+
+        for rule_data in catalog_rules_data:
+            if not rule_data.get("name"):
+                continue
+
+            matching_rule = CatalogRules.objects.filter(
+                catalog=new_catalog,
+                name=rule_data.get("name")
+            ).first()
+
+            if not matching_rule:
+                continue
+            
+            parts_data = rule_data.get("rule_parts") or rule_data.get("catalog_rule_parts") or []
+            for part_data in parts_data:
+                part_name = part_data.get("name")
+                if not part_name:
+                    continue
+
+                matching_part = CatalogRuleParts.objects.filter(
+                    catalog_rule=matching_rule,
+                    name=part_name
+                ).first()
+
+                if not matching_part:
+                    continue
+
+                for field in ["height", "width", "length", "depth", "position", "handle_position"]:
+                    if field in part_data and part_data[field] is not None:
+                        setattr(matching_part, field, part_data[field])
+
+                material_data = part_data.get("material")
+                if material_data and isinstance(material_data, dict):
+                    matching_part.material_id = material_data.get("id")
+
+                matching_part.save()
 
         return new_catalog
 
