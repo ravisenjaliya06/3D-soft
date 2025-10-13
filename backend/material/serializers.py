@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+# App imports
 from design.models import Design
 
 # Local imports
@@ -803,9 +804,7 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     design = serializers.PrimaryKeyRelatedField(
-        queryset=Design.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=Design.objects.all(), required=False, allow_null=True
     )
     catalog_rule = CatalogRuleSerializer(many=True, required=False)
 
@@ -829,7 +828,7 @@ class CatalogSerializer(serializers.ModelSerializer):
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
         catalog_rules_data = validated_data.pop("catalog_rule", [])
-        
+
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         if design_id and catalog_id:
@@ -865,13 +864,12 @@ class CatalogSerializer(serializers.ModelSerializer):
                 continue
 
             matching_rule = CatalogRules.objects.filter(
-                catalog=new_catalog,
-                name=rule_data.get("name")
+                catalog=new_catalog, name=rule_data.get("name")
             ).first()
 
             if not matching_rule:
                 continue
-            
+
             parts_data = rule_data.get("catalog_rule_parts") or []
             for part_data in parts_data:
                 part_name = part_data.get("name")
@@ -879,14 +877,20 @@ class CatalogSerializer(serializers.ModelSerializer):
                     continue
 
                 matching_part = CatalogRuleParts.objects.filter(
-                    catalog_rule=matching_rule,
-                    name=part_name
+                    catalog_rule=matching_rule, name=part_name
                 ).first()
 
                 if not matching_part:
                     continue
 
-                for field in ["height", "width", "length", "depth", "position", "handle_position"]:
+                for field in [
+                    "height",
+                    "width",
+                    "length",
+                    "depth",
+                    "position",
+                    "handle_position",
+                ]:
                     if field in part_data and part_data[field] is not None:
                         setattr(matching_part, field, part_data[field])
         return new_catalog

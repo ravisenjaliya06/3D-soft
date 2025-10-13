@@ -5,7 +5,7 @@ from pathlib import Path
 from .common import *  # noqa
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG=False
+DEBUG = False
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
