@@ -872,7 +872,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             if not matching_rule:
                 continue
             
-            parts_data = rule_data.get("rule_parts") or rule_data.get("catalog_rule_parts") or []
+            parts_data = rule_data.get("catalog_rule_parts") or []
             for part_data in parts_data:
                 part_name = part_data.get("name")
                 if not part_name:
