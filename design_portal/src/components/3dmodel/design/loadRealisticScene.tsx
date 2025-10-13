@@ -13,6 +13,7 @@ export interface RealisticMaterialOptions {
   };
   repeatX?: number;
   repeatY?: number;
+  rotation?: number | null;
 }
 
 /**
@@ -49,6 +50,7 @@ export async function createRealisticMaterial(
       textureLoader.load(path, (tex) => {
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set(repeatX, repeatY);
+        tex.rotation = options.rotation ? options.rotation : 0;
         resolve(tex);
       });
     });

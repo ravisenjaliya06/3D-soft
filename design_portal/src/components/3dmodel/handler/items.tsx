@@ -809,7 +809,6 @@ async function loadDesignObjects(
           };
 
           createdObjects.push(object3D);
-
         } catch (e) {
           console.error('Failed to recreate main item on refresh', item, e);
         }

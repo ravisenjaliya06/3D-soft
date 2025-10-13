@@ -24,6 +24,7 @@ import HelperTools from './HelperTools';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import {
+  addCTypeWallWithFloor,
   clearAllPlankDimensions,
   enablePlankDimensionEditing,
   init3DDesign,
@@ -54,24 +55,26 @@ export function removeExistingLines() {
 }
 
 export function createOutlineForObject(
-  obj: THREE.Object3D,
+  mesh: THREE.Mesh,
 ): THREE.LineSegments | null {
-  if (!obj) return null;
-  const box = new THREE.Box3().setFromObject(obj);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
+  if (!mesh.geometry) return null;
 
-  const geo = new THREE.EdgesGeometry(
-    new THREE.BoxGeometry(size.x, size.y, size.z),
-  );
-  const mat = new THREE.LineBasicMaterial({ color: 0xffff00 });
-  const outline = new THREE.LineSegments(geo, mat);
-  outline.name = `outline-${obj.id}`;
-  outline.position.copy(center);
-  outline.userData.isOutline = true;
-  return outline;
+  const edges = new THREE.EdgesGeometry(mesh.geometry);
+  const outlineMaterial = new THREE.LineBasicMaterial({
+    color: 0xffff00,
+    linewidth: 2,
+    depthTest: false,
+  });
+  const outlineLines = new THREE.LineSegments(edges, outlineMaterial);
+
+  outlineLines.position.copy(mesh.position);
+  outlineLines.rotation.copy(mesh.rotation);
+  outlineLines.scale.copy(mesh.scale);
+  outlineLines.name = `outline-${mesh.userData.objectId}`;
+  outlineLines.userData.isOutline = true;
+  outlineLines.userData.outlineFor = mesh.userData.objectId;
+
+  return outlineLines;
 }
 
 const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
@@ -198,39 +201,38 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     design3D.renderer.render(design3D.scene, design3D.camera);
   }, [design3D, currentUnitType]);
 
-useEffect(() => {
-  if (!design3D) return;
+  useEffect(() => {
+    if (!design3D) return;
 
-  const clearAlignmentIndicators = () => {
-    alignmentIndicatorsRef.current.forEach((indicator) => {
-      if (design3D) {
-        design3D.scene.remove(indicator);
-      }
+    const clearAlignmentIndicators = () => {
+      alignmentIndicatorsRef.current.forEach((indicator) => {
+        if (design3D) {
+          design3D.scene.remove(indicator);
+        }
 
-      if (indicator instanceof THREE.Line && indicator.geometry) {
-        indicator.geometry.dispose();
-      }
+        if (indicator instanceof THREE.Line && indicator.geometry) {
+          indicator.geometry.dispose();
+        }
 
-      if (indicator instanceof THREE.Sprite && indicator.material) {
-        if (indicator.material.map) indicator.material.map.dispose();
-        indicator.material.dispose();
-      }
-    });
+        if (indicator instanceof THREE.Sprite && indicator.material) {
+          if (indicator.material.map) indicator.material.map.dispose();
+          indicator.material.dispose();
+        }
+      });
 
-    alignmentIndicatorsRef.current = [];
-  };
+      alignmentIndicatorsRef.current = [];
+    };
 
-  if (isAlignmentActive) {
-    showAlignmentDistances();
-  } else {
-    clearAlignmentIndicators();
-  }
+    if (isAlignmentActive) {
+      showAlignmentDistances();
+    } else {
+      clearAlignmentIndicators();
+    }
 
-  return () => {
-    clearAlignmentIndicators();
-  };
-}, [design3D, isAlignmentActive, showAlignmentDistances]);
-
+    return () => {
+      clearAlignmentIndicators();
+    };
+  }, [design3D, isAlignmentActive, showAlignmentDistances]);
 
   useEffect(() => {
     if (mountRef.current && !design3D) {
@@ -250,6 +252,12 @@ useEffect(() => {
         });
         setMoveHandler(handler);
 
+        try {
+          await addCTypeWallWithFloor(threeDView.scene);
+          threeDView.renderer.render(threeDView.scene, threeDView.camera);
+        } catch (e) {
+          console.error('Failed to add walls after loading design:', e);
+        }
         const designId = gettingDesignID();
         if (designId) {
           try {
@@ -290,12 +298,7 @@ useEffect(() => {
         }
       };
     }
-  }, [
-    design3D,
-    setDesign3D,
-    dispatch,
-    isAlignmentActive,
-  ]);
+  }, [design3D, setDesign3D, dispatch, isAlignmentActive]);
 
   useEffect(() => {
     if (design3D && sceneFromState) {
@@ -352,7 +355,7 @@ useEffect(() => {
 
   // Calculate and display distances for alignment
 
-   useEffect(() => {
+  useEffect(() => {
     if (!design3D) return;
     const toggleOutline = () => {
       design3D.scene.traverse((object) => {
@@ -883,7 +886,7 @@ useEffect(() => {
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
-      newOutline = createOutlineForObject(hoveredMesh.parent);
+      newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
     } else if (
       hoveredMesh?.parent?.userData.objectId !== selectedChildObjectId &&
       (hoveredMesh?.parent?.userData.type === itemType.DRAWER ||
@@ -894,7 +897,7 @@ useEffect(() => {
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
-      newOutline = createOutlineForObject(hoveredMesh.parent);
+      newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
     } else {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
       setHelperTools(true);

@@ -20,6 +20,7 @@ import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
 import { TEXTURES_URLS } from '../constants';
+import { object } from 'prop-types';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -100,9 +101,10 @@ export const init3DDesign = async (
 
   // Orbit Controls
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
+  controls.enableDamping = false;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;
+  controls.enablePan = true;
   controls.target.set(0, 0, 0);
 
   const transformControls = new TransformControls(camera, renderer.domElement);
@@ -135,7 +137,7 @@ export const init3DDesign = async (
     isDay = !isDay;
   };
 
-  addCTypeWallWithFloor(scene);
+  // Walls will be added after design objects load to ensure correct ordering
 
   const loadSinkModel = async (url: string) => {
     let counterMesh = scene.getObjectByName(
@@ -627,7 +629,7 @@ export function createMeshObject(part: any, setShadows: boolean = true, userData
   mesh.userData = { ...mesh.userData, ...userData };
   return mesh;
 }
-const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
+export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
@@ -644,18 +646,14 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   });
   // ---------- Panels ----------
   // Back wall
-  const centerPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      wallLength - 2 * wallThickness,
-      wallHeight,
-      wallThickness,
-    ),
-    wallMaterial,
-  );
-  centerPanel.name = 'Center Wall';
-  centerPanel.castShadow = true;
-  centerPanel.receiveShadow = true;
-  centerPanel.position.set(0, wallHeight / 2, 0);
+  const centerWallPart = {
+    name: 'Center Wall',
+    dimensions: { width: wallLength - 2 * wallThickness, height: wallHeight, depth: wallThickness },
+    position: { x: 0, y: wallHeight / 2, z: 0 },
+    material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
+  };
+  const centerPanel = createMeshObject(centerWallPart, false, centerWallPart.userData);
 
   // Left wall part
   const leftWallPart = {
@@ -663,8 +661,9 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: -wallLength / 2 + wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
     material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
   };
-  const leftwall = createMeshObject(leftWallPart);
+  const leftwall = createMeshObject(leftWallPart, false, leftWallPart.userData);
 
   // Right wall part
   const rightwallPart = {
@@ -672,8 +671,9 @@ const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
     position: { x: wallLength / 2 - wallThickness / 2, y: wallHeight / 2, z: wallLength / 2 - wallThickness / 2 },
     material: wallMaterial,
+    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
   };
-  const rightwall = createMeshObject(rightwallPart);
+  const rightwall = createMeshObject(rightwallPart, false, rightwallPart.userData);
 
   // Floor (using PlaneGeometry)
   const floorPanel = new THREE.Mesh(
@@ -1094,6 +1094,7 @@ export const addPlatformOnWall = async (
     textures: TEXTURES_URLS.PLATFORM,
     repeatX: 10,
     repeatY: 1,
+    rotation: wallMesh?.name === 'Left Wall' || wallMesh?.name === 'Right Wall' ? Math.PI / 2 : null,
   });
 
   function addStaticInvisibleBoxforPlatform(
@@ -1116,11 +1117,39 @@ export const addPlatformOnWall = async (
       },
       `invisibleBox_platform_${nameSuffix}`,
       {
+        objectId: `invisibleBox_platform_${nameSuffix}`,
         type: 'INVISIBLE_COMPARTMENT',
         dimensions: { width: dimensions.width, height: invisibleBoxHeight, depth: dimensions.depth },
       },
     );
 
+    platformGroup.add(invisible);
+  }
+
+  function addAboveInvisibleBoxForPlatform(
+    platformGroup: THREE.Group,
+    topMesh: THREE.Mesh,
+    wallMesh: THREE.Mesh,
+    countertopThickness: number,
+    dimensions: { width: number; depth: number },
+    nameSuffix: string,
+  ) {
+    const wallParams = (wallMesh.geometry as THREE.BoxGeometry).parameters as any;
+    const wallHeight = Number(wallParams.height || 0);
+    const topY = topMesh.position.y + countertopThickness / 2;
+    const computedHeight = Math.max(wallHeight - topY, 0.02);
+    const invHeight = computedHeight;
+    const centerY = topMesh.position.y + countertopThickness / 2 + invHeight / 2;
+    const invisible = createInvisibleBox(
+      { width: dimensions.width, height: invHeight, depth: dimensions.depth },
+      { x: topMesh.position.x, y: centerY, z: topMesh.position.z },
+      `invisibleBox_platform_above_${nameSuffix}`,
+      {
+        objectId: `invisibleBox_platform_above_${nameSuffix}`,
+        type: 'INVISIBLE_COMPARTMENT',
+        dimensions: { width: dimensions.width, height: invHeight, depth: dimensions.depth },
+      },
+    );
     platformGroup.add(invisible);
   }
 
@@ -1176,6 +1205,16 @@ export const addPlatformOnWall = async (
       { width: lengthX, depth: defaultProtrusion },
       'center',
     );
+
+    // Add above-counter invisible box
+    addAboveInvisibleBoxForPlatform(
+      platformGroup,
+      topMesh,
+      wallMesh as THREE.Mesh,
+      countertopThickness,
+      { width: lengthX, depth: defaultProtrusion },
+      'center',
+    );
   } else if (wallMesh?.name === 'Left Wall' || wallMesh?.name === 'Right Wall') {
     const wallCenterZ = wallMesh.position.z;
     const halfRunZ = wallD / 2;
@@ -1219,6 +1258,16 @@ export const addPlatformOnWall = async (
       platformGroup,
       topMesh,
       floorY,
+      countertopThickness,
+      { width: defaultProtrusion, depth: effectiveRun },
+      wallTag,
+    );
+
+    // Add above-counter invisible box
+    addAboveInvisibleBoxForPlatform(
+      platformGroup,
+      topMesh,
+      wallMesh as THREE.Mesh,
       countertopThickness,
       { width: defaultProtrusion, depth: effectiveRun },
       wallTag,
@@ -1365,7 +1414,7 @@ export const addVerticalPlanksToBox = (
       compDimensions,
       compPosition,
       `invisibleBox_compartment_${i}_for_${boxMesh.name}`,
-      { type: 'INVISIBLE_COMPARTMENT', dimensions: compDimensions },
+      { objectId: `invisibleBox_compartment_${i}_for_${boxMesh.name}`, type: 'INVISIBLE_COMPARTMENT', dimensions: compDimensions },
     );
     parent.add(invisiblebox);
   }
@@ -1877,7 +1926,6 @@ export const addDrawersOnInvisibleBox = async (
     }
   }
 };
-
 
 export const addUpperCabinetsAbovePlatform = async (
   scene: THREE.Scene,
