@@ -25,7 +25,7 @@ from .models import (
     MountPlateHoles,
     Properties,
 )
-from .utils import create_duplicate_catalog
+from .utils import duplicate_material
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -816,6 +816,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
+            "parent_catalog",
             "catalog_rule",
             "height",
             "width",
@@ -827,73 +828,95 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
-        catalog_rules_data = validated_data.pop("catalog_rule", [])
-
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
-        if design_id and catalog_id:
-            return create_duplicate_catalog(design_id, catalog_id, validated_data)
+        if not design_id and not catalog_id:
+            raise serializers.ValidationError(
+                "Missing required fields: 'design_id' and 'catalog_id'."
+            )
 
-        new_catalog = Catalog.objects.create(**validated_data)
+        design = Design.objects.get(id=design_id)
+        original_catalog = Catalog.objects.get(id=catalog_id)
 
-        template_catalog = Catalog.objects.filter(
-            organization__isnull=True, type=new_catalog.type
-        ).first()
+        parent_catalog_id = validated_data.pop("parent_catalog", None)
 
-        if template_catalog:
-            for rule in template_catalog.catalog_rule.all():
-                new_rule = CatalogRules.objects.create(
-                    catalog=new_catalog,
-                    name=rule.name,
-                )
-                for part in rule.catalog_rule_parts.all():
-                    CatalogRuleParts.objects.create(
-                        catalog_rule=new_rule,
-                        name=part.name,
-                        material=part.material,
-                        height=part.height,
-                        width=part.width,
-                        length=part.length,
-                        depth=part.depth,
-                        position=part.position,
-                        handle_position=part.handle_position,
+        catalog_data = {
+            "organization": original_catalog.organization,
+            "name": original_catalog.name,
+            "type": original_catalog.type,
+            "description": original_catalog.description,
+            "design": design,
+            "height": validated_data.get("height"),
+            "width": validated_data.get("width"),
+            "length": validated_data.get("length"),
+            "depth": validated_data.get("depth"),
+            "position": validated_data.get("position"),
+            "parent_catalog": parent_catalog_id,
+        }
+
+        duplicate_catalog = Catalog.objects.create(**catalog_data)
+
+        self._duplicate_data(original_catalog, validated_data, duplicate_catalog)
+
+        return duplicate_catalog
+
+    def _duplicate_data(
+        self: "CatalogSerializer",
+        original_catalog: "Catalog",
+        validated_data: Dict[str, Any],
+        duplicate_catalog: "Catalog",
+    ) -> None:
+        for rule in original_catalog.catalog_rule.all():
+            matching_rule_data = next(
+                (
+                    r
+                    for r in validated_data.get("catalog_rule", [])
+                    if r.get("name") == rule.name
+                ),
+                None,
+            )
+
+            duplicate_rule = CatalogRules.objects.create(
+                catalog=duplicate_catalog,
+                name=rule.name,
+            )
+            for part in rule.catalog_rule_parts.all():
+                override_part = None
+                if matching_rule_data:
+                    parts_data = matching_rule_data.get("catalog_rule_parts", [])
+                    override_part = next(
+                        (p for p in parts_data if p.get("name") == part.name), None
                     )
 
-        for rule_data in catalog_rules_data:
-            if not rule_data.get("name"):
-                continue
+                new_material = None
+                if part.material:
+                    new_material = duplicate_material(part.material)
 
-            matching_rule = CatalogRules.objects.filter(
-                catalog=new_catalog, name=rule_data.get("name")
-            ).first()
+                CatalogRuleParts.objects.create(
+                    catalog_rule=duplicate_rule,
+                    name=part.name,
+                    material=new_material,
+                    height=(
+                        override_part.get("height") if override_part else part.height
+                    ),
+                    width=override_part.get("width") if override_part else part.width,
+                    length=(
+                        override_part.get("length") if override_part else part.length
+                    ),
+                    depth=override_part.get("depth") if override_part else part.depth,
+                    position=(
+                        override_part.get("position")
+                        if override_part
+                        else part.position
+                    ),
+                    handle_position=(
+                        override_part.get("handle_position")
+                        if override_part
+                        else part.handle_position
+                    ),
+                )
 
-            if not matching_rule:
-                continue
-
-            parts_data = rule_data.get("catalog_rule_parts") or []
-            for part_data in parts_data:
-                part_name = part_data.get("name")
-                if not part_name:
-                    continue
-
-                matching_part = CatalogRuleParts.objects.filter(
-                    catalog_rule=matching_rule, name=part_name
-                ).first()
-
-                if not matching_part:
-                    continue
-
-                for field in [
-                    "height",
-                    "width",
-                    "length",
-                    "depth",
-                    "position",
-                    "handle_position",
-                ]:
-                    if field in part_data and part_data[field] is not None:
-                        setattr(matching_part, field, part_data[field])
-        return new_catalog
+        return duplicate_catalog
 
     def update(
         self: "CatalogSerializer", instance: Catalog, validated_data: Dict[str, str]

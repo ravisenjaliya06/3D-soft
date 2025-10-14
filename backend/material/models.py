@@ -753,6 +753,13 @@ class Catalog(models.Model):
     depth = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
     additional_data = models.JSONField(blank=True, null=True)
+    parent_catalog = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="parent_catalog_data",
+    )
 
 
 class CatalogRules(models.Model):
