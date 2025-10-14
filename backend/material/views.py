@@ -26,6 +26,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = CompanySerializer
     http_method_names = [GET, POST, PUT, DELETE]
+    lookup_field = "id"
+    lookup_url_kwarg = "uuid"
 
     def get_queryset(self: "CompanyViewSet") -> QuerySet[Company]:
         return Company.objects.filter(
