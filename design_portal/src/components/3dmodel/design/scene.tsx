@@ -9,7 +9,7 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
-import { initializeMoveHandler } from '../handler/items';
+import { addItemtoDatabase, initializeMoveHandler } from '../handler/items';
 import { store } from '../store';
 import {
   setHoverdMesh,
@@ -20,6 +20,7 @@ import {
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { v4 as uuidv4 } from 'uuid';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -815,11 +816,12 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       depth: Math.max(depth - thickness * 2, 0.02),
     },
     position: { x: 0, y: 0, z: 0 },
-    material: invisibleMaterialProps,
+    // material: invisibleMaterialProps,
   };
   const invCab = createMeshObject(invPart, false);
 
   cabinetContainer.add(left, right, bottom, top, back, invCab);
+  cabinetContainer.userData.objectId = `${uuidv4()}`;
   scene.add(cabinetContainer);
 };
 export const addSimpleTVUnit = (scene: THREE.Scene) => {
@@ -1496,7 +1498,7 @@ export const addVerticalPlanksToBox = (
   boxMesh: THREE.Mesh,
   count: number,
   selectedCabinetItem: any = null,
-  apiResponseDataArray: any[] = [],
+  itemData: any = null,
 ) => {
   if (!boxMesh || count <= 0) return;
 
@@ -1568,12 +1570,6 @@ export const addVerticalPlanksToBox = (
       isSideWall: isSideWallBox,
       cabinetItem: selectedCabinetItem,
       dimensions: plankPart.dimensions,
-      apiData: apiResponseDataArray[i - 1],
-      objectId:
-        apiResponseDataArray[i - 1]?.id ??
-        apiResponseDataArray[i - 1]?.objectId ??
-        apiResponseDataArray[i - 1]?.data?.id ??
-        undefined,
     });
 
     const offset = -span / 2 + edgeClearance + interval * i;
@@ -1587,6 +1583,20 @@ export const addVerticalPlanksToBox = (
       plank.position.z = center.z + offset;
     }
 
+    const data = {
+      ...itemData,
+      width: (plank.geometry as THREE.BoxGeometry).parameters.width,
+      height: (plank.geometry as THREE.BoxGeometry).parameters.height,
+      depth: (plank.geometry as THREE.BoxGeometry).parameters.depth,
+      position: plank.position,
+      additional_data: {
+        isPlatform: isPlatform,
+        isSideWallBox: isSideWallBox,
+      }
+    };
+
+    const apiResponse = addItemtoDatabase(data);
+    plank.userData.apiData = apiResponse;
     parent.add(plank);
 
     // Update store
@@ -1598,11 +1608,11 @@ export const addVerticalPlanksToBox = (
         store.dispatch(
           updateObject({
             ...objInStore,
-            apiData: plank.userData.apiData,
-            width: plank.userData.dimensions.width,
-            height: plank.userData.dimensions.height,
-            depth: plank.userData.dimensions.depth,
-            position: plank.position,
+            apiData: apiResponse,
+            width: plankPart.dimensions.width,
+            height: plankPart.dimensions.height,
+            depth: plankPart.dimensions.depth,
+            position: plankPart.position,
           } as any),
         );
       }
@@ -1650,7 +1660,7 @@ export const addHorizontalPlanksInsideBox = (
   boxMesh: THREE.Mesh,
   count: number,
   selectedCabinetItem = null,
-  apiResponseDataArray: any[] = [],
+  itemData: any = null,
 ) => {
   if (!boxMesh || count <= 0) return;
 
@@ -1705,19 +1715,23 @@ export const addHorizontalPlanksInsideBox = (
     const shelf = createMeshObject(shelfPart, true, {
       isHorizontalPlank: true,
       dimensions: shelfPart.dimensions,
-      apiData: apiResponseDataArray[i - 1],
-      objectId:
-        apiResponseDataArray[i - 1]?.id ??
-        apiResponseDataArray[i - 1]?.objectId ??
-        apiResponseDataArray[i - 1]?.data?.id ??
-        undefined,
       cabinetItem: selectedCabinetItem,
     });
 
     const worldPos = center.clone();
     worldPos.y += yLocal;
-    parent.add(shelf);
     shelf.position.copy(parent.worldToLocal(worldPos));
+    
+    const data = {
+      ...itemData,
+      width: (shelf.geometry as THREE.BoxGeometry).parameters.width,
+      height: (shelf.geometry as THREE.BoxGeometry).parameters.height,
+      depth: (shelf.geometry as THREE.BoxGeometry).parameters.depth,
+      position: shelf.position,
+    }
+
+    addItemtoDatabase(data);
+    parent.add(shelf);
 
     // Update store if needed
     if (shelf.userData.objectId) {
@@ -1767,6 +1781,7 @@ export const addHorizontalPlanksInsideBox = (
 
   refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
+
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,

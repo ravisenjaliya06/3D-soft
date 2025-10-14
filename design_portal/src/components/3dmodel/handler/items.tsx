@@ -33,7 +33,7 @@ import {
 } from './interface';
 import { MoveHandler } from './moveHandler';
 import { updateObjectInDatabase } from './updateHandler';
-// import { addPlatformOnWall } from '@/components/3dmodel/design/scene';
+import { addCabinetItemToDesign } from './toolbar';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -696,7 +696,6 @@ async function loadDesignObjects(
               createdMesh = scene.getObjectByName('SimpleTable');
             }
           } else if (item.type === 'Plank') {
-            // Create plank directly from API data
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
               console.log(
                 `Creating plank directly from API data: ${item.name}, position:`,
@@ -719,7 +718,7 @@ async function loadDesignObjects(
             if (nameLower.includes('vertical')) {
               plankMesh = new THREE.Mesh(
                 new THREE.BoxGeometry(
-                  0.018, // thickness
+                  item?.width || 0.018,
                   item?.height || 0.8,
                   item?.depth || 0.4,
                 ),
@@ -730,7 +729,7 @@ async function loadDesignObjects(
               plankMesh = new THREE.Mesh(
                 new THREE.BoxGeometry(
                   item?.width || 0.4,
-                  0.018, // thickness
+                  item?.height || 0.018,
                   item?.depth || 0.4,
                 ),
                 plankMaterial,
@@ -741,7 +740,7 @@ async function loadDesignObjects(
                 new THREE.BoxGeometry(
                   item?.width || 0.4,
                   item?.height || 0.8,
-                  0.018, // thickness
+                  item?.depth || 0.4,
                 ),
                 plankMaterial,
               );
@@ -768,6 +767,28 @@ async function loadDesignObjects(
                 plankMesh.position,
               );
             }
+          } else if (item.type === 'Door') {
+            const textureLoader = new THREE.TextureLoader();
+            const doorTexture = textureLoader.load('/Texture0004.jpg');
+            doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
+            doorTexture.repeat.set(2, 1);
+            const doorMatProps = { map: doorTexture, side: THREE.DoubleSide };
+
+            doorMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(
+                item?.width || 0.018,
+                item?.height || 0.8,
+                item?.depth || 0.4,
+              ),
+              doorMatProps,
+            );
+            doorMesh.name = `VerticalPlank_${item.id}`;
+
+            doorMesh.position.set(
+              item.position.x,
+              item.position.y,
+              item.position.z,
+            );
           } else {
             addSimpleCabinet(scene);
             createdMesh = scene.getObjectByName('SimpleCabinet');
@@ -1464,15 +1485,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                  {
-                    id: normalizedData.id,
-                    name: normalizedData.name,
-                    width: normalizedData.width,
-                    height: normalizedData.height,
-                    depth: normalizedData.depth,
-                    position: normalizedData.position,
-                  },
-                ]
+                {
+                  id: normalizedData.id,
+                  name: normalizedData.name,
+                  width: normalizedData.width,
+                  height: normalizedData.height,
+                  depth: normalizedData.depth,
+                  position: normalizedData.position,
+                },
+              ]
               : [],
           );
 
@@ -2431,4 +2452,69 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
 
   child.userData.isClosed = !isClosed;
   child.userData.closedPos = closedPos;
+}
+
+export const addCabinetItemToDesign = async (
+  catalogId: string,
+  itemData: {
+    type: string;
+    name: string;
+    description: string;
+    design_id: string;
+    width?: number;
+    height?: number;
+    depth?: number;
+    position?: { x: number; y: number; z: number };
+    additional_data?: any;
+    parts?: Array<{
+      name: string;
+      width: number;
+      height: number;
+      depth: number;
+    }>;
+  },
+) => {
+  const payload = {
+    type: itemData.type,
+    name: itemData.name,
+    description: itemData.description,
+    design: itemData.design_id,
+    // Optional spatial metadata for backend consumption
+    width: itemData.width,
+    height: itemData.height,
+    depth: itemData.depth,
+    position: itemData.position,
+    additional_data: itemData.additional_data,
+    parts: itemData.parts,
+  };
+  try {
+    const response = await commonService.post(
+      `material/catalog`,
+      `${catalogId}/design`,
+      payload,
+    );
+    if (response.status === 200 || response.status === 201) {
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error adding cabinet item to design:', error);
+    throw error;
+  }
+};
+
+export const addItemtoDatabase = async (data: any) => {
+  console.log(data, 'data');
+  try {
+    const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(apiResponse, 'apiResponse');
+    }
+    return apiResponse;
+  } catch (error) {
+    console.error(
+      `Failed to add ${data.type.toLowerCase()} to design:`,
+      error,
+    );
+  }
+  return null;
 }

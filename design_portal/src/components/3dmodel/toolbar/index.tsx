@@ -37,7 +37,6 @@ import horizontal_plank from '@/assets/toolbar/horizontal-plank.svg';
 import platform from '@/assets/toolbar/kitchen-platform-icon.svg';
 import vertical_plank from '@/assets/toolbar/vertical-plank.svg';
 import React from 'react';
-import { addDynamicObject } from '../design/items';
 import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
@@ -64,6 +63,7 @@ import {
   setobjectSelected,
   togglAlignment,
 } from '../store/dataSlice';
+import { addCabinetItemToDesign } from '../handler/items';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -139,7 +139,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
@@ -282,53 +282,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const addCabinetItemToDesign = async (
-    catalogId: string,
-    itemData: {
-      type: string;
-      name: string;
-      description: string;
-      design_id: string;
-      width?: number;
-      height?: number;
-      depth?: number;
-      position?: { x: number; y: number; z: number };
-      additional_data?: any;
-      parts?: Array<{
-        name: string;
-        width: number;
-        height: number;
-        depth: number;
-      }>;
-    },
-  ) => {
-    const payload = {
-      type: itemData.type,
-      name: itemData.name,
-      description: itemData.description,
-      design: itemData.design_id,
-      // Optional spatial metadata for backend consumption
-      width: itemData.width,
-      height: itemData.height,
-      depth: itemData.depth,
-      position: itemData.position,
-      additional_data: itemData.additional_data,
-      parts: itemData.parts,
-    };
-    try {
-      const response = await commonService.post(
-        `material/catalog`,
-        `${catalogId}/design`,
-        payload,
-      );
-      if (response.status === 200 || response.status === 201) {
-        return response.data;
-      }
-    } catch (error) {
-      console.error('Error adding cabinet item to design:', error);
-      throw error;
-    }
-  };
   const handleCabinetClick = () => {
     setActiveOption('Cabinet');
     setActiveOptionName('Cabinet');
@@ -398,7 +351,30 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
           ];
         } else {
-          addDynamicObject(scene, item);
+          // Simple cabinet defaults already set
+          const thickness = 0.018;
+          parts = [
+            { name: 'LEFT_PLANK', width: thickness, height, depth },
+            { name: 'RIGHT_PLANK', width: thickness, height, depth },
+            {
+              name: 'BOTTOM_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: thickness,
+              depth,
+            },
+            {
+              name: 'TOP_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: thickness,
+              depth,
+            },
+            {
+              name: 'BACK_PLANK',
+              width: Math.max(width - thickness * 2, 0.02),
+              height: Math.max(height - thickness * 2, 0.02),
+              depth: thickness,
+            },
+          ];
         }
 
         // Floor Y
@@ -501,7 +477,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch {}
+        } catch { }
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -659,44 +635,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const designId = window.location.pathname.split('/')[2];
     const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
 
-    // Collect all API responses for the items
-    const apiResponses = [];
-
-    // Make API calls for each item
-    // Compute target box dimensions and center position once
-    const bbox = new THREE.Box3().setFromObject(targetBox);
-    const bboxSize = new THREE.Vector3();
-    const bboxCenter = new THREE.Vector3();
-    bbox.getSize(bboxSize);
-    bbox.getCenter(bboxCenter);
-    for (let i = 0; i < num; i++) {
-      try {
-        const itemData = {
-          type: itemType,
-          name: `${itemName} ${i + 1}`,
-          description:
-            selectedCabinetItem.description || `${itemName} description`,
-          design_id: designId,
-          width: bboxSize.x,
-          height: bboxSize.y,
-          depth: bboxSize.z,
-          position: { x: bboxCenter.x, y: bboxCenter.y, z: bboxCenter.z },
-        };
-
-        const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
-        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          console.log(apiResponse, 'apiResponse');
-        }
-        apiResponses.push(apiResponse);
-        dispatch(addObjects(apiResponses));
-      } catch (error) {
-        console.error(
-          `Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`,
-          error,
-        );
-        apiResponses.push(null); // Add null for failed API calls
-      }
-    }
+    const itemData = {
+      catalogId: catalogId,
+      type: itemType,
+      name: `${itemName}`,
+      description:
+        selectedCabinetItem.description || `${itemName} description`,
+      design_id: designId,
+    };
 
     // Now add the 3D objects with API response data
     if (['Door', 'Sliding Door'].includes(itemType)) {
@@ -705,7 +651,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         targetBox,
         num,
         selectedCabinetItem,
-        apiResponses,
+        itemData,
       );
     } else if (itemType === 'Drawer') {
       await addDrawersOnInvisibleBox(
@@ -713,35 +659,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         targetBox,
         num,
         selectedCabinetItem,
-        apiResponses,
+        itemData,
       );
     } else if (itemType === 'Plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
-        if (nameLower.includes('common')) {
-          await addVerticalPlanksToBox(
-            scene,
-            targetBox,
-            num,
-            selectedCabinetItem,
-            apiResponses,
-          );
-        } else {
-          await addVerticalPlanksToBox(
-            scene,
-            targetBox,
-            num,
-            selectedCabinetItem,
-            apiResponses,
-          );
-        }
+        await addVerticalPlanksToBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          itemData,
+        );
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(
           scene,
           targetBox,
           num,
           selectedCabinetItem,
-          apiResponses,
+          itemData,
         );
       }
     } else if (itemType === 'Cabinet' && itemName === 'Simple Cabinet') {
@@ -1055,9 +991,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1079,9 +1014,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1213,16 +1147,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>
