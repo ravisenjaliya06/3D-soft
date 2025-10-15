@@ -3,6 +3,7 @@ import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import { Dispatch } from 'redux';
 import * as THREE from 'three';
+import { v4 as uuidv4 } from 'uuid';
 import {
   applyEdgeBanding,
   convertDataToGeometry,
@@ -32,9 +33,8 @@ import {
   PlankDataItem,
 } from './interface';
 import { MoveHandler } from './moveHandler';
-import { updateObjectInDatabase } from './updateHandler';
 import { addCabinetItemToDesign } from './toolbar';
-import {v4 as uuidv4} from 'uuid';
+import { updateObjectInDatabase } from './updateHandler';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -76,7 +76,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   boxMesh.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
-    if (!child.userData.type || child.userData.type !== "Plank") return;
+    if (!child.userData.type || child.userData.type !== 'Plank') return;
 
     const geom = child.geometry as THREE.BoxGeometry;
     const { width, height, depth } = geom.parameters;
@@ -143,7 +143,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   const grid: string[][] = Array(gridHeight)
     .fill(null)
-    .map(() => Array(gridWidth).fill("empty"));
+    .map(() => Array(gridWidth).fill('empty'));
 
   planks.forEach((p) => {
     const { xMin, xMax, yMin, yMax } = p;
@@ -154,7 +154,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
     for (let y = startY; y <= endY; y++) {
       for (let x = startX; x <= endX; x++) {
-        grid[y][x] = "plank";
+        grid[y][x] = 'plank';
       }
     }
   });
@@ -168,17 +168,17 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   for (let y = 0; y < gridHeight; y++) {
     for (let x = 0; x < gridWidth; x++) {
-      if (grid[y][x] !== "empty") continue;
+      if (grid[y][x] !== 'empty') continue;
 
       let xEnd = x;
       let yEnd = y;
 
-      while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === "empty") xEnd++;
+      while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === 'empty') xEnd++;
 
       let valid = true;
       while (yEnd + 1 < gridHeight && valid) {
         for (let xCheck = x; xCheck <= xEnd; xCheck++) {
-          if (grid[yEnd + 1][xCheck] !== "empty") {
+          if (grid[yEnd + 1][xCheck] !== 'empty') {
             valid = false;
             break;
           }
@@ -202,7 +202,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
       for (let fy = y; fy <= yEnd; fy++) {
         for (let fx = x; fx <= xEnd; fx++) {
-          grid[fy][fx] = "filled";
+          grid[fy][fx] = 'filled';
         }
       }
     }
@@ -1660,15 +1660,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                {
-                  id: normalizedData.id,
-                  name: normalizedData.name,
-                  width: normalizedData.width,
-                  height: normalizedData.height,
-                  depth: normalizedData.depth,
-                  position: normalizedData.position,
-                },
-              ]
+                  {
+                    id: normalizedData.id,
+                    name: normalizedData.name,
+                    width: normalizedData.width,
+                    height: normalizedData.height,
+                    depth: normalizedData.depth,
+                    position: normalizedData.position,
+                  },
+                ]
               : [],
           );
 
@@ -2685,10 +2685,7 @@ export const addItemtoDatabase = async (data: any) => {
     }
     return apiResponse;
   } catch (error) {
-    console.error(
-      `Failed to add ${data.type.toLowerCase()} to design:`,
-      error,
-    );
+    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
   }
   return null;
-}
+};

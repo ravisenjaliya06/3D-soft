@@ -7,9 +7,14 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { v4 as uuidv4 } from 'uuid';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
-import { addItemtoDatabase, generateCompartmentsFromMesh, initializeMoveHandler } from '../handler/items';
+import {
+  addItemtoDatabase,
+  generateCompartmentsFromMesh,
+  initializeMoveHandler,
+} from '../handler/items';
 import { store } from '../store';
 import {
   setHoverdMesh,
@@ -20,7 +25,6 @@ import {
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
-import { v4 as uuidv4 } from 'uuid';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -1046,7 +1050,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerLeftPlank = createMeshObject(towerLeftPart, false, { type: 'Plank' });
+  const towerLeftPlank = createMeshObject(towerLeftPart, false, {
+    type: 'Plank',
+  });
 
   const towerRightPart = {
     name: 'VERTICAL_PLANK_TOWER_RIGHT',
@@ -1058,7 +1064,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerRightPlank = createMeshObject(towerRightPart, false, { type: 'Plank' });
+  const towerRightPlank = createMeshObject(towerRightPart, false, {
+    type: 'Plank',
+  });
 
   const towerBackPart = {
     name: 'BACK_PLANK_TOWER',
@@ -1074,7 +1082,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerBackPlank = createMeshObject(towerBackPart, false, { type: 'Plank' });
+  const towerBackPlank = createMeshObject(towerBackPart, false, {
+    type: 'Plank',
+  });
 
   const towerBottomPart = {
     name: 'HORIZONTAL_PLANK_TOWER_BOTTOM',
@@ -1090,7 +1100,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerBottomPlank = createMeshObject(towerBottomPart, false, { type: 'Plank' });
+  const towerBottomPlank = createMeshObject(towerBottomPart, false, {
+    type: 'Plank',
+  });
 
   const towerTopPart = {
     name: 'HORIZONTAL_PLANK_TOWER_TOP',
@@ -1106,7 +1118,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerTopPlank = createMeshObject(towerTopPart, false, { type: 'Plank' });
+  const towerTopPlank = createMeshObject(towerTopPart, false, {
+    type: 'Plank',
+  });
 
   const shelfClearH = 0.3;
   const midShelfPart = {
@@ -1374,8 +1388,7 @@ export const addPlatformOnWall = async (
     if (backPlat) {
       startZ =
         backPlat.position.z +
-        ((backPlat.geometry as THREE.BoxGeometry).parameters.depth) /
-        2;
+        (backPlat.geometry as THREE.BoxGeometry).parameters.depth / 2;
     }
     const effectiveRun = Math.max(maxZ - startZ, 0.1);
     const centerZ = startZ + effectiveRun / 2;
@@ -1459,7 +1472,7 @@ export const addVerticalPlanksToBox = async (
   bbox.getCenter(center);
 
   let parent: THREE.Mesh;
-  if (!(boxMesh.parent?.userData.isMain)) {
+  if (!boxMesh.parent?.userData.isMain) {
     parent = boxMesh;
   } else {
     parent = boxMesh.parent as THREE.Mesh;
@@ -1493,15 +1506,15 @@ export const addVerticalPlanksToBox = async (
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
       ? {
-        name: `VERTICAL_PLANK_${i}`,
-        dimensions: { width: thickness, height: effectiveHeight, depth },
-        material: plankMatProps,
-      }
+          name: `VERTICAL_PLANK_${i}`,
+          dimensions: { width: thickness, height: effectiveHeight, depth },
+          material: plankMatProps,
+        }
       : {
-        name: `VERTICAL_PLANK_${i}`,
-        dimensions: { width, height: effectiveHeight, depth: thickness },
-        material: plankMatProps,
-      };
+          name: `VERTICAL_PLANK_${i}`,
+          dimensions: { width, height: effectiveHeight, depth: thickness },
+          material: plankMatProps,
+        };
 
     const plank = createMeshObject(plankPart, true, {
       isVerticalPlank: true,
@@ -1514,10 +1527,8 @@ export const addVerticalPlanksToBox = async (
     // Compute the world position of the plank relative to boxMesh
     const worldPos = new THREE.Vector3(
       divideAlongX ? -width / 2 + edgeClearance + interval * i : 0,
-      isPlatform
-        ? -height / 2 + skirtingHeight + effectiveHeight / 2
-        : 0,
-      divideAlongX ? 0 : -depth / 2 + edgeClearance + interval * i
+      isPlatform ? -height / 2 + skirtingHeight + effectiveHeight / 2 : 0,
+      divideAlongX ? 0 : -depth / 2 + edgeClearance + interval * i,
     );
 
     // Convert this world position relative to parent
@@ -1558,7 +1569,7 @@ export const addVerticalPlanksToBox = async (
             height: plankPart.dimensions.height,
             depth: plankPart.dimensions.depth,
             position: plank.position,
-          } as any)
+          } as any),
         );
       }
     }
@@ -1569,7 +1580,7 @@ export const addVerticalPlanksToBox = async (
     const skirtingWorldPos = new THREE.Vector3(
       center.x,
       floorY + skirtingHeight / 2,
-      center.z
+      center.z,
     );
     const skirtingLocalPos = boxMesh.worldToLocal(skirtingWorldPos.clone());
 
@@ -1614,7 +1625,7 @@ export const addHorizontalPlanksInsideBox = async (
 
   const interval = innerHeight / (count + 1);
   let parent: THREE.Mesh;
-  if (!(boxMesh.parent?.userData.isMain)) {
+  if (!boxMesh.parent?.userData.isMain) {
     parent = boxMesh;
   } else {
     parent = boxMesh.parent as THREE.Mesh;
@@ -1739,17 +1750,17 @@ export const addDoorOnInvisibleBox = async (
 
   const facePart = isSide
     ? {
-      name: `Door_for_${boxMesh.name}`,
-      dimensions: { width: 0.02, height: h - 0.01, depth: d - 0.01 },
-      position: { x: 0, y: 0, z: 0 },
-      material: doorMatProps,
-    }
+        name: `Door_for_${boxMesh.name}`,
+        dimensions: { width: 0.02, height: h - 0.01, depth: d - 0.01 },
+        position: { x: 0, y: 0, z: 0 },
+        material: doorMatProps,
+      }
     : {
-      name: `Door_for_${boxMesh.name}`,
-      dimensions: { width: w - 0.01, height: h - 0.01, depth: 0.02 },
-      position: { x: 0, y: 0, z: 0 },
-      material: doorMatProps,
-    };
+        name: `Door_for_${boxMesh.name}`,
+        dimensions: { width: w - 0.01, height: h - 0.01, depth: 0.02 },
+        position: { x: 0, y: 0, z: 0 },
+        material: doorMatProps,
+      };
 
   const face = createMeshObject(facePart, true, { openDirection: 'right' });
 
@@ -1917,21 +1928,21 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer face
     const facePart = isSide
       ? {
-        name: `DrawerFace_${i}_for_${boxMesh.name}`,
-        dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
-        position: {
-          x: center.x + dir * (w / 2 + 0.01),
-          y: yCenter,
-          z: center.z,
-        },
-        material: drawerMatProps,
-      }
+          name: `DrawerFace_${i}_for_${boxMesh.name}`,
+          dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
+          position: {
+            x: center.x + dir * (w / 2 + 0.01),
+            y: yCenter,
+            z: center.z,
+          },
+          material: drawerMatProps,
+        }
       : {
-        name: `DrawerFace_${i}_for_${boxMesh.name}`,
-        dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
-        position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
-        material: drawerMatProps,
-      };
+          name: `DrawerFace_${i}_for_${boxMesh.name}`,
+          dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+          position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
+          material: drawerMatProps,
+        };
     const face = createMeshObject(facePart);
     scene.add(face);
     drawerGroup.attach(face);
@@ -2305,11 +2316,11 @@ export const addUpperCabinetsAbovePlatform = async (
         position: {
           x: isLeftWall
             ? targetWall.position.x +
-            (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 +
-            thickness / 2
+              (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 +
+              thickness / 2
             : targetWall.position.x -
-            (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 -
-            thickness / 2,
+              (targetWall.geometry as THREE.BoxGeometry).parameters.width / 2 -
+              thickness / 2,
           y: upperBottomY + upperHeight / 2,
           z: cabinetZ,
         },
@@ -2439,68 +2450,68 @@ export const addUpperCabinetsAbovePlatform = async (
 
       const leftDoorPart = isSidePlatform
         ? {
-          name: `UpperLeftDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ - doorWidth / 2,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperLeftDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ - doorWidth / 2,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 0 },
+          }
         : {
-          name: `UpperLeftDoor_${i}`,
-          dimensions: {
-            width: doorWidth,
-            height: doorHeight,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetX - doorWidth / 2,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetFrontZ + (doorThickness / 2) * normalSign,
-          },
-          material: doorMatProps,
-        };
+            name: `UpperLeftDoor_${i}`,
+            dimensions: {
+              width: doorWidth,
+              height: doorHeight,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetX - doorWidth / 2,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetFrontZ + (doorThickness / 2) * normalSign,
+            },
+            material: doorMatProps,
+          };
       const leftDoor = createMeshObject(leftDoorPart, true, {
         openDirection: 'left',
       });
 
       const rightDoorPart = isSidePlatform
         ? {
-          name: `UpperRightDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ + doorWidth / 2,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperRightDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ + doorWidth / 2,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 0 },
+          }
         : {
-          name: `UpperRightDoor_${i}`,
-          dimensions: {
-            width: doorWidth,
-            height: doorHeight,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetX + doorWidth / 2,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetFrontZ + (doorThickness / 2) * normalSign,
-          },
-          material: doorMatProps,
-        };
+            name: `UpperRightDoor_${i}`,
+            dimensions: {
+              width: doorWidth,
+              height: doorHeight,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetX + doorWidth / 2,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetFrontZ + (doorThickness / 2) * normalSign,
+            },
+            material: doorMatProps,
+          };
       const rightDoor = createMeshObject(rightDoorPart, true, {
         openDirection: 'right',
       });
@@ -2589,34 +2600,34 @@ export const addUpperCabinetsAbovePlatform = async (
 
       const doorPart = isSidePlatform
         ? {
-          name: `UpperDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 0 },
+          }
         : {
-          name: `UpperDoor_${i}`,
-          dimensions: {
-            width: doorWidth,
-            height: doorHeight,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetX,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetFrontZ + (doorThickness / 2) * normalSign,
-          },
-          material: doorMatProps,
-        };
+            name: `UpperDoor_${i}`,
+            dimensions: {
+              width: doorWidth,
+              height: doorHeight,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetX,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetFrontZ + (doorThickness / 2) * normalSign,
+            },
+            material: doorMatProps,
+          };
       const door = createMeshObject(doorPart, true, { openDirection: 'top' });
 
       cabinetGroup.add(door);

@@ -48,6 +48,7 @@ import {
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksToBox,
 } from '../design/scene';
+import { addCabinetItemToDesign } from '../handler/items';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
@@ -63,7 +64,6 @@ import {
   setobjectSelected,
   togglAlignment,
 } from '../store/dataSlice';
-import { addCabinetItemToDesign } from '../handler/items';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -139,7 +139,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
@@ -477,7 +477,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               };
             }
           }
-        } catch { }
+        } catch {}
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -639,8 +639,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       catalogId: catalogId,
       type: itemType,
       name: `${itemName}`,
-      description:
-        selectedCabinetItem.description || `${itemName} description`,
+      description: selectedCabinetItem.description || `${itemName} description`,
       design_id: designId,
     };
 
@@ -991,8 +990,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1014,8 +1014,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1147,16 +1148,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>
