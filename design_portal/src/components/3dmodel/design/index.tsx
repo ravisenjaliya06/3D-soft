@@ -890,7 +890,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       hoveredMesh?.parent?.userData.type === itemType.CUPBOARD
     ) {
       dispatch(setobjectSelected(hoveredMesh?.parent?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
@@ -901,14 +901,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         hoveredMesh?.parent?.userData.type === itemType.DOOR)
     ) {
       dispatch(setSelectedChildObject(hoveredMesh?.parent?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
       newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
     } else {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
         setHelperTools(false);

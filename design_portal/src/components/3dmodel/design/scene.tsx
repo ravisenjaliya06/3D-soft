@@ -9,7 +9,7 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
-import { addItemtoDatabase, createInvisibleBoxesFromMesh, generateCompartmentsFromMesh, generateInvisibleBoxesFromPlanks, initializeMoveHandler } from '../handler/items';
+import { addItemtoDatabase, generateCompartmentsFromMesh, initializeMoveHandler } from '../handler/items';
 import { store } from '../store';
 import {
   setHoverdMesh,
@@ -741,12 +741,6 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   woodTex.repeat.set(2, 1);
 
   const plankMaterialProps = { map: woodTex, roughness: 0.6, metalness: 0 };
-  const invisibleMaterialProps = {
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.0,
-    depthWrite: false,
-  };
 
   const cabinetContainer = createInvisibleBox(
     { width, height, depth },
@@ -805,24 +799,14 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
     material: plankMaterialProps,
   };
-  const back = createMeshObject(backPart, false, { type: 'Plank' });
-
-  // const invPart = {
-  //   name: 'invisibleBox_cabinet',
-  //   dimensions: {
-  //     width: Math.max(width - thickness * 2, 0.02),
-  //     height: Math.max(height - thickness * 2, 0.02),
-  //     depth: Math.max(depth - thickness * 2, 0.02),
-  //   },
-  //   position: { x: 0, y: 0, z: 0 },
-  //   // material: invisibleMaterialProps,
-  // };
-  // const invCab = createMeshObject(invPart, false);
+  const back = createMeshObject(backPart);
 
   cabinetContainer.add(left, right, bottom, top, back);
   cabinetContainer.userData.objectId = `${uuidv4()}`;
 
   generateCompartmentsFromMesh(cabinetContainer);
+  cabinetContainer.userData.isMain = true;
+  cabinetContainer.userData.objectId = uuidv4();
   scene.add(cabinetContainer);
 };
 
@@ -875,7 +859,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     position: { x: -(width / 2 - thickness / 2), y: 0 + deltaY, z: 0 },
     material: darkMatProps,
   };
-  const baseLeft = createMeshObject(baseLeftPart);
+  const baseLeft = createMeshObject(baseLeftPart, false, { type: 'Plank' });
 
   const baseRightPart = {
     name: 'RIGHT_PLANK',
@@ -883,7 +867,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     position: { x: width / 2 - thickness / 2, y: 0 + deltaY, z: 0 },
     material: darkMatProps,
   };
-  const baseRight = createMeshObject(baseRightPart);
+  const baseRight = createMeshObject(baseRightPart, false, { type: 'Plank' });
 
   const baseBottomPart = {
     name: 'BOTTOM_PLANK',
@@ -895,7 +879,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     position: { x: 0, y: -(baseHeight / 2 - thickness / 2) + deltaY, z: 0 },
     material: darkMatProps,
   };
-  const baseBottom = createMeshObject(baseBottomPart);
+  const baseBottom = createMeshObject(baseBottomPart, false, { type: 'Plank' });
 
   const baseTopPart = {
     name: 'TOP_PLANK',
@@ -907,7 +891,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     position: { x: 0, y: baseHeight / 2 - thickness / 2 + deltaY, z: 0 },
     material: whiteMatProps,
   };
-  const baseTop = createMeshObject(baseTopPart);
+  const baseTop = createMeshObject(baseTopPart, false, { type: 'Plank' });
 
   const dividers: THREE.Mesh[] = [];
   const cubbyWidth = (width - thickness * 2) / numCubbies;
@@ -923,7 +907,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
       position: { x, y: 0 + deltaY, z: 0 },
       material: darkMatProps,
     };
-    const div = createMeshObject(divPart);
+    const div = createMeshObject(divPart, false, { type: 'Plank' });
     dividers.push(div);
   }
 
@@ -940,7 +924,9 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     },
     material: darkMatProps,
   };
-  const verticalPanel = createMeshObject(verticalPlankPart);
+  const verticalPanel = createMeshObject(verticalPlankPart, false, {
+    type: 'Plank',
+  });
 
   const topHorizontalShelfPart = {
     name: 'HORIZONTAL_PLANK_TOP_SHELF',
@@ -952,7 +938,9 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
     },
     material: whiteMatProps,
   };
-  const topHorizontalShelf = createMeshObject(topHorizontalShelfPart);
+  const topHorizontalShelf = createMeshObject(topHorizontalShelfPart, false, {
+    type: 'Plank',
+  });
 
   const smallShelvesY = [0.2, 0.45, 0.7];
   const sShelves: THREE.Mesh[] = [];
@@ -972,25 +960,15 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
       },
       material: whiteMatProps,
     };
-    const s = createMeshObject(shelfPart);
+    const s = createMeshObject(shelfPart, false, { type: 'Plank' });
     sShelves.push(s);
   });
 
   container.add(verticalPanel, topHorizontalShelf, ...sShelves);
 
-  // Invisible compartments
-  const innerDepthTV = Math.max(depth - thickness * 2, 0.02);
-  const innerHeightTV = Math.max(baseHeight - thickness * 2, 0.02);
-  for (let i = 0; i < numCubbies; i++) {
-    const centerX = -width / 2 + thickness + cubbyWidth * (i + 0.5);
-    const compWidth = Math.max(cubbyWidth - 0.02, 0.02);
-    const invisiblebox = createInvisibleBox(
-      { width: compWidth, height: innerHeightTV, depth: innerDepthTV },
-      { x: centerX, y: 0 + deltaY, z: 0 },
-      `invisibleBox_compartment_${i}_for_tvunit_base`,
-    );
-    container.add(invisiblebox);
-  }
+  generateCompartmentsFromMesh(container);
+  container.userData.isMain = true;
+  container.userData.objectId = uuidv4();
   scene.add(container);
 };
 
@@ -1039,7 +1017,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const top = createMeshObject(topPart);
+  const top = createMeshObject(topPart, false, { type: 'Plank' });
 
   // Left leg panel
   const leftLegPart = {
@@ -1052,7 +1030,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const leftLeg = createMeshObject(leftLegPart);
+  const leftLeg = createMeshObject(leftLegPart, false, { type: 'Plank' });
 
   // Tower parts
   const towerOuterW = returnWidth;
@@ -1068,7 +1046,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerLeftPlank = createMeshObject(towerLeftPart);
+  const towerLeftPlank = createMeshObject(towerLeftPart, false, { type: 'Plank' });
 
   const towerRightPart = {
     name: 'VERTICAL_PLANK_TOWER_RIGHT',
@@ -1080,7 +1058,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerRightPlank = createMeshObject(towerRightPart);
+  const towerRightPlank = createMeshObject(towerRightPart, false, { type: 'Plank' });
 
   const towerBackPart = {
     name: 'BACK_PLANK_TOWER',
@@ -1096,7 +1074,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerBackPlank = createMeshObject(towerBackPart);
+  const towerBackPlank = createMeshObject(towerBackPart, false, { type: 'Plank' });
 
   const towerBottomPart = {
     name: 'HORIZONTAL_PLANK_TOWER_BOTTOM',
@@ -1112,7 +1090,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerBottomPlank = createMeshObject(towerBottomPart);
+  const towerBottomPlank = createMeshObject(towerBottomPart, false, { type: 'Plank' });
 
   const towerTopPart = {
     name: 'HORIZONTAL_PLANK_TOWER_TOP',
@@ -1128,7 +1106,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const towerTopPlank = createMeshObject(towerTopPart);
+  const towerTopPlank = createMeshObject(towerTopPart, false, { type: 'Plank' });
 
   const shelfClearH = 0.3;
   const midShelfPart = {
@@ -1145,7 +1123,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const midShelf = createMeshObject(midShelfPart);
+  const midShelf = createMeshObject(midShelfPart, false, { type: 'Plank' });
 
   const retTopPart = {
     name: 'HORIZONTAL_PLANK_TOWER_LOWER',
@@ -1157,7 +1135,7 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     },
     material: carcMatProps,
   };
-  const retTop = createMeshObject(retTopPart);
+  const retTop = createMeshObject(retTopPart, false, { type: 'Plank' });
 
   container.add(
     top,
@@ -1171,46 +1149,9 @@ export const addComputerDesk = (scene: THREE.Scene) => {
     retTop,
   );
 
-  // Invisible volumes
-  const kneeWidth = Math.max(deskWidth - returnWidth - plank, 0.05);
-  const kneeHeight = Math.max(deskHeight - plank, 0.05);
-  const kneeDepth = Math.max(deskDepth - 0.02, 0.02);
-  const kneeCenterX = -deskWidth / 2 + kneeWidth / 2;
-  const invisibleBoxDeskKnee = createInvisibleBox(
-    { width: kneeWidth, height: kneeHeight, depth: kneeDepth },
-    { x: kneeCenterX, y: -overallHeight / 2 + kneeHeight / 2 + deltaY, z: 0 },
-    'invisibleBox_computerdesk_kneespace',
-  );
-  container.add(invisibleBoxDeskKnee);
-
-  const horizontalPlanks = [towerBottomPlank, retTop, midShelf, towerTopPlank];
-  horizontalPlanks.sort((a, b) => a.position.y - b.position.y);
-  for (let i = 0; i < horizontalPlanks.length - 1; i++) {
-    const lower = horizontalPlanks[i];
-    const upper = horizontalPlanks[i + 1];
-    const lowerheight = (lower.geometry as THREE.BoxGeometry).parameters.height;
-    const upperheight = (upper.geometry as THREE.BoxGeometry).parameters.height;
-    const lowerTopY = lower.position.y + lowerheight / 2;
-    const upperBottomY = upper.position.y - upperheight / 2;
-    const compHeight = Math.max(upperBottomY - lowerTopY, 0.02);
-    const compY = (lowerTopY + upperBottomY) / 2;
-    const innerWidth = Math.max(returnWidth - plank * 2, 0.05);
-    const innerDepth = Math.max(deskDepth - plank * 2, 0.05);
-    const invisiblebox = createInvisibleBox(
-      { width: innerWidth, height: compHeight, depth: innerDepth },
-      { x: deskWidth / 2 - returnWidth / 2, y: compY, z: 0 },
-      `invisibleBox_compartment_${i}_for_computerdesk_tower`,
-      {
-        type: 'INVISIBLE_COMPARTMENT',
-        dimensions: {
-          width: innerWidth,
-          height: compHeight,
-          depth: innerDepth,
-        },
-      },
-    );
-    container.add(invisiblebox);
-  }
+  generateCompartmentsFromMesh(container);
+  container.userData.isMain = true;
+  container.userData.objectId = uuidv4();
   scene.add(container);
 };
 
@@ -1292,6 +1233,8 @@ export const addPlatformOnWall = async (
       },
     );
 
+    invisible.userData.objectId = uuidv4();
+    invisible.userData.isMain = true;
     platformGroup.add(invisible);
   }
 
@@ -1325,6 +1268,9 @@ export const addPlatformOnWall = async (
         },
       },
     );
+
+    invisible.userData.objectId = uuidv4();
+    invisible.userData.isMain = true;
     platformGroup.add(invisible);
   }
 
@@ -1510,8 +1456,12 @@ export const addVerticalPlanksToBox = async (
   const center = new THREE.Vector3();
   bbox.getCenter(center);
 
-  const parent = boxMesh ?? scene;
-  const localCenter = parent.worldToLocal(center.clone());
+  let parent: THREE.Mesh;
+  if (!(boxMesh.parent?.userData.isMain)) {
+    parent = boxMesh;
+  } else {
+    parent = boxMesh.parent as THREE.Mesh;
+  }
 
   const width = size.x;
   const height = size.y;
@@ -1536,33 +1486,18 @@ export const addVerticalPlanksToBox = async (
   // else scene.remove(boxMesh);
 
   const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
-
-  const effectiveHeight = isPlatform ? height - skirtingHeight : height;
-  const plankY = isPlatform
-    ? localCenter.y - height / 2 + skirtingHeight + effectiveHeight / 2
-    : localCenter.y;
+  const effectiveHeight = isPlatform ? height - skirtingHeight : height; const plankY = isPlatform ? center.y - height / 2 + skirtingHeight + effectiveHeight / 2 : center.y;
 
   for (let i = 1; i <= count; i++) {
-    const offset = -span / 2 + edgeClearance + interval * i;
     const plankPart = divideAlongX
       ? {
-        name: `VERTICAL_PLANK_${i}_for_${boxMesh.name}`,
-        dimensions: {
-          width: thickness,
-          height: effectiveHeight,
-          depth: depth,
-        },
-        position: { x: 0, y: plankY, z: 0 },
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width: thickness, height: effectiveHeight, depth },
         material: plankMatProps,
       }
       : {
-        name: `VERTICAL_PLANK_${i}_for_${boxMesh.name}`,
-        dimensions: {
-          width: width,
-          height: effectiveHeight,
-          depth: thickness,
-        },
-        position: { x: 0, y: plankY, z: 0 },
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width, height: effectiveHeight, depth: thickness },
         material: plankMatProps,
       };
 
@@ -1574,13 +1509,15 @@ export const addVerticalPlanksToBox = async (
       dimensions: plankPart.dimensions,
     });
 
-    const worldPos = new THREE.Vector3(
-      divideAlongX ? center.x + offset : center.x,
-      plankY,
-      divideAlongX ? center.z : center.z + offset
+    // Calculate local position like horizontal shelves
+    const localPos = new THREE.Vector3(
+      divideAlongX ? -width / 2 + edgeClearance + interval * i : 0,
+      isPlatform
+        ? -height / 2 + skirtingHeight + effectiveHeight / 2
+        : 0,
+      divideAlongX ? 0 : -depth / 2 + edgeClearance + interval * i
     );
 
-    const localPos = boxMesh.worldToLocal(worldPos.clone());
     plank.position.copy(localPos);
 
     const data = {
@@ -1613,7 +1550,7 @@ export const addVerticalPlanksToBox = async (
             width: plankPart.dimensions.width,
             height: plankPart.dimensions.height,
             depth: plankPart.dimensions.depth,
-            position: plankPart.position,
+            position: plank.position,
           } as any),
         );
       }
@@ -1630,7 +1567,7 @@ export const addVerticalPlanksToBox = async (
     const skirtingLocalPos = boxMesh.worldToLocal(skirtingWorldPos.clone());
 
     const skirtingPart = {
-      name: `Skirting_for_${boxMesh.name}`,
+      name: `Skirting`,
       dimensions: { width, height: skirtingHeight, depth },
       position: skirtingLocalPos,
       material: { color: 0x555555, roughness: 0.8 },
@@ -1640,10 +1577,10 @@ export const addVerticalPlanksToBox = async (
     boxMesh.add(skirting);
   }
 
-  generateCompartmentsFromMesh(boxMesh);
+  generateCompartmentsFromMesh(parent);
 };
 
-export const addHorizontalPlanksInsideBox = (
+export const addHorizontalPlanksInsideBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
@@ -1663,22 +1600,22 @@ export const addHorizontalPlanksInsideBox = (
   const depth = size.z;
 
   const thickness = 0.018;
-  const edgeClearance = Math.max(0.01, thickness);
-  const innerHeight = height - 2 * edgeClearance;
+  const innerHeight = height;
+  const innerWidth = width;
+
   if (innerHeight <= thickness) return;
 
   const interval = innerHeight / (count + 1);
-  const parent = boxMesh ?? scene;
-
+  let parent: THREE.Mesh;
+  if (!(boxMesh.parent?.userData.isMain)) {
+    parent = boxMesh;
+  } else {
+    parent = boxMesh.parent as THREE.Mesh;
+  }
   const localCenter = parent.worldToLocal(center.clone());
 
   const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
 
-  // Remove old invisible box
-  if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
-  else scene.remove(boxMesh);
-
-  // Store config for refresh
   parent.userData.compartmentConfig = {
     isHorizontal: true,
     isPlatform: false,
@@ -1695,11 +1632,13 @@ export const addHorizontalPlanksInsideBox = (
 
   for (let i = 1; i <= count; i++) {
     const yLocal = -innerHeight / 2 + interval * i;
+
     const shelfPart = {
-      name: `HORIZONTAL_PLANK_${i}_for_${boxMesh.name}`,
-      dimensions: { width, height: thickness, depth },
+      name: `HORIZONTAL_PLANK_${i}`,
+      dimensions: { width: innerWidth, height: thickness, depth },
       material: plankMatProps,
     };
+
     const shelf = createMeshObject(shelfPart, true, {
       isHorizontalPlank: true,
       dimensions: shelfPart.dimensions,
@@ -1716,12 +1655,15 @@ export const addHorizontalPlanksInsideBox = (
       height: (shelf.geometry as THREE.BoxGeometry).parameters.height,
       depth: (shelf.geometry as THREE.BoxGeometry).parameters.depth,
       position: shelf.position,
-    }
+    };
 
-    addItemtoDatabase(data);
+    const apiResponse = await addItemtoDatabase(data);
+    shelf.userData.objectId = apiResponse.id;
+    shelf.userData.type = apiResponse.type;
+    shelf.userData.apiData = apiResponse;
     parent.add(shelf);
 
-    // Update store if needed
+    // Sync with store
     if (shelf.userData.objectId) {
       const objInStore = store
         .getState()
@@ -1746,29 +1688,7 @@ export const addHorizontalPlanksInsideBox = (
     }
   }
 
-  // Create invisible boxes between shelves
-  // for (let i = 0; i <= count; i++) {
-  //   const bottomY = -innerHeight / 2 + interval * i;
-  //   const topY = bottomY + interval;
-  //   const compHeight = Math.max(interval - thickness, 0.02);
-  //   const compCenterY = (bottomY + topY) / 2;
-
-  //   const invDimensions = { width, height: compHeight, depth };
-  //   const worldPos = center.clone();
-  //   worldPos.y += compCenterY;
-  //   const invPosition = parent.worldToLocal(worldPos);
-
-  //   const invisiblebox = createInvisibleBox(
-  //     invDimensions,
-  //     { x: invPosition.x, y: invPosition.y, z: invPosition.z },
-  //     `invisibleBox_compartment_${i}_for_${boxMesh.name}`,
-  //     { type: 'INVISIBLE_COMPARTMENT', dimensions: invDimensions },
-  //   );
-  //   parent.add(invisiblebox);
-  // }
-
-  // refreshInvisibleBoxesForPlank(scene, boxMesh);
-  generateCompartmentsFromMesh(boxMesh);
+  generateCompartmentsFromMesh(parent as THREE.Mesh);
 };
 
 export const addDoorOnInvisibleBox = async (

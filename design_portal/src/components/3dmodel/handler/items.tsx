@@ -34,6 +34,7 @@ import {
 import { MoveHandler } from './moveHandler';
 import { updateObjectInDatabase } from './updateHandler';
 import { addCabinetItemToDesign } from './toolbar';
+import {v4 as uuidv4} from 'uuid';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -51,20 +52,32 @@ function initializeMoveHandler(options: {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
+  console.log('generateCompartmentsFromMesh', boxMesh);
   if (!boxMesh) return [];
 
-  // --- Collect all planks from the box ---
+  // --- Clean previous invisible boxes ---
+  const toRemove: THREE.Object3D[] = [];
+  boxMesh.traverse((child) => {
+    if (child.userData.isInvisibleBox) toRemove.push(child);
+  });
+  toRemove.forEach((c) => boxMesh.remove(c));
+
+  // --- Collect all planks ---
   const planks: {
     name: string;
     width: number;
     height: number;
     depth: number;
     position: THREE.Vector3;
+    xMin: number;
+    xMax: number;
+    yMin: number;
+    yMax: number;
   }[] = [];
 
   boxMesh.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
-    if (!child.userData.apiData || child.userData.type !== "Plank") return;
+    if (!child.userData.type || child.userData.type !== "Plank") return;
 
     const geom = child.geometry as THREE.BoxGeometry;
     const { width, height, depth } = geom.parameters;
@@ -78,72 +91,140 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       height,
       depth,
       position: localPos,
+      xMin: localPos.x - width / 2,
+      xMax: localPos.x + width / 2,
+      yMin: localPos.y - height / 2,
+      yMax: localPos.y + height / 2,
     });
   });
 
-  if (planks.length === 0) return [];
-
-  // --- Outer box boundaries ---
+  // --- Get total bounding box of container ---
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
-
   const width = size.x;
   const height = size.y;
   const depth = size.z;
 
-  // --- Extract divider positions (X for vertical, Y for horizontal) ---
-  const verticalPlanks = planks.filter((p) => p.name.includes("VERTICAL"));
-  const horizontalPlanks = planks.filter((p) => p.name.includes("HORIZONTAL"));
-
-  const xDividers = [-width / 2];
-  const yDividers = [-height / 2];
-
-  verticalPlanks.forEach((p) => xDividers.push(p.position.x));
-  horizontalPlanks.forEach((p) => yDividers.push(p.position.y));
-
-  xDividers.push(width / 2);
-  yDividers.push(height / 2);
-
-  xDividers.sort((a, b) => a - b);
-  yDividers.sort((a, b) => a - b);
-
-  // --- Create compartments ---
-  const compartments: THREE.Mesh[] = [];
+  // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
     color: 0x00ff00,
     transparent: true,
-    opacity: 0, // fully invisible
+    opacity: 0,
   });
 
-  for (let i = 0; i < xDividers.length - 1; i++) {
-    for (let j = 0; j < yDividers.length - 1; j++) {
-      const x1 = xDividers[i];
-      const x2 = xDividers[i + 1];
-      const y1 = yDividers[j];
-      const y2 = yDividers[j + 1];
+  // --- CASE 1: No planks found → full invisible box ---
+  if (planks.length === 0) {
+    const geo = new THREE.BoxGeometry(width, height, depth);
+    const mesh = new THREE.Mesh(geo, invisibleMat);
+    mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
+    mesh.userData.isInvisibleBox = true;
 
-      const w = x2 - x1;
-      const h = y2 - y1;
-      if (w <= 0 || h <= 0) continue;
+    // Center inside container
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    const localCenter = boxMesh.worldToLocal(center.clone());
+    mesh.position.copy(localCenter);
 
-      const cx = (x1 + x2) / 2;
-      const cy = (y1 + y2) / 2;
+    boxMesh.add(mesh);
+    console.log("✅ Created single full invisible box (no planks case)");
+    return [mesh];
+  }
 
-      const boxGeo = new THREE.BoxGeometry(w, h, depth);
-      const invisibleBox = new THREE.Mesh(boxGeo, invisibleMat);
-      invisibleBox.name = `INVISIBLE_COMPARTMENT_${i}_${j}_for_${boxMesh.name}`;
-      invisibleBox.position.set(cx, cy, 0);
-      invisibleBox.userData.isInvisibleBox = true;
+  // --- CASE 2: Planks exist → run grid logic ---
+  console.log(planks, 'planks');
+  const step = 0.01;
 
-      boxMesh.add(invisibleBox);
-      compartments.push(invisibleBox);
+  let minX = -width / 2;
+  let maxX = width / 2;
+  let minY = -height / 2;
+  let maxY = height / 2;
+
+  const gridWidth = Math.ceil((maxX - minX) / step);
+  const gridHeight = Math.ceil((maxY - minY) / step);
+
+  const grid: string[][] = Array(gridHeight)
+    .fill(null)
+    .map(() => Array(gridWidth).fill("empty"));
+
+  planks.forEach((p) => {
+    const { xMin, xMax, yMin, yMax } = p;
+    const startX = Math.max(0, Math.floor((xMin - minX) / step));
+    const endX = Math.min(gridWidth - 1, Math.ceil((xMax - minX) / step));
+    const startY = Math.max(0, Math.floor((yMin - minY) / step));
+    const endY = Math.min(gridHeight - 1, Math.ceil((yMax - minY) / step));
+
+    for (let y = startY; y <= endY; y++) {
+      for (let x = startX; x <= endX; x++) {
+        grid[y][x] = "plank";
+      }
+    }
+  });
+
+  const compartments: {
+    width: number;
+    height: number;
+    depth: number;
+    position: THREE.Vector3;
+  }[] = [];
+
+  for (let y = 0; y < gridHeight; y++) {
+    for (let x = 0; x < gridWidth; x++) {
+      if (grid[y][x] !== "empty") continue;
+
+      let xEnd = x;
+      let yEnd = y;
+
+      while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === "empty") xEnd++;
+
+      let valid = true;
+      while (yEnd + 1 < gridHeight && valid) {
+        for (let xCheck = x; xCheck <= xEnd; xCheck++) {
+          if (grid[yEnd + 1][xCheck] !== "empty") {
+            valid = false;
+            break;
+          }
+        }
+        if (valid) yEnd++;
+      }
+
+      const compWidth = (xEnd - x + 1) * step;
+      const compHeight = (yEnd - y + 1) * step;
+      const centerX = minX + (x + (xEnd - x) / 2) * step;
+      const centerY = minY + (y + (yEnd - y) / 2) * step;
+
+      if (compWidth > 0 && compHeight > 0) {
+        compartments.push({
+          width: compWidth,
+          height: compHeight,
+          depth: depth,
+          position: new THREE.Vector3(centerX, centerY, 0),
+        });
+      }
+
+      for (let fy = y; fy <= yEnd; fy++) {
+        for (let fx = x; fx <= xEnd; fx++) {
+          grid[fy][fx] = "filled";
+        }
+      }
     }
   }
 
-  return compartments;
+  // --- Create invisible boxes for compartments ---
+  const meshes: THREE.Mesh[] = [];
+  console.log(compartments, 'compartments');
+  compartments.forEach((c, idx) => {
+    const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
+    const mesh = new THREE.Mesh(geo, invisibleMat);
+    mesh.position.copy(c.position);
+    mesh.name = `INVISIBLE_COMPARTMENT_${idx}_for_${boxMesh.name}`;
+    mesh.userData.objectId = uuidv4();
+    mesh.userData.isInvisibleBox = true;
+    boxMesh.add(mesh);
+    meshes.push(mesh);
+  });
+
+  return meshes;
 }
 
 export function generateCompartmentsFromPlanks(
