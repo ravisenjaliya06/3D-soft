@@ -822,6 +822,9 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
         model = CatalogRules
         fields = ["id", "name", "rule_parts"]
 
+    def get_rule_parts(self: "CatalogRuleSerializer", obj: CatalogRules) -> list[dict]:
+        return CatalogRulePartSerializer(obj.catalog_rule_parts.all(), many=True).data
+
     def create(
         self: "CatalogRuleSerializer", validated_data: Dict[str, Any]
     ) -> CatalogRules:
@@ -853,8 +856,18 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
         return new_rule
 
 
+class CatalogRuleReadSerializer(serializers.ModelSerializer):
+    rule_parts = CatalogRulePartSerializer(
+        many=True, read_only=True, source="catalog_rule_parts"
+    )
+
+    class Meta:
+        model = CatalogRules
+        fields = ["id", "name", "rule_parts"]
+
+
 class CatalogReadHierarchySerializer(serializers.ModelSerializer):
-    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+    catalog_rule = CatalogRuleReadSerializer(many=True, read_only=True)
     children = serializers.SerializerMethodField()
 
     class Meta:
@@ -876,7 +889,9 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
             "children",
         ]
 
-    def get_children(self, obj):
+    def get_children(
+        self: "CatalogReadHierarchySerializer", obj: Catalog
+    ) -> list[dict]:
         children_qs = Catalog.objects.filter(
             parent_catalog=obj, organization=obj.organization
         )
