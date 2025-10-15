@@ -1235,6 +1235,7 @@ export const addPlatformOnWall = async (
 
     invisible.userData.objectId = uuidv4();
     invisible.userData.isMain = true;
+    invisible.userData.isPlatformInvisibleBox = true;
     platformGroup.add(invisible);
   }
 
@@ -1271,6 +1272,7 @@ export const addPlatformOnWall = async (
 
     invisible.userData.objectId = uuidv4();
     invisible.userData.isMain = true;
+    invisible.userData.isPlatformInvisibleBox = true;
     platformGroup.add(invisible);
   }
 
@@ -1470,7 +1472,7 @@ export const addVerticalPlanksToBox = async (
   const edgeClearance = Math.max(0.01, thickness);
   const skirtingHeight = 0.06;
 
-  const isPlatform = boxMesh.name.includes('platform');
+  const isPlatform = boxMesh.userData.isPlatformInvisibleBox;
   const isSideWallBox =
     boxMesh.name.includes('platform_leftwall') ||
     boxMesh.name.includes('platform_rightwall');
@@ -1486,7 +1488,7 @@ export const addVerticalPlanksToBox = async (
   // else scene.remove(boxMesh);
 
   const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
-  const effectiveHeight = isPlatform ? height - skirtingHeight : height; const plankY = isPlatform ? center.y - height / 2 + skirtingHeight + effectiveHeight / 2 : center.y;
+  const effectiveHeight = isPlatform ? height - skirtingHeight : height;
 
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
@@ -1509,8 +1511,8 @@ export const addVerticalPlanksToBox = async (
       dimensions: plankPart.dimensions,
     });
 
-    // Calculate local position like horizontal shelves
-    const localPos = new THREE.Vector3(
+    // Compute the world position of the plank relative to boxMesh
+    const worldPos = new THREE.Vector3(
       divideAlongX ? -width / 2 + edgeClearance + interval * i : 0,
       isPlatform
         ? -height / 2 + skirtingHeight + effectiveHeight / 2
@@ -1518,7 +1520,12 @@ export const addVerticalPlanksToBox = async (
       divideAlongX ? 0 : -depth / 2 + edgeClearance + interval * i
     );
 
+    // Convert this world position relative to parent
+    const parentWorldPos = boxMesh.localToWorld(worldPos.clone());
+    const localPos = parent.worldToLocal(parentWorldPos);
     plank.position.copy(localPos);
+
+    parent.add(plank);
 
     const data = {
       ...itemData,
@@ -1529,15 +1536,15 @@ export const addVerticalPlanksToBox = async (
       additional_data: {
         isPlatform: isPlatform,
         isSideWallBox: isSideWallBox,
-      }
+      },
     };
 
     const apiResponse = await addItemtoDatabase(data);
     plank.userData.objectId = apiResponse.id;
     plank.userData.type = 'Plank';
     plank.userData.apiData = apiResponse;
-    parent.add(plank);
 
+    // Sync store
     if (plank.userData.objectId) {
       const objInStore = store
         .getState()
@@ -1551,7 +1558,7 @@ export const addVerticalPlanksToBox = async (
             height: plankPart.dimensions.height,
             depth: plankPart.dimensions.depth,
             position: plank.position,
-          } as any),
+          } as any)
         );
       }
     }
@@ -3303,9 +3310,7 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
     applyPositionDelta(target, meta.axis, delta);
     showPlankDimensions(view.scene, target);
-    if (target.parent && target.parent.userData.compartmentConfig) {
-      updateCompartmentBoxes(target.parent);
-    }
+    generateCompartmentsFromMesh(target.parent as THREE.Mesh);
     view.renderer.render(view.scene, view.camera);
   };
 

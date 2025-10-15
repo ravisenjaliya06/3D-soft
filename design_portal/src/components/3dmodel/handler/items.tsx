@@ -52,7 +52,6 @@ function initializeMoveHandler(options: {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
-  console.log('generateCompartmentsFromMesh', boxMesh);
   if (!boxMesh) return [];
 
   // --- Clean previous invisible boxes ---
@@ -127,7 +126,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     mesh.position.copy(localCenter);
 
     boxMesh.add(mesh);
-    console.log("✅ Created single full invisible box (no planks case)");
     return [mesh];
   }
 
