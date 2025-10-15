@@ -50,6 +50,102 @@ function initializeMoveHandler(options: {
   });
 }
 
+export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
+  if (!boxMesh) return [];
+
+  // --- Collect all planks from the box ---
+  const planks: {
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+    position: THREE.Vector3;
+  }[] = [];
+
+  boxMesh.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    if (!child.userData.apiData || child.userData.type !== "Plank") return;
+
+    const geom = child.geometry as THREE.BoxGeometry;
+    const { width, height, depth } = geom.parameters;
+    const worldPos = new THREE.Vector3();
+    child.getWorldPosition(worldPos);
+    const localPos = boxMesh.worldToLocal(worldPos.clone());
+
+    planks.push({
+      name: child.name,
+      width,
+      height,
+      depth,
+      position: localPos,
+    });
+  });
+
+  if (planks.length === 0) return [];
+
+  // --- Outer box boundaries ---
+  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const center = new THREE.Vector3();
+  bbox.getCenter(center);
+
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
+
+  // --- Extract divider positions (X for vertical, Y for horizontal) ---
+  const verticalPlanks = planks.filter((p) => p.name.includes("VERTICAL"));
+  const horizontalPlanks = planks.filter((p) => p.name.includes("HORIZONTAL"));
+
+  const xDividers = [-width / 2];
+  const yDividers = [-height / 2];
+
+  verticalPlanks.forEach((p) => xDividers.push(p.position.x));
+  horizontalPlanks.forEach((p) => yDividers.push(p.position.y));
+
+  xDividers.push(width / 2);
+  yDividers.push(height / 2);
+
+  xDividers.sort((a, b) => a - b);
+  yDividers.sort((a, b) => a - b);
+
+  // --- Create compartments ---
+  const compartments: THREE.Mesh[] = [];
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    transparent: true,
+    opacity: 0, // fully invisible
+  });
+
+  for (let i = 0; i < xDividers.length - 1; i++) {
+    for (let j = 0; j < yDividers.length - 1; j++) {
+      const x1 = xDividers[i];
+      const x2 = xDividers[i + 1];
+      const y1 = yDividers[j];
+      const y2 = yDividers[j + 1];
+
+      const w = x2 - x1;
+      const h = y2 - y1;
+      if (w <= 0 || h <= 0) continue;
+
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+
+      const boxGeo = new THREE.BoxGeometry(w, h, depth);
+      const invisibleBox = new THREE.Mesh(boxGeo, invisibleMat);
+      invisibleBox.name = `INVISIBLE_COMPARTMENT_${i}_${j}_for_${boxMesh.name}`;
+      invisibleBox.position.set(cx, cy, 0);
+      invisibleBox.userData.isInvisibleBox = true;
+
+      boxMesh.add(invisibleBox);
+      compartments.push(invisibleBox);
+    }
+  }
+
+  return compartments;
+}
+
 export function generateCompartmentsFromPlanks(
   plankData: PlankDataItem[],
   objectName?: string,
@@ -2503,7 +2599,6 @@ export const addCabinetItemToDesign = async (
 };
 
 export const addItemtoDatabase = async (data: any) => {
-  console.log(data, 'data');
   try {
     const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {

@@ -259,19 +259,19 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           console.error('Failed to add walls after loading design:', e);
         }
         const designId = gettingDesignID();
-        if (designId) {
-          try {
-            const loadedObjects = await loadDesignObjects(
-              designId,
-              threeDView.scene,
-            );
-            dispatch(addObjects(loadedObjects));
-          } catch (error) {
-            console.error('Failed to load design objects:', error);
-          }
-        } else {
-          console.warn('No designId found in URL');
-        }
+        // if (designId) {
+        //   try {
+        //     const loadedObjects = await loadDesignObjects(
+        //       designId,
+        //       threeDView.scene,
+        //     );
+        //     dispatch(addObjects(loadedObjects));
+        //   } catch (error) {
+        //     console.error('Failed to load design objects:', error);
+        //   }
+        // } else {
+        //   console.warn('No designId found in URL');
+        // }
 
         threeDView.scene.traverse((object) => {
           if (
