@@ -19,6 +19,7 @@ from .serializers import (
     CompanySerializer,
     FinishesLibrarySerializer,
     MaterialSerializer,
+    CatalogReadHierarchySerializer,
 )
 
 
@@ -76,16 +77,22 @@ class MaterialViewSet(viewsets.ModelViewSet):
         else:
             serializer.save(organization=organization)
 
-
 class CatalogViewSet(viewsets.ModelViewSet):
     serializer_class = CatalogSerializer
     lookup_field = "id"
+    
+    def get_serializer_class(self):
+        if self.action in ["list"]:
+            return CatalogReadHierarchySerializer
+        return CatalogSerializer
+
 
     def get_queryset(self: "CatalogViewSet") -> QuerySet[Catalog]:
         catalog_type = self.request.query_params.get("type")
         design_id = self.request.query_params.get("design_id")
         catalog_list = Catalog.objects.filter(
-            organization=self.request.user.selected_organization
+            organization=self.request.user.selected_organization,
+            parent_catalog__isnull=True
         )
         if catalog_type:
             catalog_list = catalog_list.filter(type=catalog_type, design__isnull=True)

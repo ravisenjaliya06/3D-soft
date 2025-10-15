@@ -853,6 +853,40 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
         return new_rule
 
 
+class CatalogReadHierarchySerializer(serializers.ModelSerializer):
+    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Catalog
+        fields = [
+            "id",
+            "type",
+            "name",
+            "description",
+            "design",
+            "parent_catalog",
+            "catalog_rule",
+            "height",
+            "width",
+            "length",
+            "depth",
+            "position",
+            "additional_data",
+            "children",
+        ]
+
+    def get_children(self, obj):
+        children_qs = Catalog.objects.filter(
+            parent_catalog=obj, organization=obj.organization
+        )
+        if children_qs.exists():
+            return CatalogReadHierarchySerializer(
+                children_qs, many=True, context=self.context
+            ).data
+        return []
+
+
 class CatalogSerializer(serializers.ModelSerializer):
     catalog_rule = CatalogRuleSerializer(many=True, required=False)
 
@@ -888,7 +922,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         original_catalog = Catalog.objects.get(id=catalog_id)
 
         catalog = Catalog.objects.create(
-            organization=original_catalog.organization,
+            organization=request.user.selected_organization,
             name=original_catalog.name,
             type=original_catalog.type,
             description=original_catalog.description,
