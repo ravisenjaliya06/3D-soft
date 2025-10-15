@@ -1541,6 +1541,21 @@ export const addVerticalPlanksToBox = (
     ? localCenter.y - height / 2 + skirtingHeight + effectiveHeight / 2
     : localCenter.y;
 
+  // Add config for compartment recreation
+  parent.userData.compartmentConfig = {
+    divisionAxis: divideAlongX ? 'x' : 'z',
+    localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
+    span,
+    edgeClearance,
+    thickness,
+    perpDims: {
+      y: effectiveHeight,
+      [divideAlongX ? 'z' : 'x']: divideAlongX ? depth : width,
+    },
+    suffix: boxMesh.name,
+    isPlatform,
+  };
+
   // Create vertical planks
   for (let i = 1; i <= count; i++) {
     const offset = -span / 2 + edgeClearance + interval * i;
@@ -1655,8 +1670,6 @@ export const addVerticalPlanksToBox = (
     );
     parent.add(invisiblebox);
   }
-
-  refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
 export const addHorizontalPlanksInsideBox = (
   scene: THREE.Scene,
@@ -1706,6 +1719,12 @@ export const addHorizontalPlanksInsideBox = (
     centerZ: localCenter.z,
     thickness: thickness,
     groupName: boxMesh.name,
+    divisionAxis: 'y',
+    localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
+    span: height,
+    edgeClearance,
+    perpDims: { x: width, z: depth },
+    suffix: boxMesh.name,
   };
 
   for (let i = 1; i <= count; i++) {
@@ -1777,8 +1796,6 @@ export const addHorizontalPlanksInsideBox = (
     );
     parent.add(invisiblebox);
   }
-
-  refreshInvisibleBoxesForPlank(scene, boxMesh);
 };
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
@@ -2759,116 +2776,7 @@ export const addDoubleDoorUpperCabinetsAbovePlatform = async (
 ) => {
   return addUpperCabinetsAbovePlatform(scene, platformMesh, count, 'double');
 };
-const refreshInvisibleBoxesForGroup = (
-  parent: THREE.Object3D,
-  groupName: string,
-) => {
-  if (!parent.userData.compartmentConfig) return;
 
-  const config = parent.userData.compartmentConfig;
-  if (config.groupName !== groupName) return;
-
-  // Remove existing invisible boxes for this group
-  const toRemove: THREE.Object3D[] = [];
-  parent.traverse((o) => {
-    if (
-      o.name.includes(`invisibleBox_compartment_`) &&
-      o.name.includes(`_for_${groupName}`)
-    ) {
-      toRemove.push(o);
-    }
-  });
-  toRemove.forEach((o) => parent.remove(o));
-
-  // Collect and sort planks
-  const siblings: THREE.Mesh[] = [];
-  const plankKey = config.isHorizontal
-    ? 'HORIZONTAL_PLANK_'
-    : 'VERTICAL_PLANK_';
-  parent.traverse((o) => {
-    if (
-      o instanceof THREE.Mesh &&
-      o.name.includes(plankKey) &&
-      o.name.includes(`_for_${groupName}`)
-    ) {
-      siblings.push(o);
-    }
-  });
-
-  if (siblings.length === 0) return;
-
-  const axis = config.isHorizontal ? 'y' : config.isSideWall ? 'z' : 'x';
-  const plankPoss = siblings.map((p) => p.position[axis]);
-  plankPoss.sort((a, b) => a - b);
-
-  // Calculate compartment starts and ends
-  const plankMins = plankPoss.map((plank) => plank - config.thickness / 2);
-  const plankMaxs = plankPoss.map((plank) => plank + config.thickness / 2);
-
-  const starts = [config.boundsMin, ...plankMaxs];
-  const ends = [...plankMins, config.boundsMax];
-
-  const invisibleMat = new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.0,
-    depthWrite: false,
-  });
-
-  // Calculate height above skirting (exclude skirting area)
-  const skirtingHeight = 0.06;
-  const heightAboveSkirting = config.height - skirtingHeight;
-  const plankY = config.centerY + skirtingHeight / 2; // Position above skirting
-
-  for (let i = 0; i < starts.length; i++) {
-    const start = starts[i];
-    const end = ends[i];
-    const compSize = Math.max(end - start, 0.02);
-    if (compSize <= 0.01) continue;
-    const centerAlong = (start + end) / 2;
-
-    let invGeo;
-    if (config.isHorizontal) {
-      invGeo = new THREE.BoxGeometry(
-        config.perpSizeX,
-        compSize,
-        config.perpSizeZ,
-      );
-    } else {
-      invGeo = new THREE.BoxGeometry(
-        config.isSideWall ? config.perpSize : compSize,
-        heightAboveSkirting, // Use height above skirting instead of full height
-        config.isSideWall ? compSize : config.perpSize,
-      );
-    }
-    const invisiblebox = new THREE.Mesh(invGeo, invisibleMat);
-    invisiblebox.name = `invisibleBox_compartment_${i}_for_${groupName}`;
-
-    if (config.isHorizontal) {
-      invisiblebox.position.set(config.centerX, centerAlong, config.centerZ);
-    } else {
-      invisiblebox.position.set(
-        config.isSideWall ? config.centerPerp : centerAlong,
-        plankY, // Position above skirting
-        config.isSideWall ? centerAlong : config.centerPerp,
-      );
-    }
-    parent.add(invisiblebox);
-  }
-};
-
-// New function to refresh after plank move
-export function refreshInvisibleBoxesForPlank(
-  scene: THREE.Scene,
-  plank: THREE.Mesh,
-) {
-  const name = plank.name;
-  if (!name.includes('_for_')) return;
-  const groupName = name.split('_for_')[1];
-  if (!groupName) return;
-  if (!plank.parent) return;
-  refreshInvisibleBoxesForGroup(plank.parent, groupName);
-}
 export const ensureHandleLoaded = async () => {
   if (cachedHandleModel) return;
   const loader = new GLTFLoader();
@@ -3079,12 +2987,14 @@ function findNearestReferences(
 ) {
   scene.updateMatrixWorld(true);
 
-  let minPos: number | null = null;
-  let maxPos: number | null = null;
+  let minPlankPos: number | null = null;
+  let maxPlankPos: number | null = null;
   let minBox: THREE.Box3 | null = null;
   let maxBox: THREE.Box3 | null = null;
   let minWallPos: number | null = null;
   let maxWallPos: number | null = null;
+  let minSkirtingPos: number | null = null;
+  let maxSkirtingPos: number | null = null;
 
   const selfMin = selfBox.min[axis];
   const selfMax = selfBox.max[axis];
@@ -3095,57 +3005,54 @@ function findNearestReferences(
     const box = getAABB(obj);
     const isWall = isWallObject(obj);
     const isPlank = isPlankObject(obj);
+    const isSkirting = (obj.name || '').toLowerCase().includes('skirting');
 
     if (!overlapsOnAxes(selfBox, box, overlapAxes)) return;
 
     // Check negative direction
     if (box.max[axis] <= selfMin - EPS) {
-      if (isWall) {
+      if (isPlank) {
+        if (minPlankPos === null || box.max[axis] > minPlankPos) {
+          minPlankPos = box.max[axis];
+          minBox = box;
+        }
+      } else if (isSkirting) {
+        if (minSkirtingPos === null || box.max[axis] > minSkirtingPos) {
+          minSkirtingPos = box.max[axis];
+        }
+      } else if (isWall) {
         if (minWallPos === null || box.max[axis] > minWallPos) {
           minWallPos = box.max[axis];
-        }
-      } else if (isPlank && minWallPos === null) {
-        if (minPos === null || box.max[axis] > minPos) {
-          minPos = box.max[axis];
-          minBox = box;
-        }
-      } else if (!isPlank && minWallPos === null && minPos === null) {
-        if (minPos === null || box.max[axis] > minPos) {
-          minPos = box.max[axis];
-          minBox = box;
         }
       }
     }
 
     // Check positive direction
     if (box.min[axis] >= selfMax + EPS) {
-      if (isWall) {
+      if (isPlank) {
+        if (maxPlankPos === null || box.min[axis] < maxPlankPos) {
+          maxPlankPos = box.min[axis];
+          maxBox = box;
+        }
+      } else if (isSkirting) {
+        if (maxSkirtingPos === null || box.min[axis] < maxSkirtingPos) {
+          maxSkirtingPos = box.min[axis];
+        }
+      } else if (isWall) {
         if (maxWallPos === null || box.min[axis] < maxWallPos) {
           maxWallPos = box.min[axis];
-        }
-      } else if (isPlank && maxWallPos === null) {
-        if (maxPos === null || box.min[axis] < maxPos) {
-          maxPos = box.min[axis];
-          maxBox = box;
-        }
-      } else if (!isPlank && maxWallPos === null && maxPos === null) {
-        if (maxPos === null || box.min[axis] < maxPos) {
-          maxPos = box.min[axis];
-          maxBox = box;
         }
       }
     }
   });
 
   return {
-    minPos: minWallPos ?? minPos,
-    maxPos: maxWallPos ?? maxPos,
-    minBox: minWallPos !== null ? null : minBox,
-    maxBox: maxWallPos !== null ? null : maxBox,
+    minPos: minPlankPos ?? minSkirtingPos ?? minWallPos,
+    maxPos: maxPlankPos ?? maxSkirtingPos ?? maxWallPos,
+    minBox: minPlankPos !== null ? minBox : null,
+    maxBox: maxPlankPos !== null ? maxBox : null,
   };
 }
-
-// Dimension creation for different orientations
 function createDimensionForAxis({
   group,
   mesh,
@@ -3368,6 +3275,84 @@ function applyPositionDelta(
   else target.position.z += delta;
 }
 
+export function updateCompartmentBoxes(parent: THREE.Object3D) {
+  const config = parent.userData.compartmentConfig;
+  if (!config) return;
+
+  // Remove old invisible boxes
+  const children = [...parent.children];
+  for (const child of children) {
+    if (child.name.startsWith('invisibleBox_compartment_')) {
+      parent.remove(child);
+      disposeObjectResources(child);
+    }
+  }
+
+  const isHorizontal = config.divisionAxis === 'y';
+  const planks = children.filter(
+    (child) =>
+      (isHorizontal
+        ? child.userData.isHorizontalPlank
+        : child.userData.isVerticalPlank) && child instanceof THREE.Mesh,
+  );
+
+  if (planks.length === 0) return;
+
+  const plankCenters = planks
+    .map((p) => p.position[config.divisionAxis as 'x' | 'y' | 'z'])
+    .sort((a, b) => a - b);
+
+  const boundsMin = config.localCenter[config.divisionAxis] - config.span / 2;
+  const boundsMax = config.localCenter[config.divisionAxis] + config.span / 2;
+  const innerMin = boundsMin + config.edgeClearance;
+  const innerMax = boundsMax - config.edgeClearance;
+
+  // repair compartment box
+  const halfThick = config.thickness / 2;
+  const starts = [innerMin + halfThick];
+  for (const center of plankCenters) {
+    starts.push(center + halfThick);
+  }
+  const ends = [];
+  for (const center of plankCenters) {
+    ends.push(center - halfThick);
+  }
+  ends.push(innerMax - halfThick);
+
+  for (let i = 0; i < starts.length; i++) {
+    const start = starts[i];
+    const end = ends[i];
+    const compSize = Math.max(end - start, 0.02);
+    const compCenterLocal = (start + end) / 2;
+
+    // Position
+    const localPos = new THREE.Vector3();
+    localPos.x =
+      config.divisionAxis === 'x' ? compCenterLocal : config.localCenter.x;
+    localPos.y =
+      config.divisionAxis === 'y' ? compCenterLocal : config.localCenter.y;
+    localPos.z =
+      config.divisionAxis === 'z' ? compCenterLocal : config.localCenter.z;
+
+    const dims = {
+      width: config.perpDims.x || compSize,
+      height: config.perpDims.y || compSize,
+      depth: config.perpDims.z || compSize,
+    };
+    if (config.divisionAxis === 'x') dims.width = compSize;
+    if (config.divisionAxis === 'y') dims.height = compSize;
+    if (config.divisionAxis === 'z') dims.depth = compSize;
+
+    const invisiblebox = createInvisibleBox(
+      dims,
+      { x: localPos.x, y: localPos.y, z: localPos.z },
+      `invisibleBox_compartment_${i}_for_${config.suffix}`,
+      { type: 'INVISIBLE_COMPARTMENT', dimensions: dims },
+    );
+    parent.add(invisiblebox);
+  }
+}
+
 export function enablePlankDimensionEditing(view: ThreeDView) {
   const onClick = (event: MouseEvent) => {
     const rect = view.renderer.domElement.getBoundingClientRect();
@@ -3419,7 +3404,9 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
     applyPositionDelta(target, meta.axis, delta);
     showPlankDimensions(view.scene, target);
-    refreshInvisibleBoxesForPlank(view.scene, target);
+    if (target.parent && target.parent.userData.compartmentConfig) {
+      updateCompartmentBoxes(target.parent);
+    }
     view.renderer.render(view.scene, view.camera);
   };
 
