@@ -725,7 +725,6 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
   scene.add(cWallGroup);
 };
-
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   const width = 1.5;
   const height = 2;
@@ -826,6 +825,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   generateCompartmentsFromMesh(cabinetContainer);
   scene.add(cabinetContainer);
 };
+
 export const addSimpleTVUnit = (scene: THREE.Scene) => {
   const width = 1.6;
   const baseHeight = 0.26;
@@ -858,7 +858,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
 
   const container = createInvisibleBox(
     { width, height: overallHeight, depth: overallDepth },
-    { x: placeX, y: floorY + overallHeight / 2, z: placeZ },
+    { x: placeX, y: floorY + overallHeight / 2, z: 0 },
     'SimpleTVUnit',
     {
       baseDims: { width, height: overallHeight, depth: overallDepth },
@@ -1510,6 +1510,9 @@ export const addVerticalPlanksToBox = async (
   const center = new THREE.Vector3();
   bbox.getCenter(center);
 
+  const parent = boxMesh ?? scene;
+  const localCenter = parent.worldToLocal(center.clone());
+
   const width = size.x;
   const height = size.y;
   const depth = size.z;
@@ -1517,7 +1520,6 @@ export const addVerticalPlanksToBox = async (
   const edgeClearance = Math.max(0.01, thickness);
   const skirtingHeight = 0.06;
 
-  const parent = boxMesh ?? scene;
   const isPlatform = boxMesh.name.includes('platform');
   const isSideWallBox =
     boxMesh.name.includes('platform_leftwall') ||
@@ -1537,10 +1539,11 @@ export const addVerticalPlanksToBox = async (
 
   const effectiveHeight = isPlatform ? height - skirtingHeight : height;
   const plankY = isPlatform
-    ? center.y - height / 2 + skirtingHeight + effectiveHeight / 2
-    : center.y;
+    ? localCenter.y - height / 2 + skirtingHeight + effectiveHeight / 2
+    : localCenter.y;
 
   for (let i = 1; i <= count; i++) {
+    const offset = -span / 2 + edgeClearance + interval * i;
     const plankPart = divideAlongX
       ? {
         name: `VERTICAL_PLANK_${i}_for_${boxMesh.name}`,
