@@ -1,95 +1,16 @@
 # local imports
 # App imports
-from design.models import Design
 
 # Local imports
-from .models import Catalog, CatalogRuleParts, CatalogRules, Material, MaterialFinish, MaterialFinishType, MaterialTexture, MountHoles, MountPlateHoles, Properties
-
-
-# def create_duplicate_catalog(design_id: str, catalog_id: str) -> None:
-#     design = Design.objects.get(id=design_id)
-#     catalog = Catalog.objects.get(id=catalog_id)
-#     duplicate_catalog = Catalog.objects.create(
-#         organization=catalog.organization,
-#         name=f"{catalog.name} copy",
-#         type=catalog.type,
-#         description=catalog.description,
-#         design=design,
-#     )
-#     catalog_rule = CatalogRules.objects.filter(catalog=catalog)
-#     if catalog_rule is not None:
-#         for rule in catalog_rule:
-#             duplicate_catalog_rule = CatalogRules.objects.create(
-#                 catalog=duplicate_catalog, name=f"{rule.name} copy"
-#             )
-
-#             catalog_rule_parts = CatalogRuleParts.objects.filter(catalog_rule=rule)
-#             for part in catalog_rule_parts:
-#                 get_material_obj = part.material
-#                 if get_material_obj is not None:
-#                     material_id = get_material_obj.id
-#                     material = Material.objects.get(id=material_id)
-#                     duplicate_material = Material.objects.create(
-#                         name=f"{material.name} copy"
-#                     )
-#                     duplicate_catalog_rule_parts = CatalogRuleParts.objects.create(
-#                         name=f"{part.name}",
-#                         catalog_rule=duplicate_catalog_rule,
-#                         material=duplicate_material,
-#                     )
-#                     duplicate_catalog_rule_parts.save()
-#                 else:
-#                     duplicate_catalog_rule_parts = CatalogRuleParts.objects.create(
-#                         name=f"{part.name}",
-#                         catalog_rule=duplicate_catalog_rule,
-#                         material=None,
-#                     )
-#                     duplicate_catalog_rule_parts.save()
-
-#     return duplicate_catalog
-def create_duplicate_catalog(design_id: str, catalog_id: str, extra_data: dict = None) -> Catalog:
-    design = Design.objects.get(id=design_id)
-    catalog = Catalog.objects.get(id=catalog_id)
-
-    catalog_data = {
-        "organization": catalog.organization,
-        "name": f"{catalog.name} Copy",
-        "type": catalog.type,
-        "description": catalog.description,
-        "design": design,
-        "height": extra_data.height,
-        "width": extra_data.width,
-        "length": extra_data.length,
-        "depth": extra_data.depth,
-        "position": extra_data.position,
-    }
-
-    duplicate_catalog = Catalog.objects.create(**catalog_data)
-
-    for rule in catalog.catalog_rule.all():
-        duplicate_rule = CatalogRules.objects.create(
-            catalog=duplicate_catalog,
-            name=f"{rule.name} Copy"
-        )
-
-        for part in rule.catalog_rule_parts.all():
-            new_material = None
-            if part.material:
-                new_material = duplicate_material(part.material)
-
-            CatalogRuleParts.objects.create(
-                catalog_rule=duplicate_rule,
-                name=f"{part.name} Copy",
-                material=new_material,
-                height=part.height,
-                width=part.width,
-                length=part.length,
-                depth=part.depth,
-                position=part.position,
-                handle_position=part.handle_position,
-            )
-
-    return duplicate_catalog
+from .models import (
+    Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
+    MountHoles,
+    MountPlateHoles,
+    Properties,
+)
 
 
 def duplicate_material(material: Material) -> Material:
@@ -132,6 +53,7 @@ def duplicate_material(material: Material) -> Material:
 
 def duplicate_properties(prop: Properties, material_copy: Material) -> Properties:
     """Duplicate Properties object with mount holes + plate holes"""
+
     # First duplicate related mount holes (if exist)
     def clone_hole(hole: MountHoles) -> MountHoles | None:
         if hole:

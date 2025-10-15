@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+# App imports
 from design.models import Design
 
 # Local imports
@@ -24,7 +25,7 @@ from .models import (
     MountPlateHoles,
     Properties,
 )
-from .utils import create_duplicate_catalog
+from .utils import duplicate_material
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -790,8 +791,72 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             return {"id": str(obj.material.id), "name": obj.material.name}
         return None
 
+    def create(
+        self: "CatalogRulePartSerializer", validated_data: Dict[str, Any]
+    ) -> CatalogRuleParts:
+        old_part = self.context.get("old_part")
+        override_data = self.context.get("override_data", {})
+        data = {
+            "name": old_part.name,
+            "catalog_rule": self.context["catalog_rule"],
+            "material": (
+                duplicate_material(old_part.material) if old_part.material else None
+            ),
+            "height": override_data.get("height", old_part.height),
+            "width": override_data.get("width", old_part.width),
+            "length": override_data.get("length", old_part.length),
+            "depth": override_data.get("depth", old_part.depth),
+            "position": override_data.get("position", old_part.position),
+            "handle_position": override_data.get(
+                "handle_position", old_part.handle_position
+            ),
+        }
+
+        return CatalogRuleParts.objects.create(**data)
+
 
 class CatalogRuleSerializer(serializers.ModelSerializer):
+    rule_parts = CatalogRulePartSerializer(many=True, required=False)
+
+    class Meta:
+        model = CatalogRules
+        fields = ["id", "name", "rule_parts"]
+
+    def get_rule_parts(self: "CatalogRuleSerializer", obj: CatalogRules) -> list[dict]:
+        return CatalogRulePartSerializer(obj.catalog_rule_parts.all(), many=True).data
+
+    def create(
+        self: "CatalogRuleSerializer", validated_data: Dict[str, Any]
+    ) -> CatalogRules:
+        """Handles duplicating a single rule and all its parts."""
+        old_rule = self.context.get("old_rule")
+        catalog = self.context["catalog"]
+        override_rule_data = self.context.get("override_rule_data", {})
+
+        # Create duplicate rule
+        new_rule = CatalogRules.objects.create(
+            catalog=catalog,
+            name=old_rule.name,
+        )
+
+        override_parts = {
+            part["name"]: part for part in override_rule_data.get("rule_parts", [])
+        }
+        for old_part in old_rule.catalog_rule_parts.all():
+            part_override = (
+                override_parts.get(old_part.name, {}) if override_parts else {}
+            )
+            part_context = {
+                "old_part": old_part,
+                "catalog_rule": new_rule,
+                "override_data": part_override,
+            }
+            CatalogRulePartSerializer(context=part_context).create({})
+
+        return new_rule
+
+
+class CatalogRuleReadSerializer(serializers.ModelSerializer):
     rule_parts = CatalogRulePartSerializer(
         many=True, read_only=True, source="catalog_rule_parts"
     )
@@ -801,13 +866,9 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "rule_parts"]
 
 
-class CatalogSerializer(serializers.ModelSerializer):
-    design = serializers.PrimaryKeyRelatedField(
-        queryset=Design.objects.all(),
-        required=False,
-        allow_null=True
-    )
-    catalog_rule = CatalogRuleSerializer(many=True, read_only=True)
+class CatalogReadHierarchySerializer(serializers.ModelSerializer):
+    catalog_rule = CatalogRuleReadSerializer(many=True, read_only=True)
+    children = serializers.SerializerMethodField()
 
     class Meta:
         model = Catalog
@@ -817,6 +878,42 @@ class CatalogSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
+            "parent_catalog",
+            "catalog_rule",
+            "height",
+            "width",
+            "length",
+            "depth",
+            "position",
+            "additional_data",
+            "children",
+        ]
+
+    def get_children(
+        self: "CatalogReadHierarchySerializer", obj: Catalog
+    ) -> list[dict]:
+        children_qs = Catalog.objects.filter(
+            parent_catalog=obj, organization=obj.organization
+        )
+        if children_qs.exists():
+            return CatalogReadHierarchySerializer(
+                children_qs, many=True, context=self.context
+            ).data
+        return []
+
+
+class CatalogSerializer(serializers.ModelSerializer):
+    catalog_rule = CatalogRuleSerializer(many=True, required=False)
+
+    class Meta:
+        model = Catalog
+        fields = [
+            "id",
+            "type",
+            "name",
+            "description",
+            "design",
+            "parent_catalog",
             "catalog_rule",
             "height",
             "width",
@@ -830,28 +927,44 @@ class CatalogSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
-        if design_id and catalog_id:
-            return create_duplicate_catalog(design_id, catalog_id, validated_data)
-        new_catalog = Catalog.objects.create(**validated_data)
 
-        template_catalog = Catalog.objects.filter(
-            organization__isnull=True, type=new_catalog.type
-        ).first()
+        if not design_id or not catalog_id:
+            raise serializers.ValidationError(
+                "Missing required fields: 'design_id' or 'catalog_id'."
+            )
 
-        if template_catalog:
-            for rule in template_catalog.catalog_rule.all():
-                new_rule = CatalogRules.objects.create(
-                    catalog=new_catalog,
-                    name=rule.name,
-                )
-                for part in rule.catalog_rule_parts.all():
-                    CatalogRuleParts.objects.create(
-                        catalog_rule=new_rule,
-                        name=part.name,
-                        material=part.material,
-                    )
+        design = Design.objects.get(id=design_id)
+        original_catalog = Catalog.objects.get(id=catalog_id)
 
-        return new_catalog
+        catalog = Catalog.objects.create(
+            organization=request.user.selected_organization,
+            name=original_catalog.name,
+            type=original_catalog.type,
+            description=original_catalog.description,
+            design=design,
+            height=validated_data.get("height", original_catalog.height),
+            width=validated_data.get("width", original_catalog.width),
+            length=validated_data.get("length", original_catalog.length),
+            depth=validated_data.get("depth", original_catalog.depth),
+            position=validated_data.get("position", original_catalog.position),
+            parent_catalog=validated_data.get("parent_catalog"),
+        )
+
+        override_rules = {
+            rule["name"]: rule for rule in validated_data.get("catalog_rule", [])
+        }
+        for old_rule in original_catalog.catalog_rule.all():
+            override_rule_data = (
+                override_rules.get(old_rule.name, {}) if override_rules else {}
+            )
+            rule_context = {
+                "catalog": catalog,
+                "old_rule": old_rule,
+                "override_rule_data": override_rule_data,
+            }
+            CatalogRuleSerializer(context=rule_context).create({})
+
+        return catalog
 
     def update(
         self: "CatalogSerializer", instance: Catalog, validated_data: Dict[str, str]

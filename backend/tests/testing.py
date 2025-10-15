@@ -13,6 +13,7 @@ from rest_framework.test import APITestCase
 from tests.model_factory import (
     new_catalog,
     new_catalog_item,
+    new_company,
     new_design,
     new_design_setting,
     new_material,
@@ -51,6 +52,7 @@ class APIBaseTestCase(APITestCase):
         self.seed_new_catalog_structure(DEFAULT_DATABASE)
         self.seed_new_design_setting(DEFAULT_DATABASE)
         self.seed_new_user_organization_permission(DEFAULT_DATABASE)
+        self.seed_new_company(DEFAULT_DATABASE)
 
     @property
     def get_headers(self: "APIBaseTestCase") -> Dict[str, str]:
@@ -244,4 +246,12 @@ class APIBaseTestCase(APITestCase):
             sheet_width=200,
             sheet_height=200,
             minifix_distance=10,
+        )
+
+    def seed_new_company(self: "APIBaseTestCase", db: str) -> None:
+        self.company = new_company(
+            database=db,
+            name="test",
+            material_type="Banding",
+            organization=self.organization,
         )

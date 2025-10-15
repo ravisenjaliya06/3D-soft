@@ -9,6 +9,7 @@ from django.utils import timezone
 
 # App imports
 from design.models import Catalog, CatalogItem, Design, DesignSetting, Material, Texture
+from material.models import Company
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 
@@ -149,4 +150,12 @@ def new_design_setting(
         sheet_width=sheet_width,
         sheet_height=sheet_height,
         minifix_distance=minifix_distance,
+    )
+
+
+def new_company(
+    database: str, name: str, material_type: str, organization: Organization
+) -> Company:
+    return Company.objects.using(database).create(
+        name=name, material_type=material_type, organization=organization
     )
