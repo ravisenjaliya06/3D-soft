@@ -67,9 +67,17 @@ export function createOutlineForObject(
   });
   const outlineLines = new THREE.LineSegments(edges, outlineMaterial);
 
-  outlineLines.position.copy(mesh.position);
-  outlineLines.rotation.copy(mesh.rotation);
-  outlineLines.scale.copy(mesh.scale);
+  // Compute world position, rotation, scale
+  mesh.updateWorldMatrix(true, false);
+  const worldPosition = new THREE.Vector3();
+  const worldQuaternion = new THREE.Quaternion();
+  const worldScale = new THREE.Vector3();
+  mesh.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
+
+  outlineLines.position.copy(worldPosition);
+  outlineLines.quaternion.copy(worldQuaternion);
+  outlineLines.scale.copy(worldScale);
+
   outlineLines.name = `outline-${mesh.userData.objectId}`;
   outlineLines.userData.isOutline = true;
   outlineLines.userData.outlineFor = mesh.userData.objectId;
