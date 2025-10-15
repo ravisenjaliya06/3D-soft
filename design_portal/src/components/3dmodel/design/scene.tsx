@@ -1574,7 +1574,6 @@ export const addVerticalPlanksToBox = async (
       dimensions: plankPart.dimensions,
     });
 
-    const offset = -span / 2 + edgeClearance + interval * i;
     const worldPos = new THREE.Vector3(
       divideAlongX ? center.x + offset : center.x,
       plankY,
