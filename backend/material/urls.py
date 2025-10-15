@@ -68,7 +68,7 @@ urlpatterns = [
     ),
     path(
         "catalog/",
-        CatalogViewSet.as_view({"get": "list", "post": "create"}),
+        CatalogViewSet.as_view({"get": "list"}),
         name="catalog-list",
     ),
     path(
