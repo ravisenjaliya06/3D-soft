@@ -1631,7 +1631,6 @@ export const addHorizontalPlanksInsideBox = async (
     divisionAxis: 'y',
     localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
     span: height,
-    edgeClearance,
     perpDims: { x: width, z: depth },
     suffix: boxMesh.name,
   };
