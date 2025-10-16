@@ -5,9 +5,6 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-# App imports
-from design.models import Design
-
 # Local imports
 from .models import (
     Catalog,
@@ -878,7 +875,7 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
-            "parent_catalog",
+            "parent",
             "catalog_rule",
             "height",
             "width",
@@ -892,18 +889,14 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
     def get_children(
         self: "CatalogReadHierarchySerializer", obj: Catalog
     ) -> list[dict]:
-        children_qs = Catalog.objects.filter(
-            parent_catalog=obj, organization=obj.organization
-        )
-        if children_qs.exists():
-            return CatalogReadHierarchySerializer(
-                children_qs, many=True, context=self.context
-            ).data
-        return []
+        return CatalogReadHierarchySerializer(
+            obj.parent_catalog_data.all(), many=True, context=self.context
+        ).data
 
 
 class CatalogSerializer(serializers.ModelSerializer):
     catalog_rule = CatalogRuleSerializer(many=True, required=False)
+    design_id = serializers.UUIDField(write_only=True, required=True)
 
     class Meta:
         model = Catalog
@@ -913,7 +906,8 @@ class CatalogSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
-            "parent_catalog",
+            "design_id",
+            "parent",
             "catalog_rule",
             "height",
             "width",
@@ -924,35 +918,13 @@ class CatalogSerializer(serializers.ModelSerializer):
         ]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
-        request = self.context["request"]
-        design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
-
-        if not design_id or not catalog_id:
-            raise serializers.ValidationError(
-                "Missing required fields: 'design_id' or 'catalog_id'."
-            )
-
-        design = Design.objects.get(id=design_id)
         original_catalog = Catalog.objects.get(id=catalog_id)
 
-        catalog = Catalog.objects.create(
-            organization=request.user.selected_organization,
-            name=original_catalog.name,
-            type=original_catalog.type,
-            description=original_catalog.description,
-            design=design,
-            height=validated_data.get("height", original_catalog.height),
-            width=validated_data.get("width", original_catalog.width),
-            length=validated_data.get("length", original_catalog.length),
-            depth=validated_data.get("depth", original_catalog.depth),
-            position=validated_data.get("position", original_catalog.position),
-            parent_catalog=validated_data.get("parent_catalog"),
-        )
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
+        catalog = Catalog.objects.create(**validated_data)
 
-        override_rules = {
-            rule["name"]: rule for rule in validated_data.get("catalog_rule", [])
-        }
+        override_rules = {rule["name"]: rule for rule in catalog_rules_data}
         for old_rule in original_catalog.catalog_rule.all():
             override_rule_data = (
                 override_rules.get(old_rule.name, {}) if override_rules else {}

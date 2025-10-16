@@ -94,7 +94,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
         design_id = self.request.query_params.get("design_id")
         catalog_list = Catalog.objects.filter(
             organization=self.request.user.selected_organization,
-            parent_catalog__isnull=True,
+            parent__isnull=True,
         )
         if catalog_type:
             catalog_list = catalog_list.filter(type=catalog_type, design__isnull=True)
