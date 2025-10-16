@@ -919,8 +919,10 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
-        design_id = request.data.get("design_id")
+        design_id = request.data.get("design")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
+        if not catalog_id:
+            return Catalog.objects.create(**validated_data)
         original_catalog = Catalog.objects.get(id=catalog_id)
 
         if not design_id:
@@ -940,7 +942,6 @@ class CatalogSerializer(serializers.ModelSerializer):
                 "override_rule_data": override_rule_data,
             }
             CatalogRuleSerializer(context=rule_context).create({})
-
         return catalog
 
     def update(

@@ -14,7 +14,9 @@ import {
   addItemtoDatabase,
   addItemToDataBaseWihoutCatalog,
   generateCompartmentsFromMesh,
+  hideFullScreenLoader,
   initializeMoveHandler,
+  showFullScreenLoader,
 } from '../handler/items';
 import { store } from '../store';
 import {
@@ -26,6 +28,7 @@ import {
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { metersToMM } from '../handler/unitConversion';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -1019,7 +1022,7 @@ export const addSimpleTVUnit = (scene: THREE.Scene) => {
   smallShelvesY.forEach((ratio, idx) => {
     const y = baseHeight / 2 + gap + ratio * panelHeight + deltaY;
     const shelfPart = {
-      name: `HORIZONTAL_PLANK_SHELF_${idx}`,
+      name: `HORIZONTAL_PLANK_${idx + 1}`,
       dimensions: {
         width: smallShelfWidth,
         height: thickness,
@@ -1320,15 +1323,15 @@ export const addPlatformOnWall = async (
       name: invisible.name,
       type: 'Invisible Compartment',
       description: '',
-      design_id: designId,
-      height: invisibleBoxHeight,
-      width: dimensions.width,
-      length: dimensions.depth,
-      depth: dimensions.depth,
+      design: designId,
+      height: metersToMM(invisibleBoxHeight),
+      width: metersToMM(dimensions.width),
+      length: metersToMM(dimensions.depth),
+      depth: metersToMM(dimensions.depth),
       position: {
-        x: topMesh.position.x,
-        y: floorY + invisibleBoxHeight / 2,
-        z: topMesh.position.z,
+        x: metersToMM(topMesh.position.x),
+        y: metersToMM(floorY + invisibleBoxHeight / 2),
+        z: metersToMM(topMesh.position.z),
       }
     }
     const apiResponse = await addItemToDataBaseWihoutCatalog(data);
@@ -1427,13 +1430,16 @@ export const addPlatformOnWall = async (
 
     platformGroup.add(topMesh);
 
-    const { width, height, depth } = topPart.dimensions;
     addedMeshes.push({
       name: topPart.name,
-      width,
-      height,
-      depth,
-      position: topMesh.position as any,
+      width: metersToMM(topPart.dimensions.width),
+      height: metersToMM(topPart.dimensions.height),
+      depth: metersToMM(topPart.dimensions.depth),
+      position: {
+        x: metersToMM(topPart.position.x),
+        y: metersToMM(topPart.position.y),
+        z: metersToMM(topPart.position.z),
+      },
       data: {
         rotation: topMesh.rotation as any,
         wall: wallMesh?.name || '',
@@ -1499,13 +1505,16 @@ export const addPlatformOnWall = async (
 
     platformGroup.add(topMesh);
 
-    const { width, height, depth } = topPart.dimensions;
     addedMeshes.push({
       name: topPart.name,
-      width,
-      height,
-      depth,
-      position: topMesh.position as any,
+      width: metersToMM(topPart.dimensions.width),
+      height: metersToMM(topPart.dimensions.height),
+      depth: metersToMM(topPart.dimensions.depth),
+      position: {
+        x: metersToMM(topPart.position.x),
+        y: metersToMM(topPart.position.y),
+        z: metersToMM(topPart.position.z),
+      },
       data: {
         rotation: topMesh.rotation as any,
         wall: wallMesh?.name || '',
@@ -1549,6 +1558,7 @@ export const addVerticalPlanksToBox = async (
   selectedCabinetItem: any = null,
   itemData: any = null,
 ) => {
+  showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) return;
 
   const bbox = new THREE.Box3().setFromObject(boxMesh);
@@ -1626,11 +1636,15 @@ export const addVerticalPlanksToBox = async (
 
     const data = {
       ...itemData,
-      width: (plank.geometry as THREE.BoxGeometry).parameters.width,
-      height: (plank.geometry as THREE.BoxGeometry).parameters.height,
-      depth: (plank.geometry as THREE.BoxGeometry).parameters.depth,
-      position: plank.position,
-      parent_catalog: parent.userData.objectId,
+      width: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.width),
+      height: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.height),
+      depth: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.depth),
+      position: {
+        x: metersToMM(plank.position.x),
+        y: metersToMM(plank.position.y),
+        z: metersToMM(plank.position.z),
+      },
+      parent: parent.userData.objectId,
       additional_data: {
         isPlatform: isPlatform,
         isSideWallBox: isSideWallBox,
@@ -1663,11 +1677,6 @@ export const addVerticalPlanksToBox = async (
 
     const plankDimensionsMM = plank.userData.dimensions;
     const plankPositionMM = convertPositionToMM(plank.position as any);
-    const plankPositionMMX = {
-      x: plankPositionMM.x,
-      y: plank.position.y * 1000,
-      z: plank.position.z * 1000,
-    };
 
     if (plank.userData.objectId) {
       const objInStore = store
@@ -1712,12 +1721,16 @@ export const addVerticalPlanksToBox = async (
       type: 'Skirting',
       description: '',
       design_id: designId,
-      height: skirtingPart.dimensions.height,
-      width: skirtingPart.dimensions.width,
-      length: skirtingPart.dimensions.depth,
-      depth: skirtingPart.dimensions.depth,
-      position: skirtingPart.position,
-      parent_catalog: boxMesh.userData.objectId,
+      height: metersToMM(skirtingPart.dimensions.height),
+      width: metersToMM(skirtingPart.dimensions.width),
+      length: metersToMM(skirtingPart.dimensions.depth),
+      depth: metersToMM(skirtingPart.dimensions.depth),
+      position: {
+        x: metersToMM(skirting.position.x),
+        y: metersToMM(skirting.position.y),
+        z: metersToMM(skirting.position.z),
+      },
+      parent: parent.userData.objectId,
     }
     const apiResponse = await addItemToDataBaseWihoutCatalog(data);
     skirting.userData.objectId = apiResponse.data.id;
@@ -1727,6 +1740,7 @@ export const addVerticalPlanksToBox = async (
   }
 
   generateCompartmentsFromMesh(parent);
+  hideFullScreenLoader();
 };
 
 export const addHorizontalPlanksInsideBox = async (
@@ -1736,6 +1750,7 @@ export const addHorizontalPlanksInsideBox = async (
   selectedCabinetItem = null,
   itemData: any = null,
 ) => {
+  showFullScreenLoader('Loading design objects.');
   if (!boxMesh || count <= 0) return;
 
   const bbox = new THREE.Box3().setFromObject(boxMesh);
@@ -1805,11 +1820,15 @@ export const addHorizontalPlanksInsideBox = async (
 
     const data = {
       ...itemData,
-      width: (shelf.geometry as THREE.BoxGeometry).parameters.width,
-      height: (shelf.geometry as THREE.BoxGeometry).parameters.height,
-      depth: (shelf.geometry as THREE.BoxGeometry).parameters.depth,
-      position: shelf.position,
-      parent_catalog: parent.userData.objectId,
+      width: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.width),
+      height: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.height),
+      depth: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.depth),
+      position: {
+        x: metersToMM(shelf.position.x),
+        y: metersToMM(shelf.position.y),
+        z: metersToMM(shelf.position.z),
+      },
+      parent: parent.userData.objectId,
     };
 
     const apiResponse = await addItemtoDatabase(data);
@@ -1844,6 +1863,7 @@ export const addHorizontalPlanksInsideBox = async (
   }
 
   generateCompartmentsFromMesh(parent as THREE.Mesh);
+  hideFullScreenLoader();
 };
 
 export const addDoorOnInvisibleBox = async (

@@ -64,6 +64,7 @@ import {
   setobjectSelected,
   togglAlignment,
 } from '../store/dataSlice';
+import { metersToMM } from '../handler/unitConversion';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -139,14 +140,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
     let platformData: any[] = [];
     if (targetWall) {
-      platformData = addPlatformOnWall(scene, targetWall, counterTexture);
+      platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
     }
+    console.log('platformData', platformData);
     // Add platform data to API payload
     for (const pdata of platformData) {
       try {
@@ -352,58 +354,51 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           return;
         }
 
-        // Get actual dimensions from the created object's geometry
-        const bbox = new THREE.Box3().setFromObject(createdObject);
-        const size = new THREE.Vector3();
-        bbox.getSize(size);
-        const center = new THREE.Vector3();
-        bbox.getCenter(center);
-
         // Convert to mm for storage (meters * 1000 = mm)
-        const width = Math.round(size.x * 1000);
-        const height = Math.round(size.y * 1000);
-        const depth = Math.round(size.z * 1000);
+        const width = metersToMM(createdObject.geometry.parameters.width);
+        const height = metersToMM(createdObject.geometry.parameters.height);
+        const depth = metersToMM(createdObject.geometry.parameters.depth);
         const position = {
-          x: Math.round(center.x * 1000),
-          y: Math.round(center.y * 1000),
-          z: Math.round(center.z * 1000),
+          x: metersToMM(createdObject.position.x),
+          y: metersToMM(createdObject.position.y),
+          z: metersToMM(createdObject.position.z),
         };
 
-        // Extract parts data from the actual object
-        const parts: Array<{
-          name: string;
-          width: number;
-          height: number;
-          depth: number;
-          position: { x: number; y: number; z: number };
-        }> = [];
+        const ruleParts: any[] = [];
 
         createdObject.traverse((child) => {
           if (child instanceof THREE.Mesh && child.name.includes('PLANK')) {
-            const childBbox = new THREE.Box3().setFromObject(child);
-            const childSize = new THREE.Vector3();
-            childBbox.getSize(childSize);
+            const formattedName = child.name
+              .replace(/PLANK/gi, 'Panel')
+              .replace(/_/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase());
 
-            // Get world position
-            const worldPos = new THREE.Vector3();
-            child.getWorldPosition(worldPos);
-
-            // Convert child dimensions to mm
-            parts.push({
-              name: child.name,
-              width: Math.round(childSize.x * 1000),
-              height: Math.round(childSize.y * 1000),
-              depth: Math.round(childSize.z * 1000),
+            ruleParts.push({
+              name: formattedName,
+              width: metersToMM(child.geometry.parameters.width),
+              height: metersToMM(child.geometry.parameters.height),
+              depth: metersToMM(child.geometry.parameters.depth),
+              thickness: null,
               position: {
-                x: Math.round(worldPos.x * 1000),
-                y: Math.round(worldPos.y * 1000),
-                z: Math.round(worldPos.z * 1000),
+                x: metersToMM(child.position.x),
+                y: metersToMM(child.position.y),
+                z: metersToMM(child.position.z),
               },
+              handle_position: null,
             });
           }
         });
 
-        // Create API call with actual dimensions in mm
+        const parts = [
+          {
+            name: 'Panel',
+            rule_parts: ruleParts,
+          },
+        ];
+
         let apiResponse: any = null;
         try {
           apiResponse = await addCabinetItemToDesign(catalogId, {
@@ -447,6 +442,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(true);
   };
   const onAddItems = async () => {
+    setCreateCompanyPopup(false);
     const num = parseInt(quantityValue.toString(), 10);
     if (!Number.isFinite(num) || num <= 0) {
       return;
@@ -459,14 +455,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     let targetBox: THREE.Mesh | null = null;
 
     const getOrCreateInternalBox = (container: THREE.Mesh): THREE.Mesh => {
-      // Try find existing child invisible box
       const existing = (container.children || []).find(
         (c: any) =>
           typeof c.name === 'string' &&
           c.name.toLowerCase().startsWith('invisiblebox'),
       ) as THREE.Mesh | undefined;
       if (existing) return existing;
-      // Create a new internal invisible box using container geometry params
       const params = (container.geometry as THREE.BoxGeometry)
         .parameters as any;
       const width = params.width as number;
@@ -946,9 +940,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -970,9 +963,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1104,16 +1096,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
+                  <div className={styles.noItems}>
+                    No{' '}
+                    {activeCatalogTab === 'furniture'
+                      ? 'furniture'
+                      : activeCatalogTab === 'parts'
+                        ? 'parts'
+                        : 'custom designs'}{' '}
+                    found
+                  </div>
+                )}
             </div>
           </div>
         </div>

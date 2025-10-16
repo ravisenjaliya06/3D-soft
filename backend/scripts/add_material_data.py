@@ -1366,27 +1366,6 @@ CATALOG = [
     },
     {
         "type": "Plank",
-        "name": "Common Vertical Plank",
-        "description": "Common Vertical Plank",
-        "catalog_rules": [
-            {
-                "name": "Molding",
-                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
-            },
-            {
-                "name": "Banding",
-                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
-                ],
-            },
-        ],
-    },
-    {
-        "type": "Plank",
         "name": "Vertical Plank",
         "description": "Vertical Plank",
         "catalog_rules": [
@@ -1465,16 +1444,15 @@ CATALOG = [
             {
                 "name": "Panel",
                 "rules_parts": [
-                    {"name": "Base Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Middle Vertical Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
-                    {
-                        "name": "Middle Horizontal Panel",
-                        "material": "3/4 1s Poplar Ply",
-                    },
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel Left", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Back Panel Tower", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel Tower Left", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel Tower Right", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel Tower Bottom", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel Tower Top", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel Tower Mid", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel Tower Lower", "material": "3/4 1s Poplar Ply"},
                 ],
             },
             {
@@ -1483,10 +1461,7 @@ CATALOG = [
                     {"name": "Middle Vertical and Right Panel", "material": ""},
                     {"name": "Middle Vertical and Top Panel", "material": ""},
                     {"name": "Middle Vertical and Bottom Panel", "material": ""},
-                    {
-                        "name": "Middle Vertical and Middle Horizontal Panel",
-                        "material": "",
-                    },
+                    {"name": "Middle Vertical and Middle Horizontal Panel", "material": ""},
                     {"name": "Base and Right Panel", "material": ""},
                     {"name": "Base and Left Panel", "material": ""},
                 ],
@@ -1501,19 +1476,21 @@ CATALOG = [
             {
                 "name": "Panel",
                 "rules_parts": [
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
                     {
-                        "name": "Middle Horizontal Panel",
+                        "name": "Bottom Panel",
                         "material": "3/4 1s Poplar Ply",
                     },
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horiziontal Panel 3", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 1", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 2", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 3", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel Right Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel Top Shelf", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 3", "material": "3/4 1s Poplar Ply"},
                 ],
             },
             {
