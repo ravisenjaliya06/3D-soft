@@ -2,6 +2,7 @@
 import commonService, { AppName } from '@/services/CommonService';
 import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
+import { mmToMeters } from '../handler/unitConversion';
 import { CatalogItem, ChildCatalog, ResponseStatus } from '../interface';
 import {
   generateMinifixSystem,
@@ -333,14 +334,14 @@ export const updateObjectInScene = (
               if (plankObject && plankObject instanceof THREE.Mesh) {
                 plankObject.geometry.dispose();
                 plankObject.geometry = new THREE.BoxGeometry(
-                  plankWithHoles.width,
-                  plankWithHoles.height,
-                  plankWithHoles.depth,
+                  mmToMeters(plankWithHoles.width),
+                  mmToMeters(plankWithHoles.height),
+                  mmToMeters(plankWithHoles.depth),
                 );
                 plankObject.position.set(
-                  plankWithHoles.position.x * widthRatio,
-                  plankWithHoles.position.y * heightRatio,
-                  plankWithHoles.position.z * depthRatio,
+                  mmToMeters(plankWithHoles.position.x * widthRatio),
+                  mmToMeters(plankWithHoles.position.y * heightRatio),
+                  mmToMeters(plankWithHoles.position.z * depthRatio),
                 );
                 plankObject.geometry.attributes.position.needsUpdate = true;
                 plankObject.geometry.computeVertexNormals();
@@ -441,15 +442,15 @@ export const updateObjectInScene = (
     updatedData.height !== undefined ||
     updatedData.depth !== undefined
   ) {
-    const newWidth = updatedData.width ?? currentWidth;
-    const newHeight = updatedData.height ?? currentHeight;
-    const newDepth = updatedData.depth ?? currentDepth;
+    const newWidth = updatedData.width ?? currentWidth; // mm
+    const newHeight = updatedData.height ?? currentHeight; // mm
+    const newDepth = updatedData.depth ?? currentDepth; // mm
 
     threeDObject.geometry.dispose();
     threeDObject.geometry = new THREE.BoxGeometry(
-      newWidth,
-      newHeight,
-      newDepth,
+      mmToMeters(newWidth),
+      mmToMeters(newHeight),
+      mmToMeters(newDepth),
     );
     threeDObject.geometry.attributes.position.needsUpdate = true;
     threeDObject.geometry.computeVertexNormals();
@@ -497,7 +498,6 @@ export const updateObjectInScene = (
       );
     }
 
-    // Update child objects
     threeDObject.children.forEach((child) => {
       if (child instanceof THREE.Mesh) {
         const childObject = allObjects.find(
@@ -513,13 +513,17 @@ export const updateObjectInScene = (
 
           child.geometry.dispose();
           child.geometry = new THREE.BoxGeometry(
-            newChildWidth,
-            newChildHeight,
-            newChildDepth,
+            mmToMeters(newChildWidth),
+            mmToMeters(newChildHeight),
+            mmToMeters(newChildDepth),
           );
           child.geometry.attributes.position.needsUpdate = true;
           child.geometry.computeVertexNormals();
-          child.position.set(newChildX, newChildY, newChildZ);
+          child.position.set(
+            mmToMeters(newChildX),
+            mmToMeters(newChildY),
+            mmToMeters(newChildZ),
+          );
           child.updateMatrix();
           child.updateMatrixWorld(true);
 
@@ -678,9 +682,9 @@ export const updateObjectInScene = (
 
   if (updatedData.position) {
     threeDObject.position.set(
-      updatedData.position.x ?? currentPosition.x,
-      updatedData.position.y ?? currentPosition.y,
-      updatedData.position.z ?? currentPosition.z,
+      mmToMeters(updatedData.position.x ?? currentPosition.x),
+      mmToMeters(updatedData.position.y ?? currentPosition.y),
+      mmToMeters(updatedData.position.z ?? currentPosition.z),
     );
   }
 

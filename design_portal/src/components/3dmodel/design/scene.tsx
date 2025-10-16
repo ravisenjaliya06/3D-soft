@@ -28,9 +28,76 @@ const EPSILON_OFFSET = 0.001; // Small offset to avoid Z-fighting
 const EPS = 1e-6;
 const DIM_LABEL_PREFIX = 'dim_label_';
 const DIMENSION_GROUP_PREFIX = 'dim_group_';
-const mm = (meters: number): number => meters * 1000;
+
+// Unit conversion helpers for dimension labels and editing
+type Unit = 'mm' | 'cm' | 'm' | 'in' | 'ft';
+const metersToUnit = (m: number, unit: Unit): number => {
+  switch (unit) {
+    case 'mm':
+      return m * 1000;
+    case 'cm':
+      return m * 100;
+    case 'm':
+      return m;
+    case 'in':
+      return m * 39.37007874015748;
+    case 'ft':
+      return m * 3.280839895013123;
+    default:
+      return m * 1000;
+  }
+};
+const unitToMeters = (v: number, unit: Unit): number => {
+  switch (unit) {
+    case 'mm':
+      return v / 1000;
+    case 'cm':
+      return v / 100;
+    case 'm':
+      return v;
+    case 'in':
+      return v / 39.37007874015748;
+    case 'ft':
+      return v / 3.280839895013123;
+    default:
+      return v / 1000;
+  }
+};
+const getActiveUnit = (): Unit => {
+  try {
+    const u = (store.getState() as any)?.measurement?.unitType as
+      | Unit
+      | undefined;
+    return (u as Unit) || 'mm';
+  } catch {
+    return 'mm';
+  }
+};
+const unitSuffix = (unit: Unit): string => unit;
 
 const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
+
+// Helper function to convert dimensions to mm
+const convertDimensionsToMM = (dimensions: {
+  width: number;
+  height: number;
+  depth: number;
+}) => ({
+  width: Math.round(dimensions.width * 1000),
+  height: Math.round(dimensions.height * 1000),
+  depth: Math.round(dimensions.depth * 1000),
+});
+
+// Helper function to convert position to mm
+const convertPositionToMM = (position: {
+  x: number;
+  y: number;
+  z: number;
+}) => ({
+  x: Math.round(position.x * 1000),
+  y: Math.round(position.y * 1000),
+  z: Math.round(position.z * 1000),
+});
 
 export const init3DDesign = async (
   mount: HTMLDivElement,
@@ -1528,14 +1595,13 @@ export const addVerticalPlanksToBox = (
   if (innerSpan <= thickness) return;
 
   const interval = innerSpan / (count + 1);
+
   // Remove original invisible container mesh
   if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
   else scene.remove(boxMesh);
 
-  // Material setup
   const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
 
-  // Skirting height setup
   const effectiveHeight = isPlatform ? height - skirtingHeight : height;
   const localPlankY = isPlatform
     ? localCenter.y - height / 2 + skirtingHeight + effectiveHeight / 2
@@ -1586,7 +1652,7 @@ export const addVerticalPlanksToBox = (
       isPlatform,
       isSideWall: isSideWallBox,
       cabinetItem: selectedCabinetItem,
-      dimensions: plankPart.dimensions,
+      dimensions: convertDimensionsToMM(plankPart.dimensions),
       apiData: apiResponseDataArray[i - 1],
       objectId:
         apiResponseDataArray[i - 1]?.id ??
@@ -1607,7 +1673,7 @@ export const addVerticalPlanksToBox = (
 
     parent.add(plank);
 
-    // Update store
+    // Update store with dimensions in mm
     if (plank.userData.objectId) {
       const objInStore = store
         .getState()
@@ -1620,15 +1686,42 @@ export const addVerticalPlanksToBox = (
             width: plank.userData.dimensions.width,
             height: plank.userData.dimensions.height,
             depth: plank.userData.dimensions.depth,
-            position: plank.position,
+            position: convertPositionToMM(plank.position as any),
+          } as any),
+        );
+      }
+    }
+
+    const plankDimensionsMM = plank.userData.dimensions;
+    const plankPositionMM = convertPositionToMM(plank.position as any);
+    const plankPositionMMX = {
+      x: plankPositionMM.x,
+      y: plank.position.y * 1000,
+      z: plank.position.z * 1000,
+    };
+
+    if (plank.userData.objectId) {
+      const objInStore = store
+        .getState()
+        .data.objects.find((o) => o.id === plank.userData.objectId);
+      if (objInStore) {
+        store.dispatch(
+          updateObject({
+            ...objInStore,
+            apiData: plank.userData.apiData,
+            width: plankDimensionsMM.width,
+            height: plankDimensionsMM.height,
+            depth: plankDimensionsMM.depth,
+            position: plankPositionMM,
           } as any),
         );
       }
     }
   }
 
+  // Skirting for platforms
   if (isPlatform) {
-    let floorY = 0;
+    const floorY = 0;
     const skirtingPart = {
       name: `Skirting_for_${boxMesh.name}`,
       dimensions: { width, height: skirtingHeight, depth },
@@ -1643,7 +1736,7 @@ export const addVerticalPlanksToBox = (
     parent.add(skirting);
   }
 
-  // Create invisible compartments
+  // Invisible compartments
   for (let i = 0; i <= count; i++) {
     const compOffset = -span / 2 + edgeClearance + interval * i + interval / 2;
     const compDimensions = divideAlongX
@@ -1662,15 +1755,12 @@ export const addVerticalPlanksToBox = (
       compDimensions,
       localCompPos,
       `invisibleBox_compartment_${i}_for_${boxMesh.name}`,
-      {
-        objectId: `invisibleBox_compartment_${i}_for_${boxMesh.name}`,
-        type: 'INVISIBLE_COMPARTMENT',
-        dimensions: compDimensions,
-      },
+      { type: 'INVISIBLE_COMPARTMENT', dimensions: { ...compDimensions } },
     );
     parent.add(invisiblebox);
   }
 };
+
 export const addHorizontalPlanksInsideBox = (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -1736,7 +1826,7 @@ export const addHorizontalPlanksInsideBox = (
     };
     const shelf = createMeshObject(shelfPart, true, {
       isHorizontalPlank: true,
-      dimensions: shelfPart.dimensions,
+      dimensions: convertDimensionsToMM(shelfPart.dimensions),
       apiData: apiResponseDataArray[i - 1],
       objectId:
         apiResponseDataArray[i - 1]?.id ??
@@ -1751,7 +1841,7 @@ export const addHorizontalPlanksInsideBox = (
     parent.add(shelf);
     shelf.position.copy(parent.worldToLocal(worldPos));
 
-    // Update store if needed
+    // Update store with dimensions in mm
     if (shelf.userData.objectId) {
       const objInStore = store
         .getState()
@@ -1769,7 +1859,7 @@ export const addHorizontalPlanksInsideBox = (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: { ...shelf.position },
+            position: convertPositionToMM(shelf.position as any),
           } as any),
         );
       }
@@ -1855,7 +1945,7 @@ export const addDoorOnInvisibleBox = async (
     upward: false,
     apiData: apiResponseDataArray[0],
     cabinetItem: selectedCabinetItem,
-    dimensions: facePart.dimensions,
+    dimensions: convertDimensionsToMM(facePart.dimensions),
     objectId:
       apiResponseDataArray[0]?.id ??
       apiResponseDataArray[0]?.objectId ??
@@ -1876,7 +1966,7 @@ export const addDoorOnInvisibleBox = async (
   face.position.copy(parent.worldToLocal(worldFacePos));
   doorGroup.attach(face);
 
-  // Update store if needed
+  // Update store with dimensions in mm
   if (doorGroup.userData.objectId) {
     const objInStore = store
       .getState()
@@ -1894,7 +1984,7 @@ export const addDoorOnInvisibleBox = async (
             height: dims.height,
             depth: dims.depth,
           }),
-          position: { ...doorGroup.position },
+          position: convertPositionToMM(doorGroup.position as any),
         } as any),
       );
     }
@@ -1993,13 +2083,14 @@ export const addDrawersOnInvisibleBox = async (
 
     const drawerGroup = new THREE.Group();
     drawerGroup.name = `Drawer_${i}_for_${boxMesh.name}`;
+    const drawerDimensions = isSide
+      ? { width: 0.02, height: eachH - 0.005, depth: d - 0.01 }
+      : { width: w - 0.01, height: eachH - 0.005, depth: 0.02 };
     drawerGroup.userData = {
       type: 'DRAWER',
       apiData: apiResponseDataArray[i],
       cabinetItem: selectedCabinetItem,
-      dimensions: isSide
-        ? { width: 0.02, height: eachH - 0.005, depth: d - 0.01 }
-        : { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+      dimensions: convertDimensionsToMM(drawerDimensions),
       objectId:
         apiResponseDataArray[i]?.id ??
         apiResponseDataArray[i]?.objectId ??
@@ -2208,7 +2299,7 @@ export const addDrawersOnInvisibleBox = async (
       drawerGroup.attach(rightRail);
     }
 
-    // Update store if needed
+    // Update store with dimensions in mm
     if (drawerGroup.userData.objectId) {
       const objInStore = store
         .getState()
@@ -2226,7 +2317,7 @@ export const addDrawersOnInvisibleBox = async (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: { ...drawerGroup.position },
+            position: convertPositionToMM(drawerGroup.position as any),
           } as any),
         );
       }
@@ -3089,7 +3180,9 @@ function createDimensionForAxis({
 
   // min side
   if (minPos !== null) {
-    const dist = mm(box.min[mainAxis] - minPos);
+    const unit = getActiveUnit();
+    const distanceM = Math.abs(box.min[mainAxis] - minPos);
+    const dist = metersToUnit(distanceM, unit);
     const point1 = new THREE.Vector3(
       fixedX ?? minPos,
       fixedY ?? minPos,
@@ -3105,14 +3198,16 @@ function createDimensionForAxis({
       point1,
       point2,
       offsetDir,
-      `${dist.toFixed(1)} mm`,
+      `${dist.toFixed(1)} ${unitSuffix(unit)}`,
       { axis: mainAxis, side: 'min', ref: minPos, targetUuid: mesh.uuid },
     );
   }
 
   // max side
   if (maxPos !== null) {
-    const dist = mm(maxPos - box.max[mainAxis]);
+    const unit = getActiveUnit();
+    const distanceM = Math.abs(maxPos - box.max[mainAxis]);
+    const dist = metersToUnit(distanceM, unit);
     const point1 = new THREE.Vector3(
       fixedX ?? box.max[mainAxis],
       fixedY ?? box.max[mainAxis],
@@ -3128,7 +3223,7 @@ function createDimensionForAxis({
       point1,
       point2,
       offsetDir,
-      `${dist.toFixed(1)} mm`,
+      `${dist.toFixed(1)} ${unitSuffix(unit)}`,
       { axis: mainAxis, side: 'max', ref: maxPos, targetUuid: mesh.uuid },
     );
   }
@@ -3389,15 +3484,18 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
 
     const box = getAABB(target);
     const currentDistanceM = calculateDistance(box, meta);
-    const currentMm = Math.max(0, currentDistanceM * 1000);
+    const unit = getActiveUnit();
+    const currentInUnit = Math.max(0, metersToUnit(currentDistanceM, unit));
 
-    const input = prompt('Enter new distance (mm):', currentMm.toFixed(1));
+    const input = prompt(
+      `Enter new distance (${unitSuffix(unit)}):`,
+      currentInUnit.toFixed(1),
+    );
     if (!input) return;
+    const newVal = parseFloat(input);
+    if (!Number.isFinite(newVal) || newVal < 0) return;
 
-    const newMm = parseFloat(input);
-    if (!Number.isFinite(newMm) || newMm < 0) return;
-
-    const newM = newMm / 1000;
+    const newM = unitToMeters(newVal, unit);
     const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
     const currentFace = getCurrentFacePosition(box, meta);
     const delta = desiredFace - currentFace;

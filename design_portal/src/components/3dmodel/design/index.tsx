@@ -762,8 +762,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     });
     const outlineLines = new THREE.LineSegments(edges, outlineMaterial);
 
+    const parent = mesh.parent;
+    if (parent && parent.userData?.objectId) {
+      // safely copy parent scale
+      outlineLines.scale.copy(parent.scale);
+    } else {
+      outlineLines.scale.copy(mesh.scale);
+    }
     outlineLines.position.copy(worldPosition);
-    outlineLines.scale.copy(mesh.parent?.scale || new THREE.Vector3(1, 1, 1));
     outlineLines.name = 'hover_outline';
 
     return outlineLines;

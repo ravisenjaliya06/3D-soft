@@ -7,6 +7,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
+import {
+  UNIT_OPTIONS,
+  Unit,
+  convertFromMM,
+  convertToMM,
+  metersToMM,
+} from '../handler/unitConversion';
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
@@ -25,13 +32,18 @@ const Sidebar: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
-  const [dimensions, setDimensions] = useState({
+  const [displayUnit, setDisplayUnit] = useState<Unit>('mm');
+  const [displayedDimensions, setDisplayedDimensions] = useState({
     width: 0,
     height: 0,
     depth: 0,
   });
   const [rotations, setRotations] = useState({ x: 0, y: 0, z: 0 });
-  const [positions, setPositions] = useState({ x: 0, y: 0, z: 0 });
+  const [displayedPositions, setDisplayedPositions] = useState({
+    x: 0,
+    y: 0,
+    z: 0,
+  });
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   const materialModal = [
@@ -89,25 +101,30 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     if (selectedObject) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-        console.log(selectedObject, 'selectedObject');
       }
-      setDimensions({
-        width: selectedObject.width,
-        height: selectedObject.height,
-        depth: selectedObject.depth,
+      const w = convertFromMM(selectedObject.width, displayUnit);
+      const h = convertFromMM(selectedObject.height, displayUnit);
+      const d = convertFromMM(selectedObject.depth, displayUnit);
+      setDisplayedDimensions({
+        width: w,
+        height: h,
+        depth: d,
+      });
+      const px = convertFromMM(selectedObject.position?.x ?? 0, displayUnit);
+      const py = convertFromMM(selectedObject.position?.y ?? 0, displayUnit);
+      const pz = convertFromMM(selectedObject.position?.z ?? 0, displayUnit);
+      setDisplayedPositions({
+        x: px,
+        y: py,
+        z: pz,
       });
       setRotations({
         x: selectedObject.rotationX!,
         y: selectedObject.rotationY!,
         z: selectedObject.rotationZ!,
       });
-      setPositions({
-        x: selectedObject.apiData?.position?.x ?? 0,
-        y: selectedObject.apiData?.position?.y ?? 0,
-        z: selectedObject.apiData?.position?.z ?? 0,
-      });
     }
-  }, [selectedObject]);
+  }, [selectedObject, displayUnit]);
 
   useEffect(() => {
     if (isSidebarOpen) {
@@ -151,19 +168,28 @@ const Sidebar: React.FC = () => {
   const handleDimensionChange =
     (dim: 'width' | 'height' | 'depth') =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setDimensions((prev) => ({ ...prev, [dim]: Number(e.target.value) }));
+      setDisplayedDimensions((prev) => ({
+        ...prev,
+        [dim]: Number(e.target.value),
+      }));
     };
-
   const handleDimensionCommit = (
     dim: 'width' | 'height' | 'depth',
-    value: number,
+    displayedValue: number,
   ) => {
-    const min = dim === 'width' ? 0 : 5;
-    const max =
+    const mmValue = convertToMM(displayedValue, displayUnit);
+    const minMM = dim === 'width' ? 0 : 5;
+    const maxMM =
       dim === 'depth' && parentObject?.depth ? parentObject.depth : Infinity;
-    const validated = validateNumericInput(value, min, max);
+    const validated = validateNumericInput(mmValue, minMM, maxMM);
     if (validated !== null) {
       updateObject({ [dim]: validated });
+    } else {
+      // Reset to original value if invalid
+      setDisplayedDimensions((prev) => ({
+        ...prev,
+        [dim]: convertFromMM(selectedObject?.[dim] ?? prev[dim], displayUnit),
+      }));
     }
   };
 
@@ -171,12 +197,12 @@ const Sidebar: React.FC = () => {
     (dim: 'width' | 'height' | 'depth') =>
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        handleDimensionCommit(dim, dimensions[dim]);
+        handleDimensionCommit(dim, displayedDimensions[dim]);
       }
     };
 
   const handleDimensionBlur = (dim: 'width' | 'height' | 'depth') => () => {
-    handleDimensionCommit(dim, dimensions[dim]);
+    handleDimensionCommit(dim, displayedDimensions[dim]);
   };
 
   const handleRotationChange =
@@ -204,24 +230,32 @@ const Sidebar: React.FC = () => {
 
   const handlePositionChange =
     (axis: 'x' | 'y' | 'z') => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPositions((prev) => ({ ...prev, [axis]: Number(e.target.value) }));
+      setDisplayedPositions((prev) => ({
+        ...prev,
+        [axis]: Number(e.target.value),
+      }));
     };
 
-  const handlePositionCommit = (axis: 'x' | 'y' | 'z', value: number) => {
+  const handlePositionCommit = (
+    axis: 'x' | 'y' | 'z',
+    displayedValue: number,
+  ) => {
     if (!selectedObject || isQuickHideActive) return;
-    const newPosition = { ...selectedObject.position, [axis]: value };
+    const mmValue = convertToMM(displayedValue, displayUnit);
+    if (isNaN(mmValue)) return;
+    const newPosition = { ...selectedObject.position, [axis]: mmValue };
     updateObject({ position: newPosition });
   };
 
   const handlePositionKeyDown =
     (axis: 'x' | 'y' | 'z') => (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        handlePositionCommit(axis, positions[axis]);
+        handlePositionCommit(axis, displayedPositions[axis]);
       }
     };
 
   const handlePositionBlur = (axis: 'x' | 'y' | 'z') => () => {
-    handlePositionCommit(axis, positions[axis]);
+    handlePositionCommit(axis, displayedPositions[axis]);
   };
 
   const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
@@ -243,10 +277,10 @@ const Sidebar: React.FC = () => {
     const mesh = targetMesh as any;
     if (mesh.name !== 'SimpleCabinet') return;
     const params = (mesh.geometry as THREE.BoxGeometry).parameters as any;
-    const width = params.width as number;
-    const height = params.height as number;
-    const depth = params.depth as number;
-    const thickness = 0.018;
+    const width = metersToMM(params.width);
+    const height = metersToMM(params.height);
+    const depth = metersToMM(params.depth);
+    const thickness = 18;
     const existing = (mesh.children.find(
       (c: any) => c && c.name === 'invisibleBox_cabinet',
     ) || null) as any as THREE.Mesh | null;
@@ -260,11 +294,11 @@ const Sidebar: React.FC = () => {
       opacity: 0.0,
       depthWrite: false,
     });
-    const innerW = Math.max(width - thickness * 2, 0.02);
-    const innerH = Math.max(height - thickness * 2, 0.02);
-    const innerD = Math.max(depth - thickness * 2, 0.02);
+    const innerW = Math.max(width - thickness * 2, 20);
+    const innerH = Math.max(height - thickness * 2, 20);
+    const innerD = Math.max(depth - thickness * 2, 20);
     const invCab = new THREE.Mesh(
-      new THREE.BoxGeometry(innerW, innerH, innerD),
+      new THREE.BoxGeometry(innerW / 1000, innerH / 1000, innerD / 1000),
       invMat,
     );
     invCab.name = 'invisibleBox_cabinet';
@@ -419,6 +453,19 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const u = e.target.value as Unit;
+    setDisplayUnit(u);
+
+    try {
+      // in scene keep the unit type - smit commit
+      const { setUnitType } = require('../store/measurementSlice');
+      dispatch(setUnitType(u === 'inch' ? 'in' : (u as any)));
+    } catch (err) {
+      console.error('Failed to set unit type:', err);
+    }
+  };
+
   const applyTextureToSelected = (texturePath: string, update?: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
@@ -562,8 +609,8 @@ const Sidebar: React.FC = () => {
           label: 'Width',
           name: 'width',
           type: 'number',
-          value: dimensions.width,
-          min: 0,
+          value: displayedDimensions.width,
+          min: convertFromMM(0, displayUnit),
           disabled: isHorizontalPlank || isDisabled,
           onChange: handleDimensionChange('width'),
           onKeyDown: handleDimensionKeyDown('width'),
@@ -573,8 +620,8 @@ const Sidebar: React.FC = () => {
           label: 'Height',
           name: 'height',
           type: 'number',
-          value: dimensions.height,
-          min: 5,
+          value: displayedDimensions.height,
+          min: convertFromMM(5, displayUnit),
           disabled: isVerticalPlank || isDisabled,
           onChange: handleDimensionChange('height'),
           onKeyDown: handleDimensionKeyDown('height'),
@@ -584,9 +631,11 @@ const Sidebar: React.FC = () => {
           label: 'Depth',
           name: 'depth',
           type: 'number',
-          value: dimensions.depth,
-          min: 5,
-          max: parentObject?.depth,
+          value: displayedDimensions.depth,
+          min: convertFromMM(5, displayUnit),
+          max: parentObject?.depth
+            ? convertFromMM(parentObject.depth, displayUnit)
+            : undefined,
           disabled: isQuickHideActive,
           onChange: handleDimensionChange('depth'),
           onKeyDown: handleDimensionKeyDown('depth'),
@@ -644,7 +693,7 @@ const Sidebar: React.FC = () => {
           label: 'Position X',
           name: 'positionX',
           type: 'number',
-          value: positions.x,
+          value: displayedPositions.x,
           disabled: isQuickHideActive,
           onChange: handlePositionChange('x'),
           onKeyDown: handlePositionKeyDown('x'),
@@ -654,7 +703,7 @@ const Sidebar: React.FC = () => {
           label: 'Position Y',
           name: 'positionY',
           type: 'number',
-          value: positions.y,
+          value: displayedPositions.y,
           disabled: isQuickHideActive,
           onChange: handlePositionChange('y'),
           onKeyDown: handlePositionKeyDown('y'),
@@ -664,7 +713,7 @@ const Sidebar: React.FC = () => {
           label: 'Position Z',
           name: 'positionZ',
           type: 'number',
-          value: positions.z,
+          value: displayedPositions.z,
           disabled: isQuickHideActive,
           onChange: handlePositionChange('z'),
           onKeyDown: handlePositionKeyDown('z'),
@@ -733,6 +782,20 @@ const Sidebar: React.FC = () => {
           )}
           {isSettingOpen && selectedObject && (
             <div className={style.field_main_div}>
+              <div className={style.field_group1}>
+                <p>Unit</p>
+                <select
+                  value={displayUnit}
+                  onChange={handleUnitChange}
+                  disabled={isQuickHideActive}
+                >
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
               {sideBarMenuConfig.map((menu) => (
                 <div key={menu.subMenu}>
                   <div
