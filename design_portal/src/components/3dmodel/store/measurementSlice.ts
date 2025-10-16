@@ -5,7 +5,7 @@ import { MeasurementState, UnitType } from './interface';
 
 const initialState: MeasurementState = {
   isActive: false,
-  unitType: 'cm', // Default unit
+  unitType: 'mm', // Default unit (supports 'mm' | 'cm' | 'm' | 'in' | 'ft')
   lastMeasurement: null,
 };
 

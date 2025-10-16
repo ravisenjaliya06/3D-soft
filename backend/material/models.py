@@ -756,7 +756,7 @@ class Catalog(models.Model):
     thickness = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
     additional_data = models.JSONField(blank=True, null=True)
-    parent_catalog = models.ForeignKey(
+    parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
         null=True,

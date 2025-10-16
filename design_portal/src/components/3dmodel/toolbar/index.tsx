@@ -145,7 +145,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     let platformData: any[] = [];
     if (targetWall) {
-      platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
+      platformData = addPlatformOnWall(scene, targetWall, counterTexture);
     }
     // Add platform data to API payload
     for (const pdata of platformData) {
@@ -293,6 +293,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       handleToAddPlatform(item.id);
       return;
     }
+
     // For Cabinet items: no quantity popup, no target selection; create via API and add directly
     if (item?.type === 'Cabinet') {
       try {
@@ -301,110 +302,108 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         const catalogId = item.id;
         const lowerName = (item?.name || '').toLowerCase();
 
-        // Determine default dimensions and placement similar to scene helpers
-        let width = 0.6;
-        let height = 0.7;
-        let depth = 0.4;
-        let parts: Array<{
-          name: string;
-          width: number;
-          height: number;
-          depth: number;
-        }> = [];
+        // Get actual dimensions from the created object instead of static values
+        let createdObject: THREE.Object3D | null = null;
+
+        // Add to scene first to get actual dimensions
         if (lowerName.includes('tv')) {
-          // Simple TV unit
-          width = 1.6;
-          const baseHeight = 0.26;
-          const panelHeight = 1.0;
-          height = baseHeight + panelHeight; // 1.26
-          const unitDepth = 0.35;
-          const topShelfDepth = 0.25;
-          depth = Math.max(unitDepth, topShelfDepth); // 0.35
-          parts = [
-            { name: 'Base', width, height: baseHeight, depth: unitDepth },
-            {
-              name: 'RightPanel',
-              width: 0.018,
-              height: panelHeight,
-              depth: unitDepth,
-            },
-          ];
+          if (typeof threeDView.addSimpleTVUnit === 'function') {
+            threeDView.addSimpleTVUnit();
+            // Find the created TV unit (get the last one added)
+            const tvUnits: THREE.Object3D[] = [];
+            scene.traverse((obj) => {
+              if (obj.name === 'SimpleTVUnit') {
+                tvUnits.push(obj);
+              }
+            });
+            createdObject = tvUnits[tvUnits.length - 1] || null;
+          }
         } else if (
           lowerName.includes('computer') ||
           lowerName.includes('desk')
         ) {
-          // Computer desk
-          width = 1.4;
-          depth = 0.55;
-          height = 0.74;
-          parts = [
-            { name: 'Top', width, height: 0.03, depth },
-            { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
-          ];
-        } else if (lowerName.includes('table')) {
-          // Simple table
-          width = 1.5;
-          depth = 0.7;
-          height = 0.75;
-          parts = [
-            { name: 'Top', width, height: 0.03, depth },
-            { name: 'Leg', width: 0.06, height: height - 0.03, depth: 0.06 },
-          ];
+          if (typeof threeDView.addComputerDesk === 'function') {
+            threeDView.addComputerDesk();
+            // Find the created computer desk (get the last one added)
+            const desks: THREE.Object3D[] = [];
+            scene.traverse((obj) => {
+              if (obj.name === 'ComputerDesk') {
+                desks.push(obj);
+              }
+            });
+            createdObject = desks[desks.length - 1] || null;
+          }
         } else {
-          // Simple cabinet defaults already set
-          const thickness = 0.018;
-          parts = [
-            { name: 'LEFT_PLANK', width: thickness, height, depth },
-            { name: 'RIGHT_PLANK', width: thickness, height, depth },
-            {
-              name: 'BOTTOM_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: thickness,
-              depth,
-            },
-            {
-              name: 'TOP_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: thickness,
-              depth,
-            },
-            {
-              name: 'BACK_PLANK',
-              width: Math.max(width - thickness * 2, 0.02),
-              height: Math.max(height - thickness * 2, 0.02),
-              depth: thickness,
-            },
-          ];
+          if (typeof threeDView.addSimpleCabinet === 'function') {
+            threeDView.addSimpleCabinet();
+            // Find the created cabinet (get the last one added)
+            const cabinets: THREE.Object3D[] = [];
+            scene.traverse((obj) => {
+              if (obj.name === 'SimpleCabinet') {
+                cabinets.push(obj);
+              }
+            });
+            createdObject = cabinets[cabinets.length - 1] || null;
+          }
         }
 
-        // Floor Y
-        let floorY = 0;
-        const cWallGroup = scene.getObjectByName(
-          'cWallWithFloor',
-        ) as THREE.Group | null;
-        if (cWallGroup) {
-          const floorObj = cWallGroup.children.find(
-            (o: any) =>
-              (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry,
-          ) as THREE.Mesh | undefined;
-          if (floorObj) floorY = floorObj.position.y;
+        if (!createdObject) {
+          console.error('Failed to create or find the cabinet object');
+          return;
         }
 
-        // Place against Center Wall if available
-        const centerWall = scene.getObjectByName(
-          'Center Wall',
-        ) as THREE.Mesh | null;
-        let placeX = 0;
-        let placeZ = depth / 2 + 0.02;
-        if (centerWall) {
-          const params = (centerWall.geometry as THREE.BoxGeometry)
-            .parameters as any;
-          const wallDepth = params.depth as number;
-          placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
-        }
-        const position = { x: placeX, y: floorY + height / 2, z: placeZ };
+        // Get actual dimensions from the created object's geometry
+        const bbox = new THREE.Box3().setFromObject(createdObject);
+        const size = new THREE.Vector3();
+        bbox.getSize(size);
+        const center = new THREE.Vector3();
+        bbox.getCenter(center);
 
-        // Create API call
+        // Convert to mm for storage (meters * 1000 = mm)
+        const width = Math.round(size.x * 1000);
+        const height = Math.round(size.y * 1000);
+        const depth = Math.round(size.z * 1000);
+        const position = {
+          x: Math.round(center.x * 1000),
+          y: Math.round(center.y * 1000),
+          z: Math.round(center.z * 1000),
+        };
+
+        // Extract parts data from the actual object
+        const parts: Array<{
+          name: string;
+          width: number;
+          height: number;
+          depth: number;
+          position: { x: number; y: number; z: number };
+        }> = [];
+
+        createdObject.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.name.includes('PLANK')) {
+            const childBbox = new THREE.Box3().setFromObject(child);
+            const childSize = new THREE.Vector3();
+            childBbox.getSize(childSize);
+
+            // Get world position
+            const worldPos = new THREE.Vector3();
+            child.getWorldPosition(worldPos);
+
+            // Convert child dimensions to mm
+            parts.push({
+              name: child.name,
+              width: Math.round(childSize.x * 1000),
+              height: Math.round(childSize.y * 1000),
+              depth: Math.round(childSize.z * 1000),
+              position: {
+                x: Math.round(worldPos.x * 1000),
+                y: Math.round(worldPos.y * 1000),
+                z: Math.round(worldPos.z * 1000),
+              },
+            });
+          }
+        });
+
+        // Create API call with actual dimensions in mm
         let apiResponse: any = null;
         try {
           apiResponse = await addCabinetItemToDesign(catalogId, {
@@ -428,56 +427,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           console.error('Cabinet create API failed', apiErr);
         }
 
-        // Add to scene immediately
-        if (lowerName.includes('tv')) {
-          if (typeof threeDView.addSimpleTVUnit === 'function')
-            threeDView.addSimpleTVUnit();
-        } else if (
-          lowerName.includes('computer') ||
-          lowerName.includes('desk')
-        ) {
-          if (typeof threeDView.addComputerDesk === 'function')
-            threeDView.addComputerDesk();
-        } else if (lowerName.includes('table')) {
-          if (typeof threeDView.addSimpleTable === 'function')
-            threeDView.addSimpleTable();
-        } else {
-          if (typeof threeDView.addSimpleCabinet === 'function')
-            threeDView.addSimpleCabinet();
-        }
-
         // Annotate the newly created container with API metadata
-        try {
-          const containerName = lowerName.includes('tv')
-            ? 'SimpleTVUnit'
-            : lowerName.includes('computer') || lowerName.includes('desk')
-              ? 'ComputerDesk'
-              : lowerName.includes('table')
-                ? 'SimpleTable'
-                : 'SimpleCabinet';
-          const candidates: THREE.Mesh[] = [] as any;
-          scene.traverse((o) => {
-            if (o instanceof THREE.Mesh && o.name === containerName) {
-              candidates.push(o);
-            }
-          });
-          if (candidates.length > 0) {
-            const pick = candidates.reduce((best, cur) => {
-              const dCur = cur.position.distanceTo(
-                new THREE.Vector3(position.x, position.y, position.z),
-              );
-              if (!best) return { node: cur, dist: dCur } as any;
-              return dCur < best.dist ? { node: cur, dist: dCur } : best;
-            }, null as any);
-            if (pick?.node) {
-              pick.node.userData = {
-                ...(pick.node.userData || {}),
-                objectId: apiResponse?.id,
-                apiData: apiResponse || undefined,
-              };
-            }
-          }
-        } catch {}
+        if (createdObject && apiResponse) {
+          createdObject.userData = {
+            ...(createdObject.userData || {}),
+            objectId: apiResponse.id,
+            apiData: apiResponse,
+          };
+        }
       } catch (e) {
         console.error('Failed to add cabinet directly to scene', e);
       }
@@ -489,7 +446,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
     setCreateCompanyPopup(true);
   };
-
   const onAddItems = async () => {
     const num = parseInt(quantityValue.toString(), 10);
     if (!Number.isFinite(num) || num <= 0) {

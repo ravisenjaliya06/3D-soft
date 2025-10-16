@@ -5,9 +5,6 @@ from typing import Any, Dict, List
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-# App imports
-from design.models import Design
-
 # Local imports
 from .models import (
     Catalog,
@@ -879,7 +876,7 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
-            "parent_catalog",
+            "parent",
             "catalog_rule",
             "height",
             "width",
@@ -893,14 +890,9 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
     def get_children(
         self: "CatalogReadHierarchySerializer", obj: Catalog
     ) -> list[dict]:
-        children_qs = Catalog.objects.filter(
-            parent_catalog=obj, organization=obj.organization
-        )
-        if children_qs.exists():
-            return CatalogReadHierarchySerializer(
-                children_qs, many=True, context=self.context
-            ).data
-        return []
+        return CatalogReadHierarchySerializer(
+            obj.parent_catalog_data.all(), many=True, context=self.context
+        ).data
 
 
 class CatalogSerializer(serializers.ModelSerializer):
@@ -914,7 +906,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
-            "parent_catalog",
+            "parent",
             "catalog_rule",
             "height",
             "width",
@@ -929,43 +921,25 @@ class CatalogSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
+        original_catalog = Catalog.objects.get(id=catalog_id)
 
-        design = Design.objects.get(id=design_id)
-        
-        original_catalog = None
-        if catalog_id:
-            original_catalog = Catalog.objects.get(id=catalog_id)
+        if not design_id:
+            raise serializers.ValidationError("Missing required field 'design_id'.")
 
-        catalog = Catalog.objects.create(
-            organization=request.user.selected_organization,
-            name=original_catalog.name if catalog_id else validated_data["name"],
-            type=original_catalog.type if catalog_id else validated_data["type"],
-            description=original_catalog.description if catalog_id else "",
-            design=design,
-            height=validated_data.get("height"),
-            width=validated_data.get("width"),
-            length=validated_data.get("length"),
-            depth=validated_data.get("depth"),
-            position=validated_data.get("position"),
-            parent_catalog=validated_data.get("parent_catalog"),
-            additional_data=validated_data.get("additional_data"),
-        )
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
+        catalog = Catalog.objects.create(**validated_data)
 
-        override_rules = {
-            rule["name"]: rule for rule in validated_data.get("catalog_rule", [])
-        }
-
-        if original_catalog:
-            for old_rule in original_catalog.catalog_rule.all():
-                override_rule_data = (
-                    override_rules.get(old_rule.name, {}) if override_rules else {}
-                )
-                rule_context = {
-                    "catalog": catalog,
-                    "old_rule": old_rule,
-                    "override_rule_data": override_rule_data,
-                }
-                CatalogRuleSerializer(context=rule_context).create({})
+        override_rules = {rule["name"]: rule for rule in catalog_rules_data}
+        for old_rule in original_catalog.catalog_rule.all():
+            override_rule_data = (
+                override_rules.get(old_rule.name, {}) if override_rules else {}
+            )
+            rule_context = {
+                "catalog": catalog,
+                "old_rule": old_rule,
+                "override_rule_data": override_rule_data,
+            }
+            CatalogRuleSerializer(context=rule_context).create({})
 
         return catalog
 
@@ -1015,7 +989,6 @@ class CatalogSerializer(serializers.ModelSerializer):
                     part.material_id = part_data["material"]["id"]
 
                 part.save()
-
         return instance
 
 

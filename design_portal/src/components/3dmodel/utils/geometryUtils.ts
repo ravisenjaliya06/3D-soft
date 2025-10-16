@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
+import { mmToMeters } from '../handler/unitConversion';
 import { PlankSegment, PositionKey } from '../interface';
 import { Object3D } from '../store/interface';
 
@@ -25,7 +26,11 @@ export const updateObjectGeometry = (
   const depthRatio = getRatio(newDepth, object.depth);
 
   mesh.geometry.dispose();
-  mesh.geometry = new THREE.BoxGeometry(newWidth, newHeight, newDepth);
+  mesh.geometry = new THREE.BoxGeometry(
+    mmToMeters(newWidth),
+    mmToMeters(newHeight),
+    mmToMeters(newDepth),
+  );
   mesh.geometry.attributes.position.needsUpdate = true;
   mesh.geometry.computeVertexNormals();
 
@@ -233,8 +238,16 @@ export const updateObjectGeometry = (
       }
 
       (childMesh as THREE.Mesh).geometry.dispose();
-      (childMesh as THREE.Mesh).geometry = new THREE.BoxGeometry(nw, nh, nd);
-      childMesh.position.set(newPos.x, newPos.y, newPos.z);
+      (childMesh as THREE.Mesh).geometry = new THREE.BoxGeometry(
+        mmToMeters(nw),
+        mmToMeters(nh),
+        mmToMeters(nd),
+      );
+      childMesh.position.set(
+        mmToMeters(newPos.x),
+        mmToMeters(newPos.y),
+        mmToMeters(newPos.z),
+      );
       (childMesh as THREE.Mesh).geometry.attributes.position.needsUpdate = true;
       (childMesh as THREE.Mesh).geometry.computeVertexNormals();
       childMesh.updateMatrix();
@@ -273,11 +286,15 @@ export const updateObjectGeometry = (
 
           (gcMesh as THREE.Mesh).geometry.dispose();
           (gcMesh as THREE.Mesh).geometry = new THREE.BoxGeometry(
-            gcW,
-            gcH,
-            gcD,
+            mmToMeters(gcW),
+            mmToMeters(gcH),
+            mmToMeters(gcD),
           );
-          gcMesh.position.set(gcPos.x, gcPos.y, gcPos.z);
+          gcMesh.position.set(
+            mmToMeters(gcPos.x),
+            mmToMeters(gcPos.y),
+            mmToMeters(gcPos.z),
+          );
           (gcMesh as THREE.Mesh).geometry.attributes.position.needsUpdate =
             true;
           (gcMesh as THREE.Mesh).geometry.computeVertexNormals();
@@ -332,10 +349,18 @@ export function buildMeshTree(
 
   // Create mesh for this object
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(config.width, config.height, config.depth),
+    new THREE.BoxGeometry(
+      mmToMeters(config.width),
+      mmToMeters(config.height),
+      mmToMeters(config.depth),
+    ),
     new THREE.MeshStandardMaterial(),
   );
-  mesh.position.set(config.position.x, config.position.y, config.position.z);
+  mesh.position.set(
+    mmToMeters(config.position.x),
+    mmToMeters(config.position.y),
+    mmToMeters(config.position.z),
+  );
   mesh.userData.objectId = object.id;
 
   // Recursively add children

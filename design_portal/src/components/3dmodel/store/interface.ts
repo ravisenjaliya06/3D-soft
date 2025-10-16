@@ -186,7 +186,7 @@ export interface HistoryState {
   future: HistoryAction[];
 }
 
-export type UnitType = 'mm' | 'cm' | 'in';
+export type UnitType = 'mm' | 'cm' | 'm' | 'in' | 'ft';
 export interface MeasurementState {
   isActive: boolean;
   unitType: UnitType;
