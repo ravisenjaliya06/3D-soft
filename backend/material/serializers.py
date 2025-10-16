@@ -896,7 +896,6 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     catalog_rule = CatalogRuleSerializer(many=True, required=False)
-    design_id = serializers.UUIDField(write_only=True, required=True)
 
     class Meta:
         model = Catalog
@@ -906,7 +905,6 @@ class CatalogSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "design",
-            "design_id",
             "parent",
             "catalog_rule",
             "height",
@@ -918,8 +916,13 @@ class CatalogSerializer(serializers.ModelSerializer):
         ]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
+        request = self.context["request"]
+        design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         original_catalog = Catalog.objects.get(id=catalog_id)
+
+        if not design_id:
+            raise serializers.ValidationError("Missing required field 'design_id'.")
 
         catalog_rules_data = validated_data.pop("catalog_rule", [])
         catalog = Catalog.objects.create(**validated_data)
@@ -984,7 +987,6 @@ class CatalogSerializer(serializers.ModelSerializer):
                     part.material_id = part_data["material"]["id"]
 
                 part.save()
-
         return instance
 
 
