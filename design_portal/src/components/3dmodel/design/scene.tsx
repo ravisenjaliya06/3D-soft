@@ -1590,7 +1590,12 @@ export const addVerticalPlanksToBox = async (
   if (innerSpan <= thickness) return;
 
   const interval = innerSpan / (count + 1);
-  const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
+  const textureLoader = new THREE.TextureLoader();
+  const woodTex = textureLoader.load('/textures/light_wood.jpg');
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+  woodTex.repeat.set(2, 1);
+
+  const plankMatProps = { map: woodTex, roughness: 0.6, metalness: 0 };
   const effectiveHeight = isPlatform ? height - skirtingHeight : height;
 
   for (let i = 1; i <= count; i++) {
@@ -1642,6 +1647,7 @@ export const addVerticalPlanksToBox = async (
       additional_data: {
         isPlatform: isPlatform,
         isSideWallBox: isSideWallBox,
+        texture: '/textures/light_wood.jpg',
       },
     };
 
@@ -1649,25 +1655,6 @@ export const addVerticalPlanksToBox = async (
     plank.userData.objectId = apiResponse.id;
     plank.userData.type = 'Plank';
     plank.userData.apiData = apiResponse;
-
-    // Sync store
-    if (plank.userData.objectId) {
-      const objInStore = store
-        .getState()
-        .data.objects.find((o) => o.id === plank.userData.objectId);
-      if (objInStore) {
-        store.dispatch(
-          updateObject({
-            ...objInStore,
-            apiData: apiResponse,
-            width: plankPart.dimensions.width,
-            height: plankPart.dimensions.height,
-            depth: plankPart.dimensions.depth,
-            position: convertPositionToMM(plank.position as any),
-          } as any),
-        );
-      }
-    }
 
     const plankDimensionsMM = plank.userData.dimensions;
     const plankPositionMM = convertPositionToMM(plank.position as any);
@@ -1725,6 +1712,9 @@ export const addVerticalPlanksToBox = async (
         z: metersToMM(skirting.position.z),
       },
       parent: parent.userData.objectId,
+      additional_data: {
+        color: '0x555555',
+      },
     };
     const apiResponse = await addItemToDataBaseWihoutCatalog(data);
     skirting.userData.objectId = apiResponse.data.id;
@@ -1772,7 +1762,12 @@ export const addHorizontalPlanksInsideBox = async (
   }
   const localCenter = parent.worldToLocal(center.clone());
 
-  const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
+  const textureLoader = new THREE.TextureLoader();
+  const woodTex = textureLoader.load('/textures/light_wood.jpg');
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+  woodTex.repeat.set(2, 1);
+
+  const plankMatProps = { map: woodTex, roughness: 0.6, metalness: 0 };
 
   parent.userData.compartmentConfig = {
     isHorizontal: true,
@@ -1825,6 +1820,9 @@ export const addHorizontalPlanksInsideBox = async (
         z: metersToMM(shelf.position.z),
       },
       parent: parent.userData.objectId,
+      additional_data: {
+        texture: '/textures/light_wood.jpg',
+      },
     };
 
     const apiResponse = await addItemtoDatabase(data);
@@ -1951,6 +1949,10 @@ export const addDoorOnInvisibleBox = async (
       z: metersToMM(face.position.z),
     },
     parent: parent.userData.objectId,
+    additional_data: {
+      openDirection: 'right',
+      texture: '/Texture0004.jpg',
+    },
   };
 
   const apiResponse = await addItemtoDatabase(data);

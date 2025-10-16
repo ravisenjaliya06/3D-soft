@@ -1447,12 +1447,30 @@ CATALOG = [
                     {"name": "Horizontal Top Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel Left", "material": "3/4 1s Poplar Ply"},
                     {"name": "Back Panel Tower", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Vertical Panel Tower Left", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Vertical Panel Tower Right", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel Tower Bottom", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel Tower Top", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel Tower Mid", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel Tower Lower", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Vertical Panel Tower Left",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Vertical Panel Tower Right",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Bottom",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Top",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Mid",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Lower",
+                        "material": "3/4 1s Poplar Ply",
+                    },
                 ],
             },
             {
@@ -1461,7 +1479,10 @@ CATALOG = [
                     {"name": "Middle Vertical and Right Panel", "material": ""},
                     {"name": "Middle Vertical and Top Panel", "material": ""},
                     {"name": "Middle Vertical and Bottom Panel", "material": ""},
-                    {"name": "Middle Vertical and Middle Horizontal Panel", "material": ""},
+                    {
+                        "name": "Middle Vertical and Middle Horizontal Panel",
+                        "material": "",
+                    },
                     {"name": "Base and Right Panel", "material": ""},
                     {"name": "Base and Left Panel", "material": ""},
                 ],
@@ -1486,8 +1507,14 @@ CATALOG = [
                     {"name": "Vertical Panel 1", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 2", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 3", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Vertical Panel Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel Top Shelf", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Vertical Panel Right Panel",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Top Shelf",
+                        "material": "3/4 1s Poplar Ply",
+                    },
                     {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
                     {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
                     {"name": "Horizontal Panel 3", "material": "3/4 1s Poplar Ply"},
@@ -1727,7 +1754,7 @@ def create_catalog_data() -> None:
                     "position": catalog_data.get("position"),
                     "thickness": catalog_data.get("thickness"),
                     "additional_data": catalog_data.get("additional_data"),
-                    "description": catalog_data.get("description", "")
+                    "description": catalog_data.get("description", ""),
                 },
             )
 
@@ -1754,7 +1781,7 @@ def create_catalog_data() -> None:
                             "position": part_data.get("position"),
                             "handle_position": part_data.get("handle_position"),
                             "thickness": part_data.get("thickness"),
-                            "material": material_obj
+                            "material": material_obj,
                         },
                     )
 

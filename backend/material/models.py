@@ -794,3 +794,4 @@ class CatalogRuleParts(models.Model):
     thickness = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
     handle_position = models.JSONField(blank=True, null=True)
+    additional_data = models.JSONField(blank=True, null=True)

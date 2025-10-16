@@ -782,6 +782,7 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "thickness",
             "position",
             "handle_position",
+            "additional_data",
         ]
 
     def get_material(self: "CatalogRulePartSerializer", obj: CatalogRuleParts) -> dict:
@@ -808,6 +809,7 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "handle_position": override_data.get(
                 "handle_position", old_part.handle_position
             ),
+            "additional_data": override_data.get("additional_data", {}),
         }
 
         return CatalogRuleParts.objects.create(**data)
@@ -1010,6 +1012,7 @@ class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
             "depth",
             "position",
             "handle_position",
+            "additional_data",
         ]
         read_only_fields = ["id", "name"]
 

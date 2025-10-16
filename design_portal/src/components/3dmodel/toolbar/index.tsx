@@ -387,6 +387,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                 z: metersToMM(child.position.z),
               },
               handle_position: null,
+              additional_data: {
+                texture: '/textures/light_wood.jpg',
+              },
             });
           }
         });
@@ -409,6 +412,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             height,
             depth,
             position,
+            additional_data: {
+              texture: '/textures/light_wood.jpg',
+            },
             parts,
           });
           if (apiResponse) {

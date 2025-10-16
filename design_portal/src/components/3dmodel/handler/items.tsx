@@ -91,29 +91,44 @@ export function hideFullScreenLoader() {
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   if (!boxMesh) return [];
 
-  // --- Clean previous invisible boxes ---
+  // --- Remove previous invisible boxes ---
   const toRemove: THREE.Object3D[] = [];
   boxMesh.traverse((child) => {
     if (child.userData.isInvisibleBox) toRemove.push(child);
   });
   toRemove.forEach((c) => boxMesh.remove(c));
 
-  // --- Collect all planks ---
+  // --- Determine orientation and grid axes ---
+  let widthAxis: 'x' | 'z' = 'x';
+  let heightAxis: 'y' | 'z' = 'y';
+  let depthAxis: 'x' | 'y' | 'z' = 'z';
+
+  if (boxMesh.name.includes('leftwall') || boxMesh.name.includes('rightwall')) {
+    widthAxis = 'z';
+    heightAxis = 'y';
+    depthAxis = 'x';
+  } else {
+    widthAxis = 'x';
+    heightAxis = 'y';
+    depthAxis = 'z';
+  }
+
+  // --- Collect planks ---
   const planks: {
     name: string;
     width: number;
     height: number;
     depth: number;
     position: THREE.Vector3;
-    xMin: number;
-    xMax: number;
-    yMin: number;
-    yMax: number;
+    wMin: number;
+    wMax: number;
+    hMin: number;
+    hMax: number;
   }[] = [];
 
   boxMesh.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
-    if (!child.userData.type || child.userData.type !== 'Plank') return;
+    if (child.userData.type !== 'Plank') return;
 
     const geom = child.geometry as THREE.BoxGeometry;
     const { width, height, depth } = geom.parameters;
@@ -127,20 +142,25 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       height,
       depth,
       position: localPos,
-      xMin: localPos.x - width / 2,
-      xMax: localPos.x + width / 2,
-      yMin: localPos.y - height / 2,
-      yMax: localPos.y + height / 2,
+      wMin: localPos[widthAxis] - width / 2,
+      wMax: localPos[widthAxis] + width / 2,
+      hMin: localPos[heightAxis] - height / 2,
+      hMax: localPos[heightAxis] + height / 2,
     });
   });
 
   // --- Get total bounding box of container ---
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
   bbox.getSize(size);
-  const width = size.x;
-  const height = size.y;
-  const depth = size.z;
+  bbox.getCenter(center);
+
+  const width = size[widthAxis];
+  const height = size[heightAxis];
+  const depth = size[depthAxis];
+
+  const boxCenterLocal = boxMesh.worldToLocal(center.clone());
 
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
@@ -149,44 +169,38 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     opacity: 0,
   });
 
-  // --- CASE 1: No planks found → full invisible box ---
+  // --- CASE 1: No planks found → single invisible box ---
   if (planks.length === 0) {
     const geo = new THREE.BoxGeometry(width, height, depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
     mesh.userData.isInvisibleBox = true;
-
-    // Center inside container
-    const center = new THREE.Vector3();
-    bbox.getCenter(center);
-    const localCenter = boxMesh.worldToLocal(center.clone());
-    mesh.position.copy(localCenter);
-
+    mesh.position.copy(boxCenterLocal);
     boxMesh.add(mesh);
     return [mesh];
   }
 
-  // --- CASE 2: Planks exist → run grid logic ---
+  // --- CASE 2: Planks exist → build grid ---
   const step = 0.01;
+  const minW = -width / 2;
+  const maxW = width / 2;
+  const minH = -height / 2;
+  const maxH = height / 2;
 
-  let minX = -width / 2;
-  let maxX = width / 2;
-  let minY = -height / 2;
-  let maxY = height / 2;
-
-  const gridWidth = Math.ceil((maxX - minX) / step);
-  const gridHeight = Math.ceil((maxY - minY) / step);
+  const gridWidth = Math.ceil((maxW - minW) / step);
+  const gridHeight = Math.ceil((maxH - minH) / step);
 
   const grid: string[][] = Array(gridHeight)
     .fill(null)
     .map(() => Array(gridWidth).fill('empty'));
 
+  // --- Mark plank areas on grid ---
   planks.forEach((p) => {
-    const { xMin, xMax, yMin, yMax } = p;
-    const startX = Math.max(0, Math.floor((xMin - minX) / step));
-    const endX = Math.min(gridWidth - 1, Math.ceil((xMax - minX) / step));
-    const startY = Math.max(0, Math.floor((yMin - minY) / step));
-    const endY = Math.min(gridHeight - 1, Math.ceil((yMax - minY) / step));
+    const { wMin, wMax, hMin, hMax } = p;
+    const startX = Math.max(0, Math.floor((wMin - minW) / step));
+    const endX = Math.min(gridWidth - 1, Math.ceil((wMax - minW) / step));
+    const startY = Math.max(0, Math.floor((hMin - minH) / step));
+    const endY = Math.min(gridHeight - 1, Math.ceil((hMax - minH) / step));
 
     for (let y = startY; y <= endY; y++) {
       for (let x = startX; x <= endX; x++) {
@@ -195,6 +209,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     }
   });
 
+  // --- Detect empty compartments ---
   const compartments: {
     width: number;
     height: number;
@@ -224,15 +239,20 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
       const compWidth = (xEnd - x + 1) * step;
       const compHeight = (yEnd - y + 1) * step;
-      const centerX = minX + (x + (xEnd - x) / 2) * step;
-      const centerY = minY + (y + (yEnd - y) / 2) * step;
+      const centerW = minW + (x + (xEnd - x) / 2) * step;
+      const centerH = minH + (y + (yEnd - y) / 2) * step;
 
       if (compWidth > 0 && compHeight > 0) {
+        const pos = new THREE.Vector3();
+        pos[widthAxis] = centerW;
+        pos[heightAxis] = centerH;
+        pos[depthAxis] = boxCenterLocal[depthAxis];
+
         compartments.push({
           width: compWidth,
           height: compHeight,
-          depth: depth,
-          position: new THREE.Vector3(centerX, centerY, 0),
+          depth,
+          position: pos,
         });
       }
 
@@ -244,7 +264,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     }
   }
 
-  // --- Create invisible boxes for compartments ---
   const meshes: THREE.Mesh[] = [];
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
@@ -879,6 +898,23 @@ export async function createMeshRecursively(
       opacity: 0.0,
       depthWrite: false,
     });
+  } else if (data.additional_data?.texture) {
+    const textureLoader = new THREE.TextureLoader();
+    const woodTex = textureLoader.load(data.additional_data.texture);
+    woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+    woodTex.repeat.set(2, 1);
+
+    material = new THREE.MeshStandardMaterial({
+      map: woodTex,
+      roughness: 0.6,
+      metalness: 0,
+    });
+  } else if (data.additional_data?.color) {
+    const colorValue = parseInt(data.additional_data.color, 16);
+    material = new THREE.MeshStandardMaterial({
+      color: colorValue,
+      roughness: 0.8,
+    });
   } else {
     material = await createRealisticMaterial(scene, {
       textures: TEXTURES_URLS.PLATFORM,
@@ -913,14 +949,33 @@ export async function createMeshRecursively(
             partDepth,
           );
 
-          const partMesh = new THREE.Mesh(
-            partGeometry,
-            await createRealisticMaterial(scene, {
+          let material: THREE.Material;
+          if (data.additional_data?.texture) {
+            const textureLoader = new THREE.TextureLoader();
+            const woodTex = textureLoader.load(data.additional_data.texture);
+            woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+            woodTex.repeat.set(2, 1);
+
+            material = new THREE.MeshStandardMaterial({
+              map: woodTex,
+              roughness: 0.6,
+              metalness: 0,
+            });
+          } else if (data.additional_data?.color) {
+            const colorValue = parseInt(data.additional_data.color, 16);
+            material = new THREE.MeshStandardMaterial({
+              color: colorValue,
+              roughness: 0.8,
+            });
+          } else {
+            material = await createRealisticMaterial(scene, {
               textures: TEXTURES_URLS.PLATFORM,
               repeatX: 10,
               repeatY: 1,
-            }),
-          );
+            });
+          }
+
+          const partMesh = new THREE.Mesh(partGeometry, material);
           partMesh.name = part.name || 'RulePart';
           partMesh.userData = { ...part, type: 'RulePart' };
 
