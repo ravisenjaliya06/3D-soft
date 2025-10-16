@@ -90,20 +90,23 @@ class CatalogViewSet(viewsets.ModelViewSet):
         return CatalogSerializer
 
     def get_queryset(self: "CatalogViewSet") -> QuerySet[Catalog]:
-        catalog_type = self.request.query_params.get("type")
-        design_id = self.request.query_params.get("design_id")
-        catalog_list = Catalog.objects.filter(
-            organization=self.request.user.selected_organization,
-            parent__isnull=True,
+        qs = Catalog.objects.filter(
+            organization=self.request.user.selected_organization
         )
-        if catalog_type:
-            catalog_list = catalog_list.filter(type=catalog_type, design__isnull=True)
-        if design_id:
-            catalog_list = catalog_list.filter(design_id=design_id)
-        else:
-            catalog_list = catalog_list.filter(design__isnull=True)
 
-        return catalog_list
+        if self.action == "list":
+            catalog_type = self.request.query_params.get("type")
+            design_id = self.request.query_params.get("design_id")
+            qs = qs.filter(parent__isnull=True)
+
+            if catalog_type:
+                qs = qs.filter(type=catalog_type, design__isnull=True)
+            if design_id:
+                qs = qs.filter(design_id=design_id)
+            else:
+                qs = qs.filter(design__isnull=True)
+
+        return qs
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)
