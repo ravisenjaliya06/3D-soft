@@ -273,6 +273,8 @@ class CatalogTypeChoices(models.TextChoices):
     SLIDING_DOOR = "Sliding Door"
     CABINET = "Cabinet"
     PLATFORM = "Platform"
+    INVISIBLE_COMPARTMENT = "Invisible Compartment"
+    SKIRTING = "Skirting"
 
 
 class ConnectionTypesChoices(models.TextChoices):

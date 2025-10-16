@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '../hooks';
 import { ResponseStatus } from '../interface';
 import { store } from '../store';
 import {
+  addObjects,
   copyObjectsThunk,
   removeObjectWithHistory,
   setHoverdMesh,
@@ -28,6 +29,7 @@ import {
   init3DDesign,
   showPlankDimensions,
 } from './scene';
+import { loadDesignObjects } from '../handler/items';
 
 export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];
@@ -264,20 +266,20 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         } catch (e) {
           console.error('Failed to add walls after loading design:', e);
         }
-        // const designId = gettingDesignID();
-        // if (designId) {
-        //   try {
-        //     const loadedObjects = await loadDesignObjects(
-        //       designId,
-        //       threeDView.scene,
-        //     );
-        //     dispatch(addObjects(loadedObjects));
-        //   } catch (error) {
-        //     console.error('Failed to load design objects:', error);
-        //   }
-        // } else {
-        //   console.warn('No designId found in URL');
-        // }
+        const designId = gettingDesignID();
+        if (designId) {
+          try {
+            const loadedObjects = await loadDesignObjects(
+              designId,
+              threeDView.scene,
+            );
+            dispatch(addObjects(loadedObjects));
+          } catch (error) {
+            console.error('Failed to load design objects:', error);
+          }
+        } else {
+          console.warn('No designId found in URL');
+        }
 
         threeDView.scene.traverse((object) => {
           if (
@@ -922,7 +924,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const name = m.name.toUpperCase();
       if (
         name.includes('VERTICAL_PLANK') ||
-        name.includes('HORIZONTAL_PLANK')
+        name.includes('HORIZONTAL_PLANK') || 
+        m.userData.type === 'Plank'
       ) {
         if (m instanceof THREE.Mesh) {
           showPlankDimensions(design3D.scene, m);
@@ -950,6 +953,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'TABLE',
     'TVUNIT',
     'UPPERCABINET',
+    'PLATFORM',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&

@@ -28,6 +28,7 @@ export async function createRealisticMaterial(
   scene: THREE.Scene,
   options: RealisticMaterialOptions = {},
 ): Promise<THREE.MeshStandardMaterial> {
+  console.log(scene, 'scene');
   const { textures = {}, repeatX = 1, repeatY = 1 } = options;
 
   const textureLoader = new THREE.TextureLoader();
@@ -37,8 +38,8 @@ export async function createRealisticMaterial(
   const hdrPromise = new Promise<void>((resolve) => {
     new RGBELoader().load(hdrPath, (hdrTexture) => {
       hdrTexture.mapping = THREE.EquirectangularReflectionMapping;
-      scene.environment = hdrTexture;
-      scene.background = hdrTexture;
+      if (!scene.environment) scene.environment = hdrTexture;
+      if (!scene.background) scene.background = hdrTexture;
       resolve();
     });
   });

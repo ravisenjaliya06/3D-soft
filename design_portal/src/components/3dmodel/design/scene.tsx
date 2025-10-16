@@ -12,6 +12,7 @@ import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
 import {
   addItemtoDatabase,
+  addItemToDataBaseWihoutCatalog,
   generateCompartmentsFromMesh,
   initializeMoveHandler,
 } from '../handler/items';
@@ -603,7 +604,7 @@ export function createInvisibleBox(
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = name;
   mesh.position.set(position.x, position.y, position.z);
-  mesh.userData = { ...userData, objectId: uuidv4(), isInvisibleBox: true };
+  mesh.userData = { ...userData, isInvisibleBox: true };
   return mesh;
 }
 export function createMeshObject(
@@ -729,6 +730,7 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
   scene.add(cWallGroup);
 };
+
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   const width = 1.5;
   const height = 2;
@@ -806,7 +808,6 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const back = createMeshObject(backPart);
 
   cabinetContainer.add(left, right, bottom, top, back);
-  cabinetContainer.userData.objectId = `${uuidv4()}`;
 
   generateCompartmentsFromMesh(cabinetContainer);
   cabinetContainer.userData.isMain = true;
@@ -1212,7 +1213,7 @@ export const addPlatformOnWall = async (
         : null,
   });
 
-  function addStaticInvisibleBoxforPlatform(
+  async function addStaticInvisibleBoxforPlatform(
     platformGroup: THREE.Group,
     topMesh: THREE.Mesh,
     floorY: number,
@@ -1247,7 +1248,25 @@ export const addPlatformOnWall = async (
       },
     );
 
-    invisible.userData.objectId = uuidv4();
+    const designId = window.location.pathname.split('/')[2];
+    const data = {
+      name: invisible.name,
+      type: 'Invisible Compartment',
+      description: '',
+      design_id: designId,
+      height: invisibleBoxHeight,
+      width: dimensions.width,
+      length: dimensions.depth,
+      depth: dimensions.depth,
+      position: {
+        x: topMesh.position.x,
+        y: floorY + invisibleBoxHeight / 2,
+        z: topMesh.position.z,
+      }
+    }
+    const apiResponse = await addItemToDataBaseWihoutCatalog(data);
+    console.log(apiResponse);
+    invisible.userData.objectId = apiResponse.data.id;
     invisible.userData.isMain = true;
     invisible.userData.isPlatformInvisibleBox = true;
     platformGroup.add(invisible);
@@ -1524,14 +1543,12 @@ export const addVerticalPlanksToBox = async (
       dimensions: plankPart.dimensions,
     });
 
-    // Compute the world position of the plank relative to boxMesh
     const worldPos = new THREE.Vector3(
       divideAlongX ? -width / 2 + edgeClearance + interval * i : 0,
       isPlatform ? -height / 2 + skirtingHeight + effectiveHeight / 2 : 0,
       divideAlongX ? 0 : -depth / 2 + edgeClearance + interval * i,
     );
 
-    // Convert this world position relative to parent
     const parentWorldPos = boxMesh.localToWorld(worldPos.clone());
     const localPos = parent.worldToLocal(parentWorldPos);
     plank.position.copy(localPos);
@@ -1544,6 +1561,7 @@ export const addVerticalPlanksToBox = async (
       height: (plank.geometry as THREE.BoxGeometry).parameters.height,
       depth: (plank.geometry as THREE.BoxGeometry).parameters.depth,
       position: plank.position,
+      parent_catalog: parent.userData.objectId,
       additional_data: {
         isPlatform: isPlatform,
         isSideWallBox: isSideWallBox,
@@ -1592,6 +1610,23 @@ export const addVerticalPlanksToBox = async (
     };
 
     const skirting = createMeshObject(skirtingPart);
+    const designId = window.location.pathname.split('/')[2];
+    const data = {
+      name: skirting.name,
+      type: 'Skirting',
+      description: '',
+      design_id: designId,
+      height: skirtingPart.dimensions.height,
+      width: skirtingPart.dimensions.width,
+      length: skirtingPart.dimensions.depth,
+      depth: skirtingPart.dimensions.depth,
+      position: skirtingPart.position,
+      parent_catalog: boxMesh.userData.objectId,
+    }
+    const apiResponse = await addItemToDataBaseWihoutCatalog(data);
+    skirting.userData.objectId = apiResponse.data.id;
+    skirting.userData.type = 'Skirting';
+    skirting.userData.apiData = apiResponse;
     boxMesh.add(skirting);
   }
 
@@ -1678,6 +1713,7 @@ export const addHorizontalPlanksInsideBox = async (
       height: (shelf.geometry as THREE.BoxGeometry).parameters.height,
       depth: (shelf.geometry as THREE.BoxGeometry).parameters.depth,
       position: shelf.position,
+      parent_catalog: parent.userData.objectId,
     };
 
     const apiResponse = await addItemtoDatabase(data);

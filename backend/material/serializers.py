@@ -930,41 +930,42 @@ class CatalogSerializer(serializers.ModelSerializer):
         design_id = request.data.get("design_id")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
 
-        if not design_id or not catalog_id:
-            raise serializers.ValidationError(
-                "Missing required fields: 'design_id' or 'catalog_id'."
-            )
-
         design = Design.objects.get(id=design_id)
-        original_catalog = Catalog.objects.get(id=catalog_id)
+        
+        original_catalog = None
+        if catalog_id:
+            original_catalog = Catalog.objects.get(id=catalog_id)
 
         catalog = Catalog.objects.create(
             organization=request.user.selected_organization,
-            name=original_catalog.name,
-            type=original_catalog.type,
-            description=original_catalog.description,
+            name=original_catalog.name if catalog_id else validated_data["name"],
+            type=original_catalog.type if catalog_id else validated_data["type"],
+            description=original_catalog.description if catalog_id else "",
             design=design,
-            height=validated_data.get("height", original_catalog.height),
-            width=validated_data.get("width", original_catalog.width),
-            length=validated_data.get("length", original_catalog.length),
-            depth=validated_data.get("depth", original_catalog.depth),
-            position=validated_data.get("position", original_catalog.position),
+            height=validated_data.get("height"),
+            width=validated_data.get("width"),
+            length=validated_data.get("length"),
+            depth=validated_data.get("depth"),
+            position=validated_data.get("position"),
             parent_catalog=validated_data.get("parent_catalog"),
+            additional_data=validated_data.get("additional_data"),
         )
 
         override_rules = {
             rule["name"]: rule for rule in validated_data.get("catalog_rule", [])
         }
-        for old_rule in original_catalog.catalog_rule.all():
-            override_rule_data = (
-                override_rules.get(old_rule.name, {}) if override_rules else {}
-            )
-            rule_context = {
-                "catalog": catalog,
-                "old_rule": old_rule,
-                "override_rule_data": override_rule_data,
-            }
-            CatalogRuleSerializer(context=rule_context).create({})
+
+        if original_catalog:
+            for old_rule in original_catalog.catalog_rule.all():
+                override_rule_data = (
+                    override_rules.get(old_rule.name, {}) if override_rules else {}
+                )
+                rule_context = {
+                    "catalog": catalog,
+                    "old_rule": old_rule,
+                    "override_rule_data": override_rule_data,
+                }
+                CatalogRuleSerializer(context=rule_context).create({})
 
         return catalog
 

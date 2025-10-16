@@ -1431,19 +1431,15 @@ CATALOG = [
         "type": "Cabinet",
         "name": "Simple Cabinet",
         "description": "Simple Cabinet",
-        "width": 1500,
-        "height": 2000,
-        "depth": 400,
-        "thickness": 18,
         "catalog_rules": [
             {
                 "name": "Panel",
                 "rules_parts": [
-                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply", "width": 18, "height": 2000, "depth": 400, "position": { "x": 741, "y": 0, "z": 0 }},
-                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply", "width": 18, "height": 2000, "depth": 400, "position": { "x": -741, "y": 0, "z": 0 }},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 18, "depth": 400, "position": { "x": 0, "y": 991, "z": 0 }},
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 18, "depth": 400, "position": { "x": 0, "y": -991, "z": 0 }},
-                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply", "width": 1464, "height": 1964, "depth": 18, "position": { "x": 0, "y": 0, "z": -191 }},
+                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply"},
                 ],
             },
             {

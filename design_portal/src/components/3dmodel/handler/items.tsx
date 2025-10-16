@@ -35,6 +35,8 @@ import {
 import { MoveHandler } from './moveHandler';
 import { addCabinetItemToDesign } from './toolbar';
 import { updateObjectInDatabase } from './updateHandler';
+import { createRealisticMaterial } from '../design/loadRealisticScene';
+import { TEXTURES_URLS } from '../constants';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -821,6 +823,62 @@ async function createChildObjectFromData(
   }
 }
 
+export async function createMeshRecursively(
+  data,
+  parent: THREE.Object3D | null = null,
+  scene?: THREE.Scene
+): Promise<THREE.Mesh | null> {
+  if (!data) return null;
+
+  const width = data.width || data.length || 1;
+  const height = data.height || 1;
+  const depth = data.depth || 1;
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+
+  let material: THREE.Material;
+  if (data.type === 'Invisible Compartment') {
+    material = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.0,
+      depthWrite: false,
+    });
+  } else {
+    material = await createRealisticMaterial(scene, {
+      textures: TEXTURES_URLS.PLATFORM,
+      repeatX: 10,
+      repeatY: 1,
+    });
+  }
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = data.name || data.type || 'Unknown';
+  mesh.userData = { ...data };
+
+  if (data.position) {
+    mesh.position.set(data.position.x || 0, data.position.y || 0, data.position.z || 0);
+  }
+
+  if (Array.isArray(data.children) && data.children.length > 0) {
+    for (const child of data.children) {
+      const childMesh = await createMeshRecursively(child, mesh, scene);
+      if (childMesh) mesh.add(childMesh);
+    }
+  }
+
+  if (parent) {
+    mesh.userData.objectId = data.id;
+    parent.add(mesh);
+  } else if (scene) {
+    mesh.userData.objectId = data.id;
+    mesh.userData.isMain = true;
+    scene.add(mesh);
+    generateCompartmentsFromMesh(mesh);
+  }
+
+  return mesh;
+}
+
 async function loadDesignObjects(
   designId: string,
   scene: THREE.Scene,
@@ -839,175 +897,176 @@ async function loadDesignObjects(
 
       // Create all objects (main objects and their child items)
       for (const item of data) {
-        try {
-          const nameLower = (item?.name || '').toLowerCase();
-          let createdMesh: THREE.Object3D | null = null;
+        // try {
+        //   const nameLower = (item?.name || '').toLowerCase();
+        //   let createdMesh: THREE.Object3D | null = null;
 
-          // Create main object
-          if (item.type === 'Platform') {
-            const wall = scene.getObjectByName(item.additional_data?.wall);
-            const textureLoader = new THREE.TextureLoader();
-            const counterTexture = textureLoader.load('/img14_64.jpg');
-            counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
-            counterTexture.repeat.set(10, 1);
-            const meshes = addPlatformOnWall(
-              scene,
-              wall as any,
-              counterTexture,
-            );
-            createdMesh = meshes?.[0]; // Get the first platform mesh
-          } else if (item.type === 'Cabinet') {
-            if (nameLower.includes('tv')) {
-              addSimpleTVUnit(scene);
-              createdMesh = scene.getObjectByName('SimpleTVUnit');
-            } else if (
-              nameLower.includes('computer') ||
-              nameLower.includes('desk')
-            ) {
-              addComputerDesk(scene);
-              createdMesh = scene.getObjectByName('ComputerDesk');
-            } else if (nameLower.includes('table')) {
-              addSimpleTable(scene);
-              createdMesh = scene.getObjectByName('SimpleTable');
-            }
-          } else if (item.type === 'Plank') {
-            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-              console.log(
-                `Creating plank directly from API data: ${item.name}, position:`,
-                item.data?.position,
-                'dimensions:',
-                item.data?.width,
-                'x',
-                item.data?.height,
-                'x',
-                item.data?.depth,
-              );
-            }
+        //   // Create main object
+        //   if (item.type === 'Platform') {
+        //     const wall = scene.getObjectByName(item.additional_data?.wall);
+        //     const textureLoader = new THREE.TextureLoader();
+        //     const counterTexture = textureLoader.load('/img14_64.jpg');
+        //     counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
+        //     counterTexture.repeat.set(10, 1);
+        //     const meshes = addPlatformOnWall(
+        //       scene,
+        //       wall as any,
+        //       counterTexture,
+        //     );
+        //     createdMesh = meshes?.[0]; // Get the first platform mesh
+        //   } else if (item.type === 'Cabinet') {
+        //     if (nameLower.includes('tv')) {
+        //       addSimpleTVUnit(scene);
+        //       createdMesh = scene.getObjectByName('SimpleTVUnit');
+        //     } else if (
+        //       nameLower.includes('computer') ||
+        //       nameLower.includes('desk')
+        //     ) {
+        //       addComputerDesk(scene);
+        //       createdMesh = scene.getObjectByName('ComputerDesk');
+        //     } else if (nameLower.includes('table')) {
+        //       addSimpleTable(scene);
+        //       createdMesh = scene.getObjectByName('SimpleTable');
+        //     }
+        //   } else if (item.type === 'Plank') {
+        //     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        //       console.log(
+        //         `Creating plank directly from API data: ${item.name}, position:`,
+        //         item.data?.position,
+        //         'dimensions:',
+        //         item.data?.width,
+        //         'x',
+        //         item.data?.height,
+        //         'x',
+        //         item.data?.depth,
+        //       );
+        //     }
 
-            const plankMaterial = new THREE.MeshStandardMaterial({
-              color: 0xd9c7b8,
-              roughness: 0.7,
-            });
+        //     const plankMaterial = new THREE.MeshStandardMaterial({
+        //       color: 0xd9c7b8,
+        //       roughness: 0.7,
+        //     });
 
-            let plankMesh: THREE.Mesh;
-            if (nameLower.includes('vertical')) {
-              plankMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(
-                  item?.width || 0.018,
-                  item?.height || 0.8,
-                  item?.depth || 0.4,
-                ),
-                plankMaterial,
-              );
-              plankMesh.name = `VerticalPlank_${item.id}`;
-            } else if (nameLower.includes('horizontal')) {
-              plankMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(
-                  item?.width || 0.4,
-                  item?.height || 0.018,
-                  item?.depth || 0.4,
-                ),
-                plankMaterial,
-              );
-              plankMesh.name = `HorizontalPlank_${item.id}`;
-            } else {
-              plankMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(
-                  item?.width || 0.4,
-                  item?.height || 0.8,
-                  item?.depth || 0.4,
-                ),
-                plankMaterial,
-              );
-              plankMesh.name = `Plank_${item.id}`;
-            }
+        //     let plankMesh: THREE.Mesh;
+        //     if (nameLower.includes('vertical')) {
+        //       plankMesh = new THREE.Mesh(
+        //         new THREE.BoxGeometry(
+        //           item?.width || 0.018,
+        //           item?.height || 0.8,
+        //           item?.depth || 0.4,
+        //         ),
+        //         plankMaterial,
+        //       );
+        //       plankMesh.name = `VerticalPlank_${item.id}`;
+        //     } else if (nameLower.includes('horizontal')) {
+        //       plankMesh = new THREE.Mesh(
+        //         new THREE.BoxGeometry(
+        //           item?.width || 0.4,
+        //           item?.height || 0.018,
+        //           item?.depth || 0.4,
+        //         ),
+        //         plankMaterial,
+        //       );
+        //       plankMesh.name = `HorizontalPlank_${item.id}`;
+        //     } else {
+        //       plankMesh = new THREE.Mesh(
+        //         new THREE.BoxGeometry(
+        //           item?.width || 0.4,
+        //           item?.height || 0.8,
+        //           item?.depth || 0.4,
+        //         ),
+        //         plankMaterial,
+        //       );
+        //       plankMesh.name = `Plank_${item.id}`;
+        //     }
 
-            // Set position from API data
-            if (item?.position) {
-              plankMesh.position.set(
-                item.position.x,
-                item.position.y,
-                item.position.z,
-              );
-            }
+        //     // Set position from API data
+        //     if (item?.position) {
+        //       plankMesh.position.set(
+        //         item.position.x,
+        //         item.position.y,
+        //         item.position.z,
+        //       );
+        //     }
 
-            plankMesh.userData.objectId = item.id;
-            plankMesh.userData.apiData = item;
-            scene.add(plankMesh);
-            createdMesh = plankMesh;
+        //     plankMesh.userData.objectId = item.id;
+        //     plankMesh.userData.apiData = item;
+        //     scene.add(plankMesh);
+        //     createdMesh = plankMesh;
 
-            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-              console.log(
-                `Successfully created plank mesh: ${plankMesh.name} at position:`,
-                plankMesh.position,
-              );
-            }
-          } else if (item.type === 'Door') {
-            const textureLoader = new THREE.TextureLoader();
-            const doorTexture = textureLoader.load('/Texture0004.jpg');
-            doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
-            doorTexture.repeat.set(2, 1);
-            const doorMatProps = { map: doorTexture, side: THREE.DoubleSide };
+        //     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        //       console.log(
+        //         `Successfully created plank mesh: ${plankMesh.name} at position:`,
+        //         plankMesh.position,
+        //       );
+        //     }
+        //   } else if (item.type === 'Door') {
+        //     const textureLoader = new THREE.TextureLoader();
+        //     const doorTexture = textureLoader.load('/Texture0004.jpg');
+        //     doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
+        //     doorTexture.repeat.set(2, 1);
+        //     const doorMatProps = { map: doorTexture, side: THREE.DoubleSide };
 
-            doorMesh = new THREE.Mesh(
-              new THREE.BoxGeometry(
-                item?.width || 0.018,
-                item?.height || 0.8,
-                item?.depth || 0.4,
-              ),
-              doorMatProps,
-            );
-            doorMesh.name = `VerticalPlank_${item.id}`;
+        //     doorMesh = new THREE.Mesh(
+        //       new THREE.BoxGeometry(
+        //         item?.width || 0.018,
+        //         item?.height || 0.8,
+        //         item?.depth || 0.4,
+        //       ),
+        //       doorMatProps,
+        //     );
+        //     doorMesh.name = `VerticalPlank_${item.id}`;
 
-            doorMesh.position.set(
-              item.position.x,
-              item.position.y,
-              item.position.z,
-            );
-          } else {
-            addSimpleCabinet(scene);
-            createdMesh = scene.getObjectByName('SimpleCabinet');
-          }
+        //     doorMesh.position.set(
+        //       item.position.x,
+        //       item.position.y,
+        //       item.position.z,
+        //     );
+        //   } else {
+        //     addSimpleCabinet(scene);
+        //     createdMesh = scene.getObjectByName('SimpleCabinet');
+        //   }
 
-          // Tag the created mesh with object ID and set position
-          if (createdMesh) {
-            createdMesh.userData.objectId = item.id;
-            createdMesh.userData.apiData = item;
+        //   // Tag the created mesh with object ID and set position
+        //   if (createdMesh) {
+        //     createdMesh.userData.objectId = item.id;
+        //     createdMesh.userData.apiData = item;
 
-            // Set position from API data
-            if (item.position) {
-              createdMesh.position.set(
-                item.position.x,
-                item.position.y,
-                item.position.z,
-              );
-            }
-          }
+        //     // Set position from API data
+        //     if (item.position) {
+        //       createdMesh.position.set(
+        //         item.position.x,
+        //         item.position.y,
+        //         item.position.z,
+        //       );
+        //     }
+        //   }
 
-          // Convert to Object3D format
-          const object3D: Object3D = {
-            id: item.id,
-            name: item.name || '',
-            width: item?.width || 0,
-            height: item?.height || 0,
-            depth: item?.depth || 0,
-            altitude: 0,
-            position: item?.position || { x: 0, y: 0, z: 0 },
-            material: item?.material || { type: 'TEXTURE', value: 'default' },
-            parent: item.parent || null,
-            child: [],
-            grooves: item.grooves || [],
-            catalog_type: item?.catalog_type || '',
-            layer: 0,
-            rotationX: 0,
-            rotationY: 0,
-            rotationZ: 0,
-          };
+        //   // Convert to Object3D format
+        //   const object3D: Object3D = {
+        //     id: item.id,
+        //     name: item.name || '',
+        //     width: item?.width || 0,
+        //     height: item?.height || 0,
+        //     depth: item?.depth || 0,
+        //     altitude: 0,
+        //     position: item?.position || { x: 0, y: 0, z: 0 },
+        //     material: item?.material || { type: 'TEXTURE', value: 'default' },
+        //     parent: item.parent || null,
+        //     child: [],
+        //     grooves: item.grooves || [],
+        //     catalog_type: item?.catalog_type || '',
+        //     layer: 0,
+        //     rotationX: 0,
+        //     rotationY: 0,
+        //     rotationZ: 0,
+        //   };
 
-          createdObjects.push(object3D);
-        } catch (e) {
-          console.error('Failed to recreate main item on refresh', item, e);
-        }
+        //   createdObjects.push(object3D);
+        // } catch (e) {
+        //   console.error('Failed to recreate main item on refresh', item, e);
+        // }
+        createMeshRecursively(item, null, scene);
       }
 
       // Regenerate invisible boxes for compartments after all objects are loaded
@@ -1660,15 +1719,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                  {
-                    id: normalizedData.id,
-                    name: normalizedData.name,
-                    width: normalizedData.width,
-                    height: normalizedData.height,
-                    depth: normalizedData.depth,
-                    position: normalizedData.position,
-                  },
-                ]
+                {
+                  id: normalizedData.id,
+                  name: normalizedData.name,
+                  width: normalizedData.width,
+                  height: normalizedData.height,
+                  depth: normalizedData.depth,
+                  position: normalizedData.position,
+                },
+              ]
               : [],
           );
 
@@ -2636,6 +2695,7 @@ export const addCabinetItemToDesign = async (
     name: string;
     description: string;
     design_id: string;
+    parent_catalog?: string;
     width?: number;
     height?: number;
     depth?: number;
@@ -2649,11 +2709,12 @@ export const addCabinetItemToDesign = async (
     }>;
   },
 ) => {
+  console.log(itemData, 'itemData');
   const payload = {
     type: itemData.type,
     name: itemData.name,
     description: itemData.description,
-    design: itemData.design_id,
+    design_id: itemData.design_id,
     // Optional spatial metadata for backend consumption
     width: itemData.width,
     height: itemData.height,
@@ -2661,6 +2722,7 @@ export const addCabinetItemToDesign = async (
     position: itemData.position,
     additional_data: itemData.additional_data,
     parts: itemData.parts,
+    parent_catalog: itemData.parent_catalog,
   };
   try {
     const response = await commonService.post(
@@ -2689,3 +2751,16 @@ export const addItemtoDatabase = async (data: any) => {
   }
   return null;
 };
+
+export const addItemToDataBaseWihoutCatalog = async (data: any) => {
+  try {
+    const apiResponse = await commonService.post('material', 'catalog/design', data);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(apiResponse, 'apiResponse');
+    }
+    return apiResponse;
+  } catch (error) {
+    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
+  }
+  return null;
+}
