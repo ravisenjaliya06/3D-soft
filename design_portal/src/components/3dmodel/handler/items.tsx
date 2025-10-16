@@ -9,13 +9,9 @@ import {
   convertDataToGeometry,
   createDesign,
 } from '../catalog/object-creator';
-import {
-  addComputerDesk,
-  addPlatformOnWall,
-  addSimpleCabinet,
-  addSimpleTable,
-  addSimpleTVUnit,
-} from '../design/scene';
+import { TEXTURES_URLS } from '../constants';
+import { createRealisticMaterial } from '../design/loadRealisticScene';
+import { mmToMeters } from '../handler/unitConversion';
 import {
   generateMinifixSystem,
   PlankData,
@@ -35,9 +31,6 @@ import {
 import { MoveHandler } from './moveHandler';
 import { addCabinetItemToDesign } from './toolbar';
 import { updateObjectInDatabase } from './updateHandler';
-import { createRealisticMaterial } from '../design/loadRealisticScene';
-import { TEXTURES_URLS } from '../constants';
-import { mmToMeters } from '../handler/unitConversion';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -174,7 +167,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   }
 
   // --- CASE 2: Planks exist → run grid logic ---
-  console.log(planks, 'planks');
   const step = 0.01;
 
   let minX = -width / 2;
@@ -254,7 +246,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   // --- Create invisible boxes for compartments ---
   const meshes: THREE.Mesh[] = [];
-  console.log(compartments, 'compartments');
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
@@ -868,7 +859,7 @@ async function createChildObjectFromData(
 export async function createMeshRecursively(
   data,
   parent: THREE.Object3D | null = null,
-  scene?: THREE.Scene
+  scene?: THREE.Scene,
 ): Promise<THREE.Mesh | null> {
   showFullScreenLoader('Loading design objects...');
   if (!data) return null;
@@ -904,7 +895,7 @@ export async function createMeshRecursively(
     mesh.position.set(
       mmToMeters(data.position.x) || 0,
       mmToMeters(data.position.y) || 0,
-      mmToMeters(data.position.z) || 0
+      mmToMeters(data.position.z) || 0,
     );
   }
 
@@ -916,15 +907,20 @@ export async function createMeshRecursively(
           const partHeight = mmToMeters(part.height || 1);
           const partDepth = mmToMeters(part.depth || 1);
 
-          const partGeometry = new THREE.BoxGeometry(partWidth, partHeight, partDepth);
+          const partGeometry = new THREE.BoxGeometry(
+            partWidth,
+            partHeight,
+            partDepth,
+          );
 
           const partMesh = new THREE.Mesh(
-            partGeometry, 
+            partGeometry,
             await createRealisticMaterial(scene, {
-            textures: TEXTURES_URLS.PLATFORM,
-            repeatX: 10,
-            repeatY: 1,
-          }));
+              textures: TEXTURES_URLS.PLATFORM,
+              repeatX: 10,
+              repeatY: 1,
+            }),
+          );
           partMesh.name = part.name || 'RulePart';
           partMesh.userData = { ...part, type: 'RulePart' };
 
@@ -932,12 +928,12 @@ export async function createMeshRecursively(
             partMesh.position.set(
               mmToMeters(part.position.x) || 0,
               mmToMeters(part.position.y) || 0,
-              mmToMeters(part.position.z) || 0
+              mmToMeters(part.position.z) || 0,
             );
           }
-          console.log(mesh, 'mesh');
           mesh.add(partMesh);
         }
+      } else if (rule.name.includes('Handle')) {
       }
     }
   }
@@ -1629,15 +1625,15 @@ async function createItem(
           .concat(
             !normalizeObjectData.name.includes('DRAWER')
               ? [
-                {
-                  id: normalizedData.id,
-                  name: normalizedData.name,
-                  width: normalizedData.width,
-                  height: normalizedData.height,
-                  depth: normalizedData.depth,
-                  position: normalizedData.position,
-                },
-              ]
+                  {
+                    id: normalizedData.id,
+                    name: normalizedData.name,
+                    width: normalizedData.width,
+                    height: normalizedData.height,
+                    depth: normalizedData.depth,
+                    position: normalizedData.position,
+                  },
+                ]
               : [],
           );
 
@@ -2619,7 +2615,6 @@ export const addCabinetItemToDesign = async (
     }>;
   },
 ) => {
-  console.log(itemData, 'itemData');
   const payload = {
     type: itemData.type,
     name: itemData.name,
@@ -2664,7 +2659,11 @@ export const addItemtoDatabase = async (data: any) => {
 
 export const addItemToDataBaseWihoutCatalog = async (data: any) => {
   try {
-    const apiResponse = await commonService.post('material', 'catalog/design', data);
+    const apiResponse = await commonService.post(
+      'material',
+      'catalog/design',
+      data,
+    );
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(apiResponse, 'apiResponse');
     }
@@ -2673,4 +2672,4 @@ export const addItemToDataBaseWihoutCatalog = async (data: any) => {
     console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
   }
   return null;
-}
+};

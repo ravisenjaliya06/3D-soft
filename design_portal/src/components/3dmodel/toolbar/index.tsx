@@ -49,6 +49,7 @@ import {
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { addCabinetItemToDesign } from '../handler/items';
+import { metersToMM } from '../handler/unitConversion';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
@@ -64,7 +65,6 @@ import {
   setobjectSelected,
   togglAlignment,
 } from '../store/dataSlice';
-import { metersToMM } from '../handler/unitConversion';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -140,7 +140,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const targetWall =
       wallFromSelection ||
       (hovered &&
-        ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
+      ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
         ? hovered
         : null);
 
@@ -148,7 +148,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     if (targetWall) {
       platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
     }
-    console.log('platformData', platformData);
     // Add platform data to API payload
     for (const pdata of platformData) {
       try {
@@ -453,135 +452,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       o.name.startsWith('outline-'),
     ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
+    const selectedChildObject = store.getState().data.selectedChildObject;
 
-    const getOrCreateInternalBox = (container: THREE.Mesh): THREE.Mesh => {
-      const existing = (container.children || []).find(
-        (c: any) =>
-          typeof c.name === 'string' &&
-          c.name.toLowerCase().startsWith('invisiblebox'),
-      ) as THREE.Mesh | undefined;
-      if (existing) return existing;
-      const params = (container.geometry as THREE.BoxGeometry)
-        .parameters as any;
-      const width = params.width as number;
-      const height = params.height as number;
-      const depth = params.depth as number;
-      const thickness = 0.018;
-      const invW = Math.max(width - thickness * 2, 0.02);
-      const invH = Math.max(height - thickness * 2, 0.02);
-      const invD = Math.max(depth - thickness * 2, 0.02);
-      const invMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.0,
-        depthWrite: false,
-      });
-      const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(invW, invH, invD),
-        invMat,
-      );
-      inv.name = 'invisibleBox_auto';
-      (inv as any).userData.isInvisibleBox = true;
-      inv.position.set(0, 0, 0);
-      container.add(inv);
-      return inv;
-    };
+    scene.traverse((obj) => {
+      if (obj.userData.objectId === selectedChildObject) {
+        targetBox = obj as THREE.Mesh;
+      }
+    });
 
-    // Determine target box based on item type
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
 
-    if (outline) {
-      const outlineCenter = outline.position.clone();
-      scene.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
-          // For planks, use different invisible box types
-          if (itemType === 'Plank') {
-            if (
-              itemName === 'Vertical Plank' &&
-              o.name.toLowerCase().includes('invisiblebox')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            } else if (
-              itemName === 'Horizontal Plank' &&
-              o.name.toLowerCase().includes('invisiblebox')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            }
-          } else if (o.name.toLowerCase().includes('invisiblebox')) {
-            // For doors and drawers, use compartment invisible boxes
-            const b = new THREE.Box3().setFromObject(o);
-            const c = new THREE.Vector3();
-            b.getCenter(c);
-            if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-          }
-        }
-      });
-    }
-
     if (!targetBox) {
-      const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (
-        hovered &&
-        typeof hovered.name === 'string' &&
-        hovered.name.toLowerCase().includes('invisiblebox')
-      ) {
-        targetBox = hovered;
-      }
+      alert('❌ Target box not found!');
+      return;
     }
 
-    // Final fallback: use selected container (or selected child’s parent) and auto-create internal box
-    if (!targetBox) {
-      const selectedChildObjectId = store.getState().data
-        .selectedChildObject as string | null;
-      const selectedObjectId = store.getState().data.selectedObject as
-        | string
-        | null;
-      let container: THREE.Mesh | null = null;
-      if (selectedChildObjectId) {
-        scene.traverse((o: any) => {
-          if (
-            !container &&
-            o &&
-            o.isMesh &&
-            o.userData &&
-            o.userData.objectId === selectedChildObjectId
-          ) {
-            container =
-              o.parent && (o.parent as any).isMesh
-                ? (o.parent as THREE.Mesh)
-                : (o as THREE.Mesh);
-          }
-        });
-      }
-      if (!container && selectedObjectId) {
-        scene.traverse((o: any) => {
-          if (
-            !container &&
-            o &&
-            o.isMesh &&
-            o.userData &&
-            o.userData.objectId === selectedObjectId
-          ) {
-            container = o as THREE.Mesh;
-          }
-        });
-      }
-      if (container) {
-        targetBox = getOrCreateInternalBox(container);
-      }
-    }
-
-    // If still nothing, abort silently (no blocking alert)
-    if (!targetBox) return;
-
-    // Handle different item types and make individual API calls for each item
     const designId = window.location.pathname.split('/')[2];
     const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
 
@@ -593,14 +479,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       design_id: designId,
     };
 
-    // Now add the 3D objects with API response data
     if (['Door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(
         scene,
         targetBox,
-        num,
         selectedCabinetItem,
         itemData,
+        num,
       );
     } else if (itemType === 'Drawer') {
       await addDrawersOnInvisibleBox(
@@ -940,8 +825,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, isActive, disabled }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -963,8 +849,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     ({ option, icon, onClick, disabled, isActive }) => (
                       <div
                         key={option}
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                         style={{
                           cursor: disabled ? 'not-allowed' : 'pointer',
                           opacity: disabled ? 0.3 : 1,
@@ -1096,16 +983,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   ? partItems
                   : customItems
               ).length === 0 && (
-                  <div className={styles.noItems}>
-                    No{' '}
-                    {activeCatalogTab === 'furniture'
-                      ? 'furniture'
-                      : activeCatalogTab === 'parts'
-                        ? 'parts'
-                        : 'custom designs'}{' '}
-                    found
-                  </div>
-                )}
+                <div className={styles.noItems}>
+                  No{' '}
+                  {activeCatalogTab === 'furniture'
+                    ? 'furniture'
+                    : activeCatalogTab === 'parts'
+                      ? 'parts'
+                      : 'custom designs'}{' '}
+                  found
+                </div>
+              )}
             </div>
           </div>
         </div>

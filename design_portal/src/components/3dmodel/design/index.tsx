@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { cleanupThreeDView } from '../customDesign/design/scene';
+import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { ResponseStatus } from '../interface';
@@ -29,7 +30,6 @@ import {
   init3DDesign,
   showPlankDimensions,
 } from './scene';
-import { loadDesignObjects } from '../handler/items';
 
 export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];
@@ -930,7 +930,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const name = m.name.toUpperCase();
       if (
         name.includes('VERTICAL_PLANK') ||
-        name.includes('HORIZONTAL_PLANK') || 
+        name.includes('HORIZONTAL_PLANK') ||
         m.userData.type === 'Plank'
       ) {
         if (m instanceof THREE.Mesh) {

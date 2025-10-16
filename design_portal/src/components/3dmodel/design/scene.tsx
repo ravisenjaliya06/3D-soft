@@ -18,6 +18,7 @@ import {
   initializeMoveHandler,
   showFullScreenLoader,
 } from '../handler/items';
+import { metersToMM } from '../handler/unitConversion';
 import { store } from '../store';
 import {
   setHoverdMesh,
@@ -28,7 +29,6 @@ import {
 import { createGrid } from './grid-creator';
 import { ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
-import { metersToMM } from '../handler/unitConversion';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -1332,10 +1332,9 @@ export const addPlatformOnWall = async (
         x: metersToMM(topMesh.position.x),
         y: metersToMM(floorY + invisibleBoxHeight / 2),
         z: metersToMM(topMesh.position.z),
-      }
-    }
+      },
+    };
     const apiResponse = await addItemToDataBaseWihoutCatalog(data);
-    console.log(apiResponse);
     invisible.userData.objectId = apiResponse.data.id;
     invisible.userData.isMain = true;
     invisible.userData.isPlatformInvisibleBox = true;
@@ -1573,7 +1572,6 @@ export const addVerticalPlanksToBox = async (
   } else {
     parent = boxMesh.parent as THREE.Mesh;
   }
-
   const width = size.x;
   const height = size.y;
   const depth = size.z;
@@ -1592,13 +1590,7 @@ export const addVerticalPlanksToBox = async (
   if (innerSpan <= thickness) return;
 
   const interval = innerSpan / (count + 1);
-
-  // Remove original invisible container mesh
-  // if (boxMesh.parent) boxMesh.parent.remove(boxMesh);
-  // else scene.remove(boxMesh);
-
   const plankMatProps = { color: 0xd9c7b8, roughness: 0.7 };
-
   const effectiveHeight = isPlatform ? height - skirtingHeight : height;
 
   for (let i = 1; i <= count; i++) {
@@ -1637,7 +1629,9 @@ export const addVerticalPlanksToBox = async (
     const data = {
       ...itemData,
       width: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.width),
-      height: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.height),
+      height: metersToMM(
+        (plank.geometry as THREE.BoxGeometry).parameters.height,
+      ),
       depth: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.depth),
       position: {
         x: metersToMM(plank.position.x),
@@ -1731,7 +1725,7 @@ export const addVerticalPlanksToBox = async (
         z: metersToMM(skirting.position.z),
       },
       parent: parent.userData.objectId,
-    }
+    };
     const apiResponse = await addItemToDataBaseWihoutCatalog(data);
     skirting.userData.objectId = apiResponse.data.id;
     skirting.userData.type = 'Skirting';
@@ -1821,7 +1815,9 @@ export const addHorizontalPlanksInsideBox = async (
     const data = {
       ...itemData,
       width: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.width),
-      height: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.height),
+      height: metersToMM(
+        (shelf.geometry as THREE.BoxGeometry).parameters.height,
+      ),
       depth: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.depth),
       position: {
         x: metersToMM(shelf.position.x),
@@ -1870,8 +1866,9 @@ export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   selectedCabinetItem: any = null,
-  apiResponseDataArray: any[] = [],
+  itemData: any = null,
 ) => {
+  showFullScreenLoader('Loading design objects.');
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
@@ -1882,7 +1879,12 @@ export const addDoorOnInvisibleBox = async (
   const h = size.y;
   const d = size.z;
 
-  const parent = boxMesh.parent ?? scene;
+  let parent: THREE.Mesh;
+  if (!boxMesh.parent?.userData.isMain) {
+    parent = boxMesh;
+  } else {
+    parent = boxMesh.parent as THREE.Mesh;
+  }
 
   const isSide =
     boxMesh.name.includes('platform_leftwall') ||
@@ -1903,13 +1905,13 @@ export const addDoorOnInvisibleBox = async (
   const facePart = isSide
     ? {
         name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: 0.02, height: h - 0.01, depth: d - 0.01 },
+        dimensions: { width: 0.02, height: h, depth: d },
         position: { x: 0, y: 0, z: 0 },
         material: doorMatProps,
       }
     : {
         name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: w - 0.01, height: h - 0.01, depth: 0.02 },
+        dimensions: { width: w, height: h, depth: 0.02 },
         position: { x: 0, y: 0, z: 0 },
         material: doorMatProps,
       };
@@ -1922,14 +1924,8 @@ export const addDoorOnInvisibleBox = async (
   doorGroup.userData = {
     type: 'DOOR',
     upward: false,
-    apiData: apiResponseDataArray[0],
     cabinetItem: selectedCabinetItem,
     dimensions: convertDimensionsToMM(facePart.dimensions),
-    objectId:
-      apiResponseDataArray[0]?.id ??
-      apiResponseDataArray[0]?.objectId ??
-      apiResponseDataArray[0]?.data?.id ??
-      undefined,
   };
 
   parent.add(doorGroup);
@@ -1937,12 +1933,30 @@ export const addDoorOnInvisibleBox = async (
   // Set face position in world, then attach and convert to local
   let worldFacePos = worldCenter.clone();
   if (isSide) {
-    worldFacePos.x += dir * (w / 2 + toAvoidOverlap);
+    worldFacePos.x += w / 2;
   } else {
-    worldFacePos.z += d / 2 + toAvoidOverlap;
+    worldFacePos.z += d / 2;
   }
   parent.add(face);
   face.position.copy(parent.worldToLocal(worldFacePos));
+
+  const data = {
+    ...itemData,
+    width: metersToMM((face.geometry as THREE.BoxGeometry).parameters.width),
+    height: metersToMM((face.geometry as THREE.BoxGeometry).parameters.height),
+    depth: metersToMM((face.geometry as THREE.BoxGeometry).parameters.depth),
+    position: {
+      x: metersToMM(face.position.x),
+      y: metersToMM(face.position.y),
+      z: metersToMM(face.position.z),
+    },
+    parent: parent.userData.objectId,
+  };
+
+  const apiResponse = await addItemtoDatabase(data);
+  face.userData.objectId = apiResponse.id;
+  face.userData.type = apiResponse.type;
+  face.userData.apiData = apiResponse;
   doorGroup.attach(face);
 
   // Update store with dimensions in mm
@@ -2013,6 +2027,7 @@ export const addDoorOnInvisibleBox = async (
     handle.position.copy(parent.worldToLocal(worldHandlePos));
     doorGroup.attach(handle);
   }
+  hideFullScreenLoader();
 };
 
 export const addDrawersOnInvisibleBox = async (
