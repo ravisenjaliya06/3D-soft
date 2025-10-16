@@ -102,6 +102,12 @@
   --sizecontrole-background-color-hover: #026ada;
   --processed-color: #f0f0f0;
   --processed-background-color: #f8f9fa;
+
+  /* hover color */
+  --toolbarhover-color:#F1F6FF;
+
+  /*border */
+  --toolbar-border-color: #E0E0E0;
 }
 
 html {

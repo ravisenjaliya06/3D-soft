@@ -917,7 +917,7 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
-        design_id = request.data.get("design_id")
+        design_id = request.data.get("design")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         original_catalog = Catalog.objects.get(id=catalog_id)
 
