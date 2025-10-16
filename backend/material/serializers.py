@@ -921,7 +921,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         catalog_id = self.context["view"].kwargs.get("catalog_id")
         original_catalog = Catalog.objects.get(id=catalog_id)
 
-        catalog_rules_data = validated_data.pop("catalog_rule")
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
         catalog = Catalog.objects.create(**validated_data)
 
         override_rules = {rule["name"]: rule for rule in catalog_rules_data}
