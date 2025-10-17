@@ -891,7 +891,7 @@ export async function createMeshRecursively(
   const geometry = new THREE.BoxGeometry(width, height, depth);
 
   let material: THREE.Material;
-  if (data.type === 'Invisible Compartment' || data.type === 'Cabinet') {
+  if (data.type === 'Invisible Compartment' || data.type === 'Cabinet' || data.type === 'Drawer') {
     material = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,

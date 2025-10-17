@@ -498,7 +498,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         scene,
         targetBox,
         num,
-        selectedCabinetItem,
         itemData,
       );
     } else if (itemType === 'Plank') {

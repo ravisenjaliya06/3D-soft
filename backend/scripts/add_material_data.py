@@ -1305,6 +1305,7 @@ CATALOG = [
                     {"name": "Front Drawer Panel", "material": "1/2 1s Poplar Ply"},
                     {"name": "Back Drawer Panel", "material": "1/4 1s Poplar Ply"},
                     {"name": "Bottom Drawer Panel", "material": "1/8 1s Poplar Ply"},
+                    {"name": "Drawer Face Panel", "material": "1/8 1s Poplar Ply"},
                 ],
             },
             {
