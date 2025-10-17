@@ -3,18 +3,15 @@ import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import { Dispatch } from 'redux';
 import * as THREE from 'three';
+import { v4 as uuidv4 } from 'uuid';
 import {
   applyEdgeBanding,
   convertDataToGeometry,
   createDesign,
 } from '../catalog/object-creator';
-import {
-  addComputerDesk,
-  addPlatformOnWall,
-  addSimpleCabinet,
-  addSimpleTable,
-  addSimpleTVUnit,
-} from '../design/scene';
+import { TEXTURES_URLS } from '../constants';
+import { createRealisticMaterial } from '../design/loadRealisticScene';
+import { mmToMeters } from '../handler/unitConversion';
 import {
   generateMinifixSystem,
   PlankData,
@@ -32,8 +29,8 @@ import {
   PlankDataItem,
 } from './interface';
 import { MoveHandler } from './moveHandler';
+import { addCabinetItemToDesign } from './toolbar';
 import { updateObjectInDatabase } from './updateHandler';
-// import { addPlatformOnWall } from '@/components/3dmodel/design/scene';
 
 let moveHandler: MoveHandler | null = null;
 
@@ -48,6 +45,238 @@ function initializeMoveHandler(options: {
     renderer: options.renderer,
     movableObjects: [],
   });
+}
+
+export function showFullScreenLoader(message = 'Loading...') {
+  if (document.getElementById('global-loader')) return;
+
+  const loader = document.createElement('div');
+  loader.id = 'global-loader';
+  loader.style.position = 'fixed';
+  loader.style.top = '0';
+  loader.style.left = '0';
+  loader.style.width = '100vw';
+  loader.style.height = '100vh';
+  loader.style.background = 'rgba(0,0,0,0.7)';
+  loader.style.display = 'flex';
+  loader.style.flexDirection = 'column';
+  loader.style.justifyContent = 'center';
+  loader.style.alignItems = 'center';
+  loader.style.zIndex = '9999';
+  loader.innerHTML = `
+    <div style="color:white;font-size:20px;margin-bottom:20px;">${message}</div>
+    <div style="
+      width:60px;
+      height:60px;
+      border:6px solid #fff;
+      border-top-color:transparent;
+      border-radius:50%;
+      animation: spin 1s linear infinite;
+    "></div>
+    <style>
+      @keyframes spin { 
+        from { transform: rotate(0deg); } 
+        to { transform: rotate(360deg); } 
+      }
+    </style>
+  `;
+  document.body.appendChild(loader);
+}
+
+export function hideFullScreenLoader() {
+  const loader = document.getElementById('global-loader');
+  if (loader) loader.remove();
+}
+
+export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
+  if (!boxMesh) return [];
+
+  // --- Remove previous invisible boxes ---
+  const toRemove: THREE.Object3D[] = [];
+  boxMesh.traverse((child) => {
+    if (child.userData.isInvisibleBox) toRemove.push(child);
+  });
+  toRemove.forEach((c) => boxMesh.remove(c));
+
+  // --- Determine orientation and grid axes ---
+  let widthAxis: 'x' | 'z' = 'x';
+  let heightAxis: 'y' | 'z' = 'y';
+  let depthAxis: 'x' | 'y' | 'z' = 'z';
+
+  if (boxMesh.name.includes('leftwall') || boxMesh.name.includes('rightwall')) {
+    widthAxis = 'z';
+    heightAxis = 'y';
+    depthAxis = 'x';
+  } else {
+    widthAxis = 'x';
+    heightAxis = 'y';
+    depthAxis = 'z';
+  }
+
+  // --- Collect planks ---
+  const planks: {
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+    position: THREE.Vector3;
+    wMin: number;
+    wMax: number;
+    hMin: number;
+    hMax: number;
+  }[] = [];
+
+  boxMesh.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    if (child.userData.type !== 'Plank') return;
+
+    const geom = child.geometry as THREE.BoxGeometry;
+    const { width, height, depth } = geom.parameters;
+    const worldPos = new THREE.Vector3();
+    child.getWorldPosition(worldPos);
+    const localPos = boxMesh.worldToLocal(worldPos.clone());
+
+    planks.push({
+      name: child.name,
+      width,
+      height,
+      depth,
+      position: localPos,
+      wMin: localPos[widthAxis] - width / 2,
+      wMax: localPos[widthAxis] + width / 2,
+      hMin: localPos[heightAxis] - height / 2,
+      hMax: localPos[heightAxis] + height / 2,
+    });
+  });
+
+  // --- Get total bounding box of container ---
+  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  bbox.getSize(size);
+  bbox.getCenter(center);
+
+  const width = size[widthAxis];
+  const height = size[heightAxis];
+  const depth = size[depthAxis];
+
+  const boxCenterLocal = boxMesh.worldToLocal(center.clone());
+
+  // --- Material for invisible boxes ---
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    transparent: true,
+    opacity: 0,
+  });
+
+  // --- CASE 1: No planks found → single invisible box ---
+  if (planks.length === 0) {
+    const geo = new THREE.BoxGeometry(width, height, depth);
+    const mesh = new THREE.Mesh(geo, invisibleMat);
+    mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
+    mesh.userData.isInvisibleBox = true;
+    mesh.position.copy(boxCenterLocal);
+    boxMesh.add(mesh);
+    return [mesh];
+  }
+
+  // --- CASE 2: Planks exist → build grid ---
+  const step = 0.01;
+  const minW = -width / 2;
+  const maxW = width / 2;
+  const minH = -height / 2;
+  const maxH = height / 2;
+
+  const gridWidth = Math.ceil((maxW - minW) / step);
+  const gridHeight = Math.ceil((maxH - minH) / step);
+
+  const grid: string[][] = Array(gridHeight)
+    .fill(null)
+    .map(() => Array(gridWidth).fill('empty'));
+
+  // --- Mark plank areas on grid ---
+  planks.forEach((p) => {
+    const { wMin, wMax, hMin, hMax } = p;
+    const startX = Math.max(0, Math.floor((wMin - minW) / step));
+    const endX = Math.min(gridWidth - 1, Math.ceil((wMax - minW) / step));
+    const startY = Math.max(0, Math.floor((hMin - minH) / step));
+    const endY = Math.min(gridHeight - 1, Math.ceil((hMax - minH) / step));
+
+    for (let y = startY; y <= endY; y++) {
+      for (let x = startX; x <= endX; x++) {
+        grid[y][x] = 'plank';
+      }
+    }
+  });
+
+  // --- Detect empty compartments ---
+  const compartments: {
+    width: number;
+    height: number;
+    depth: number;
+    position: THREE.Vector3;
+  }[] = [];
+
+  for (let y = 0; y < gridHeight; y++) {
+    for (let x = 0; x < gridWidth; x++) {
+      if (grid[y][x] !== 'empty') continue;
+
+      let xEnd = x;
+      let yEnd = y;
+
+      while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === 'empty') xEnd++;
+
+      let valid = true;
+      while (yEnd + 1 < gridHeight && valid) {
+        for (let xCheck = x; xCheck <= xEnd; xCheck++) {
+          if (grid[yEnd + 1][xCheck] !== 'empty') {
+            valid = false;
+            break;
+          }
+        }
+        if (valid) yEnd++;
+      }
+
+      const compWidth = (xEnd - x + 1) * step;
+      const compHeight = (yEnd - y + 1) * step;
+      const centerW = minW + (x + (xEnd - x) / 2) * step;
+      const centerH = minH + (y + (yEnd - y) / 2) * step;
+
+      if (compWidth > 0 && compHeight > 0) {
+        const pos = new THREE.Vector3();
+        pos[widthAxis] = centerW;
+        pos[heightAxis] = centerH;
+        pos[depthAxis] = boxCenterLocal[depthAxis];
+
+        compartments.push({
+          width: compWidth,
+          height: compHeight,
+          depth,
+          position: pos,
+        });
+      }
+
+      for (let fy = y; fy <= yEnd; fy++) {
+        for (let fx = x; fx <= xEnd; fx++) {
+          grid[fy][fx] = 'filled';
+        }
+      }
+    }
+  }
+
+  const meshes: THREE.Mesh[] = [];
+  compartments.forEach((c, idx) => {
+    const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
+    const mesh = new THREE.Mesh(geo, invisibleMat);
+    mesh.position.copy(c.position);
+    mesh.name = `INVISIBLE_COMPARTMENT_${idx}_for_${boxMesh.name}`;
+    mesh.userData.objectId = uuidv4();
+    mesh.userData.isInvisibleBox = true;
+    boxMesh.add(mesh);
+    meshes.push(mesh);
+  });
+
+  return meshes;
 }
 
 export function generateCompartmentsFromPlanks(
@@ -646,6 +875,146 @@ async function createChildObjectFromData(
   }
 }
 
+export async function createMeshRecursively(
+  data,
+  parent: THREE.Object3D | null = null,
+  scene?: THREE.Scene,
+): Promise<THREE.Mesh | null> {
+  showFullScreenLoader('Loading design objects...');
+  if (!data) return null;
+
+  // --- STEP 1: Create main object ---
+  const width = mmToMeters(data.width || data.length) || 1;
+  const height = mmToMeters(data.height || 1);
+  const depth = mmToMeters(data.depth || 1);
+
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+
+  let material: THREE.Material;
+  if (data.type === 'Invisible Compartment' || data.type === 'Cabinet' || data.type === 'Drawer') {
+    material = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.0,
+      depthWrite: false,
+    });
+  } else if (data.additional_data?.texture) {
+    const textureLoader = new THREE.TextureLoader();
+    const woodTex = textureLoader.load(data.additional_data.texture);
+    woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+    woodTex.repeat.set(2, 1);
+
+    material = new THREE.MeshStandardMaterial({
+      map: woodTex,
+      roughness: 0.6,
+      metalness: 0,
+    });
+  } else if (data.additional_data?.color) {
+    const colorValue = parseInt(data.additional_data.color, 16);
+    material = new THREE.MeshStandardMaterial({
+      color: colorValue,
+      roughness: 0.8,
+    });
+  } else {
+    material = await createRealisticMaterial(scene, {
+      textures: TEXTURES_URLS.PLATFORM,
+      repeatX: 10,
+      repeatY: 1,
+    });
+  }
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = data.name || data.type || 'Unknown';
+  mesh.userData = { ...data };
+
+  if (data.position) {
+    mesh.position.set(
+      mmToMeters(data.position.x) || 0,
+      mmToMeters(data.position.y) || 0,
+      mmToMeters(data.position.z) || 0,
+    );
+  }
+
+  if (Array.isArray(data.catalog_rule)) {
+    for (const rule of data.catalog_rule) {
+      if (Array.isArray(rule.rule_parts) && rule.name === 'Panel') {
+        for (const part of rule.rule_parts) {
+          const partWidth = mmToMeters(part.width || part.length) || 1;
+          const partHeight = mmToMeters(part.height || 1);
+          const partDepth = mmToMeters(part.depth || 1);
+
+          const partGeometry = new THREE.BoxGeometry(
+            partWidth,
+            partHeight,
+            partDepth,
+          );
+
+          let material: THREE.Material;
+          if (data.additional_data?.texture) {
+            const textureLoader = new THREE.TextureLoader();
+            const woodTex = textureLoader.load(data.additional_data.texture);
+            woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+            woodTex.repeat.set(2, 1);
+
+            material = new THREE.MeshStandardMaterial({
+              map: woodTex,
+              roughness: 0.6,
+              metalness: 0,
+            });
+          } else if (data.additional_data?.color) {
+            const colorValue = parseInt(data.additional_data.color, 16);
+            material = new THREE.MeshStandardMaterial({
+              color: colorValue,
+              roughness: 0.8,
+            });
+          } else {
+            material = await createRealisticMaterial(scene, {
+              textures: TEXTURES_URLS.PLATFORM,
+              repeatX: 10,
+              repeatY: 1,
+            });
+          }
+
+          const partMesh = new THREE.Mesh(partGeometry, material);
+          partMesh.name = part.name || 'RulePart';
+          partMesh.userData = { ...part, type: 'RulePart' };
+
+          if (part.position) {
+            partMesh.position.set(
+              mmToMeters(part.position.x) || 0,
+              mmToMeters(part.position.y) || 0,
+              mmToMeters(part.position.z) || 0,
+            );
+          }
+          mesh.add(partMesh);
+        }
+      } else if (rule.name.includes('Handle')) {
+      }
+    }
+  }
+
+  // --- STEP 3: Recursively create children ---
+  if (Array.isArray(data.children) && data.children.length > 0) {
+    for (const child of data.children) {
+      const childMesh = await createMeshRecursively(child, mesh, scene);
+      if (childMesh) mesh.add(childMesh);
+    }
+  }
+
+  // --- STEP 4: Add to scene or parent ---
+  mesh.userData.objectId = data.id;
+  if (parent) {
+    parent.add(mesh);
+  } else if (scene) {
+    mesh.userData.isMain = true;
+    scene.add(mesh);
+    generateCompartmentsFromMesh(mesh);
+  }
+
+  hideFullScreenLoader();
+  return mesh;
+}
+
 async function loadDesignObjects(
   designId: string,
   scene: THREE.Scene,
@@ -661,162 +1030,9 @@ async function loadDesignObjects(
     if (response.status === 200 && response.data) {
       const data = response.data;
       const createdObjects: Object3D[] = [];
-
-      // Create all objects (main objects and their child items)
       for (const item of data) {
-        try {
-          const nameLower = (item?.name || '').toLowerCase();
-          let createdMesh: THREE.Object3D | null = null;
-
-          // Create main object
-          if (item.type === 'Platform') {
-            const wall = scene.getObjectByName(item.additional_data?.wall);
-            const textureLoader = new THREE.TextureLoader();
-            const counterTexture = textureLoader.load('/img14_64.jpg');
-            counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
-            counterTexture.repeat.set(10, 1);
-            const meshes = addPlatformOnWall(
-              scene,
-              wall as any,
-              counterTexture,
-            );
-            createdMesh = meshes?.[0]; // Get the first platform mesh
-          } else if (item.type === 'Cabinet') {
-            if (nameLower.includes('tv')) {
-              addSimpleTVUnit(scene);
-              createdMesh = scene.getObjectByName('SimpleTVUnit');
-            } else if (
-              nameLower.includes('computer') ||
-              nameLower.includes('desk')
-            ) {
-              addComputerDesk(scene);
-              createdMesh = scene.getObjectByName('ComputerDesk');
-            } else if (nameLower.includes('table')) {
-              addSimpleTable(scene);
-              createdMesh = scene.getObjectByName('SimpleTable');
-            } else if (nameLower.includes('plank')) {
-              // Create plank directly from API data
-              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                console.log(
-                  `Creating plank directly from API data: ${item.name}, position:`,
-                  item.data?.position,
-                  'dimensions:',
-                  item.data?.width,
-                  'x',
-                  item.data?.height,
-                  'x',
-                  item.data?.depth,
-                );
-              }
-
-              const plankMaterial = new THREE.MeshStandardMaterial({
-                color: 0xd9c7b8,
-                roughness: 0.7,
-              });
-
-              let plankMesh: THREE.Mesh;
-              if (nameLower.includes('vertical')) {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    0.018, // thickness
-                    item?.height || 0.8,
-                    item?.depth || 0.4,
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `VerticalPlank_${item.id}`;
-              } else if (nameLower.includes('horizontal')) {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    item?.width || 0.4,
-                    0.018, // thickness
-                    item?.depth || 0.4,
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `HorizontalPlank_${item.id}`;
-              } else {
-                plankMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(
-                    item?.width || 0.4,
-                    item?.height || 0.8,
-                    0.018, // thickness
-                  ),
-                  plankMaterial,
-                );
-                plankMesh.name = `Plank_${item.id}`;
-              }
-
-              // Set position from API data
-              if (item?.position) {
-                plankMesh.position.set(
-                  item.position.x,
-                  item.position.y,
-                  item.position.z,
-                );
-              }
-
-              plankMesh.userData.objectId = item.id;
-              plankMesh.userData.apiData = item;
-              scene.add(plankMesh);
-              createdMesh = plankMesh;
-
-              if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                console.log(
-                  `Successfully created plank mesh: ${plankMesh.name} at position:`,
-                  plankMesh.position,
-                );
-              }
-            } else {
-              addSimpleCabinet(scene);
-              createdMesh = scene.getObjectByName('SimpleCabinet');
-            }
-          }
-
-          // Tag the created mesh with object ID and set position
-          if (createdMesh) {
-            createdMesh.userData.objectId = item.id;
-            createdMesh.userData.apiData = item;
-
-            // Set position from API data
-            if (item.position) {
-              createdMesh.position.set(
-                item.position.x,
-                item.position.y,
-                item.position.z,
-              );
-            }
-          }
-
-          // Convert to Object3D format
-          const object3D: Object3D = {
-            id: item.id,
-            name: item.name || '',
-            width: item?.width || 0,
-            height: item?.height || 0,
-            depth: item?.depth || 0,
-            altitude: 0,
-            position: item?.position || { x: 0, y: 0, z: 0 },
-            material: item?.material || { type: 'TEXTURE', value: 'default' },
-            parent: item.parent || null,
-            child: [],
-            grooves: item.grooves || [],
-            catalog_type: item?.catalog_type || '',
-            layer: 0,
-            rotationX: 0,
-            rotationY: 0,
-            rotationZ: 0,
-          };
-
-          createdObjects.push(object3D);
-        } catch (e) {
-          console.error('Failed to recreate main item on refresh', item, e);
-        }
+        createMeshRecursively(item, null, scene);
       }
-
-      // Regenerate invisible boxes for compartments after all objects are loaded
-      await regenerateInvisibleBoxes(scene, createdObjects);
-
       return createdObjects;
     }
   } catch (error) {
@@ -2432,3 +2648,83 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
   child.userData.isClosed = !isClosed;
   child.userData.closedPos = closedPos;
 }
+
+export const addCabinetItemToDesign = async (
+  catalogId: string,
+  itemData: {
+    type: string;
+    name: string;
+    description: string;
+    design_id: string;
+    parent?: string;
+    width?: number;
+    height?: number;
+    depth?: number;
+    position?: { x: number; y: number; z: number };
+    additional_data?: any;
+    parts?: Array<{
+      name: string;
+      width: number;
+      height: number;
+      depth: number;
+    }>;
+  },
+) => {
+  const payload = {
+    type: itemData.type,
+    name: itemData.name,
+    description: itemData.description,
+    design: itemData.design_id,
+    // Optional spatial metadata for backend consumption
+    width: itemData.width,
+    height: itemData.height,
+    depth: itemData.depth,
+    position: itemData.position,
+    additional_data: itemData.additional_data,
+    catalog_rule: itemData.parts,
+    parent: itemData.parent,
+  };
+  try {
+    const response = await commonService.post(
+      `material/catalog`,
+      `${catalogId}/design`,
+      payload,
+    );
+    if (response.status === 200 || response.status === 201) {
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error adding cabinet item to design:', error);
+    throw error;
+  }
+};
+
+export const addItemtoDatabase = async (data: any) => {
+  try {
+    const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(apiResponse, 'apiResponse');
+    }
+    return apiResponse;
+  } catch (error) {
+    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
+  }
+  return null;
+};
+
+export const addItemToDataBaseWihoutCatalog = async (data: any) => {
+  try {
+    const apiResponse = await commonService.post(
+      'material',
+      'catalog/design',
+      data,
+    );
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(apiResponse, 'apiResponse');
+    }
+    return apiResponse;
+  } catch (error) {
+    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
+  }
+  return null;
+};

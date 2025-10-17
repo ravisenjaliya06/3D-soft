@@ -1305,6 +1305,7 @@ CATALOG = [
                     {"name": "Front Drawer Panel", "material": "1/2 1s Poplar Ply"},
                     {"name": "Back Drawer Panel", "material": "1/4 1s Poplar Ply"},
                     {"name": "Bottom Drawer Panel", "material": "1/8 1s Poplar Ply"},
+                    {"name": "Drawer Face Panel", "material": "1/8 1s Poplar Ply"},
                 ],
             },
             {
@@ -1325,62 +1326,6 @@ CATALOG = [
                     {"name": "Front Panel and Handle Connections"},
                     {"name": "Right Panel and Right Drawer Guide Connections"},
                     {"name": "Left Panel and Left Drawer Guide Connections"},
-                ],
-            },
-        ],
-    },
-    {
-        "type": "Sliding Door",
-        "name": "Default Sliding Door",
-        "description": "Default Sliding Door",
-        "catalog_rules": [
-            {
-                "name": "Door Rail",
-                "rules_parts": [
-                    {"name": "Top Rail", "material": "Sliding Door Rail"},
-                    {"name": "Bottom Rail", "material": "Sliding Door Rail"},
-                ],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Left Door Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Right Door Panel", "material": "5/8 1s Poplar Ply"},
-                ],
-            },
-            {
-                "name": "Handles",
-                "rules_parts": [
-                    {"name": "Right Door Handle", "material": "Wooden Knob"},
-                    {"name": "Left Door Handle", "material": "Wooden Knob"},
-                ],
-            },
-            {
-                "name": "Connections",
-                "rules_parts": [
-                    {"name": "Right Door and Right Door Handle Connections"},
-                    {"name": "Left Door and Left Door Handle Connections"},
-                ],
-            },
-        ],
-    },
-    {
-        "type": "Plank",
-        "name": "Common Vertical Plank",
-        "description": "Common Vertical Plank",
-        "catalog_rules": [
-            {
-                "name": "Molding",
-                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
-            },
-            {
-                "name": "Banding",
-                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
                 ],
             },
         ],
@@ -1465,16 +1410,33 @@ CATALOG = [
             {
                 "name": "Panel",
                 "rules_parts": [
-                    {"name": "Base Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Middle Vertical Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Top Panel", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Vertical Panel Left", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Back Panel Tower", "material": "3/4 1s Poplar Ply"},
                     {
-                        "name": "Middle Horizontal Panel",
+                        "name": "Vertical Panel Tower Left",
                         "material": "3/4 1s Poplar Ply",
                     },
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Vertical Panel Tower Right",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Bottom",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Top",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Mid",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Tower Lower",
+                        "material": "3/4 1s Poplar Ply",
+                    },
                 ],
             },
             {
@@ -1501,19 +1463,27 @@ CATALOG = [
             {
                 "name": "Panel",
                 "rules_parts": [
+                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
                     {
-                        "name": "Middle Horizontal Panel",
+                        "name": "Bottom Panel",
                         "material": "3/4 1s Poplar Ply",
                     },
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Horiziontal Panel 3", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 1", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 2", "material": "3/4 1s Poplar Ply"},
                     {"name": "Vertical Panel 3", "material": "3/4 1s Poplar Ply"},
+                    {
+                        "name": "Vertical Panel Right Panel",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {
+                        "name": "Horizontal Panel Top Shelf",
+                        "material": "3/4 1s Poplar Ply",
+                    },
+                    {"name": "Horizontal Panel 1", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 2", "material": "3/4 1s Poplar Ply"},
+                    {"name": "Horizontal Panel 3", "material": "3/4 1s Poplar Ply"},
                 ],
             },
             {
@@ -1742,7 +1712,16 @@ def create_catalog_data() -> None:
                 type=catalog_data["type"],
                 name=catalog_data["name"],
                 design=None,
-                defaults={"description": catalog_data.get("description", "")},
+                defaults={
+                    "width": catalog_data.get("width"),
+                    "height": catalog_data.get("height"),
+                    "length": catalog_data.get("length"),
+                    "depth": catalog_data.get("depth"),
+                    "position": catalog_data.get("position"),
+                    "thickness": catalog_data.get("thickness"),
+                    "additional_data": catalog_data.get("additional_data"),
+                    "description": catalog_data.get("description", ""),
+                },
             )
 
             for rule_data in catalog_data.get("catalog_rules", []):
@@ -1760,7 +1739,16 @@ def create_catalog_data() -> None:
                     CatalogRuleParts.objects.update_or_create(
                         catalog_rule=catalog_rule,
                         name=part_data["name"],
-                        defaults={"material": material_obj},
+                        defaults={
+                            "width": part_data.get("width"),
+                            "height": part_data.get("height"),
+                            "length": part_data.get("length"),
+                            "depth": part_data.get("depth"),
+                            "position": part_data.get("position"),
+                            "handle_position": part_data.get("handle_position"),
+                            "thickness": part_data.get("thickness"),
+                            "material": material_obj,
+                        },
                     )
 
 

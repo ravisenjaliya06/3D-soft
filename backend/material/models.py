@@ -273,6 +273,8 @@ class CatalogTypeChoices(models.TextChoices):
     SLIDING_DOOR = "Sliding Door"
     CABINET = "Cabinet"
     PLATFORM = "Platform"
+    INVISIBLE_COMPARTMENT = "Invisible Compartment"
+    SKIRTING = "Skirting"
 
 
 class ConnectionTypesChoices(models.TextChoices):
@@ -751,6 +753,7 @@ class Catalog(models.Model):
     width = models.FloatField(blank=True, null=True)
     length = models.FloatField(blank=True, null=True)
     depth = models.FloatField(blank=True, null=True)
+    thickness = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
     additional_data = models.JSONField(blank=True, null=True)
     parent = models.ForeignKey(
@@ -788,5 +791,7 @@ class CatalogRuleParts(models.Model):
     width = models.FloatField(blank=True, null=True)
     length = models.FloatField(blank=True, null=True)
     depth = models.FloatField(blank=True, null=True)
+    thickness = models.FloatField(blank=True, null=True)
     position = models.JSONField(blank=True, null=True)
     handle_position = models.JSONField(blank=True, null=True)
+    additional_data = models.JSONField(blank=True, null=True)

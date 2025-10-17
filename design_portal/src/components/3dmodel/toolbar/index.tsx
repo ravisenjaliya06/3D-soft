@@ -53,6 +53,8 @@ import {
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksToBox,
 } from '../design/scene';
+import { addCabinetItemToDesign } from '../handler/items';
+import { metersToMM } from '../handler/unitConversion';
 import {
   updateCatalogItemObject,
   updateObjectInDatabase,
@@ -179,7 +181,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     let platformData: any[] = [];
     if (targetWall) {
-      platformData = addPlatformOnWall(scene, targetWall, counterTexture);
+      platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
     }
     // Add platform data to API payload
     for (const pdata of platformData) {
@@ -316,53 +318,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const addCabinetItemToDesign = async (
-    catalogId: string,
-    itemData: {
-      type: string;
-      name: string;
-      description: string;
-      design_id: string;
-      width?: number;
-      height?: number;
-      depth?: number;
-      position?: { x: number; y: number; z: number };
-      additional_data?: any;
-      parts?: Array<{
-        name: string;
-        width: number;
-        height: number;
-        depth: number;
-      }>;
-    },
-  ) => {
-    const payload = {
-      type: itemData.type,
-      name: itemData.name,
-      description: itemData.description,
-      design: itemData.design_id,
-      // Optional spatial metadata for backend consumption
-      width: itemData.width,
-      height: itemData.height,
-      depth: itemData.depth,
-      position: itemData.position,
-      additional_data: itemData.additional_data,
-      parts: itemData.parts,
-    };
-    try {
-      const response = await commonService.post(
-        `material/catalog`,
-        `${catalogId}/design`,
-        payload,
-      );
-      if (response.status === 200 || response.status === 201) {
-        return response.data;
-      }
-    } catch (error) {
-      console.error('Error adding cabinet item to design:', error);
-      throw error;
-    }
-  };
   const handleCabinetClick = () => {
     setActiveOption('Furniture');
     setActiveOptionName('Furniture');
@@ -433,58 +388,54 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           return;
         }
 
-        // Get actual dimensions from the created object's geometry
-        const bbox = new THREE.Box3().setFromObject(createdObject);
-        const size = new THREE.Vector3();
-        bbox.getSize(size);
-        const center = new THREE.Vector3();
-        bbox.getCenter(center);
-
         // Convert to mm for storage (meters * 1000 = mm)
-        const width = Math.round(size.x * 1000);
-        const height = Math.round(size.y * 1000);
-        const depth = Math.round(size.z * 1000);
+        const width = metersToMM(createdObject.geometry.parameters.width);
+        const height = metersToMM(createdObject.geometry.parameters.height);
+        const depth = metersToMM(createdObject.geometry.parameters.depth);
         const position = {
-          x: Math.round(center.x * 1000),
-          y: Math.round(center.y * 1000),
-          z: Math.round(center.z * 1000),
+          x: metersToMM(createdObject.position.x),
+          y: metersToMM(createdObject.position.y),
+          z: metersToMM(createdObject.position.z),
         };
 
-        // Extract parts data from the actual object
-        const parts: Array<{
-          name: string;
-          width: number;
-          height: number;
-          depth: number;
-          position: { x: number; y: number; z: number };
-        }> = [];
+        const ruleParts: any[] = [];
 
         createdObject.traverse((child) => {
           if (child instanceof THREE.Mesh && child.name.includes('PLANK')) {
-            const childBbox = new THREE.Box3().setFromObject(child);
-            const childSize = new THREE.Vector3();
-            childBbox.getSize(childSize);
+            const formattedName = child.name
+              .replace(/PLANK/gi, 'Panel')
+              .replace(/_/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase());
 
-            // Get world position
-            const worldPos = new THREE.Vector3();
-            child.getWorldPosition(worldPos);
-
-            // Convert child dimensions to mm
-            parts.push({
-              name: child.name,
-              width: Math.round(childSize.x * 1000),
-              height: Math.round(childSize.y * 1000),
-              depth: Math.round(childSize.z * 1000),
+            ruleParts.push({
+              name: formattedName,
+              width: metersToMM(child.geometry.parameters.width),
+              height: metersToMM(child.geometry.parameters.height),
+              depth: metersToMM(child.geometry.parameters.depth),
+              thickness: null,
               position: {
-                x: Math.round(worldPos.x * 1000),
-                y: Math.round(worldPos.y * 1000),
-                z: Math.round(worldPos.z * 1000),
+                x: metersToMM(child.position.x),
+                y: metersToMM(child.position.y),
+                z: metersToMM(child.position.z),
+              },
+              handle_position: null,
+              additional_data: {
+                texture: '/textures/light_wood.jpg',
               },
             });
           }
         });
 
-        // Create API call with actual dimensions in mm
+        const parts = [
+          {
+            name: 'Panel',
+            rule_parts: ruleParts,
+          },
+        ];
+
         let apiResponse: any = null;
         try {
           apiResponse = await addCabinetItemToDesign(catalogId, {
@@ -496,6 +447,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             height,
             depth,
             position,
+            additional_data: {
+              texture: '/textures/light_wood.jpg',
+            },
             parts,
           });
           if (apiResponse) {
@@ -528,6 +482,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(true);
   };
   const onAddItems = async () => {
+    setCreateCompanyPopup(false);
     const num = parseInt(quantityValue.toString(), 10);
     if (!Number.isFinite(num) || num <= 0) {
       return;
@@ -538,223 +493,65 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       o.name.startsWith('outline-'),
     ) as THREE.Object3D | undefined;
     let targetBox: THREE.Mesh | null = null;
+    const selectedChildObject = store.getState().data.selectedChildObject;
 
-    const getOrCreateInternalBox = (container: THREE.Mesh): THREE.Mesh => {
-      // Try find existing child invisible box
-      const existing = (container.children || []).find(
-        (c: any) =>
-          typeof c.name === 'string' &&
-          c.name.toLowerCase().startsWith('invisiblebox'),
-      ) as THREE.Mesh | undefined;
-      if (existing) return existing;
-      // Create a new internal invisible box using container geometry params
-      const params = (container.geometry as THREE.BoxGeometry)
-        .parameters as any;
-      const width = params.width as number;
-      const height = params.height as number;
-      const depth = params.depth as number;
-      const thickness = 0.018;
-      const invW = Math.max(width - thickness * 2, 0.02);
-      const invH = Math.max(height - thickness * 2, 0.02);
-      const invD = Math.max(depth - thickness * 2, 0.02);
-      const invMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.0,
-        depthWrite: false,
-      });
-      const inv = new THREE.Mesh(
-        new THREE.BoxGeometry(invW, invH, invD),
-        invMat,
-      );
-      inv.name = 'invisibleBox_auto';
-      (inv as any).userData.isInvisibleBox = true;
-      inv.position.set(0, 0, 0);
-      container.add(inv);
-      return inv;
-    };
+    scene.traverse((obj) => {
+      if (obj.userData.objectId === selectedChildObject) {
+        targetBox = obj as THREE.Mesh;
+      }
+    });
 
-    // Determine target box based on item type
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
 
-    if (outline) {
-      const outlineCenter = outline.position.clone();
-      scene.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
-          // For planks, use different invisible box types
-          if (itemType === 'Plank') {
-            if (
-              itemName === 'Vertical Plank' &&
-              o.name.toLowerCase().includes('invisiblebox')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            } else if (
-              itemName === 'Horizontal Plank' &&
-              o.name.toLowerCase().includes('invisiblebox')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-            }
-          } else if (o.name.toLowerCase().includes('invisiblebox')) {
-            // For doors and drawers, use compartment invisible boxes
-            const b = new THREE.Box3().setFromObject(o);
-            const c = new THREE.Vector3();
-            b.getCenter(c);
-            if (c.distanceTo(outlineCenter) < 1e-3) targetBox = o;
-          }
-        }
-      });
-    }
-
     if (!targetBox) {
-      const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (
-        hovered &&
-        typeof hovered.name === 'string' &&
-        hovered.name.toLowerCase().includes('invisiblebox')
-      ) {
-        targetBox = hovered;
-      }
+      alert('❌ Target box not found!');
+      return;
     }
 
-    // Final fallback: use selected container (or selected child’s parent) and auto-create internal box
-    if (!targetBox) {
-      const selectedChildObjectId = store.getState().data
-        .selectedChildObject as string | null;
-      const selectedObjectId = store.getState().data.selectedObject as
-        | string
-        | null;
-      let container: THREE.Mesh | null = null;
-      if (selectedChildObjectId) {
-        scene.traverse((o: any) => {
-          if (
-            !container &&
-            o &&
-            o.isMesh &&
-            o.userData &&
-            o.userData.objectId === selectedChildObjectId
-          ) {
-            container =
-              o.parent && (o.parent as any).isMesh
-                ? (o.parent as THREE.Mesh)
-                : (o as THREE.Mesh);
-          }
-        });
-      }
-      if (!container && selectedObjectId) {
-        scene.traverse((o: any) => {
-          if (
-            !container &&
-            o &&
-            o.isMesh &&
-            o.userData &&
-            o.userData.objectId === selectedObjectId
-          ) {
-            container = o as THREE.Mesh;
-          }
-        });
-      }
-      if (container) {
-        targetBox = getOrCreateInternalBox(container);
-      }
-    }
-
-    // If still nothing, abort silently (no blocking alert)
-    if (!targetBox) return;
-
-    // Handle different item types and make individual API calls for each item
     const designId = window.location.pathname.split('/')[2];
     const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
 
-    // Collect all API responses for the items
-    const apiResponses = [];
+    const itemData = {
+      catalogId: catalogId,
+      type: itemType,
+      name: `${itemName}`,
+      description: selectedCabinetItem.description || `${itemName} description`,
+      design_id: designId,
+    };
 
-    // Make API calls for each item
-    // Compute target box dimensions and center position once
-    const bbox = new THREE.Box3().setFromObject(targetBox);
-    const bboxSize = new THREE.Vector3();
-    const bboxCenter = new THREE.Vector3();
-    bbox.getSize(bboxSize);
-    bbox.getCenter(bboxCenter);
-    for (let i = 0; i < num; i++) {
-      try {
-        const itemData = {
-          type: itemType,
-          name: `${itemName} ${i + 1}`,
-          description:
-            selectedCabinetItem.description || `${itemName} description`,
-          design_id: designId,
-          width: bboxSize.x,
-          height: bboxSize.y,
-          depth: bboxSize.z,
-          position: { x: bboxCenter.x, y: bboxCenter.y, z: bboxCenter.z },
-        };
-
-        const apiResponse = await addCabinetItemToDesign(catalogId, itemData);
-        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          console.log(apiResponse, 'apiResponse');
-        }
-        apiResponses.push(apiResponse);
-        dispatch(addObjects(apiResponses));
-      } catch (error) {
-        console.error(
-          `Failed to add ${itemType.toLowerCase()} ${i + 1} to design:`,
-          error,
-        );
-        apiResponses.push(null); // Add null for failed API calls
-      }
-    }
-
-    // Now add the 3D objects with API response data
     if (['Door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(
         scene,
         targetBox,
-        num,
         selectedCabinetItem,
-        apiResponses,
+        itemData,
+        num,
       );
     } else if (itemType === 'Drawer') {
       await addDrawersOnInvisibleBox(
         scene,
         targetBox,
         num,
-        selectedCabinetItem,
-        apiResponses,
+        itemData,
       );
     } else if (itemType === 'Plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
-        if (nameLower.includes('common')) {
-          await addVerticalPlanksToBox(
-            scene,
-            targetBox,
-            num,
-            selectedCabinetItem,
-            apiResponses,
-          );
-        } else {
-          await addVerticalPlanksToBox(
-            scene,
-            targetBox,
-            num,
-            selectedCabinetItem,
-            apiResponses,
-          );
-        }
+        await addVerticalPlanksToBox(
+          scene,
+          targetBox,
+          num,
+          selectedCabinetItem,
+          itemData,
+        );
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(
           scene,
           targetBox,
           num,
           selectedCabinetItem,
-          apiResponses,
+          itemData,
         );
       }
     } else if (itemType === 'Cabinet' && itemName === 'Simple Cabinet') {
