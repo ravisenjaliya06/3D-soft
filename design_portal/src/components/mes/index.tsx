@@ -1,97 +1,97 @@
-import erroricon from '@/assets/design/error.svg';
+// import erroricon from '@/assets/design/error.svg';
 import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
-import CommonService from '@/services/CommonService';
-import React, { useEffect, useState } from 'react';
-import { WorkOrderData } from './interface';
+// import CommonService from '@/services/CommonService';
+import React from 'react';
+// import { WorkOrderData } from './interface';
 
-import activepackaging from '@/assets/mes/activepackaging.svg';
-import activeshipment from '@/assets/mes/activeshipment.svg';
-import activetracking from '@/assets/mes/activetracking.svg';
-import workordersvg from '@/assets/mes/activeworkorder.svg';
-import packagingsvg from '@/assets/mes/Packaging.svg';
-import shipmentsvg from '@/assets/mes/Shipment.svg';
-import trackingsvg from '@/assets/mes/tracking.svg';
-import activeworkorder from '@/assets/mes/workorder.svg';
+// import activepackaging from '@/assets/mes/activepackaging.svg';
+// import activeshipment from '@/assets/mes/activeshipment.svg';
+// import activetracking from '@/assets/mes/activetracking.svg';
+// import workordersvg from '@/assets/mes/activeworkorder.svg';
+// import packagingsvg from '@/assets/mes/Packaging.svg';
+// import shipmentsvg from '@/assets/mes/Shipment.svg';
+// import trackingsvg from '@/assets/mes/tracking.svg';
+// import activeworkorder from '@/assets/mes/workorder.svg';
 
 const Mes = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [apiErrorMessage, setApiErrorMessage] = useState('');
-  const [errorPopup, setErrorPopup] = useState(false);
+  // const [searchQuery, setSearchQuery] = useState('');
+  // const [apiErrorMessage, setApiErrorMessage] = useState('');
+  // const [errorPopup, setErrorPopup] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('workorders');
-  const [filterToggle, setFilterToggle] = useState('active');
-  const [createWorkOrderPopup, setCreateWorkOrderPopup] = useState(false);
-  const [workorders, setWorkOrders] = useState<WorkOrderData[]>([]);
+  // const [activeTab, setActiveTab] = useState('workorders');
+  // const [filterToggle, setFilterToggle] = useState('active');
+  // const [createWorkOrderPopup, setCreateWorkOrderPopup] = useState(false);
+  // const [workorders, setWorkOrders] = useState<WorkOrderData[]>([]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
+  // const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setSearchQuery(e.target.value);
+  // };
 
-  const handleChangeTab = (tab: string) => {
-    setActiveTab(tab);
-  };
+  // const handleChangeTab = (tab: string) => {
+  //   setActiveTab(tab);
+  // };
 
-  const getWorkOrdersList = async () => {
-    const response: { status: number; data: WorkOrderData[] } =
-      await CommonService.get('mes_portal', 'work_order');
+  // const getWorkOrdersList = async () => {
+  //   const response: { status: number; data: WorkOrderData[] } =
+  //     await CommonService.get('mes_portal', 'work_order');
 
-    if (response?.status === 200 && Array.isArray(response.data)) {
-      const sortedData = [...response.data].sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
-      setWorkOrders(sortedData);
-    } else {
-      setWorkOrders([]);
-      setErrorPopup(true);
-      setApiErrorMessage('Failed to fetch work orders');
-    }
-  };
+  //   if (response?.status === 200 && Array.isArray(response.data)) {
+  //     const sortedData = [...response.data].sort(
+  //       (a, b) =>
+  //         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  //     );
+  //     setWorkOrders(sortedData);
+  //   } else {
+  //     setWorkOrders([]);
+  //     setErrorPopup(true);
+  //     setApiErrorMessage('Failed to fetch work orders');
+  //   }
+  // };
 
-  useEffect(() => {
-    getWorkOrdersList();
-  }, []);
+  // useEffect(() => {
+  //   getWorkOrdersList();
+  // }, []);
 
-  const displayedWorkOrders = workorders.filter((order) =>
-    filterToggle === 'active' ? !order.is_archived : order.is_archived,
-  );
+  // const displayedWorkOrders = workorders.filter((order) =>
+  //   filterToggle === 'active' ? !order.is_archived : order.is_archived,
+  // );
 
-  const tabs = [
-    {
-      name: 'Work Orders',
-      key: 'workorders',
-      image: workordersvg.src,
-      activeimage: activeworkorder.src,
-    },
-    {
-      name: 'Tracking',
-      key: 'tracking',
-      image: trackingsvg.src,
-      activeimage: activetracking.src,
-    },
-    {
-      name: 'Packaging',
-      key: 'packaging',
-      image: packagingsvg.src,
-      activeimage: activepackaging.src,
-    },
-    {
-      name: 'Shipment',
-      key: 'shipment',
-      image: shipmentsvg.src,
-      activeimage: activeshipment.src,
-    },
-  ];
+  // const tabs = [
+  //   {
+  //     name: 'Work Orders',
+  //     key: 'workorders',
+  //     image: workordersvg.src,
+  //     activeimage: activeworkorder.src,
+  //   },
+  //   {
+  //     name: 'Tracking',
+  //     key: 'tracking',
+  //     image: trackingsvg.src,
+  //     activeimage: activetracking.src,
+  //   },
+  //   {
+  //     name: 'Packaging',
+  //     key: 'packaging',
+  //     image: packagingsvg.src,
+  //     activeimage: activepackaging.src,
+  //   },
+  //   {
+  //     name: 'Shipment',
+  //     key: 'shipment',
+  //     image: shipmentsvg.src,
+  //     activeimage: activeshipment.src,
+  //   },
+  // ];
 
   return (
     <div className={styles.container}>
-      {errorPopup === true && (
+      {/* {errorPopup === true && (
         <div className={styles.successPopup}>
           <img src={erroricon.src} alt="Error" />
           <p>{apiErrorMessage}</p>
         </div>
-      )}
+      )} */}
 
       <Sidebar />
       <div className={styles.rightside}>

@@ -1,4 +1,4 @@
-const MAIN_TEXTURE_URL = process.env.NEXT_PUBLIC_MEDIA_URL + '/textures';
+// const MAIN_TEXTURE_URL = process.env.NEXT_PUBLIC_MEDIA_URL + '/textures';
 
 export const TEXTURES_URLS = {
   HDR: '/texture/hdr/rosendal_plains_2_2k.hdr',
