@@ -72,6 +72,11 @@ import kitchen_svg from '@/assets/toolbar/kitchen_svg.svg';
 import table_svg from '@/assets/toolbar/table_svg.svg';
 import tvunit_svg from '@/assets/toolbar/tvunit_scg.svg';
 import cabinet_svg from '@/assets/toolbar/cabinet_svg.svg';
+import double from '@/assets/toolbar/double_door.svg';
+import single from '@/assets/toolbar/single.svg';
+import tv from '@/assets/toolbar/tv.svg';
+import cabinet_1 from '@/assets/toolbar/cabinet.svg';
+import table from '@/assets/toolbar/computer.svg';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -963,7 +968,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const alwaysFields = [
     {
       option: 'Upper Cabinets',
-      icon: cabinet,
+      icon: double,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         const outline = scene.children.find((o) =>
@@ -1013,7 +1018,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Double Door Upper Cabinets',
-      icon: cabinet,
+      icon: single,
       onClick: async () => {
         const scene = threeDView.scene as THREE.Scene;
         const outline = scene.children.find((o) =>
@@ -1132,8 +1137,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     Door: door.src,
     'Horizontal Plank': horizontal_plank.src,
     'Vertical Plank': vertical_plank.src,
+    'Tv Unit': tv.src,
+    "Computer Desk": table.src,
     Plank: vertical_plank.src,
-    Cabinet: cabinet.src,
+    Cabinet: cabinet_1.src,
     Platform: platform.src,
   };
 
