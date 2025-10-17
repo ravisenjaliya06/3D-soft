@@ -1,8 +1,3 @@
-import Process_upload from '@/assets/design/progress-upload.svg';
-import download from '@/assets/mes/download.svg';
-import styles from '@/components/designmes/mes.module.css';
-import Header from '@/components/header/header';
-import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
 import { useEffect, useState } from 'react';
 

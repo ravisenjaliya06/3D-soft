@@ -1,6 +1,4 @@
 import erroricon from '@/assets/design/error.svg';
-import search from '@/assets/design/search.svg';
-import Header from '@/components/header/header';
 import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
@@ -11,13 +9,10 @@ import activepackaging from '@/assets/mes/activepackaging.svg';
 import activeshipment from '@/assets/mes/activeshipment.svg';
 import activetracking from '@/assets/mes/activetracking.svg';
 import workordersvg from '@/assets/mes/activeworkorder.svg';
-import createworkordersvg from '@/assets/mes/createworkordersvg.svg';
 import packagingsvg from '@/assets/mes/Packaging.svg';
 import shipmentsvg from '@/assets/mes/Shipment.svg';
 import trackingsvg from '@/assets/mes/tracking.svg';
 import activeworkorder from '@/assets/mes/workorder.svg';
-import WorkOrder from '@/components/mes/workorders/index';
-import CreateDesign from './createWorkOrder';
 
 const Mes = () => {
   const [searchQuery, setSearchQuery] = useState('');

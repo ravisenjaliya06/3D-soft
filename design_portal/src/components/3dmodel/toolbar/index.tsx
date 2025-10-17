@@ -494,12 +494,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         num,
       );
     } else if (itemType === 'Drawer') {
-      await addDrawersOnInvisibleBox(
-        scene,
-        targetBox,
-        num,
-        itemData,
-      );
+      await addDrawersOnInvisibleBox(scene, targetBox, num, itemData);
     } else if (itemType === 'Plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
