@@ -91,4 +91,9 @@ urlpatterns = [
         CatalogViewSet.as_view({"post": "create"}),
         name="catalog-design-list",
     ),
+    path(
+        "catalog/design/",
+        CatalogViewSet.as_view({"post": "create"}),
+        name="catalog-design-list",
+    ),
 ]

@@ -896,7 +896,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       hoveredMesh?.parent?.userData.type === itemType.CUPBOARD
     ) {
       dispatch(setobjectSelected(hoveredMesh?.parent?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
@@ -907,14 +907,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         hoveredMesh?.parent?.userData.type === itemType.DOOR)
     ) {
       dispatch(setSelectedChildObject(hoveredMesh?.parent?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
       newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
     } else {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
-      setHelperTools(true);
+      // setHelperTools(true);
       setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
         setHelperTools(false);
@@ -930,7 +930,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const name = m.name.toUpperCase();
       if (
         name.includes('VERTICAL_PLANK') ||
-        name.includes('HORIZONTAL_PLANK')
+        name.includes('HORIZONTAL_PLANK') ||
+        m.userData.type === 'Plank'
       ) {
         if (m instanceof THREE.Mesh) {
           showPlankDimensions(design3D.scene, m);
@@ -958,6 +959,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'TABLE',
     'TVUNIT',
     'UPPERCABINET',
+    'PLATFORM',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&

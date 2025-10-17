@@ -779,8 +779,10 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "width",
             "length",
             "depth",
+            "thickness",
             "position",
             "handle_position",
+            "additional_data",
         ]
 
     def get_material(self: "CatalogRulePartSerializer", obj: CatalogRuleParts) -> dict:
@@ -807,6 +809,7 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "handle_position": override_data.get(
                 "handle_position", old_part.handle_position
             ),
+            "additional_data": override_data.get("additional_data", {}),
         }
 
         return CatalogRuleParts.objects.create(**data)
@@ -911,14 +914,17 @@ class CatalogSerializer(serializers.ModelSerializer):
             "width",
             "length",
             "depth",
+            "thickness",
             "position",
             "additional_data",
         ]
 
     def create(self: "CatalogSerializer", validated_data: Dict[str, str]) -> Catalog:
         request = self.context["request"]
-        design_id = request.data.get("design_id")
+        design_id = request.data.get("design")
         catalog_id = self.context["view"].kwargs.get("catalog_id")
+        if not catalog_id:
+            return Catalog.objects.create(**validated_data)
         original_catalog = Catalog.objects.get(id=catalog_id)
 
         if not design_id:
@@ -938,7 +944,6 @@ class CatalogSerializer(serializers.ModelSerializer):
                 "override_rule_data": override_rule_data,
             }
             CatalogRuleSerializer(context=rule_context).create({})
-
         return catalog
 
     def update(
@@ -1007,6 +1012,7 @@ class CatalogRulePartUpdateSerializer(serializers.ModelSerializer):
             "depth",
             "position",
             "handle_position",
+            "additional_data",
         ]
         read_only_fields = ["id", "name"]
 
