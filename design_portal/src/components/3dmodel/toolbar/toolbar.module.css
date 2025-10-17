@@ -795,17 +795,8 @@
 }
 
 .createpopupOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1001;
-  pointer-events: none;
+  position: absolute;
+  z-index: 999;
 }
 
 .createpopup {
@@ -813,12 +804,12 @@
   width: 12rem;
   border-radius: 0.8rem;
   position: fixed;
-  right: 3rem;
-  top: 50%;
+  /* right: 3rem; */
   transform: translateY(-50%);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   padding: 0.9rem;
   pointer-events: all;
+  position: absolute;
 }
 
 .createpopup::before {
@@ -1014,6 +1005,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.8rem;
+  position: relative;
 }
 
 .submenuItem {
@@ -1022,7 +1014,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.2rem;
-  border: 0.063rem solid var(--toolbar-border-color);
+  border: 0.023rem solid var(--toolbar-border-color);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1031,9 +1023,7 @@
 }
 
 .submenuItem:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-color);
+  border: 0.02rem solid var(--primary-color);
 }
 
 .submenuItem img {

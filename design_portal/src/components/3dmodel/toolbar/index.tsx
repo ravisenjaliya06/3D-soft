@@ -68,6 +68,10 @@ import {
   setobjectSelected,
   togglAlignment,
 } from '../store/dataSlice';
+import kitchen_svg from '@/assets/toolbar/kitchen_svg.svg';
+import table_svg from '@/assets/toolbar/table_svg.svg';
+import tvunit_svg from '@/assets/toolbar/tvunit_scg.svg';
+import cabinet_svg from '@/assets/toolbar/cabinet_svg.svg';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
@@ -96,13 +100,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [quantityValue, setQuantityValue] = useState(1);
   const [activeSubOption, setActiveSubOption] = useState<string | null>(null);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
-
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
   };
+
+  const handleSubmenuClick = (event: React.MouseEvent, item: any) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPopupPosition({ x: rect.right + 12, y: rect.top + 55 });
+    setSelectedItem(item);
+    setPopupVisible(true);
+  };
+
+  const closePopup = () => {
+    setPopupVisible(false);
+    setSelectedItem(null);
+    setCreateCompanyPopup(false);
+    setSelectedCabinetItem(null);
+    setQuantityValue(1);
+  };
+
 
   const handleToolToggleClick = () => {
     setIsToolOpen((prevState) => !prevState);
@@ -832,10 +854,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
   ];
   const furnitureTools = [
-    { option: 'Kitchen', icon: homefurniture },
-    { option: 'Cabinet', icon: homefurniture },
-    { option: 'Tv unit', icon: homefurniture },
-    { option: 'Computer Desk', icon: homefurniture },
+    { option: 'Kitchen', icon: kitchen_svg },
+    { option: 'Cabinet', icon: cabinet_svg },
+    { option: 'Tv unit', icon: tvunit_svg },
+    { option: 'Computer Desk', icon: table_svg },
   ];
 
   // Submenu items for each furniture category - dynamically filtered from API
@@ -913,6 +935,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const handleFurnitureCategoryClick = (category: string) => {
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
+    setPopupVisible(false);
+    setSelectedItem(null);
+    setCreateCompanyPopup(false);
+    setSelectedCabinetItem(null);
+    setQuantityValue(1);
   };
 
   const handleSubMenuItemClick = (item: any) => {
@@ -1056,6 +1083,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setActiveOptionName('Home');
     setSelectedFurnitureCategory(null);
     setcatalogMenu(false);
+    setPopupVisible(false);
+    setSelectedItem(null);
+    setCreateCompanyPopup(false);
+    setSelectedCabinetItem(null);
+    setQuantityValue(1);
   };
   useEffect(() => {
     const fetchCatalogItems = async () => {
@@ -1142,17 +1174,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         {isToolOpen && (
           <div className={styles.activegroup_tools_container}>
             <div className={styles.activegroup}>
-         {activeOption !== 'furniture' && (
-  <div className={styles.activegroup_header}>
-    <img 
-      src={backicon.src} 
-      alt="back" 
-      onClick={handleback}
-      
-    />
-    <p>{activeOptionName}</p>
-  </div>
-)}
+              {activeOption !== 'furniture' && (
+                <div className={styles.activegroup_header}>
+                  <img
+                    src={backicon.src}
+                    alt="back"
+                    onClick={handleback}
+
+                  />
+                  <p>{activeOptionName}</p>
+                </div>
+              )}
               <img
                 src={tool_part_line.src}
                 className={styles.active_tool_part_line}
@@ -1205,41 +1237,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   )}
                 </div>
               )}
-
-              {/* {activeOption === 'Furniture' && (
-                <div className={styles.activegroup_tools_group}>
-                  {alwaysFields.map(({ option, onClick, icon }) => (
-                    <div
-                      key={option}
-                      className={styles.activegroup_tools}
-                      onClick={onClick}
-                      title={option}
-                    >
-                      <img
-                        src={icon.src} // fallback if type not found
-                        alt={`${option} icon`}
-                      />
-                      <span>{option}</span>
-                    </div>
-                  ))}
-                  {cabinetItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className={styles.activegroup_tools}
-                      onClick={() => handleCabinetItemSelect(item)}
-                      title={item.description}
-                    >
-                      <img
-                        src={
-                          iconMap[item.name] || iconMap[item.type] || drawer.src
-                        } // fallback if type not found
-                        alt={`${item.type} icon`}
-                      />
-                      <span>{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )} */}
 
               {activeOption === 'Furniture' && (
                 <div className={styles.activegroup_tools_group}>
@@ -1311,6 +1308,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   className={styles.submenuItem}
                   onClick={(e) => {
                     e.stopPropagation();
+                    handleSubmenuClick(e, item);
                     if (item.isAlwaysField) {
                       // For alwaysFields items, call their onClick directly
                       item.onClick();
@@ -1435,7 +1433,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       )}
 
       {createCompanyPopup && selectedCabinetItem && (
-        <div className={styles.createpopupOverlay}>
+        <div className={styles.createpopupOverlay} style={{ top: popupPosition.y, left: popupPosition.x }}>
           <div className={styles.createpopup}>
             <img
               src={createicon.src || '/placeholder.svg'}
@@ -1447,7 +1445,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               src={close.src || '/placeholder.svg'}
               className={styles.createclose}
               alt="close"
-              onClick={onClose}
+              onClick={closePopup}
             />
             <div className={styles.create_right_side}>
               <p>Enter the number of {selectedCabinetItem.name} to add.</p>
