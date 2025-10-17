@@ -90,6 +90,7 @@ export function hideFullScreenLoader() {
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   if (!boxMesh) return [];
+  if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
   // --- Remove previous invisible boxes ---
   const toRemove: THREE.Object3D[] = [];
