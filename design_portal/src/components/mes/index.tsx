@@ -100,7 +100,8 @@ const Mes = () => {
 
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="MES" />
+        <div>Coming Soon...</div>
+        {/* <Header isBorderRadius={true} dashboardName="MES" />
         <div className={styles.maincontent}>
           <div className={styles.tabs}>
             {tabs.map((tab) => (
@@ -119,7 +120,7 @@ const Mes = () => {
           </div>
 
           <div className={styles.designs}>
-            {/* Design View Part */}
+            Design View Part
             <div className={styles.designfirstpart}>
               <div className={styles.searchWrapper}>
                 <img
@@ -184,7 +185,7 @@ const Mes = () => {
               />
             )}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

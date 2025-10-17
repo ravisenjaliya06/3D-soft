@@ -95,98 +95,99 @@ const Template = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <Sidebar />
-      <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="MES" />
-        <div className={styles.maincontent}>
-          <div className={styles.designs}>
-            <div className={styles.mesdesigncontent}>
-              <h2>{designName}</h2>
+    // <div className={styles.container}>
+    //   <Sidebar />
+    //   <div className={styles.rightside}>
+    //     <Header isBorderRadius={true} dashboardName="MES" />
+    //     <div className={styles.maincontent}>
+    //       <div className={styles.designs}>
+    //         <div className={styles.mesdesigncontent}>
+    //           <h2>{designName}</h2>
 
-              <div className={styles.toolbarmenu}>
-                <div className={styles.toolbaricon}></div>
+    //           <div className={styles.toolbarmenu}>
+    //             <div className={styles.toolbaricon}></div>
 
-                <div className={styles.rediogroup}>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="pdf"
-                      checked={selectedFormat === 'pdf'}
-                      onChange={() => setSelectedFormat('pdf')}
-                      className={styles.option}
-                    />
-                    PDF
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="xlsx"
-                      checked={selectedFormat === 'xlsx'}
-                      onChange={() => setSelectedFormat('xlsx')}
-                      className={styles.option}
-                    />
-                    XLSX
-                  </label>
-                </div>
-                <a>
-                  {' '}
-                  <img
-                    onClick={handleDownload}
-                    src={download.src}
-                    alt="download"
-                    className={styles.download}
-                  />
-                </a>
-              </div>
+    //             <div className={styles.rediogroup}>
+    //               <label className={styles.label}>
+    //                 <input
+    //                   type="radio"
+    //                   name="option"
+    //                   value="pdf"
+    //                   checked={selectedFormat === 'pdf'}
+    //                   onChange={() => setSelectedFormat('pdf')}
+    //                   className={styles.option}
+    //                 />
+    //                 PDF
+    //               </label>
+    //               <label className={styles.label}>
+    //                 <input
+    //                   type="radio"
+    //                   name="option"
+    //                   value="xlsx"
+    //                   checked={selectedFormat === 'xlsx'}
+    //                   onChange={() => setSelectedFormat('xlsx')}
+    //                   className={styles.option}
+    //                 />
+    //                 XLSX
+    //               </label>
+    //             </div>
+    //             <a>
+    //               {' '}
+    //               <img
+    //                 onClick={handleDownload}
+    //                 src={download.src}
+    //                 alt="download"
+    //                 className={styles.download}
+    //               />
+    //             </a>
+    //           </div>
 
-              <div className={styles.tablecontainer}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Width</th>
-                      <th>Height</th>
-                      <th>Thick</th>
-                      <th>Part Of</th>
-                      <th>Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mesData.slice(0, visibleDesigns).map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td>{item.width}</td>
-                        <td>{item.height || '-'}</td>
-                        <td>{item.depth || '-'}</td>
-                        <td>{item.object}</td>
-                        <td>
-                          {item.name ? item.name.replace(/_/, ' ') : item.name}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            {visibleDesigns < mesData.length && (
-              <div className={styles.designsLoadMore}>
-                <div className={styles.loadmore} onClick={handleLoadMore}>
-                  <p>Load More</p>
-                  <img
-                    src={Process_upload.src}
-                    alt="process upload"
-                    className={styles.process_upload}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    //           <div className={styles.tablecontainer}>
+    //             <table>
+    //               <thead>
+    //                 <tr>
+    //                   <th>ID</th>
+    //                   <th>Width</th>
+    //                   <th>Height</th>
+    //                   <th>Thick</th>
+    //                   <th>Part Of</th>
+    //                   <th>Name</th>
+    //                 </tr>
+    //               </thead>
+    //               <tbody>
+    //                 {mesData.slice(0, visibleDesigns).map((item, index) => (
+    //                   <tr key={item.id}>
+    //                     <td>{index + 1}</td>
+    //                     <td>{item.width}</td>
+    //                     <td>{item.height || '-'}</td>
+    //                     <td>{item.depth || '-'}</td>
+    //                     <td>{item.object}</td>
+    //                     <td>
+    //                       {item.name ? item.name.replace(/_/, ' ') : item.name}
+    //                     </td>
+    //                   </tr>
+    //                 ))}
+    //               </tbody>
+    //             </table>
+    //           </div>
+    //         </div>
+    //         {visibleDesigns < mesData.length && (
+    //           <div className={styles.designsLoadMore}>
+    //             <div className={styles.loadmore} onClick={handleLoadMore}>
+    //               <p>Load More</p>
+    //               <img
+    //                 src={Process_upload.src}
+    //                 alt="process upload"
+    //                 className={styles.process_upload}
+    //               />
+    //             </div>
+    //           </div>
+    //         )}
+    //       </div>
+    //     </div>
+    //   </div>
+    // </div>
+    <div>Coming Soon...</div>
   );
 };
 
