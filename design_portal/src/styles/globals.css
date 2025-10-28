@@ -36,6 +36,7 @@
   --nesting-color: #f5d879;
   --completed-color: #bbeeeb;
   --menu-background: #f3e8fb;
+  --soft-dark-grey: #8e9cb3;
 
   /* box shadow colors */
   --box-shadow: 0px 0.188rem 4rem 0px #c5bfda;
@@ -82,7 +83,9 @@
   /* Button colors */
   --header-button-color: #666;
   --button-hover-color: #38b2a5;
+  --button-soft-grey: #a4b0be;
   --content-active-color: #deebf9;
+  --hover-button: #6d28d9;
 
   /* border colors */
   --project-border-color: #e2e8f0;
@@ -104,10 +107,14 @@
   --processed-background-color: #f8f9fa;
 
   /* hover color */
-  --toolbarhover-color:#F1F6FF;
+  --toolbarhover-color: #f1f6ff;
 
   /*border */
-  --toolbar-border-color: #E0E0E0;
+  --toolbar-border-color: #e0e0e0;
+  --button-color: #a0aec0;
+
+  /* option colors */
+  --option-color: #c0b3ec;
 }
 
 html {

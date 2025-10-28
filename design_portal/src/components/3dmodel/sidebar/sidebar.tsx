@@ -1,6 +1,7 @@
 import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
 import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
-import mouse_svg from '@/assets/sidebar/mouse-click-icon.svg';
+import menu_down from '@/assets/sidebar/menu-down.svg';
+import menu_up from '@/assets/sidebar/menu-up.svg';
 import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import React, { useEffect, useRef, useState } from 'react';
@@ -24,7 +25,7 @@ const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [subMenu, setSubMenu] = useState<string | null>('basic');
+  const [subMenu, setSubMenu] = useState<string | null>('layout');
   const [doorPosition, setDoorPosition] = useState('None');
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
   const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
@@ -128,7 +129,7 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (isSidebarOpen) {
-      setSubMenu('basic');
+      setSubMenu('layout');
     }
   }, [isSidebarOpen]);
 
@@ -602,8 +603,8 @@ const Sidebar: React.FC = () => {
   }
   const sideBarMenuConfig = [
     {
-      subMenu: 'basic',
-      title: 'Basic',
+      subMenu: 'layout',
+      title: 'Layout',
       fields: [
         {
           label: 'Width',
@@ -755,7 +756,8 @@ const Sidebar: React.FC = () => {
               Navigation
             </button>
           </div>
-          <hr />
+          <hr></hr>
+          {/* <hr /> */}
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>
@@ -781,140 +783,89 @@ const Sidebar: React.FC = () => {
             </p>
           )}
           {isSettingOpen && selectedObject && (
-            <div className={style.field_main_div}>
-              <div className={style.field_group1}>
-                <p>Unit</p>
-                <select
-                  value={displayUnit}
-                  onChange={handleUnitChange}
-                  disabled={isQuickHideActive}
-                >
-                  {UNIT_OPTIONS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {sideBarMenuConfig.map((menu) => (
-                <div key={menu.subMenu}>
-                  <div
-                    className={style.field_group_title_div}
-                    onClick={() => toggleSubMenu(menu.subMenu)}
-                    style={{ cursor: 'pointer' }}
+            <>
+              <div className={style.field_main_div}>
+                <div className={style.field_group_unitdiv}>
+                  <p>Unit</p>
+                  <select
+                    value={displayUnit}
+                    onChange={handleUnitChange}
+                    disabled={isQuickHideActive}
                   >
-                    <img
-                      src={
-                        subMenu === menu.subMenu ? up_arrow.src : down_arrow.src
-                      }
-                      alt="toggle_arrow"
-                    />
-                    <p className={style.field_group_title}>{menu.title}</p>
-                  </div>
-                  {subMenu === menu.subMenu && (
-                    <div className={style.field_group_div}>
-                      {menu.fields.map((field, index) => (
-                        <div key={index} className={style.field_group1}>
-                          <p>{field.label}</p>
-                          <div className={style.input_with_unit}>
-                            <input
-                              id={field.name}
-                              name={field.name}
-                              type={field.type}
-                              value={field.value}
-                              disabled={field.disabled}
-                              onChange={field.onChange}
-                              onKeyDown={field.onKeyDown}
-                              onBlur={field.onBlur}
-                              className={style.number_input}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    {UNIT_OPTIONS.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
-              <div
-                className={style.field_group_title_div}
-                onClick={() => toggleSubMenu('material')}
-                style={{ cursor: 'pointer' }}
-              >
-                <img
-                  src={subMenu === 'material' ? up_arrow.src : down_arrow.src}
-                  alt="toggle_arrow"
-                />
-                <p className={style.field_group_title}>Material</p>
-              </div>
-              {subMenu === 'material' && (
-                <div className={style.field_group_div}>
-                  <div
-                    className={style.field_group1}
-                    onClick={handleMaterialChange}
-                  >
-                    <button
-                      className={style.btn_material_change}
-                      disabled={isQuickHideActive}
-                    >
-                      Change Material
-                    </button>
-                    <img
-                      src={mouse_svg.src}
-                      alt=""
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Color</p>
-                    <input
-                      type="color"
-                      ref={colorInputRef}
-                      value={selectedColor}
-                      onChange={(e) => applyColorToSelected(e.target.value)}
-                      onBlur={() =>
-                        applyColorToSelected(selectedColor, 'extraValue')
-                      }
-                      disabled={isQuickHideActive}
-                      className={style.color_input}
-                    />
-                  </div>
-                  <div className={style.field_group1}>
-                    <p>Texture</p>
-                    <button
-                      className={style.btn_material_change}
-                      onClick={toggleTextureList}
-                      disabled={isQuickHideActive}
-                    >
-                      Change Texture
-                    </button>
-                    {isTextureListOpen && (
-                      <div className={style.texture_list}>
-                        {materialModal.map((material) => (
-                          <div
-                            key={material.option}
-                            className={style.texture_item}
-                            onClick={() => handleTextureSelect(material.image)}
-                            title={material.name}
-                          >
-                            <img
-                              src={material.image}
-                              alt={material.name}
-                              className={style.texture_thumbnail}
-                            />
-                            <p>{material.name}</p>
+                <hr></hr>
+                {sideBarMenuConfig.map((menu) => (
+                  <div key={menu.subMenu}>
+                    <div className={style.field_group_title_div}>
+                      <p className={style.field_group_title}>{menu.title}</p>
+                      <div className={style.field_group_div}>
+                        {menu.fields.map((field, index) => (
+                          <div key={index} className={style.field_group1}>
+                            <p>{field.label}</p>
+                            <div className={style.input_with_unit}>
+                              <input
+                                id={field.name}
+                                name={field.name}
+                                type={field.type}
+                                value={field.value}
+                                disabled={field.disabled}
+                                onChange={field.onChange}
+                                onKeyDown={field.onKeyDown}
+                                onBlur={field.onBlur}
+                                className={style.number_input}
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>
-                    )}
+                    </div>
+                    <hr></hr>
+                  </div>
+                ))}
+                <div className={style.field_group_title_div}>
+                  <p className={style.field_group_title}>Material</p>
+                </div>
+                <div className={style.field_group_div_material}>
+                  <div className={style.field_group_color_row}>
+                    <p>Color</p>
+
+                    <div className={style.color_preview_wrapper}>
+                      <input
+                        type="color"
+                        value={selectedColor}
+                        onChange={(e) => applyColorToSelected(e.target.value)}
+                        className={style.color_input_box}
+                      />
+                      <input
+                        type="text"
+                        value={selectedColor.toUpperCase()}
+                        onChange={(e) => applyColorToSelected(e.target.value)}
+                        className={style.color_hex_input}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    className={style.field_group_div_material_change}
+                    onClick={handleMaterialChange}
+                  >
+                    <p>Change Material</p>
+                    <button
+                      className={style.btn_material_change}
+                      disabled={isQuickHideActive}
+                    >
+                      Press to Change
+                    </button>
                   </div>
                 </div>
-              )}
-              {!isQuickHideActive &&
-                isSettingOpen &&
-                subMenu === 'material' &&
-                itemType.DOOR && (
-                  <div className={style.field_group_div}>
-                    <div className={style.field_group}>
+                {!isQuickHideActive && isSettingOpen && itemType.DOOR && (
+                  <div className={style.field_group_div_door}>
+                    <div className={style.field_group_div_material_change}>
                       <p>Door Position</p>
                       <select
                         value={doorPosition}
@@ -932,57 +883,92 @@ const Sidebar: React.FC = () => {
                         <option value="Bottom">Bottom</option>
                       </select>
                     </div>
-                    <div className={style.field_group}>
+                    <div className={style.field_group_div_material_change}>
                       <p>Handle</p>
-                      <div className={style.handle_dropdown_wrapper}>
-                        <div
-                          className={style.dropdown_like_select}
-                          onClick={() =>
-                            setIsHandleDropdownOpen((prev) => !prev)
+                      <div
+                        className={style.dropdown_like_select}
+                        onClick={() => setIsHandleDropdownOpen((prev) => !prev)}
+                      >
+                        {selectedHandle ? selectedHandle : 'Select Position'}
+                        <img
+                          src={
+                            isHandleDropdownOpen ? menu_up.src : menu_down.src
                           }
-                        >
-                          {selectedHandle}
-                          <span>{isHandleDropdownOpen ? '▲' : '▼'}</span>
-                        </div>
-                        {isHandleDropdownOpen && (
-                          <div className={style.dropdown_grid}>
-                            {[
-                              'Top-Left',
-                              'Top-Center',
-                              'Top-Right',
-                              'Middle-Left',
-                              'Center',
-                              'Middle-Right',
-                              'Bottom-Left',
-                              'Bottom-Center',
-                              'Bottom-Right',
-                            ].map((label, index) => (
-                              <div
-                                key={index}
-                                className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
-                                onClick={() => {
-                                  setSelectedHandle(label);
-                                  setIsHandleDropdownOpen(false);
-                                  handleHandlePositionChange(label);
-                                  if (selectedObject && !isQuickHideActive) {
-                                    updateObjectInScene(
-                                      selectedObject.id,
-                                      { handlePosition: label },
-                                      scene,
-                                      dispatch,
-                                      selectedObject,
-                                    );
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
+                          alt="dropdown arrow"
+                        />
                       </div>
+                      {isHandleDropdownOpen && (
+                        <div className={style.dropdown_grid}>
+                          {[
+                            'Top-Left',
+                            'Top-Center',
+                            'Top-Right',
+                            'Middle-Left',
+                            'Center',
+                            'Middle-Right',
+                            'Bottom-Left',
+                            'Bottom-Center',
+                            'Bottom-Right',
+                          ].map((label, index) => (
+                            <div
+                              key={index}
+                              className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
+                              onClick={() => {
+                                setSelectedHandle(label);
+                                setIsHandleDropdownOpen(false);
+                                handleHandlePositionChange(label);
+                                if (selectedObject && !isQuickHideActive) {
+                                  updateObjectInScene(
+                                    selectedObject.id,
+                                    { handlePosition: label },
+                                    scene,
+                                    dispatch,
+                                    selectedObject,
+                                  );
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className={style.field_group_div_material_change}>
+                      <p>Texture</p>
+                      <button
+                        className={style.btn_material_change}
+                        onClick={toggleTextureList}
+                        disabled={isQuickHideActive}
+                      >
+                        Select Texture
+                      </button>
+                    </div>
+                    <div>
+                      {isTextureListOpen && (
+                        <div className={style.texture_list}>
+                          {materialModal.map((material) => (
+                            <div
+                              key={material.option}
+                              className={style.texture_item}
+                              onClick={() =>
+                                handleTextureSelect(material.image)
+                              }
+                              title={material.name}
+                            >
+                              <img
+                                src={material.image}
+                                alt={material.name}
+                                className={style.texture_thumbnail}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
-            </div>
+              </div>
+              <hr></hr>
+            </>
           )}
         </>
       )}

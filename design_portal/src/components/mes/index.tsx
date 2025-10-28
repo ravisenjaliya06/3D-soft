@@ -2,7 +2,6 @@
 import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 // import CommonService from '@/services/CommonService';
-import React from 'react';
 // import { WorkOrderData } from './interface';
 
 // import activepackaging from '@/assets/mes/activepackaging.svg';
