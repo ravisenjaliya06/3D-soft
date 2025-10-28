@@ -119,7 +119,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
         qs.delete()
-        return Response({"detail": "Successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT)
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)

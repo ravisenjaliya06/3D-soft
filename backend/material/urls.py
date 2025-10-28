@@ -97,7 +97,7 @@ urlpatterns = [
         name="catalog-design-list",
     ),
     path(
-        "catalog/design/<design_id>",
+        "catalog/design/<uuid:design_id>/",
         CatalogViewSet.as_view({"delete": "destroy"}),
         name="catalog-design-delete",
     ),
