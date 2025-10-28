@@ -270,7 +270,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               let catalogEntry = childCatalogList.find(
                 (entry) => entry.catalog.id === catalogObj.id,
               );
-
+              
               if (!catalogEntry) {
                 catalogEntry = {
                   catalog: {

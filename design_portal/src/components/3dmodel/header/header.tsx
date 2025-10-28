@@ -1,13 +1,12 @@
-import zoom_svg from '@/assets/3dmodel/footerbar/right_content_seventh_icon.svg';
+import zoom_svg from '@/assets/3dmodel/header/newzoom.svg';
 import screenshot_svg from '@/assets/3dmodel/footerbar/screenshot_svg.svg';
-import clear_svg from '@/assets/3dmodel/header/clear.svg';
-import redo_svg from '@/assets/3dmodel/header/redo.svg';
+import clear_svg from '@/assets/3dmodel/header/newclear.svg';
+import redo_svg from '@/assets/3dmodel/header/newredu.svg';
 import settings_svg from '@/assets/3dmodel/header/Setting.svg';
-import undo_svg from '@/assets/3dmodel/header/undo.svg';
+import undo_svg from '@/assets/3dmodel/header/newundo.svg';
 import close from '@/assets/catalog/close.svg';
 import profile from '@/assets/catalog/profile.svg';
-import two_D_svg from '@/assets/customdesign/shape/cube.svg';
-import door_sliding from '@/assets/door-sliding.svg';
+import door_sliding from '@/assets/3dmodel/header/newopenclose.svg';
 import edit_delete_line from '@/assets/edit-delete-line.svg';
 import success from '@/assets/profile/success.svg';
 import CreateDesignPopup from '@/components/3dmodel/components/CreateDesignPopup';
@@ -41,7 +40,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [designName, setDesignName] = useState<Design[]>([]);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [is2DMode, setIs2DMode] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
@@ -108,16 +106,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }
   }, [showSettingsPopup]);
 
-  const handleViewToggle = () => {
-    setIs2DMode((prev) => {
-      const newMode = !prev;
-      if (design3D) {
-        design3D.toggle2DMode(newMode);
-      }
-      return newMode;
-    });
-  };
-
   const handleZoomModeToggle = () => {
     if (design3D) {
       design3D.toggleZoomMode?.(!design3D.isZoomMode);
@@ -170,8 +158,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         setSuccessMessage(
           'Settings updated successfully! Minifix spacing updated to ' +
-            minifixDistance +
-            'mm',
+          minifixDistance +
+          'mm',
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {
@@ -304,9 +292,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const handleDesignClick = () => {
     setShowCreatePopup(true);
   };
-  const handleSettingsClick = () => {
-    setShowSettingsPopup(true);
-  };
 
   const handleOpenCloseClick = () => {
     design3D?.scene.traverse((child) => {
@@ -351,13 +336,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       onClick: handleClear,
     },
     {
-      option: 'view',
-      name: is2DMode ? '3D View' : '2D View',
-      icon: two_D_svg,
-      disabled: false,
-      onClick: handleViewToggle,
-    },
-    {
       option: 'zoom',
       name: 'Zoom',
       icon: zoom_svg,
@@ -370,13 +348,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       icon: screenshot_svg,
       disabled: false,
       onClick: handleScreenshot,
-    },
-    {
-      option: 'settings',
-      name: 'Settings',
-      icon: settings_svg,
-      disabled: false,
-      onClick: handleSettingsClick,
     },
     {
       option: 'Open/Close',
@@ -406,16 +377,18 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         <div className={styles.headerTools}>
           {headerTools.map(({ option, name, icon, disabled, onClick }) => (
-            <div
-              key={option}
-              className={
-                disabled ? styles.disabledHeaderIcon : styles.headerIcon
-              }
-              onClick={disabled ? undefined : onClick}
-              title={name}
-            >
-              <img src={icon.src || '/placeholder.svg'} alt={name} />
-              {name}
+            <div key={option} className={styles.headerToolList}>
+              <div
+                key={option}
+                className={
+                  disabled ? styles.disabledHeaderIcon : styles.headerIcon
+                }
+                onClick={disabled ? undefined : onClick}
+                title={name}
+              >
+                <img src={icon.src || '/placeholder.svg'} alt={name} />
+                {name}
+              </div>
             </div>
           ))}
         </div>
