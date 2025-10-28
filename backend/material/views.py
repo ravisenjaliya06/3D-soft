@@ -116,7 +116,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
             organization=self.request.user.selected_organization, design_id=design_id
         )
         if not qs.exists():
-            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Any Catalog Not found With Given Design"}, status=status.HTTP_404_NOT_FOUND)
 
         qs.delete()
         return Response({"detail": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT)
