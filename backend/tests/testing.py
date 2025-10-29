@@ -12,11 +12,15 @@ from rest_framework.test import APITestCase
 # App imports
 from tests.model_factory import (
     new_catalog,
+    new_catalog_for_material,
     new_catalog_item,
+    new_catalog_rule_parts,
+    new_catalog_rules,
     new_company,
     new_design,
     new_design_setting,
     new_material,
+    new_material_for_material,
     new_organization,
     new_texture,
     new_user,
@@ -53,6 +57,10 @@ class APIBaseTestCase(APITestCase):
         self.seed_new_design_setting(DEFAULT_DATABASE)
         self.seed_new_user_organization_permission(DEFAULT_DATABASE)
         self.seed_new_company(DEFAULT_DATABASE)
+        self.seed_new_material_for_material(DEFAULT_DATABASE)
+        self.seed_new_catalog_for_material(DEFAULT_DATABASE)
+        self.seed_new_catalog_rules(DEFAULT_DATABASE)
+        self.seed_new_catalog_rule_parts(DEFAULT_DATABASE)
 
     @property
     def get_headers(self: "APIBaseTestCase") -> Dict[str, str]:
@@ -254,4 +262,42 @@ class APIBaseTestCase(APITestCase):
             name="test",
             material_type="Banding",
             organization=self.organization,
+        )
+
+    def seed_new_material_for_material(self: "APIBaseTestCase", db: str) -> None:
+        self.material = new_material_for_material(
+            database=db,
+            name="Molding Copy",
+            organization=self.organization,
+            company=self.company,
+            type="Laminate",
+            # is_deleted=False,
+        )
+
+    def seed_new_catalog_for_material(self: "APIBaseTestCase", db: str) -> None:
+        self.catalog = new_catalog_for_material(
+            database=db,
+            type="Door",
+            name="new create t1",
+            organization=self.organization,
+            width=101,
+            height=200,
+            design=self.design,
+        )
+
+    def seed_new_catalog_rules(self: "APIBaseTestCase", db: str) -> None:
+        self.catalog_rules = new_catalog_rules(
+            database=db,
+            name="Test Rule",
+            catalog=self.catalog,
+        )
+
+    def seed_new_catalog_rule_parts(self: "APIBaseTestCase", db: str) -> None:
+        self.catalog_rule_parts = new_catalog_rule_parts(
+            database=db,
+            catalog_rule=self.catalog_rules,
+            name="Door Molding",
+            height=50,
+            width=500,
+            material=self.material,
         )

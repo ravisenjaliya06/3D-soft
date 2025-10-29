@@ -114,8 +114,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
     def destroy(self: "CatalogViewSet", *args, **kwargs) -> Response:
         design_id = kwargs.get("id")
         # get data from pylode in json formet
-        data = self.request.body or "{}"
-        catalog_ids = data.get("catalog_ids")  # get list of catalog_ids
+        data = self.request.data or {}
 
         if not data:  # means data == {}
             # Filter by user's organization and design_id
@@ -134,6 +133,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_204_NO_CONTENT,
             )
 
+        catalog_ids = data.get("catalog_ids")  # get list of catalog_ids
         if len(catalog_ids) > 1:
             for id in catalog_ids:
                 qs = Catalog.objects.filter(
