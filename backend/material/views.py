@@ -1,7 +1,5 @@
 # Python imports
 
-# Python imports
-
 # Django imports
 from django.db.models.query import QuerySet
 
