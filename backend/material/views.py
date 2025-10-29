@@ -1,5 +1,7 @@
 # Python imports
 
+# Python imports
+
 # Django imports
 from django.db.models.query import QuerySet
 
@@ -111,9 +113,44 @@ class CatalogViewSet(viewsets.ModelViewSet):
 
     def destroy(self: "CatalogViewSet", *args, **kwargs) -> Response:
         design_id = kwargs.get("id")
-        # Filter by user's organization and design_id
+        # get data from pylode in json formet
+        data = self.request.body or "{}"
+        catalog_ids = data.get("catalog_ids")  # get list of catalog_ids
+
+        if not data:  # means data == {}
+            # Filter by user's organization and design_id
+            qs = Catalog.objects.filter(
+                organization=self.request.user.selected_organization, design=design_id
+            )
+
+            if not qs.exists():
+                return Response(
+                    {"detail": "Any Catalog Not found With Given Design"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            qs.delete()
+            return Response(
+                {"detail": "Matching Catalog With Given Design Deleted Successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+
+        if len(catalog_ids) > 1:
+            for id in catalog_ids:
+                qs = Catalog.objects.filter(
+                    organization=self.request.user.selected_organization, id=id
+                )
+                if not qs.exists():
+                    return Response(
+                        {"detail": "Any Catalog Not found With Given Design"},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                qs.delete()
+            return Response(
+                {"detail": "Matching Catalog Deleted Successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         qs = Catalog.objects.filter(
-            organization=self.request.user.selected_organization, design=design_id
+            organization=self.request.user.selected_organization, id=catalog_ids[0]
         )
         if not qs.exists():
             return Response(
@@ -123,7 +160,8 @@ class CatalogViewSet(viewsets.ModelViewSet):
 
         qs.delete()
         return Response(
-            {"detail": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT
+            {"detail": "Matching Catalog Deleted Successfully"},
+            status=status.HTTP_204_NO_CONTENT,
         )
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
