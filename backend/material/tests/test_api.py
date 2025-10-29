@@ -295,7 +295,9 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_delete_catalog_with_design_id(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        data = {}
+        data = {
+            "design_id": str(self.design.id),
+        }
         response = self.client.delete(
             reverse("catalog-design-delete", kwargs={"id": self.design.id}),
             data=data,
@@ -332,5 +334,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(
-            response.data["detail"], "Matching Catalog Deleted Successfully"
+            response.data["detail"],
+            "Matching Catalog With Given Design Deleted Successfully",
         )
