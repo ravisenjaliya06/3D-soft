@@ -113,41 +113,27 @@ class CatalogViewSet(viewsets.ModelViewSet):
         design_id = kwargs.get("id")
         # get data from pylode in json formet
         catalog_ids = self.request.data.get("catalog_ids", {})
-
-        if not catalog_ids:  # means data == {}
+        qs = None
+        if catalog_ids:
+            for id in catalog_ids:
+                qs = Catalog.objects.filter(
+                    organization=self.request.user.selected_organization, id=id
+                )
+        else:
             # Filter by user's organization and design_id
             qs = Catalog.objects.filter(
                 organization=self.request.user.selected_organization, design=design_id
             )
 
-            if not qs.exists():
-                return Response(
-                    {"detail": "Any Catalog Not found With Given Design"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            qs.delete()
+        if not qs.exists():
             return Response(
-                {"detail": "Matching Catalog With Given Design Deleted Successfully"},
-                status=status.HTTP_204_NO_CONTENT,
+                {"detail": "Any Catalog Not found With Given Design"},
+                status=status.HTTP_404_NOT_FOUND,
             )
-
-        for id in catalog_ids:
-            qs = Catalog.objects.filter(
-                organization=self.request.user.selected_organization, id=id
-            )
-            if not qs.exists():
-                return Response(
-                    {"detail": "Any Catalog Not found With Given Design"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            qs.delete()
-            return Response(
-                {"detail": "Matching Catalog Deleted Successfully"},
-                status=status.HTTP_204_NO_CONTENT,
-            )
+        qs.delete()
         return Response(
-            {"detail": "Any Catalog Not found With Given Design"},
-            status=status.HTTP_404_NOT_FOUND,
+            {"detail": "Matching Catalog With Given Design Deleted Successfully"},
+            status=status.HTTP_204_NO_CONTENT,
         )
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
