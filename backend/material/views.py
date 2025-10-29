@@ -4,8 +4,9 @@
 from django.db.models.query import QuerySet
 
 # External imports
-from rest_framework import generics, serializers, viewsets
+from rest_framework import generics, serializers, status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 # App imports
 from umaboy.constant import DELETE, GET, POST, PUT
@@ -107,6 +108,35 @@ class CatalogViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(design__isnull=True)
 
         return qs
+
+    def destroy(self: "CatalogViewSet", *args, **kwargs) -> Response:
+        design_id = kwargs.get("id")
+        # get data from pylode in json formet
+        catalog_ids = self.request.data.get("catalog_ids", [])
+        qs = None
+        if catalog_ids:
+            for id in catalog_ids:
+                qs = Catalog.objects.filter(
+                    organization=self.request.user.selected_organization,
+                    id=id,
+                    design=design_id,
+                )
+        else:
+            # Filter by user's organization and design_id
+            qs = Catalog.objects.filter(
+                organization=self.request.user.selected_organization, design=design_id
+            )
+
+        if not qs.exists():
+            return Response(
+                {"detail": "Any Catalog Not found With Given Design"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        qs.delete()
+        return Response(
+            {"detail": "Matching Catalog With Given Design Deleted Successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)
