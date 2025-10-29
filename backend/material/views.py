@@ -112,9 +112,9 @@ class CatalogViewSet(viewsets.ModelViewSet):
     def destroy(self: "CatalogViewSet", *args, **kwargs) -> Response:
         design_id = kwargs.get("id")
         # get data from pylode in json formet
-        data = self.request.data.get("catalog_ids", {})
+        catalog_ids = self.request.data.get("catalog_ids", {})
 
-        if not data:  # means data == {}
+        if not catalog_ids:  # means data == {}
             # Filter by user's organization and design_id
             qs = Catalog.objects.filter(
                 organization=self.request.user.selected_organization, design=design_id
@@ -131,7 +131,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_204_NO_CONTENT,
             )
 
-        for id in data:
+        for id in catalog_ids:
             qs = Catalog.objects.filter(
                 organization=self.request.user.selected_organization, id=id
             )
@@ -145,6 +145,10 @@ class CatalogViewSet(viewsets.ModelViewSet):
                 {"detail": "Matching Catalog Deleted Successfully"},
                 status=status.HTTP_204_NO_CONTENT,
             )
+        return Response(
+            {"detail": "Any Catalog Not found With Given Design"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)
