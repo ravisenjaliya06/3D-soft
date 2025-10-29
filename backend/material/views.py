@@ -109,17 +109,22 @@ class CatalogViewSet(viewsets.ModelViewSet):
 
         return qs
 
-    def delete(self: "CatalogViewSet", *args, **kwargs) -> Response:
-        design_id = kwargs.get("design_id")
+    def destroy(self: "CatalogViewSet", *args, **kwargs) -> Response:
+        design_id = kwargs.get("id")
         # Filter by user's organization and design_id
         qs = Catalog.objects.filter(
-            organization=self.request.user.selected_organization, design_id=design_id
+            organization=self.request.user.selected_organization, design=design_id
         )
         if not qs.exists():
-            return Response({"detail": "Any Catalog Not found With Given Design"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Any Catalog Not found With Given Design"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         qs.delete()
-        return Response({"detail": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT
+        )
 
     def perform_create(self: "CatalogViewSet", serializer: CatalogSerializer) -> None:
         serializer.save(organization=self.request.user.selected_organization)
