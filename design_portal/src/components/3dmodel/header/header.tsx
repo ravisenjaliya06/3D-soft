@@ -1,12 +1,12 @@
-import zoom_svg from '@/assets/3dmodel/header/newzoom.svg';
 import screenshot_svg from '@/assets/3dmodel/footerbar/screenshot_svg.svg';
 import clear_svg from '@/assets/3dmodel/header/newclear.svg';
+import door_sliding from '@/assets/3dmodel/header/newopenclose.svg';
 import redo_svg from '@/assets/3dmodel/header/newredu.svg';
-import settings_svg from '@/assets/3dmodel/header/Setting.svg';
 import undo_svg from '@/assets/3dmodel/header/newundo.svg';
+import zoom_svg from '@/assets/3dmodel/header/newzoom.svg';
+import settings_svg from '@/assets/3dmodel/header/Setting.svg';
 import close from '@/assets/catalog/close.svg';
 import profile from '@/assets/catalog/profile.svg';
-import door_sliding from '@/assets/3dmodel/header/newopenclose.svg';
 import edit_delete_line from '@/assets/edit-delete-line.svg';
 import success from '@/assets/profile/success.svg';
 import CreateDesignPopup from '@/components/3dmodel/components/CreateDesignPopup';
@@ -158,8 +158,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         setSuccessMessage(
           'Settings updated successfully! Minifix spacing updated to ' +
-          minifixDistance +
-          'mm',
+            minifixDistance +
+            'mm',
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {

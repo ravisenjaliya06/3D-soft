@@ -2696,23 +2696,22 @@ export const addUpperCabinetsAbovePlatform = async (
 
     if (doorType === 'double') {
       const doorWidth = (actualCabinetWidth - thickness * 2 - epsilon) / 2;
-
       const leftDoorPart = isSidePlatform
         ? {
-          name: `UpperLeftDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ - doorWidth / 2,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperLeftDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ - doorWidth / 2,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 90 },
+          }
         : {
           name: `UpperLeftDoor_${i}`,
           dimensions: {
@@ -2733,20 +2732,20 @@ export const addUpperCabinetsAbovePlatform = async (
 
       const rightDoorPart = isSidePlatform
         ? {
-          name: `UpperRightDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ + doorWidth / 2,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperRightDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ + doorWidth / 2,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 90 },
+          }
         : {
           name: `UpperRightDoor_${i}`,
           dimensions: {
@@ -2785,32 +2784,66 @@ export const addUpperCabinetsAbovePlatform = async (
         const epsilonOffset = 0.0001;
 
         if (isSidePlatform) {
-          leftHandle.rotation.set(0, 0, Math.PI / 2);
-          rightHandle.rotation.set(0, 0, Math.PI / 2);
+          const handleY = upperBottomY + thickness + 0.1;
+          const epsilonOffset = 0.0001;
 
-          leftHandle.updateMatrixWorld(true);
-          rightHandle.updateMatrixWorld(true);
+          if (isLeftWall) {
+            leftHandle.rotation.set(Math.PI / 2, 0, Math.PI);
+            rightHandle.rotation.set(Math.PI / 2, 0, Math.PI);
 
-          const leftHandleBox = new THREE.Box3().setFromObject(leftHandle);
-          const rightHandleBox = new THREE.Box3().setFromObject(rightHandle);
+            leftHandle.updateMatrixWorld(true);
+            rightHandle.updateMatrixWorld(true);
 
-          const baseOffsetLeft =
-            normalSign > 0 ? leftHandleBox.min.x : -leftHandleBox.max.x;
-          const baseOffsetRight =
-            normalSign > 0 ? rightHandleBox.min.x : -rightHandleBox.max.x;
+            const leftHandleBox = new THREE.Box3().setFromObject(leftHandle);
+            const rightHandleBox = new THREE.Box3().setFromObject(rightHandle);
 
-          const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
+            // Reverse logic for left wall
+            const baseOffsetLeft =
+              normalSign > 0 ? -leftHandleBox.min.x : leftHandleBox.max.x;
+            const baseOffsetRight =
+              normalSign > 0 ? -rightHandleBox.min.x : rightHandleBox.max.x;
 
-          leftHandle.position.set(
-            doorFrontX - baseOffsetLeft + epsilonOffset * normalSign,
-            handleY,
-            cabinetZ - (actualCabinetWidth - thickness * 2 - epsilon) / 4,
-          );
-          rightHandle.position.set(
-            doorFrontX - baseOffsetRight + epsilonOffset * normalSign,
-            handleY,
-            cabinetZ + (actualCabinetWidth - thickness * 2 - epsilon) / 4,
-          );
+            const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
+            const positionFix = 0.13;
+
+            leftHandle.position.set(
+              doorFrontX - baseOffsetLeft - positionFix * normalSign,
+              handleY,
+              cabinetZ - (actualCabinetWidth - thickness * 2 - epsilon) / 4,
+            );
+            rightHandle.position.set(
+              doorFrontX - baseOffsetRight - positionFix * normalSign,
+              handleY,
+              cabinetZ + (actualCabinetWidth - thickness * 2 - epsilon) / 4,
+            );
+          } else if (isRightWall) {
+            leftHandle.rotation.set(Math.PI / 2, 0, 0);
+            rightHandle.rotation.set(Math.PI / 2, 0, 0);
+
+            leftHandle.updateMatrixWorld(true);
+            rightHandle.updateMatrixWorld(true);
+
+            const leftHandleBox = new THREE.Box3().setFromObject(leftHandle);
+            const rightHandleBox = new THREE.Box3().setFromObject(rightHandle);
+
+            const baseOffsetLeft =
+              normalSign > 0 ? leftHandleBox.min.x : -leftHandleBox.max.x;
+            const baseOffsetRight =
+              normalSign > 0 ? rightHandleBox.min.x : -rightHandleBox.max.x;
+
+            const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
+
+            leftHandle.position.set(
+              doorFrontX - baseOffsetLeft + epsilonOffset * normalSign,
+              handleY,
+              cabinetZ - (actualCabinetWidth - thickness * 2 - epsilon) / 4,
+            );
+            rightHandle.position.set(
+              doorFrontX - baseOffsetRight + epsilonOffset * normalSign,
+              handleY,
+              cabinetZ + (actualCabinetWidth - thickness * 2 - epsilon) / 4,
+            );
+          }
         } else {
           leftHandle.rotation.set(-(Math.PI / 2), 0, Math.PI / 2);
           rightHandle.rotation.set(-(Math.PI / 2), 0, Math.PI / 2);
@@ -2849,20 +2882,20 @@ export const addUpperCabinetsAbovePlatform = async (
 
       const doorPart = isSidePlatform
         ? {
-          name: `UpperDoor_${i}`,
-          dimensions: {
-            width: doorHeight,
-            height: doorWidth,
-            depth: doorThickness,
-          },
-          position: {
-            x: cabinetFrontX + (doorThickness / 2) * normalSign,
-            y: upperBottomY + upperHeight / 2,
-            z: cabinetZ,
-          },
-          material: doorMatProps,
-          rotation: { x: 0, y: 90, z: 0 },
-        }
+            name: `UpperDoor_${i}`,
+            dimensions: {
+              width: doorHeight,
+              height: doorWidth,
+              depth: doorThickness,
+            },
+            position: {
+              x: cabinetFrontX + (doorThickness / 2) * normalSign,
+              y: upperBottomY + upperHeight / 2,
+              z: cabinetZ,
+            },
+            material: doorMatProps,
+            rotation: { x: 0, y: 90, z: 90 },
+          }
         : {
           name: `UpperDoor_${i}`,
           dimensions: {
@@ -2884,6 +2917,7 @@ export const addUpperCabinetsAbovePlatform = async (
       // Handle for single door
       if (cachedHandleModel) {
         const handle = cachedHandleModel.clone(true);
+        console.log('handle', handle);
         handle.traverse((n: any) => {
           if (n.isMesh) {
             n.castShadow = true;
@@ -2895,30 +2929,41 @@ export const addUpperCabinetsAbovePlatform = async (
         const epsilonOffset = 0.0001;
 
         if (isSidePlatform) {
-          handle.rotation.set(0, 0, Math.PI / 2);
-
-          handle.updateMatrixWorld(true);
-          const handleBox = new THREE.Box3().setFromObject(handle);
-
-          const baseOffset =
-            normalSign > 0 ? handleBox.min.x : -handleBox.max.x;
-          const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
-
-          handle.position.set(
-            doorFrontX - baseOffset + epsilonOffset * normalSign,
-            handleY,
-            cabinetZ,
-          );
+          if (platformMesh.name.includes('RightWall')) {
+            handle.rotation.set(Math.PI / 2, 0, 0);
+            handle.updateMatrixWorld(true);
+            const handleBox = new THREE.Box3().setFromObject(handle);
+            //  Reverse logic
+            const baseOffset =
+              normalSign > 0 ? handleBox.min.x : -handleBox.max.x;
+            const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
+            handle.position.set(
+              doorFrontX - baseOffset + epsilonOffset * normalSign,
+              handleY,
+              cabinetZ,
+            );
+          } else if (platformMesh.name.includes('LeftWall')) {
+            handle.rotation.set(Math.PI / 2, 0, Math.PI);
+            handle.updateMatrixWorld(true);
+            const handleBox = new THREE.Box3().setFromObject(handle);
+            //  Reverse logic
+            const baseOffset =
+              normalSign > 0 ? -handleBox.min.x : handleBox.max.x;
+            const doorFrontX = cabinetFrontX + (doorThickness / 2) * normalSign;
+            const positionFix = 0.13; // adjust position to closer
+            handle.position.set(
+              doorFrontX - baseOffset - positionFix * normalSign,
+              handleY,
+              cabinetZ,
+            );
+          }
         } else {
           handle.rotation.set(-(Math.PI / 2), 0, Math.PI / 2);
-
           handle.updateMatrixWorld(true);
           const handleBox = new THREE.Box3().setFromObject(handle);
-
           const baseOffset =
             normalSign > 0 ? handleBox.min.z : -handleBox.max.z;
           const doorFrontZ = cabinetFrontZ + (doorThickness / 2) * normalSign;
-
           handle.position.set(
             cabinetX,
             handleY,

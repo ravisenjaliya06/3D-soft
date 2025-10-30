@@ -237,14 +237,14 @@
   letter-spacing: 0.04rem;
   margin: 0;
 }
-.headerToolList{
+.headerToolList {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .headerTools {
-  width:20rem;
+  width: 20rem;
   display: flex;
   justify-self: center;
   align-items: center;

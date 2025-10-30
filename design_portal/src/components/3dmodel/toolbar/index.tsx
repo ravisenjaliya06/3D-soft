@@ -270,7 +270,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               let catalogEntry = childCatalogList.find(
                 (entry) => entry.catalog.id === catalogObj.id,
               );
-              
+
               if (!catalogEntry) {
                 catalogEntry = {
                   catalog: {
@@ -479,6 +479,60 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
     setCreateCompanyPopup(true);
   };
+  const handleAddUpperCabinets = async (
+    type: 'UpperCabinet' | 'DoubleDoorUpperCabinet',
+  ) => {
+    const scene = threeDView.scene as THREE.Scene;
+    const outline = scene.children.find((o) =>
+      o.name.startsWith('outline-'),
+    ) as THREE.Object3D | undefined;
+    let targetPlatform: THREE.Mesh | null = null;
+
+    if (outline) {
+      const outlineCenter = outline.position.clone();
+      scene.traverse((o) => {
+        if (
+          o instanceof THREE.Mesh &&
+          (o.name.startsWith('Counter_') ||
+            o.name === 'Back Counter' ||
+            o.name === 'Left Counter' ||
+            o.name === 'Right Counter')
+        ) {
+          const b = new THREE.Box3().setFromObject(o);
+          const c = new THREE.Vector3();
+          b.getCenter(c);
+          if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
+        }
+      });
+    }
+
+    if (!targetPlatform) {
+      const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
+      if (
+        hovered &&
+        (hovered.name.startsWith('Counter_') ||
+          hovered.name === 'Back Counter' ||
+          hovered.name === 'Left Counter' ||
+          hovered.name === 'Right Counter')
+      ) {
+        targetPlatform = hovered;
+      }
+    }
+
+    if (!targetPlatform) {
+      alert('Please select a platform/counter first.');
+      return;
+    }
+
+    const num = parseInt(quantityValue.toString(), 10);
+    if (!Number.isFinite(num) || num <= 0) return;
+
+    if (type === 'UpperCabinet') {
+      addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+    } else if (type === 'DoubleDoorUpperCabinet') {
+      addDoubleDoorUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+    }
+  };
   const onAddItems = async () => {
     setCreateCompanyPopup(false);
     const num = parseInt(quantityValue.toString(), 10);
@@ -571,6 +625,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         selectedCabinetItem,
         apiResponses,
       );
+    } else if (itemType === 'UpperCabinet') {
+      await handleAddUpperCabinets('UpperCabinet');
+    } else if (itemType === 'DoubleDoorUpperCabinet') {
+      await handleAddUpperCabinets('DoubleDoorUpperCabinet');
     }
 
     setCreateCompanyPopup(false);
@@ -795,100 +853,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     {
       option: 'Upper Cabinets',
       icon: double,
-      onClick: async () => {
-        const scene = threeDView.scene as THREE.Scene;
-        const outline = scene.children.find((o) =>
-          o.name.startsWith('outline-'),
-        ) as THREE.Object3D | undefined;
-        let targetPlatform: THREE.Mesh | null = null;
-        if (outline) {
-          const outlineCenter = outline.position.clone();
-          scene.traverse((o) => {
-            if (
-              o instanceof THREE.Mesh &&
-              (o.name.startsWith('Counter_') ||
-                o.name === 'Back Counter' ||
-                o.name === 'Left Counter' ||
-                o.name === 'Right Counter')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
-            }
-          });
-        }
-        if (!targetPlatform) {
-          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-          if (
-            hovered &&
-            (hovered.name.startsWith('Counter_') ||
-              hovered.name === 'Back Counter' ||
-              hovered.name === 'Left Counter' ||
-              hovered.name === 'Right Counter')
-          )
-            targetPlatform = hovered;
-        }
-        if (!targetPlatform) {
-          alert('Select a platform/counter first.');
-          return;
-        }
-        const input = prompt(
-          'How many upper cabinets to add above this platform?',
-        );
-        const num = parseInt((input || '').trim(), 10);
-        if (!Number.isFinite(num) || num <= 0) return;
-        addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      onClick: () => {
+        setSelectedCabinetItem({
+          id: 'upper-cabinet',
+          name: 'Upper Cabinets',
+          type: 'UpperCabinet',
+        });
+        setQuantityValue(1);
+        setCreateCompanyPopup(true);
       },
       isActive: false,
     },
     {
       option: 'Double Door Upper Cabinets',
       icon: single,
-      onClick: async () => {
-        const scene = threeDView.scene as THREE.Scene;
-        const outline = scene.children.find((o) =>
-          o.name.startsWith('outline-'),
-        ) as THREE.Object3D | undefined;
-        let targetPlatform: THREE.Mesh | null = null;
-        if (outline) {
-          const outlineCenter = outline.position.clone();
-          scene.traverse((o) => {
-            if (
-              o instanceof THREE.Mesh &&
-              (o.name.startsWith('Counter_') ||
-                o.name === 'Back Counter' ||
-                o.name === 'Left Counter' ||
-                o.name === 'Right Counter')
-            ) {
-              const b = new THREE.Box3().setFromObject(o);
-              const c = new THREE.Vector3();
-              b.getCenter(c);
-              if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
-            }
-          });
-        }
-        if (!targetPlatform) {
-          const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-          if (
-            hovered &&
-            (hovered.name.startsWith('Counter_') ||
-              hovered.name === 'Back Counter' ||
-              hovered.name === 'Left Counter' ||
-              hovered.name === 'Right Counter')
-          )
-            targetPlatform = hovered;
-        }
-        if (!targetPlatform) {
-          alert('Select a platform/counter first.');
-          return;
-        }
-        const input = prompt(
-          'How many double door upper cabinets to add above this platform?',
-        );
-        const num = parseInt((input || '').trim(), 10);
-        if (!Number.isFinite(num) || num <= 0) return;
-        addDoubleDoorUpperCabinetsAbovePlatform(scene, targetPlatform, num);
+      onClick: () => {
+        setSelectedCabinetItem({
+          id: 'double-door-upper-cabinet',
+          name: 'Double Door Upper Cabinets',
+          type: 'DoubleDoorUpperCabinet',
+        });
+        setQuantityValue(1);
+        setCreateCompanyPopup(true);
       },
       isActive: false,
     },
@@ -903,7 +889,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: false,
     },
   ];
-
   const handleAddObject = (name: string) => {
     dispatch(addObjectsThunk(name));
     setcatalogMenu(false);
