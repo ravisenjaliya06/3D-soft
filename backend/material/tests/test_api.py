@@ -107,7 +107,7 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             "position": "{'x': 10, 'y': 20, 'z': 30}",
         }
         response = self.client.post(
-            reverse("catalog-design-list", kwargs={"catalog_id": self.catalog.id}),
+            reverse("create-design-catalog", kwargs={"catalog_id": self.catalog.id}),
             data=data,
             format="json",
             headers=self.get_headers,
@@ -243,7 +243,7 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             "design": str(self.design.id),
         }
         response = self.client.post(
-            reverse("catalog-design-list", kwargs={"catalog_id": self.catalog.id}),
+            reverse("create-design-catalog", kwargs={"catalog_id": self.catalog.id}),
             data=data,
             format="json",
             headers=self.get_headers,
@@ -264,7 +264,7 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             "design": str(self.design.id),
         }
         response = self.client.post(
-            reverse("catalog-design-list", kwargs={"catalog_id": self.catalog.id}),
+            reverse("create-design-catalog", kwargs={"catalog_id": self.catalog.id}),
             data=data,
             format="json",
             headers=self.get_headers,
@@ -284,7 +284,7 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             "design": str(self.design.id),
         }
         response = self.client.post(
-            reverse("catalog-design-list"),
+            reverse("create-default-catalog"),
             data=data,
             format="json",
             headers=self.get_headers,

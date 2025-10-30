@@ -826,7 +826,9 @@ class CatalogRuleSerializer(serializers.ModelSerializer):
         model = CatalogRules
         fields = ["id", "name", "rule_parts"]
 
-    def create(self: "CatalogRuleSerializer") -> CatalogRules:
+    def create(
+        self: "CatalogRuleSerializer", _validated_data: Dict[str, Any]
+    ) -> CatalogRules:
         catalog = self.context["catalog"]
         old_rule = self.context["old_rule"]
         override_rule_data = self.context.get("override_rule_data", {})

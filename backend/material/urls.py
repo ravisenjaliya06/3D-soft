@@ -89,12 +89,12 @@ urlpatterns = [
     path(
         "catalog/<uuid:catalog_id>/design/",
         CatalogViewSet.as_view({"post": "create"}),
-        name="catalog-design-list",
+        name="create-design-catalog",
     ),
     path(
         "catalog/design/",
         CatalogViewSet.as_view({"post": "create"}),
-        name="catalog-design-list",
+        name="create-default-catalog",
     ),
     path(
         "catalog/design/<uuid:id>/",
