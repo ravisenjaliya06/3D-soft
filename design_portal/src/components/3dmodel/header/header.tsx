@@ -77,10 +77,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
     try {
       const response: { status: number } =
-        await commonService.deleteWithQueryParam(
-          'design',
-          `${designId}`,
-          `object/?is_custom=False`,
+        await commonService.delete(
+          'material',
+          `catalog/design/${designId}`,
         );
 
       if (response.status === 200 || response.status === 204) {

@@ -2369,6 +2369,7 @@ export const addDrawersOnInvisibleBox = async (
       apiResponse = await addItemtoDatabase(drawerPayload);
       drawerGroup.userData.objectId = apiResponse.id;
       store.dispatch(addObjects([apiResponse]));
+      
 
     } catch (err) {
       console.error('Error adding drawer item:', err);

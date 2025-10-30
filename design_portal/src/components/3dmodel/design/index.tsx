@@ -103,6 +103,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
+
   const [outline, setOutline] = useState<THREE.Object3D | null>(null);
   const [helperTools, setHelperTools] = useState<boolean>(false);
   const [toolPosition, setToolPosition] = useState<{ x: number; y: number }>({
@@ -872,6 +873,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
+  
   const handleObjectSelection = () => {
     removeExistingLines();
     if (design3D) {
@@ -1140,12 +1142,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       }
 
       const formData = new FormData();
-      formData.append('ids', selectedObject.userData.objectId);
+      formData.append('catalog_ids[]', selectedObject.userData.objectId);
 
       const response = (await commonService.deleteDesignObjectsData(
-        'design',
-        gettingDesignID(),
-        'object',
+          'material',
+          'catalog',
+          `design/${gettingDesignID()}`,
         formData,
       )) as ResponseStatus;
 
@@ -1283,8 +1285,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   };
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
-    if (event.key === 'Delete' && selectedObject) {
+    if (event.key === 'Delete') {
+      console.log(selectedObject, "selectedObject for delete");
       if (selectedObject?.userData.objectId) {
+        console.log("delete");
         deleteObject()
           .then(() => {
             removeObjectAndChildrenFromScene(selectedObject);

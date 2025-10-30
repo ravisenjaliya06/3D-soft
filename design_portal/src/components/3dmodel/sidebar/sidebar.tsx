@@ -81,6 +81,7 @@ const Sidebar: React.FC = () => {
     selectedObject = null;
   }
 
+  console.log('selectedObject', selectedObject);  
   const parentObject = selectedObject?.parent
     ? objects.find((obj) => obj.id === selectedObject.parent)
     : null;

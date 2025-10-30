@@ -271,7 +271,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   // Collect data for history
   const historyData: {
     objects: Object3D[];
-    meshes: THREE.Mesh[];
+    meshes: Object3D[];
     childObjects: Object3D[];
   } = {
     objects: [],
@@ -280,10 +280,10 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   };
 
   mainObjects.forEach((object) => {
-    const mesh = scene.children.find(
-      (child) =>
-        child.userData.objectId === object.id && child instanceof THREE.Mesh,
-    ) as THREE.Mesh | undefined;
+const mesh = scene.children.find(
+  (child) =>
+    child.userData.objectId === object.id && (child as unknown as Object3D)
+) as Object3D | undefined;
 
     if (mesh) {
       historyData.objects.push(object);
@@ -306,14 +306,14 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
         type: 'REMOVE',
         data: {
           objects: historyData.objects,
-          meshes: historyData.meshes,
+          meshes: historyData.meshes as any,
           childObjects: historyData.childObjects,
         },
       }),
     );
 
     historyData.meshes.forEach((mesh) => {
-      dispatch(removeElement(mesh));
+      dispatch(removeElement(mesh as any));
     });
 
     historyData.objects.forEach((object) => {
@@ -323,6 +323,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
       dispatch(removeObject(child.id));
     });
   }
+  
 };
 
 export const {
