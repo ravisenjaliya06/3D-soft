@@ -998,6 +998,7 @@ export async function createMeshRecursively(
     }
   }
 
+  store.dispatch(addObjects([data]));
   // --- STEP 3: Recursively create children ---
   if (Array.isArray(data.children) && data.children.length > 0) {
     for (const child of data.children) {

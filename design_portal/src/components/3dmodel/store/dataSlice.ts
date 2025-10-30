@@ -282,7 +282,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   mainObjects.forEach((object) => {
     const mesh = scene.children.find(
       (child) =>
-        child.userData.objectId === object.id && child instanceof THREE.Mesh,
+        child.userData.objectId === object.id && (child as unknown as Object3D),
     ) as THREE.Mesh | undefined;
 
     if (mesh) {

@@ -178,8 +178,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         : null);
 
     let platformData: any[] = [];
+    let platFormGroup;
     if (targetWall) {
-      platformData = await addPlatformOnWall(scene, targetWall, counterTexture);
+      const platform = await addPlatformOnWall(
+        scene,
+        targetWall,
+        counterTexture,
+      );
+      platformData = platform.addedMeshes;
+      platFormGroup = platform.platformGroup;
     }
     // Add platform data to API payload
     for (const pdata of platformData) {
@@ -199,6 +206,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         if (apiResponse) {
           dispatch(addObjects([apiResponse]));
           if (apiResponse.id) dispatch(setobjectSelected(apiResponse.id));
+          platFormGroup.userData.objectId = apiResponse.id;
         }
       } catch (e) {
         console.error('Platform API failed', e);
