@@ -794,9 +794,9 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
         self: "CatalogRulePartSerializer", validated_data: Dict[str, Any]
     ) -> CatalogRuleParts:
         old_part = self.context.get("old_part")
-        override_data = self.context.get("override_data", {})
+        override_data = {**validated_data, **self.context.get("override_data", {})}
         data = {
-            "name": old_part.name,
+            "name": override_data.get("name", old_part.name),
             "catalog_rule": self.context["catalog_rule"],
             "material": (
                 duplicate_material(old_part.material) if old_part.material else None
@@ -809,51 +809,48 @@ class CatalogRulePartSerializer(serializers.ModelSerializer):
             "handle_position": override_data.get(
                 "handle_position", old_part.handle_position
             ),
-            "additional_data": override_data.get("additional_data", {}),
+            "additional_data": override_data.get(
+                "additional_data", old_part.additional_data or {}
+            ),
         }
 
         return CatalogRuleParts.objects.create(**data)
 
 
 class CatalogRuleSerializer(serializers.ModelSerializer):
-    rule_parts = CatalogRulePartSerializer(many=True, required=False)
+    rule_parts = CatalogRulePartSerializer(
+        many=True, required=False, source="catalog_rule_parts"
+    )
 
     class Meta:
         model = CatalogRules
         fields = ["id", "name", "rule_parts"]
 
-    def get_rule_parts(self: "CatalogRuleSerializer", obj: CatalogRules) -> list[dict]:
-        return CatalogRulePartSerializer(obj.catalog_rule_parts.all(), many=True).data
-
     def create(
-        self: "CatalogRuleSerializer", validated_data: Dict[str, Any]
+        self: "CatalogRuleSerializer", _validated_data: Dict[str, Any]
     ) -> CatalogRules:
-        """Handles duplicating a single rule and all its parts."""
-        old_rule = self.context.get("old_rule")
         catalog = self.context["catalog"]
+        old_rule = self.context["old_rule"]
         override_rule_data = self.context.get("override_rule_data", {})
+        rule_parts_data = self.context.get("rule_parts_data", [])
 
-        # Create duplicate rule
-        new_rule = CatalogRules.objects.create(
+        catalog_rule = CatalogRules.objects.create(
             catalog=catalog,
-            name=old_rule.name,
+            name=override_rule_data.get("name", old_rule.name),
         )
 
-        override_parts = {
-            part["name"]: part for part in override_rule_data.get("rule_parts", [])
-        }
+        override_parts = {p["name"]: p for p in rule_parts_data}
+
         for old_part in old_rule.catalog_rule_parts.all():
-            part_override = (
-                override_parts.get(old_part.name, {}) if override_parts else {}
-            )
+            override_data = override_parts.get(old_part.name, {})
             part_context = {
+                "catalog_rule": catalog_rule,
                 "old_part": old_part,
-                "catalog_rule": new_rule,
-                "override_data": part_override,
+                "override_data": override_data,
             }
             CatalogRulePartSerializer(context=part_context).create({})
 
-        return new_rule
+        return catalog_rule
 
 
 class CatalogRuleReadSerializer(serializers.ModelSerializer):
@@ -935,13 +932,12 @@ class CatalogSerializer(serializers.ModelSerializer):
 
         override_rules = {rule["name"]: rule for rule in catalog_rules_data}
         for old_rule in original_catalog.catalog_rule.all():
-            override_rule_data = (
-                override_rules.get(old_rule.name, {}) if override_rules else {}
-            )
+            override_rule_data = override_rules.get(old_rule.name, {})
             rule_context = {
                 "catalog": catalog,
                 "old_rule": old_rule,
                 "override_rule_data": override_rule_data,
+                "rule_parts_data": override_rule_data.get("catalog_rule_parts", []),
             }
             CatalogRuleSerializer(context=rule_context).create({})
         return catalog
