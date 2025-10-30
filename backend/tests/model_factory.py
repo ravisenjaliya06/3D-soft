@@ -8,8 +8,21 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 
 # App imports
-from design.models import Catalog, CatalogItem, Design, DesignSetting, Material, Texture
-from material.models import Company
+from design.models import (
+    Catalog as DesignCatalog,
+    CatalogItem,
+    Design,
+    DesignSetting,
+    Material as DesignMaterial,
+    Texture,
+)
+from material.models import (
+    Catalog as MaterialCatalog,
+    CatalogRuleParts,
+    CatalogRules,
+    Company,
+    Material,
+)
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 
@@ -105,19 +118,19 @@ def new_texture(database: str, name: str, image: str) -> Texture:
     return Texture.objects.using(database).create(name=name, image=image)
 
 
-def new_material(database: str, name: str, texture: Texture) -> Material:
-    return Material.objects.using(database).create(name=name, texture=texture)
+def new_material(database: str, name: str, texture: Texture) -> DesignMaterial:
+    return DesignMaterial.objects.using(database).create(name=name, texture=texture)
 
 
 def new_catalog(
     database: str,
     name: str,
     design: Optional[Design] = None,
-    parent: Optional["Catalog"] = None,
+    parent: Optional["DesignCatalog"] = None,
     data: Optional[dict] = None,
     is_default: bool = False,
-) -> Catalog:
-    return Catalog.objects.using(database).create(
+) -> DesignCatalog:
+    return DesignCatalog.objects.using(database).create(
         name=name, design=design, parent=parent, data=data or {}, is_default=is_default
     )
 
@@ -125,9 +138,9 @@ def new_catalog(
 def new_catalog_item(
     database: str,
     name: str,
-    catalog: Catalog,
+    catalog: DesignCatalog,
     data: dict,
-    material: Optional[Material] = None,
+    material: Optional[DesignMaterial] = None,
 ) -> CatalogItem:
     return CatalogItem.objects.using(database).create(
         name=name, catalog=catalog, data=data, material=material
@@ -158,4 +171,59 @@ def new_company(
 ) -> Company:
     return Company.objects.using(database).create(
         name=name, material_type=material_type, organization=organization
+    )
+
+
+def new_material_for_material(
+    database: str, name: str, organization: Organization, company: Company, type: str
+) -> Material:
+    return Material.objects.using(database).create(
+        # name="Molding Copy",
+        name=name,
+        organization=organization,
+        company=company,
+        type=type,
+        is_deleted=False,
+    )
+
+
+def new_catalog_for_material(
+    database: str,
+    name: str,
+    organization: Organization,
+    type: str,
+    width: int = 101,
+    height: int = 200,
+    design: Optional[Design] = None,
+) -> MaterialCatalog:
+    return MaterialCatalog.objects.using(database).create(
+        type=type,
+        name=name,
+        organization=organization,
+        width=width,
+        height=height,
+        design=design,
+    )
+
+
+def new_catalog_rules(
+    database: str, name: str, catalog: MaterialCatalog
+) -> CatalogRules:
+    return CatalogRules.objects.using(database).create(name=name, catalog=catalog)
+
+
+def new_catalog_rule_parts(
+    database: str,
+    name: str,
+    catalog_rule: CatalogRules,
+    width: int = 100,
+    height: int = 200,
+    material: Optional[Material] = None,
+) -> CatalogRuleParts:
+    return CatalogRuleParts.objects.using(database).create(
+        name=name,
+        catalog_rule=catalog_rule,
+        width=width,
+        height=height,
+        material=material,
     )
