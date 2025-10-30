@@ -1285,9 +1285,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
-      console.log(selectedObject, 'selectedObject for delete');
       if (selectedObject?.userData.objectId) {
-        console.log('delete');
         deleteObject()
           .then(() => {
             removeObjectAndChildrenFromScene(selectedObject);

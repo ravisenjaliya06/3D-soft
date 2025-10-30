@@ -882,7 +882,6 @@ export async function createMeshRecursively(
   scene?: THREE.Scene,
 ): Promise<THREE.Mesh | null> {
   showFullScreenLoader('Loading design objects...');
-  store.dispatch(addObjects([data]));
   if (!data) return null;
 
   // --- STEP 1: Create main object ---
@@ -999,6 +998,7 @@ export async function createMeshRecursively(
     }
   }
 
+  store.dispatch(addObjects([data]));
   // --- STEP 3: Recursively create children ---
   if (Array.isArray(data.children) && data.children.length > 0) {
     for (const child of data.children) {
