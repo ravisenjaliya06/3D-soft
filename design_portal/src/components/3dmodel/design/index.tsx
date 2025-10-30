@@ -873,7 +873,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
-  
   const handleObjectSelection = () => {
     removeExistingLines();
     if (design3D) {
@@ -1145,9 +1144,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       formData.append('catalog_ids[]', selectedObject.userData.objectId);
 
       const response = (await commonService.deleteDesignObjectsData(
-          'material',
-          'catalog',
-          `design/${gettingDesignID()}`,
+        'material',
+        'catalog',
+        `design/${gettingDesignID()}`,
         formData,
       )) as ResponseStatus;
 
@@ -1286,9 +1285,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
-      console.log(selectedObject, "selectedObject for delete");
+      console.log(selectedObject, 'selectedObject for delete');
       if (selectedObject?.userData.objectId) {
-        console.log("delete");
+        console.log('delete');
         deleteObject()
           .then(() => {
             removeObjectAndChildrenFromScene(selectedObject);
