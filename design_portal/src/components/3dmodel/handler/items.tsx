@@ -882,6 +882,7 @@ export async function createMeshRecursively(
   scene?: THREE.Scene,
 ): Promise<THREE.Mesh | null> {
   showFullScreenLoader('Loading design objects...');
+  store.dispatch(addObjects([data]));
   if (!data) return null;
 
   // --- STEP 1: Create main object ---

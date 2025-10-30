@@ -1549,7 +1549,7 @@ export const addPlatformOnWall = async (
   store.dispatch(setSelectedChildObject(null));
   store.dispatch(setHoverdMesh(null));
   removeExistingLines();
-  return addedMeshes;
+  return { addedMeshes, platformGroup };
 };
 
 export const addVerticalPlanksToBox = async (
