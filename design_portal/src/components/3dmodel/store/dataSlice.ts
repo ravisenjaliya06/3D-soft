@@ -1,4 +1,3 @@
-// @ts-nocheck
 import Item from '@/components/3dmodel/handler/items';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
@@ -272,7 +271,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   // Collect data for history
   const historyData: {
     objects: Object3D[];
-    meshes: Object3D[];
+    meshes: THREE.Mesh[];
     childObjects: Object3D[];
   } = {
     objects: [],
@@ -284,7 +283,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
     const mesh = scene.children.find(
       (child) =>
         child.userData.objectId === object.id && (child as unknown as Object3D),
-    ) as Object3D | undefined;
+    ) as THREE.Mesh | undefined;
 
     if (mesh) {
       historyData.objects.push(object);
@@ -307,14 +306,14 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
         type: 'REMOVE',
         data: {
           objects: historyData.objects,
-          meshes: historyData.meshes as any,
+          meshes: historyData.meshes,
           childObjects: historyData.childObjects,
         },
       }),
     );
 
     historyData.meshes.forEach((mesh) => {
-      dispatch(removeElement(mesh as any));
+      dispatch(removeElement(mesh));
     });
 
     historyData.objects.forEach((object) => {
