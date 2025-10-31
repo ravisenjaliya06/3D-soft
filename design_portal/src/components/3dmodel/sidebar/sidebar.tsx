@@ -340,22 +340,22 @@ const Sidebar: React.FC = () => {
       }
     });
   };
-
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
+  
     if (!targetId) return;
     let doorMesh: any = null;
-    scene.traverse((node: any) => {
-      if (
-        !doorMesh &&
-        node &&
-        node.userData &&
-        node.userData.objectId === targetId
-      ) {
-        doorMesh = node;
+      scene.traverse((node: any) => {
+      if (!doorMesh && node.userData?.objectId === targetId) {
+        if (node.parent && node.parent.name.includes('DoorGroup')) {
+          doorMesh = node.parent;
+        } else {
+          doorMesh = node;
+        }
       }
     });
+
     if (!doorMesh) return;
     let handleMesh: any = null;
     doorMesh.traverse((child: any) => {
@@ -365,6 +365,10 @@ const Sidebar: React.FC = () => {
       }
     });
     if (!handleMesh) return;
+
+    const currentZ = handleMesh.position.z;
+    const doorPosition = doorMesh.position.clone();
+
     const box = new THREE.Box3().setFromObject(doorMesh);
     const min = box.min.clone();
     const max = box.max.clone();
@@ -373,23 +377,39 @@ const Sidebar: React.FC = () => {
       (min.y + max.y) / 2,
       (min.z + max.z) / 2,
     );
+    doorMesh.position.copy(doorPosition); 
+
+    const padding = 0.12;
+
     const pickX = (label: string) => {
-      if (label.endsWith('Left')) return min.x;
-      if (label.endsWith('Right')) return max.x;
+      if (label.endsWith('Left')) return min.x + padding;
+      if (label.endsWith('Right')) return max.x - padding;
       return mid.x;
     };
     const pickY = (label: string) => {
-      if (label.startsWith('Top')) return max.y;
-      if (label.startsWith('Bottom')) return min.y;
+      if (label.startsWith('Top')) return max.y - padding;
+      if (label.startsWith('Bottom')) return min.y + padding;
       return mid.y;
     };
-    const pickZ = () => max.z;
     const label = position as string;
-    const targetWorld = new THREE.Vector3(pickX(label), pickY(label), pickZ());
-    const outward = new THREE.Vector3(0, 0, 0);
-    targetWorld.add(outward);
+    const targetWorld = new THREE.Vector3(pickX(label), pickY(label), mid.z);
     const targetLocal = doorMesh.worldToLocal(targetWorld.clone());
-    handleMesh.position.copy(targetLocal);
+
+    // Only update X and Y original Z position
+    handleMesh.position.x = targetLocal.x;
+    handleMesh.position.y = targetLocal.y;
+    handleMesh.position.z = currentZ;
+
+    if (label.startsWith('Top') || label.startsWith('Bottom')) {
+      handleMesh.rotation.x = -(Math.PI / 2);
+      handleMesh.rotation.y = 0;
+      handleMesh.rotation.z = Math.PI / 2;
+    } else if (label.endsWith('Left') || label.endsWith('Right')) {
+      handleMesh.rotation.x = 0;
+      handleMesh.rotation.y = Math.PI / 2;
+      handleMesh.rotation.z = 0;
+    }
+
     if (handleMesh.updateMatrixWorld) handleMesh.updateMatrixWorld(true);
   };
 

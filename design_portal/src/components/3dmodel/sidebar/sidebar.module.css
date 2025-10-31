@@ -62,7 +62,19 @@
   font-family: var(--font-family);
   font-size: 0.7rem;
   color: var(--primary-color);
-  border: 0.01rem solid var(--border-color);
+  border-radius: 0.3rem;
+  border: 0.001rem solid var(--border-color);
+  cursor: pointer;
+  background-color: var(--primary-white);
+}
+.field_group_unitdiv select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+.field_group_unitdiv select option {
+  color: var(--primary-color);
+  background-color: var(--primary-white);
+  font-size: 0.7rem;
 }
 
 .sidebar_title p,
@@ -200,7 +212,7 @@
   border: 0.02rem solid var(--border-color);
   border-radius: 0.2rem;
   font-family: var(--font-family);
-  font-size: 0.67rem;
+  font-size: 0.58rem;
   padding-left: 0.3rem;
 }
 
@@ -576,7 +588,7 @@ input:checked + .slider:before {
 }
 .texture_list {
   position: absolute;
-  left: 5%;
+  left: 14%;
   z-index: 100;
   display: flex;
   flex-wrap: wrap;
@@ -589,7 +601,7 @@ input:checked + .slider:before {
   box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
   max-height: 6rem;
   overflow-y: auto;
-  width: 11.2rem;
+  max-width: 10.4rem;
 }
 
 .texture_item {
@@ -650,7 +662,7 @@ input:checked + .slider:before {
 .field_group_color_row {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 4.1rem;
 }
 
 .field_group_color_row p {

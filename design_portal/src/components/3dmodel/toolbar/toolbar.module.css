@@ -273,6 +273,9 @@
   align-items: space-between;
   justify-content: space-between;
 }
+.furnitureItemslist:hover {
+  background: var(--toolbarhover-color);
+}
 
 .toollistbox:hover {
   background: var(--toolbarhover-color);
@@ -379,7 +382,6 @@
   color: var(--primary-color);
   letter-spacing: 0.03rem;
   border: 0.063rem solid var(--text-gray);
-  cursor: not-allowed;
 
   &:focus {
     outline: 0;
@@ -964,7 +966,6 @@
   margin-top: 0.5rem;
   width: 1rem;
   height: 1rem;
-  pointer-events: none;
 }
 
 .searchInput {
