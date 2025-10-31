@@ -1964,6 +1964,7 @@ export const addDoorOnInvisibleBox = async (
   face.userData.objectId = apiResponse.id;
   face.userData.type = apiResponse.type;
   face.userData.apiData = apiResponse;
+  doorGroup.userData.openDirection = 'right';
   doorGroup.attach(face);
 
   // Update store with dimensions in mm
@@ -2029,7 +2030,7 @@ export const addDoorOnInvisibleBox = async (
       handle.rotation.set(0, Math.PI / 2, 0);
     }
 
-    handle.name = `Handle_for_${boxMesh.name}`;
+    handle.name = `DoorHandle_for_${boxMesh.name}`;
     parent.add(handle);
     handle.position.copy(parent.worldToLocal(worldHandlePos));
     doorGroup.attach(handle);
