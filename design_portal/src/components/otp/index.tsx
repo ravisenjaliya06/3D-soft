@@ -64,12 +64,7 @@ const Otp = () => {
       email: email as string,
     };
 
-    await handleResendOtp(
-      resendPayload,
-      setError,
-      setIsLoading,
-      setSuccessMessage,
-    );
+    await handleResendOtp(resendPayload, setError, setIsLoading, setSuccessMessage);
 
     setTimer(120);
     setOtp(new Array(otpLength).fill(''));
@@ -99,8 +94,8 @@ const Otp = () => {
           </div>
           <h2>Verification</h2>
           <p>
-            Please enter the 6-digit code sent to your registered email{' '}
-            <a>{email}</a> for verification.
+            Please enter the 6-digit code sent to your registered email <a>{email}</a> for
+            verification.
           </p>
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.otpContainer}>
@@ -127,18 +122,12 @@ const Otp = () => {
               {success && <p className={styles.otpSuccessMessage}>{success}</p>}
             </div>
             <div className={styles.buttonContainer}>
-              <button
-                className={styles.otpButton}
-                onClick={handleOTPVerify}
-                disabled={isLoading}
-              >
+              <button className={styles.otpButton} onClick={handleOTPVerify} disabled={isLoading}>
                 CONTINUE
               </button>
             </div>
           </form>
-          <div className={styles.resendText}>
-            If you didn&apos;t receive a code!
-          </div>
+          <div className={styles.resendText}>If you didn&apos;t receive a code!</div>
           <button
             disabled={setResend}
             className={setResend ? styles.disabledButton : styles.resendButton}

@@ -35,11 +35,7 @@ const measurementSlice = createSlice({
   },
 });
 
-export const {
-  toggleMeasurementTool,
-  setMeasurementActive,
-  setUnitType,
-  setLastMeasurement,
-} = measurementSlice.actions;
+export const { toggleMeasurementTool, setMeasurementActive, setUnitType, setLastMeasurement } =
+  measurementSlice.actions;
 
 export default measurementSlice.reducer;

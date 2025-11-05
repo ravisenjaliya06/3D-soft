@@ -22,8 +22,7 @@ const Register = () => {
 
   // UI States
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
   // error popup
   const [nameError, setNameError] = useState<string | null>(null);
@@ -31,16 +30,13 @@ const Register = () => {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<
-    string | null
-  >(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [termsError, setTermsError] = useState<string | null>(null);
 
   // Password Toggle Handlers
   const handleClickShowPassword = () => setShowPassword(!showPassword);
 
-  const handleClickShowConfirmPassword = () =>
-    setShowConfirmPassword(!showConfirmPassword);
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
 
   const handleSignInWrapper = async () => {
     setNameError(null);
@@ -76,7 +72,7 @@ const Register = () => {
       setUsernameError,
       setPhoneError,
       setPasswordError,
-      setConfirmPasswordError,
+      setConfirmPasswordError
     );
   };
 
@@ -105,8 +101,7 @@ const Register = () => {
       type: 'text',
       smallField: true,
       placeholder: 'Enter username',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setUsername(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: usernameError,
     },
     {
@@ -125,8 +120,7 @@ const Register = () => {
       type: 'password',
       placeholder: 'Enter password',
       showPassword,
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setPassword(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
       onClickShowPassword: handleClickShowPassword,
       error: passwordError,
     },
@@ -135,8 +129,7 @@ const Register = () => {
       type: 'password',
       placeholder: 'Enter confirm password',
       showPassword: showConfirmPassword,
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setConfirmPassword(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value),
       onClickShowPassword: handleClickShowConfirmPassword,
       error: confirmPasswordError,
     },
@@ -160,36 +153,21 @@ const Register = () => {
           </div>
           <div className={styles.right_side}>
             <h2>Sign up</h2>
-            <p>
-              Let&apos;s get you all set up so you can access your personal
-              account.
-            </p>
+            <p>Let&apos;s get you all set up so you can access your personal account.</p>
             <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
               <div className={styles.inputGroup1}>
                 {firstfieldsgroup.map((field, index) => (
-                  <InputField
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
+                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               <div className={styles.inputGroup1}>
                 {secondfieldsgroup.map((field, index) => (
-                  <InputField
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
+                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               <div className={styles.inputGroup}>
                 {thirdfieldsgroup.map((field, index) => (
-                  <InputField
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
+                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               {error && <p className={styles.registererrorMessage}>{error}</p>}
@@ -205,9 +183,7 @@ const Register = () => {
                   I agree to all the <a>Terms</a> and <a>Privacy Policies</a>
                 </label>
               </div>
-              {termsError && (
-                <p className={styles.registererrorMessage}>{termsError}</p>
-              )}
+              {termsError && <p className={styles.registererrorMessage}>{termsError}</p>}
               <div className={styles.buttonContainer}>
                 <button
                   className={styles.registerButton}

@@ -20,11 +20,7 @@ const InputField = ({
   return (
     <div className={styles.main}>
       {type === 'select' ? (
-        <select
-          className={styles.selectfielddata}
-          onChange={onChange}
-          {...props}
-        >
+        <select className={styles.selectfielddata} onChange={onChange} {...props}>
           <option value="" disabled selected hidden>
             Select {label}
           </option>
@@ -83,8 +79,7 @@ const InputField = ({
                   border: `0.063rem solid ${borderColor} !important`,
                 },
                 '&.Mui-focused fieldset': {
-                  border:
-                    '0.063rem solid var(--primary-color-grey-2) !important',
+                  border: '0.063rem solid var(--primary-color-grey-2) !important',
                 },
                 '&.Mui-error fieldset': {
                   border: '0.063rem solid red !important',
@@ -105,12 +100,11 @@ const InputField = ({
                 transform: 'translate(1rem, 0.6rem)',
                 transition: 'all 0.2s ease-out',
               },
-              '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled':
-                {
-                  fontSize: '0.9rem',
-                  color: error ? 'red' : 'var(--text-gray)',
-                  transform: 'translate(0.6rem, -0.45rem) scale(0.7)',
-                },
+              '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
+                fontSize: '0.9rem',
+                color: error ? 'red' : 'var(--text-gray)',
+                transform: 'translate(0.6rem, -0.45rem) scale(0.7)',
+              },
               '& .MuiInputBase-root': {
                 width:
                   minField === true

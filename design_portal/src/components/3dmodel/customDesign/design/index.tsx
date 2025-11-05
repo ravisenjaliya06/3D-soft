@@ -3,10 +3,7 @@ import { setCustomScene } from '@/components/3dmodel/store/customDesignSlice';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
-import {
-  createObject,
-  loadObjectsFromDatabase,
-} from '../handler/objectCreator';
+import { createObject, loadObjectsFromDatabase } from '../handler/objectCreator';
 import { customDesignProps, GeometryData, ThreeDView } from '../interface';
 import HelperTools from './helperTool/helperTool';
 import { cleanupThreeDView, init3DDesign } from './scene';
@@ -20,9 +17,7 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
     x: 0,
     y: 0,
   });
-  const selectedShapeId = useAppSelector(
-    (state) => state.customDesign.selectedShapeId,
-  );
+  const selectedShapeId = useAppSelector((state) => state.customDesign.selectedShapeId);
   const shapes = useAppSelector((state) => state.customDesign.shapes);
   const scene = useAppSelector((state) => state.customDesign.sceneState.scene);
   const prevShapesRef = useRef(shapes); // Store previous shapes to detect changes
@@ -44,12 +39,7 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
           camera:
             threeDView.camera instanceof THREE.PerspectiveCamera
               ? threeDView.camera
-              : new THREE.PerspectiveCamera(
-                  75,
-                  window.innerWidth / window.innerHeight,
-                  0.1,
-                  1000,
-                ),
+              : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
           renderer: threeDView.renderer,
           movableObjects: [],
           controls: threeDView.controls,
@@ -92,8 +82,7 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
       (child) =>
         child.userData.objectId === selectedShapeId &&
         (child instanceof THREE.Mesh ||
-          (child instanceof THREE.Group &&
-            child.children.some((c) => c instanceof THREE.Mesh))),
+          (child instanceof THREE.Group && child.children.some((c) => c instanceof THREE.Mesh)))
     ) as THREE.Mesh | THREE.Group | undefined;
 
     if (!mesh) return;
@@ -101,9 +90,7 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
     // Get the actual mesh if we found a group
     const actualMesh =
       mesh instanceof THREE.Group
-        ? (mesh.children.find(
-            (child) => child instanceof THREE.Mesh,
-          ) as THREE.Mesh)
+        ? (mesh.children.find((child) => child instanceof THREE.Mesh) as THREE.Mesh)
         : (mesh as THREE.Mesh);
 
     if (!actualMesh) return;
@@ -112,22 +99,18 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
     actualMesh.position.set(
       selectedShape.position.x,
       selectedShape.position.y,
-      selectedShape.position.z,
+      selectedShape.position.z
     );
 
     // Update rotation
     actualMesh.rotation.set(
       selectedShape.rotation.x,
       selectedShape.rotation.y,
-      selectedShape.rotation.z,
+      selectedShape.rotation.z
     );
 
     // Update scale
-    actualMesh.scale.set(
-      selectedShape.scale.x,
-      selectedShape.scale.y,
-      selectedShape.scale.z,
-    );
+    actualMesh.scale.set(selectedShape.scale.x, selectedShape.scale.y, selectedShape.scale.z);
 
     // Check if dimensions have changed
     const prevShapes = prevShapesRef.current;
@@ -151,19 +134,14 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
 
         dimensions: selectedShape.properties.dimensions || {},
         color: selectedShape.properties.color || 0x808080,
-        material:
-          actualMesh.material instanceof THREE.Material
-            ? actualMesh.material
-            : undefined,
+        material: actualMesh.material instanceof THREE.Material ? actualMesh.material : undefined,
       };
 
       // Create new geometry
       const newMesh = createObject(geometryData);
       if (newMesh instanceof THREE.Group) {
         const newGeometry = (
-          newMesh.children.find(
-            (child) => child instanceof THREE.Mesh,
-          ) as THREE.Mesh
+          newMesh.children.find((child) => child instanceof THREE.Mesh) as THREE.Mesh
         )?.geometry;
         if (newGeometry) {
           // Dispose of old geometry and update mesh
@@ -191,8 +169,7 @@ const Design: React.FC<customDesignProps> = ({ setDesign3D }) => {
       return (
         child.userData.objectId === selectedShapeId &&
         (child instanceof THREE.Mesh ||
-          (child instanceof THREE.Group &&
-            child.children.some((c) => c instanceof THREE.Mesh)))
+          (child instanceof THREE.Group && child.children.some((c) => c instanceof THREE.Mesh)))
       );
     });
 

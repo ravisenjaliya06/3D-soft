@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import type { ContextMenu, MaterialContextMenu, MaterialState } from '../types';
 
-const initialState: Omit<
-  MaterialState,
-  'companyMaterials' | 'materialCategories' | 'error'
-> = {
+const initialState: Omit<MaterialState, 'companyMaterials' | 'materialCategories' | 'error'> = {
   expandedCategory: 'banding',
   selectedType: null,
   selectedSubItem: null,

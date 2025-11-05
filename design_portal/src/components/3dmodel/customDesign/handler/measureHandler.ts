@@ -1,14 +1,11 @@
 import * as THREE from 'three';
-import {
-  CSS2DObject,
-  CSS2DRenderer,
-} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { MeasureHandler } from '../interface';
 
 export function createMeasureHandler(
   scene: THREE.Scene,
   camera: THREE.Camera,
-  renderer: THREE.WebGLRenderer,
+  renderer: THREE.WebGLRenderer
 ): MeasureHandler {
   let isMeasuring = false;
   let firstPoint: THREE.Vector3 | null = null;
@@ -62,11 +59,7 @@ export function createMeasureHandler(
     return group;
   }
 
-  function createArrow(
-    base: THREE.Vector3,
-    tip: THREE.Vector3,
-    pointsToBase: boolean,
-  ): THREE.Line {
+  function createArrow(base: THREE.Vector3, tip: THREE.Vector3, pointsToBase: boolean): THREE.Line {
     const direction = new THREE.Vector3().subVectors(tip, base).normalize();
 
     const arrowLength = 0.04;
@@ -76,57 +69,37 @@ export function createMeasureHandler(
     if (pointsToBase) {
       points.push(base.clone());
 
-      const perpendicular = new THREE.Vector3(
-        -direction.y,
-        direction.x,
-        direction.z,
-      ).normalize();
+      const perpendicular = new THREE.Vector3(-direction.y, direction.x, direction.z).normalize();
 
       const leftWing = new THREE.Vector3().addVectors(
         base,
-        new THREE.Vector3().addScaledVector(direction, arrowLength),
+        new THREE.Vector3().addScaledVector(direction, arrowLength)
       );
-      leftWing.addScaledVector(
-        perpendicular,
-        arrowLength * Math.sin(arrowAngle),
-      );
+      leftWing.addScaledVector(perpendicular, arrowLength * Math.sin(arrowAngle));
       points.push(leftWing);
       points.push(base.clone());
       const rightWing = new THREE.Vector3().addVectors(
         base,
-        new THREE.Vector3().addScaledVector(direction, arrowLength),
+        new THREE.Vector3().addScaledVector(direction, arrowLength)
       );
-      rightWing.addScaledVector(
-        perpendicular,
-        -arrowLength * Math.sin(arrowAngle),
-      );
+      rightWing.addScaledVector(perpendicular, -arrowLength * Math.sin(arrowAngle));
       points.push(rightWing);
     } else {
       const arrowTip = tip.clone();
       points.push(arrowTip);
-      const perpendicular = new THREE.Vector3(
-        -direction.y,
-        direction.x,
-        direction.z,
-      ).normalize();
+      const perpendicular = new THREE.Vector3(-direction.y, direction.x, direction.z).normalize();
       const leftWing = new THREE.Vector3().addVectors(
         arrowTip,
-        new THREE.Vector3().addScaledVector(direction, -arrowLength),
+        new THREE.Vector3().addScaledVector(direction, -arrowLength)
       );
-      leftWing.addScaledVector(
-        perpendicular,
-        arrowLength * Math.sin(arrowAngle),
-      );
+      leftWing.addScaledVector(perpendicular, arrowLength * Math.sin(arrowAngle));
       points.push(leftWing);
       points.push(arrowTip);
       const rightWing = new THREE.Vector3().addVectors(
         arrowTip,
-        new THREE.Vector3().addScaledVector(direction, -arrowLength),
+        new THREE.Vector3().addScaledVector(direction, -arrowLength)
       );
-      rightWing.addScaledVector(
-        perpendicular,
-        -arrowLength * Math.sin(arrowAngle),
-      );
+      rightWing.addScaledVector(perpendicular, -arrowLength * Math.sin(arrowAngle));
       points.push(rightWing);
     }
 
@@ -139,10 +112,7 @@ export function createMeasureHandler(
     return new THREE.Line(arrowGeometry, arrowMaterial);
   }
 
-  function createDistanceLabel(
-    start: THREE.Vector3,
-    end: THREE.Vector3,
-  ): CSS2DObject {
+  function createDistanceLabel(start: THREE.Vector3, end: THREE.Vector3): CSS2DObject {
     const distance = start.distanceTo(end) * 1000;
 
     const labelDiv = document.createElement('div');
@@ -291,9 +261,7 @@ export function createMeasureHandler(
                   v2.applyMatrix4(object.matrixWorld);
 
                   // Add midpoint
-                  const midpoint = new THREE.Vector3()
-                    .addVectors(v1, v2)
-                    .multiplyScalar(0.5);
+                  const midpoint = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
 
                   // Check for duplicates
                   let isDuplicate = false;
@@ -425,9 +393,7 @@ export function createMeasureHandler(
       scene.add(currentLine);
       scene.add(currentLabel);
 
-      const lineDirection = new THREE.Vector3()
-        .subVectors(secondPoint, firstPoint)
-        .normalize();
+      const lineDirection = new THREE.Vector3().subVectors(secondPoint, firstPoint).normalize();
       const perpendicularUp = new THREE.Vector3(0, 1, 0);
       const offset = new THREE.Vector3()
         .crossVectors(lineDirection, perpendicularUp)
@@ -457,9 +423,7 @@ export function createMeasureHandler(
     tempLabel = createDistanceLabel(firstPoint, intersect);
     scene.add(tempLine);
     scene.add(tempLabel);
-    const lineDirection = new THREE.Vector3()
-      .subVectors(intersect, firstPoint)
-      .normalize();
+    const lineDirection = new THREE.Vector3().subVectors(intersect, firstPoint).normalize();
     const perpendicularUp = new THREE.Vector3(0, 1, 0);
     const offset = new THREE.Vector3()
       .crossVectors(lineDirection, perpendicularUp)
@@ -528,9 +492,7 @@ export function createMeasureHandler(
     removeMeasurement();
     firstPoint = null;
 
-    const startMarker = scene.children.find(
-      (obj) => obj.name === 'measure_start_marker',
-    );
+    const startMarker = scene.children.find((obj) => obj.name === 'measure_start_marker');
     if (startMarker) {
       scene.remove(startMarker);
       if (startMarker instanceof THREE.Mesh) {
@@ -564,11 +526,7 @@ export function createMeasureHandler(
     renderer.domElement.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('keydown', onKeyDown);
     document.body.style.cursor = 'default';
-    if (
-      css2DRenderer &&
-      css2DRenderer.domElement &&
-      css2DRenderer.domElement.parentNode
-    ) {
+    if (css2DRenderer && css2DRenderer.domElement && css2DRenderer.domElement.parentNode) {
       css2DRenderer.domElement.parentNode.removeChild(css2DRenderer.domElement);
       css2DRenderer = null;
     }

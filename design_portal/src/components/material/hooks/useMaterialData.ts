@@ -6,23 +6,17 @@ import { mapMaterial } from '../utils/materialMapper';
 
 export const useMaterialData = () => {
   const [companyMaterials, setCompanyMaterials] = useState<TableRow[]>([]);
-  const [materialCategories, setMaterialCategories] = useState<MaterialItem[]>(
-    STATIC_MATERIAL_TYPES,
-  );
+  const [materialCategories, setMaterialCategories] =
+    useState<MaterialItem[]>(STATIC_MATERIAL_TYPES);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const response: MaterialResponse = await commonService.get(
-        'material',
-        'company',
-      );
+      const response: MaterialResponse = await commonService.get('material', 'company');
       if (response.status === 200) {
         const companies: TableRow[] = response.data;
         const updatedCategories = STATIC_MATERIAL_TYPES.map((category) => {
-          const matchingCompanies = companies.filter(
-            (c) => c.material_type === category.name,
-          );
+          const matchingCompanies = companies.filter((c) => c.material_type === category.name);
           return {
             ...category,
             subItems: matchingCompanies.map((c) => ({
@@ -45,13 +39,11 @@ export const useMaterialData = () => {
         'material',
         '',
         'type',
-        type,
+        type
       );
 
       if (response.status === 200) {
-        const materials: TableRow[] = response.data.map((m) =>
-          mapMaterial(m, type),
-        );
+        const materials: TableRow[] = response.data.map((m) => mapMaterial(m, type));
         setCompanyMaterials(materials);
       }
     } catch (error) {
@@ -64,7 +56,7 @@ export const useMaterialData = () => {
     try {
       const response: MaterialResponse = await commonService.get(
         `material`,
-        `company/${companyId}/material`,
+        `company/${companyId}/material`
       );
 
       if (response.status === 200) {
@@ -89,11 +81,7 @@ export const useMaterialData = () => {
           name: companyName,
           material_type: selectedType || '',
         };
-        const response = await commonService.post(
-          'material',
-          'company',
-          payload,
-        );
+        const response = await commonService.post('material', 'company', payload);
         if (response.status === 201 || response.status === 200) {
           setError(null);
           await fetchCompanies();
@@ -108,7 +96,7 @@ export const useMaterialData = () => {
         return false;
       }
     },
-    [fetchCompanies],
+    [fetchCompanies]
   );
 
   return {

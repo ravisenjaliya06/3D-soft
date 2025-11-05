@@ -70,9 +70,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
   React.useEffect(() => {
     if (design3D && !isInitialized) {
       const savedState = loadImageState();
-      const existingImages = design3D.scene.children.filter(
-        (child) => child.userData.isImage,
-      );
+      const existingImages = design3D.scene.children.filter((child) => child.userData.isImage);
 
       // Sort by timestamp if available, otherwise use the last one
       const latestImage = existingImages.sort((a, b) => {
@@ -90,8 +88,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
         // Always use saved state if available
         if (savedState && savedState.id === latestImage.uuid) {
           // Restore position from saved state or image data
-          const position = savedState.position ||
-            imageData.position || { x: 0, y: 0, z: 0 };
+          const position = savedState.position || imageData.position || { x: 0, y: 0, z: 0 };
           latestImage.position.set(position.x, position.y, position.z);
 
           // Restore rotation from saved state or image data
@@ -103,30 +100,19 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
           latestImage.rotation.set(rotation.x, rotation.y, rotation.z);
 
           // Restore scale from saved state or image data
-          const scale = savedState.scale ||
-            imageData.scale || { x: 1, y: 1, z: 1 };
+          const scale = savedState.scale || imageData.scale || { x: 1, y: 1, z: 1 };
           latestImage.scale.set(scale.x, scale.y, scale.z);
 
           // Restore dimensions
           const finalDimensions = {
             width: dimensions.width || savedState.dimensions?.width || 0,
             height: dimensions.height || savedState.dimensions?.height || 0,
-            sizeMultiplier:
-              dimensions.sizeMultiplier ||
-              savedState.dimensions?.sizeMultiplier ||
-              1,
-            maxDimension:
-              dimensions.maxDimension ||
-              savedState.dimensions?.maxDimension ||
-              100,
+            sizeMultiplier: dimensions.sizeMultiplier || savedState.dimensions?.sizeMultiplier || 1,
+            maxDimension: dimensions.maxDimension || savedState.dimensions?.maxDimension || 100,
             imageSize: dimensions.imageSize ||
               savedState.dimensions?.imageSize || { width: 0, height: 0 },
-            aspectRatio:
-              imageData.aspectRatio || savedState.dimensions?.aspectRatio || 1,
-            fileName:
-              imageData.fileName ||
-              savedState.dimensions?.fileName ||
-              'image.png',
+            aspectRatio: imageData.aspectRatio || savedState.dimensions?.aspectRatio || 1,
+            fileName: imageData.fileName || savedState.dimensions?.fileName || 'image.png',
           };
 
           // Update the image's dimensions
@@ -139,10 +125,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
 
           // Restore metadata
           const finalMetadata = {
-            timestamp:
-              metadata.timestamp ||
-              savedState.metadata?.timestamp ||
-              Date.now(),
+            timestamp: metadata.timestamp || savedState.metadata?.timestamp || Date.now(),
             persistDuringTransform:
               metadata.persistDuringTransform ||
               savedState.metadata?.persistDuringTransform ||
@@ -189,12 +172,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
         camera:
           design3D.camera instanceof THREE.PerspectiveCamera
             ? design3D.camera
-            : new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000,
-              ),
+            : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
         renderer: design3D.renderer,
         movableObjects: [],
         gridBounds: {
@@ -291,9 +269,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
     setSize(newSize);
   };
 
-  const handleMaxDimensionChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleMaxDimensionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newMaxDimension = parseInt(event.target.value);
     setMaxDimension(newMaxDimension);
   };
@@ -373,7 +349,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
         design3D.camera,
         imageData,
         moveHandlerRef.current,
-        store.dispatch,
+        store.dispatch
       );
 
       if (imageMesh) {
@@ -442,10 +418,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
             setTimeout(() => {
               if (design3D.activeTools) {
                 // Disable eraser if it was active
-                if (
-                  design3D.activeTools.eraser &&
-                  design3D.activeTools.eraser.isActive
-                ) {
+                if (design3D.activeTools.eraser && design3D.activeTools.eraser.isActive) {
                   design3D.activeTools.eraser.isActive = false;
                 }
 
@@ -459,8 +432,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
 
               const onObjectChange = () => {
                 if (imageMesh && imageMesh.material) {
-                  const material =
-                    imageMesh.material as THREE.MeshBasicMaterial;
+                  const material = imageMesh.material as THREE.MeshBasicMaterial;
                   if (material.map) {
                     material.map.needsUpdate = true;
                     material.needsUpdate = true;
@@ -489,10 +461,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
                 saveImageState(imageMesh);
               };
 
-              design3D.transformControls.addEventListener(
-                'objectChange',
-                onObjectChange,
-              );
+              design3D.transformControls.addEventListener('objectChange', onObjectChange);
 
               if (previewUrl) {
                 imageMesh.userData.originalImageUrl = previewUrl;
@@ -561,7 +530,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
                     });
                   } else {
                     console.warn(
-                      'Could not find shape data for image, undo/redo may not work properly',
+                      'Could not find shape data for image, undo/redo may not work properly'
                     );
                   }
                 } catch (e) {
@@ -569,21 +538,14 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
                 }
               }
 
-              if (
-                design3D &&
-                design3D.activeTools &&
-                design3D.activeTools.eraser
-              ) {
+              if (design3D && design3D.activeTools && design3D.activeTools.eraser) {
                 try {
                   design3D.activeTools.eraser.isActive = false;
                   if (design3D.activeTools.select) {
                     design3D.activeTools.select.isActive = true;
                   }
                 } catch (toolError) {
-                  console.warn(
-                    'Could not directly modify tool state:',
-                    toolError,
-                  );
+                  console.warn('Could not directly modify tool state:', toolError);
                 }
               }
             }, 100);
@@ -615,12 +577,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
       <div className={styles.importDialogContainer}>
         <div className={styles.importDialogHeader}>
           <h3>Import Image</h3>
-          <img
-            src={closeIcon.src}
-            alt="Close"
-            className={styles.closeIcon}
-            onClick={onClose}
-          />
+          <img src={closeIcon.src} alt="Close" className={styles.closeIcon} onClick={onClose} />
         </div>
 
         <div className={styles.importDialogContent}>
@@ -632,33 +589,22 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
               accept="image/*"
               style={{ display: 'none' }}
             />
-            <button
-              className={styles.selectFileButton}
-              onClick={handleSelectFile}
-            >
+            <button className={styles.selectFileButton} onClick={handleSelectFile}>
               Select Image File
             </button>
-            {selectedFile && (
-              <div className={styles.selectedFileName}>{selectedFile.name}</div>
-            )}
+            {selectedFile && <div className={styles.selectedFileName}>{selectedFile.name}</div>}
           </div>
 
           {previewUrl && (
             <div className={styles.previewContainer}>
               <h3>Preview:</h3>
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className={styles.imagePreview}
-              />
+              <img src={previewUrl} alt="Preview" className={styles.imagePreview} />
               <div className={styles.previewSize}>
                 <p>
-                  Preview Size: {previewSize.width.toFixed(1)} x{' '}
-                  {previewSize.height.toFixed(1)} cm
+                  Preview Size: {previewSize.width.toFixed(1)} x {previewSize.height.toFixed(1)} cm
                   <br />
                   <small>
-                    Original: {imageSize.width.toFixed(1)} x{' '}
-                    {imageSize.height.toFixed(1)} cm
+                    Original: {imageSize.width.toFixed(1)} x {imageSize.height.toFixed(1)} cm
                   </small>
                 </p>
               </div>

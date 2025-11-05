@@ -10,11 +10,7 @@ interface MaterialSidebarProps {
   onCategoryClick: (categoryId: string, name: string) => void;
   onToggleCategory: (categoryId: string) => void;
   onSubItemClick: (itemId: string) => void;
-  onContextMenu: (
-    e: React.MouseEvent,
-    categoryId: string,
-    name: string,
-  ) => void;
+  onContextMenu: (e: React.MouseEvent, categoryId: string, name: string) => void;
   onMaterialContextMenu: (e: React.MouseEvent, companyId: string) => void;
 }
 

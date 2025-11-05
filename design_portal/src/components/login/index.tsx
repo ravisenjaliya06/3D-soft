@@ -38,10 +38,7 @@ const Login = () => {
       password,
     };
 
-    const { formData, errors } = handleFormData<LoginForm>(
-      loginPayload,
-      setError,
-    );
+    const { formData, errors } = handleFormData<LoginForm>(loginPayload, setError);
 
     setEmailError(errors.email);
     setPasswordError(errors.password);
@@ -85,8 +82,7 @@ const Login = () => {
       type: 'password',
       placeholder: 'Enter your password',
       showPassword,
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setPassword(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
       onClickShowPassword: handleClickShowPassword,
       error: passwordError,
     },
@@ -130,17 +126,11 @@ const Login = () => {
                 />
               ))}
             </div>
-            {loginerror && (
-              <p className={styles.loginerrorMessage}>{loginerror}</p>
-            )}
+            {loginerror && <p className={styles.loginerrorMessage}>{loginerror}</p>}
             {error && <p className={styles.errorMessage}>{error}</p>}
             <div className={styles.forgotContainer}>
               <div className={styles.remembermeContainer}>
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  className={styles.rememberMeCheckbox}
-                />
+                <input type="checkbox" id="rememberMe" className={styles.rememberMeCheckbox} />
                 <label htmlFor="rememberMe">Remember me</label>
               </div>
               <div className={styles.forgotPasswordContainer}>
@@ -154,11 +144,7 @@ const Login = () => {
               </div>
             </div>
             <div className={styles.buttonContainer}>
-              <button
-                className={styles.loginButton}
-                onClick={handleLogin}
-                disabled={isLoading}
-              >
+              <button className={styles.loginButton} onClick={handleLogin} disabled={isLoading}>
                 Login
               </button>
             </div>
@@ -166,9 +152,7 @@ const Login = () => {
               <div className={styles.registerLinkContainer}>
                 <p>
                   Don&apos;t have an account?{' '}
-                  <span onClick={() => router.push(REDIRECT.REGISTER)}>
-                    Sign up
-                  </span>
+                  <span onClick={() => router.push(REDIRECT.REGISTER)}>Sign up</span>
                 </p>
               </div>
             </div>

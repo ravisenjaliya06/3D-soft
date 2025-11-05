@@ -59,17 +59,11 @@ const Sidebar: React.FC = () => {
   ];
 
   const dispatch = useDispatch();
-  const selectedObjectId = useSelector(
-    (state: RootState) => state.data.selectedObject,
-  );
-  const selectedChildObjectId = useSelector(
-    (state: RootState) => state.data.selectedChildObject,
-  );
+  const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
+  const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
-  const isQuickHideActive = useSelector(
-    (state: RootState) => state.data.isQuickHideActive,
-  );
+  const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
   const isDisabled = isQuickHideActive;
 
   let selectedObject: Object3D | null | undefined;
@@ -84,10 +78,8 @@ const Sidebar: React.FC = () => {
   const parentObject = selectedObject?.parent
     ? objects.find((obj) => obj.id === selectedObject.parent)
     : null;
-  const isHorizontalPlank =
-    selectedObject?.name?.includes(itemType.HORIZONTAL_PLANK) ?? false;
-  const isVerticalPlank =
-    selectedObject?.name?.includes(itemType.VERTICAL_PLANK) ?? false;
+  const isHorizontalPlank = selectedObject?.name?.includes(itemType.HORIZONTAL_PLANK) ?? false;
+  const isVerticalPlank = selectedObject?.name?.includes(itemType.VERTICAL_PLANK) ?? false;
 
   useEffect(() => {
     if (selectedObjectId || selectedChildObjectId) {
@@ -149,39 +141,28 @@ const Sidebar: React.FC = () => {
   const validateNumericInput = (
     value: number,
     min: number = 0,
-    max: number = Infinity,
+    max: number = Infinity
   ): number | null => {
     return isNaN(value) || value < min || value > max ? null : value;
   };
 
   const updateObject = (updates: Partial<Object3D>) => {
     if (!selectedObject || isQuickHideActive) return;
-    updateObjectInScene(
-      selectedObject.id,
-      updates,
-      scene,
-      dispatch,
-      selectedObject,
-    );
+    updateObjectInScene(selectedObject.id, updates, scene, dispatch, selectedObject);
     tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
   };
 
   const handleDimensionChange =
-    (dim: 'width' | 'height' | 'depth') =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (dim: 'width' | 'height' | 'depth') => (e: React.ChangeEvent<HTMLInputElement>) => {
       setDisplayedDimensions((prev) => ({
         ...prev,
         [dim]: Number(e.target.value),
       }));
     };
-  const handleDimensionCommit = (
-    dim: 'width' | 'height' | 'depth',
-    displayedValue: number,
-  ) => {
+  const handleDimensionCommit = (dim: 'width' | 'height' | 'depth', displayedValue: number) => {
     const mmValue = convertToMM(displayedValue, displayUnit);
     const minMM = dim === 'width' ? 0 : 5;
-    const maxMM =
-      dim === 'depth' && parentObject?.depth ? parentObject.depth : Infinity;
+    const maxMM = dim === 'depth' && parentObject?.depth ? parentObject.depth : Infinity;
     const validated = validateNumericInput(mmValue, minMM, maxMM);
     if (validated !== null) {
       updateObject({ [dim]: validated });
@@ -195,8 +176,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleDimensionKeyDown =
-    (dim: 'width' | 'height' | 'depth') =>
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (dim: 'width' | 'height' | 'depth') => (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         handleDimensionCommit(dim, displayedDimensions[dim]);
       }
@@ -237,10 +217,7 @@ const Sidebar: React.FC = () => {
       }));
     };
 
-  const handlePositionCommit = (
-    axis: 'x' | 'y' | 'z',
-    displayedValue: number,
-  ) => {
+  const handlePositionCommit = (axis: 'x' | 'y' | 'z', displayedValue: number) => {
     if (!selectedObject || isQuickHideActive) return;
     const mmValue = convertToMM(displayedValue, displayUnit);
     if (isNaN(mmValue)) return;
@@ -266,11 +243,7 @@ const Sidebar: React.FC = () => {
     } catch {}
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child: any) => {
-      if (
-        !targetMesh &&
-        child?.isMesh &&
-        child?.userData?.objectId === objectId
-      ) {
+      if (!targetMesh && child?.isMesh && child?.userData?.objectId === objectId) {
         targetMesh = child as THREE.Mesh;
       }
     });
@@ -282,9 +255,8 @@ const Sidebar: React.FC = () => {
     const height = metersToMM(params.height);
     const depth = metersToMM(params.depth);
     const thickness = 18;
-    const existing = (mesh.children.find(
-      (c: any) => c && c.name === 'invisibleBox_cabinet',
-    ) || null) as any as THREE.Mesh | null;
+    const existing = (mesh.children.find((c: any) => c && c.name === 'invisibleBox_cabinet') ||
+      null) as any as THREE.Mesh | null;
     if (existing) {
       mesh.remove(existing);
       (existing as any).geometry?.dispose?.();
@@ -300,7 +272,7 @@ const Sidebar: React.FC = () => {
     const innerD = Math.max(depth - thickness * 2, 20);
     const invCab = new THREE.Mesh(
       new THREE.BoxGeometry(innerW / 1000, innerH / 1000, innerD / 1000),
-      invMat,
+      invMat
     );
     invCab.name = 'invisibleBox_cabinet';
     invCab.userData.isInvisibleBox = true;
@@ -343,10 +315,10 @@ const Sidebar: React.FC = () => {
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
-  
+
     if (!targetId) return;
     let doorMesh: any = null;
-      scene.traverse((node: any) => {
+    scene.traverse((node: any) => {
       if (!doorMesh && node.userData?.objectId === targetId) {
         if (node.parent && node.parent.name.includes('DoorGroup')) {
           doorMesh = node.parent;
@@ -372,12 +344,8 @@ const Sidebar: React.FC = () => {
     const box = new THREE.Box3().setFromObject(doorMesh);
     const min = box.min.clone();
     const max = box.max.clone();
-    const mid = new THREE.Vector3(
-      (min.x + max.x) / 2,
-      (min.y + max.y) / 2,
-      (min.z + max.z) / 2,
-    );
-    doorMesh.position.copy(doorPosition); 
+    const mid = new THREE.Vector3((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
+    doorMesh.position.copy(doorPosition);
 
     const padding = 0.12;
 
@@ -432,11 +400,7 @@ const Sidebar: React.FC = () => {
     if (nameLower.includes('door') || nameLower.includes('drawer')) return;
     let targetMesh: any = null;
     scene.traverse((child: any) => {
-      if (
-        !targetMesh &&
-        child?.isMesh &&
-        child?.userData?.objectId === targetId
-      ) {
+      if (!targetMesh && child?.isMesh && child?.userData?.objectId === targetId) {
         targetMesh = child;
       }
     });
@@ -469,7 +433,7 @@ const Sidebar: React.FC = () => {
         { material: { type: 'COLOR', value } },
         scene,
         dispatch,
-        obj as any,
+        obj as any
       );
     }
   };
@@ -544,7 +508,7 @@ const Sidebar: React.FC = () => {
           { material: { type: 'TEXTURE', value: texturePath } },
           scene,
           dispatch,
-          obj as any,
+          obj as any
         );
       }
     });
@@ -568,11 +532,7 @@ const Sidebar: React.FC = () => {
     const sy = (newDims.height || 1) / (last.height || 1);
     const sz = (newDims.depth || 1) / (last.depth || 1);
 
-    if (
-      Math.abs(sx - 1) < 1e-6 &&
-      Math.abs(sy - 1) < 1e-6 &&
-      Math.abs(sz - 1) < 1e-6
-    ) {
+    if (Math.abs(sx - 1) < 1e-6 && Math.abs(sy - 1) < 1e-6 && Math.abs(sz - 1) < 1e-6) {
       return;
     }
 
@@ -584,11 +544,7 @@ const Sidebar: React.FC = () => {
       if (name.startsWith('invisiblebox')) return;
 
       // Scale local position
-      child.position.set(
-        child.position.x * sx,
-        child.position.y * sy,
-        child.position.z * sz,
-      );
+      child.position.set(child.position.x * sx, child.position.y * sy, child.position.z * sz);
       // Scale mesh uniformly per axis (relative to previous scale)
       const m = child as THREE.Mesh;
       m.scale.set(m.scale.x * sx, m.scale.y * sy, m.scale.z * sz);
@@ -654,9 +610,7 @@ const Sidebar: React.FC = () => {
           type: 'number',
           value: displayedDimensions.depth,
           min: convertFromMM(5, displayUnit),
-          max: parentObject?.depth
-            ? convertFromMM(parentObject.depth, displayUnit)
-            : undefined,
+          max: parentObject?.depth ? convertFromMM(parentObject.depth, displayUnit) : undefined,
           disabled: isQuickHideActive,
           onChange: handleDimensionChange('depth'),
           onKeyDown: handleDimensionKeyDown('depth'),
@@ -747,9 +701,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className={isSidebarOpen ? style.sidebar : style.sidebar_open}>
       <div
-        className={
-          isSidebarOpen ? style.sidebar_title : style.sidebar_close_title
-        }
+        className={isSidebarOpen ? style.sidebar_title : style.sidebar_close_title}
         onClick={toggleSidebar}
       >
         <p>Viewport Navigation</p>
@@ -769,10 +721,7 @@ const Sidebar: React.FC = () => {
             >
               Setting
             </button>
-            <button
-              onClick={handleNavigation}
-              className={isNavOpen ? style.btnactive : style.btn}
-            >
+            <button onClick={handleNavigation} className={isNavOpen ? style.btnactive : style.btn}>
               Navigation
             </button>
           </div>
@@ -781,11 +730,7 @@ const Sidebar: React.FC = () => {
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>
-                <img
-                  src={navigationdetail.src}
-                  alt=""
-                  className={style.zoomoption_img}
-                />
+                <img src={navigationdetail.src} alt="" className={style.zoomoption_img} />
               </div>
             </div>
           )}
@@ -875,10 +820,7 @@ const Sidebar: React.FC = () => {
                     onClick={handleMaterialChange}
                   >
                     <p>Change Material</p>
-                    <button
-                      className={style.btn_material_change}
-                      disabled={isQuickHideActive}
-                    >
+                    <button className={style.btn_material_change} disabled={isQuickHideActive}>
                       Press to Change
                     </button>
                   </div>
@@ -911,9 +853,7 @@ const Sidebar: React.FC = () => {
                       >
                         {selectedHandle ? selectedHandle : 'Select Position'}
                         <img
-                          src={
-                            isHandleDropdownOpen ? menu_up.src : menu_down.src
-                          }
+                          src={isHandleDropdownOpen ? menu_up.src : menu_down.src}
                           alt="dropdown arrow"
                         />
                       </div>
@@ -943,7 +883,7 @@ const Sidebar: React.FC = () => {
                                     { handlePosition: label },
                                     scene,
                                     dispatch,
-                                    selectedObject,
+                                    selectedObject
                                   );
                                 }
                               }}
@@ -969,9 +909,7 @@ const Sidebar: React.FC = () => {
                             <div
                               key={material.option}
                               className={style.texture_item}
-                              onClick={() =>
-                                handleTextureSelect(material.image)
-                              }
+                              onClick={() => handleTextureSelect(material.image)}
                               title={material.name}
                             >
                               <img

@@ -47,13 +47,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     width: panel.width,
     height: panel.height,
   });
-  const [shapePoints, setShapePoints] = useState<{ x: number; y: number }[]>(
-    [],
-  );
+  const [shapePoints, setShapePoints] = useState<{ x: number; y: number }[]>([]);
   const [cornerRadius, setcornerRadius] = useState<number[]>([]);
-  const [originalGeometry, setOriginalGeometry] = useState<
-    THREE.BoxGeometry | undefined
-  >();
+  const [originalGeometry, setOriginalGeometry] = useState<THREE.BoxGeometry | undefined>();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [holes, setHoles] = useState<
     {
@@ -77,9 +73,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     type: 'rect' | 'circle';
   } | null>(null);
   const [holeShape, setHoleShape] = useState<'rect' | 'circle'>('rect');
-  const [selectedCornerIndex, setSelectedCornerIndex] = useState<number | null>(
-    null,
-  );
+  const [selectedCornerIndex, setSelectedCornerIndex] = useState<number | null>(null);
   const [showRadiusInput, setShowRadiusInput] = useState(false);
 
   // Initialize corner radii when shapePoints change
@@ -109,12 +103,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       }
     });
 
-    const selectedMesh = scene.children.find(
-      (obj) => obj.userData?.objectId === selectedObject,
-    );
+    const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
 
     const selectedChildMesh = selectedMesh?.children.find(
-      (obj) => obj.userData?.objectId === selectedChildObject,
+      (obj) => obj.userData?.objectId === selectedChildObject
     );
 
     if (!(selectedChildMesh instanceof THREE.Mesh)) return;
@@ -191,11 +183,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       renderer.dispose();
       controls.dispose();
     };
-  }, [
-    state?.scene?.scene,
-    state?.data?.selectedObject,
-    state?.data?.selectedChildObject,
-  ]);
+  }, [state?.scene?.scene, state?.data?.selectedObject, state?.data?.selectedChildObject]);
 
   useEffect(() => {
     const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
@@ -211,7 +199,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       height: number;
       type: string;
     }[],
-    cornerRadius: number[],
+    cornerRadius: number[]
   ) => {
     const selectedObject = state?.data?.selectedObject;
     const selectedChildObject = state?.data?.selectedChildObject;
@@ -219,11 +207,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     if (!scene || !selectedObject || !selectedChildObject) return;
 
-    const selectedMesh = scene.children.find(
-      (obj) => obj.userData?.objectId === selectedObject,
-    );
+    const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
     const selectedChildMesh = selectedMesh?.children.find(
-      (obj) => obj.userData?.objectId === selectedChildObject,
+      (obj) => obj.userData?.objectId === selectedChildObject
     );
 
     if (!(selectedChildMesh instanceof THREE.Mesh)) return;
@@ -341,7 +327,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           r,
           tangents.start_angle,
           tangents.end_angle,
-          false,
+          false
         );
       }
     }
@@ -355,15 +341,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         const centerY = hole.y + radiusY;
 
         const circlePath = new THREE.Path();
-        circlePath.absellipse(
-          centerX,
-          centerY,
-          radiusX,
-          radiusY,
-          0,
-          Math.PI * 2,
-          false,
-        );
+        circlePath.absellipse(centerX, centerY, radiusX, radiusY, 0, Math.PI * 2, false);
         shape.holes.push(circlePath);
       } else {
         const holePath = new THREE.Path();
@@ -385,16 +363,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         selectedChildMesh.rotation.y = Math.PI / 2 + Math.PI;
         selectedChildMesh.rotation.z = Math.PI;
         if (!selectedChildMesh.userData.isPerfect) {
-          selectedChildMesh.position.z =
-            selectedChildMesh.position.z + (params.depth || 18) / 2;
+          selectedChildMesh.position.z = selectedChildMesh.position.z + (params.depth || 18) / 2;
           selectedChildMesh.userData.isPerfect = true;
         }
       } else if (selectedChildMesh.userData.type === 'HORIZONTAL') {
         staticDirectionValue = params.height || 1960;
         selectedChildMesh.rotation.x = Math.PI / 2;
         if (!selectedChildMesh.userData.isPerfect) {
-          selectedChildMesh.position.z =
-            selectedChildMesh.position.z + (params.depth || 18) / 2;
+          selectedChildMesh.position.z = selectedChildMesh.position.z + (params.depth || 18) / 2;
           selectedChildMesh.userData.isPerfect = true;
         }
       } else {
@@ -402,9 +378,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         selectedChildMesh.rotation.x = Math.PI;
       }
     } else {
-      console.warn(
-        'originalGeometry is not defined or does not have parameters',
-      );
+      console.warn('originalGeometry is not defined or does not have parameters');
     }
 
     const extrudeSettings = {
@@ -490,7 +464,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             width: '1px',
             height: '10px',
           }}
-        />,
+        />
       );
 
       ticks.push(
@@ -503,7 +477,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           }}
         >
           {i * tickSpacing}
-        </div>,
+        </div>
       );
     }
 
@@ -531,7 +505,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             width: '10px',
             height: '1px',
           }}
-        />,
+        />
       );
 
       ticks.push(
@@ -546,7 +520,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           }}
         >
           {i * tickSpacing}
-        </div>,
+        </div>
       );
     }
 
@@ -581,10 +555,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     { x: -panelWidth / 2, y: panelHeight / 2 },
   ];
 
-  const buildPathData = (
-    points: { x: number; y: number }[],
-    cornerRadius: number[],
-  ) => {
+  const buildPathData = (points: { x: number; y: number }[], cornerRadius: number[]) => {
     const n = points.length;
     if (n < 3) return '';
 
@@ -733,9 +704,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           {activeTool === 'Dig' && (
             <select
               value={holeShape}
-              onChange={(e) =>
-                setHoleShape(e.target.value as 'rect' | 'circle')
-              }
+              onChange={(e) => setHoleShape(e.target.value as 'rect' | 'circle')}
               className={styles.holeTypeDropdown}
             >
               <option value="rect">Rectangle Hole</option>
@@ -750,9 +719,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           >
             Cancel
           </button>
-          <button className={`${styles.actionButton} ${styles.completeButton}`}>
-            Complete
-          </button>
+          <button className={`${styles.actionButton} ${styles.completeButton}`}>Complete</button>
         </div>
       </div>
       {renderHorizontalRuler()}
@@ -829,7 +796,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               updateMeshGeometry(
                 shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
                 [...holes, finalHole],
-                cornerRadius,
+                cornerRadius
               );
             }
             setIsDrawingHole(false);
@@ -838,13 +805,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           }}
         >
           <Layer>
-            {(shapePoints.length > 0 ||
-              (panelWidth > 0 && panelHeight > 0)) && (
+            {(shapePoints.length > 0 || (panelWidth > 0 && panelHeight > 0)) && (
               <>
                 <Path
                   data={buildPathData(
                     shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
-                    cornerRadius,
+                    cornerRadius
                   )}
                   fill="#d8fdd3"
                   stroke="green"
@@ -899,12 +865,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                       strokeWidth={0.5}
                       listening={false}
                     />
-                  ),
+                  )
                 )}
-                {(shapePoints.length > 0
-                  ? shapePoints
-                  : defaultPanelPoints
-                ).map((point, index) => (
+                {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((point, index) => (
                   <Rect
                     key={index}
                     x={point.x - 3}
@@ -914,16 +877,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                     fill="grey"
                     opacity={0.7}
                     draggable
-                    onClick={
-                      activeTool === 'Curve'
-                        ? () => handleCurveClick(index)
-                        : undefined
-                    }
+                    onClick={activeTool === 'Curve' ? () => handleCurveClick(index) : undefined}
                     onDragMove={(e) => {
                       const newPoints = [
-                        ...(shapePoints.length > 0
-                          ? shapePoints
-                          : defaultPanelPoints),
+                        ...(shapePoints.length > 0 ? shapePoints : defaultPanelPoints),
                       ];
                       newPoints[index] = {
                         x: e.target.x() + 3,
@@ -934,8 +891,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                     onMouseEnter={(e) => {
                       const container = e.target.getStage()?.container();
                       if (container) {
-                        container.style.cursor =
-                          activeTool === 'Curve' ? 'crosshair' : 'pointer';
+                        container.style.cursor = activeTool === 'Curve' ? 'crosshair' : 'pointer';
                       }
                     }}
                     onMouseLeave={(e) => {
@@ -960,8 +916,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         </Stage>
       </div>
       <div className={styles.footer}>
-        Origin at center • depth(D): {dimensions.width.toFixed(1)} • width(W):
-        18.0 • height(H): {dimensions.height.toFixed(1)}
+        Origin at center • depth(D): {dimensions.width.toFixed(1)} • width(W): 18.0 • height(H):{' '}
+        {dimensions.height.toFixed(1)}
       </div>
       <div className={styles.miniThreeViewer}>
         <canvas ref={threeCanvasRef} />
@@ -972,8 +928,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             <div className={styles.popupHeader}>
               <FaExclamationTriangle className={styles.warningIcon} />
               <h2 className={styles.popupTitle}>
-                The results of this edit will not be saved, will you confirm the
-                exit editing?
+                The results of this edit will not be saved, will you confirm the exit editing?
               </h2>
             </div>
             <div className={styles.buttonContainer}>

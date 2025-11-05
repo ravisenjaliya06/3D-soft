@@ -615,11 +615,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               key: 'guideType',
               label: 'Type',
               type: 'select',
-              options: [
-                'Full Extension',
-                'Partial Extension',
-                'Over Extension',
-              ],
+              options: ['Full Extension', 'Partial Extension', 'Over Extension'],
             },
             {
               key: 'length',
@@ -2704,21 +2700,15 @@ const AddMaterialPopup: React.FC<Props> = ({
       materialSpecificProperties.thickness = formData.thickness || 0;
       materialSpecificProperties.rough_thickness = formData.roughThickness || 0;
       materialSpecificProperties.cnc_optimize = formData.cncOptimize || false;
-      materialSpecificProperties.cnc_grain_dependent =
-        formData.cncGrainDependent || false;
+      materialSpecificProperties.cnc_grain_dependent = formData.cncGrainDependent || false;
       materialSpecificProperties.cnc_drop_width = formData.cncDropWidth || 0;
       materialSpecificProperties.cnc_drop_length = formData.cncDropLength || 0;
-      materialSpecificProperties.cnc_feed_rate_percent =
-        formData.cncFeedRatePercent || 0;
-      materialSpecificProperties.cnc_spindle_speed_percent =
-        formData.cncSpindleSpeedPercent || 0;
-      materialSpecificProperties.cnc_minimize_face_chip =
-        formData.cncMinimizeFaceChip || false;
-      materialSpecificProperties.cnc_minimize_back_chip =
-        formData.cncMinimizeBackChip || false;
+      materialSpecificProperties.cnc_feed_rate_percent = formData.cncFeedRatePercent || 0;
+      materialSpecificProperties.cnc_spindle_speed_percent = formData.cncSpindleSpeedPercent || 0;
+      materialSpecificProperties.cnc_minimize_face_chip = formData.cncMinimizeFaceChip || false;
+      materialSpecificProperties.cnc_minimize_back_chip = formData.cncMinimizeBackChip || false;
       materialSpecificProperties.cnc_climb_cut = formData.cncClimbCut || false;
-      materialSpecificProperties.cnc_maximum_depth_per_pass =
-        formData.cncMaximumDepthPerPass || 0;
+      materialSpecificProperties.cnc_maximum_depth_per_pass = formData.cncMaximumDepthPerPass || 0;
     }
 
     // Caster specific properties
@@ -2729,20 +2719,16 @@ const AddMaterialPopup: React.FC<Props> = ({
     // Connector specific properties
     if (selectedMaterialType === 'Connector') {
       materialSpecificProperties.connector_type = formData.connectorType || '';
-      materialSpecificProperties.connector_slot_type =
-        formData.connectorSlotType || '';
+      materialSpecificProperties.connector_slot_type = formData.connectorSlotType || '';
     }
 
     // Drawer Guide specific properties
     if (selectedMaterialType === 'Drawer Guide') {
       materialSpecificProperties.side_clearance = formData.sideClearance || 0;
       materialSpecificProperties.top_clearance = formData.topClearance || 0;
-      materialSpecificProperties.bottom_clearance =
-        formData.bottomClearance || 0;
-      materialSpecificProperties.minimum_below_box =
-        formData.minimumBelowBox || 0;
-      materialSpecificProperties.minimum_above_box =
-        formData.minimumAboveBox || 0;
+      materialSpecificProperties.bottom_clearance = formData.bottomClearance || 0;
+      materialSpecificProperties.minimum_below_box = formData.minimumBelowBox || 0;
+      materialSpecificProperties.minimum_above_box = formData.minimumAboveBox || 0;
       materialSpecificProperties.guide_type = formData.guideType || '';
       materialSpecificProperties.height = formData.height || 0;
       materialSpecificProperties.length = formData.length || 0;
@@ -2751,32 +2737,20 @@ const AddMaterialPopup: React.FC<Props> = ({
         formData.screwCenterReferenceToTop || 0;
       materialSpecificProperties.screw_center_to_box_reference =
         formData.screwCenterToBoxReference || 0;
-      materialSpecificProperties.back_notch_length =
-        formData.backNotchLength || 0;
-      materialSpecificProperties.back_notch_height =
-        formData.backNotchHeight || 0;
-      materialSpecificProperties.back_notch_offset =
-        formData.backNotchOffset || 0;
-      materialSpecificProperties.mount_holes_diameter =
-        formData.mountHolesDiameter || 0;
-      materialSpecificProperties.mount_holes_depth =
-        formData.mountHolesDepth || 0;
-      materialSpecificProperties.mount_holes_top_reference =
-        formData.mountHolesTopReference || 0;
+      materialSpecificProperties.back_notch_length = formData.backNotchLength || 0;
+      materialSpecificProperties.back_notch_height = formData.backNotchHeight || 0;
+      materialSpecificProperties.back_notch_offset = formData.backNotchOffset || 0;
+      materialSpecificProperties.mount_holes_diameter = formData.mountHolesDiameter || 0;
+      materialSpecificProperties.mount_holes_depth = formData.mountHolesDepth || 0;
+      materialSpecificProperties.mount_holes_top_reference = formData.mountHolesTopReference || 0;
       materialSpecificProperties.mount_holes_screw_center_to_reference =
         formData.mountHolesScrewCenterToReference || 0;
-      materialSpecificProperties.mount_holes_position_1 =
-        formData.mountHolesPosition1 || 0;
-      materialSpecificProperties.mount_holes_position_2 =
-        formData.mountHolesPosition2 || 0;
-      materialSpecificProperties.mount_holes_position_3 =
-        formData.mountHolesPosition3 || 0;
-      materialSpecificProperties.mount_holes_position_4 =
-        formData.mountHolesPosition4 || 0;
-      materialSpecificProperties.mount_holes_position_5 =
-        formData.mountHolesPosition5 || 0;
-      materialSpecificProperties.mount_holes_position_6 =
-        formData.mountHolesPosition6 || 0;
+      materialSpecificProperties.mount_holes_position_1 = formData.mountHolesPosition1 || 0;
+      materialSpecificProperties.mount_holes_position_2 = formData.mountHolesPosition2 || 0;
+      materialSpecificProperties.mount_holes_position_3 = formData.mountHolesPosition3 || 0;
+      materialSpecificProperties.mount_holes_position_4 = formData.mountHolesPosition4 || 0;
+      materialSpecificProperties.mount_holes_position_5 = formData.mountHolesPosition5 || 0;
+      materialSpecificProperties.mount_holes_position_6 = formData.mountHolesPosition6 || 0;
       materialSpecificProperties.front_mount_holes = [
         {
           offsets: formData.frontOffsets || 0,
@@ -2804,54 +2778,41 @@ const AddMaterialPopup: React.FC<Props> = ({
           quantity: formData.bottomQty || 0,
         },
       ];
-      materialSpecificProperties.back_mount_notches_length =
-        formData.backMountNotchesLength || 0;
-      materialSpecificProperties.back_mount_notches_height =
-        formData.backMountNotchesHeight || 0;
+      materialSpecificProperties.back_mount_notches_length = formData.backMountNotchesLength || 0;
+      materialSpecificProperties.back_mount_notches_height = formData.backMountNotchesHeight || 0;
       materialSpecificProperties.back_mount_notches_horizontal_offset =
         formData.backMountNotchesHorizontalOffset || 0;
       materialSpecificProperties.bottom_mount_holes_first_position =
         formData.bottomMountHolesFirstPosition || 0;
       materialSpecificProperties.bottom_mount_grooves_horizontal_offset =
         formData.bottomMountGroovesHorizontalOffset || 0;
-      materialSpecificProperties.bottom_mount_grooves_width =
-        formData.bottomMountGroovesWidth || 0;
-      materialSpecificProperties.bottom_mount_grooves_depth =
-        formData.bottomMountGroovesDepth || 0;
+      materialSpecificProperties.bottom_mount_grooves_width = formData.bottomMountGroovesWidth || 0;
+      materialSpecificProperties.bottom_mount_grooves_depth = formData.bottomMountGroovesDepth || 0;
     }
 
     // Hinge specific properties
     if (selectedMaterialType === 'Hinge') {
       materialSpecificProperties.hinge_type = formData.hingeType || '';
-      materialSpecificProperties.horizontal_overlay =
-        formData.horizontalOverlay || 0;
-      materialSpecificProperties.vertical_overlay =
-        formData.verticalOverlay || 0;
-      materialSpecificProperties.door_end_to_hinge =
-        formData.doorEndToHinge || 0;
+      materialSpecificProperties.horizontal_overlay = formData.horizontalOverlay || 0;
+      materialSpecificProperties.vertical_overlay = formData.verticalOverlay || 0;
+      materialSpecificProperties.door_end_to_hinge = formData.doorEndToHinge || 0;
       materialSpecificProperties.inset = formData.inset || 0;
       materialSpecificProperties.maximum_spacing = formData.maximumSpacing || 0;
       materialSpecificProperties.opening_angle = formData.openingAngle || 0;
       materialSpecificProperties.door_edge_to_reference_point =
         formData.doorEdgeToReferencePoint || 0;
-      materialSpecificProperties.roll_out_clearance =
-        formData.rollOutClearance || 0;
+      materialSpecificProperties.roll_out_clearance = formData.rollOutClearance || 0;
       materialSpecificProperties.cup_diameter = formData.cupDiameter || 0;
       materialSpecificProperties.cup_depth = formData.cupDepth || 0;
-      materialSpecificProperties.anchor_holes_cup_to_anchor =
-        formData.anchorHolesCupToAnchor || 0;
-      materialSpecificProperties.anchor_holes_diameter =
-        formData.anchorHolesDiameter || 0;
-      materialSpecificProperties.anchor_holes_depth =
-        formData.anchorHolesDepth || 0;
-      materialSpecificProperties.anchor_holes_spacing =
-        formData.anchorHolesSpacing || 0;
+      materialSpecificProperties.anchor_holes_cup_to_anchor = formData.anchorHolesCupToAnchor || 0;
+      materialSpecificProperties.anchor_holes_diameter = formData.anchorHolesDiameter || 0;
+      materialSpecificProperties.anchor_holes_depth = formData.anchorHolesDepth || 0;
+      materialSpecificProperties.anchor_holes_spacing = formData.anchorHolesSpacing || 0;
     }
 
     // Hinge Plate specific properties
     if (selectedMaterialType === 'Hinge Plate') {
-      materialSpecificProperties.hinge_plate_type =
-        formData.hingePlateType || '';
+      materialSpecificProperties.hinge_plate_type = formData.hingePlateType || '';
       materialSpecificProperties.hole_offset = formData.holeOffset || 0;
       materialSpecificProperties.hinge_diameter = formData.hingeDiameter || 0;
       materialSpecificProperties.depth = formData.depth || 0;
@@ -2862,21 +2823,15 @@ const AddMaterialPopup: React.FC<Props> = ({
     if (selectedMaterialType === 'Laminate') {
       materialSpecificProperties.oversize = formData.oversize || 0;
       materialSpecificProperties.cnc_optimize = formData.cncOptimize || false;
-      materialSpecificProperties.cnc_grain_dependent =
-        formData.cncGrainDependent || false;
+      materialSpecificProperties.cnc_grain_dependent = formData.cncGrainDependent || false;
       materialSpecificProperties.cnc_drop_width = formData.cncDropWidth || 0;
       materialSpecificProperties.cnc_drop_length = formData.cncDropLength || 0;
-      materialSpecificProperties.cnc_feed_rate_percent =
-        formData.cncFeedRatePercent || 0;
-      materialSpecificProperties.cnc_spindle_speed_percent =
-        formData.cncSpindleSpeedPercent || 0;
-      materialSpecificProperties.cnc_minimize_face_chip =
-        formData.cncMinimizeFaceChip || false;
-      materialSpecificProperties.cnc_minimize_back_chip =
-        formData.cncMinimizeBackChip || false;
+      materialSpecificProperties.cnc_feed_rate_percent = formData.cncFeedRatePercent || 0;
+      materialSpecificProperties.cnc_spindle_speed_percent = formData.cncSpindleSpeedPercent || 0;
+      materialSpecificProperties.cnc_minimize_face_chip = formData.cncMinimizeFaceChip || false;
+      materialSpecificProperties.cnc_minimize_back_chip = formData.cncMinimizeBackChip || false;
       materialSpecificProperties.cnc_climb_cut = formData.cncClimbCut || false;
-      materialSpecificProperties.cnc_maximum_depth_per_pass =
-        formData.cncMaximumDepthPerPass || 0;
+      materialSpecificProperties.cnc_maximum_depth_per_pass = formData.cncMaximumDepthPerPass || 0;
     }
 
     // Leg specific properties
@@ -2907,32 +2862,24 @@ const AddMaterialPopup: React.FC<Props> = ({
       materialSpecificProperties.length = formData.length || 0;
       materialSpecificProperties.thickness = formData.thickness || 0;
       materialSpecificProperties.cnc_optimize = formData.cncOptimize || false;
-      materialSpecificProperties.cnc_grain_dependent =
-        formData.cncGrainDependent || false;
+      materialSpecificProperties.cnc_grain_dependent = formData.cncGrainDependent || false;
       materialSpecificProperties.cnc_drop_width = formData.cncDropWidth || 0;
       materialSpecificProperties.cnc_drop_length = formData.cncDropLength || 0;
-      materialSpecificProperties.cnc_feed_rate_percent =
-        formData.cncFeedRatePercent || 0;
-      materialSpecificProperties.cnc_spindle_speed_percent =
-        formData.cncSpindleSpeedPercent || 0;
-      materialSpecificProperties.cnc_minimize_face_chip =
-        formData.cncMinimizeFaceChip || false;
-      materialSpecificProperties.cnc_minimize_back_chip =
-        formData.cncMinimizeBackChip || false;
+      materialSpecificProperties.cnc_feed_rate_percent = formData.cncFeedRatePercent || 0;
+      materialSpecificProperties.cnc_spindle_speed_percent = formData.cncSpindleSpeedPercent || 0;
+      materialSpecificProperties.cnc_minimize_face_chip = formData.cncMinimizeFaceChip || false;
+      materialSpecificProperties.cnc_minimize_back_chip = formData.cncMinimizeBackChip || false;
       materialSpecificProperties.cnc_climb_cut = formData.cncClimbCut || false;
-      materialSpecificProperties.cnc_maximum_depth_per_pass =
-        formData.cncMaximumDepthPerPass || 0;
+      materialSpecificProperties.cnc_maximum_depth_per_pass = formData.cncMaximumDepthPerPass || 0;
     }
 
     // Pull specific properties
     if (selectedMaterialType === 'Pull') {
       materialSpecificProperties.pull_type = formData.pullType || '';
-      materialSpecificProperties.center_to_center =
-        formData.centerToCenter || 0;
+      materialSpecificProperties.center_to_center = formData.centerToCenter || 0;
       materialSpecificProperties.width = formData.width || 0;
       materialSpecificProperties.depth = formData.depth || 0;
-      materialSpecificProperties.horizontal_inset =
-        formData.horizontalInset || 0;
+      materialSpecificProperties.horizontal_inset = formData.horizontalInset || 0;
       materialSpecificProperties.vertical_inset = formData.verticalInset || 0;
       materialSpecificProperties.mounting_holes_holes_diameter =
         formData.mountingHolesHolesDiameter || 0;
@@ -2953,24 +2900,19 @@ const AddMaterialPopup: React.FC<Props> = ({
 
     // Sliding Door Rail specific properties
     if (selectedMaterialType === 'Sliding Door Rail') {
-      materialSpecificProperties.sliding_door_rail_type =
-        formData.slidingDoorRailType || '';
+      materialSpecificProperties.sliding_door_rail_type = formData.slidingDoorRailType || '';
       materialSpecificProperties.length = formData.length || 0;
-      materialSpecificProperties.boring_first_position =
-        formData.boringFirstPosition || 0;
-      materialSpecificProperties.rail_boring_diameter =
-        formData.railBoringDiameter || 0;
+      materialSpecificProperties.boring_first_position = formData.boringFirstPosition || 0;
+      materialSpecificProperties.rail_boring_diameter = formData.railBoringDiameter || 0;
       materialSpecificProperties.boring_depth = formData.boringDepth || 0;
       materialSpecificProperties.boring_spacing = formData.boringSpacing || 0;
     }
 
     // Sliding Door Roller specific properties
     if (selectedMaterialType === 'Sliding Door Roller') {
-      materialSpecificProperties.sliding_door_roller_type =
-        formData.slidingDoorRollerType || '';
+      materialSpecificProperties.sliding_door_roller_type = formData.slidingDoorRollerType || '';
       materialSpecificProperties.mount_on_back = formData.mountOnBack || false;
-      materialSpecificProperties.horizontal_offset =
-        formData.horizontalInset || 0;
+      materialSpecificProperties.horizontal_offset = formData.horizontalInset || 0;
       materialSpecificProperties.vertical_offset = formData.verticalInset || 0;
       materialSpecificProperties.door_edge_inset = formData.doorEdgeInset || 0;
       materialSpecificProperties.door_end_inset = formData.doorEndInset || 0;
@@ -3020,18 +2962,14 @@ const AddMaterialPopup: React.FC<Props> = ({
 
     // Wire Basket specific properties
     if (selectedMaterialType === 'Wire Basket') {
-      materialSpecificProperties.wire_basket_type =
-        formData.wireBasketType || '';
+      materialSpecificProperties.wire_basket_type = formData.wireBasketType || '';
       materialSpecificProperties.basket_diameter = formData.basketDiameter || 0;
-      materialSpecificProperties.screw_center_to_reference =
-        formData.screwCenterToReference || 0;
+      materialSpecificProperties.screw_center_to_reference = formData.screwCenterToReference || 0;
       materialSpecificProperties.depth = formData.depth || 0;
       materialSpecificProperties.width = formData.width || 0;
       materialSpecificProperties.height = formData.height || 0;
-      materialSpecificProperties.mount_holes_diameter =
-        formData.mountHolesDiameter || 0;
-      materialSpecificProperties.mount_holes_depth =
-        formData.mountHolesDepth || 0;
+      materialSpecificProperties.mount_holes_diameter = formData.mountHolesDiameter || 0;
+      materialSpecificProperties.mount_holes_depth = formData.mountHolesDepth || 0;
       materialSpecificProperties.mount_holes_screw_center_to_reference =
         formData.mountHolesScrewCenterToReference || 0;
     }
@@ -3069,7 +3007,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       const response = await commonService.post(
         'material',
         `company/${companyState}/material`,
-        finalData,
+        finalData
       );
 
       if (response.status === 201 || response.status === 200) {
@@ -3095,9 +3033,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               handleInputChange(field.key, e.target.value)
             }
-            options={
-              field.options?.map((opt) => ({ value: opt, label: opt })) || []
-            }
+            options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
             disabled={field.disabled}
             borderColor={undefined}
             error={undefined}
@@ -3126,10 +3062,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             value={value}
             placeholder={field.placeholder}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(
-                field.key,
-                e.target.value ? parseFloat(e.target.value) : '',
-              )
+              handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
             }
             disabled={field.disabled}
             borderColor={undefined}
@@ -3170,10 +3103,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 Step {currentStep + 1} of {currentSequence.length}
               </p>
             </div>
-            <button
-              className={styles.closeButton}
-              onClick={() => setCreateWorkOrderPopup(false)}
-            >
+            <button className={styles.closeButton} onClick={() => setCreateWorkOrderPopup(false)}>
               <img src={close.src || '/placeholder.svg'} alt="Close" />
             </button>
           </div>
@@ -3189,18 +3119,11 @@ const AddMaterialPopup: React.FC<Props> = ({
           </div>
 
           <div className={styles.buttonGroup}>
-            <button
-              className={styles.cancelButton}
-              onClick={() => setCreateWorkOrderPopup(false)}
-            >
+            <button className={styles.cancelButton} onClick={() => setCreateWorkOrderPopup(false)}>
               Cancel
             </button>
 
-            <button
-              className={styles.backButton}
-              onClick={handleBack}
-              disabled={isFirstStep}
-            >
+            <button className={styles.backButton} onClick={handleBack} disabled={isFirstStep}>
               Back
             </button>
 

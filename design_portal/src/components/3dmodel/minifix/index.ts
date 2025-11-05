@@ -5,14 +5,7 @@ export * from './types';
 export * from './visualizer';
 
 // Main exports for easy importing
-export {
-  calculateMinifixPositions,
-  getMinifixStandards,
-  updateMinifixSpacing,
-} from './calculator';
+export { calculateMinifixPositions, getMinifixStandards, updateMinifixSpacing } from './calculator';
 export { detect90DegreeConnections } from './detector';
 export { generateMinifixSystem } from './generator';
-export {
-  toggleMinifixVisibility,
-  visualizeMinifixConnections,
-} from './visualizer';
+export { toggleMinifixVisibility, visualizeMinifixConnections } from './visualizer';

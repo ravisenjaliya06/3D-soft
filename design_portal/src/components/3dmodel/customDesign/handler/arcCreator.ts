@@ -16,7 +16,7 @@ export enum ArcCreationState {
 export function createArcCreator(
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
-  renderer: THREE.WebGLRenderer,
+  renderer: THREE.WebGLRenderer
 ) {
   // State variables
   let state: ArcCreationState = ArcCreationState.INACTIVE;
@@ -62,11 +62,7 @@ export function createArcCreator(
       } else if (state === ArcCreationState.PLACING_END_POINT && startPoint) {
         // Show a line from start to current point
         updatePreviewLine(startPoint, intersectionPoint);
-      } else if (
-        state === ArcCreationState.PLACING_BULGE_POINT &&
-        startPoint &&
-        endPoint
-      ) {
+      } else if (state === ArcCreationState.PLACING_BULGE_POINT && startPoint && endPoint) {
         // Update bulge point and preview arc
         bulgePoint = intersectionPoint.clone();
         updatePreviewArc();
@@ -98,9 +94,7 @@ export function createArcCreator(
         state = ArcCreationState.PLACING_BULGE_POINT;
 
         // Create initial bulge point at midpoint with some offset
-        const midPoint = new THREE.Vector3()
-          .addVectors(startPoint, endPoint)
-          .multiplyScalar(0.5);
+        const midPoint = new THREE.Vector3().addVectors(startPoint, endPoint).multiplyScalar(0.5);
         const direction = new THREE.Vector3().subVectors(endPoint, startPoint);
         const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x)
           .normalize()
@@ -108,11 +102,7 @@ export function createArcCreator(
         bulgePoint = new THREE.Vector3().addVectors(midPoint, perpendicular);
 
         updatePreviewArc();
-      } else if (
-        state === ArcCreationState.PLACING_BULGE_POINT &&
-        startPoint &&
-        endPoint
-      ) {
+      } else if (state === ArcCreationState.PLACING_BULGE_POINT && startPoint && endPoint) {
         bulgePoint = intersectionPoint.clone();
         updatePointsVisualization();
         finalizeArc();
@@ -190,11 +180,7 @@ export function createArcCreator(
     }
 
     // Create a quadratic bezier curve
-    const curve = createQuadraticBezierFromThreePoints(
-      startPoint,
-      endPoint,
-      bulgePoint,
-    );
+    const curve = createQuadraticBezierFromThreePoints(startPoint, endPoint, bulgePoint);
     const points = curve.getPoints(50);
 
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -210,7 +196,7 @@ export function createArcCreator(
   const createQuadraticBezierFromThreePoints = (
     p0: THREE.Vector3,
     p2: THREE.Vector3,
-    p1Actual: THREE.Vector3,
+    p1Actual: THREE.Vector3
   ): THREE.QuadraticBezierCurve3 => {
     // For a quadratic bezier curve, we need to find the control point
     // that will make the curve pass through our desired bulge point
@@ -242,11 +228,7 @@ export function createArcCreator(
     }
 
     // Create a quadratic bezier curve
-    const curve = createQuadraticBezierFromThreePoints(
-      startPoint,
-      endPoint,
-      bulgePoint,
-    );
+    const curve = createQuadraticBezierFromThreePoints(startPoint, endPoint, bulgePoint);
     const curvePoints = curve.getPoints(64);
 
     // Compute centroid
@@ -258,10 +240,7 @@ export function createArcCreator(
     const shape = new THREE.Shape();
     shape.moveTo(curvePoints[0].x - centroid.x, curvePoints[0].z - centroid.z);
     for (let i = 1; i < curvePoints.length; i++) {
-      shape.lineTo(
-        curvePoints[i].x - centroid.x,
-        curvePoints[i].z - centroid.z,
-      );
+      shape.lineTo(curvePoints[i].x - centroid.x, curvePoints[i].z - centroid.z);
     }
     shape.closePath();
 
@@ -311,7 +290,7 @@ export function createArcCreator(
       curvePoints,
       mesh.position,
       mesh.rotation,
-      mesh.scale,
+      mesh.scale
     );
 
     // Create arc data for Redux store
@@ -362,7 +341,7 @@ export function createArcCreator(
     curvePoints: THREE.Vector3[],
     position: THREE.Vector3,
     rotation: THREE.Euler,
-    scale: THREE.Vector3,
+    scale: THREE.Vector3
   ) {
     const designId = getDesignId();
     if (!designId) {

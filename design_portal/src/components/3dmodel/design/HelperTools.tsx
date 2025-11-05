@@ -71,11 +71,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
       onClick={handleContainerClick}
     >
       {isChildObject && (
-        <div
-          className={styles.toolItem}
-          onClick={handlePanelDesign}
-          title="Panel Design"
-        >
+        <div className={styles.toolItem} onClick={handlePanelDesign} title="Panel Design">
           <img src={edit.src} />
         </div>
       )}
@@ -90,11 +86,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
           <FaArrowsAlt />
         </div>
       )}
-      <div
-        className={styles.toolItem}
-        onClick={handleOpenClose}
-        title="OpenClose"
-      >
+      <div className={styles.toolItem} onClick={handleOpenClose} title="OpenClose">
         <FaDoorOpen />
       </div>
     </div>

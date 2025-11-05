@@ -21,8 +21,7 @@ export class MoveHandler {
   private dragOffset: THREE.Vector3;
   private initialClickPosition: THREE.Vector3;
   private objectUnderCursor: THREE.Mesh | null = null;
-  private onObjectMovedCallback: ((object: THREE.Object3D) => void) | null =
-    null;
+  private onObjectMovedCallback: ((object: THREE.Object3D) => void) | null = null;
   private controls: OrbitControls;
   private originalPosition: THREE.Vector3 | null = null;
   private originalRotation: THREE.Euler | null = null;
@@ -71,10 +70,7 @@ export class MoveHandler {
 
     if (this.draggedObject) {
       this.planePoint.copy(this.draggedObject.position);
-      this.plane.setFromNormalAndCoplanarPoint(
-        this.planeNormal,
-        this.planePoint,
-      );
+      this.plane.setFromNormalAndCoplanarPoint(this.planeNormal, this.planePoint);
     }
 
     const intersection = new THREE.Vector3();
@@ -95,10 +91,7 @@ export class MoveHandler {
     if (!mousePosition) return;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(
-      this.movableObjects,
-      true,
-    );
+    const intersects = this.raycaster.intersectObjects(this.movableObjects, true);
 
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
@@ -133,7 +126,7 @@ export class MoveHandler {
               z: clampedPosition.z,
             },
           },
-        }),
+        })
       );
     }
   }
@@ -154,7 +147,7 @@ export class MoveHandler {
             this.draggedObject,
             this.originalPosition,
             this.originalRotation,
-            this.originalScale,
+            this.originalScale
           );
         }
       }
@@ -174,31 +167,22 @@ export class MoveHandler {
 
   private clampToGrid(position: THREE.Vector3): THREE.Vector3 {
     return new THREE.Vector3(
-      Math.max(
-        this.gridBounds?.minX ?? -10,
-        Math.min(this.gridBounds?.maxX ?? 10, position.x),
-      ),
+      Math.max(this.gridBounds?.minX ?? -10, Math.min(this.gridBounds?.maxX ?? 10, position.x)),
       this.draggedObject?.position.y ?? 0,
-      Math.max(
-        this.gridBounds?.minZ ?? -10,
-        Math.min(this.gridBounds?.maxZ ?? 10, position.z),
-      ),
+      Math.max(this.gridBounds?.minZ ?? -10, Math.min(this.gridBounds?.maxZ ?? 10, position.z))
     );
   }
 
   public startDragging(object: THREE.Object3D): void {
     this.isDragging = true;
-    this.draggedObject =
-      object.parent instanceof THREE.Scene ? object : object.parent;
+    this.draggedObject = object.parent instanceof THREE.Scene ? object : object.parent;
 
     this.originalPosition = object.position.clone();
     this.originalRotation = object.rotation.clone();
     this.originalScale = object.scale.clone();
 
     // Store initial offset between mouse and object
-    const mousePosition = this.getMousePositionOnPlane(
-      new MouseEvent('mousemove'),
-    );
+    const mousePosition = this.getMousePositionOnPlane(new MouseEvent('mousemove'));
     if (mousePosition) {
       this.dragOffset.copy(object.position).sub(mousePosition);
     }

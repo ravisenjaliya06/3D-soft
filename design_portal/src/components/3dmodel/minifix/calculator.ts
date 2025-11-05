@@ -1,10 +1,5 @@
 import { Position } from '../store/interface';
-import type {
-  MinifixConnection,
-  MinifixStandards,
-  PlankConnection,
-  PlankData,
-} from './types';
+import type { MinifixConnection, MinifixStandards, PlankConnection, PlankData } from './types';
 export const MINIFIX_STANDARDS: MinifixStandards = {
   SCREW_DIAMETER: 1,
   SCREW_LENGTH: 5,
@@ -15,9 +10,7 @@ export const MINIFIX_STANDARDS: MinifixStandards = {
   SPACING: 10,
 };
 
-export const getDynamicMinifixStandards = (
-  spacing: number,
-): MinifixStandards => {
+export const getDynamicMinifixStandards = (spacing: number): MinifixStandards => {
   const updated = {
     ...MINIFIX_STANDARDS,
     SPACING: spacing,
@@ -33,15 +26,14 @@ export function updateMinifixSpacing(newSpacing: number): MinifixStandards {
 export function calculateMinifixPositions(
   connections: PlankConnection[],
   cupboardId: string,
-  spacing?: number,
+  spacing?: number
 ): MinifixConnection[] {
   const minifixConnections: MinifixConnection[] = [];
   const effectiveSpacing = spacing || MINIFIX_STANDARDS.SPACING;
 
   connections.forEach((connection, index) => {
     const { plankA, plankB, jointPosition, connectionType } = connection;
-    const screwPlank =
-      connectionType === 'VERTICAL_TO_HORIZONTAL' ? plankB : plankA;
+    const screwPlank = connectionType === 'VERTICAL_TO_HORIZONTAL' ? plankB : plankA;
     const depth = screwPlank.depth;
     const numConnectors = Math.floor(depth / effectiveSpacing);
 
@@ -56,7 +48,7 @@ export function calculateMinifixPositions(
       const minifixConnection = calculateSingleConnection(
         { ...connection, jointPosition: shiftedJoint },
         cupboardId,
-        index * 100 + i,
+        index * 100 + i
       );
 
       if (minifixConnection) {
@@ -72,7 +64,7 @@ export function calculateMinifixPositions(
 function calculateSingleConnection(
   connection: PlankConnection,
   cupboardId: string,
-  index: number,
+  index: number
 ): MinifixConnection | null {
   const { plankA, plankB, jointPosition, connectionType } = connection;
 
@@ -129,7 +121,7 @@ function calculateSingleConnection(
 function calculateHolePositions(
   screwPlank: PlankData,
   camPlank: PlankData,
-  jointPosition: Position,
+  jointPosition: Position
 ) {
   const { SCREW_DIAMETER, SCREW_LENGTH } = MINIFIX_STANDARDS;
 
@@ -161,12 +153,7 @@ function calculateHolePositions(
         : 'z';
 
   const screwDir = getInwardDirection(jointPosition, screwBounds, touchingAxis);
-  const camDir = getInwardDirection(
-    jointPosition,
-    camBounds,
-    touchingAxis,
-    true,
-  );
+  const camDir = getInwardDirection(jointPosition, camBounds, touchingAxis, true);
 
   // Screw Position: matches visualizer's createScrewVisualization
   const screwPos = {
@@ -178,12 +165,8 @@ function calculateHolePositions(
   // Cam Position: matches visualizer's createCamVisualization
   const isVertical = Math.abs(screwDir.y) > 0.9;
   const camPos = {
-    x: isVertical
-      ? jointPosition.x - SCREW_DIAMETER / 2
-      : jointPosition.x + SCREW_LENGTH / 2,
-    y: isVertical
-      ? jointPosition.y - SCREW_LENGTH / 2
-      : jointPosition.y + SCREW_DIAMETER / 2,
+    x: isVertical ? jointPosition.x - SCREW_DIAMETER / 2 : jointPosition.x + SCREW_LENGTH / 2,
+    y: isVertical ? jointPosition.y - SCREW_LENGTH / 2 : jointPosition.y + SCREW_DIAMETER / 2,
     z: jointPosition.z,
   };
 
@@ -204,26 +187,10 @@ function calculateHolePositions(
   const camPlankIsHorizontal = camPlank.width > camPlank.height;
 
   // Calculate 2D local positions for nesting
-  const screwLocal2D = calculateLocal2DPosition(
-    screwPos,
-    screwPlank,
-    isVertical,
-  );
-  const camLocal2D = calculateLocal2DPosition(
-    camPos,
-    camPlank,
-    camPlankIsHorizontal,
-  );
-  const dowelLocal2D = calculateLocal2DPosition(
-    dowelPos,
-    camPlank,
-    camPlankIsHorizontal,
-  );
-  const boltDrillLocal2D = calculateLocal2DPosition(
-    boltDrillPos,
-    camPlank,
-    camPlankIsHorizontal,
-  );
+  const screwLocal2D = calculateLocal2DPosition(screwPos, screwPlank, isVertical);
+  const camLocal2D = calculateLocal2DPosition(camPos, camPlank, camPlankIsHorizontal);
+  const dowelLocal2D = calculateLocal2DPosition(dowelPos, camPlank, camPlankIsHorizontal);
+  const boltDrillLocal2D = calculateLocal2DPosition(boltDrillPos, camPlank, camPlankIsHorizontal);
 
   return {
     screw: {
@@ -252,7 +219,7 @@ function calculateHolePositions(
 function calculateLocal2DPosition(
   position: Position,
   plank: PlankData,
-  isVertical: boolean,
+  isVertical: boolean
 ): { x: number; y: number } {
   // Use plank's center as the local origin
   const center = {
@@ -298,31 +265,16 @@ function getInwardDirection(
     maxZ: number;
   },
   axis: 'x' | 'y' | 'z',
-  opposite = false,
+  opposite = false
 ): { x: number; y: number; z: number } {
   let dir = 0;
 
   if (axis === 'x') {
-    dir =
-      Math.abs(joint.x - bounds.minX) < 1
-        ? 1
-        : Math.abs(joint.x - bounds.maxX) < 1
-          ? -1
-          : 0;
+    dir = Math.abs(joint.x - bounds.minX) < 1 ? 1 : Math.abs(joint.x - bounds.maxX) < 1 ? -1 : 0;
   } else if (axis === 'y') {
-    dir =
-      Math.abs(joint.y - bounds.minY) < 1
-        ? 1
-        : Math.abs(joint.y - bounds.maxY) < 1
-          ? -1
-          : 0;
+    dir = Math.abs(joint.y - bounds.minY) < 1 ? 1 : Math.abs(joint.y - bounds.maxY) < 1 ? -1 : 0;
   } else if (axis === 'z') {
-    dir =
-      Math.abs(joint.z - bounds.minZ) < 1
-        ? 1
-        : Math.abs(joint.z - bounds.maxZ) < 1
-          ? -1
-          : 0;
+    dir = Math.abs(joint.z - bounds.minZ) < 1 ? 1 : Math.abs(joint.z - bounds.maxZ) < 1 ? -1 : 0;
   }
 
   if (opposite) dir *= -1;

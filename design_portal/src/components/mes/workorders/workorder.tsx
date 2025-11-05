@@ -1,10 +1,6 @@
 import download from '@/assets/mes/download.svg';
 import { CatalogItem } from '@/components/3dmodel/interface';
-import {
-  SettingConfigs,
-  sheetData,
-  sheetsData,
-} from '@/components/settings/interface';
+import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import CommonService from '@/services/CommonService';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
@@ -13,16 +9,16 @@ import styles from './workorder.module.css';
 
 const WorkOrder = (workOrderData: WorkOrderData) => {
   const [designSheets, setDesignSheets] = useState<sheetsData[]>([]);
-  const [sheetDetails, setSheetDetails] = useState<Record<string, sheetData[]>>(
-    {},
-  );
+  const [sheetDetails, setSheetDetails] = useState<Record<string, sheetData[]>>({});
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<sheetData | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
 
   const getDesignSheet = async () => {
-    const response: { status: number; data: SettingConfigs } =
-      await CommonService.get('design', `${workOrderData.design}/settings`);
+    const response: { status: number; data: SettingConfigs } = await CommonService.get(
+      'design',
+      `${workOrderData.design}/settings`
+    );
 
     if (response.status === 200) {
       setDesignSheets(response.data.sheet_data || []);
@@ -37,13 +33,12 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
 
     const details = await Promise.all(
       ids.map(async (id) => {
-        const res: { status: number; data: CatalogItem } =
-          await CommonService.get(
-            'design',
-            `${workOrderData.design}/catalog/item/${id}`,
-          );
+        const res: { status: number; data: CatalogItem } = await CommonService.get(
+          'design',
+          `${workOrderData.design}/catalog/item/${id}`
+        );
         return res.status === 200 ? res.data : { id, error: 'Not found' };
-      }),
+      })
     );
 
     setSheetDetails((prev) => ({
@@ -74,7 +69,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
         `${workOrderData.design}/nesting/download`,
         data,
         // @ts-expect-error No time to update it at this moment
-        { responseType: 'blob' },
+        { responseType: 'blob' }
       );
 
       if (response.status === 200) {
@@ -95,13 +90,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
     }
   };
 
-  const DetailRow = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | number | object;
-  }) => {
+  const DetailRow = ({ label, value }: { label: string; value: string | number | object }) => {
     const [open, setOpen] = useState(false);
 
     if (value === null || value === undefined) {
@@ -132,11 +121,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
           <div className={styles.dropdownContent}>
             {Array.isArray(value)
               ? value.map((item, idx) => (
-                  <DetailRow
-                    key={idx}
-                    label={`${displayLabel} ${idx + 1}`}
-                    value={item}
-                  />
+                  <DetailRow key={idx} label={`${displayLabel} ${idx + 1}`} value={item} />
                 ))
               : Object.entries(value).map(([subKey, subValue]) => (
                   <DetailRow key={subKey} label={subKey} value={subValue} />
@@ -248,10 +233,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
       {selectedDetail && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <button
-              className={styles.closeButton}
-              onClick={() => setSelectedDetail(null)}
-            >
+            <button className={styles.closeButton} onClick={() => setSelectedDetail(null)}>
               ✕
             </button>
             <div className={styles.popupContent}>
@@ -267,11 +249,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
               <div className={styles.detailContainer}>
                 <div className="space-y-2">
                   {Object.entries(selectedDetail).map(([key, value]) => (
-                    <DetailRow
-                      key={key}
-                      label={key}
-                      value={value as string | number | object}
-                    />
+                    <DetailRow key={key} label={key} value={value as string | number | object} />
                   ))}
                 </div>
                 <div className={styles.qrCodeContainer}>

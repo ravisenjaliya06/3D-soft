@@ -26,7 +26,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   };
 
   const withMandatoryNameColumn = (
-    columns: { key: string; label: string; sortable: boolean }[],
+    columns: { key: string; label: string; sortable: boolean }[]
   ) => {
     const nameColumn = { key: 'material_name', label: 'Name', sortable: true };
     const hasNameColumn = columns.some((col) => col.key === 'material_name');
@@ -42,12 +42,8 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
     return <div>Please select a category</div>;
   }
 
-  const activeTabObject = CATEGORY_TABS[activeCategory].find(
-    (t) => t.id === activeTab,
-  );
-  const columns = activeTabObject
-    ? withMandatoryNameColumn(activeTabObject.columns)
-    : [];
+  const activeTabObject = CATEGORY_TABS[activeCategory].find((t) => t.id === activeTab);
+  const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
     <div className={styles.tableContainer}>

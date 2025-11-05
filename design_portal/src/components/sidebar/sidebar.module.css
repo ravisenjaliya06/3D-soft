@@ -108,11 +108,7 @@
 }
 
 .nav li.active {
-  background: linear-gradient(
-    90deg,
-    rgba(144, 120, 221, 0.2) 0%,
-    #392579 87.74%
-  );
+  background: linear-gradient(90deg, rgba(144, 120, 221, 0.2) 0%, #392579 87.74%);
   height: 1.4rem;
   margin: 0;
   box-shadow: 0px 0.219rem 0.344rem 0px var(--box-shadow-color);
@@ -121,11 +117,7 @@
 }
 
 .nav li.active_small {
-  background: linear-gradient(
-    90deg,
-    rgba(144, 120, 221, 0.2) 0%,
-    #392579 87.74%
-  );
+  background: linear-gradient(90deg, rgba(144, 120, 221, 0.2) 0%, #392579 87.74%);
   height: 1.4rem;
   margin: 0;
   box-shadow: 0px 0.219rem 0.344rem 0px var(--box-shadow-color);

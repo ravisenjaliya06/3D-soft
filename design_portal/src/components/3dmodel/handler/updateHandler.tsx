@@ -4,23 +4,13 @@ import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
 import { mmToMeters } from '../handler/unitConversion';
 import { CatalogItem, ChildCatalog, ResponseStatus } from '../interface';
-import {
-  generateMinifixSystem,
-  MINIFIX_STANDARDS,
-  visualizeMinifixConnections,
-} from '../minifix';
+import { generateMinifixSystem, MINIFIX_STANDARDS, visualizeMinifixConnections } from '../minifix';
 import { AppDispatch, store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { trackPropertyChange } from '../store/historySlice';
 import { Object3D } from '../store/interface';
 import { updateObjectGeometry } from '../utils/geometryUtils';
-import {
-  ITEM,
-  ItemData,
-  PLANK,
-  PlankDataItem,
-  UpdatedItemData,
-} from './interface';
+import { ITEM, ItemData, PLANK, PlankDataItem, UpdatedItemData } from './interface';
 
 function getDesignId(): string | null {
   const url = window.location.href;
@@ -42,7 +32,7 @@ export const updateObjectInDatabase = async (
   items: CatalogItem[] = [],
   childCatalogs: ChildCatalog[] = [],
   appName: AppName = 'design',
-  designCatalog: string = 'object',
+  designCatalog: string = 'object'
 ): Promise<THREE.Scene | null> => {
   const designId = getDesignId();
   if (!designId) {
@@ -72,13 +62,10 @@ export const updateObjectInDatabase = async (
     material: selectedObject.material || { type: 'TEXTURE', value: 'default' },
     catalog_type: selectedObject.catalog_type || '',
     // Include Minifix data
-    minifixSpacing:
-      updatedMainData.minifixSpacing ?? selectedObject.minifixSpacing,
+    minifixSpacing: updatedMainData.minifixSpacing ?? selectedObject.minifixSpacing,
     minifixConnections:
-      updatedMainData.minifixConnections ??
-      (selectedObject.minifixConnections || []),
-    minifixHoles:
-      updatedMainData.minifixHoles ?? (selectedObject.minifixHoles || []),
+      updatedMainData.minifixConnections ?? (selectedObject.minifixConnections || []),
+    minifixHoles: updatedMainData.minifixHoles ?? (selectedObject.minifixHoles || []),
   };
 
   // Create a Set to track unique items
@@ -169,19 +156,12 @@ export const updateObjectInDatabase = async (
     },
   };
 
-  const response = await commonService.putObjectData(
-    appName,
-    designId,
-    designCatalog,
-    payload,
-  );
+  const response = await commonService.putObjectData(appName, designId, designCatalog, payload);
 
   if ((response as ResponseStatus).status === 200) {
     return response;
   } else {
-    console.error(
-      `Failed to update object ${objectId}: ${(response as ResponseStatus).status}`,
-    );
+    console.error(`Failed to update object ${objectId}: ${(response as ResponseStatus).status}`);
     return null;
   }
 };
@@ -193,7 +173,7 @@ export const updateObjectInScene = (
   dispatch: AppDispatch,
   selectedObject: Object3D | null,
   appName: AppName = 'design',
-  designCatalog: string = 'object',
+  designCatalog: string = 'object'
 ): void => {
   if (!scene || !selectedObject) return;
   removeExistingLines();
@@ -215,9 +195,7 @@ export const updateObjectInScene = (
   const currentPosition = selectedObject.position || { x: 0, y: 0, z: 0 };
 
   const widthRatio = updatedData.width ? updatedData.width / currentWidth : 1;
-  const heightRatio = updatedData.height
-    ? updatedData.height / currentHeight
-    : 1;
+  const heightRatio = updatedData.height ? updatedData.height / currentHeight : 1;
   const depthRatio = updatedData.depth ? updatedData.depth / currentDepth : 1;
 
   let serializableObject = {
@@ -244,7 +222,7 @@ export const updateObjectInScene = (
   ) {
     try {
       const cupboardObject = scene.children.find(
-        (obj) => obj.userData.objectId === selectedObject.id,
+        (obj) => obj.userData.objectId === selectedObject.id
       ) as THREE.Mesh;
 
       if (cupboardObject) {
@@ -256,10 +234,7 @@ export const updateObjectInScene = (
             name: obj.name,
             width: updatedData.width ? obj.width * widthRatio : obj.width,
             height: updatedData.height ? obj.height * heightRatio : obj.height,
-            depth:
-              updatedData.depth && obj.depth
-                ? obj.depth * depthRatio
-                : obj.depth,
+            depth: updatedData.depth && obj.depth ? obj.depth * depthRatio : obj.depth,
             position: {
               x: obj.position.x * widthRatio || 0,
               y: obj.position.y * heightRatio || 0,
@@ -277,11 +252,7 @@ export const updateObjectInScene = (
             updatedData.minifixSpacing ??
             selectedObject.minifixSpacing ??
             MINIFIX_STANDARDS.SPACING;
-          const minifixSystem = generateMinifixSystem(
-            selectedObject.id,
-            planks,
-            minifixSpacing,
-          );
+          const minifixSystem = generateMinifixSystem(selectedObject.id, planks, minifixSpacing);
 
           if (minifixSystem.connections.length > 0) {
             // Clear existing Minifix visualizations
@@ -307,10 +278,7 @@ export const updateObjectInScene = (
               }
             });
 
-            visualizeMinifixConnections(
-              minifixSystem.connections,
-              cupboardObject,
-            );
+            visualizeMinifixConnections(minifixSystem.connections, cupboardObject);
 
             // Update cupboard object with new Minifix data
             serializableObject = {
@@ -323,12 +291,10 @@ export const updateObjectInScene = (
 
             minifixSystem.planksWithHoles.forEach((plankWithHoles) => {
               const plankObject = cupboardObject.children.find(
-                (child) => child.userData.objectId === plankWithHoles.id,
+                (child) => child.userData.objectId === plankWithHoles.id
               ) as THREE.Mesh | undefined;
 
-              const originalPlank = allObjects.find(
-                (obj) => obj.id === plankWithHoles.id,
-              );
+              const originalPlank = allObjects.find((obj) => obj.id === plankWithHoles.id);
               if (!originalPlank) return;
 
               if (plankObject && plankObject instanceof THREE.Mesh) {
@@ -336,12 +302,12 @@ export const updateObjectInScene = (
                 plankObject.geometry = new THREE.BoxGeometry(
                   mmToMeters(plankWithHoles.width),
                   mmToMeters(plankWithHoles.height),
-                  mmToMeters(plankWithHoles.depth),
+                  mmToMeters(plankWithHoles.depth)
                 );
                 plankObject.position.set(
                   mmToMeters(plankWithHoles.position.x * widthRatio),
                   mmToMeters(plankWithHoles.position.y * heightRatio),
-                  mmToMeters(plankWithHoles.position.z * depthRatio),
+                  mmToMeters(plankWithHoles.position.z * depthRatio)
                 );
                 plankObject.geometry.attributes.position.needsUpdate = true;
                 plankObject.geometry.computeVertexNormals();
@@ -384,9 +350,7 @@ export const updateObjectInScene = (
 
             // Prepare items for database update
             updatedItems = minifixSystem.planksWithHoles.map((plank) => {
-              const originalPlank = allObjects.find(
-                (obj) => obj.id === plank.id,
-              );
+              const originalPlank = allObjects.find((obj) => obj.id === plank.id);
               return {
                 id: plank.id,
                 name: plank.name,
@@ -427,7 +391,7 @@ export const updateObjectInScene = (
               updatedItems,
               [],
               appName,
-              designCatalog,
+              designCatalog
             );
           }
         }
@@ -450,7 +414,7 @@ export const updateObjectInScene = (
     threeDObject.geometry = new THREE.BoxGeometry(
       mmToMeters(newWidth),
       mmToMeters(newHeight),
-      mmToMeters(newDepth),
+      mmToMeters(newDepth)
     );
     threeDObject.geometry.attributes.position.needsUpdate = true;
     threeDObject.geometry.computeVertexNormals();
@@ -468,22 +432,19 @@ export const updateObjectInScene = (
           'width',
           currentWidth,
           updatedData.width,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
-    if (
-      updatedData.height !== undefined &&
-      updatedData.height !== currentHeight
-    ) {
+    if (updatedData.height !== undefined && updatedData.height !== currentHeight) {
       dispatch(
         trackPropertyChange(
           serializableObject,
           'height',
           currentHeight,
           updatedData.height,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
     if (updatedData.depth !== undefined && updatedData.depth !== currentDepth) {
@@ -493,16 +454,14 @@ export const updateObjectInScene = (
           'depth',
           currentDepth,
           updatedData.depth,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
 
     threeDObject.children.forEach((child) => {
       if (child instanceof THREE.Mesh) {
-        const childObject = allObjects.find(
-          (obj) => obj.id === child.userData.objectId,
-        );
+        const childObject = allObjects.find((obj) => obj.id === child.userData.objectId);
         if (childObject) {
           const newChildWidth = childObject.width * widthRatio;
           const newChildHeight = childObject.height * heightRatio;
@@ -515,15 +474,11 @@ export const updateObjectInScene = (
           child.geometry = new THREE.BoxGeometry(
             mmToMeters(newChildWidth),
             mmToMeters(newChildHeight),
-            mmToMeters(newChildDepth),
+            mmToMeters(newChildDepth)
           );
           child.geometry.attributes.position.needsUpdate = true;
           child.geometry.computeVertexNormals();
-          child.position.set(
-            mmToMeters(newChildX),
-            mmToMeters(newChildY),
-            mmToMeters(newChildZ),
-          );
+          child.position.set(mmToMeters(newChildX), mmToMeters(newChildY), mmToMeters(newChildZ));
           child.updateMatrix();
           child.updateMatrixWorld(true);
 
@@ -548,8 +503,8 @@ export const updateObjectInScene = (
                 'width',
                 childObject.width,
                 newChildWidth,
-                child,
-              ),
+                child
+              )
             );
           }
           if (newChildHeight !== childObject.height) {
@@ -559,8 +514,8 @@ export const updateObjectInScene = (
                 'height',
                 childObject.height,
                 newChildHeight,
-                child,
-              ),
+                child
+              )
             );
           }
           if (newChildDepth !== childObject.depth) {
@@ -570,8 +525,8 @@ export const updateObjectInScene = (
                 'depth',
                 childObject.depth,
                 newChildDepth,
-                child,
-              ),
+                child
+              )
             );
           }
         }
@@ -581,91 +536,73 @@ export const updateObjectInScene = (
 
   // Track position changes
   if (updatedData.position) {
-    if (
-      updatedData.position.x !== undefined &&
-      updatedData.position.x !== currentPosition.x
-    ) {
+    if (updatedData.position.x !== undefined && updatedData.position.x !== currentPosition.x) {
       dispatch(
         trackPropertyChange(
           serializableObject,
           'position.x',
           currentPosition.x,
           updatedData.position.x,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
-    if (
-      updatedData.position.y !== undefined &&
-      updatedData.position.y !== currentPosition.y
-    ) {
+    if (updatedData.position.y !== undefined && updatedData.position.y !== currentPosition.y) {
       dispatch(
         trackPropertyChange(
           serializableObject,
           'position.y',
           currentPosition.y,
           updatedData.position.y,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
-    if (
-      updatedData.position.z !== undefined &&
-      updatedData.position.z !== currentPosition.z
-    ) {
+    if (updatedData.position.z !== undefined && updatedData.position.z !== currentPosition.z) {
       dispatch(
         trackPropertyChange(
           serializableObject,
           'position.z',
           currentPosition.z,
           updatedData.position.z,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
   }
 
   // Track rotation changes
-  if (
-    updatedData.rotationX !== undefined &&
-    updatedData.rotationX !== selectedObject.rotationX
-  ) {
+  if (updatedData.rotationX !== undefined && updatedData.rotationX !== selectedObject.rotationX) {
     dispatch(
       trackPropertyChange(
         serializableObject,
         'rotationX',
         selectedObject.rotationX || 0,
         updatedData.rotationX,
-        threeDObject,
-      ),
+        threeDObject
+      )
     );
   }
-  if (
-    updatedData.rotationY !== undefined &&
-    updatedData.rotationY !== selectedObject.rotationY
-  ) {
+  if (updatedData.rotationY !== undefined && updatedData.rotationY !== selectedObject.rotationY) {
     dispatch(
       trackPropertyChange(
         serializableObject,
         'rotationY',
         selectedObject.rotationY || 0,
         updatedData.rotationY,
-        threeDObject,
-      ),
+        threeDObject
+      )
     );
   }
-  if (
-    updatedData.rotationZ !== undefined &&
-    updatedData.rotationZ !== selectedObject.rotationZ
-  ) {
+  if (updatedData.rotationZ !== undefined && updatedData.rotationZ !== selectedObject.rotationZ) {
     dispatch(
       trackPropertyChange(
         serializableObject,
         'rotationZ',
         selectedObject.rotationZ || 0,
         updatedData.rotationZ,
-        threeDObject,
-      ),
+        threeDObject
+      )
     );
   }
 
@@ -684,16 +621,11 @@ export const updateObjectInScene = (
     threeDObject.position.set(
       mmToMeters(updatedData.position.x ?? currentPosition.x),
       mmToMeters(updatedData.position.y ?? currentPosition.y),
-      mmToMeters(updatedData.position.z ?? currentPosition.z),
+      mmToMeters(updatedData.position.z ?? currentPosition.z)
     );
   }
 
-  const childUpdates = updateObjectGeometry(
-    threeDObject,
-    selectedObject,
-    updatedData,
-    allObjects,
-  );
+  const childUpdates = updateObjectGeometry(threeDObject, selectedObject, updatedData, allObjects);
 
   const items: CatalogItem[] = [];
   const childCatalogs: ChildCatalog[] = [];
@@ -708,15 +640,9 @@ export const updateObjectInScene = (
       height: childData.height ? childData.height : childObject.height,
       depth: childData.depth ? childData.depth : childObject.depth,
       position: {
-        x: childData.position?.x
-          ? childData.position.x
-          : childObject.position?.x || 0,
-        y: childData.position?.y
-          ? childData.position.y
-          : childObject.position?.y || 0,
-        z: childData.position?.z
-          ? childData.position.z
-          : childObject.position?.z || 0,
+        x: childData.position?.x ? childData.position.x : childObject.position?.x || 0,
+        y: childData.position?.y ? childData.position.y : childObject.position?.y || 0,
+        z: childData.position?.z ? childData.position.z : childObject.position?.z || 0,
       },
     };
 
@@ -724,7 +650,7 @@ export const updateObjectInScene = (
       updateObject({
         ...childObject,
         ...updatedChildData,
-      }),
+      })
     );
 
     if (updatedChildData.width !== childObject.width) {
@@ -734,8 +660,8 @@ export const updateObjectInScene = (
           'width',
           childObject.width,
           updatedChildData.width,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
     if (updatedChildData.height !== childObject.height) {
@@ -745,8 +671,8 @@ export const updateObjectInScene = (
           'height',
           childObject.height,
           updatedChildData.height,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
     if (updatedChildData.depth !== childObject.depth) {
@@ -756,8 +682,8 @@ export const updateObjectInScene = (
           'depth',
           childObject.depth,
           updatedChildData.depth,
-          threeDObject,
-        ),
+          threeDObject
+        )
       );
     }
 
@@ -790,207 +716,181 @@ export const updateObjectInScene = (
     });
   });
 
-  Object.entries(childUpdates.grandChildUpdates).forEach(
-    ([childId, childData]) => {
-      const childObject = allObjects.find(
-        (obj: Object3D) => obj.id === childId,
-      );
-      if (!childObject) return;
+  Object.entries(childUpdates.grandChildUpdates).forEach(([childId, childData]) => {
+    const childObject = allObjects.find((obj: Object3D) => obj.id === childId);
+    if (!childObject) return;
 
-      const updatedChildData = {
-        ...childData,
-        width: childData.width ? childData.width : childObject.width,
-        height: childData.height ? childData.height : childObject.height,
-        depth: childData.depth ? childData.depth : childObject.depth,
-        position: {
-          x: childData.position?.x
-            ? childData.position.x
-            : childObject.position?.x || 0,
-          y: childData.position?.y
-            ? childData.position.y
-            : childObject.position?.y || 0,
-          z: childData.position?.z
-            ? childData.position.z
-            : childObject.position?.z || 0,
-        },
-      };
+    const updatedChildData = {
+      ...childData,
+      width: childData.width ? childData.width : childObject.width,
+      height: childData.height ? childData.height : childObject.height,
+      depth: childData.depth ? childData.depth : childObject.depth,
+      position: {
+        x: childData.position?.x ? childData.position.x : childObject.position?.x || 0,
+        y: childData.position?.y ? childData.position.y : childObject.position?.y || 0,
+        z: childData.position?.z ? childData.position.z : childObject.position?.z || 0,
+      },
+    };
+    dispatch(
+      updateObject({
+        ...childObject,
+        ...updatedChildData,
+      })
+    );
+
+    if (updatedChildData.width !== childObject.width) {
       dispatch(
-        updateObject({
-          ...childObject,
-          ...updatedChildData,
-        }),
+        trackPropertyChange(
+          { ...childObject, ...updatedChildData },
+          'width',
+          childObject.width,
+          updatedChildData.width,
+          threeDObject
+        )
       );
+    }
+    if (updatedChildData.height !== childObject.height) {
+      dispatch(
+        trackPropertyChange(
+          { ...childObject, ...updatedChildData },
+          'height',
+          childObject.height,
+          updatedChildData.height,
+          threeDObject
+        )
+      );
+    }
+    if (updatedChildData.depth !== childObject.depth) {
+      dispatch(
+        trackPropertyChange(
+          { ...childObject, ...updatedChildData },
+          'depth',
+          childObject.depth,
+          updatedChildData.depth,
+          threeDObject
+        )
+      );
+    }
 
-      if (updatedChildData.width !== childObject.width) {
-        dispatch(
-          trackPropertyChange(
-            { ...childObject, ...updatedChildData },
-            'width',
-            childObject.width,
-            updatedChildData.width,
-            threeDObject,
-          ),
-        );
-      }
-      if (updatedChildData.height !== childObject.height) {
-        dispatch(
-          trackPropertyChange(
-            { ...childObject, ...updatedChildData },
-            'height',
-            childObject.height,
-            updatedChildData.height,
-            threeDObject,
-          ),
-        );
-      }
-      if (updatedChildData.depth !== childObject.depth) {
-        dispatch(
-          trackPropertyChange(
-            { ...childObject, ...updatedChildData },
-            'depth',
-            childObject.depth,
-            updatedChildData.depth,
-            threeDObject,
-          ),
-        );
-      }
+    if (childData.child && Array.isArray(childData.child) && childData.child.length > 0) {
+      const catalogItems = childData.child
+        .map((grandChildId: string) => {
+          const grandChildObj = allObjects.find((obj: Object3D) => obj.id === grandChildId);
+          const grandChildUpdate =
+            (childUpdates.grandChildUpdates as Record<string, Partial<Object3D>>)[grandChildId] ||
+            {};
+          if (!grandChildObj) return null;
 
-      if (
-        childData.child &&
-        Array.isArray(childData.child) &&
-        childData.child.length > 0
-      ) {
-        const catalogItems = childData.child
-          .map((grandChildId: string) => {
-            const grandChildObj = allObjects.find(
-              (obj: Object3D) => obj.id === grandChildId,
-            );
-            const grandChildUpdate =
-              (
-                childUpdates.grandChildUpdates as Record<
-                  string,
-                  Partial<Object3D>
-                >
-              )[grandChildId] || {};
-            if (!grandChildObj) return null;
+          const updatedGrandChildData = {
+            width: grandChildUpdate.width ? grandChildUpdate.width : grandChildObj.width,
+            height: grandChildUpdate.height ? grandChildUpdate.height : grandChildObj.height,
+            depth: grandChildUpdate.depth ? grandChildUpdate.depth : grandChildObj.depth,
+            position: {
+              x: grandChildUpdate.position?.x
+                ? grandChildUpdate.position.x
+                : grandChildObj.position?.x || 0,
+              y: grandChildUpdate.position?.y
+                ? grandChildUpdate.position.y
+                : grandChildObj.position?.y || 0,
+              z: grandChildUpdate.position?.z
+                ? grandChildUpdate.position.z
+                : grandChildObj.position?.z || 0,
+            },
+          };
 
-            const updatedGrandChildData = {
-              width: grandChildUpdate.width
-                ? grandChildUpdate.width
-                : grandChildObj.width,
-              height: grandChildUpdate.height
-                ? grandChildUpdate.height
-                : grandChildObj.height,
-              depth: grandChildUpdate.depth
-                ? grandChildUpdate.depth
-                : grandChildObj.depth,
-              position: {
-                x: grandChildUpdate.position?.x
-                  ? grandChildUpdate.position.x
-                  : grandChildObj.position?.x || 0,
-                y: grandChildUpdate.position?.y
-                  ? grandChildUpdate.position.y
-                  : grandChildObj.position?.y || 0,
-                z: grandChildUpdate.position?.z
-                  ? grandChildUpdate.position.z
-                  : grandChildObj.position?.z || 0,
-              },
-            };
+          dispatch(
+            updateObject({
+              ...grandChildObj,
+              ...updatedGrandChildData,
+            })
+          );
 
+          if (updatedGrandChildData.width !== grandChildObj.width) {
             dispatch(
-              updateObject({
-                ...grandChildObj,
-                ...updatedGrandChildData,
-              }),
+              trackPropertyChange(
+                { ...grandChildObj, ...updatedGrandChildData },
+                'width',
+                grandChildObj.width,
+                updatedGrandChildData.width,
+                threeDObject
+              )
             );
+          }
+          if (updatedGrandChildData.height !== grandChildObj.height) {
+            dispatch(
+              trackPropertyChange(
+                { ...grandChildObj, ...updatedGrandChildData },
+                'height',
+                grandChildObj.height,
+                updatedGrandChildData.height,
+                threeDObject
+              )
+            );
+          }
+          if (updatedGrandChildData.depth !== grandChildObj.depth) {
+            dispatch(
+              trackPropertyChange(
+                { ...grandChildObj, ...updatedGrandChildData },
+                'depth',
+                grandChildObj.depth,
+                updatedGrandChildData.depth,
+                threeDObject
+              )
+            );
+          }
 
-            if (updatedGrandChildData.width !== grandChildObj.width) {
-              dispatch(
-                trackPropertyChange(
-                  { ...grandChildObj, ...updatedGrandChildData },
-                  'width',
-                  grandChildObj.width,
-                  updatedGrandChildData.width,
-                  threeDObject,
-                ),
-              );
-            }
-            if (updatedGrandChildData.height !== grandChildObj.height) {
-              dispatch(
-                trackPropertyChange(
-                  { ...grandChildObj, ...updatedGrandChildData },
-                  'height',
-                  grandChildObj.height,
-                  updatedGrandChildData.height,
-                  threeDObject,
-                ),
-              );
-            }
-            if (updatedGrandChildData.depth !== grandChildObj.depth) {
-              dispatch(
-                trackPropertyChange(
-                  { ...grandChildObj, ...updatedGrandChildData },
-                  'depth',
-                  grandChildObj.depth,
-                  updatedGrandChildData.depth,
-                  threeDObject,
-                ),
-              );
-            }
-
-            return {
-              id: grandChildId,
-              name: grandChildObj.name || `ITEM_${grandChildId}`,
-              data: {
-                width: updatedGrandChildData.width,
-                height: updatedGrandChildData.height,
-                depth: updatedGrandChildData.depth,
-                position: updatedGrandChildData.position,
-                material: grandChildObj.material || {
-                  type: 'TEXTURE',
-                  value: 'wood_3',
-                },
-              },
-              material: null,
-            };
-          })
-          .filter((item: ItemData) => item !== null);
-
-        if (catalogItems.length > 0) {
-          childCatalogs.push({
-            catalog: {
-              id: childId,
-              name: childObject?.name || `CATALOG_${childId}`,
-              data: {
-                position: updatedChildData.position,
-                id: '',
-                name: '',
-                width: 0,
-                height: 0,
-                depth: 0,
-                layer: 0,
-                altitude: 0,
-                plankSize: 0,
-                rotateX: 0,
-                rotateY: 0,
-                rotateZ: 0,
-                parent: '',
-                child: [],
-                minifixHoles: [],
-                minifixConnections: [],
-                grooves: [],
-                material: childObject.material || {
-                  type: 'TEXTURE',
-                  value: 'wood_3',
-                },
+          return {
+            id: grandChildId,
+            name: grandChildObj.name || `ITEM_${grandChildId}`,
+            data: {
+              width: updatedGrandChildData.width,
+              height: updatedGrandChildData.height,
+              depth: updatedGrandChildData.depth,
+              position: updatedGrandChildData.position,
+              material: grandChildObj.material || {
+                type: 'TEXTURE',
+                value: 'wood_3',
               },
             },
-            items: catalogItems,
-          });
-        }
+            material: null,
+          };
+        })
+        .filter((item: ItemData) => item !== null);
+
+      if (catalogItems.length > 0) {
+        childCatalogs.push({
+          catalog: {
+            id: childId,
+            name: childObject?.name || `CATALOG_${childId}`,
+            data: {
+              position: updatedChildData.position,
+              id: '',
+              name: '',
+              width: 0,
+              height: 0,
+              depth: 0,
+              layer: 0,
+              altitude: 0,
+              plankSize: 0,
+              rotateX: 0,
+              rotateY: 0,
+              rotateZ: 0,
+              parent: '',
+              child: [],
+              minifixHoles: [],
+              minifixConnections: [],
+              grooves: [],
+              material: childObject.material || {
+                type: 'TEXTURE',
+                value: 'wood_3',
+              },
+            },
+          },
+          items: catalogItems,
+        });
       }
-    },
-  );
+    }
+  });
 
   if (
     !selectedObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
@@ -1026,7 +926,7 @@ export const updateObjectInScene = (
     items,
     childCatalogs,
     appName,
-    designCatalog,
+    designCatalog
   );
 
   updateObjectOutline(selectedObject, scene);
@@ -1034,12 +934,12 @@ export const updateObjectInScene = (
 
 export const updateObjectOutline = (
   selectedObject: Object3D | null,
-  scene: THREE.Scene | null,
+  scene: THREE.Scene | null
 ): void => {
   if (!scene || !selectedObject) return;
 
   const threeDObject = scene.children.find(
-    (child) => child.userData.objectId === selectedObject.id,
+    (child) => child.userData.objectId === selectedObject.id
   );
 
   if (threeDObject && threeDObject instanceof THREE.Mesh) {
@@ -1047,7 +947,7 @@ export const updateObjectOutline = (
       (child) =>
         child instanceof THREE.LineSegments &&
         child.userData.isOutline &&
-        child.userData.outlineFor === selectedObject.id,
+        child.userData.outlineFor === selectedObject.id
     ) as THREE.LineSegments | undefined;
 
     if (outlineObject) {
@@ -1084,10 +984,7 @@ export const gettingDesignID = () => {
   return designID;
 };
 
-export const updateCatalogItemObject = async (
-  catalog: CatalogItem,
-  data: CatalogItem,
-) => {
+export const updateCatalogItemObject = async (catalog: CatalogItem, data: CatalogItem) => {
   const payload = {
     data: {
       catalog: {
@@ -1110,7 +1007,7 @@ export const updateCatalogItemObject = async (
     gettingDesignID(),
     'object',
     data.id,
-    payload,
+    payload
   );
 
   if (response.status !== 200) {

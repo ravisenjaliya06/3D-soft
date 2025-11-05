@@ -1,6 +1,6 @@
 export const handleFormData = <T extends Record<string, string>>(
   formData: T,
-  setError: (error: string | null) => void,
+  setError: (error: string | null) => void
 ): { formData: FormData | false; errors: Record<string, string | null> } => {
   const formDataObject = new FormData();
   const errors: Record<string, string | null> = {};
@@ -29,9 +29,7 @@ export const handleFormData = <T extends Record<string, string>>(
 
   setError(null);
   return {
-    formData: Object.keys(errors).some((key) => errors[key])
-      ? false
-      : formDataObject,
+    formData: Object.keys(errors).some((key) => errors[key]) ? false : formDataObject,
     errors,
   };
 };

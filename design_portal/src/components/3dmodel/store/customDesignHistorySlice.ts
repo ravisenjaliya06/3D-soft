@@ -75,8 +75,7 @@ const customHistorySlice = createSlice({
   },
 });
 
-export const { undo, redo, addToHistory, clearHistory, moveToPresent } =
-  customHistorySlice.actions;
+export const { undo, redo, addToHistory, clearHistory, moveToPresent } = customHistorySlice.actions;
 
 export default customHistorySlice.reducer;
 
@@ -180,15 +179,11 @@ export const trackShapePropertyChange =
     oldValue: number | { x: number; y: number; z: number } | string,
     newValue: number | { x: number; y: number; z: number } | string,
     isRecursive = false,
-    childShapes?: Shape[],
+    childShapes?: Shape[]
   ): AppThunk =>
   (dispatch) => {
     const action: CustomHistoryAction = {
-      id:
-        (isRecursive ? 'recursive-' : '') +
-        shape.id +
-        '-' +
-        Date.now().toString(),
+      id: (isRecursive ? 'recursive-' : '') + shape.id + '-' + Date.now().toString(),
       type: 'PROPERTY_CHANGE',
       data: {
         shape: JSON.parse(JSON.stringify(shape)),
@@ -271,9 +266,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
             payload: lastAction.data.shape.id,
           });
 
-          const objectToRemove = scene.getObjectByName(
-            lastAction.data.shape.id,
-          );
+          const objectToRemove = scene.getObjectByName(lastAction.data.shape.id);
           if (objectToRemove && objectToRemove.parent) {
             objectToRemove.parent.remove(objectToRemove);
           }
@@ -307,7 +300,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
             recreateImageFromShape(
               lastAction.data.shape,
               scene,
-              lastAction.data.imageData as ImageMetadata,
+              lastAction.data.imageData as ImageMetadata
             );
           } else {
             // Standard object recreation
@@ -336,9 +329,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
           });
 
           // Remove existing object
-          const objectToRemove = scene.getObjectByName(
-            lastAction.data.previousState.id,
-          );
+          const objectToRemove = scene.getObjectByName(lastAction.data.previousState.id);
           if (objectToRemove && objectToRemove.parent) {
             objectToRemove.parent.remove(objectToRemove);
           }
@@ -352,7 +343,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
             recreateImageFromShape(
               lastAction.data.previousState,
               scene,
-              lastAction.data.imageData as ImageMetadata,
+              lastAction.data.imageData as ImageMetadata
             );
           } else {
             // Standard object recreation
@@ -369,9 +360,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
           const change = changes[0]; // We only handle one property change for now
 
           // Get updated shape from store
-          const storeShape = store
-            .getState()
-            .customDesign.shapes.find((s) => s.id === shape.id);
+          const storeShape = store.getState().customDesign.shapes.find((s) => s.id === shape.id);
 
           if (!storeShape) {
             break;
@@ -437,9 +426,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
                 .getState()
                 .customDesign.shapes.find((s) => s.id === childId);
               if (storeChildShape) {
-                const updatedChildShape = JSON.parse(
-                  JSON.stringify(storeChildShape),
-                );
+                const updatedChildShape = JSON.parse(JSON.stringify(storeChildShape));
                 if (
                   typeof change.oldValue === 'object' &&
                   change.oldValue !== null &&
@@ -470,10 +457,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
           const imageDataMap: ImageDataMap = {};
 
           // Build image maps for quick lookups
-          if (
-            lastAction.data.imageShapes &&
-            Array.isArray(lastAction.data.imageShapes)
-          ) {
+          if (lastAction.data.imageShapes && Array.isArray(lastAction.data.imageShapes)) {
             lastAction.data.imageShapes.forEach((shape) => {
               if (shape && shape.id) {
                 imageShapesMap[shape.id] = shape;
@@ -481,15 +465,9 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
             });
           }
 
-          if (
-            lastAction.data.imageData &&
-            typeof lastAction.data.imageData === 'object'
-          ) {
+          if (lastAction.data.imageData && typeof lastAction.data.imageData === 'object') {
             if (!Array.isArray(lastAction.data.imageData)) {
-              const imageDataObj = lastAction.data.imageData as Record<
-                string,
-                ImageMetadata
-              >;
+              const imageDataObj = lastAction.data.imageData as Record<string, ImageMetadata>;
               Object.keys(imageDataObj).forEach((id) => {
                 imageDataMap[id] = imageDataObj[id];
               });
@@ -536,10 +514,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
   }
 };
 
-function recreateObjectFromShape(
-  shape: Shape,
-  scene: THREE.Scene,
-): THREE.Mesh | null {
+function recreateObjectFromShape(shape: Shape, scene: THREE.Scene): THREE.Mesh | null {
   if (shape.type === 'image') {
     return recreateImageFromShape(shape, scene);
   }
@@ -559,7 +534,7 @@ function recreateObjectFromShape(
       geometry = new THREE.BoxGeometry(
         dimensions.width || 1,
         dimensions.height || 1,
-        dimensions.depth || 1,
+        dimensions.depth || 1
       );
       break;
     case 'sphere':
@@ -570,29 +545,17 @@ function recreateObjectFromShape(
         dimensions.radiusTop || 0.5,
         dimensions.radiusBottom || 0.5,
         dimensions.height || 1,
-        32,
+        32
       );
       break;
     case 'cone':
-      geometry = new THREE.ConeGeometry(
-        dimensions.radius || 0.5,
-        dimensions.height || 1,
-        32,
-      );
+      geometry = new THREE.ConeGeometry(dimensions.radius || 0.5, dimensions.height || 1, 32);
       break;
     case 'torus':
-      geometry = new THREE.TorusGeometry(
-        dimensions.radius || 0.5,
-        dimensions.tube || 0.2,
-        16,
-        100,
-      );
+      geometry = new THREE.TorusGeometry(dimensions.radius || 0.5, dimensions.tube || 0.2, 16, 100);
       break;
     case 'plane':
-      geometry = new THREE.PlaneGeometry(
-        dimensions.width || 1,
-        dimensions.height || 1,
-      );
+      geometry = new THREE.PlaneGeometry(dimensions.width || 1, dimensions.height || 1);
       break;
     // Add more geometry types as needed
     default:
@@ -602,8 +565,7 @@ function recreateObjectFromShape(
   const material = new THREE.MeshStandardMaterial({
     color: geometryData.color || 0xbbbbbb,
     transparent: shape.properties?.transparent || false,
-    opacity:
-      shape.properties?.opacity !== undefined ? shape.properties.opacity : 1,
+    opacity: shape.properties?.opacity !== undefined ? shape.properties.opacity : 1,
   });
 
   const mesh = new THREE.Mesh(geometry, material);
@@ -628,7 +590,7 @@ function recreateObjectFromShape(
 function recreateImageFromShape(
   shape: Shape,
   scene: THREE.Scene,
-  imageData?: ImageMetadata,
+  imageData?: ImageMetadata
 ): THREE.Mesh | null {
   try {
     // Get dimensions and properties from shape
@@ -704,7 +666,7 @@ function recreateImageFromShape(
           undefined,
           (error) => {
             reject(error);
-          },
+          }
         );
       });
     };
@@ -746,10 +708,7 @@ function recreateImageFromShape(
 
     // Get geometry edges for the wireframe
     const wireframeGeometry = new THREE.EdgesGeometry(geometry);
-    const wireframe = new THREE.LineSegments(
-      wireframeGeometry,
-      wireframeMaterial,
-    );
+    const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
 
     // Name it so we can find it later
     wireframe.name = 'image-wireframe-' + shape.id;
@@ -765,15 +724,7 @@ function recreateImageFromShape(
 }
 
 interface GeometryData {
-  type:
-    | 'box'
-    | 'sphere'
-    | 'cylinder'
-    | 'cone'
-    | 'torus'
-    | 'plane'
-    | 'tetrahedron'
-    | 'circle';
+  type: 'box' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'plane' | 'tetrahedron' | 'circle';
   dimensions?: {
     width?: number;
     height?: number;
@@ -823,7 +774,7 @@ export const redoCustomAction = (): AppThunk => (dispatch, getState) => {
           recreateImageFromShape(
             nextAction.data.shape,
             scene,
-            nextAction.data.imageData as ImageMetadata,
+            nextAction.data.imageData as ImageMetadata
           );
         } else {
           recreateObjectFromShape(nextAction.data.shape, scene);
@@ -892,7 +843,7 @@ export const redoCustomAction = (): AppThunk => (dispatch, getState) => {
           recreateImageFromShape(
             nextAction.data.shape,
             scene,
-            nextAction.data.imageData as ImageMetadata,
+            nextAction.data.imageData as ImageMetadata
           );
         } else {
           recreateObjectFromShape(nextAction.data.shape, scene);
@@ -908,14 +859,10 @@ export const redoCustomAction = (): AppThunk => (dispatch, getState) => {
         const change = changes[0]; // We only handle one property change for now
 
         // Get latest shape from store
-        const storeShape = getState().customDesign.shapes.find(
-          (s) => s.id === shape.id,
-        );
+        const storeShape = getState().customDesign.shapes.find((s) => s.id === shape.id);
 
         if (!storeShape) {
-          console.warn(
-            'Cannot redo property change - shape not found in store',
-          );
+          console.warn('Cannot redo property change - shape not found in store');
           break;
         }
 
@@ -975,13 +922,9 @@ export const redoCustomAction = (): AppThunk => (dispatch, getState) => {
             }
 
             // Update the child shape in Redux too
-            const storeChildShape = getState().customDesign.shapes.find(
-              (s) => s.id === childId,
-            );
+            const storeChildShape = getState().customDesign.shapes.find((s) => s.id === childId);
             if (storeChildShape) {
-              const updatedChildShape = JSON.parse(
-                JSON.stringify(storeChildShape),
-              );
+              const updatedChildShape = JSON.parse(JSON.stringify(storeChildShape));
               if (
                 typeof change.newValue === 'object' &&
                 change.newValue !== null &&
@@ -1013,11 +956,7 @@ export const redoCustomAction = (): AppThunk => (dispatch, getState) => {
         if (scene) {
           const meshesToRemove = scene.children.filter((child) => {
             const objectId = child.userData.objectId;
-            return (
-              objectId &&
-              shapesToRemove.includes(objectId) &&
-              child instanceof THREE.Mesh
-            );
+            return objectId && shapesToRemove.includes(objectId) && child instanceof THREE.Mesh;
           });
           if (meshesToRemove.length > 0) {
             meshesToRemove.forEach((mesh) => {

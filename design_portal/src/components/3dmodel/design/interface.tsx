@@ -22,12 +22,12 @@ export interface ThreeDView {
     scene: THREE.Scene,
     platformMesh: THREE.Mesh,
     count: number,
-    doorType?: 'single' | 'double',
+    doorType?: 'single' | 'double'
   ) => Promise<void>;
   addDoubleDoorUpperCabinetsAbovePlatform: (
     scene: THREE.Scene,
     platformMesh: THREE.Mesh,
-    count: number,
+    count: number
   ) => Promise<void>;
 }
 

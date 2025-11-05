@@ -1,23 +1,13 @@
 import * as THREE from 'three';
 
 export const createGrid = (size: number, divisions: number): THREE.Group => {
-  const primaryGrid = new THREE.GridHelper(
-    size,
-    divisions,
-    '#d3d3d3',
-    '#d3d3d3',
-  );
+  const primaryGrid = new THREE.GridHelper(size, divisions, '#d3d3d3', '#d3d3d3');
   primaryGrid.material.opacity = 0.2;
   primaryGrid.material.transparent = true;
   primaryGrid.position.y = 0;
   primaryGrid.name = 'grid';
 
-  const secondaryGrid = new THREE.GridHelper(
-    size,
-    divisions / 2,
-    '#d3d3d3',
-    '#d3d3d3',
-  );
+  const secondaryGrid = new THREE.GridHelper(size, divisions / 2, '#d3d3d3', '#d3d3d3');
   secondaryGrid.material.opacity = 0.05;
   secondaryGrid.material.transparent = true;
   secondaryGrid.position.y = 0;

@@ -6,7 +6,7 @@ import { safeNameIncludes } from './nameUtils';
 export function safeGet<T, K extends keyof T>(
   obj: T | null | undefined,
   prop: K,
-  defaultValue: T[K],
+  defaultValue: T[K]
 ): T[K] {
   if (obj === null || obj === undefined) {
     return defaultValue;
@@ -14,11 +14,7 @@ export function safeGet<T, K extends keyof T>(
   return obj[prop] !== undefined ? obj[prop] : defaultValue;
 }
 
-export function safeSetProperties<T>(
-  target: T,
-  source: Partial<T>,
-  props: (keyof T)[],
-): T {
+export function safeSetProperties<T>(target: T, source: Partial<T>, props: (keyof T)[]): T {
   if (!target || !source) {
     return target;
   }
@@ -41,24 +37,17 @@ export function cloneObject3D(obj: Object3D): Object3D {
   return {
     ...obj,
     position: obj.position ? { ...obj.position } : { x: 0, y: 0, z: 0 },
-    material: obj.material
-      ? { ...obj.material }
-      : { type: 'TEXTURE', value: 'default' },
+    material: obj.material ? { ...obj.material } : { type: 'TEXTURE', value: 'default' },
     child: obj.child ? [...obj.child] : [],
   };
 }
 
-export function isObjectOfType(
-  obj: Object3D | null | undefined,
-  typeIdentifier: string,
-): boolean {
+export function isObjectOfType(obj: Object3D | null | undefined, typeIdentifier: string): boolean {
   if (!obj) return false;
   return safeNameIncludes(obj.name, typeIdentifier);
 }
 
-export function getSafeReadOnlyObject3D(
-  obj: Partial<Object3D>,
-): Readonly<Object3D> {
+export function getSafeReadOnlyObject3D(obj: Partial<Object3D>): Readonly<Object3D> {
   const defaultObject: Object3D = {
     id: '',
     name: '',
@@ -146,7 +135,7 @@ interface CatalogPayload {
 
 export const updateObjectInDatabase = async (
   objectData: Shape,
-  updatedData: UpdatedData,
+  updatedData: UpdatedData
 ): Promise<void> => {
   try {
     const designId = getDesignId();

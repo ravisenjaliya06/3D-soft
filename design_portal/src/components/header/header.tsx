@@ -58,10 +58,7 @@ const Header = ({
 
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get(
-        'user',
-        '',
-      );
+      const response: { status: number; data: User } = await CommonService.get('user', '');
       if (response.status === 200) {
         const userdetails = response.data;
         setUserDetails(userdetails);
@@ -148,8 +145,7 @@ const Header = ({
                 </p>
                 <p className={styles.userSubtitle}>
                   {userdetails.selected_organization_name.length > 15
-                    ? userdetails.selected_organization_name.substring(0, 15) +
-                      '...'
+                    ? userdetails.selected_organization_name.substring(0, 15) + '...'
                     : userdetails.selected_organization_name}
                 </p>
               </div>
@@ -160,11 +156,7 @@ const Header = ({
               </div>
             )}
             <div>
-              <img
-                src={dropDown.src}
-                className={styles.dropDown}
-                alt="dropDown"
-              ></img>
+              <img src={dropDown.src} className={styles.dropDown} alt="dropDown"></img>
             </div>
             {isDropdownOpen && (
               <div className={styles.dropdownMenuProfile} ref={dropdownMenuRef}>

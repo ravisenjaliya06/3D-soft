@@ -8,13 +8,10 @@ export const handleVerify = async (
   registerOTPPayload: OTPVerifyForm,
   setError: (message: string | null) => void,
   router: NextRouter,
-  setIsLoading: (loading: boolean) => void,
+  setIsLoading: (loading: boolean) => void
 ) => {
   setIsLoading(true);
-  const { formData } = handleFormData<OTPVerifyForm>(
-    registerOTPPayload,
-    setError,
-  );
+  const { formData } = handleFormData<OTPVerifyForm>(registerOTPPayload, setError);
   if (!formData) {
     setIsLoading(false);
     return;
@@ -39,7 +36,7 @@ export const handleResendOtp = async (
   resendOTPPayload: ResendOtp,
   setError: (message: string | null) => void,
   setIsLoading: (loading: boolean) => void,
-  setSuccessMessage: (message: string | null) => void,
+  setSuccessMessage: (message: string | null) => void
 ) => {
   setIsLoading(true);
   const { formData } = handleFormData<ResendOtp>(resendOTPPayload, setError);
