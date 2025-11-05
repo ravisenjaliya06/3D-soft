@@ -1,10 +1,9 @@
-import createicon from '@/assets/createicon.svg';
-import close from '@/assets/design/close.svg';
-import InputField from '@/components/inputfields/InputField';
+import { assets } from '@/svgPaths';
 import styles from '@/components/mes/mes.module.css';
 import CommonService from '@/services/CommonService';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { Design } from './interface';
+import InputField from '../inputfields/InputField';
 
 type Props = {
   setCreateWorkOrderPopup: (value: boolean) => void;
@@ -115,9 +114,9 @@ const CreateWorkOrder: React.FC<Props> = ({ setCreateWorkOrderPopup, refreshWork
   return (
     <div className={styles.createpopupOverlay}>
       <div className={styles.createpopup}>
-        <img src={createicon.src} className={styles.createicon} alt="createicon" />
+        <img src={assets.createicon} className={styles.createicon} alt="createicon" />
         <img
-          src={close.src}
+          src={assets.close}
           className={styles.createclose}
           alt="close"
           onClick={() => setCreateWorkOrderPopup(false)}

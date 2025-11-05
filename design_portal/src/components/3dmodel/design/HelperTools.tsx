@@ -1,4 +1,4 @@
-import edit from '@/assets/paneldesign/design.svg';
+import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { FaArrowsAlt, FaCopy, FaDoorOpen, FaTrash } from 'react-icons/fa';
@@ -72,7 +72,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
     >
       {isChildObject && (
         <div className={styles.toolItem} onClick={handlePanelDesign} title="Panel Design">
-          <img src={edit.src} />
+          <img src={assets.edit} />
         </div>
       )}
       <div className={styles.toolItem} onClick={handleCopy} title="Copy">

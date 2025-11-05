@@ -1,5 +1,4 @@
-import bravento_logo from '@/assets/Logo.svg';
-import popup_logo from '@/assets/popup_logo.svg';
+import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/login/login.module.css';
@@ -100,14 +99,14 @@ const Login = () => {
         {/* Left Section */}
         <div className={styles.left_side}>
           <div className={styles.popup_logo}>
-            <img src={popup_logo.src} alt="Popup Logo" />
+            <img src={assets.popup_logo} alt="Popup Logo" />
           </div>
           <h1>
             3D Models of <span>wooden sheet cutting</span>
           </h1>
           <p>Make your design and nesting with 3D to less wastage</p>
           <div className={styles.logo}>
-            <img src={bravento_logo.src} alt="Bravento Logo" />
+            <img src={assets.Logo} alt="Bravento Logo" />
           </div>
         </div>
 

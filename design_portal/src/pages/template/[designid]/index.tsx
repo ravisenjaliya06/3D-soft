@@ -1,4 +1,4 @@
-import logo from '@/assets/titleLogo.svg';
+import { assets } from '@/svgPaths';
 import { useAuthRedirect } from '@/components/helper/helper';
 import Template from '@/components/template';
 import { PAGE_TITLE } from '@/services/CommonStatus';
@@ -9,7 +9,7 @@ const TemplatePage = () => {
     document.title = PAGE_TITLE.SETTINGS;
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = logo.src;
+    link.href = assets.titleLogo;
     document.head.appendChild(link);
 
     return () => {

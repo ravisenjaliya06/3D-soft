@@ -1,5 +1,4 @@
-import createicon from '@/assets/createicon.svg';
-import close from '@/assets/design/close.svg';
+import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
 import type React from 'react';
 import styles from '../material.module.css';
@@ -23,12 +22,12 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
     <div className={styles.createpopupOverlay}>
       <div className={styles.createpopup}>
         <img
-          src={createicon.src || '/placeholder.svg'}
+          src={assets.createicon || '/placeholder.svg'}
           className={styles.createicon}
           alt="createicon"
         />
         <img
-          src={close.src || '/placeholder.svg'}
+          src={assets.close || '/placeholder.svg'}
           className={styles.createclose}
           alt="close"
           onClick={onClose}

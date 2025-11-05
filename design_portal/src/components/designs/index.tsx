@@ -1,28 +1,4 @@
-import createicon from '@/assets/createicon.svg';
-import deleteicon from '@/assets/deleteicon.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
-import acive_grid from '@/assets/design/active-grid.svg';
-import { default as close, default as editclose } from '@/assets/design/close.svg';
-import complate_svg from '@/assets/design/complate-svg.svg';
-import CreateDesingIcon from '@/assets/design/createdesignicon.svg';
-import delete_svg from '@/assets/design/delete-svg.svg';
-import design_list_icon from '@/assets/design/design_list_icon.svg';
-import disactive_list from '@/assets/design/disactive-list.svg';
-import draft_svg from '@/assets/design/draft-svg.svg';
-import erroricon from '@/assets/design/error.svg';
-import grid_computer from '@/assets/design/grid-computer.svg';
-import Grid_formate from '@/assets/design/grid_formate.svg';
-import List_formate from '@/assets/design/list_formate.svg';
-import nesting_svg from '@/assets/design/nesting-svg.svg';
-import Plus from '@/assets/design/plus_icon.svg';
-import Process_upload from '@/assets/design/progress-upload.svg';
-import ready_svg from '@/assets/design/ready-svg.svg';
-import search from '@/assets/design/search.svg';
-import Short_search from '@/assets/design/sort_searching.svg';
-import three_dots from '@/assets/design/three_dots.svg';
-import edit_delete_line from '@/assets/edit-delete-line.svg';
-import editicon from '@/assets/editicon.svg';
-import editpopupicon from '@/assets/editpopupicon.svg';
+import { assets } from '@/svgPaths';
 import styles from '@/components/designs/designs.module.css';
 import Header from '@/components/header/header';
 import InputField from '@/components/inputfields/InputField';
@@ -75,11 +51,11 @@ const Designs = () => {
       Completed: styles.gridStatusCompleted,
     },
     SVG: {
-      Draft: draft_svg.src,
-      Deleted: delete_svg.src,
-      Ready: ready_svg.src,
-      Nesting: nesting_svg.src,
-      Completed: complate_svg.src,
+      Draft: assets.draft_svg,
+      Deleted: assets.delete_svg,
+      Ready: assets.ready_svg,
+      Nesting: assets.nesting_svg,
+      Completed: assets.complate_svg,
     },
   };
   const filterStatusOptions = [
@@ -87,31 +63,31 @@ const Designs = () => {
     {
       value: 'Draft',
       label: 'Draft',
-      icon: draft_svg.src,
+      icon: assets.draft_svg,
       color: styles.statusDraft,
     },
     {
       value: 'Deleted',
       label: 'Deleted',
-      icon: delete_svg.src,
+      icon: assets.delete_svg,
       color: styles.statusDelete,
     },
     {
       value: 'Ready',
       label: 'Ready',
-      icon: ready_svg.src,
+      icon: assets.ready_svg,
       color: styles.statusReady,
     },
     {
       value: 'Nesting',
       label: 'Nesting',
-      icon: nesting_svg.src,
+      icon: assets.nesting_svg,
       color: styles.statusNesting,
     },
     {
       value: 'Completed',
       label: 'Completed',
-      icon: complate_svg.src,
+      icon: assets.complate_svg,
       color: styles.statusCompleted,
     },
   ];
@@ -378,7 +354,7 @@ const Designs = () => {
     <div className={styles.container}>
       {errorPopup === true && (
         <div className={styles.successPopup}>
-          <img src={erroricon.src} alt="Error" />
+          <img src={assets.error} alt="Error" />
           <p>{apiErrorMessage}</p>
         </div>
       )}
@@ -397,14 +373,14 @@ const Designs = () => {
             <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
-                  <img src={Plus.src} alt="create design" />
+                  <img src={assets.plus_icon} alt="create design" />
                   <div className={styles.createdesingtext}>
                     <h4>Create New Design</h4>
                     <p>All-in-one design for modeling, visualizing, and drawing</p>
                   </div>
                 </div>
                 <div className={styles.createbuttonimage}>
-                  <img src={CreateDesingIcon.src} alt="create design icon" />
+                  <img src={assets.createdesignicon} alt="create design icon" />
                 </div>
               </div>
             </div>
@@ -413,9 +389,9 @@ const Designs = () => {
           {showPopup && (
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
-                <img src={createicon.src} className={styles.createicon} alt="createicon" />
+                <img src={assets.createicon} className={styles.createicon} alt="createicon" />
                 <img
-                  src={close.src}
+                  src={assets.close}
                   className={styles.createclose}
                   alt="close"
                   onClick={() => setShowPopup(false)}
@@ -460,7 +436,7 @@ const Designs = () => {
             {/* Design View Part */}
             <div className={styles.designfirstpart}>
               <div className={styles.searchWrapper}>
-                <img src={search.src} alt="Search Icon" className={styles.searchIcon} />
+                <img src={assets.search} alt="Search Icon" className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search Design"
@@ -471,7 +447,7 @@ const Designs = () => {
               </div>
               <div className={styles.designsIcon}>
                 <img
-                  src={Short_search.src}
+                  src={assets.sort_searching}
                   alt="short search"
                   onClick={handleShort}
                   ref={dropdownButtonRef}
@@ -501,13 +477,13 @@ const Designs = () => {
                   </div>
                 )}
                 <img
-                  src={activeView === 'list' ? List_formate.src : disactive_list.src}
+                  src={activeView === 'list' ? assets.list_formate : assets.disactive_list}
                   alt="list formate"
                   className={activeView === 'list' ? styles.activeView : ''}
                   onClick={() => setActiveView('list')}
                 />
                 <img
-                  src={activeView === 'grid' ? acive_grid.src : Grid_formate.src}
+                  src={activeView === 'grid' ? assets.active_grid : assets.grid_formate}
                   alt="grid formate"
                   className={activeView === 'grid' ? styles.activeView : ''}
                   onClick={() => setActiveView('grid')}
@@ -534,7 +510,7 @@ const Designs = () => {
                   >
                     {/* List view content */}
                     <img
-                      src={design_list_icon.src}
+                      src={assets.design_list_icon}
                       alt="design list icon"
                       className={styles.design_list_icon}
                     />
@@ -575,7 +551,7 @@ const Designs = () => {
                     </div>
                     <div className={styles.threedot_container}>
                       <img
-                        src={three_dots.src}
+                        src={assets.three_dots}
                         alt="design list icon"
                         className={styles.design_list_icon}
                         onClick={(event) => handlathreedot(event, design.id, design.status)}
@@ -586,7 +562,7 @@ const Designs = () => {
                             <div className={styles.edit}>
                               <li onClick={(event) => handleEditClickPopUp(event, design.id)}>
                                 <img
-                                  src={editicon.src}
+                                  src={assets.editicon}
                                   alt="edit icon"
                                   className={styles.editicon}
                                 />
@@ -594,14 +570,14 @@ const Designs = () => {
                               </li>
                             </div>
                             <img
-                              src={edit_delete_line.src}
+                              src={assets.edit_delete_line}
                               alt="edit-delete-line"
                               className={styles.edit_delete_line}
                             />
                             <div className={styles.delete}>
                               <li onClick={(event) => handleDeleteClickPopUp(event, design.id)}>
                                 <img
-                                  src={deleteicon.src}
+                                  src={assets.deleteicon}
                                   alt="delete icon"
                                   className={styles.deleteicon}
                                 />
@@ -630,12 +606,12 @@ const Designs = () => {
                     >
                       <div className={styles.gridItem}>
                         <div className={styles.gridTitle}>
-                          <img src={grid_computer.src} alt="design list icon" />
+                          <img src={assets.grid_computer} alt="design list icon" />
                           <p>{design.design_name}</p>
                         </div>
                         <div className={styles.gridAction}>
                           <img
-                            src={three_dots.src}
+                            src={assets.three_dots}
                             alt="design list icon"
                             className={styles.design_list_icon}
                             onClick={(event) => handlathreedot(event, design.id, design.status)}
@@ -646,7 +622,7 @@ const Designs = () => {
                               <ul className={styles.gridthree_dots_dropdown}>
                                 <li onClick={(event) => handleEditClickPopUp(event, design.id)}>
                                   <img
-                                    src={editicon.src}
+                                    src={assets.editicon}
                                     alt="edit icon"
                                     className={styles.gridediticon}
                                   />
@@ -654,14 +630,14 @@ const Designs = () => {
                                 </li>
 
                                 <img
-                                  src={edit_delete_line.src}
+                                  src={assets.edit_delete_line}
                                   alt="edit-delete-line"
                                   className={styles.gridedit_delete_line}
                                 />
 
                                 <li onClick={(event) => handleDeleteClickPopUp(event, design.id)}>
                                   <img
-                                    src={deleteicon.src}
+                                    src={assets.deleteicon}
                                     alt="delete icon"
                                     className={styles.griddeleteicon}
                                   />
@@ -716,7 +692,7 @@ const Designs = () => {
                 <div className={styles.loadmore} onClick={handleLoadMore}>
                   <p>Load More</p>
                   <img
-                    src={Process_upload.src}
+                    src={assets.progress_upload}
                     alt="process upload"
                     className={styles.process_upload}
                   />
@@ -737,12 +713,12 @@ const Designs = () => {
               >
                 <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
                   <img
-                    src={editpopupicon.src}
+                    src={assets.editpopupicon}
                     alt="editpopupicon"
                     className={styles.editpopupicon}
                   />
                   <img
-                    src={editclose.src}
+                    src={assets.close}
                     alt="close"
                     onClick={() => setshowEdtiPopup(false)}
                     className={styles.editclose}
@@ -794,13 +770,13 @@ const Designs = () => {
               >
                 <div className={styles.deletepopup}>
                   <img
-                    src={deletepopupicon.src}
+                    src={assets.deletepopup}
                     alt="deletepopupicon"
                     className={styles.deletepopupicon}
                   />
 
                   <img
-                    src={close.src}
+                    src={assets.close}
                     alt="close"
                     onClick={() => setshowDeletePopup(false)}
                     className={styles.close}

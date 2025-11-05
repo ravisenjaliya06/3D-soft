@@ -1,6 +1,4 @@
-import search from '@/assets/design/search.svg';
-import blank from '@/assets/template/blank.svg';
-import createtemplatehome from '@/assets/template/createtemplatehome.svg';
+import { assets } from '@/svgPaths';
 import Header from '@/components/header/header';
 import Loading_style from '@/components/loading.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
@@ -12,7 +10,7 @@ const Template = () => {
   const [loading, setLoading] = useState(false);
 
   const TemplateDesings = [
-    { option: 'Modern Minimalist Dining Room with Green Accents', icon: blank },
+    { option: 'Modern Minimalist Dining Room with Green Accents', icon: assets.blank },
   ];
 
   const router = useRouter();
@@ -57,7 +55,7 @@ const Template = () => {
                   </div>
                 </div>
                 <div className={styles.createbuttonimage}>
-                  <img src={createtemplatehome.src} alt="create design icon" />
+                  <img src={assets.createtemplatehome} alt="create design icon" />
                 </div>
               </div>
             </div>
@@ -70,7 +68,7 @@ const Template = () => {
                 <ul></ul>
               </div>
               <div className={styles.searchWrapper}>
-                <img src={search.src} alt="Search Icon" className={styles.searchIcon} />
+                <img src={assets.search} alt="Search Icon" className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search Design"
@@ -87,7 +85,7 @@ const Template = () => {
                   key={index}
                   onClick={() => handleCreateDesign()}
                 >
-                  <img src={item.icon.src} alt="template" />
+                  <img src={item.icon} alt="template" />
                   <button className={styles.templateBoxButton}>Use This Template</button>
                 </div>
               ))}

@@ -11,7 +11,7 @@
   border: 0.2rem solid var(--primary-white);
   border-radius: 1.6rem;
   box-shadow: var(--box-shadow);
-  background-image: url('../../assets/login-background.svg');
+  background-image: url('/assets/login-background.svg');
   background-size: cover;
 }
 

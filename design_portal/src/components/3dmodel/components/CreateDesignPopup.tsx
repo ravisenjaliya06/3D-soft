@@ -1,11 +1,4 @@
-import createicon from '@/assets/createicon.svg';
-import deleteicon from '@/assets/customdesign/shape/delete.svg';
-import demoimage from '@/assets/customdesign/shape/demo.png';
-import editicon from '@/assets/customdesign/shape/edit.svg';
-import lines from '@/assets/customdesign/shape/lines.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
-import { default as close } from '@/assets/design/close.svg';
-import Process_upload from '@/assets/design/progress-upload.svg';
+import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
 import CommonService from '@/services/CommonService';
 import { useRouter } from 'next/router';
@@ -142,7 +135,7 @@ const CreateDesignPopup = ({
           </button>
           <p> Custom Design Created </p>
           <img
-            src={close.src}
+            src={assets.close}
             className={styles.closeButton}
             alt="close"
             onClick={() => {
@@ -151,7 +144,7 @@ const CreateDesignPopup = ({
           />
         </div>
         <div className={styles.images}>
-          <img src={lines.src} className={styles.lines} alt="lines" />
+          <img src={assets.lines} className={styles.lines} alt="lines" />
         </div>
         <div className={styles.designList}>
           {fetchLoading ? (
@@ -171,7 +164,7 @@ const CreateDesignPopup = ({
                     onMouseEnter={() => setHoveredDesignId(design.id)}
                     onMouseLeave={() => setHoveredDesignId(null)}
                   >
-                    <img src={demoimage.src} className={styles.demoimage} alt="demoimage" />
+                    <img src={assets.demo} className={styles.demoimage} alt="demoimage" />
                     <div className={styles.names}>
                       <h4>{design.design_name}</h4>
                     </div>
@@ -181,14 +174,14 @@ const CreateDesignPopup = ({
                           className={styles.editButton}
                           onClick={(e) => handleEditDesign(design.id, e)}
                         >
-                          <img src={editicon.src} className={styles.editicon} alt="editicon" />
+                          <img src={assets.editicon} className={styles.editicon} alt="editicon" />
                         </button>
                         <button
                           className={styles.deleteiconButton}
                           onClick={(e) => handleDeleteDesign(design.id, e)}
                         >
                           <img
-                            src={deleteicon.src}
+                            src={assets.deleteicon}
                             className={styles.deleteicon}
                             alt="deleteicon"
                           />
@@ -203,7 +196,7 @@ const CreateDesignPopup = ({
                   <div className={styles.loadmore} onClick={handleLoadMore}>
                     <p>Load More</p>
                     <img
-                      src={Process_upload.src}
+                      src={assets.progress_upload}
                       alt="process upload"
                       className={styles.process_upload}
                     />
@@ -219,9 +212,9 @@ const CreateDesignPopup = ({
       {showPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img src={createicon.src} className={styles.createicon} alt="createicon" />
+            <img src={assets.createicon} className={styles.createicon} alt="createicon" />
             <img
-              src={close.src}
+              src={assets.close}
               className={styles.createclose}
               alt="close"
               onClick={() => {
@@ -287,12 +280,12 @@ const CreateDesignPopup = ({
         >
           <div className={styles.deletepopup}>
             <img
-              src={deletepopupicon.src}
+              src={assets.deletepopupicon}
               alt="deletepopupicon"
               className={styles.deletepopupicon}
             />
             <img
-              src={close.src}
+              src={assets.close}
               alt="close"
               onClick={() => setshowDeletePopup(false)}
               className={styles.close}

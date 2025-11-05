@@ -1,26 +1,14 @@
 // @ts-nocheck
-import part_line from '@/assets/3dmodel/part-line.svg';
-import img1 from '@/assets/catalog/toolbaricon/img1.svg';
-import img2 from '@/assets/catalog/toolbaricon/img2.svg';
-import cone from '@/assets/customdesign/shape/cone.svg';
-import cube from '@/assets/customdesign/shape/cube.svg';
-import cylinder from '@/assets/customdesign/shape/cylinder.svg';
-import sphere from '@/assets/customdesign/shape/sphere.svg';
-import torus from '@/assets/customdesign/shape/torus.svg';
-import logo from '@/assets/titleLogo.svg';
+import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import styles from './toolbar.module.css';
 // home toolbar
-import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
-import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
-import exlight from '@/assets/toolbar/exlight.svg';
 
 // catalog modal photo
 import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 
 // parts
-import close from '@/assets/catalog/close.svg';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import * as THREE from 'three';
@@ -329,14 +317,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         <div style={{ flexDirection: 'column', display: 'flex' }}>
           <div className={styles.group}>
             <img
-              src={logo.src}
+              src={assets.logo}
               className={styles.projectLogo}
               alt="Toolbar Logo"
               onClick={() => goToDashboard()}
             />
           </div>
           <div className={styles.partLineGroup}>
-            <img src={part_line.src} className={styles.partLine} alt="Toolbar Logo" />
+            <img src={assets.part_line} className={styles.partLine} alt="Toolbar Logo" />
           </div>
           <div className={styles.icon_style}>
             {options.map(({ option, icon }) => (
@@ -345,7 +333,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                 onClick={() => handleOptionClick(option)}
                 className={activeOption === option ? styles.icon_active : styles.icon}
               >
-                <img src={icon.src} alt={`${option} Icon`} />
+                <img src={assets.icon} alt={`${option} Icon`} />
               </div>
             ))}
           </div>
@@ -369,7 +357,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       onClick={onClick}
                       title={disabled ? 'Coming Soon' : option}
                     >
-                      <img src={icon.src} alt={`${option} Icon`} />
+                      <img src={assets.icon} alt={`${option} Icon`} />
                       <span>{option}</span>
                     </div>
                   ))}
@@ -390,7 +378,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       onClick={onClick}
                       title={disabled ? 'Coming Soon' : option}
                     >
-                      <img src={icon.src} alt={`${option} Icon`} />
+                      <img src={assets.icon} alt={`${option} Icon`} />
                       <span>{option}</span>
                     </div>
                   ))}
@@ -404,7 +392,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           className={isToolOpen ? styles.toggle : styles.toggle_open}
           onClick={handleToolToggleClick}
         >
-          <img src={isToolOpen ? tool_toggle.src : tool_toggle_open.src} alt="toggle" />
+          <img src={isToolOpen ? assets.tool_toggle : assets.tool_toggle_open} alt="toggle" />
         </div>
       </aside>
 
@@ -414,7 +402,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           <div className={styles.firstpart}>
             <h3>Furniture</h3>
             <div className={styles.menuFunctionality}>
-              <img src={close.src} onClick={() => setcatalogMenu(false)} alt="close" />
+              <img src={assets.close} onClick={() => setcatalogMenu(false)} alt="close" />
             </div>
           </div>
 
@@ -436,13 +424,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         >
           <div className={styles.partfirstpart}>
             <h3>Parts</h3>
-            <img src={close.src} onClick={() => setparts(false)} alt="close" />
+            <img src={assets.close} onClick={() => setparts(false)} alt="close" />
           </div>
 
           <div className={styles.partsecondpart}>
             {partsModal.map(({ icon, name, onClick }) => (
               <div key={name} className={styles.partsbox} onClick={onClick}>
-                <img src={icon.src} alt="photo" />
+                <img src={assets.icon} alt="photo" />
                 <p>{name}</p>
               </div>
             ))}
@@ -457,13 +445,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         >
           <div className={styles.materialfirstpart}>
             <h3>Texture</h3>
-            <img src={close.src} onClick={() => setmaterial(false)} alt="close" />
+            <img src={assets.close} onClick={() => setmaterial(false)} alt="close" />
           </div>
 
           <div className={styles.materialescondpart}>
             {materialModal.map(({ image, name, onClick }) => (
               <div key={name} className={styles.materialbox} onClick={onClick}>
-                <img src={image} alt="photo" />
+                <img src={assets.image} alt="photo" />
               </div>
             ))}
           </div>
@@ -477,7 +465,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             <div className={styles.popupHeader}>
               <h3>Create Blank Cupboard</h3>
               <img
-                src={close.src}
+                src={assets.close}
                 onClick={handleClosePopup}
                 alt="close"
                 className={styles.closeButton}

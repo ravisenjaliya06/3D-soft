@@ -1,8 +1,0 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path opacity="0.2" d="M3 12H21C21.4142 12 21.75 11.6642 21.75 11.25V5.25C21.75 4.83579 21.4142 4.5 21 4.5H3C2.58579 4.5 2.25 4.83579 2.25 5.25V11.25C2.25 11.6642 2.58579 12 3 12Z" fill="black"/>
-  <path d="M7.5 12H3C2.80109 12 2.61032 11.921 2.46967 11.7803C2.32902 11.6397 2.25 11.4489 2.25 11.25V5.25C2.25 5.05109 2.32902 4.86032 2.46967 4.71967C2.61032 4.57902 2.80109 4.5 3 4.5H21C21.1989 4.5 21.3897 4.57902 21.5303 4.71967C21.671 4.86032 21.75 5.05109 21.75 5.25V11.25C21.75 11.4489 21.671 11.6397 21.5303 11.7803C21.3897 11.921 21.1989 12 21 12H16.5" stroke="black" stroke-linecap="round" stroke-linejoin="round"/>
-  
-  <!-- Increased space for vertical layout -->
-  <path d="M12 12V22" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M7.5 18L12 22.5L16.5 18" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

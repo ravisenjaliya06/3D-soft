@@ -1,4 +1,4 @@
-import download from '@/assets/mes/download.svg';
+import { assets } from '@/svgPaths';
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import CommonService from '@/services/CommonService';
@@ -184,7 +184,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
                 {' '}
                 <img
                   onClick={handleDownload}
-                  src={download.src}
+                  src={assets.download}
                   alt="download"
                   className={styles.download}
                 />

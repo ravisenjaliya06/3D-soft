@@ -1,7 +1,4 @@
-import dropDown from '@/assets/dropdown.svg';
-import profile_setting_line from '@/assets/edit-delete-line.svg';
-import simpleLine from '@/assets/header-part-line.svg';
-import user_photo from '@/assets/profile/user.png';
+import { assets } from '@/svgPaths';
 import styles from '@/components/header/header.module.css';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -131,7 +128,7 @@ const Header = ({
           >
             <div>
               <img
-                src={profileUrl ? profileUrl : user_photo.src}
+                src={profileUrl ? profileUrl : assets.user}
                 alt="profile"
                 className={styles.profileIcon}
               />
@@ -156,14 +153,14 @@ const Header = ({
               </div>
             )}
             <div>
-              <img src={dropDown.src} className={styles.dropDown} alt="dropDown"></img>
+              <img src={assets.dropdown} className={styles.dropDown} alt="dropDown"></img>
             </div>
             {isDropdownOpen && (
               <div className={styles.dropdownMenuProfile} ref={dropdownMenuRef}>
                 <ul className={styles.ProfiledropdownList}>
                   <li onClick={profileSetting}>Profile Settings</li>
                   <img
-                    src={profile_setting_line.src}
+                    src={assets.edit_delete_line}
                     alt="edit-delete-line"
                     className={styles.profile_setting_line}
                   />
@@ -175,7 +172,7 @@ const Header = ({
         </div>
       </div>
       <div className={styles.simpleLine}>
-        <img src={simpleLine.src} alt="simpleLine" className={simpleLine} />
+        <img src={assets.header_part_line} alt="simpleLine" className={styles.simpleLine} />
       </div>
     </>
   );

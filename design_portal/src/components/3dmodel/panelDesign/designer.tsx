@@ -1,9 +1,4 @@
-import curve from '@/assets/customdesign/curve.svg';
-import dig from '@/assets/paneldesign/dig.svg';
-import pencil from '@/assets/paneldesign/pencil.svg';
-import redo from '@/assets/paneldesign/redo.svg';
-import slotting from '@/assets/paneldesign/slotting.svg';
-import undo from '@/assets/paneldesign/undo.svg';
+import { assets } from '@/svgPaths';
 import Konva from 'konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useRouter } from 'next/router';
@@ -540,12 +535,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   const tools = [
-    { name: 'Undo', icon: undo },
-    { name: 'Redo', icon: redo },
-    { name: 'Draw the outline of the board', icon: pencil },
-    { name: 'Dig', icon: dig },
-    { name: 'Slotting', icon: slotting },
-    { name: 'Curve', icon: curve },
+    { name: 'Undo', icon: assets.undo },
+    { name: 'Redo', icon: assets.redo },
+    { name: 'Draw the outline of the board', icon: assets.pencil },
+    { name: 'Dig', icon: assets.dig },
+    { name: 'Slotting', icon: assets.slotting },
+    { name: 'Curve', icon: assets.curve },
   ];
 
   const defaultPanelPoints = [
@@ -697,7 +692,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               onClick={() => setActiveTool(name)}
               title={name}
             >
-              <img src={icon.src} alt={name} />
+              <img src={icon} alt={name} />
               <div>{name}</div>
             </div>
           ))}

@@ -1,20 +1,9 @@
-import logo from '@/assets/titleLogo.svg';
+import { usePageSetup } from '@/pages/usePageSetup';
 import Forgot from '@/components/forgot';
 import { PAGE_TITLE } from '@/services/CommonStatus';
-import { useEffect } from 'react';
 
 const ForgotPage = () => {
-  useEffect(() => {
-    document.title = PAGE_TITLE.FORGOT;
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = logo.src;
-    document.head.appendChild(link);
-
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, []);
+  usePageSetup(PAGE_TITLE.FORGOT);
   return <Forgot />;
 };
 

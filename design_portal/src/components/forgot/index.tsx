@@ -1,7 +1,4 @@
-import bravento_logo from '@/assets/Logo.svg';
-import back_icon from '@/assets/back-login-icon.svg';
-import forgot_boy from '@/assets/forgot-boy.svg';
-import popup_logo from '@/assets/popup_logo.svg';
+import { assets } from '@/svgPaths';
 import styles from '@/components/forgot/forgot.module.css';
 import { handleForgotAPI } from '@/components/forgot/utils';
 import InputField from '@/components/inputfields/InputField';
@@ -59,20 +56,20 @@ const Forgot = () => {
         {/* Left Section */}
         <div className={styles.left_side}>
           <div className={styles.popup_logo}>
-            <img src={popup_logo.src} alt="Popup Logo" />
+            <img src={assets.popup_logo} alt="Popup Logo" />
           </div>
           <div className={styles.forgot_boy}>
-            <img src={forgot_boy.src} alt="forgot boy" />
+            <img src={assets.forgot_boy} alt="forgot boy" />
           </div>
           <div className={styles.logo}>
-            <img src={bravento_logo.src} alt="Bravento Logo" />
+            <img src={assets.Logo} alt="Bravento Logo" />
           </div>
         </div>
 
         {/* Right Section */}
         <div className={styles.right_side}>
           <div className={styles.back_button}>
-            <img src={back_icon.src} onClick={() => router.push(REDIRECT.LOGIN)} alt="Logo" />
+            <img src={assets.back_login_icon} onClick={() => router.push(REDIRECT.LOGIN)} alt="Logo" />
             Back to Login
           </div>
           <h2>Forgot your Password?</h2>

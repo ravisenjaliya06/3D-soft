@@ -1,7 +1,4 @@
-import bravento_logo from '@/assets/Logo.svg';
-import back_icon from '@/assets/back-login-icon.svg';
-import otp_computer from '@/assets/otp-computer.svg';
-import popup_logo from '@/assets/popup_logo.svg';
+import { assets } from '@/svgPaths';
 import styles from '@/components/otp/otp.module.css';
 import { handleResendOtp, handleVerify } from '@/components/otp/utils';
 import { useRouter } from 'next/router';
@@ -76,20 +73,20 @@ const Otp = () => {
         {/* Left Section */}
         <div className={styles.left_side}>
           <div className={styles.popup_logo}>
-            <img src={popup_logo.src} alt="Popup Logo" />
+            <img src={assets.popup_logo} alt="Popup Logo" />
           </div>
           <div className={styles.forgot_boy}>
-            <img src={otp_computer.src} alt="forgot boy" />
+            <img src={assets.otp_computer} alt="forgot boy" />
           </div>
           <div className={styles.logo}>
-            <img src={bravento_logo.src} alt="Bravento Logo" />
+            <img src={assets.Logo} alt="Bravento Logo" />
           </div>
         </div>
 
         {/* Right Section */}
         <div className={styles.right_side}>
           <div className={styles.back_button}>
-            <img src={back_icon.src} onClick={() => router.back()} alt="Logo" />
+            <img src={assets.back_login_icon} onClick={() => router.back()} alt="Logo" />
             Back
           </div>
           <h2>Verification</h2>

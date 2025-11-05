@@ -1,8 +1,9 @@
 // @ts-nocheck
-import part_line from '@/assets/3dmodel/part-line.svg';
-import img1 from '@/assets/catalog/toolbaricon/img1.svg';
-import img2 from '@/assets/catalog/toolbaricon/img2.svg';
-import logo from '@/assets/titleLogo.svg';
+import { assets } from '@/svgPaths';
+// import part_line from '@/assets/3dmodel/part-line.svg';
+// import img1 from '@/assets/catalog/toolbaricon/img1.svg';
+// import img2 from '@/assets/catalog/toolbaricon/img2.svg';
+// import logo from '@/assets/titleLogo.svg';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -10,19 +11,19 @@ import { toggleMeasurement, toggleQuickHide } from '../store/dataSlice';
 import styles from './toolbar.module.css';
 
 // home toolbar
-import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
-import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
-import aling_dimension from '@/assets/3dmodel/toolbar/aling.svg';
-import list_line_arrow from '@/assets/3dmodel/toolbar/arrow.svg';
-import backicon from '@/assets/3dmodel/toolbar/back.svg';
-import homefurniture from '@/assets/3dmodel/toolbar/homefur.svg';
-import Measurement from '@/assets/3dmodel/toolbar/mesurment.svg';
-import quick_hide from '@/assets/3dmodel/toolbar/quickhide.svg';
-import searchIcon from '@/assets/3dmodel/toolbar/searchIcon.svg';
-import sink from '@/assets/3dmodel/toolbar/sink.svg';
-import createicon from '@/assets/createicon.svg';
-import exlight from '@/assets/toolbar/exlight.svg';
-import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
+// import tool_toggle_open from '@/assets/3dmodel/header/tool-toggle-open.svg';
+// import tool_toggle from '@/assets/3dmodel/header/tool-toggle.svg';
+// import aling_dimension from '@/assets/3dmodel/toolbar/aling.svg';
+// import list_line_arrow from '@/assets/3dmodel/toolbar/arrow.svg';
+// import backicon from '@/assets/3dmodel/toolbar/back.svg';
+// import homefurniture from '@/assets/3dmodel/toolbar/homefur.svg';
+// import Measurement from '@/assets/3dmodel/toolbar/mesurment.svg';
+// import quick_hide from '@/assets/3dmodel/toolbar/quickhide.svg';
+// import searchIcon from '@/assets/3dmodel/toolbar/searchIcon.svg';
+// import sink from '@/assets/3dmodel/toolbar/sink.svg';
+// import createicon from '@/assets/createicon.svg';
+// import exlight from '@/assets/toolbar/exlight.svg';
+// import tool_part_line from '@/assets/toolbar/tool-part-line.svg';
 import InputField from '@/components/inputfields/InputField';
 import { removeExistingLines } from '../design/index';
 
@@ -30,23 +31,23 @@ import { removeExistingLines } from '../design/index';
 import { objectName } from '@/components/3dmodel/handler/constant';
 
 // parts
-import close from '@/assets/catalog/close.svg';
+// import close from '@/assets/catalog/close.svg';
 import commonService from '@/services/CommonService';
 
-import drawer from '@/assets/3dmodel/toolbar/drawer.svg';
-import horizontal_plank from '@/assets/3dmodel/toolbar/horizontal.svg';
-import platform from '@/assets/3dmodel/toolbar/platform.svg';
-import vertical_plank from '@/assets/3dmodel/toolbar/vertical.svg';
-import cabinet_1 from '@/assets/toolbar/cabinet.svg';
-import cabinet_svg from '@/assets/toolbar/cabinet_svg.svg';
-import table from '@/assets/toolbar/computer.svg';
-import door from '@/assets/toolbar/door-icon.svg';
-import double from '@/assets/toolbar/double_door.svg';
-import kitchen_svg from '@/assets/toolbar/kitchen_svg.svg';
-import single from '@/assets/toolbar/single.svg';
-import table_svg from '@/assets/toolbar/table_svg.svg';
-import tv from '@/assets/toolbar/tv.svg';
-import tvunit_svg from '@/assets/toolbar/tvunit_scg.svg';
+// import drawer from '@/assets/3dmodel/toolbar/drawer.svg';
+// import horizontal_plank from '@/assets/3dmodel/toolbar/horizontal.svg';
+// import platform from '@/assets/3dmodel/toolbar/platform.svg';
+// import vertical_plank from '@/assets/3dmodel/toolbar/vertical.svg';
+// import cabinet_1 from '@/assets/toolbar/cabinet.svg';
+// import cabinet_svg from '@/assets/toolbar/cabinet_svg.svg';
+// import table from '@/assets/toolbar/computer.svg';
+// import door from '@/assets/toolbar/door-icon.svg';
+// import double from '@/assets/toolbar/double_door.svg';
+// import kitchen_svg from '@/assets/toolbar/kitchen_svg.svg';
+// import single from '@/assets/toolbar/single.svg';
+// import table_svg from '@/assets/toolbar/table_svg.svg';
+// import tv from '@/assets/toolbar/tv.svg';
+// import tvunit_svg from '@/assets/toolbar/tvunit_scg.svg';
 import React from 'react';
 import {
   addDoorOnInvisibleBox,
@@ -196,8 +197,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   };
 
   const options = [
-    { option: 'Home', name: 'Home', icon: img1 },
-    { option: 'View', name: 'View', icon: img2 },
+    { option: 'Home', name: 'Home', icon: assets.img1 },
+    { option: 'View', name: 'View', icon: assets.img2 },
   ];
 
   const handleTextureClick = async (name: string) => {
@@ -595,7 +596,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const homeTools = [
     {
       option: 'Furniture',
-      icon: homefurniture,
+      icon: assets.homefurniture,
       onClick: () => {
         if (activeOption !== 'Furniture') {
           setActiveOption('Furniture');
@@ -608,7 +609,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Quick Hide',
-      icon: quick_hide,
+      icon: assets.quick_hide,
       onClick: () => {
         dispatch(toggleQuickHide(!isQuickHideActive));
         setcatalogMenu(false);
@@ -618,7 +619,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Measure',
-      icon: Measurement,
+      icon: assets.Measurement,
       onClick: () => {
         dispatch(toggleMeasurement(!isMeasurementActive));
         setcatalogMenu(false);
@@ -628,7 +629,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Align Dimension',
-      icon: aling_dimension,
+      icon: assets.aling_dimension,
       onClick: () => {
         dispatch(togglAlignment(!isAlignmentActive));
         setcatalogMenu(false);
@@ -641,7 +642,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const viewTools = [
     {
       option: 'Exlight',
-      icon: exlight,
+      icon: assets.exlight,
       onClick: () => {
         if (threeDView) {
           threeDView.toggleSky();
@@ -653,10 +654,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
   ];
   const furnitureTools = [
-    { option: 'Kitchen', icon: kitchen_svg },
-    { option: 'Cabinet', icon: cabinet_svg },
-    { option: 'Tv unit', icon: tvunit_svg },
-    { option: 'Computer Desk', icon: table_svg },
+    { option: 'Kitchen', icon: assets.kitchen_svg },
+    { option: 'Cabinet', icon: assets.cabinet_svg },
+    { option: 'Tv unit', icon: assets.tvunit_svg },
+    { option: 'Computer Desk', icon: assets.table_svg },
   ];
 
   // Submenu items for each furniture category - dynamically filtered from API
@@ -784,7 +785,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const alwaysFields = [
     {
       option: 'Upper Cabinets',
-      icon: double,
+      icon: assets.double,
       onClick: () => {
         setSelectedCabinetItem({
           id: 'upper-cabinet',
@@ -798,7 +799,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Double Door Upper Cabinets',
-      icon: single,
+      icon: assets.single,
       onClick: () => {
         setSelectedCabinetItem({
           id: 'double-door-upper-cabinet',
@@ -812,7 +813,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
     {
       option: 'Load Sink GLB',
-      icon: sink,
+      icon: assets.sink,
       onClick: () => {
         if (threeDView && typeof threeDView.loadSinkModel === 'function') {
           threeDView.loadSinkModel('/sink.glb');
@@ -875,16 +876,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   }, []);
 
   const iconMap = {
-    Drawer: drawer.src,
-    'Sliding Door': door.src,
-    Door: door.src,
-    'Horizontal Plank': horizontal_plank.src,
-    'Vertical Plank': vertical_plank.src,
-    'Tv Unit': tv.src,
-    'Computer Desk': table.src,
-    Plank: vertical_plank.src,
-    Cabinet: cabinet_1.src,
-    Platform: platform.src,
+    Drawer: assets.drawer,
+    'Sliding Door': assets.door,
+    Door: assets.door,
+    'Horizontal Plank': assets.horizontal_plank,
+    'Vertical Plank': assets.vertical_plank,
+    'Tv Unit': assets.tv,
+    'Computer Desk': assets.table,
+    Plank: assets.vertical_plank,
+    Cabinet: assets.cabinet_1,
+    Platform: assets.platform,
   };
 
   return (
@@ -893,10 +894,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       <aside className={styles.aside}>
         <div style={{ flexDirection: 'column', display: 'flex' }}>
           <div className={styles.group}>
-            <img src={logo.src} className={styles.projectLogo} alt="Toolbar Logo" />
+            <img src={assets.logo} className={styles.projectLogo} alt="Toolbar Logo" />
           </div>
           <div className={styles.partLineGroup}>
-            <img src={part_line.src} className={styles.partLine} alt="Toolbar Logo" />
+            <img src={assets.part_line} className={styles.partLine} alt="Toolbar Logo" />
           </div>
           <div className={styles.icon_style}>
             {options.map(({ option, name, icon }) => (
@@ -905,7 +906,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                 onClick={() => handleOptionClick(option, name)}
                 className={activeOption === option ? styles.icon_active : styles.icon}
               >
-                <img src={icon.src} alt={`${option} Icon`} />
+                <img src={assets.icon} alt={`${option} Icon`} />
               </div>
             ))}
           </div>
@@ -916,12 +917,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div className={styles.activegroup_header}>
-                  <img src={backicon.src} alt="back" onClick={handleback} />
+                  <img src={assets.backicon} alt="back" onClick={handleback} />
                   <p>{activeOptionName}</p>
                 </div>
               )}
               <img
-                src={tool_part_line.src}
+                src={assets.tool_part_line}
                 className={styles.active_tool_part_line}
                 alt="active group"
               />
@@ -943,7 +944,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                           isActive ? styles.activegroup_tools_selected : ''
                         }`}
                       >
-                        <img src={icon.src} alt={`${option} Icon`} />
+                        <img src={assets.icon} alt={`${option} Icon`} />
                       </div>
                       <span>{option}</span>
                     </div>
@@ -964,7 +965,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       onClick={onClick}
                       title={disabled ? 'Coming Soon' : option}
                     >
-                      <img src={icon.src} alt={`${option} Icon`} />
+                      <img src={assets.icon} alt={`${option} Icon`} />
                       <span>{option}</span>
                     </div>
                   ))}
@@ -981,11 +982,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.activegroup_tools}>
-                        <img src={icon.src} alt={`${option} Icon`} />
+                        <img src={assets.icon} alt={`${option} Icon`} />
                       </div>
                       <span>{option}</span>
                       <img
-                        src={list_line_arrow.src}
+                        src={assets.list_line_arrow}
                         alt=""
                         style={{
                           transform:
@@ -1010,7 +1011,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             <div className={styles.submenuHeader}>
               <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
               <div className={styles.searchWrapper}>
-                <img src={searchIcon.src} alt="search" className={styles.searchIcon} />
+                <img src={assets.searchIcon} alt="search" className={styles.searchIcon} />
                 <input
                   type="text"
                   className={styles.searchInput}
@@ -1021,7 +1022,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                 />
               </div>
               <img
-                src={close.src}
+                src={assets.close}
                 alt="close"
                 className={styles.closeIcon}
                 onClick={() => setSelectedFurnitureCategory(null)}
@@ -1048,8 +1049,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   <img
                     src={
                       item.isAlwaysField
-                        ? item.icon.src
-                        : iconMap[item.name] || iconMap[item.type] || drawer.src
+                        ? item.icon
+                        : iconMap[item.name] || iconMap[item.type] || assets.drawer
                     }
                     alt={item.name}
                   />
@@ -1069,7 +1070,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           className={isToolOpen ? styles.toggle : styles.toggle_open}
           onClick={handleToolToggleClick}
         >
-          <img src={isToolOpen ? tool_toggle.src : tool_toggle_open.src} alt="toggle" />
+          <img src={isToolOpen ? assets.tool_toggle : assets.tool_toggle_open} alt="toggle" />
         </div>
       </aside>
 
@@ -1079,7 +1080,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           <div className={styles.firstpart}>
             <h3>Catalog</h3>
             <div className={styles.menuFunctionality}>
-              <img src={close.src} onClick={() => setcatalogMenu(false)} alt="close" />
+              <img src={assets.close} onClick={() => setcatalogMenu(false)} alt="close" />
             </div>
           </div>
           <div className={styles.catalogTabs}>
@@ -1152,13 +1153,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         >
           <div className={styles.createpopup}>
             <img
-              src={createicon.src || '/placeholder.svg'}
+              src={assets.createicon || '/placeholder.svg'}
               className={styles.createicon}
               alt="createicon"
             />
             <h2>Add {selectedCabinetItem.name}</h2>
             <img
-              src={close.src || '/placeholder.svg'}
+              src={assets.close || '/placeholder.svg'}
               className={styles.createclose}
               alt="close"
               onClick={closePopup}
