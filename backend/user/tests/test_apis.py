@@ -18,7 +18,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 # App imports
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 from umaboy.models import Organization, User
-from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, MES_EDITOR
+from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, MES_EDITOR
 from user.serializers import AddUserInOrganizationSerializer, SetPasswordSerializer
 
 FORGET_PASSWORD = "umaboy@321"  # noqa: S105
@@ -513,7 +513,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test456",
             "email": "testing_organization1@gmail.com",
-            "groups": [ACCOUNTS_MANAGER, MES_EDITOR, CATALOG_MANAGER],
+            "groups": [ACCOUNT_MANAGER, MES_EDITOR, CATALOG_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -536,7 +536,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test789",
             "email": "testing_organization@gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -562,7 +562,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "name": "test321",
             "email": "test321gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
 
         response = self.client.post(
@@ -584,7 +584,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "name": "test321",
             "email": "testing_organization@gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"), data=data, format="json"
@@ -609,7 +609,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "user",
             "email": "existing_user@example.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -628,7 +628,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test321",
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -698,12 +698,13 @@ class APIViewTestCase(APIBaseTestCase):
             "name": "test321",
             "email": "testing_organization@gmail.com",
             "phone": "1234567899",
-            "groups": ["Accounts Manager"],
+            "groups": [ACCOUNT_MANAGER],
         }
         serializer = AddUserInOrganizationSerializer(data=data)
         with self.assertRaises(serializers.ValidationError) as context:
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
         self.assertEqual(
             context.exception.detail["error"], "Request context is required."
         )
@@ -715,7 +716,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(
@@ -734,7 +735,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(
@@ -754,7 +755,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(
@@ -824,23 +825,23 @@ class APIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_show_origanization_users(self: "APIViewTestCase") -> None:
+    def test_show_organization_users(self: "APIViewTestCase") -> None:
         response = self.client.get(
-            reverse("show_origanization_users"),
+            reverse("show_organization_users"),
             format="json",
             headers=self.get_headers,
         )
         response_data, status_code = response.json(), response.status_code
         self.assertEqual(status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response_data["message"], "Organization users retrieved successfully."
+            response_data["message"], "Organization users retrieved"
         )
 
-    def test_show_origanization_users_with_invalid_token(
+    def test_show_organization_users_with_invalid_token(
         self: "APIViewTestCase",
     ) -> None:
         response = self.client.get(
-            reverse("show_origanization_users"),
+            reverse("show_organization_users"),
             format="json",
             headers=self.get_invalid_user_headers,
         )
@@ -852,7 +853,7 @@ class APIViewTestCase(APIBaseTestCase):
         )
 
     def test_delete_user_in_organization(self: "APIViewTestCase") -> None:
-        reponse = self.client.delete(
+        response = self.client.delete(
             reverse(
                 "remove_user_from_organization",
                 kwargs={"user_id": str(self.invited_user.id)},
@@ -864,9 +865,9 @@ class APIViewTestCase(APIBaseTestCase):
             Organization.objects.using(DEFAULT_DATABASE).filter(user=self.user).first()
         )
         is_user_in_org = organization.user.filter(id=self.invited_user.id).exists()
-        self.assertEqual(reponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            reponse.data["message"], "User removed from organization successfully."
+            response.data["message"], "User removed from organization successfully."
         )
         self.assertIsNotNone(organization)
         self.assertFalse(is_user_in_org)

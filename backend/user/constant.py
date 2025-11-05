@@ -9,7 +9,7 @@ POST = "POST"
 PUT = "PUT"
 DELETE = "DELETE"
 
-ACCOUNTS_MANAGER = "Accounts Manager"
+ACCOUNT_MANAGER = "Account Manager"
 CATALOG_MANAGER = "Catalog Manager"
 DESIGNER = "Designer"
 MES_EDITOR = "Mes Editor"

@@ -13,7 +13,7 @@ import pytest
 # App imports
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 from umaboy.models import Organization, UserOrganizationPermission
-from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
+from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 from user.typing import EmailData
 from user.utils import add_user_to_organization, send_email, verify_otp
 
@@ -156,7 +156,7 @@ class UtilsTestCase(APIBaseTestCase):
         if not organization:
             organization = self.seed_organization(DEFAULT_DATABASE)
         groups = [
-            ACCOUNTS_MANAGER,
+            ACCOUNT_MANAGER,
             MES_EDITOR,
             DESIGNER,
             CATALOG_MANAGER,

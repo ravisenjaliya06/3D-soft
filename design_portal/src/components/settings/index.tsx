@@ -64,7 +64,7 @@ const Settings = () => {
   const [grooveGap, setGrooveGap] = useState<number | null>();
   const [grooveDig, setGrooveDig] = useState<number | null>();
 
-  const rolesList = ['Accounts Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
+  const rolesList = ['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
 
   const [members, setMembers] = useState<Member[]>([]);
 
@@ -1100,7 +1100,7 @@ const Settings = () => {
 
                                       <img
                                         src={
-                                          role === 'Accounts Manager'
+                                          role === 'Account Manager'
                                             ? assets.admindot
                                             : role === 'Mes Editor'
                                               ? assets.mesdot
@@ -1174,7 +1174,7 @@ const Settings = () => {
                       >
                         <img
                           src={
-                            role === 'Accounts Manager'
+                            role === 'Account Manager'
                               ? assets.admindot
                               : role === 'Mes Editor'
                                 ? assets.mesdot
@@ -1235,7 +1235,7 @@ const Settings = () => {
                       <div className={styles.checkboxgroup}>
                         <input
                           type="checkbox"
-                          id="Accounts Manager"
+                          id="Account Manager"
                           onChange={handleCheckboxChange}
                         />
                         <label htmlFor="admin">Admin</label>

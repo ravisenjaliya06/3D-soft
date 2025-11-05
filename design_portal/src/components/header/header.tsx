@@ -136,8 +136,8 @@ const Header = ({
             {userdetails?.username ? (
               <div className={styles.userInfo}>
                 <p className={styles.userName} title={userdetails.username}>
-                  {userdetails.username.length > 5
-                    ? userdetails.username.substring(0, 5) + '...'
+                  {userdetails.username.length > 10
+                    ? userdetails.username.substring(0, 10) + '...'
                     : userdetails.username}
                 </p>
                 <p className={styles.userSubtitle}>

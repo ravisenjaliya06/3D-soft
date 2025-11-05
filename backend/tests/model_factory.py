@@ -24,7 +24,7 @@ from material.models import (
     Material,
 )
 from umaboy.models import Organization, User, UserOrganizationPermission
-from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
+from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 
 
 def new_user(
@@ -84,7 +84,7 @@ def new_user_organization_permission(
     permission_instance = UserOrganizationPermission.objects.using(database).create(
         user=check_user, organization=check_organization
     )
-    groups = [ACCOUNTS_MANAGER, MES_EDITOR, DESIGNER, CATALOG_MANAGER]
+    groups = [ACCOUNT_MANAGER, MES_EDITOR, DESIGNER, CATALOG_MANAGER]
     for group_name in groups:
         try:
             group = Group.objects.using(database).get(name=group_name)
