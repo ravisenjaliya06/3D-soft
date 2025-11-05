@@ -834,7 +834,7 @@ class APIViewTestCase(APIBaseTestCase):
         response_data, status_code = response.json(), response.status_code
         self.assertEqual(status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response_data["message"], "Organization users retrieved successfully."
+            response_data["message"], "Organization users retrieved"
         )
 
     def test_show_organization_users_with_invalid_token(
