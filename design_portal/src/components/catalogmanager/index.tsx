@@ -38,10 +38,6 @@ const CatalogManager = () => {
     }
   }, [catalogData]);
 
-  // const filteredMaterials = materialData.filter(
-  //   (mat) => mat.type === selectedMaterialType
-  // );
-
   const filteredMaterials = materialData
     .filter((mat) => mat.type === selectedMaterialType) // keep type filter
     .filter(

@@ -726,7 +726,6 @@ const Sidebar: React.FC = () => {
             </button>
           </div>
           <hr></hr>
-          {/* <hr /> */}
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>

@@ -1,8 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MeasurementState, UnitType } from './interface';
 
-// import type UnitType = 'mm' | 'cm' | 'in';
-
 const initialState: MeasurementState = {
   isActive: false,
   unitType: 'mm', // Default unit (supports 'mm' | 'cm' | 'm' | 'in' | 'ft')
