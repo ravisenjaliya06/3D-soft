@@ -13,7 +13,7 @@ export enum CircleCreationState {
 
 export function createCircleCreator(
   scene: THREE.Scene,
-  camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
+  camera: THREE.PerspectiveCamera | THREE.OrthographicCamera
 ) {
   // State variables
   let state: CircleCreationState = CircleCreationState.INACTIVE;
@@ -64,10 +64,7 @@ export function createCircleCreator(
         centerPosition = intersectionPoint.clone();
         createPreviewCircle(0.1); // Start with small radius
         state = CircleCreationState.ADJUSTING_RADIUS;
-      } else if (
-        state === CircleCreationState.ADJUSTING_RADIUS &&
-        centerPosition
-      ) {
+      } else if (state === CircleCreationState.ADJUSTING_RADIUS && centerPosition) {
         const radius = centerPosition.distanceTo(intersectionPoint);
         finalizeCircle(radius);
         state = CircleCreationState.INACTIVE;
@@ -206,7 +203,7 @@ export function createCircleCreator(
       centerPosition,
       mesh.position,
       mesh.rotation,
-      mesh.scale,
+      mesh.scale
     );
 
     // Create circle data for Redux store
@@ -249,7 +246,7 @@ export function createCircleCreator(
     center: THREE.Vector3,
     position: THREE.Vector3,
     rotation: THREE.Euler,
-    scale: THREE.Vector3,
+    scale: THREE.Vector3
   ) {
     const designId = getDesignId();
     if (!designId) {
@@ -295,7 +292,7 @@ export function createCircleCreator(
       'design',
       designId,
       'object',
-      payload,
+      payload
     );
     if (response.status === 200) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {

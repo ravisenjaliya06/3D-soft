@@ -6,12 +6,7 @@ import { ResponseStatus } from '../interface';
 import { AppThunk } from '../store';
 import { convertObjectData } from '../utils/convertData';
 import { updateObjectGeometry } from '../utils/geometryUtils'; // Import the utility
-import {
-  addObjects,
-  removeObject,
-  removeObjectWithHistory,
-  updateObject,
-} from './dataSlice';
+import { addObjects, removeObject, removeObjectWithHistory, updateObject } from './dataSlice';
 import { HistoryAction, HistoryState, Object3D, Position } from './interface';
 import { addElement, removeElement } from './sceneSlice';
 
@@ -20,16 +15,9 @@ const isMainObject = (object: Object3D): boolean => {
   return !object.parent || object.parent === null;
 };
 
-const getAllChildObjects = (
-  object: Object3D,
-  allObjects: Object3D[],
-): Object3D[] => {
+const getAllChildObjects = (object: Object3D, allObjects: Object3D[]): Object3D[] => {
   const childObjects = allObjects.filter((obj) => {
-    return (
-      obj.parent === object.id &&
-      obj.parent !== null &&
-      obj.parent !== undefined
-    );
+    return obj.parent === object.id && obj.parent !== null && obj.parent !== undefined;
   });
 
   let result = [...childObjects];
@@ -77,7 +65,7 @@ const historySlice = createSlice({
     },
     updateHistory: (
       state,
-      action: PayloadAction<{ past: HistoryAction[]; future: HistoryAction[] }>,
+      action: PayloadAction<{ past: HistoryAction[]; future: HistoryAction[] }>
     ) => {
       state.past = action.payload.past;
       state.future = action.payload.future;
@@ -91,7 +79,7 @@ export const trackPropertyChange =
     property: string,
     oldValue: number,
     newValue: number,
-    mesh?: THREE.Mesh,
+    mesh?: THREE.Mesh
   ): AppThunk =>
   (dispatch) => {
     const action: HistoryAction = {
@@ -116,9 +104,7 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
     switch (lastAction.type) {
       case 'ADD':
         if (lastAction.data.mesh && lastAction.data.object) {
-          dispatch(
-            deleteObject(lastAction.data.mesh, lastAction.data.object.id),
-          );
+          dispatch(deleteObject(lastAction.data.mesh, lastAction.data.object.id));
         }
         if (lastAction.data.object) {
           dispatch(removeObject(lastAction.data.object.id));
@@ -127,9 +113,7 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
           dispatch(removeElement(lastAction.data.mesh));
         }
         if (lastAction.data.childObjects) {
-          lastAction.data.childObjects.forEach((child) =>
-            dispatch(removeObject(child.id)),
-          );
+          lastAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
         }
         break;
 
@@ -151,9 +135,7 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
         } else {
           // Handle single object removal
           if (lastAction.data.mesh && lastAction.data.object) {
-            dispatch(
-              createObject(lastAction.data.object, lastAction.data.mesh),
-            );
+            dispatch(createObject(lastAction.data.object, lastAction.data.mesh));
             dispatch(addElement(lastAction.data.mesh));
           }
           if (lastAction.data.object) {
@@ -166,11 +148,7 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
         break;
 
       case 'PROPERTY_CHANGE':
-        if (
-          lastAction.data.propertyChanges &&
-          lastAction.data.mesh &&
-          lastAction.data.object
-        ) {
+        if (lastAction.data.propertyChanges && lastAction.data.mesh && lastAction.data.object) {
           const change = lastAction.data.propertyChanges[0];
           const updatedData = { [change.property]: change.oldValue };
           const allObjects = getState().data.objects;
@@ -181,8 +159,8 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
                 updatedData,
                 lastAction.data.object,
                 lastAction.data.mesh,
-                allObjects,
-              ),
+                allObjects
+              )
             );
           }
         }
@@ -203,11 +181,7 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
       case 'ADD':
         if (nextAction.data.mesh && nextAction.data.object) {
           dispatch(
-            createObject(
-              nextAction.data.object,
-              nextAction.data.mesh,
-              nextAction.data.childObjects,
-            ),
+            createObject(nextAction.data.object, nextAction.data.mesh, nextAction.data.childObjects)
           );
         }
         if (nextAction.data.object) {
@@ -236,16 +210,12 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
 
           // Remove all child objects
           if (nextAction.data.childObjects) {
-            nextAction.data.childObjects.forEach((child) =>
-              dispatch(removeObject(child.id)),
-            );
+            nextAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
           }
         } else {
           // Handle single object removal
           if (nextAction.data.mesh && nextAction.data.object) {
-            dispatch(
-              deleteObject(nextAction.data.mesh, nextAction.data.object.id),
-            );
+            dispatch(deleteObject(nextAction.data.mesh, nextAction.data.object.id));
           }
           if (nextAction.data.object) {
             dispatch(removeObject(nextAction.data.object.id));
@@ -254,19 +224,13 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
             dispatch(removeElement(nextAction.data.mesh));
           }
           if (nextAction.data.childObjects) {
-            nextAction.data.childObjects.forEach((child) =>
-              dispatch(removeObject(child.id)),
-            );
+            nextAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
           }
         }
         break;
 
       case 'PROPERTY_CHANGE':
-        if (
-          nextAction.data.propertyChanges &&
-          nextAction.data.mesh &&
-          nextAction.data.object
-        ) {
+        if (nextAction.data.propertyChanges && nextAction.data.mesh && nextAction.data.object) {
           const change = nextAction.data.propertyChanges[0];
           const updatedData = { [change.property]: change.newValue };
           const allObjects = getState().data.objects;
@@ -277,8 +241,8 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
                 updatedData,
                 nextAction.data.object,
                 nextAction.data.mesh,
-                allObjects,
-              ),
+                allObjects
+              )
             );
           }
         }
@@ -308,11 +272,7 @@ export const createObject =
       },
     };
 
-    const response = await commonService.post(
-      'design',
-      `${designId}/object`,
-      data,
-    );
+    const response = await commonService.post('design', `${designId}/object`, data);
 
     if (response.status === 200 || response.status === 201) {
       const state = getState();
@@ -356,7 +316,7 @@ export const updateMainObjectInDatabase =
     updatedData: Partial<Object3D>,
     selectedObject: Object3D,
     mesh: THREE.Mesh,
-    allObjects: Object3D[],
+    allObjects: Object3D[]
   ): AppThunk =>
   async (dispatch) => {
     const designId = gettingDesignID();
@@ -384,28 +344,19 @@ export const updateMainObjectInDatabase =
     };
 
     if (updatedData.width !== undefined) dataObject.width = updatedData.width;
-    if (updatedData.height !== undefined)
-      dataObject.height = updatedData.height;
+    if (updatedData.height !== undefined) dataObject.height = updatedData.height;
     if (updatedData.depth !== undefined) dataObject.depth = updatedData.depth;
     if (updatedData.position)
       dataObject.position = { ...dataObject.position, ...updatedData.position };
-    if (updatedData.rotationX !== undefined)
-      dataObject.rotateX = updatedData.rotationX;
-    if (updatedData.rotationY !== undefined)
-      dataObject.rotateY = updatedData.rotationY;
-    if (updatedData.rotationZ !== undefined)
-      dataObject.rotateZ = updatedData.rotationZ;
+    if (updatedData.rotationX !== undefined) dataObject.rotateX = updatedData.rotationX;
+    if (updatedData.rotationY !== undefined) dataObject.rotateY = updatedData.rotationY;
+    if (updatedData.rotationZ !== undefined) dataObject.rotateZ = updatedData.rotationZ;
 
     const items = [];
     const updatedObject = { ...selectedObject, ...updatedData };
     dispatch(updateObject(updatedObject));
 
-    const childUpdates = updateObjectGeometry(
-      mesh,
-      updatedObject,
-      updatedData,
-      allObjects,
-    );
+    const childUpdates = updateObjectGeometry(mesh, updatedObject, updatedData, allObjects);
 
     for (const [childId, childData] of Object.entries(childUpdates)) {
       const childObject = allObjects.find((obj) => obj.id === childId);
@@ -429,7 +380,7 @@ export const updateMainObjectInDatabase =
       'design',
       designId,
       'object',
-      payload,
+      payload
     );
 
     if (response && response.status === 200) {
@@ -448,7 +399,7 @@ export const deleteObject =
       'design',
       gettingDesignID(),
       'object',
-      formData,
+      formData
     )) as ResponseStatus;
 
     if (response && response.status === 200) {
@@ -490,6 +441,5 @@ export const removeObjectWithChildrenFromHistory =
     dispatch(addToHistory(action));
   };
 
-export const { addToHistory, undo, redo, clearHistory, updateHistory } =
-  historySlice.actions;
+export const { addToHistory, undo, redo, clearHistory, updateHistory } = historySlice.actions;
 export default historySlice.reducer;

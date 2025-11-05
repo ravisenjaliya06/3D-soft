@@ -2,10 +2,7 @@ import createicon from '@/assets/createicon.svg';
 import deleteicon from '@/assets/deleteicon.svg';
 import deletepopupicon from '@/assets/deletepopup.svg';
 import acive_grid from '@/assets/design/active-grid.svg';
-import {
-  default as close,
-  default as editclose,
-} from '@/assets/design/close.svg';
+import { default as close, default as editclose } from '@/assets/design/close.svg';
 import complate_svg from '@/assets/design/complate-svg.svg';
 import CreateDesingIcon from '@/assets/design/createdesignicon.svg';
 import delete_svg from '@/assets/design/delete-svg.svg';
@@ -53,9 +50,7 @@ const Designs = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
-  const [editPopupData, setEditPopupData] = useState<editPopupData | null>(
-    null,
-  );
+  const [editPopupData, setEditPopupData] = useState<editPopupData | null>(null);
   const [showEdtiPopup, setshowEdtiPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -127,8 +122,7 @@ const Designs = () => {
       type: 'name',
       placeholder: 'Enter design name',
 
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setDesingName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
       error: '',
     },
   ];
@@ -138,8 +132,7 @@ const Designs = () => {
       label: 'Design Name',
       type: 'name',
       placeholder: 'Enter design name',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setDesingName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
       error: '',
       value: designName,
     },
@@ -147,8 +140,7 @@ const Designs = () => {
       label: 'Design Status',
       type: 'select',
       placeholder: 'Enter design status',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setDesingStatus(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingStatus(e.target.value),
       error: '',
       options: [
         { value: 'Draft', label: 'Draft' },
@@ -166,12 +158,7 @@ const Designs = () => {
       const response: {
         status: number;
         data: Design[];
-      } = await CommonService.getWithQueryParam(
-        'design',
-        '',
-        'is_custom',
-        'false',
-      );
+      } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
       if (response.status === 200) {
         setDesigns(response.data);
       } else if (response.status === 403) {
@@ -193,9 +180,7 @@ const Designs = () => {
   }, []);
 
   const filteredDesigns = designs.filter((design) => {
-    const matchesSearch = design.design_name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+    const matchesSearch = design.design_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = activeFilter ? design.status === activeFilter : true;
     return matchesSearch && matchesStatus;
   });
@@ -225,7 +210,7 @@ const Designs = () => {
     const response: { status: number; data: Design } = await CommonService.post(
       'design',
       '',
-      formData,
+      formData
     );
 
     if (response.status === 201) {
@@ -331,7 +316,7 @@ const Designs = () => {
   const handlathreedot = (
     event: React.MouseEvent<HTMLImageElement, MouseEvent>,
     designId: string,
-    designStatus: string,
+    designStatus: string
   ) => {
     if (designStatus === 'Deleted') return;
     event.stopPropagation();
@@ -340,7 +325,7 @@ const Designs = () => {
 
   const handleEditClickPopUp = (
     event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    designId: string,
+    designId: string
   ) => {
     event.stopPropagation();
     const design = designs.find((design) => design.id === designId);
@@ -359,7 +344,7 @@ const Designs = () => {
 
   const handleDeleteClickPopUp = (
     event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    designId: string,
+    designId: string
   ) => {
     event.stopPropagation();
     const design = designs.find((design) => design.id === designId);
@@ -373,10 +358,7 @@ const Designs = () => {
 
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get(
-        'user',
-        '',
-      );
+      const response: { status: number; data: User } = await CommonService.get('user', '');
       if (response.status === 200) {
         const userdetails = response.data;
         setUserDetails(userdetails);
@@ -412,18 +394,13 @@ const Designs = () => {
                 Follow the guide to create your first design project
               </p>
             </div>
-            <div
-              className={styles.createdesignButton}
-              onClick={() => setShowPopup(true)}
-            >
+            <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
                   <img src={Plus.src} alt="create design" />
                   <div className={styles.createdesingtext}>
                     <h4>Create New Design</h4>
-                    <p>
-                      All-in-one design for modeling, visualizing, and drawing
-                    </p>
+                    <p>All-in-one design for modeling, visualizing, and drawing</p>
                   </div>
                 </div>
                 <div className={styles.createbuttonimage}>
@@ -436,11 +413,7 @@ const Designs = () => {
           {showPopup && (
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
-                <img
-                  src={createicon.src}
-                  className={styles.createicon}
-                  alt="createicon"
-                />
+                <img src={createicon.src} className={styles.createicon} alt="createicon" />
                 <img
                   src={close.src}
                   className={styles.createclose}
@@ -472,16 +445,10 @@ const Designs = () => {
                   </form>
                 </div>
                 <div className={styles.createButtonGrop}>
-                  <button
-                    className={styles.cancelcreateButton}
-                    onClick={() => setShowPopup(false)}
-                  >
+                  <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>
                     Cancel
                   </button>
-                  <button
-                    className={styles.createcontinueButton}
-                    onClick={handleCreateDesign}
-                  >
+                  <button className={styles.createcontinueButton} onClick={handleCreateDesign}>
                     continue
                   </button>
                 </div>
@@ -493,11 +460,7 @@ const Designs = () => {
             {/* Design View Part */}
             <div className={styles.designfirstpart}>
               <div className={styles.searchWrapper}>
-                <img
-                  src={search.src}
-                  alt="Search Icon"
-                  className={styles.searchIcon}
-                />
+                <img src={search.src} alt="Search Icon" className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search Design"
@@ -520,9 +483,7 @@ const Designs = () => {
                         <li
                           key={option.label}
                           className={`${styles.dropdownItem} ${
-                            activeFilter === option.value
-                              ? styles.activeDropdownItem
-                              : ''
+                            activeFilter === option.value ? styles.activeDropdownItem : ''
                           }`}
                           onClick={() => filterData(option.value)}
                         >
@@ -540,19 +501,13 @@ const Designs = () => {
                   </div>
                 )}
                 <img
-                  src={
-                    activeView === 'list'
-                      ? List_formate.src
-                      : disactive_list.src
-                  }
+                  src={activeView === 'list' ? List_formate.src : disactive_list.src}
                   alt="list formate"
                   className={activeView === 'list' ? styles.activeView : ''}
                   onClick={() => setActiveView('list')}
                 />
                 <img
-                  src={
-                    activeView === 'grid' ? acive_grid.src : Grid_formate.src
-                  }
+                  src={activeView === 'grid' ? acive_grid.src : Grid_formate.src}
                   alt="grid formate"
                   className={activeView === 'grid' ? styles.activeView : ''}
                   onClick={() => setActiveView('grid')}
@@ -570,9 +525,7 @@ const Designs = () => {
                   <div
                     key={design.id}
                     className={`${styles.designview} ${
-                      design.status.toLowerCase() === 'deleted'
-                        ? styles.cursorNotAllowed
-                        : ''
+                      design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
                     }`}
                     onClick={() => {
                       if (design.status.toLowerCase() === 'deleted') return;
@@ -586,19 +539,14 @@ const Designs = () => {
                       className={styles.design_list_icon}
                     />
                     <div className={styles.designviewcontent}>
-                      <h4 className={styles.designName}>
-                        {design.design_name}
-                      </h4>
+                      <h4 className={styles.designName}>{design.design_name}</h4>
                       <div className={styles.designsdetailsontime}>
                         <div className={styles.designCreatedAt}>
                           <p className={styles.designTime}>Created By</p>
                           <sub className={styles.userSubtitle}>
                             {userdetails?.username ? (
                               <div className={styles.userInfo}>
-                                <p
-                                  className={styles.userName}
-                                  title={userdetails.username}
-                                >
+                                <p className={styles.userName} title={userdetails.username}>
                                   {userdetails.username}
                                 </p>
                               </div>
@@ -620,15 +568,8 @@ const Designs = () => {
                           </sub>
                         </div>
                       </div>
-                      <div
-                        className={`${styles.status} ${
-                          statusStyles['LIST'][design.status]
-                        }`}
-                      >
-                        <img
-                          src={`${statusStyles['SVG'][design.status]}`}
-                          alt="status img"
-                        />
+                      <div className={`${styles.status} ${statusStyles['LIST'][design.status]}`}>
+                        <img src={`${statusStyles['SVG'][design.status]}`} alt="status img" />
                         <p className={styles.statusText}> {design.status}</p>
                       </div>
                     </div>
@@ -637,19 +578,13 @@ const Designs = () => {
                         src={three_dots.src}
                         alt="design list icon"
                         className={styles.design_list_icon}
-                        onClick={(event) =>
-                          handlathreedot(event, design.id, design.status)
-                        }
+                        onClick={(event) => handlathreedot(event, design.id, design.status)}
                       />
                       {activeDropdownId === design.id && (
                         <div className={styles.three_dots} ref={dropdownRef}>
                           <ul className={styles.three_dots_dropdown}>
                             <div className={styles.edit}>
-                              <li
-                                onClick={(event) =>
-                                  handleEditClickPopUp(event, design.id)
-                                }
-                              >
+                              <li onClick={(event) => handleEditClickPopUp(event, design.id)}>
                                 <img
                                   src={editicon.src}
                                   alt="edit icon"
@@ -664,11 +599,7 @@ const Designs = () => {
                               className={styles.edit_delete_line}
                             />
                             <div className={styles.delete}>
-                              <li
-                                onClick={(event) =>
-                                  handleDeleteClickPopUp(event, design.id)
-                                }
-                              >
+                              <li onClick={(event) => handleDeleteClickPopUp(event, design.id)}>
                                 <img
                                   src={deleteicon.src}
                                   alt="delete icon"
@@ -690,9 +621,7 @@ const Designs = () => {
                     <div
                       key={design.id}
                       className={`${styles.gridItemContainer} ${
-                        design.status.toLowerCase() === 'deleted'
-                          ? styles.cursorNotAllowed
-                          : ''
+                        design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
                       }`}
                       onClick={() => {
                         if (design.status.toLowerCase() === 'deleted') return;
@@ -709,22 +638,13 @@ const Designs = () => {
                             src={three_dots.src}
                             alt="design list icon"
                             className={styles.design_list_icon}
-                            onClick={(event) =>
-                              handlathreedot(event, design.id, design.status)
-                            }
+                            onClick={(event) => handlathreedot(event, design.id, design.status)}
                           />
 
                           {activeDropdownId === design.id && (
-                            <div
-                              className={styles.gridthree_dots}
-                              ref={dropdownRef}
-                            >
+                            <div className={styles.gridthree_dots} ref={dropdownRef}>
                               <ul className={styles.gridthree_dots_dropdown}>
-                                <li
-                                  onClick={(event) =>
-                                    handleEditClickPopUp(event, design.id)
-                                  }
-                                >
+                                <li onClick={(event) => handleEditClickPopUp(event, design.id)}>
                                   <img
                                     src={editicon.src}
                                     alt="edit icon"
@@ -739,11 +659,7 @@ const Designs = () => {
                                   className={styles.gridedit_delete_line}
                                 />
 
-                                <li
-                                  onClick={(event) =>
-                                    handleDeleteClickPopUp(event, design.id)
-                                  }
-                                >
+                                <li onClick={(event) => handleDeleteClickPopUp(event, design.id)}>
                                   <img
                                     src={deleteicon.src}
                                     alt="delete icon"
@@ -762,10 +678,7 @@ const Designs = () => {
                           <sub className={styles.userSubtitle}>
                             {userdetails?.username ? (
                               <div className={styles.userInfo}>
-                                <p
-                                  className={styles.griduserName}
-                                  title={userdetails.username}
-                                >
+                                <p className={styles.griduserName} title={userdetails.username}>
                                   {userdetails.username}
                                 </p>
                               </div>
@@ -777,14 +690,9 @@ const Designs = () => {
                           </sub>
                         </div>
                         <div
-                          className={`${styles.gridStatus} ${
-                            statusStyles['GRID'][design.status]
-                          }`}
+                          className={`${styles.gridStatus} ${statusStyles['GRID'][design.status]}`}
                         >
-                          <img
-                            src={`${statusStyles['SVG'][design.status]}`}
-                            alt="status img"
-                          />
+                          <img src={`${statusStyles['SVG'][design.status]}`} alt="status img" />
                           <p> {design.status} </p>
                         </div>
                         <div className={styles.gridDesignUpdateAt}>
@@ -827,10 +735,7 @@ const Designs = () => {
                   }
                 }}
               >
-                <div
-                  className={styles.popup}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
                   <img
                     src={editpopupicon.src}
                     alt="editpopupicon"
@@ -848,10 +753,7 @@ const Designs = () => {
                     <p>Please change name for this design.</p>
                   </div>
                   <div>
-                    <form
-                      className={styles.form}
-                      onSubmit={(e) => e.preventDefault()}
-                    >
+                    <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                       <div className={styles.inputGroup}>
                         {editFields.map((field, index) => (
                           <InputField
@@ -872,10 +774,7 @@ const Designs = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      className={styles.continueButton}
-                      onClick={handleEditClick}
-                    >
+                    <button className={styles.continueButton} onClick={handleEditClick}>
                       continue
                     </button>
                   </div>
@@ -910,8 +809,7 @@ const Designs = () => {
                   <div className={styles.right_side}>
                     <h2>Delete Design</h2>
                     <p className={styles.deletemassage}>
-                      Are you sure you want to delete this design? This action
-                      cannot be undone.
+                      Are you sure you want to delete this design? This action cannot be undone.
                     </p>
                   </div>
                   <div className={styles.deleteButtonGrop}>
@@ -921,10 +819,7 @@ const Designs = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={handleDeleteClick}
-                    >
+                    <button className={styles.deleteButton} onClick={handleDeleteClick}>
                       Delete
                     </button>
                   </div>

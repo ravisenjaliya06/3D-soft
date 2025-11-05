@@ -95,7 +95,7 @@ export const updateObjectInRedux = (
   mesh: THREE.Mesh,
   previousPosition?: THREE.Vector3,
   previousRotation?: THREE.Euler,
-  previousScale?: THREE.Vector3,
+  previousScale?: THREE.Vector3
 ) => {
   const state = store.getState();
   const objectId = mesh.userData.objectId || mesh.uuid;
@@ -144,7 +144,7 @@ export const updateObjectInRedux = (
     updateShape({
       id: objectId,
       updates: updates,
-    }),
+    })
   );
 
   if (previousPosition && previousRotation && previousScale) {

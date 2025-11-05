@@ -10,8 +10,7 @@ export const CONVERSION_FACTORS: Record<Unit, number> = {
   feet: 304.8,
 };
 
-export const convertToMM = (value: number, unit: Unit): number =>
-  value * CONVERSION_FACTORS[unit];
+export const convertToMM = (value: number, unit: Unit): number => value * CONVERSION_FACTORS[unit];
 export const convertFromMM = (value: number, unit: Unit): number =>
   value / CONVERSION_FACTORS[unit];
 
@@ -20,11 +19,7 @@ export const mmToMeters = (valueMm: number | undefined | null): number =>
 
 export const metersToMM = (valueM: number): number => valueM * 1000;
 
-export const convertUnit = (
-  value: number,
-  fromUnit: Unit,
-  toUnit: Unit,
-): number => {
+export const convertUnit = (value: number, fromUnit: Unit, toUnit: Unit): number => {
   const mmValue = convertToMM(value, fromUnit);
   return convertFromMM(mmValue, toUnit);
 };

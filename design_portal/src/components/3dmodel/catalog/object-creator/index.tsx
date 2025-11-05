@@ -1,8 +1,5 @@
 // @ts-nocheck
-import {
-  TEXTURE_MEDIA,
-  TEXTURE_NAME,
-} from '@/components/3dmodel/handler/constant';
+import { TEXTURE_MEDIA, TEXTURE_NAME } from '@/components/3dmodel/handler/constant';
 import { store } from '@/components/3dmodel/store';
 import * as Three from 'three';
 import {
@@ -53,7 +50,7 @@ function applyTexture(texture: string): Three.MeshPhongMaterial {
       material.side = Three.DoubleSide;
     },
     undefined,
-    (error) => console.error('Error loading texture:', error),
+    (error) => console.error('Error loading texture:', error)
   );
   return material;
 }
@@ -64,7 +61,7 @@ function applyColor(color: string): Three.MeshLambertMaterial {
 
 function applyMaterial(
   material_type: string,
-  value: string,
+  value: string
 ): Three.MeshLambertMaterial | Three.MeshPhongMaterial {
   if (material_type === 'COLOR') {
     return applyColor(value);
@@ -74,18 +71,12 @@ function applyMaterial(
   return applyColor('0xffffff');
 }
 
-function applyGeometry(
-  element: Three.Mesh,
-  geoMetryData: geoMetryData,
-): Three.Mesh {
-  const material = applyMaterial(
-    geoMetryData.material.type,
-    geoMetryData.material.value,
-  );
+function applyGeometry(element: Three.Mesh, geoMetryData: geoMetryData): Three.Mesh {
+  const material = applyMaterial(geoMetryData.material.type, geoMetryData.material.value);
   const geometry = new Three.BoxGeometry(
     geoMetryData.width,
     geoMetryData.height,
-    geoMetryData.depth,
+    geoMetryData.depth
   );
 
   // Create mesh directly with geometry and material
@@ -96,11 +87,7 @@ function applyGeometry(
   mesh.userData.texture = geoMetryData.material.value;
   mesh.userData.objectId = geoMetryData.id;
 
-  mesh.position.set(
-    geoMetryData.position.x,
-    geoMetryData.position.y,
-    geoMetryData.position.z,
-  );
+  mesh.position.set(geoMetryData.position.x, geoMetryData.position.y, geoMetryData.position.z);
   if (geoMetryData.name === 'BACK_PLANK') {
     mesh.position.z = geoMetryData.position.z + 0.5;
   }
@@ -114,49 +101,40 @@ function applyGeometry(
 
 function applyCylinderGeometry(
   element: Three.Mesh,
-  cylinderGeometryData: cylinderGeometryData,
+  cylinderGeometryData: cylinderGeometryData
 ): Three.Mesh {
   const material = applyMaterial(
     cylinderGeometryData.material.type,
-    cylinderGeometryData.material.value,
+    cylinderGeometryData.material.value
   );
   const geometry = new Three.CylinderGeometry(
     cylinderGeometryData.radiusTop,
     cylinderGeometryData.radiusBottom,
     cylinderGeometryData.height,
-    cylinderGeometryData.radialSegments,
+    cylinderGeometryData.radialSegments
   );
 
   const mesh = new Three.Mesh(geometry, material);
   mesh.position.set(
     cylinderGeometryData.position.x,
     cylinderGeometryData.position.y,
-    cylinderGeometryData.position.z,
+    cylinderGeometryData.position.z
   );
 
   return mesh;
 }
 
-function handleElementData(
-  element: Three.Mesh,
-  elementData: elementData,
-): Three.Mesh {
+function handleElementData(element: Three.Mesh, elementData: elementData): Three.Mesh {
   if (elementData.type === 'GEOMETRY_DATA') {
     return applyGeometry(element, elementData.data as geoMetryData);
   } else if (elementData.type === 'CYLINDER_GEOMETRY_DATA') {
-    return applyCylinderGeometry(
-      element,
-      elementData.data as cylinderGeometryData,
-    );
+    return applyCylinderGeometry(element, elementData.data as cylinderGeometryData);
   }
 
   return element;
 }
 
-function createDesign(
-  elementDataList: elementDataList,
-  viewType: string,
-): Three.Mesh {
+function createDesign(elementDataList: elementDataList, viewType: string): Three.Mesh {
   const element = new Three.Mesh();
 
   // Create a temporary array to store child meshes
@@ -164,10 +142,8 @@ function createDesign(
 
   elementDataList.forEach((elementData) => {
     if (
-      (viewType === 'MAX' &&
-        (elementData.minMax === 'MAX' || elementData.minMax === 'BOTH')) ||
-      (viewType === 'MIN' &&
-        (elementData.minMax === 'MIN' || elementData.minMax === 'BOTH'))
+      (viewType === 'MAX' && (elementData.minMax === 'MAX' || elementData.minMax === 'BOTH')) ||
+      (viewType === 'MIN' && (elementData.minMax === 'MIN' || elementData.minMax === 'BOTH'))
     ) {
       const childMesh = handleElementData(new Three.Mesh(), elementData);
       if (elementData.data.grooves.length > 0) {
@@ -215,7 +191,7 @@ function createDesign(
     element.position.set(
       (boundingBox.min.x + boundingBox.max.x) / 2,
       (boundingBox.min.y + boundingBox.max.y) / 2,
-      (boundingBox.min.z + boundingBox.max.z) / 2,
+      (boundingBox.min.z + boundingBox.max.z) / 2
     );
     applyGroove(element);
     return element;
@@ -330,7 +306,7 @@ function applyGroove(element: Three.Mesh): Three.Mesh {
           sidePlank,
           'fitment',
           sidePlank.name,
-          element,
+          element
         );
         backPlank.userData.grooves.push(fitmentDetail);
 
@@ -339,7 +315,7 @@ function applyGroove(element: Three.Mesh): Three.Mesh {
           backPlank,
           'groove',
           backPlank.name,
-          element,
+          element
         );
         sidePlank.userData.grooves.push(grooveDetail);
       }
@@ -353,22 +329,18 @@ function boxesAreConnected(boxA: Three.Box3, boxB: Three.Box3): boolean {
   const threshold = 0.1;
 
   const xConnected =
-    Math.abs(boxA.max.x - boxB.min.x) < threshold ||
-    Math.abs(boxB.max.x - boxA.min.x) < threshold;
+    Math.abs(boxA.max.x - boxB.min.x) < threshold || Math.abs(boxB.max.x - boxA.min.x) < threshold;
 
   const yOverlap = boxA.min.y < boxB.max.y && boxA.max.y > boxB.min.y;
 
   const zOverlap = boxA.min.z < boxB.max.z && boxA.max.z > boxB.min.z;
 
   const yConnected =
-    Math.abs(boxA.max.y - boxB.min.y) < threshold ||
-    Math.abs(boxB.max.y - boxA.min.y) < threshold;
+    Math.abs(boxA.max.y - boxB.min.y) < threshold || Math.abs(boxB.max.y - boxA.min.y) < threshold;
 
   const xOverlap = boxA.min.x < boxB.max.x && boxA.max.x > boxB.min.x;
 
-  return (
-    (xConnected && yOverlap && zOverlap) || (yConnected && xOverlap && zOverlap)
-  );
+  return (xConnected && yOverlap && zOverlap) || (yConnected && xOverlap && zOverlap);
 }
 
 function calculateGrooveDetail(
@@ -376,7 +348,7 @@ function calculateGrooveDetail(
   plankB: Three.Mesh,
   type: 'groove' | 'fitment',
   connectedTo: string,
-  element: Three.Mesh,
+  element: Three.Mesh
 ): GrooveDetail {
   const designSettings = store.getState().designSettings.settings[0];
   const boxA = new Three.Box3().setFromObject(plankA);
@@ -384,12 +356,10 @@ function calculateGrooveDetail(
   const threshold = 0.1;
 
   const xConnected =
-    Math.abs(boxA.max.x - boxB.min.x) < threshold ||
-    Math.abs(boxB.max.x - boxA.min.x) < threshold;
+    Math.abs(boxA.max.x - boxB.min.x) < threshold || Math.abs(boxB.max.x - boxA.min.x) < threshold;
 
   const yConnected =
-    Math.abs(boxA.max.y - boxB.min.y) < threshold ||
-    Math.abs(boxB.max.y - boxA.min.y) < threshold;
+    Math.abs(boxA.max.y - boxB.min.y) < threshold || Math.abs(boxB.max.y - boxA.min.y) < threshold;
 
   let orientation: 'horizontal' | 'vertical';
   let worldX = 0,
@@ -400,31 +370,21 @@ function calculateGrooveDetail(
   if (xConnected) {
     orientation = 'vertical';
     worldX = Math.min(boxA.max.x, boxB.max.x);
-    worldY =
-      (Math.max(boxA.min.y, boxB.min.y) + Math.min(boxA.max.y, boxB.max.y)) / 2;
-    worldZ =
-      (Math.max(boxA.min.z, boxB.min.z) + Math.min(boxA.max.z, boxB.max.z)) / 2;
-    length = Math.abs(
-      Math.min(boxA.max.y, boxB.max.y) - Math.max(boxA.min.y, boxB.min.y),
-    );
+    worldY = (Math.max(boxA.min.y, boxB.min.y) + Math.min(boxA.max.y, boxB.max.y)) / 2;
+    worldZ = (Math.max(boxA.min.z, boxB.min.z) + Math.min(boxA.max.z, boxB.max.z)) / 2;
+    length = Math.abs(Math.min(boxA.max.y, boxB.max.y) - Math.max(boxA.min.y, boxB.min.y));
   } else if (yConnected) {
     orientation = 'horizontal';
-    worldX =
-      (Math.max(boxA.min.x, boxB.min.x) + Math.min(boxA.max.x, boxB.max.x)) / 2;
+    worldX = (Math.max(boxA.min.x, boxB.min.x) + Math.min(boxA.max.x, boxB.max.x)) / 2;
     worldY = Math.min(boxA.max.y, boxB.max.y);
-    worldZ =
-      (Math.max(boxA.min.z, boxB.min.z) + Math.min(boxA.max.z, boxB.max.z)) / 2;
-    length = Math.abs(
-      Math.min(boxA.max.x, boxB.max.x) - Math.max(boxA.min.x, boxB.min.x),
-    );
+    worldZ = (Math.max(boxA.min.z, boxB.min.z) + Math.min(boxA.max.z, boxB.max.z)) / 2;
+    length = Math.abs(Math.min(boxA.max.x, boxB.max.x) - Math.max(boxA.min.x, boxB.min.x));
   } else {
     orientation = 'horizontal';
   }
 
   // Convert global coordinates to plankA's local coordinates
-  const localPoint = plankA.worldToLocal(
-    new Three.Vector3(worldX, worldY, worldZ),
-  );
+  const localPoint = plankA.worldToLocal(new Three.Vector3(worldX, worldY, worldZ));
 
   const groove_gap = designSettings ? (designSettings.groove_gap ?? 0) : 0;
   const groove_dig = designSettings ? (designSettings.groove_dig ?? 0) : 0;
@@ -484,7 +444,7 @@ function convertDataToGeometry(data) {
         minMax: 'BOTH',
       };
       dataList.push(geometry);
-    },
+    }
   );
 
   return dataList;
@@ -493,20 +453,16 @@ function convertDataToGeometry(data) {
 function applySelectedHelperLine(element: Three.LOD): Three.LineSegments {
   const bbox = new Three.Box3().setFromObject(element);
   const edges = new Three.EdgesGeometry(
-    new Three.BoxGeometry(
-      bbox.max.x - bbox.min.x,
-      bbox.max.y - bbox.min.y,
-      bbox.max.z - bbox.min.z,
-    ),
+    new Three.BoxGeometry(bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, bbox.max.z - bbox.min.z)
   );
   const line = new Three.LineSegments(
     edges,
-    new Three.LineBasicMaterial({ color: 0x1e90ff, linewidth: 5 }),
+    new Three.LineBasicMaterial({ color: 0x1e90ff, linewidth: 5 })
   );
   line.position.set(
     (bbox.min.x + bbox.max.x) / 2,
     (bbox.min.y + bbox.max.y) / 2,
-    (bbox.min.z + bbox.max.z) / 2,
+    (bbox.min.z + bbox.max.z) / 2
   );
   return line;
 }

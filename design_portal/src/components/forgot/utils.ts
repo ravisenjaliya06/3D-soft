@@ -9,13 +9,10 @@ export const handleForgotAPI = async (
   router: NextRouter,
   setIsLoading: (loading: boolean) => void,
   setEmailError: (message: string | null) => void,
-  setSuccessMessage: (message: string | null) => void,
+  setSuccessMessage: (message: string | null) => void
 ) => {
   setIsLoading(true);
-  const { formData, errors } = handleFormData<ForgotForm>(
-    forgotPayload,
-    setError,
-  );
+  const { formData, errors } = handleFormData<ForgotForm>(forgotPayload, setError);
 
   setEmailError(errors.email);
 
@@ -23,11 +20,7 @@ export const handleForgotAPI = async (
     setIsLoading(false);
     return;
   }
-  const response = await CommonService.post(
-    'user',
-    'forgot_password',
-    formData,
-  );
+  const response = await CommonService.post('user', 'forgot_password', formData);
   if (response.status === 200) {
     setSuccessMessage('Password reset email sent successfully');
   } else {

@@ -22,9 +22,7 @@ const CatalogManager = () => {
   const [description, setDescription] = useState('1/2 millimeter');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [catalogType, setCatalogType] = useState('Door');
-  const [selectedCatalog, setSelectedCatalog] = useState<
-    null | (typeof catalogData)[0]
-  >(null);
+  const [selectedCatalog, setSelectedCatalog] = useState<null | (typeof catalogData)[0]>(null);
   const [catalogData, setCatalogData] = useState<any[]>([]);
   const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
   const [ruleParts, setRuleParts] = useState<any[]>([]);
@@ -45,7 +43,7 @@ const CatalogManager = () => {
     .filter(
       (mat) =>
         mat.name.toLowerCase().includes(materialSearch.toLowerCase()) ||
-        mat.description.toLowerCase().includes(materialSearch.toLowerCase()),
+        mat.description.toLowerCase().includes(materialSearch.toLowerCase())
     );
 
   const fields = [
@@ -53,16 +51,14 @@ const CatalogManager = () => {
       label: 'Name',
       type: 'name',
       placeholder: 'Enter catalog name',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setNewName(e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value),
       error: '',
     },
     {
       label: 'Description',
       type: 'name',
       placeholder: 'Enter catalog description',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setNewDescription(e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNewDescription(e.target.value),
       error: '',
     },
   ];
@@ -106,11 +102,10 @@ const CatalogManager = () => {
     { name: 'Elder ven EB', description: 'No' },
   ];
 
-  const handleBlur = (setEditing: (v: boolean) => void) => () =>
-    setEditing(false);
+  const handleBlur = (setEditing: (v: boolean) => void) => () => setEditing(false);
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    setEditing: (v: boolean) => void,
+    setEditing: (v: boolean) => void
   ) => {
     if (e.key === 'Enter') setEditing(false);
   };
@@ -119,13 +114,12 @@ const CatalogManager = () => {
   const handleDeleteCatalog = () => setshowDeletePopup(true);
 
   const getCatalog = async () => {
-    const response: { status: number; data: any } =
-      await commonService.getWithQueryParam(
-        'material',
-        'catalog',
-        'type',
-        catalogType,
-      );
+    const response: { status: number; data: any } = await commonService.getWithQueryParam(
+      'material',
+      'catalog',
+      'type',
+      catalogType
+    );
     if (response.status === 200) {
       setCatalogData(response.data);
     }
@@ -136,7 +130,7 @@ const CatalogManager = () => {
     try {
       const response: { status: number; data: any[] } = await commonService.get(
         'material',
-        `catalog_rules/${ruleId}/parts`,
+        `catalog_rules/${ruleId}/parts`
       );
       if (response.status === 200) {
         setRuleParts(response.data);
@@ -178,18 +172,13 @@ const CatalogManager = () => {
     const response: { status: number; data: any } = await commonService.post(
       'material',
       'catalog',
-      payload,
+      payload
     );
 
     if (response.status === 201) {
       // fetch all catalogs
       const catalogResponse: { status: number; data: any[] } =
-        await commonService.getWithQueryParam(
-          'material',
-          'catalog',
-          'type',
-          catalogType,
-        );
+        await commonService.getWithQueryParam('material', 'catalog', 'type', catalogType);
       if (catalogResponse.status === 200) {
         setCatalogData(catalogResponse.data);
         setSelectedCatalog(response.data);
@@ -199,10 +188,7 @@ const CatalogManager = () => {
   };
 
   const getMaterial = async () => {
-    const response: { status: number; data: any } = await commonService.get(
-      'material',
-      '',
-    );
+    const response: { status: number; data: any } = await commonService.get('material', '');
     if (response.status === 200) {
       setMaterialData(response.data);
     }
@@ -217,23 +203,15 @@ const CatalogManager = () => {
     if (!material) return;
 
     setRuleParts((prevParts) =>
-      prevParts.map((part) =>
-        part.id === partId ? { ...part, material } : part,
-      ),
+      prevParts.map((part) => (part.id === partId ? { ...part, material } : part))
     );
     // @ts-ignore
-    const response: { status: number } = commonService.put(
-      'material',
-      `catalog/part/${partId}`,
-      {
-        material_id: materialId,
-      },
-    );
+    const response: { status: number } = commonService.put('material', `catalog/part/${partId}`, {
+      material_id: materialId,
+    });
     if (response.status === 200) {
       setRuleParts((prevParts) =>
-        prevParts.map((part) =>
-          part.id === partId ? { ...part, material } : part,
-        ),
+        prevParts.map((part) => (part.id === partId ? { ...part, material } : part))
       );
       setSelectedPartId('');
       setSelectedMaterialId('');
@@ -245,25 +223,17 @@ const CatalogManager = () => {
 
   const handleDeleteMaterial = (partId: string) => {
     setRuleParts((prevParts) =>
-      prevParts.map((part) =>
-        part.id === partId ? { ...part, material: null } : part,
-      ),
+      prevParts.map((part) => (part.id === partId ? { ...part, material: null } : part))
     );
 
     // @ts-ignore
-    const response: { status: number } = commonService.put(
-      'material',
-      `catalog/part/${partId}`,
-      {
-        material_id: null,
-      },
-    );
+    const response: { status: number } = commonService.put('material', `catalog/part/${partId}`, {
+      material_id: null,
+    });
 
     if (response.status === 200) {
       setRuleParts((prevParts) =>
-        prevParts.map((part) =>
-          part.id === partId ? { ...part, material: null } : part,
-        ),
+        prevParts.map((part) => (part.id === partId ? { ...part, material: null } : part))
       );
       setSelectedPartId('');
       setSelectedMaterialId('');
@@ -340,9 +310,7 @@ const CatalogManager = () => {
                   className={styles.dropdown}
                   value={selectedCatalog?.id || ''}
                   onChange={(e) => {
-                    const catalog = catalogData.find(
-                      (c) => c.id === e.target.value,
-                    );
+                    const catalog = catalogData.find((c) => c.id === e.target.value);
                     setSelectedCatalog(catalog || null);
                   }}
                 >
@@ -378,11 +346,7 @@ const CatalogManager = () => {
                     className={styles.deleteButtonRule}
                     onClick={() => handleShowDeletePopup()}
                   >
-                    <img
-                      src={deleteIconOne.src}
-                      alt=""
-                      className={styles.deleteIconButton}
-                    />{' '}
+                    <img src={deleteIconOne.src} alt="" className={styles.deleteIconButton} />{' '}
                     Delete
                   </button>
                 </div>
@@ -419,15 +383,10 @@ const CatalogManager = () => {
                         ? ruleParts.map((part) => (
                             <tr
                               key={part.id}
-                              className={
-                                selectedPartId === part.id
-                                  ? styles.selectedRow
-                                  : ''
-                              }
+                              className={selectedPartId === part.id ? styles.selectedRow : ''}
                               onDragOver={(e) => e.preventDefault()}
                               onDrop={(e) => {
-                                const materialId =
-                                  e.dataTransfer.getData('materialId');
+                                const materialId = e.dataTransfer.getData('materialId');
                                 handleAssignMaterial(part.id, materialId);
                               }}
                               onClick={() => {
@@ -435,9 +394,7 @@ const CatalogManager = () => {
                               }}
                             >
                               <td>{part.name}</td>
-                              <td>
-                                {part.material?.name || 'NO MATERIAL ASSIGNED'}
-                              </td>
+                              <td>{part.material?.name || 'NO MATERIAL ASSIGNED'}</td>
                             </tr>
                           ))
                         : null}
@@ -476,14 +433,10 @@ const CatalogManager = () => {
                             value={selectedCatalog?.name}
                             onChange={(e) => setName(e.target.value)}
                             onBlur={handleBlur(setIsEditingName)}
-                            onKeyDown={(e) =>
-                              handleKeyDown(e, setIsEditingName)
-                            }
+                            onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
                           />
                         ) : (
-                          <p onClick={() => setIsEditingName(true)}>
-                            {selectedCatalog?.name}
-                          </p>
+                          <p onClick={() => setIsEditingName(true)}>{selectedCatalog?.name}</p>
                         )}
                       </td>
                     </tr>
@@ -496,9 +449,7 @@ const CatalogManager = () => {
                             value={selectedCatalog?.description}
                             onChange={(e) => setDescription(e.target.value)}
                             onBlur={handleBlur(setIsEditingDescription)}
-                            onKeyDown={(e) =>
-                              handleKeyDown(e, setIsEditingDescription)
-                            }
+                            onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
                           />
                         ) : (
                           <p onClick={() => setIsEditingDescription(true)}>
@@ -596,14 +547,8 @@ const CatalogManager = () => {
                         <tr
                           key={row.id}
                           draggable
-                          className={
-                            selectedMaterialId === row.id
-                              ? styles.selectedRow
-                              : ''
-                          }
-                          onDragStart={(e) =>
-                            e.dataTransfer.setData('materialId', row.id)
-                          }
+                          className={selectedMaterialId === row.id ? styles.selectedRow : ''}
+                          onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                           onClick={() => {
                             setSelectedMaterialId(row.id);
                           }}
@@ -635,11 +580,7 @@ const CatalogManager = () => {
       {showPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img
-              src={createicon.src}
-              className={styles.createicon}
-              alt="createicon"
-            />
+            <img src={createicon.src} className={styles.createicon} alt="createicon" />
             <img
               src={close.src}
               className={styles.createclose}
@@ -670,16 +611,10 @@ const CatalogManager = () => {
               </form>
             </div>
             <div className={styles.createButtonGrop}>
-              <button
-                className={styles.cancelcreateButton}
-                onClick={() => setShowPopup(false)}
-              >
+              <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>
                 Cancel
               </button>
-              <button
-                className={styles.createcontinueButton}
-                onClick={handleCreateCatalog}
-              >
+              <button className={styles.createcontinueButton} onClick={handleCreateCatalog}>
                 continue
               </button>
             </div>
@@ -713,21 +648,14 @@ const CatalogManager = () => {
             <div className={styles.right_side}>
               <h2>Delete Design</h2>
               <p className={styles.deletemassage}>
-                Are you sure you want to delete this design? This action cannot
-                be undone.
+                Are you sure you want to delete this design? This action cannot be undone.
               </p>
             </div>
             <div className={styles.deleteButtonGrop}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setshowDeletePopup(false)}
-              >
+              <button className={styles.cancelButton} onClick={() => setshowDeletePopup(false)}>
                 Cancel
               </button>
-              <button
-                className={styles.deleteButton}
-                onClick={handleDeleteAssignMaterial}
-              >
+              <button className={styles.deleteButton} onClick={handleDeleteAssignMaterial}>
                 Delete
               </button>
             </div>

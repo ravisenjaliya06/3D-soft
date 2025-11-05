@@ -25,12 +25,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
         camera:
           design3D.camera instanceof THREE.PerspectiveCamera
             ? design3D.camera
-            : new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000,
-              ),
+            : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
         renderer: design3D.renderer,
         movableObjects: [],
         gridBounds: {
@@ -65,9 +60,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
       // Check file size for SKP files
       if (extension === 'skp' && file.size > 100 * 1024 * 1024) {
         // 100MB limit
-        setError(
-          'The SKP file is too large. Please use a file smaller than 100MB.',
-        );
+        setError('The SKP file is too large. Please use a file smaller than 100MB.');
         setSelectedFile(null);
         return;
       }
@@ -82,9 +75,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
     setSize(newSize);
   };
 
-  const handleMaxDimensionChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleMaxDimensionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newMaxDimension = parseFloat(event.target.value);
     setMaxDimension(newMaxDimension);
   };
@@ -120,7 +111,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
       const maxCurrentDimension = Math.max(
         cadData.dimensions.width,
         cadData.dimensions.height,
-        cadData.dimensions.depth,
+        cadData.dimensions.depth
       );
       const scaleFactor = (maxDimension / maxCurrentDimension) * size;
 
@@ -231,12 +222,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
       <div className={styles.importDialogContainer}>
         <div className={styles.importDialogHeader}>
           <h3>Import 3D File</h3>
-          <img
-            src={closeIcon.src}
-            alt="Close"
-            className={styles.closeIcon}
-            onClick={onClose}
-          />
+          <img src={closeIcon.src} alt="Close" className={styles.closeIcon} onClick={onClose} />
         </div>
 
         <div className={styles.importDialogContent}>
@@ -248,15 +234,10 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
               accept=".skp,.stl"
               style={{ display: 'none' }}
             />
-            <button
-              className={styles.selectFileButton}
-              onClick={handleSelectFile}
-            >
+            <button className={styles.selectFileButton} onClick={handleSelectFile}>
               Select File
             </button>
-            {selectedFile && (
-              <div className={styles.selectedFileName}>{selectedFile.name}</div>
-            )}
+            {selectedFile && <div className={styles.selectedFileName}>{selectedFile.name}</div>}
           </div>
 
           <div className={styles.sizeControls}>
@@ -286,13 +267,8 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
 
           {isLoading && (
             <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
-              <span className={styles.progressText}>
-                {Math.round(progress)}%
-              </span>
+              <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+              <span className={styles.progressText}>{Math.round(progress)}%</span>
             </div>
           )}
 

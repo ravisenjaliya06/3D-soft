@@ -4,30 +4,16 @@ import gsap from 'gsap';
 import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  applyEdgeBanding,
-  convertDataToGeometry,
-  createDesign,
-} from '../catalog/object-creator';
+import { applyEdgeBanding, convertDataToGeometry, createDesign } from '../catalog/object-creator';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
-import {
-  generateMinifixSystem,
-  PlankData,
-  visualizeMinifixConnections,
-} from '../minifix';
+import { generateMinifixSystem, PlankData, visualizeMinifixConnections } from '../minifix';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
 import { objectName } from './constant';
-import {
-  AllItemsData,
-  CatalogResponse,
-  ITEM,
-  PLANK,
-  PlankDataItem,
-} from './interface';
+import { AllItemsData, CatalogResponse, ITEM, PLANK, PlankDataItem } from './interface';
 import { MoveHandler } from './moveHandler';
 import { addCabinetItemToDesign } from './toolbar';
 import { updateObjectInDatabase } from './updateHandler';
@@ -280,10 +266,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   return meshes;
 }
 
-export function generateCompartmentsFromPlanks(
-  plankData: PlankDataItem[],
-  objectName?: string,
-) {
+export function generateCompartmentsFromPlanks(plankData: PlankDataItem[], objectName?: string) {
   let minX = Infinity,
     maxX = -Infinity;
   let minY = Infinity,
@@ -318,26 +301,14 @@ export function generateCompartmentsFromPlanks(
 
   internalPlanks.forEach((p) => {
     const { width, height, position, name } = p;
-    if (
-      name.includes('VERTICAL') ||
-      name.includes('HORIZONTAL') ||
-      name.includes(ITEM.DRAWER)
-    ) {
+    if (name.includes('VERTICAL') || name.includes('HORIZONTAL') || name.includes(ITEM.DRAWER)) {
       const startX = Math.round((position.x - width / 2 - minX) / step);
       const endX = Math.round((position.x + width / 2 - minX) / step);
       const startY = Math.round((position.y - height / 2 - minY) / step);
       const endY = Math.round((position.y + height / 2 - minY) / step);
 
-      for (
-        let y = Math.max(0, startY);
-        y <= Math.min(gridHeight - 1, endY);
-        y++
-      ) {
-        for (
-          let x = Math.max(0, startX);
-          x <= Math.min(gridWidth - 1, endX);
-          x++
-        ) {
+      for (let y = Math.max(0, startY); y <= Math.min(gridHeight - 1, endY); y++) {
+        for (let x = Math.max(0, startX); x <= Math.min(gridWidth - 1, endX); x++) {
           grid[y][x] = 'plank';
         }
       }
@@ -427,10 +398,7 @@ export function generateCompartmentsFromPlanks(
           let bottomRightX = x;
           let bottomRightY = y;
 
-          while (
-            bottomRightX + 1 < gridWidth &&
-            grid[y][bottomRightX + 1] === 'empty'
-          ) {
+          while (bottomRightX + 1 < gridWidth && grid[y][bottomRightX + 1] === 'empty') {
             let valid = true;
             for (let yCheck = y; yCheck <= bottomRightY; yCheck++) {
               if (grid[yCheck][bottomRightX + 1] !== 'empty') {
@@ -442,10 +410,7 @@ export function generateCompartmentsFromPlanks(
             bottomRightX++;
           }
 
-          while (
-            bottomRightY + 1 < gridHeight &&
-            grid[bottomRightY + 1][x] === 'empty'
-          ) {
+          while (bottomRightY + 1 < gridHeight && grid[bottomRightY + 1][x] === 'empty') {
             let valid = true;
             for (let xCheck = x; xCheck <= bottomRightX; xCheck++) {
               if (grid[bottomRightY + 1][xCheck] !== 'empty') {
@@ -487,7 +452,7 @@ export function generateCompartmentsFromPlanks(
 async function createChildObjectFromCatalogItem(
   item: CatalogItemData,
   parentMesh: THREE.Object3D | null,
-  scene: THREE.Scene,
+  scene: THREE.Scene
 ): Promise<Object3D | null> {
   try {
     if (!parentMesh) {
@@ -501,7 +466,7 @@ async function createChildObjectFromCatalogItem(
 
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(
-        `Creating child object: ${item.name}, type: ${itemType}, parent: ${parentMesh?.name}`,
+        `Creating child object: ${item.name}, type: ${itemType}, parent: ${parentMesh?.name}`
       );
     }
 
@@ -510,13 +475,13 @@ async function createChildObjectFromCatalogItem(
       new THREE.BoxGeometry(
         item.data?.width || 0.5,
         item.data?.height || 0.5,
-        item.data?.depth || 0.5,
+        item.data?.depth || 0.5
       ),
       new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
-      }),
+      })
     );
     invisibleBox.name = `invisibleBox_${item.id}`;
     invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
@@ -533,11 +498,7 @@ async function createChildObjectFromCatalogItem(
       z: (item.data?.position?.z || 0) - parentMesh.position.z,
     };
 
-    invisibleBox.position.set(
-      relativePosition.x,
-      relativePosition.y,
-      relativePosition.z,
-    );
+    invisibleBox.position.set(relativePosition.x, relativePosition.y, relativePosition.z);
     parentMesh.add(invisibleBox);
 
     if (itemType === 'Door' || itemType === 'Sliding Door') {
@@ -547,15 +508,11 @@ async function createChildObjectFromCatalogItem(
       doorTexture.repeat.set(2, 1);
 
       const doorFace = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          item.data?.width || 0.4,
-          item.data?.height || 0.8,
-          0.02,
-        ),
+        new THREE.BoxGeometry(item.data?.width || 0.4, item.data?.height || 0.8, 0.02),
         new THREE.MeshStandardMaterial({
           map: doorTexture,
           side: THREE.DoubleSide,
-        }),
+        })
       );
       doorFace.name = `Door_${item.id}`;
       doorFace.userData.openDirection = 'right';
@@ -583,15 +540,11 @@ async function createChildObjectFromCatalogItem(
 
       // Create drawer face
       const drawerFace = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          item.data?.width || 0.4,
-          item.data?.height || 0.2,
-          0.02,
-        ),
+        new THREE.BoxGeometry(item.data?.width || 0.4, item.data?.height || 0.2, 0.02),
         new THREE.MeshStandardMaterial({
           color: 0xd9c7b8,
           roughness: 0.7,
-        }),
+        })
       );
       drawerFace.name = `DrawerFace_${item.id}`;
       drawerFace.userData.objectId = item.id;
@@ -604,7 +557,7 @@ async function createChildObjectFromCatalogItem(
       // Create plank
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
         console.log(
-          `Creating plank: ${item.name}, type: ${itemType}, dimensions: ${item.data?.width}x${item.data?.height}x${item.data?.depth}`,
+          `Creating plank: ${item.name}, type: ${itemType}, dimensions: ${item.data?.width}x${item.data?.height}x${item.data?.depth}`
         );
       }
 
@@ -619,9 +572,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             0.018, // thickness
             item.data?.height || 0.8,
-            item.data?.depth || 0.4,
+            item.data?.depth || 0.4
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `VerticalPlank_${item.id}`;
       } else if (nameLower.includes('horizontal')) {
@@ -629,9 +582,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             0.018, // thickness
-            item.data?.depth || 0.4,
+            item.data?.depth || 0.4
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `HorizontalPlank_${item.id}`;
       } else {
@@ -639,9 +592,9 @@ async function createChildObjectFromCatalogItem(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             item.data?.height || 0.8,
-            0.018, // thickness
+            0.018 // thickness
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `Plank_${item.id}`;
       }
@@ -656,7 +609,7 @@ async function createChildObjectFromCatalogItem(
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
         console.log(
           `Successfully created plank mesh: ${plankMesh.name} at position:`,
-          plankMesh.position,
+          plankMesh.position
         );
       }
     }
@@ -695,7 +648,7 @@ async function createChildObjectFromCatalogItem(
 async function createChildObjectFromData(
   item: CatalogResponse,
   parentMesh: THREE.Mesh,
-  scene: THREE.Scene,
+  scene: THREE.Scene
 ): Promise<Object3D | null> {
   try {
     const nameLower = (item?.name || '').toLowerCase();
@@ -707,13 +660,13 @@ async function createChildObjectFromData(
       new THREE.BoxGeometry(
         item.data?.width || 0.5,
         item.data?.height || 0.5,
-        item.data?.depth || 0.5,
+        item.data?.depth || 0.5
       ),
       new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
-      }),
+      })
     );
     invisibleBox.name = `invisibleBox_${item.id}`;
     invisibleBox.userData.objectId = `invisibleBox_${item.id}`;
@@ -730,11 +683,7 @@ async function createChildObjectFromData(
       z: (item.data?.position?.z || 0) - parentMesh.position.z,
     };
 
-    invisibleBox.position.set(
-      relativePosition.x,
-      relativePosition.y,
-      relativePosition.z,
-    );
+    invisibleBox.position.set(relativePosition.x, relativePosition.y, relativePosition.z);
     parentMesh.add(invisibleBox);
 
     if (itemType === 'Door' || itemType === 'Sliding Door') {
@@ -744,15 +693,11 @@ async function createChildObjectFromData(
       doorTexture.repeat.set(2, 1);
 
       const doorFace = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          item.data?.width || 0.4,
-          item.data?.height || 0.8,
-          0.02,
-        ),
+        new THREE.BoxGeometry(item.data?.width || 0.4, item.data?.height || 0.8, 0.02),
         new THREE.MeshStandardMaterial({
           map: doorTexture,
           side: THREE.DoubleSide,
-        }),
+        })
       );
       doorFace.name = `Door_${item.id}`;
       doorFace.userData.openDirection = 'right';
@@ -780,15 +725,11 @@ async function createChildObjectFromData(
 
       // Create drawer face
       const drawerFace = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          item.data?.width || 0.4,
-          item.data?.height || 0.2,
-          0.02,
-        ),
+        new THREE.BoxGeometry(item.data?.width || 0.4, item.data?.height || 0.2, 0.02),
         new THREE.MeshStandardMaterial({
           color: 0xd9c7b8,
           roughness: 0.7,
-        }),
+        })
       );
       drawerFace.name = `DrawerFace_${item.id}`;
       drawerFace.userData.objectId = item.id;
@@ -810,9 +751,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             0.018, // thickness
             item.data?.height || 0.8,
-            item.data?.depth || 0.4,
+            item.data?.depth || 0.4
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `VerticalPlank_${item.id}`;
       } else if (nameLower.includes('horizontal')) {
@@ -820,9 +761,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             0.018, // thickness
-            item.data?.depth || 0.4,
+            item.data?.depth || 0.4
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `HorizontalPlank_${item.id}`;
       } else {
@@ -830,9 +771,9 @@ async function createChildObjectFromData(
           new THREE.BoxGeometry(
             item.data?.width || 0.4,
             item.data?.height || 0.8,
-            0.018, // thickness
+            0.018 // thickness
           ),
-          plankMaterial,
+          plankMaterial
         );
         plankMesh.name = `Plank_${item.id}`;
       }
@@ -879,7 +820,7 @@ async function createChildObjectFromData(
 export async function createMeshRecursively(
   data,
   parent: THREE.Object3D | null = null,
-  scene?: THREE.Scene,
+  scene?: THREE.Scene
 ): Promise<THREE.Mesh | null> {
   showFullScreenLoader('Loading design objects...');
   if (!data) return null;
@@ -892,11 +833,7 @@ export async function createMeshRecursively(
   const geometry = new THREE.BoxGeometry(width, height, depth);
 
   let material: THREE.Material;
-  if (
-    data.type === 'Invisible Compartment' ||
-    data.type === 'Cabinet' ||
-    data.type === 'Drawer'
-  ) {
+  if (data.type === 'Invisible Compartment' || data.type === 'Cabinet' || data.type === 'Drawer') {
     material = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
@@ -936,7 +873,7 @@ export async function createMeshRecursively(
     mesh.position.set(
       mmToMeters(data.position.x) || 0,
       mmToMeters(data.position.y) || 0,
-      mmToMeters(data.position.z) || 0,
+      mmToMeters(data.position.z) || 0
     );
   }
 
@@ -948,11 +885,7 @@ export async function createMeshRecursively(
           const partHeight = mmToMeters(part.height || 1);
           const partDepth = mmToMeters(part.depth || 1);
 
-          const partGeometry = new THREE.BoxGeometry(
-            partWidth,
-            partHeight,
-            partDepth,
-          );
+          const partGeometry = new THREE.BoxGeometry(partWidth, partHeight, partDepth);
 
           let material: THREE.Material;
           if (data.additional_data?.texture) {
@@ -988,7 +921,7 @@ export async function createMeshRecursively(
             partMesh.position.set(
               mmToMeters(part.position.x) || 0,
               mmToMeters(part.position.y) || 0,
-              mmToMeters(part.position.z) || 0,
+              mmToMeters(part.position.z) || 0
             );
           }
           mesh.add(partMesh);
@@ -1021,18 +954,10 @@ export async function createMeshRecursively(
   return mesh;
 }
 
-async function loadDesignObjects(
-  designId: string,
-  scene: THREE.Scene,
-): Promise<Object3D[]> {
+async function loadDesignObjects(designId: string, scene: THREE.Scene): Promise<Object3D[]> {
   try {
     const response: { status: number; data: CatalogResponse[] } =
-      await commonService.getWithQueryParam(
-        'material',
-        'catalog',
-        'design_id',
-        designId,
-      );
+      await commonService.getWithQueryParam('material', 'catalog', 'design_id', designId);
     if (response.status === 200 && response.data) {
       const data = response.data;
       const createdObjects: Object3D[] = [];
@@ -1047,19 +972,14 @@ async function loadDesignObjects(
   }
 }
 
-async function regenerateInvisibleBoxes(
-  scene: THREE.Scene,
-  objects: Object3D[],
-) {
+async function regenerateInvisibleBoxes(scene: THREE.Scene, objects: Object3D[]) {
   try {
     // Find all cabinet objects
-    const cabinetObjects = objects.filter(
-      (obj) => obj.catalog_type === 'Cabinet' && !obj.parent,
-    );
+    const cabinetObjects = objects.filter((obj) => obj.catalog_type === 'Cabinet' && !obj.parent);
 
     for (const cabinet of cabinetObjects) {
       const cabinetMesh = scene.children.find(
-        (child) => child.userData.objectId === cabinet.id,
+        (child) => child.userData.objectId === cabinet.id
       ) as THREE.Mesh;
 
       if (!cabinetMesh) continue;
@@ -1070,17 +990,14 @@ async function regenerateInvisibleBoxes(
           obj.parent === cabinet.id &&
           (obj.name.includes('Plank') ||
             obj.name.includes('VERTICAL') ||
-            obj.name.includes('HORIZONTAL')),
+            obj.name.includes('HORIZONTAL'))
       );
 
       if (plankObjects.length > 0) {
         // Remove existing invisible boxes
         const existingBoxes: THREE.Mesh[] = [];
         cabinetMesh.traverse((child) => {
-          if (
-            child.name.includes('invisibleBox') &&
-            child instanceof THREE.Mesh
-          ) {
+          if (child.name.includes('invisibleBox') && child instanceof THREE.Mesh) {
             existingBoxes.push(child);
           }
         });
@@ -1109,18 +1026,14 @@ async function regenerateInvisibleBoxes(
           const geometry = new THREE.BoxGeometry(
             compartment.width,
             compartment.height,
-            compartment.depth,
+            compartment.depth
           );
           const material = new THREE.MeshBasicMaterial({
             transparent: true,
             opacity: 0,
           });
           const box = new THREE.Mesh(geometry, material);
-          box.position.set(
-            compartment.position.x,
-            compartment.position.y,
-            compartment.position.z,
-          );
+          box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
           box.name = 'invisibleBox';
           box.userData = {
             objectId: `invisibleBox_${index}_${cabinet.id}`,
@@ -1193,10 +1106,10 @@ interface CreateResult {
 async function create(
   name: string,
   catalogList: { catalog: CatalogListItem[][] },
-  element: THREE.Mesh,
+  element: THREE.Mesh
 ): Promise<CreateResult | null> {
   const catalogEntry = catalogList.catalog[0].find(
-    (catObj: CatalogListItem) => catObj.catalog.name === name,
+    (catObj: CatalogListItem) => catObj.catalog.name === name
   );
 
   const designId = getDesignId();
@@ -1208,11 +1121,7 @@ async function create(
   try {
     const formData = new FormData();
     formData.append('catalog_id', catalogEntry?.catalog.id || '');
-    const response = await commonService.post(
-      'design',
-      `${designId}/object`,
-      formData,
-    );
+    const response = await commonService.post('design', `${designId}/object`, formData);
 
     if (response.status === 200 || response.status === 201) {
       if (response.data) {
@@ -1287,8 +1196,7 @@ async function create(
         const allItems: AllItemsData[] = [];
 
         for (const entry of responseData) {
-          const itemIds =
-            entry.design_catalog_items?.map((item) => item.id) || [];
+          const itemIds = entry.design_catalog_items?.map((item) => item.id) || [];
 
           for (const obj of allObjects) {
             let matchedMesh: THREE.Object3D | undefined;
@@ -1308,15 +1216,11 @@ async function create(
 
           for (const itemId of itemIds) {
             const matchingPlank = element.children.find(
-              (child: object) =>
-                child instanceof THREE.Mesh &&
-                child.userData.objectId === itemId,
+              (child: object) => child instanceof THREE.Mesh && child.userData.objectId === itemId
             ) as THREE.Mesh | undefined;
 
             if (matchingPlank && matchingPlank.userData?.grooves?.length > 0) {
-              const itemEntry = entry.design_catalog_items?.find(
-                (item) => item.id === itemId,
-              );
+              const itemEntry = entry.design_catalog_items?.find((item) => item.id === itemId);
 
               if (itemEntry) {
                 allItems.push({
@@ -1346,7 +1250,7 @@ async function create(
           const patchResponse = await commonService.put(
             'design',
             `${designId}/object`,
-            data as unknown as FormData,
+            data as unknown as FormData
           );
 
           if (patchResponse.status === 200) {
@@ -1400,7 +1304,7 @@ interface NormalizeInputData {
 
 function normalizeObjectData(
   input: NormalizeInputData,
-  defaults: Partial<Object3D> = {},
+  defaults: Partial<Object3D> = {}
 ): Object3D {
   const normalized: Object3D = {
     id: input.id || defaults.id || crypto.randomUUID(),
@@ -1410,8 +1314,7 @@ function normalizeObjectData(
     depth: input.depth || defaults.depth || 0,
     altitude: input.altitude || defaults.altitude || 0,
     position: input.position || defaults.position || { x: 0, y: 0, z: 0 },
-    material: input.material ||
-      defaults.material || { type: 'TEXTURE', value: 'default' },
+    material: input.material || defaults.material || { type: 'TEXTURE', value: 'default' },
     parent: input.parent || defaults.parent || null,
     child: input.child || defaults.child || [],
     layer: input.layer || defaults.layer || 0,
@@ -1439,11 +1342,11 @@ async function createItem(
   finalPosition: THREE.Vector3,
   dispatch: Dispatch,
   dataObjects?: Object3D[],
-  scene?: THREE.Scene,
+  scene?: THREE.Scene
 ): Promise<CreateItemResponse | null> {
   const objectData: Object3D[] = [];
   const catalogEntry = catalogList.catalog[0].find(
-    (catObj: CatalogListItem) => catObj.catalog.name === name,
+    (catObj: CatalogListItem) => catObj.catalog.name === name
   );
   const width = (threeDObject.geometry as THREE.BoxGeometry).parameters.width;
   const height = (threeDObject.geometry as THREE.BoxGeometry).parameters.height;
@@ -1485,27 +1388,22 @@ async function createItem(
 
   objectData.push(normalizedData);
 
-  if (
-    threeDObject.name.includes(ITEM.PLANK) ||
-    threeDObject.name.includes(ITEM.DRAWER)
-  ) {
+  if (threeDObject.name.includes(ITEM.PLANK) || threeDObject.name.includes(ITEM.DRAWER)) {
     const allObjects: Object3D[] = store.getState().data.objects || [];
     const cupboards = allObjects.filter(
       (obj) =>
         !obj.name.includes(ITEM.PLANK) &&
         !obj.name.includes(ITEM.DOOR) &&
         !obj.name.includes(ITEM.DRAWER) &&
-        (obj.parent === null || obj.parent === undefined),
+        (obj.parent === null || obj.parent === undefined)
     );
 
     // Find the cupboard this plank belongs to
-    const targetCupboard = cupboards.find(
-      (cupboard) => cupboard.id === parentId,
-    );
+    const targetCupboard = cupboards.find((cupboard) => cupboard.id === parentId);
 
     if (targetCupboard) {
       const cupboardObject = scene?.children.find(
-        (obj) => obj.userData.objectId === targetCupboard.id,
+        (obj) => obj.userData.objectId === targetCupboard.id
       ) as THREE.Mesh;
 
       if (cupboardObject) {
@@ -1514,9 +1412,8 @@ async function createItem(
           .filter(
             (obj) =>
               obj.parent === targetCupboard.id &&
-              (obj.name.includes(ITEM.PLANK) ||
-                obj.name.includes(ITEM.DRAWER)) &&
-              !obj.name.includes(ITEM.DOOR),
+              (obj.name.includes(ITEM.PLANK) || obj.name.includes(ITEM.DRAWER)) &&
+              !obj.name.includes(ITEM.DOOR)
           )
           .map((obj) => ({
             id: obj.id,
@@ -1547,10 +1444,7 @@ async function createItem(
 
         try {
           // 🔧 GENERATE MINIFIX SYSTEM WITH NEW PLANK
-          const minifixSystem = generateMinifixSystem(
-            targetCupboard.id,
-            allPlanks,
-          );
+          const minifixSystem = generateMinifixSystem(targetCupboard.id, allPlanks);
 
           if (minifixSystem.connections.length > 0) {
             // 🔧 CLEAR EXISTING MINIFIX VISUALIZATIONS
@@ -1577,10 +1471,7 @@ async function createItem(
             });
 
             // 🔧 ADD NEW MINIFIX VISUALIZATIONS
-            visualizeMinifixConnections(
-              minifixSystem.connections,
-              cupboardObject,
-            );
+            visualizeMinifixConnections(minifixSystem.connections, cupboardObject);
 
             // 🔧 UPDATE CUPBOARD WITH NEW MINIFIX DATA
             const updatedCupboard = {
@@ -1624,47 +1515,29 @@ async function createItem(
               };
 
               try {
-                const patchResponse = await commonService.put(
-                  'design',
-                  `${designId}/object`,
-                  data,
-                );
+                const patchResponse = await commonService.put('design', `${designId}/object`, data);
 
-                if (
-                  patchResponse.status === 200 ||
-                  patchResponse.status === 201
-                ) {
+                if (patchResponse.status === 200 || patchResponse.status === 201) {
                   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-                    console.log(
-                      'Minifix data updated in database after adding new plank',
-                    );
+                    console.log('Minifix data updated in database after adding new plank');
                   }
                 } else {
-                  console.error(
-                    'Failed to update Minifix data in database:',
-                    patchResponse,
-                  );
+                  console.error('Failed to update Minifix data in database:', patchResponse);
                 }
               } catch (error) {
-                console.error(
-                  'Error updating Minifix data in database:',
-                  error,
-                );
+                console.error('Error updating Minifix data in database:', error);
               }
             }
           }
         } catch (error) {
-          console.error(
-            'Error generating Minifix system for new plank:',
-            error,
-          );
+          console.error('Error generating Minifix system for new plank:', error);
         }
       }
     }
 
     cupboards.forEach((cupboard) => {
       const cupboardObject = scene?.children.find(
-        (obj) => obj.userData.objectId === cupboard.id,
+        (obj) => obj.userData.objectId === cupboard.id
       ) as THREE.Mesh;
       if (cupboardObject) {
         const plankDataList: PlankDataItem[] = allObjects
@@ -1673,7 +1546,7 @@ async function createItem(
               obj.parent === cupboard.id &&
               obj.name.includes(ITEM.PLANK) &&
               !obj.name.includes(ITEM.DRAWER) &&
-              !obj.name.includes(ITEM.DOOR),
+              !obj.name.includes(ITEM.DOOR)
           )
           .map((obj) => ({
             id: obj.id,
@@ -1695,7 +1568,7 @@ async function createItem(
                     position: normalizedData.position,
                   },
                 ]
-              : [],
+              : []
           );
 
         const objectsToRemove: THREE.Mesh[] = [];
@@ -1717,18 +1590,14 @@ async function createItem(
           const geometry = new THREE.BoxGeometry(
             compartment.width,
             compartment.height,
-            compartment.depth,
+            compartment.depth
           );
           const material = new THREE.MeshBasicMaterial({
             transparent: true,
             opacity: 0,
           });
           const box = new THREE.Mesh(geometry, material);
-          box.position.set(
-            compartment.position.x,
-            compartment.position.y,
-            compartment.position.z,
-          );
+          box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
           box.name = 'invisibleBox';
           box.userData = {
             objectId: `invisibleBox_${index}_${cupboard.id}`,
@@ -1759,7 +1628,7 @@ async function createItem(
     const response = await commonService.post(
       'design',
       `${designId}/catalog/${parentId}/item`,
-      payload,
+      payload
     );
 
     if (response.status === 200 || response.status === 201) {
@@ -1774,15 +1643,13 @@ async function createItem(
         threeDObject.userData.objectId = itemId;
       } else {
         console.warn(
-          `No valid ID found in API response for ${name}, userData.objectId not assigned`,
+          `No valid ID found in API response for ${name}, userData.objectId not assigned`
         );
       }
       if (itemId) {
         objectData[0].id = itemId;
       } else {
-        console.warn(
-          `No valid ID found in API response for ${name}, using temporary ID`,
-        );
+        console.warn(`No valid ID found in API response for ${name}, using temporary ID`);
       }
       dispatch(addObjects(objectData));
 
@@ -1832,14 +1699,14 @@ async function moveObject(
   catalogList: { catalog: CatalogWithChildren[][] },
   scene: THREE.Scene,
   dispatch: Dispatch,
-  dataObjects?: Object3D[],
+  dataObjects?: Object3D[]
 ): Promise<MoveObjectResult | void> {
   if (!scene) {
     return;
   }
 
   const catalogEntry = catalogList.catalog[0].find(
-    (catObj: CatalogWithChildren) => catObj.catalog.name === name,
+    (catObj: CatalogWithChildren) => catObj.catalog.name === name
   );
   if (!catalogEntry) {
     console.error('Catalog entry not found for:', name);
@@ -1859,9 +1726,7 @@ async function moveObject(
   const childObjects: THREE.Mesh[] = [];
   for (const childCatalog of childCatalogs) {
     if (childCatalog.items && childCatalog.items.length > 0) {
-      const childDataList = childCatalog.items.map(
-        (item: CatalogChildItem) => item.data,
-      );
+      const childDataList = childCatalog.items.map((item: CatalogChildItem) => item.data);
       const convertedChildData = convertDataToGeometry(childDataList);
       const childObject = createDesign(convertedChildData, 'MAX');
       const position = childCatalog.catalog.data.position;
@@ -1891,34 +1756,24 @@ async function moveObject(
         height: Number(item.height || 0),
         depth: Number(item.depth || 0),
         position: {
-          x: Number(
-            (item.position as { x: number; y: number; z: number })?.x || 0,
-          ),
-          y: Number(
-            (item.position as { x: number; y: number; z: number })?.y || 0,
-          ),
-          z: Number(
-            (item.position as { x: number; y: number; z: number })?.z || 0,
-          ),
+          x: Number((item.position as { x: number; y: number; z: number })?.x || 0),
+          y: Number((item.position as { x: number; y: number; z: number })?.y || 0),
+          z: Number((item.position as { x: number; y: number; z: number })?.z || 0),
         },
-      })),
+      }))
     );
     compartments.forEach((compartment, index) => {
       const geometry = new THREE.BoxGeometry(
         compartment.width,
         compartment.height,
-        compartment.depth,
+        compartment.depth
       );
       const material = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
       });
       const box = new THREE.Mesh(geometry, material);
-      box.position.set(
-        compartment.position.x,
-        compartment.position.y,
-        compartment.position.z,
-      );
+      box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
       box.name = 'invisibleBox';
       box.userData = { objectId: `invisibleBox_${index}_${name}` };
       threeDObject.add(box);
@@ -1935,31 +1790,27 @@ async function moveObject(
 
   let createResult;
 
-  if (
-    threeDObject.name.includes(ITEM.PLANK) ||
-    threeDObject.name.includes(ITEM.DRAWER)
-  ) {
+  if (threeDObject.name.includes(ITEM.PLANK) || threeDObject.name.includes(ITEM.DRAWER)) {
     const allObjects: Object3D[] = dataObjects || [];
     const cupboards = allObjects.filter(
       (obj) =>
         !obj.name.includes(ITEM.PLANK) &&
         !obj.name.includes(ITEM.DOOR) &&
         !obj.name.includes(ITEM.DRAWER) &&
-        (obj.parent === null || obj.parent === undefined),
+        (obj.parent === null || obj.parent === undefined)
     );
 
     cupboards.forEach((cupboard) => {
       const cupboardObject = scene.children.find(
-        (obj) => obj.userData.objectId === cupboard.id,
+        (obj) => obj.userData.objectId === cupboard.id
       ) as THREE.Mesh;
       if (cupboardObject) {
         const plankDataList: PlankDataItem[] = allObjects
           .filter(
             (obj) =>
               obj.parent === cupboard.id &&
-              (obj.name.includes(ITEM.PLANK) ||
-                obj.name.includes(ITEM.DRAWER)) &&
-              !obj.name.includes(ITEM.DOOR),
+              (obj.name.includes(ITEM.PLANK) || obj.name.includes(ITEM.DRAWER)) &&
+              !obj.name.includes(ITEM.DOOR)
           )
           .map((obj) => ({
             name: obj.name,
@@ -1983,26 +1834,19 @@ async function moveObject(
           }
         });
 
-        const compartments = generateCompartmentsFromPlanks(
-          plankDataList,
-          threeDObject.name,
-        );
+        const compartments = generateCompartmentsFromPlanks(plankDataList, threeDObject.name);
         compartments.forEach((compartment, index) => {
           const geometry = new THREE.BoxGeometry(
             compartment.width,
             compartment.height,
-            compartment.depth,
+            compartment.depth
           );
           const material = new THREE.MeshBasicMaterial({
             transparent: true,
             opacity: 0,
           });
           const box = new THREE.Mesh(geometry, material);
-          box.position.set(
-            compartment.position.x,
-            compartment.position.y,
-            compartment.position.z,
-          );
+          box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
           box.name = 'invisibleBox';
           box.userData = {
             objectId: `invisibleBox_${index}_${cupboard.id}`,
@@ -2016,11 +1860,7 @@ async function moveObject(
   if (moveHandler) {
     const finalPosition = await moveHandler.enableDragging(threeDObject);
     if (finalPosition) {
-      threeDObject.position.set(
-        finalPosition.x,
-        finalPosition.y,
-        finalPosition.z,
-      );
+      threeDObject.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
 
       if (
         threeDObject.name.includes('PLANK') ||
@@ -2032,8 +1872,7 @@ async function moveObject(
           .forEach((child) => {
             threeDObject.remove(child);
             // Optionally dispose geometry and material
-            if ((child as THREE.Mesh).geometry)
-              (child as THREE.Mesh).geometry.dispose();
+            if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
             if ((child as THREE.Mesh).material instanceof THREE.Material) {
               (child as THREE.Mesh).material.dispose();
             }
@@ -2050,7 +1889,7 @@ async function moveObject(
           finalPosition,
           dispatch,
           dataObjects,
-          scene,
+          scene
         );
       } else {
         // Handle non-plank objects (e.g., cupboard with children
@@ -2070,20 +1909,17 @@ async function moveObject(
             if (targetObject) {
               targetObject.userData.objectId = obj.id;
             } else {
-              console.warn(
-                `No 3D object found for ${obj.name} with ID ${obj.id}`,
-              );
+              console.warn(`No 3D object found for ${obj.name} with ID ${obj.id}`);
             }
           });
           try {
             const cupboardId = createResult.objectsList[0].id;
-            const cupboardPlanks: PlankDataItem[] =
-              createResult.objectsList.filter(
-                (obj) =>
-                  obj.parent === cupboardId &&
-                  obj.name.includes(ITEM.PLANK) &&
-                  !obj.name.includes(ITEM.DRAWER),
-              );
+            const cupboardPlanks: PlankDataItem[] = createResult.objectsList.filter(
+              (obj) =>
+                obj.parent === cupboardId &&
+                obj.name.includes(ITEM.PLANK) &&
+                !obj.name.includes(ITEM.DRAWER)
+            );
             const cupboardMinifixSystem = generateMinifixSystem(
               cupboardId,
               cupboardPlanks.map((plank) => ({
@@ -2094,16 +1930,15 @@ async function moveObject(
                 depth: plank.depth,
                 position: plank.position,
                 parent: plank.parent,
-              })),
+              }))
             );
             const drawers = createResult.objectsList.filter(
-              (obj) =>
-                obj.parent === cupboardId && obj.name.includes(ITEM.DRAWER),
+              (obj) => obj.parent === cupboardId && obj.name.includes(ITEM.DRAWER)
             );
             const drawerUpdates = [];
             for (const drawer of drawers) {
               const drawerPlanks = createResult.objectsList.filter(
-                (obj) => obj.parent === drawer.id,
+                (obj) => obj.parent === drawer.id
               );
               if (drawerPlanks.length > 0) {
                 const drawerMinifixSystem = generateMinifixSystem(
@@ -2116,7 +1951,7 @@ async function moveObject(
                     depth: plank.depth,
                     position: plank.position,
                     parent: plank.parent,
-                  })),
+                  }))
                 );
 
                 drawerUpdates.push({
@@ -2134,7 +1969,7 @@ async function moveObject(
             updatedObjects.push(updatedCupboard);
             const updatedDirectPlanks = cupboardPlanks.map((plank) => {
               const plankWithHoles = cupboardMinifixSystem.planksWithHoles.find(
-                (p) => p.id === plank.id,
+                (p) => p.id === plank.id
               );
               return {
                 ...plank,
@@ -2152,9 +1987,7 @@ async function moveObject(
               updatedObjects.push(updatedDrawer);
 
               const updatedDrawerPlanks = planks.map((plank) => {
-                const plankWithHoles = minifixSystem.planksWithHoles.find(
-                  (p) => p.id === plank.id,
-                );
+                const plankWithHoles = minifixSystem.planksWithHoles.find((p) => p.id === plank.id);
                 return {
                   ...plank,
                   minifixHoles: plankWithHoles?.minifixHoles || [],
@@ -2168,29 +2001,21 @@ async function moveObject(
                   !obj.name.includes(ITEM.PLANK) &&
                   obj.id !== cupboardId &&
                   !drawers.some((drawer) => drawer.id === obj.id) &&
-                  !obj.name.includes(PLANK.DRAWER_HANDLE),
-              ),
+                  !obj.name.includes(PLANK.DRAWER_HANDLE)
+              )
             );
             dispatch(addObjects(updatedObjects));
             if (cupboardMinifixSystem.connections.length > 0) {
-              visualizeMinifixConnections(
-                cupboardMinifixSystem.connections,
-                threeDObject,
-              );
-              threeDObject.userData.minifixConnections =
-                cupboardMinifixSystem.connections;
+              visualizeMinifixConnections(cupboardMinifixSystem.connections, threeDObject);
+              threeDObject.userData.minifixConnections = cupboardMinifixSystem.connections;
             }
             for (const { drawer, minifixSystem } of drawerUpdates) {
               const drawerObject = threeDObject.children.find(
-                (c) => c.userData.objectId === drawer.id,
+                (c) => c.userData.objectId === drawer.id
               );
               if (drawerObject && minifixSystem.connections.length > 0) {
-                visualizeMinifixConnections(
-                  minifixSystem.connections,
-                  drawerObject,
-                );
-                drawerObject.userData.minifixConnections =
-                  minifixSystem.connections;
+                visualizeMinifixConnections(minifixSystem.connections, drawerObject);
+                drawerObject.userData.minifixConnections = minifixSystem.connections;
               }
             }
 
@@ -2226,29 +2051,21 @@ async function moveObject(
               const cupboardResponse = await commonService.put(
                 'design',
                 `${designId}/object`,
-                cupboardPayload,
+                cupboardPayload
               );
 
-              if (
-                cupboardResponse.status === 200 ||
-                cupboardResponse.status === 201
-              ) {
+              if (cupboardResponse.status === 200 || cupboardResponse.status === 201) {
                 if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
                   console.log('✅ Cupboard & planks updated');
                 }
               } else {
-                console.error(
-                  '❌ Failed to update cupboard:',
-                  cupboardResponse,
-                );
+                console.error('❌ Failed to update cupboard:', cupboardResponse);
               }
 
               // Update each drawer + its planks separately
               for (const { drawer, minifixSystem, planks } of drawerUpdates) {
                 const updatedDrawerPlanks = planks.map((plank) => {
-                  const updated = minifixSystem.planksWithHoles.find(
-                    (p) => p.id === plank.id,
-                  );
+                  const updated = minifixSystem.planksWithHoles.find((p) => p.id === plank.id);
                   return {
                     id: plank.id,
                     name: plank.name,
@@ -2301,21 +2118,15 @@ async function moveObject(
                 const drawerResponse = await commonService.put(
                   'design',
                   `${designId}/object`,
-                  drawerPayload,
+                  drawerPayload
                 );
 
-                if (
-                  drawerResponse.status === 200 ||
-                  drawerResponse.status === 201
-                ) {
+                if (drawerResponse.status === 200 || drawerResponse.status === 201) {
                   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
                     console.log(`✅ Drawer ${drawer.name} updated`);
                   }
                 } else {
-                  console.error(
-                    `❌ Failed to update drawer ${drawer.name}:`,
-                    drawerResponse,
-                  );
+                  console.error(`❌ Failed to update drawer ${drawer.name}:`, drawerResponse);
                 }
               }
             }
@@ -2336,7 +2147,7 @@ async function moveObject(
               await updateObjectInDatabase(
                 createResult.mainObjects[0].id,
                 updatedData,
-                updatedData,
+                updatedData
               );
             }
           }
@@ -2373,11 +2184,7 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
     const formData = new FormData();
     formData.append('catalog_id', id);
 
-    const response = await commonService.post(
-      'design',
-      `${designId}/object`,
-      formData,
-    );
+    const response = await commonService.post('design', `${designId}/object`, formData);
 
     if (response.status === 200 || response.status === 201) {
       const responseData = response.data;
@@ -2393,8 +2200,7 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
       const idMap = new Map<string, string>();
 
       dataArray.forEach((entry: CatalogResponse) => {
-        const newId =
-          entry.id && !idMap.has(entry.id) ? entry.id : crypto.randomUUID();
+        const newId = entry.id && !idMap.has(entry.id) ? entry.id : crypto.randomUUID();
         idMap.set(newId, newId);
 
         const mainObject: Object3D = {
@@ -2419,8 +2225,7 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
         };
 
         const childObjects = entry.design_catalog_items?.map((item) => {
-          const childId =
-            item.id && !idMap.has(item.id) ? item.id : crypto.randomUUID();
+          const childId = item.id && !idMap.has(item.id) ? item.id : crypto.randomUUID();
           idMap.set(childId, childId);
           return {
             id: childId,
@@ -2432,9 +2237,7 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
             position: { ...item.data.position },
             material: item.data.material,
             parent: newId,
-            child: item.data.child
-              ? item.data.child.map(() => crypto.randomUUID())
-              : [],
+            child: item.data.child ? item.data.child.map(() => crypto.randomUUID()) : [],
             layer: item.data.layer,
             rotationX: 0,
             rotationY: 0,
@@ -2453,17 +2256,9 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
 
       dataArray.forEach((entry: CatalogResponse) => {
         if (entry.parent) {
-          const parentObj = allObjects.find(
-            (o) => o.id === idMap.get(entry.parent ?? ''),
-          );
-          const currentObj = allObjects.find(
-            (o) => o.id === idMap.get(entry.id),
-          );
-          if (
-            parentObj &&
-            currentObj &&
-            !parentObj.child.includes(currentObj.id)
-          ) {
+          const parentObj = allObjects.find((o) => o.id === idMap.get(entry.parent ?? ''));
+          const currentObj = allObjects.find((o) => o.id === idMap.get(entry.id));
+          if (parentObj && currentObj && !parentObj.child.includes(currentObj.id)) {
             parentObj.child.push(currentObj.id);
           }
         }
@@ -2517,8 +2312,7 @@ export function toggleDoor(child: THREE.Mesh) {
   while (obj && !wallType) {
     if (obj.name.toLowerCase().includes('center')) wallType = 'center';
     else if (obj.name.toLowerCase().includes('leftwall')) wallType = 'leftwall';
-    else if (obj.name.toLowerCase().includes('rightwall'))
-      wallType = 'rightwall';
+    else if (obj.name.toLowerCase().includes('rightwall')) wallType = 'rightwall';
     obj = obj.parent;
   }
 
@@ -2674,7 +2468,7 @@ export const addCabinetItemToDesign = async (
       height: number;
       depth: number;
     }>;
-  },
+  }
 ) => {
   const payload = {
     type: itemData.type,
@@ -2691,11 +2485,7 @@ export const addCabinetItemToDesign = async (
     parent: itemData.parent,
   };
   try {
-    const response = await commonService.post(
-      `material/catalog`,
-      `${catalogId}/design`,
-      payload,
-    );
+    const response = await commonService.post(`material/catalog`, `${catalogId}/design`, payload);
     if (response.status === 200 || response.status === 201) {
       return response.data;
     }
@@ -2720,11 +2510,7 @@ export const addItemtoDatabase = async (data: any) => {
 
 export const addItemToDataBaseWihoutCatalog = async (data: any) => {
   try {
-    const apiResponse = await commonService.post(
-      'material',
-      'catalog/design',
-      data,
-    );
+    const apiResponse = await commonService.post('material', 'catalog/design', data);
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(apiResponse, 'apiResponse');
     }

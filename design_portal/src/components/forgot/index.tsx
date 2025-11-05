@@ -32,7 +32,7 @@ const Forgot = () => {
       router,
       setIsLoading,
       setEmailError,
-      setSuccessMessage,
+      setSuccessMessage
     );
   };
 
@@ -72,17 +72,12 @@ const Forgot = () => {
         {/* Right Section */}
         <div className={styles.right_side}>
           <div className={styles.back_button}>
-            <img
-              src={back_icon.src}
-              onClick={() => router.push(REDIRECT.LOGIN)}
-              alt="Logo"
-            />
+            <img src={back_icon.src} onClick={() => router.push(REDIRECT.LOGIN)} alt="Logo" />
             Back to Login
           </div>
           <h2>Forgot your Password?</h2>
           <p>
-            Don&apos;t worry, happens to all of us. Enter your email below to
-            recover your password
+            Don&apos;t worry, happens to all of us. Enter your email below to recover your password
           </p>
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.inputGroup}>
@@ -94,18 +89,12 @@ const Forgot = () => {
                     {...field}
                   />
                   {error && <p className={styles.errorMessage}>{error}</p>}
-                  {success && (
-                    <p className={styles.successMessage}>{success}</p>
-                  )}
+                  {success && <p className={styles.successMessage}>{success}</p>}
                 </div>
               ))}
             </div>
             <div className={styles.buttonContainer}>
-              <button
-                className={styles.loginButton}
-                onClick={handleForgot}
-                disabled={isLoading}
-              >
+              <button className={styles.loginButton} onClick={handleForgot} disabled={isLoading}>
                 Send Reset link
               </button>
             </div>

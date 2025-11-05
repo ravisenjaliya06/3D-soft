@@ -21,14 +21,13 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [showdropDown, setShowDropDown] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-  const [selectedWorkOrder, setSelectedWorkOrder] =
-    useState<WorkOrderData | null>(null);
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
 
   const filteredWorkOrders = workorders.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const visibleWorkOrders = filteredWorkOrders.slice(0, visibleCount);
@@ -38,10 +37,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
 
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
-      if (
-        dropdownButtonRef.current &&
-        !dropdownButtonRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownButtonRef.current && !dropdownButtonRef.current.contains(event.target as Node)) {
         setShowDropDown(false);
         setActiveDropdownId(null);
       }
@@ -55,13 +51,11 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
 
   const handlathreedot = (
     event: React.MouseEvent<HTMLImageElement, MouseEvent>,
-    workOrderId: string,
+    workOrderId: string
   ) => {
     event.stopPropagation();
     setShowDropDown(true);
-    setActiveDropdownId((prevId) =>
-      prevId === workOrderId ? null : workOrderId,
-    );
+    setActiveDropdownId((prevId) => (prevId === workOrderId ? null : workOrderId));
   };
 
   const handleWorkorderClick = async (workOrder: WorkOrderData) => {
@@ -71,7 +65,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
     setIsLoading(true);
     const response: { status: number } = await commonService.get(
       'design',
-      `${workOrder.design}/nesting`,
+      `${workOrder.design}/nesting`
     );
     if (response.status === 200) {
       setSelectedWorkOrder(workOrder);
@@ -120,9 +114,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
               onClick={() => handleWorkorderClick(item)}
             >
               <div className={styles.data}>
-                {item.name.length > 10
-                  ? `${item.name.slice(0, 10)}...`
-                  : item.name}
+                {item.name.length > 10 ? `${item.name.slice(0, 10)}...` : item.name}
               </div>
               <div className={styles.data}>
                 {item.design_name.length > 10
@@ -194,11 +186,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
             style={{ cursor: 'pointer' }}
           >
             <p>Load More</p>
-            <img
-              src={Process_upload.src}
-              alt="process upload"
-              className={styles.process_upload}
-            />
+            <img src={Process_upload.src} alt="process upload" className={styles.process_upload} />
           </div>
         </div>
       )}

@@ -38,7 +38,7 @@ function createEdge(
   start: THREE.Vector3,
   end: THREE.Vector3,
   name: string,
-  edgeType: string,
+  edgeType: string
 ): THREE.Line {
   const material = new THREE.LineBasicMaterial({ color: 0x000000 });
   const points = [start, end];
@@ -83,7 +83,7 @@ export function getAllFacesFromLines(group: THREE.Mesh): THREE.Mesh[] {
     current: string,
     path: string[],
     visited: Set<string>,
-    maxLength: number,
+    maxLength: number
   ): void {
     if (path.length > maxLength) return;
 
@@ -108,13 +108,7 @@ export function getAllFacesFromLines(group: THREE.Mesh): THREE.Mesh[] {
 
       if (!visited.has(neighbor)) {
         visited.add(neighbor);
-        findLoops(
-          start,
-          neighbor,
-          [...path, neighbor],
-          new Set(visited),
-          maxLength,
-        );
+        findLoops(start, neighbor, [...path, neighbor], new Set(visited), maxLength);
       }
     }
   }
@@ -174,10 +168,7 @@ export function getAllFacesFromLines(group: THREE.Mesh): THREE.Mesh[] {
     extrudeMesh.userData.shape = shape;
 
     const defaultNormal = new THREE.Vector3(0, 0, 1);
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(
-      defaultNormal,
-      normal,
-    );
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, normal);
 
     extrudeMesh.setRotationFromQuaternion(quaternion);
     extrudeMesh.name = `face-${faces.indexOf(vertices)}`;
@@ -241,10 +232,7 @@ export function getAllFacesFromLines(group: THREE.Mesh): THREE.Mesh[] {
 function isPlanar(points: THREE.Vector3[]): boolean {
   if (points.length < 3) return false;
   const normal = new THREE.Vector3()
-    .crossVectors(
-      points[1].clone().sub(points[0]),
-      points[2].clone().sub(points[0]),
-    )
+    .crossVectors(points[1].clone().sub(points[0]), points[2].clone().sub(points[0]))
     .normalize();
 
   for (let i = 3; i < points.length; i++) {
@@ -644,9 +632,7 @@ export function Box2(faces: Face[]) {
   for (const face of faces) {
     const { points, faceId } = face;
 
-    const vectorPoints = points.map(
-      (point) => new THREE.Vector3(point.x, point.y, point.z),
-    );
+    const vectorPoints = points.map((point) => new THREE.Vector3(point.x, point.y, point.z));
 
     const center = vectorPoints
       .reduce((sum, vector) => sum.add(vector.clone()), new THREE.Vector3())
@@ -709,10 +695,7 @@ export function Box2(faces: Face[]) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute(
           'position',
-          new THREE.Float32BufferAttribute(
-            [p1.x, p1.y, p1.z, p2.x, p2.y, p2.z],
-            3,
-          ),
+          new THREE.Float32BufferAttribute([p1.x, p1.y, p1.z, p2.x, p2.y, p2.z], 3)
         );
 
         const lineMesh = new THREE.Line(geometry, lineMaterial);
@@ -724,10 +707,7 @@ export function Box2(faces: Face[]) {
         group.add(lineMesh);
         lineUUIDs.push(lineMesh.uuid);
         lineMap.set(key, lineMesh.uuid);
-        linePointMap.set(lineMesh.uuid, [
-          lineMesh.userData.points.a,
-          lineMesh.userData.points.b,
-        ]);
+        linePointMap.set(lineMesh.uuid, [lineMesh.userData.points.a, lineMesh.userData.points.b]);
       }
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
         console.log(lineMap, 'lineMap');
@@ -762,10 +742,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         side: THREE.DoubleSide,
       });
 
-      const placeholderMesh = new THREE.Mesh(
-        planeGeometry,
-        placeholderMaterial,
-      );
+      const placeholderMesh = new THREE.Mesh(planeGeometry, placeholderMaterial);
       placeholderMesh.name = 'image-placeholder';
       return placeholderMesh;
     }
@@ -810,7 +787,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         if (diffuseColor.a < 0.1) {
           discard;
         }
-        `,
+        `
       );
     };
     imageMaterial.imageUrl = imageUrl;
@@ -834,7 +811,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         if (diffuseColor.a < 0.1) {
           discard;
         }
-        `,
+        `
       );
     };
     imageMaterial.imageUrl = imageUrl;
@@ -847,10 +824,7 @@ function createObject(data: GeometryData): THREE.Mesh {
     }
     imageMaterial.isImageMaterial = true;
 
-    const imageMesh = new THREE.Mesh(
-      planeGeometry,
-      imageMaterial,
-    ) as unknown as ImageMesh;
+    const imageMesh = new THREE.Mesh(planeGeometry, imageMaterial) as unknown as ImageMesh;
     imageMesh.name = 'image-' + Date.now().toString();
 
     imageMesh.userData.originalImageUrl = imageUrl;
@@ -894,10 +868,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         side: THREE.DoubleSide,
       });
 
-      const placeholderMesh = new THREE.Mesh(
-        planeGeometry,
-        placeholderMaterial,
-      );
+      const placeholderMesh = new THREE.Mesh(planeGeometry, placeholderMaterial);
       placeholderMesh.name = 'image-placeholder';
       return placeholderMesh;
     }
@@ -944,7 +915,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         if (diffuseColor.a < 0.1) {
           discard;
         }
-        `,
+        `
       );
     };
     imageMaterial.imageUrl = imageUrl;
@@ -957,10 +928,7 @@ function createObject(data: GeometryData): THREE.Mesh {
     }
     imageMaterial.isImageMaterial = true;
 
-    const imageMesh = new THREE.Mesh(
-      planeGeometry,
-      imageMaterial,
-    ) as unknown as ImageMesh;
+    const imageMesh = new THREE.Mesh(planeGeometry, imageMaterial) as unknown as ImageMesh;
     imageMesh.name = 'image-' + Date.now().toString();
 
     imageMesh.userData.originalImageUrl = imageUrl;
@@ -1012,7 +980,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         data.dimensions?.depth || 1,
         data.dimensions?.widthSegments || 2,
         data.dimensions?.heightSegments || 2,
-        data.dimensions?.depthSegments || 2,
+        data.dimensions?.depthSegments || 2
       ).toNonIndexed();
       geometry.computeVertexNormals();
       break;
@@ -1020,7 +988,7 @@ function createObject(data: GeometryData): THREE.Mesh {
       geometry = new THREE.SphereGeometry(
         data.dimensions?.radius || 1,
         data.dimensions?.segments || 16,
-        data.dimensions?.segments || 16,
+        data.dimensions?.segments || 16
       ).toNonIndexed();
       break;
     case 'cylinder':
@@ -1029,7 +997,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         data.dimensions?.radiusBottom || 1,
         data.dimensions?.height || 1,
         data.dimensions?.segments || 16,
-        data.dimensions?.heightSegments || 4,
+        data.dimensions?.heightSegments || 4
       );
       break;
     case 'cone':
@@ -1037,14 +1005,14 @@ function createObject(data: GeometryData): THREE.Mesh {
         data.dimensions?.radius || 1,
         data.dimensions?.height || 2,
         data.dimensions?.segments || 16,
-        data.dimensions?.heightSegments || 4,
+        data.dimensions?.heightSegments || 4
       );
       break;
     case 'torus':
       geometry = new THREE.TorusGeometry(
         data.dimensions?.radius || 1,
         data.dimensions?.tube || 0.2,
-        data.dimensions?.segments || 16,
+        data.dimensions?.segments || 16
       );
       break;
     case 'plane':
@@ -1052,13 +1020,13 @@ function createObject(data: GeometryData): THREE.Mesh {
         data.dimensions?.width || 1,
         data.dimensions?.height || 1,
         data.dimensions?.segments || 1,
-        data.dimensions?.segments || 1,
+        data.dimensions?.segments || 1
       );
       break;
     case 'circle':
       geometry = new THREE.CircleGeometry(
         data.dimensions?.radius || 1,
-        data.dimensions?.segments || 32,
+        data.dimensions?.segments || 32
       );
       break;
     case 'polygon':
@@ -1101,10 +1069,7 @@ function createObject(data: GeometryData): THREE.Mesh {
       geometry = new THREE.BoxGeometry(width1, height1, depth1);
       break;
     case 'arc':
-      if (
-        data.dimensions?.curvePoints &&
-        Array.isArray(data.dimensions.curvePoints)
-      ) {
+      if (data.dimensions?.curvePoints && Array.isArray(data.dimensions.curvePoints)) {
         // Create arc from curve points
         const curvePoints = data.dimensions.curvePoints;
         const arcShape = new THREE.Shape();
@@ -1158,11 +1123,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         }
 
         return mesh;
-      } else if (
-        data.dimensions?.start &&
-        data.dimensions?.end &&
-        data.dimensions?.bulge
-      ) {
+      } else if (data.dimensions?.start && data.dimensions?.end && data.dimensions?.bulge) {
         // Create arc from control points
         const start = data.dimensions.start;
         const end = data.dimensions.end;
@@ -1173,11 +1134,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         const bulgePoint = new THREE.Vector3(bulge.x, bulge.y, bulge.z);
 
         // Create the curve
-        const curve = createQuadraticBezierFromThreePoints(
-          startPoint,
-          endPoint,
-          bulgePoint,
-        );
+        const curve = createQuadraticBezierFromThreePoints(startPoint, endPoint, bulgePoint);
         const curvePoints = curve.getPoints(64);
 
         // Create shape from curve points
@@ -1228,7 +1185,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         data.dimensions?.width || 1,
         data.dimensions?.height || 1,
         data.dimensions?.depth || 1,
-        data.dimensions?.steps || 4,
+        data.dimensions?.steps || 4
       );
     }
     case 'line':
@@ -1240,7 +1197,7 @@ function createObject(data: GeometryData): THREE.Mesh {
         // Convert points to THREE.Vector3 if they aren't already
         const points3D = data.dimensions.points.map(
           (p: { x: number; y?: number; z?: number }) =>
-            new THREE.Vector3(p.x, p.y || 0, p.z || p.y || 0),
+            new THREE.Vector3(p.x, p.y || 0, p.z || p.y || 0)
         );
 
         // Compute centroid for positioning
@@ -1325,42 +1282,42 @@ function createObject(data: GeometryData): THREE.Mesh {
             new THREE.Vector3(
               posX + segmentWidth / 2,
               posY + segmentHeight / 2,
-              posZ + segmentDepth / 2,
+              posZ + segmentDepth / 2
             ),
             new THREE.Vector3(
               posX - segmentWidth / 2,
               posY + segmentHeight / 2,
-              posZ + segmentDepth / 2,
+              posZ + segmentDepth / 2
             ),
             new THREE.Vector3(
               posX - segmentWidth / 2,
               posY - segmentHeight / 2,
-              posZ + segmentDepth / 2,
+              posZ + segmentDepth / 2
             ),
             new THREE.Vector3(
               posX + segmentWidth / 2,
               posY - segmentHeight / 2,
-              posZ + segmentDepth / 2,
+              posZ + segmentDepth / 2
             ),
             new THREE.Vector3(
               posX + segmentWidth / 2,
               posY + segmentHeight / 2,
-              posZ - segmentDepth / 2,
+              posZ - segmentDepth / 2
             ),
             new THREE.Vector3(
               posX - segmentWidth / 2,
               posY + segmentHeight / 2,
-              posZ - segmentDepth / 2,
+              posZ - segmentDepth / 2
             ),
             new THREE.Vector3(
               posX - segmentWidth / 2,
               posY - segmentHeight / 2,
-              posZ - segmentDepth / 2,
+              posZ - segmentDepth / 2
             ),
             new THREE.Vector3(
               posX + segmentWidth / 2,
               posY - segmentHeight / 2,
-              posZ - segmentDepth / 2,
+              posZ - segmentDepth / 2
             ),
           ];
 
@@ -1386,8 +1343,8 @@ function createObject(data: GeometryData): THREE.Mesh {
                 corners[start],
                 corners[end],
                 `edge_${x}_${y}_${z}_${index}`,
-                `edge_${x}_${y}_${z}_${index}`,
-              ),
+                `edge_${x}_${y}_${z}_${index}`
+              )
             );
           });
         }
@@ -1401,7 +1358,7 @@ function createObject(data: GeometryData): THREE.Mesh {
 function createQuadraticBezierFromThreePoints(
   p0: THREE.Vector3,
   p2: THREE.Vector3,
-  p1Actual: THREE.Vector3,
+  p1Actual: THREE.Vector3
 ): THREE.QuadraticBezierCurve3 {
   // For a quadratic bezier curve, we need to find the control point
   // that will make the curve pass through our desired bulge point
@@ -1428,7 +1385,7 @@ function createQuadraticBezierFromThreePoints(
 
 export function createCustomWireframe(
   geometry: THREE.BufferGeometry,
-  type: string,
+  type: string
 ): THREE.LineSegments {
   const lineMaterial = new THREE.LineBasicMaterial({
     color: 0x000000,
@@ -1439,10 +1396,7 @@ export function createCustomWireframe(
 
   const addVertex = (x: number, y: number, z: number): number => {
     const index = vertices.findIndex(
-      (v) =>
-        Math.abs(v.x - x) < 0.0001 &&
-        Math.abs(v.y - y) < 0.0001 &&
-        Math.abs(v.z - z) < 0.0001,
+      (v) => Math.abs(v.x - x) < 0.0001 && Math.abs(v.y - y) < 0.0001 && Math.abs(v.z - z) < 0.0001
     );
     if (index !== -1) return index;
     vertices.push(new THREE.Vector3(x, y, z));
@@ -1626,10 +1580,7 @@ export function createCustomWireframe(
       const apexV = addVertex(0, height / 2, 0);
       indices.push(prevV, apexV);
     }
-  } else if (
-    type === 'cylinder' &&
-    geometry instanceof THREE.CylinderGeometry
-  ) {
+  } else if (type === 'cylinder' && geometry instanceof THREE.CylinderGeometry) {
     const radiusTop = geometry.parameters.radiusTop;
     const radiusBottom = geometry.parameters.radiusBottom;
     const height = geometry.parameters.height;
@@ -1712,10 +1663,7 @@ export function createCustomWireframe(
         indices.push(v1, v2);
       }
     }
-  } else if (
-    type === 'tetrahedron' &&
-    geometry instanceof THREE.TetrahedronGeometry
-  ) {
+  } else if (type === 'tetrahedron' && geometry instanceof THREE.TetrahedronGeometry) {
     // Define the four vertices of a tetrahedron
     const radius = geometry.parameters.radius;
     const s = radius / Math.sqrt(3);
@@ -1734,16 +1682,8 @@ export function createCustomWireframe(
       [2, 3],
     ];
     edges.forEach(([i, j]) => {
-      const v1 = addVertex(
-        verticesTetra[i].x,
-        verticesTetra[i].y,
-        verticesTetra[i].z,
-      );
-      const v2 = addVertex(
-        verticesTetra[j].x,
-        verticesTetra[j].y,
-        verticesTetra[j].z,
-      );
+      const v1 = addVertex(verticesTetra[i].x, verticesTetra[i].y, verticesTetra[i].z);
+      const v2 = addVertex(verticesTetra[j].x, verticesTetra[j].y, verticesTetra[j].z);
       indices.push(v1, v2);
     });
   }
@@ -1793,7 +1733,7 @@ async function addObjectToScene(
   data: GeometryData,
   moveHandler: MoveHandler,
   dispatch: Dispatch,
-  distanceFromCamera = 3,
+  distanceFromCamera = 3
 ): Promise<THREE.Mesh> {
   const object = createObject(data);
 
@@ -1803,9 +1743,7 @@ async function addObjectToScene(
     cameraDirection.applyQuaternion(camera.quaternion);
 
     // static position of the object
-    const targetPosition = cameraPosition.add(
-      cameraDirection.multiplyScalar(distanceFromCamera),
-    );
+    const targetPosition = cameraPosition.add(cameraDirection.multiplyScalar(distanceFromCamera));
     object.position.set(targetPosition.x, targetPosition.y, targetPosition.z);
   }
   const boundingBox = new THREE.Box3().setFromObject(object);
@@ -1823,9 +1761,7 @@ async function addObjectToScene(
       moveHandler.startDragging(object);
       draggingStarted = true;
     } else {
-      console.warn(
-        'Move handler does not have startDragging method, skipping drag operation',
-      );
+      console.warn('Move handler does not have startDragging method, skipping drag operation');
     }
   } catch (err) {
     console.warn('Error starting drag operation:', err);
@@ -1881,8 +1817,7 @@ async function addObjectToScene(
               aspectRatio:
                 data.dimensions?.aspectRatio ||
                 (data.dimensions?.imageSize
-                  ? data.dimensions.imageSize.width /
-                    data.dimensions.imageSize.height
+                  ? data.dimensions.imageSize.width / data.dimensions.imageSize.height
                   : 1),
 
               fileName: data.dimensions?.fileName || 'image.png',
@@ -1925,8 +1860,7 @@ async function addObjectToScene(
             points:
               data.type === 'line' && data.dimensions?.points
                 ? data.dimensions.points.map(
-                    (p: { x: number; y: number }) =>
-                      new THREE.Vector2(p.x, p.y || 0),
+                    (p: { x: number; y: number }) => new THREE.Vector2(p.x, p.y || 0)
                   )
                 : undefined,
           },
@@ -1936,11 +1870,7 @@ async function addObjectToScene(
       },
     };
 
-    const response = await commonService.post(
-      'design',
-      `${designId}/object`,
-      apiPayload,
-    );
+    const response = await commonService.post('design', `${designId}/object`, apiPayload);
     if (response.status === 200 || response.status === 201) {
       const objectList = response.data;
       const objectID = objectList[0].id;
@@ -1973,8 +1903,7 @@ async function addObjectToScene(
             aspectRatio:
               data.dimensions?.aspectRatio ||
               (data.dimensions?.imageSize
-                ? data.dimensions.imageSize.width /
-                  data.dimensions.imageSize.height
+                ? data.dimensions.imageSize.width / data.dimensions.imageSize.height
                 : 1),
             fileName: data.dimensions?.fileName || 'image.png',
             isImageMaterial: true,
@@ -2037,8 +1966,10 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
   }
 
   try {
-    const response: { status: number; data: DatabaseObject[] } =
-      await commonService.get('design', `${designId}/object/?is_custom=True`);
+    const response: { status: number; data: DatabaseObject[] } = await commonService.get(
+      'design',
+      `${designId}/object/?is_custom=True`
+    );
 
     if (response.status !== 200) {
       console.error('could not load objects from database');
@@ -2052,9 +1983,7 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
     }
 
     for (const objectData of objects) {
-      const type: GeometryType = (
-        objectData.data.originalType || objectData.name
-      )
+      const type: GeometryType = (objectData.data.originalType || objectData.name)
         .toString()
         .toLowerCase();
       const supportedTypes = supportedGeometryTypes;
@@ -2135,17 +2064,17 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
       object.position.set(
         objectData.data.position.x,
         objectData.data.position.y,
-        objectData.data.position.z,
+        objectData.data.position.z
       );
       object.rotation.set(
         objectData.data.rotateX || 0,
         objectData.data.rotateY || 0,
-        objectData.data.rotateZ || 0,
+        objectData.data.rotateZ || 0
       );
       object.scale.set(
         objectData.data.scale.x || 1,
         objectData.data.scale.y || 1,
-        objectData.data.scale.z || 1,
+        objectData.data.scale.z || 1
       );
 
       // If there's a filletRadius and cornerIndex, recreate the shape with the curve
@@ -2168,14 +2097,8 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
             const currPoint = points[currIndex];
             const nextPoint = points[nextIndex];
             // Compute directions
-            const prevDir = new THREE.Vector2(
-              prevPoint.x - currPoint.x,
-              prevPoint.z - currPoint.z,
-            );
-            const nextDir = new THREE.Vector2(
-              nextPoint.x - currPoint.x,
-              nextPoint.z - currPoint.z,
-            );
+            const prevDir = new THREE.Vector2(prevPoint.x - currPoint.x, prevPoint.z - currPoint.z);
+            const nextDir = new THREE.Vector2(nextPoint.x - currPoint.x, nextPoint.z - currPoint.z);
             if (prevDir.length() < 0.001 || nextDir.length() < 0.001) {
               console.error(`Invalid edge length at vertex ${currIndex}`);
               continue;
@@ -2191,17 +2114,17 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
             // Calculate tangent points
             const tangentPoint1 = new THREE.Vector2(
               currPoint.x + prevDir.x * filletRadius,
-              currPoint.z + prevDir.y * filletRadius,
+              currPoint.z + prevDir.y * filletRadius
             );
             const tangentPoint2 = new THREE.Vector2(
               currPoint.x + nextDir.x * filletRadius,
-              currPoint.z + nextDir.y * filletRadius,
+              currPoint.z + nextDir.y * filletRadius
             );
             // Create quadratic Bezier curve
             const curve = new THREE.QuadraticBezierCurve(
               tangentPoint1,
               new THREE.Vector2(currPoint.x, currPoint.z),
-              tangentPoint2,
+              tangentPoint2
             );
             const curvePoints = curve.getPoints(10);
             curvePoints.forEach((point) => {
@@ -2220,9 +2143,7 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
         }
         object.geometry = newGeometry;
         // Update wireframe
-        const wireframe = object.children.find(
-          (child) => child instanceof THREE.LineSegments,
-        );
+        const wireframe = object.children.find((child) => child instanceof THREE.LineSegments);
         if (wireframe) {
           object.remove(wireframe);
         }
@@ -2281,13 +2202,11 @@ async function loadObjectsFromDatabase(scene: THREE.Scene): Promise<void> {
             ...geometryData.dimensions,
             points:
               type === 'line' && Array.isArray(objectData.data.points)
-                ? objectData.data.points.map(
-                    (p: { x: number; y: number; z: number }) => ({
-                      x: p.x,
-                      y: p.y || 0,
-                      z: p.z,
-                    }),
-                  )
+                ? objectData.data.points.map((p: { x: number; y: number; z: number }) => ({
+                    x: p.x,
+                    y: p.y || 0,
+                    z: p.z,
+                  }))
                 : undefined,
           },
           color: geometryData.color || 0x808080,
@@ -2357,7 +2276,7 @@ export async function updateArcInDatabase(
     end?: Position;
     bulge?: Position;
   },
-  curvePoints?: Position[],
+  curvePoints?: Position[]
 ): Promise<boolean> {
   const designId = getDesignId();
   if (!designId) {
@@ -2365,9 +2284,7 @@ export async function updateArcInDatabase(
     return Promise.resolve(false);
   }
 
-  const clonedCurvePoints = curvePoints
-    ? JSON.parse(JSON.stringify(curvePoints))
-    : undefined;
+  const clonedCurvePoints = curvePoints ? JSON.parse(JSON.stringify(curvePoints)) : undefined;
 
   const payload = {
     data: {
@@ -2396,7 +2313,7 @@ export async function updateArcInDatabase(
       'design',
       designId,
       'object',
-      payload,
+      payload
     );
     if (response.status !== 200) {
       console.error(`Failed to update arc ${objectId}`);
@@ -2414,7 +2331,7 @@ export function createSegmentFaces(
   height: number,
   depth: number,
   color: number,
-  parent: THREE.Group,
+  parent: THREE.Group
 ): void {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
@@ -2568,10 +2485,7 @@ export function createSegmentFaces(
 
   // Inner Front face (facing -Z)
   const innerFrontGeometry = new THREE.PlaneGeometry(width, height);
-  const innerFrontFace = new THREE.Mesh(
-    innerFrontGeometry,
-    innerMaterial.clone(),
-  );
+  const innerFrontFace = new THREE.Mesh(innerFrontGeometry, innerMaterial.clone());
   innerFrontFace.position.z = halfDepth - INNER_OFFSET;
   innerFrontFace.rotation.y = Math.PI; // Flip to face inward
   innerFrontFace.name = `face_inner_front_${i}_${j}_${k}`;
@@ -2591,10 +2505,7 @@ export function createSegmentFaces(
 
   // Inner Back face (facing +Z)
   const innerBackGeometry = new THREE.PlaneGeometry(width, height);
-  const innerBackFace = new THREE.Mesh(
-    innerBackGeometry,
-    innerMaterial.clone(),
-  );
+  const innerBackFace = new THREE.Mesh(innerBackGeometry, innerMaterial.clone());
   innerBackFace.position.z = -halfDepth + INNER_OFFSET;
   // No rotation needed as it naturally faces inward
   innerBackFace.name = `face_inner_back_${i}_${j}_${k}`;
@@ -2634,10 +2545,7 @@ export function createSegmentFaces(
 
   // Inner Bottom face (facing +Y)
   const innerBottomGeometry = new THREE.PlaneGeometry(width, depth);
-  const innerBottomFace = new THREE.Mesh(
-    innerBottomGeometry,
-    innerMaterial.clone(),
-  );
+  const innerBottomFace = new THREE.Mesh(innerBottomGeometry, innerMaterial.clone());
   innerBottomFace.position.y = -halfHeight + INNER_OFFSET;
   innerBottomFace.rotation.x = -Math.PI / 2; // Flip to face inward
   innerBottomFace.name = `face_inner_bottom_${i}_${j}_${k}`;
@@ -2657,10 +2565,7 @@ export function createSegmentFaces(
 
   // Inner Right face (facing -X)
   const innerRightGeometry = new THREE.PlaneGeometry(depth, height);
-  const innerRightFace = new THREE.Mesh(
-    innerRightGeometry,
-    innerMaterial.clone(),
-  );
+  const innerRightFace = new THREE.Mesh(innerRightGeometry, innerMaterial.clone());
   innerRightFace.position.x = halfWidth - INNER_OFFSET;
   innerRightFace.rotation.y = -Math.PI / 2; // Flip to face inward
   innerRightFace.name = `face_inner_right_${i}_${j}_${k}`;
@@ -2680,10 +2585,7 @@ export function createSegmentFaces(
 
   // Inner Left face (facing +X)
   const innerLeftGeometry = new THREE.PlaneGeometry(depth, height);
-  const innerLeftFace = new THREE.Mesh(
-    innerLeftGeometry,
-    innerMaterial.clone(),
-  );
+  const innerLeftFace = new THREE.Mesh(innerLeftGeometry, innerMaterial.clone());
   innerLeftFace.position.x = -halfWidth + INNER_OFFSET;
   innerLeftFace.rotation.y = Math.PI / 2; // Flip to face inward
   innerLeftFace.name = `face_inner_left_${i}_${j}_${k}`;
@@ -2706,7 +2608,7 @@ export function createSegmentEdges(
   width: number,
   height: number,
   depth: number,
-  parent: THREE.Group,
+  parent: THREE.Group
 ): void {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
@@ -2793,10 +2695,7 @@ export function createSegmentEdges(
 
   edges.forEach((points, index) => {
     const geometry = new THREE.BufferGeometry();
-    geometry.setFromPoints([
-      new THREE.Vector3(...points[0]),
-      new THREE.Vector3(...points[1]),
-    ]);
+    geometry.setFromPoints([new THREE.Vector3(...points[0]), new THREE.Vector3(...points[1])]);
     const line = new THREE.Line(geometry, lineMaterial);
     line.name = edgeNames[index];
     // Add edge-specific userData for selection

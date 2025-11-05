@@ -19,14 +19,18 @@ const App: React.FC<AppProps> = ({ router }) => {
   const [design3D, setDesign3D] = useState<ThreeDView | null>(null);
 
   const fetchCatalogData = async () => {
-    const response: { status: number; data: CatalogWithChildren[] } =
-      await CommonServices.get('design', 'catalog/default');
+    const response: { status: number; data: CatalogWithChildren[] } = await CommonServices.get(
+      'design',
+      'catalog/default'
+    );
     dispatch(setObjects(response.data));
   };
 
   const fetchDesignSettings = async () => {
-    const response: { status: number; data: CatalogApiResponse } =
-      await CommonServices.get('design', `${designID}/settings`);
+    const response: { status: number; data: CatalogApiResponse } = await CommonServices.get(
+      'design',
+      `${designID}/settings`
+    );
     dispatch(setSettings(response.data));
   };
 

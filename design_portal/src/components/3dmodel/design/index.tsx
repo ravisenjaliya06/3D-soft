@@ -54,9 +54,7 @@ export function removeExistingLines() {
   });
 }
 
-export function createOutlineForObject(
-  mesh: THREE.Mesh,
-): THREE.LineSegments | null {
+export function createOutlineForObject(mesh: THREE.Mesh): THREE.LineSegments | null {
   if (!mesh.geometry) return null;
 
   const edges = new THREE.EdgesGeometry(mesh.geometry);
@@ -88,15 +86,9 @@ export function createOutlineForObject(
 const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const dispatch = useAppDispatch();
   const sceneFromState = useAppSelector((state) => state.scene.scene);
-  const isQuickHideActive = useAppSelector(
-    (state) => state.data.isQuickHideActive,
-  );
-  const isMeasurementActive = useAppSelector(
-    (state) => state.data.isMeasurementActive,
-  );
-  const isAlignmentActive = useAppSelector(
-    (state) => state.data.isAlignmentActive,
-  );
+  const isQuickHideActive = useAppSelector((state) => state.data.isQuickHideActive);
+  const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
+  const isAlignmentActive = useAppSelector((state) => state.data.isAlignmentActive);
 
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
@@ -119,9 +111,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const alignmentIndicatorsRef = useRef<THREE.Object3D[]>([]);
   const childOutlineGroupsRef = useRef(new Map<THREE.Mesh, THREE.Group>());
-  const minifixMarkersRef = useRef<Map<THREE.Mesh, THREE.Object3D[]>>(
-    new Map(),
-  );
+  const minifixMarkersRef = useRef<Map<THREE.Mesh, THREE.Object3D[]>>(new Map());
 
   const showAlignmentDistances = useCallback(() => {
     if (!design3D) return;
@@ -173,14 +163,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           boxA: THREE.Box3,
           boxB: THREE.Box3,
           pointA: THREE.Vector3,
-          pointB: THREE.Vector3,
+          pointB: THREE.Vector3
         ) => {
-          pointA.copy(
-            boxA.clampPoint(
-              boxB.getCenter(new THREE.Vector3()),
-              new THREE.Vector3(),
-            ),
-          );
+          pointA.copy(boxA.clampPoint(boxB.getCenter(new THREE.Vector3()), new THREE.Vector3()));
           pointB.copy(boxB.clampPoint(pointA, new THREE.Vector3()));
         };
 
@@ -189,8 +174,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         const distance = closestPoint1.distanceTo(closestPoint2);
         if (distance < 0.01) continue;
 
-        const distanceInUnit =
-          currentUnitType === 'cm' ? distance * 100 : distance;
+        const distanceInUnit = currentUnitType === 'cm' ? distance * 100 : distance;
         const distanceText = `${distanceInUnit.toFixed(2)} ${currentUnitType}`;
 
         const line = createDistanceLine(closestPoint1, closestPoint2);
@@ -269,10 +253,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         const designId = gettingDesignID();
         if (designId) {
           try {
-            const loadedObjects = await loadDesignObjects(
-              designId,
-              threeDView.scene,
-            );
+            const loadedObjects = await loadDesignObjects(designId, threeDView.scene);
             dispatch(addObjects(loadedObjects));
           } catch (error) {
             console.error('Failed to load design objects:', error);
@@ -416,27 +397,16 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                 }
                 const childName = child.name;
 
-                if (
-                  child instanceof THREE.Mesh &&
-                  childName.toLowerCase().includes('minifix')
-                ) {
+                if (child instanceof THREE.Mesh && childName.toLowerCase().includes('minifix')) {
                   let colorHex = 0xcc0000;
                   const lowerName = childName.toLowerCase();
                   if (lowerName.includes('screw')) colorHex = 0x0066cc;
                   else if (lowerName.includes('cam')) colorHex = 0xcc0000;
                   else if (lowerName.includes('dowel')) colorHex = 0x00cc00;
-                  else if (
-                    lowerName.includes('bolt') ||
-                    lowerName.includes('drill')
-                  )
+                  else if (lowerName.includes('bolt') || lowerName.includes('drill'))
                     colorHex = 0x999999;
 
-                  const cylGeo = new THREE.CylinderGeometry(
-                    0.004,
-                    0.004,
-                    0.008,
-                    16,
-                  );
+                  const cylGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.008, 16);
                   const cylMat = new THREE.MeshBasicMaterial({
                     color: new THREE.Color(colorHex),
                   });
@@ -445,18 +415,13 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                   child.updateWorldMatrix(true, true);
                   marker.position.setFromMatrixPosition(child.matrixWorld);
 
-                  const normalMatrix = new THREE.Matrix3().getNormalMatrix(
-                    child.matrixWorld,
-                  );
+                  const normalMatrix = new THREE.Matrix3().getNormalMatrix(child.matrixWorld);
                   const direction = new THREE.Vector3(0, 1, 0)
                     .applyMatrix3(normalMatrix)
                     .normalize();
 
                   const quaternion = new THREE.Quaternion();
-                  quaternion.setFromUnitVectors(
-                    new THREE.Vector3(0, 1, 0),
-                    direction,
-                  );
+                  quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
                   marker.quaternion.copy(quaternion);
 
                   marker.name = `minifix_marker_${child.uuid}`;
@@ -491,10 +456,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                   const labelPosition = new THREE.Vector3();
 
                   let plankKey = childName;
-                  if (
-                    childName === 'LEFT_PLANK' ||
-                    childName === 'RIGHT_PLANK'
-                  ) {
+                  if (childName === 'LEFT_PLANK' || childName === 'RIGHT_PLANK') {
                     plankKey = 'SIDE_PLANK';
                   } else if (childName === 'TOP_PLANK') {
                     plankKey = 'HORIZONTAL_TOP_PLANK';
@@ -504,8 +466,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                     plankKey = 'BACK_PLANK';
                   }
 
-                  if (processedPlankTypes.has(plankKey))
-                    processedPlankTypes.add(plankKey);
+                  if (processedPlankTypes.has(plankKey)) processedPlankTypes.add(plankKey);
 
                   if (childName === 'LEFT_PLANK') {
                     labelPosition.set(box.min.x - 0.05, center.y, center.z);
@@ -528,10 +489,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                       linewidth: 1,
                       depthTest: false,
                     });
-                    const childOutline = new THREE.LineSegments(
-                      edges,
-                      outlineMaterial,
-                    );
+                    const childOutline = new THREE.LineSegments(edges, outlineMaterial);
                     childOutline.position.copy(child.position);
                     childOutline.rotation.copy(child.rotation);
                     childOutline.scale.set(1, 1, 1);
@@ -563,42 +521,31 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                       const localOffset = new THREE.Vector3(
                         groove.x * scaleFactor,
                         groove.y * scaleFactor,
-                        0,
+                        0
                       );
 
                       if (orientation === 'horizontal') {
                         points.push(
-                          new THREE.Vector3(
-                            -child.geometry.parameters.width / 2,
-                            0,
-                            0,
-                          ).add(localOffset),
-                          new THREE.Vector3(
-                            child.geometry.parameters.width / 2,
-                            0,
-                            0,
-                          ).add(localOffset),
+                          new THREE.Vector3(-child.geometry.parameters.width / 2, 0, 0).add(
+                            localOffset
+                          ),
+                          new THREE.Vector3(child.geometry.parameters.width / 2, 0, 0).add(
+                            localOffset
+                          )
                         );
                       } else if (orientation === 'vertical') {
                         points.push(
-                          new THREE.Vector3(
-                            0,
-                            -child.geometry.parameters.height / 2,
-                            0,
-                          ).add(localOffset),
-                          new THREE.Vector3(
-                            0,
-                            child.geometry.parameters.height / 2,
-                            0,
-                          ).add(localOffset),
+                          new THREE.Vector3(0, -child.geometry.parameters.height / 2, 0).add(
+                            localOffset
+                          ),
+                          new THREE.Vector3(0, child.geometry.parameters.height / 2, 0).add(
+                            localOffset
+                          )
                         );
                       }
 
                       grooveGeometry.setFromPoints(points);
-                      const grooveLine = new THREE.Line(
-                        grooveGeometry,
-                        grooveMaterial,
-                      );
+                      const grooveLine = new THREE.Line(grooveGeometry, grooveMaterial);
 
                       grooveLine.position.copy(position);
                       grooveLine.rotation.copy(child.rotation);
@@ -643,8 +590,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
               if (outline) {
                 design3D.scene.remove(outline);
                 outline.geometry?.dispose();
-                if (outline.material instanceof THREE.Material)
-                  outline.material.dispose();
+                if (outline.material instanceof THREE.Material) outline.material.dispose();
                 outlinesRef.current.delete(mesh);
               }
 
@@ -653,8 +599,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                 labels.forEach((label) => {
                   design3D.scene.remove(label);
                   if (label.material.map) label.material.map.dispose();
-                  if (label.material instanceof THREE.Material)
-                    label.material.dispose();
+                  if (label.material instanceof THREE.Material) label.material.dispose();
                 });
                 dimensionLabelsRef.current.delete(mesh);
               }
@@ -664,8 +609,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                 outlineGroup.children.forEach((child) => {
                   if (child instanceof THREE.LineSegments) {
                     child.geometry.dispose();
-                    if (child.material instanceof THREE.Material)
-                      child.material.dispose();
+                    if (child.material instanceof THREE.Material) child.material.dispose();
                   }
                 });
                 design3D.scene.remove(outlineGroup);
@@ -691,8 +635,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       outlinesRef.current.forEach((outline) => {
         design3D.scene.remove(outline);
         outline.geometry?.dispose();
-        if (outline.material instanceof THREE.Material)
-          outline.material.dispose();
+        if (outline.material instanceof THREE.Material) outline.material.dispose();
       });
       outlinesRef.current.clear();
 
@@ -700,8 +643,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         labels.forEach((label) => {
           design3D.scene.remove(label);
           if (label.material.map) label.material.map.dispose();
-          if (label.material instanceof THREE.Material)
-            label.material.dispose();
+          if (label.material instanceof THREE.Material) label.material.dispose();
         });
       });
       dimensionLabelsRef.current.clear();
@@ -710,8 +652,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         group.children.forEach((child) => {
           if (child instanceof THREE.LineSegments) {
             child.geometry.dispose();
-            if (child.material instanceof THREE.Material)
-              child.material.dispose();
+            if (child.material instanceof THREE.Material) child.material.dispose();
           }
         });
         design3D.scene.remove(group);
@@ -748,10 +689,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return outlineLines;
   };
 
-  const createHoverOutline = (
-    mesh: THREE.Mesh,
-    worldPosition: THREE.Vector3,
-  ) => {
+  const createHoverOutline = (mesh: THREE.Mesh, worldPosition: THREE.Vector3) => {
     if (!mesh.geometry) return null;
 
     const edges = new THREE.EdgesGeometry(mesh.geometry);
@@ -836,17 +774,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
     return () => {
       if (design3D && design3D.controls) {
-        design3D.controls.removeEventListener(
-          'change',
-          updateHelperToolsPosition,
-        );
+        design3D.controls.removeEventListener('change', updateHelperToolsPosition);
       }
     };
   }, [selectedObject, design3D, updateHelperToolsPosition]);
 
-  const createBoundingBoxOutline = (
-    object: THREE.Object3D,
-  ): THREE.LineSegments | null => {
+  const createBoundingBoxOutline = (object: THREE.Object3D): THREE.LineSegments | null => {
     if (!object) return null;
 
     try {
@@ -858,7 +791,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       box.getCenter(center);
       const wireframe = new THREE.LineSegments(
         new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ color: 0xffff00 }),
+        new THREE.LineBasicMaterial({ color: 0xffff00 })
       );
       wireframe.position.copy(center);
       wireframe.rotation.copy(object.rotation);
@@ -880,8 +813,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!design3D) return;
 
     let newOutline: THREE.LineSegments | null = null;
-    const hoveredMesh = store.getState().data
-      .hoverdMesh as unknown as THREE.Mesh | null;
+    const hoveredMesh = store.getState().data.hoverdMesh as unknown as THREE.Mesh | null;
     const selectedObjectId = store.getState().data.selectedObject;
     const selectedChildObjectId = store.getState().data.selectedChildObject;
 
@@ -974,7 +906,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       /** 1. Mouse setup */
       const mouse = new THREE.Vector2(
         (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1 + 0.15,
+        -(event.clientY / window.innerHeight) * 2 + 1 + 0.15
       );
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, design3D.camera);
@@ -1011,15 +943,11 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       if (hitsSelectable.length > 0) {
         hoveredMesh = hitsSelectable[0].object as THREE.Mesh;
-        if (
-          hoveredMesh?.userData.objectId === selectedChildObjectId &&
-          hitsSelectable.length > 1
-        ) {
+        if (hoveredMesh?.userData.objectId === selectedChildObjectId && hitsSelectable.length > 1) {
           hoveredMesh = hitsSelectable[1].object as THREE.Mesh;
         } else if (
           hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
-          (hoveredMesh as THREE.Mesh)?.userData.objectId ===
-            selectedInvisibleBoxId
+          (hoveredMesh as THREE.Mesh)?.userData.objectId === selectedInvisibleBoxId
         ) {
           hoveredMesh = hitsSelectable[2].object as THREE.Mesh;
         }
@@ -1042,7 +970,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       /** 5. Re-render */
       design3D.renderer.render(design3D.scene, design3D.camera);
     },
-    [design3D, isQuickHideActive, isMeasurementActive, dispatch],
+    [design3D, isQuickHideActive, isMeasurementActive, dispatch]
   );
 
   useEffect(() => {
@@ -1069,10 +997,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
       raycaster.setFromCamera(mouse, design3D.camera);
-      const intersects = raycaster.intersectObjects(
-        design3D.scene.children,
-        true,
-      );
+      const intersects = raycaster.intersectObjects(design3D.scene.children, true);
 
       if (intersects.length === 0) {
         setHelperTools(false);
@@ -1105,7 +1030,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         setHelperTools(false);
       }
     },
-    [design3D, helperTools],
+    [design3D, helperTools]
   );
 
   useEffect(() => {
@@ -1121,8 +1046,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       // Clean up hover outline
       if (design3D && hoverOutlineRef.current) {
         design3D.scene.remove(hoverOutlineRef.current);
-        if (hoverOutlineRef.current.geometry)
-          hoverOutlineRef.current.geometry.dispose();
+        if (hoverOutlineRef.current.geometry) hoverOutlineRef.current.geometry.dispose();
         if (hoverOutlineRef.current.material instanceof THREE.Material) {
           hoverOutlineRef.current.material.dispose();
         }
@@ -1146,18 +1070,13 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         'material',
         'catalog',
         `design/${gettingDesignID()}`,
-        formData,
+        formData
       )) as ResponseStatus;
 
       if (response && response.status === 200) {
         removeExistingLines();
         removeObjectAndChildrenFromScene(selectedObject);
-        dispatch(
-          removeObjectWithHistory(
-            selectedObject.userData.objectId,
-            selectedObject,
-          ),
-        );
+        dispatch(removeObjectWithHistory(selectedObject.userData.objectId, selectedObject));
       } else {
         console.error('Failed to delete object from backend');
       }
@@ -1176,7 +1095,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const updateObjectPositionInDatabase = async (
     objectId: string,
     originalObj: Object3D,
-    position: THREE.Vector3,
+    position: THREE.Vector3
   ) => {
     try {
       const updatedObj = { ...originalObj };
@@ -1195,14 +1114,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         'design',
         gettingDesignID(),
         'object',
-        payload,
+        payload
       );
       if (response && response.status === 200) {
         dispatch(
           updateObjectPosition({
             id: objectId,
             position: { x: position.x, y: position.y, z: position.z },
-          }),
+          })
         );
         return true;
       }
@@ -1220,9 +1139,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     const objectId = selectedObject.userData.objectId;
     if (!objectId) return;
 
-    const object = store
-      .getState()
-      .data.objects.find((obj) => obj.id === objectId);
+    const object = store.getState().data.objects.find((obj) => obj.id === objectId);
     if (!object) return;
 
     try {
@@ -1233,10 +1150,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       }
       if (selectedObject instanceof THREE.Mesh) {
         const moveOutline = createSelectionOutline(selectedObject);
-        if (
-          moveOutline &&
-          moveOutline.material instanceof THREE.LineBasicMaterial
-        ) {
+        if (moveOutline && moveOutline.material instanceof THREE.LineBasicMaterial) {
           moveOutline.material.color.set(0x00ff00);
           design3D.scene.add(moveOutline);
           setOutline(moveOutline);
@@ -1249,11 +1163,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       if (design3D.controls) design3D.controls.enabled = true;
       if (finalPosition) {
         selectedObject.position.copy(finalPosition);
-        const success = await updateObjectPositionInDatabase(
-          objectId,
-          object,
-          finalPosition,
-        );
+        const success = await updateObjectPositionInDatabase(objectId, object, finalPosition);
         if (!success) {
           console.error('Failed to update position in DB, reverting...');
           selectedObject.position.copy(originalPosition);
@@ -1354,7 +1264,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const updateSuccess = await updateObjectPositionInDatabase(
         newObjectId,
         mainObject,
-        finalPosition,
+        finalPosition
       );
 
       if (!updateSuccess) {
@@ -1372,7 +1282,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
               mesh: clonedObject,
               childObjects: result.childObjects,
             },
-          }),
+          })
         );
       }
       setSelectedObject(clonedObject);

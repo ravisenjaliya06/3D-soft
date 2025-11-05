@@ -63,39 +63,21 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
   const [showShapeDropdown, setShowShapeDropdown] = useState(false);
   const [showFlipDropdown, setShowFlipDropdown] = useState(false);
   const shapes = useAppSelector((state) => state.customDesign.shapes);
-  const selectedShapeId = useAppSelector(
-    (state) => state.customDesign.selectedShapeId,
-  );
+  const selectedShapeId = useAppSelector((state) => state.customDesign.selectedShapeId);
   const moveToolRef = useRef<MoveHandler | null>(null);
-  const circleCreatorRef = useRef<ReturnType<
-    typeof createCircleCreator
-  > | null>(null);
-  const rectangleCreatorRef = useRef<ReturnType<
-    typeof createRectangleCreator
-  > | null>(null);
-  const polygonCreatorRef = useRef<ReturnType<
-    typeof createPolygonCreator
-  > | null>(null);
-  const arcCreatorRef = useRef<ReturnType<typeof createArcCreator> | null>(
-    null,
-  );
+  const circleCreatorRef = useRef<ReturnType<typeof createCircleCreator> | null>(null);
+  const rectangleCreatorRef = useRef<ReturnType<typeof createRectangleCreator> | null>(null);
+  const polygonCreatorRef = useRef<ReturnType<typeof createPolygonCreator> | null>(null);
+  const arcCreatorRef = useRef<ReturnType<typeof createArcCreator> | null>(null);
   const shapeButtonRef = useRef<HTMLDivElement>(null);
   const flipButtonRef = useRef<HTMLDivElement>(null);
   const outlineRef = useRef<THREE.LineSegments | null>(null);
-  const measureHandlerRef = useRef<ReturnType<
-    typeof createMeasureHandler
-  > | null>(null);
+  const measureHandlerRef = useRef<ReturnType<typeof createMeasureHandler> | null>(null);
   const pushPullHandlerRef = useRef<PushPullHandler | null>(null);
   const referenceLineHandlerRef = useRef<ReferenceLineHandler | null>(null);
-  const lineCreatorRef = useRef<ReturnType<typeof createLineCreator> | null>(
-    null,
-  );
-  const scaleHandlerRef = useRef<ReturnType<typeof createScaleHandler> | null>(
-    null,
-  );
-  const curveHandlerRef = useRef<ReturnType<typeof createCurveHandler> | null>(
-    null,
-  );
+  const lineCreatorRef = useRef<ReturnType<typeof createLineCreator> | null>(null);
+  const scaleHandlerRef = useRef<ReturnType<typeof createScaleHandler> | null>(null);
+  const curveHandlerRef = useRef<ReturnType<typeof createCurveHandler> | null>(null);
 
   const createOutline = useCallback(
     (mesh: THREE.Mesh): void => {
@@ -131,9 +113,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
 
       const center = new THREE.Vector3();
       boundingBox.getCenter(center);
-      outlineLines.position
-        .copy(mesh.position)
-        .add(center.multiply(mesh.scale));
+      outlineLines.position.copy(mesh.position).add(center.multiply(mesh.scale));
 
       outlineLines.rotation.copy(mesh.rotation);
       outlineLines.scale.copy(mesh.scale);
@@ -147,7 +127,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       outlineLines.userData.linkedMesh = mesh;
       outlineLines.userData.linkedMeshId = mesh.userData.objectId;
     },
-    [design3D],
+    [design3D]
   );
 
   // Function to remove outline
@@ -214,10 +194,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       }
     };
     const handleTransformEnd = () => {
-      if (
-        !transformControlsRef?.current?.isTransforming ||
-        !transformControlsRef.current.object
-      )
+      if (!transformControlsRef?.current?.isTransforming || !transformControlsRef.current.object)
         return;
       const object = transformControlsRef.current.object;
       const objectId = object.userData.objectId;
@@ -253,7 +230,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
         updateShape({
           id: objectId,
           updates,
-        }),
+        })
       );
 
       // Update database
@@ -267,10 +244,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
 
     const handleObjectChange = () => {
       if (!transformControlsRef.current) return;
-      if (
-        !transformControlsRef.current.isTransforming ||
-        !transformControlsRef.current.object
-      )
+      if (!transformControlsRef.current.isTransforming || !transformControlsRef.current.object)
         return;
 
       const object = transformControlsRef.current.object;
@@ -297,12 +271,9 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
               z: object.scale.z,
             },
           },
-        }),
+        })
       );
-      if (
-        outlineRef.current &&
-        outlineRef.current.userData.linkedMesh === object
-      ) {
+      if (outlineRef.current && outlineRef.current.userData.linkedMesh === object) {
         if (!object.scale.equals(transformControlsRef.current.initialScale)) {
           createOutline(object);
         } else {
@@ -313,28 +284,13 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       }
     };
 
-    design3D.transformControls.addEventListener(
-      'mouseDown',
-      handleTransformStart,
-    );
+    design3D.transformControls.addEventListener('mouseDown', handleTransformStart);
     design3D.transformControls.addEventListener('mouseUp', handleTransformEnd);
-    design3D.transformControls.addEventListener(
-      'objectChange',
-      handleObjectChange,
-    );
+    design3D.transformControls.addEventListener('objectChange', handleObjectChange);
     return () => {
-      design3D.transformControls.removeEventListener(
-        'mouseDown',
-        handleTransformStart,
-      );
-      design3D.transformControls.removeEventListener(
-        'mouseUp',
-        handleTransformEnd,
-      );
-      design3D.transformControls.removeEventListener(
-        'objectChange',
-        handleObjectChange,
-      );
+      design3D.transformControls.removeEventListener('mouseDown', handleTransformStart);
+      design3D.transformControls.removeEventListener('mouseUp', handleTransformEnd);
+      design3D.transformControls.removeEventListener('objectChange', handleObjectChange);
     };
   }, [design3D, dispatch, shapes, createOutline, router.query.designid]);
 
@@ -395,7 +351,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
         dispatch(selectShape(null));
       }
     },
-    [design3D, createOutline, removeOutline],
+    [design3D, createOutline, removeOutline]
   );
 
   const handleHoverEffect = useCallback(
@@ -417,16 +373,9 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
           design3D.scene.remove(object);
         }
 
-        if (
-          object.userData &&
-          object.userData.isHovered &&
-          !object.userData.isSelected
-        ) {
+        if (object.userData && object.userData.isHovered && !object.userData.isSelected) {
           // Reset hovered material if it's not selected
-          if (
-            object instanceof THREE.Mesh &&
-            object.userData.originalMaterial
-          ) {
+          if (object instanceof THREE.Mesh && object.userData.originalMaterial) {
             object.material = object.userData.originalMaterial;
             delete object.userData.originalMaterial;
           }
@@ -528,10 +477,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
           }
         }
         // Handle other types of objects if needed
-        else if (
-          hoveredObject.parent &&
-          hoveredObject.parent.name.startsWith('segment_')
-        ) {
+        else if (hoveredObject.parent && hoveredObject.parent.name.startsWith('segment_')) {
           // Hovering over a segment but not a specific face/edge
           // For now, let's just change the cursor
         }
@@ -540,7 +486,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
         document.body.style.cursor = 'default';
       }
     },
-    [design3D],
+    [design3D]
   );
 
   const handleEraserTool = useCallback(
@@ -580,10 +526,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
           let currentObj: THREE.Object3D | null = intersect.object;
 
           while (currentObj) {
-            if (
-              currentObj instanceof THREE.Mesh &&
-              currentObj.userData.objectId
-            ) {
+            if (currentObj instanceof THREE.Mesh && currentObj.userData.objectId) {
               objectToRemove = currentObj;
               objectId = currentObj.userData.objectId;
               break;
@@ -640,7 +583,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
         }
       }
     },
-    [design3D, dispatch, removeOutline, shapes],
+    [design3D, dispatch, removeOutline, shapes]
   );
   const handleMoveTool = useCallback(() => {
     if (!design3D) return;
@@ -670,7 +613,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
           !object.name.includes('floor') &&
           !object.name.includes('ground') &&
           !object.name.includes('plane') &&
-          !object.name.includes('Grid'),
+          !object.name.includes('Grid')
       ),
     });
 
@@ -688,14 +631,11 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
                   z: object.position.z,
                 },
               },
-            }),
+            })
           );
 
           // Update outline position if it exists
-          if (
-            outlineRef.current &&
-            outlineRef.current.userData.linkedMesh === object
-          ) {
+          if (outlineRef.current && outlineRef.current.userData.linkedMesh === object) {
             outlineRef.current.position.copy(object.position);
           }
 
@@ -730,13 +670,12 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
             },
           };
 
-          const response: { status: number } =
-            await commonService.putObjectData(
-              'design',
-              designId.toString(),
-              'object',
-              payload,
-            );
+          const response: { status: number } = await commonService.putObjectData(
+            'design',
+            designId.toString(),
+            'object',
+            payload
+          );
           if (response.status !== 200) {
             console.error('Error updating object position in database');
           }
@@ -803,7 +742,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
               z: newScale.z,
             },
           },
-        }),
+        })
       );
 
       // Update the object in the database
@@ -823,7 +762,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       setShowFlipDropdown(false);
       setActiveTool(null); // Deactivate flip tool after operation
     },
-    [design3D, selectedShapeId, shapes, dispatch, createOutline, removeOutline],
+    [design3D, selectedShapeId, shapes, dispatch, createOutline, removeOutline]
   );
 
   useEffect(() => {
@@ -879,7 +818,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
     const rectangleCreator = createRectangleCreator(
       design3D.scene,
       design3D.camera,
-      design3D.renderer,
+      design3D.renderer
     );
 
     rectangleCreatorRef.current = rectangleCreator;
@@ -905,11 +844,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
     cleanupEventListeners();
 
     // Create a new polygon creator
-    const polygonCreator = createPolygonCreator(
-      design3D.scene,
-      design3D.camera,
-      design3D.renderer,
-    );
+    const polygonCreator = createPolygonCreator(design3D.scene, design3D.camera, design3D.renderer);
 
     // Set the number of sides
 
@@ -936,11 +871,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
     cleanupEventListeners();
 
     // Create a new arc creator
-    const arcCreator = createArcCreator(
-      design3D.scene,
-      design3D.camera,
-      design3D.renderer,
-    );
+    const arcCreator = createArcCreator(design3D.scene, design3D.camera, design3D.renderer);
 
     arcCreatorRef.current = arcCreator;
     arcCreator.activate();
@@ -1008,13 +939,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
 
     // Remove outline when switching tools
     removeOutline();
-  }, [
-    design3D,
-    handleSelectTool,
-    handleEraserTool,
-    removeOutline,
-    handleHoverEffect,
-  ]);
+  }, [design3D, handleSelectTool, handleEraserTool, removeOutline, handleHoverEffect]);
 
   const handleReferenceLineTool = useCallback((): void => {
     if (!design3D) return;
@@ -1074,7 +999,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       measureHandlerRef.current = createMeasureHandler(
         design3D.scene,
         design3D.camera,
-        design3D.renderer,
+        design3D.renderer
       );
     }
 
@@ -1124,11 +1049,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       return;
     }
 
-    const lineCreator = createLineCreator(
-      design3D.scene,
-      design3D.camera,
-      design3D.renderer,
-    );
+    const lineCreator = createLineCreator(design3D.scene, design3D.camera, design3D.renderer);
     lineCreatorRef.current = lineCreator;
     lineCreatorRef.current.activate();
     setActiveTool('line');
@@ -1188,10 +1109,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       const mouse = new THREE.Vector2(x, y);
       raycaster.setFromCamera(mouse, design3D.camera);
 
-      const intersects = raycaster.intersectObjects(
-        design3D.scene.children,
-        true,
-      );
+      const intersects = raycaster.intersectObjects(design3D.scene.children, true);
 
       if (intersects.length > 0) {
         const object = intersects[0].object as THREE.Mesh;
@@ -1302,7 +1220,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
       showShapeDropdown,
       selectedShapeId,
       handleDottedLineTool,
-    ],
+    ]
   );
 
   // Cleanup on unmount
@@ -1316,7 +1234,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
   const handlePositionUpdate = (
     object: THREE.Object3D,
     objectId: string,
-    shapeData: footerShapeData,
+    shapeData: footerShapeData
   ) => {
     const designId = path.basename(window.location.pathname);
     if (!designId) return;
@@ -1571,11 +1489,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
                   onClick={onClick}
                   title={name}
                   ref={
-                    option === 'shape'
-                      ? shapeButtonRef
-                      : option === 'flip'
-                        ? flipButtonRef
-                        : null
+                    option === 'shape' ? shapeButtonRef : option === 'flip' ? flipButtonRef : null
                   }
                 >
                   <img
@@ -1630,7 +1544,7 @@ const Footer: React.FC<FooterProps> = ({ design3D }) => {
                     </div>
                   )}
                 </div>
-              ),
+              )
           )}
         </div>
       </div>

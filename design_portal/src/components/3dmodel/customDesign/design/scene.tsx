@@ -5,9 +5,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { ThreeDView } from '../interface';
 import { createGrid } from './grid-creator';
 
-export const init3DDesign = async (
-  mount: HTMLDivElement,
-): Promise<ThreeDView> => {
+export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> => {
   const scene = new THREE.Scene();
 
   // Perspective Camera (3D)
@@ -15,7 +13,7 @@ export const init3DDesign = async (
     80,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000,
+    1000
   );
   perspectiveCamera.position.set(-3.0, 3.0, 3.0);
   perspectiveCamera.lookAt(0, 0, 0);
@@ -29,15 +27,14 @@ export const init3DDesign = async (
     frustumSize / 2,
     frustumSize / -2,
     0.1,
-    1000,
+    1000
   );
   orthographicCamera.position.set(0, 10, 0); // Top-down view
   orthographicCamera.lookAt(0, 0, 0);
   orthographicCamera.rotation.set(-Math.PI / 2, 0, 0); // Ensure correct orientation
 
   // Current active camera
-  let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera =
-    perspectiveCamera;
+  let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera = perspectiveCamera;
 
   // Initialize Day Sky
   const daySky = new Sky();
@@ -75,10 +72,7 @@ export const init3DDesign = async (
     const z = (Math.random() - 0.5) * 2000;
     starVertices.push(x, y, z);
   }
-  starGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(starVertices, 3),
-  );
+  starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
   const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
   const stars = new THREE.Points(starGeometry, starMaterial);
 

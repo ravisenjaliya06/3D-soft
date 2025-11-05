@@ -35,13 +35,12 @@ const CreateDesignPopup = ({
   useEffect(() => {
     const fetchDesigns = async () => {
       setFetchLoading(true);
-      const response: { status: number; data: Design[] } =
-        await CommonService.getWithQueryParam(
-          'design',
-          '',
-          'is_custom',
-          'true',
-        );
+      const response: { status: number; data: Design[] } = await CommonService.getWithQueryParam(
+        'design',
+        '',
+        'is_custom',
+        'true'
+      );
       if (response.status === 200) {
         setFetchLoading(false);
         setDesigns(response.data);
@@ -68,8 +67,7 @@ const CreateDesignPopup = ({
       label: 'Name',
       type: 'name',
       placeholder: 'Enter design name',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setDesingName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
       error: '',
     },
   ];
@@ -86,15 +84,13 @@ const CreateDesignPopup = ({
     const response: { status: number; data: Design } = await CommonService.post(
       'design',
       '',
-      formData,
+      formData
     );
 
     if (response.status === 201) {
       const selectedDesignId = window.location.pathname.split('/')[2];
       setLoading(false);
-      router.push(
-        `/design/${selectedDesignId}/customdesign/${response.data.id}`,
-      );
+      router.push(`/design/${selectedDesignId}/customdesign/${response.data.id}`);
       setShowPopup(false); // Close the popup on success
     } else {
       setApiErrorMessage(response.data.detail || 'Failed to create design');
@@ -112,10 +108,7 @@ const CreateDesignPopup = ({
     if (!designToDelete) return;
 
     try {
-      const response: { status: number } = await CommonService.delete(
-        'design',
-        designToDelete,
-      );
+      const response: { status: number } = await CommonService.delete('design', designToDelete);
       if (response.status === 200) {
         setDesigns(designs.filter((design) => design.id !== designToDelete));
         setshowDeletePopup(false);
@@ -178,11 +171,7 @@ const CreateDesignPopup = ({
                     onMouseEnter={() => setHoveredDesignId(design.id)}
                     onMouseLeave={() => setHoveredDesignId(null)}
                   >
-                    <img
-                      src={demoimage.src}
-                      className={styles.demoimage}
-                      alt="demoimage"
-                    />
+                    <img src={demoimage.src} className={styles.demoimage} alt="demoimage" />
                     <div className={styles.names}>
                       <h4>{design.design_name}</h4>
                     </div>
@@ -192,11 +181,7 @@ const CreateDesignPopup = ({
                           className={styles.editButton}
                           onClick={(e) => handleEditDesign(design.id, e)}
                         >
-                          <img
-                            src={editicon.src}
-                            className={styles.editicon}
-                            alt="editicon"
-                          />
+                          <img src={editicon.src} className={styles.editicon} alt="editicon" />
                         </button>
                         <button
                           className={styles.deleteiconButton}
@@ -234,11 +219,7 @@ const CreateDesignPopup = ({
       {showPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img
-              src={createicon.src}
-              className={styles.createicon}
-              alt="createicon"
-            />
+            <img src={createicon.src} className={styles.createicon} alt="createicon" />
             <img
               src={close.src}
               className={styles.createclose}
@@ -270,9 +251,7 @@ const CreateDesignPopup = ({
                   ))}
                 </div>
               </form>
-              {errorPopup && (
-                <div className={styles.error}>{apiErrorMessage}</div>
-              )}
+              {errorPopup && <div className={styles.error}>{apiErrorMessage}</div>}
             </div>
             <div className={styles.createButtonGrop}>
               <button
@@ -321,21 +300,14 @@ const CreateDesignPopup = ({
             <div className={styles.right_side}>
               <h3>Delete Design</h3>
               <p className={styles.deletemassage}>
-                Are you sure you want to delete this design? This action cannot
-                be undone.
+                Are you sure you want to delete this design? This action cannot be undone.
               </p>
             </div>
             <div className={styles.deleteButtonGrop}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setshowDeletePopup(false)}
-              >
+              <button className={styles.cancelButton} onClick={() => setshowDeletePopup(false)}>
                 Cancel
               </button>
-              <button
-                className={styles.deleteButton}
-                onClick={handleDeleteConfirm}
-              >
+              <button className={styles.deleteButton} onClick={handleDeleteConfirm}>
                 Delete
               </button>
             </div>

@@ -418,8 +418,7 @@
 
 .rulematireal img {
   width: 0.9rem;
-  filter: invert(28%) sepia(100%) saturate(700%) hue-rotate(230deg)
-    brightness(90%) contrast(100%);
+  filter: invert(28%) sepia(100%) saturate(700%) hue-rotate(230deg) brightness(90%) contrast(100%);
 
   transition: all 0.1s ease;
 }

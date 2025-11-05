@@ -20,8 +20,7 @@ const ProjectDashboard = () => {
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
-        const response: { status: number; data: Design[] } =
-          await CommonService.get('design', '');
+        const response: { status: number; data: Design[] } = await CommonService.get('design', '');
         if (response.status === 200) {
           setDesignsCount(response.data.length);
         } else {
@@ -44,11 +43,7 @@ const ProjectDashboard = () => {
         <div className={styles.mainContent}>
           <div className={styles.showdetails}>
             <div className={styles.showprojectdetails}>
-              <img
-                className={styles.showprojectimage}
-                src={Designs.src}
-                alt="Design"
-              />
+              <img className={styles.showprojectimage} src={Designs.src} alt="Design" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Designs</p>
                 <p className={styles.showValues}>{designsCount}</p>
@@ -56,11 +51,7 @@ const ProjectDashboard = () => {
             </div>
             <img className={styles.Lines} src={Line.src} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img
-                className={styles.showprojectimage}
-                src={Projects.src}
-                alt="Project"
-              />
+              <img className={styles.showprojectimage} src={Projects.src} alt="Project" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Projects</p>
                 <p className={styles.showValues}>0</p>
@@ -68,11 +59,7 @@ const ProjectDashboard = () => {
             </div>
             <img className={styles.Lines} src={Line.src} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img
-                className={styles.showprojectimage}
-                src={Users.src}
-                alt="Users"
-              />
+              <img className={styles.showprojectimage} src={Users.src} alt="Users" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Users</p>
                 <p className={styles.showValues}>0</p>
@@ -80,11 +67,7 @@ const ProjectDashboard = () => {
             </div>
             <img className={styles.Lines} src={Line.src} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img
-                className={styles.showprojectimage}
-                src={Sells.src}
-                alt="Sells"
-              />
+              <img className={styles.showprojectimage} src={Sells.src} alt="Sells" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Sells</p>
                 <p className={styles.showValues}>0</p>

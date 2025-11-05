@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     try {
       const response: { status: number } = await commonService.delete(
         'material',
-        `catalog/design/${designId}`,
+        `catalog/design/${designId}`
       );
 
       if (response.status === 200 || response.status === 204) {
@@ -124,8 +124,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const fetchSettingsConfig = async () => {
     const designId = window.location.pathname.split('/')[2];
 
-    const response: { status: number; data: DesignIDSettingData } =
-      await commonService.get('design', `${designId}/settings`);
+    const response: { status: number; data: DesignIDSettingData } = await commonService.get(
+      'design',
+      `${designId}/settings`
+    );
     if (response.status === 200) {
       setMinifixDistance(response.data.minifix_distance ?? 30);
       setBoltSize(response.data.minifix_bolt ?? 5);
@@ -144,20 +146,14 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     formData.append('minifix_distance', String(minifixDistance));
 
     try {
-      const response = await commonService.put(
-        'design',
-        `${designId}/settings`,
-        formData,
-      );
+      const response = await commonService.put('design', `${designId}/settings`, formData);
       if (response.status === 200) {
         // Update the Minifix calculator with new spacing
         const { updateMinifixSpacing } = await import('../minifix/calculator');
         updateMinifixSpacing(minifixDistance);
 
         setSuccessMessage(
-          'Settings updated successfully! Minifix spacing updated to ' +
-            minifixDistance +
-            'mm',
+          'Settings updated successfully! Minifix spacing updated to ' + minifixDistance + 'mm'
         );
         fetchSettingsConfig(); // refresh
         setTimeout(() => {
@@ -174,8 +170,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     if (showSettingsPopup) fetchSettingsConfig();
   }, [showSettingsPopup]);
 
-  const pathName =
-    typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+  const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
   const designId = pathName.length > 2 ? pathName[2] : '';
 
   useEffect(() => {
@@ -184,8 +179,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const fetchDesigns = async () => {
     try {
-      const response: { status: number; data: Design[] } =
-        await commonService.get('design', '');
+      const response: { status: number; data: Design[] } = await commonService.get('design', '');
       if (response.status === 200) {
         const designs = response.data;
         const selectedDesign = designs.find((design) => design.id === designId);
@@ -259,8 +253,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const handleNesting = async () => {
     setIsLoading(true); // 🔄 Show loading spinner
     try {
-      const response: { status: number; data: Design[] } =
-        await commonService.get('design', `${designId}/nesting`);
+      const response: { status: number; data: Design[] } = await commonService.get(
+        'design',
+        `${designId}/nesting`
+      );
       if (response.status === 200) {
         router.push(`/mes/${designId}`);
       }
@@ -361,11 +357,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           </div>
         )}
         <div className={styles.headerTitle}>
-          <p>
-            {designName.length > 0
-              ? designName[0].design_name
-              : 'Furniture Design'}
-          </p>
+          <p>{designName.length > 0 ? designName[0].design_name : 'Furniture Design'}</p>
         </div>
 
         <div className={styles.headerTools}>
@@ -373,9 +365,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             <div key={option} className={styles.headerToolList}>
               <div
                 key={option}
-                className={
-                  disabled ? styles.disabledHeaderIcon : styles.headerIcon
-                }
+                className={disabled ? styles.disabledHeaderIcon : styles.headerIcon}
                 onClick={disabled ? undefined : onClick}
                 title={name}
               >
@@ -448,24 +438,19 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
       )}
 
-      {showCreatePopup && (
-        <CreateDesignPopup setShowCreatePopup={setShowCreatePopup} />
-      )}
+      {showCreatePopup && <CreateDesignPopup setShowCreatePopup={setShowCreatePopup} />}
       {showClearConfirm && (
         <div className={styles.confirmPopup}>
           <div className={styles.confirmContent}>
             <p>
-              Are you sure you want to clear all catalogs and reset the scene?
-              This cannot be undone.
+              Are you sure you want to clear all catalogs and reset the scene? This cannot be
+              undone.
             </p>
             <div className={styles.buttonGroup}>
               <button className={styles.confirmButton} onClick={confirmClear}>
                 Yes, Clear
               </button>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setShowClearConfirm(false)}
-              >
+              <button className={styles.cancelButton} onClick={() => setShowClearConfirm(false)}>
                 Cancel
               </button>
             </div>
@@ -479,10 +464,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             {/* Header with icon and title */}
             <div className={styles.popupHeader}>
               <div className={styles.settingsTitleContainer}>
-                <img
-                  src={settings_svg.src || '/placeholder.svg'}
-                  alt="Settings Icon"
-                />
+                <img src={settings_svg.src || '/placeholder.svg'} alt="Settings Icon" />
                 <div>
                   <h2>Design Settings</h2>
                 </div>
@@ -558,10 +540,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
               {/* Submit Button */}
               <div className={styles.minifixSubmitGroup}>
-                <button
-                  className={styles.minifixSubmitButton}
-                  onClick={handleSettingsSubmit}
-                >
+                <button className={styles.minifixSubmitButton} onClick={handleSettingsSubmit}>
                   Save Changes
                 </button>
                 {successMessage && (

@@ -27,11 +27,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(
-    90deg,
-    var(--primary-white) 0%,
-    var(--primary-light-pink) 100%
-  );
+  background: linear-gradient(90deg, var(--primary-white) 0%, var(--primary-light-pink) 100%);
   width: 60rem;
   height: 4.8rem;
   border-radius: 0.6rem;
@@ -63,11 +59,7 @@
 }
 
 .createdesignButtoncontent {
-  background: linear-gradient(
-    90deg,
-    var(--primary-white) 51.5%,
-    var(--primary-light-blur) 100%
-  );
+  background: linear-gradient(90deg, var(--primary-white) 51.5%, var(--primary-light-blur) 100%);
   border-radius: 0.4rem;
   height: 5.4rem;
   width: 30rem;
@@ -1150,6 +1142,6 @@
 }
 
 .activeDropdownItem .dropdownStatusIcon {
-  filter: brightness(0) saturate(100%) invert(42%) sepia(70%) saturate(361%)
-    hue-rotate(81deg) brightness(91%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(42%) sepia(70%) saturate(361%) hue-rotate(81deg)
+    brightness(91%) contrast(95%);
 }

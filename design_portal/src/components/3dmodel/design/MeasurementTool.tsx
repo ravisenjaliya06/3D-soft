@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import {
-  CSS2DObject,
-  CSS2DRenderer,
-} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { MeasurementToolProps } from './interface';
 
 const MeasurementTool: React.FC<MeasurementToolProps> = ({
@@ -12,9 +9,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
   unitType,
   onComplete,
 }) => {
-  const measurementsRef = useRef<{ group: THREE.Group; label: CSS2DObject }[]>(
-    [],
-  );
+  const measurementsRef = useRef<{ group: THREE.Group; label: CSS2DObject }[]>([]);
   const tempGroupRef = useRef<THREE.Group | null>(null);
   const tempLabelRef = useRef<CSS2DObject | null>(null);
   const snapMarkerRef = useRef<THREE.Mesh | null>(null);
@@ -33,18 +28,12 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       css2DRendererRef.current.domElement.style.position = 'absolute';
       css2DRendererRef.current.domElement.style.top = '0px';
       css2DRendererRef.current.domElement.style.pointerEvents = 'none';
-      design3D.renderer.domElement.parentNode?.appendChild(
-        css2DRendererRef.current.domElement,
-      );
+      design3D.renderer.domElement.parentNode?.appendChild(css2DRendererRef.current.domElement);
     }
   }, [design3D.renderer]);
 
   const createArrow = useCallback(
-    (
-      base: THREE.Vector3,
-      tip: THREE.Vector3,
-      pointsToBase: boolean,
-    ): THREE.Line => {
+    (base: THREE.Vector3, tip: THREE.Vector3, pointsToBase: boolean): THREE.Line => {
       const direction = new THREE.Vector3().subVectors(tip, base).normalize();
       const arrowLength = 0.04;
       const arrowAngle = Math.PI / 6;
@@ -52,56 +41,36 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
 
       if (pointsToBase) {
         points.push(base.clone());
-        const perpendicular = new THREE.Vector3(
-          -direction.y,
-          direction.x,
-          direction.z,
-        ).normalize();
+        const perpendicular = new THREE.Vector3(-direction.y, direction.x, direction.z).normalize();
         const leftWing = new THREE.Vector3().addVectors(
           base,
-          new THREE.Vector3().addScaledVector(direction, arrowLength),
+          new THREE.Vector3().addScaledVector(direction, arrowLength)
         );
-        leftWing.addScaledVector(
-          perpendicular,
-          arrowLength * Math.sin(arrowAngle),
-        );
+        leftWing.addScaledVector(perpendicular, arrowLength * Math.sin(arrowAngle));
         points.push(leftWing);
         points.push(base.clone());
         const rightWing = new THREE.Vector3().addVectors(
           base,
-          new THREE.Vector3().addScaledVector(direction, arrowLength),
+          new THREE.Vector3().addScaledVector(direction, arrowLength)
         );
-        rightWing.addScaledVector(
-          perpendicular,
-          -arrowLength * Math.sin(arrowAngle),
-        );
+        rightWing.addScaledVector(perpendicular, -arrowLength * Math.sin(arrowAngle));
         points.push(rightWing);
       } else {
         const arrowTip = tip.clone();
         points.push(arrowTip);
-        const perpendicular = new THREE.Vector3(
-          -direction.y,
-          direction.x,
-          direction.z,
-        ).normalize();
+        const perpendicular = new THREE.Vector3(-direction.y, direction.x, direction.z).normalize();
         const leftWing = new THREE.Vector3().addVectors(
           arrowTip,
-          new THREE.Vector3().addScaledVector(direction, -arrowLength),
+          new THREE.Vector3().addScaledVector(direction, -arrowLength)
         );
-        leftWing.addScaledVector(
-          perpendicular,
-          arrowLength * Math.sin(arrowAngle),
-        );
+        leftWing.addScaledVector(perpendicular, arrowLength * Math.sin(arrowAngle));
         points.push(leftWing);
         points.push(arrowTip);
         const rightWing = new THREE.Vector3().addVectors(
           arrowTip,
-          new THREE.Vector3().addScaledVector(direction, -arrowLength),
+          new THREE.Vector3().addScaledVector(direction, -arrowLength)
         );
-        rightWing.addScaledVector(
-          perpendicular,
-          -arrowLength * Math.sin(arrowAngle),
-        );
+        rightWing.addScaledVector(perpendicular, -arrowLength * Math.sin(arrowAngle));
         points.push(rightWing);
       }
 
@@ -113,7 +82,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       });
       return new THREE.Line(arrowGeometry, arrowMaterial);
     },
-    [],
+    []
   );
 
   const createLineGroup = useCallback(
@@ -141,7 +110,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
 
       return group;
     },
-    [createArrow],
+    [createArrow]
   );
 
   const formatDistance = useCallback(
@@ -177,7 +146,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       const formatted = `${value.toFixed(unit === 'mi' ? 6 : value < 10 ? 2 : value >= 1000 ? 1 : 0)} ${unit}`;
       return { value, formatted };
     },
-    [unitType],
+    [unitType]
   );
 
   const createDistanceLabel = useCallback(
@@ -206,7 +175,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       label.name = 'measure_label';
       return label;
     },
-    [formatDistance],
+    [formatDistance]
   );
 
   const cleanupTemporary = useCallback(() => {
@@ -244,9 +213,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       if (obj instanceof THREE.Line || obj instanceof THREE.Mesh) {
         obj.geometry.dispose();
 
-        const materials = Array.isArray(obj.material)
-          ? obj.material
-          : [obj.material];
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
 
         materials.forEach((material) => material.dispose());
       }
@@ -285,10 +252,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
 
     const vertexCount = positionAttribute.count;
     for (let i = 0; i < vertexCount; i++) {
-      const vertex = new THREE.Vector3().fromBufferAttribute(
-        positionAttribute,
-        i,
-      );
+      const vertex = new THREE.Vector3().fromBufferAttribute(positionAttribute, i);
       vertex.applyMatrix4(object.matrixWorld);
       vertices.push(vertex);
     }
@@ -305,9 +269,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
           const v2 = new THREE.Vector3()
             .fromBufferAttribute(positionAttribute, idx2)
             .applyMatrix4(object.matrixWorld);
-          const midpoint = new THREE.Vector3()
-            .addVectors(v1, v2)
-            .multiplyScalar(0.5);
+          const midpoint = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
           vertices.push(midpoint);
         }
       }
@@ -319,7 +281,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
   const addUniqueSnapPoints = (
     points: THREE.Vector3[],
     snapPoints: THREE.Vector3[],
-    tolerance = 0.001,
+    tolerance = 0.001
   ) => {
     for (const point of points) {
       let isDuplicate = false;
@@ -353,21 +315,18 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
     });
   }, [design3D.scene]);
 
-  const findNearestSnapPoint = useCallback(
-    (point: THREE.Vector3): THREE.Vector3 | null => {
-      let minDistance = SNAP_DISTANCE;
-      let nearestPoint = null;
-      for (let i = 0; i < snapTargetsRef.current.length; i++) {
-        const distance = point.distanceTo(snapTargetsRef.current[i]);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestPoint = snapTargetsRef.current[i];
-        }
+  const findNearestSnapPoint = useCallback((point: THREE.Vector3): THREE.Vector3 | null => {
+    let minDistance = SNAP_DISTANCE;
+    let nearestPoint = null;
+    for (let i = 0; i < snapTargetsRef.current.length; i++) {
+      const distance = point.distanceTo(snapTargetsRef.current[i]);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestPoint = snapTargetsRef.current[i];
       }
-      return nearestPoint;
-    },
-    [],
-  );
+    }
+    return nearestPoint;
+  }, []);
 
   const getIntersectionPoint = useCallback(
     (event: MouseEvent): THREE.Vector3 | null => {
@@ -424,7 +383,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       }
       return null;
     },
-    [design3D.camera, design3D.renderer, design3D.scene, findNearestSnapPoint],
+    [design3D.camera, design3D.renderer, design3D.scene, findNearestSnapPoint]
   );
 
   const handleClick = useCallback(
@@ -494,7 +453,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       design3D.scene,
       design3D.renderer,
       design3D.camera,
-    ],
+    ]
   );
 
   const handleMouseMove = useCallback(
@@ -542,7 +501,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       design3D.scene,
       design3D.camera,
       design3D.renderer,
-    ],
+    ]
   );
 
   const handleKeyDown = useCallback(
@@ -558,13 +517,7 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
         }
       }
     },
-    [
-      isActive,
-      cleanupTemporary,
-      design3D.renderer,
-      design3D.scene,
-      design3D.camera,
-    ],
+    [isActive, cleanupTemporary, design3D.renderer, design3D.scene, design3D.camera]
   );
 
   useEffect(() => {
@@ -579,20 +532,14 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
       }
 
       design3D.renderer.domElement.addEventListener('click', handleClick);
-      design3D.renderer.domElement.addEventListener(
-        'mousemove',
-        handleMouseMove,
-      );
+      design3D.renderer.domElement.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('keydown', handleKeyDown);
 
       document.body.style.cursor = 'crosshair';
 
       return () => {
         design3D.renderer.domElement.removeEventListener('click', handleClick);
-        design3D.renderer.domElement.removeEventListener(
-          'mousemove',
-          handleMouseMove,
-        );
+        design3D.renderer.domElement.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('keydown', handleKeyDown);
 
         cleanupAllMeasurements();
@@ -605,12 +552,9 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
           snapMarkerRef.current = null;
         }
         snapTargetsRef.current = [];
-        if (
-          css2DRendererRef.current &&
-          css2DRendererRef.current.domElement.parentNode
-        ) {
+        if (css2DRendererRef.current && css2DRendererRef.current.domElement.parentNode) {
           css2DRendererRef.current.domElement.parentNode.removeChild(
-            css2DRendererRef.current.domElement,
+            css2DRendererRef.current.domElement
           );
           css2DRendererRef.current = null;
         }
@@ -642,12 +586,9 @@ const MeasurementTool: React.FC<MeasurementToolProps> = ({
   useEffect(() => {
     return () => {
       cleanupAllMeasurements();
-      if (
-        css2DRendererRef.current &&
-        css2DRendererRef.current.domElement.parentNode
-      ) {
+      if (css2DRendererRef.current && css2DRendererRef.current.domElement.parentNode) {
         css2DRendererRef.current.domElement.parentNode.removeChild(
-          css2DRendererRef.current.domElement,
+          css2DRendererRef.current.domElement
         );
         css2DRendererRef.current = null;
       }

@@ -50,9 +50,7 @@ export class MoveHandler implements IMoveHandler {
     this.plane = new THREE.Plane(this.planeNormal, 0);
   }
 
-  private getMousePositionOnPlane = (
-    event: MouseEvent,
-  ): THREE.Vector3 | null => {
+  private getMousePositionOnPlane = (event: MouseEvent): THREE.Vector3 | null => {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -60,10 +58,7 @@ export class MoveHandler implements IMoveHandler {
 
     if (this.draggedObject) {
       this.planePoint.copy(this.draggedObject.position);
-      this.plane.setFromNormalAndCoplanarPoint(
-        this.planeNormal,
-        this.planePoint,
-      );
+      this.plane.setFromNormalAndCoplanarPoint(this.planeNormal, this.planePoint);
     }
 
     const intersection = new THREE.Vector3();
@@ -81,15 +76,9 @@ export class MoveHandler implements IMoveHandler {
 
   private clampToGrid = (position: THREE.Vector3): THREE.Vector3 => {
     return new THREE.Vector3(
-      Math.max(
-        this.gridBounds?.minX ?? -10,
-        Math.min(this.gridBounds?.maxX ?? 10, position.x),
-      ),
+      Math.max(this.gridBounds?.minX ?? -10, Math.min(this.gridBounds?.maxX ?? 10, position.x)),
       this.draggedObject?.position.y ?? 0,
-      Math.max(
-        this.gridBounds?.minZ ?? -10,
-        Math.min(this.gridBounds?.maxZ ?? 10, position.z),
-      ),
+      Math.max(this.gridBounds?.minZ ?? -10, Math.min(this.gridBounds?.maxZ ?? 10, position.z))
     );
   };
 
@@ -125,43 +114,32 @@ export class MoveHandler implements IMoveHandler {
         const center = new THREE.Vector3();
         boundingBox.getCenter(center);
 
-        const plankWidth = (targetObject.geometry as THREE.BoxGeometry)
-          .parameters.width;
-        const plankHeight = (targetObject.geometry as THREE.BoxGeometry)
-          .parameters.height;
-        const plankDepth = (targetObject.geometry as THREE.BoxGeometry)
-          .parameters.depth;
+        const plankWidth = (targetObject.geometry as THREE.BoxGeometry).parameters.width;
+        const plankHeight = (targetObject.geometry as THREE.BoxGeometry).parameters.height;
+        const plankDepth = (targetObject.geometry as THREE.BoxGeometry).parameters.depth;
         (this.draggedObject as THREE.Mesh).geometry.dispose();
         if (this.draggedObject.name === objectName.HORIZONTAL_PLANK) {
           (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
             plankWidth + 1,
             2,
-            plankDepth - 1.5,
+            plankDepth - 1.5
           );
         } else if (this.draggedObject.name.includes('DRAWER')) {
           this.draggedObject.children.forEach((child) => {
-            if (
-              child instanceof THREE.Mesh &&
-              child.geometry instanceof THREE.BoxGeometry
-            ) {
+            if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry) {
               if (child.name.includes('LEFT') || child.name.includes('RIGHT')) {
                 child.geometry = new THREE.BoxGeometry(
                   2,
                   child.geometry.parameters.height,
-                  plankDepth - 2,
+                  plankDepth - 2
                 );
-                child.position.x = child.name.includes('LEFT')
-                  ? -plankWidth / 2
-                  : plankWidth / 2;
+                child.position.x = child.name.includes('LEFT') ? -plankWidth / 2 : plankWidth / 2;
                 child.position.y = child.position.z - 0.5;
-              } else if (
-                child.name.includes('BACK') ||
-                child.name.includes('FRONT')
-              ) {
+              } else if (child.name.includes('BACK') || child.name.includes('FRONT')) {
                 child.geometry = new THREE.BoxGeometry(
                   plankWidth + 2,
                   child.geometry.parameters.height,
-                  2,
+                  2
                 );
                 child.position.y = child.name.includes('BACK')
                   ? child.position.x - 0.5
@@ -173,7 +151,7 @@ export class MoveHandler implements IMoveHandler {
                 child.geometry = new THREE.BoxGeometry(
                   plankWidth - 2,
                   child.geometry.parameters.height,
-                  plankDepth - 2,
+                  plankDepth - 2
                 );
               }
             }
@@ -187,28 +165,20 @@ export class MoveHandler implements IMoveHandler {
             this.draggedObject.children[0] instanceof THREE.Mesh
               ? this.draggedObject.children[0]
               : new THREE.Mesh();
-          leftDoor.geometry = new THREE.BoxGeometry(
-            doorWidth,
-            doorHeight,
-            doorDepth,
-          );
+          leftDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
           leftDoor.position.set(-doorWidth / 2, 0, plankDepth / 2 - 1.5);
 
           const rightDoor =
             this.draggedObject.children[1] instanceof THREE.Mesh
               ? this.draggedObject.children[1]
               : new THREE.Mesh();
-          rightDoor.geometry = new THREE.BoxGeometry(
-            doorWidth,
-            doorHeight,
-            doorDepth,
-          );
+          rightDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
           rightDoor.position.set(doorWidth / 2, 0, plankDepth / 2 - 1.5);
         } else {
           (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
             2,
             plankHeight + 1,
-            plankDepth - 1.5,
+            plankDepth - 1.5
           );
         }
 
@@ -225,7 +195,7 @@ export class MoveHandler implements IMoveHandler {
           (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
             plankWidth,
             plankHeight,
-            2,
+            2
           );
           this.draggedObject.position.z =
             (targetObject.geometry as THREE.BoxGeometry).parameters.depth / 2;
@@ -269,30 +239,19 @@ export class MoveHandler implements IMoveHandler {
     this.raycaster.params.Points.threshold = 0.1;
     this.raycaster.params.Line.threshold = 0.1;
 
-    const intersects = this.raycaster.intersectObjects(
-      this.movableObjects,
-      true,
-    );
+    const intersects = this.raycaster.intersectObjects(this.movableObjects, true);
 
     if (intersects.length > 0) {
       let targetObject = intersects[0].object;
       let depth = 0;
       const maxDepth = 10;
 
-      while (
-        targetObject &&
-        !targetObject.userData.object_id &&
-        depth < maxDepth
-      ) {
+      while (targetObject && !targetObject.userData.object_id && depth < maxDepth) {
         targetObject = targetObject.parent ?? targetObject;
         depth++;
       }
 
-      if (
-        targetObject &&
-        targetObject.userData.object_id &&
-        targetObject.name !== 'grid'
-      ) {
+      if (targetObject && targetObject.userData.object_id && targetObject.name !== 'grid') {
         this.draggedObject = targetObject;
         const position = this.getMousePositionOnPlane(event);
         if (position) {
@@ -329,8 +288,7 @@ export class MoveHandler implements IMoveHandler {
       // Define event handlers
       const onMouseMoveHandler = (event: MouseEvent) => this.onMouseMove(event);
       const onMouseDownHandler = () => this.onMouseDown();
-      const onDoubleClickHandler = (event: MouseEvent) =>
-        this.onDoubleClick(event);
+      const onDoubleClickHandler = (event: MouseEvent) => this.onDoubleClick(event);
       const onMouseUpHandler = () => {
         const finalPosition = this.onMouseUp(); // Get final position
         this.isDragging = false; // Reset state
@@ -395,9 +353,7 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public getObjectPosition(objectId: string): THREE.Vector3 | null {
-    const targetObject = this.movableObjects.find(
-      (obj) => obj.userData.object_id === objectId,
-    );
+    const targetObject = this.movableObjects.find((obj) => obj.userData.object_id === objectId);
     if (targetObject) {
       return targetObject.position.clone();
     }

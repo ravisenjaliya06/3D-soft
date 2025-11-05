@@ -30,13 +30,7 @@ export type RemainingPath =
   | `company/${string}/material`
   | `catalog_rules/${string}/parts`;
 
-type Param =
-  | 'recent'
-  | 'deleted'
-  | 'project_id'
-  | 'is_custom'
-  | `type`
-  | 'design_id';
+type Param = 'recent' | 'deleted' | 'project_id' | 'is_custom' | `type` | 'design_id';
 
 type Error = {
   message: string;
@@ -45,13 +39,9 @@ type Error = {
 
 class CommonService {
   get(AppName: AppName, RemainingPath: RemainingPath | null) {
-    const url =
-      RemainingPath === '' ? `/${AppName}/` : `/${AppName}/${RemainingPath}/`;
+    const url = RemainingPath === '' ? `/${AppName}/` : `/${AppName}/${RemainingPath}/`;
     return http.get(url).catch((err: Error) => {
-      if (
-        err.status == STATUS_CODES.UNAUTHORIZED &&
-        typeof window !== 'undefined'
-      ) {
+      if (err.status == STATUS_CODES.UNAUTHORIZED && typeof window !== 'undefined') {
         Cookies.remove('token', { path: '' });
         localStorage.clear();
         window.location.href = REDIRECT.UNAUTHORIZED;
@@ -64,35 +54,30 @@ class CommonService {
     AppName: AppName,
     project_id: string | number,
     design: string,
-    design_id: string | number,
+    design_id: string | number
   ) {
-    return http
-      .get(`/${AppName}/${project_id}/${design}/${design_id}/`)
-      .catch((err: Error) => {
-        if (err.status == STATUS_CODES.UNAUTHORIZED) {
-          Cookies.remove('token', { path: '' });
-          localStorage.clear();
-          window.location.href = REDIRECT.UNAUTHORIZED;
-        }
-        throw err?.message;
-      });
+    return http.get(`/${AppName}/${project_id}/${design}/${design_id}/`).catch((err: Error) => {
+      if (err.status == STATUS_CODES.UNAUTHORIZED) {
+        Cookies.remove('token', { path: '' });
+        localStorage.clear();
+        window.location.href = REDIRECT.UNAUTHORIZED;
+      }
+      throw err?.message;
+    });
   }
 
   getWithQueryParam(
     AppName: AppName,
     RemainingPath: RemainingPath | null,
     Param: Param,
-    value: string | number,
+    value: string | number
   ) {
     const url = RemainingPath
       ? `/${AppName}/${RemainingPath}/?${Param}=${value}`
       : `/${AppName}/?${Param}=${value}`;
 
     return http.get(url).catch((err: Error) => {
-      if (
-        err.status == STATUS_CODES.UNAUTHORIZED &&
-        typeof window !== 'undefined'
-      ) {
+      if (err.status == STATUS_CODES.UNAUTHORIZED && typeof window !== 'undefined') {
         Cookies.remove('token', { path: '' });
         localStorage.clear();
         window.location.href = REDIRECT.UNAUTHORIZED;
@@ -102,9 +87,7 @@ class CommonService {
   }
 
   post<T>(AppName: string, RemainingPath: string | null, data: T) {
-    const url = RemainingPath
-      ? `/${AppName}/${RemainingPath}/`
-      : `/${AppName}/`;
+    const url = RemainingPath ? `/${AppName}/${RemainingPath}/` : `/${AppName}/`;
     return http
       .post(url, data)
       .then((response) => response)
@@ -116,42 +99,30 @@ class CommonService {
       });
   }
 
-  postWithSingleParam(
-    AppName: AppName,
-    RemainingPath: RemainingPath,
-    value1: string | number,
-  ) {
-    return http
-      .post(`/${AppName}/${RemainingPath}/${value1}/`)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.CREATED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+  postWithSingleParam(AppName: AppName, RemainingPath: RemainingPath, value1: string | number) {
+    return http.post(`/${AppName}/${RemainingPath}/${value1}/`).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.CREATED) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
   postWithDoubleParam(
     AppName: AppName,
     RemainingPath: RemainingPath,
     value1: string | number,
-    value2: string | number,
+    value2: string | number
   ) {
-    return http
-      .post(`/${AppName}/${RemainingPath}/${value1}/${value2}`)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.CREATED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+    return http.post(`/${AppName}/${RemainingPath}/${value1}/${value2}`).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.CREATED) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
-  postWithFormData<payloadType>(
-    AppName: AppName,
-    RemainingPath: RemainingPath,
-    data: payloadType,
-  ) {
+  postWithFormData<payloadType>(AppName: AppName, RemainingPath: RemainingPath, data: payloadType) {
     return http
       .post(`/${AppName}/${RemainingPath}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -169,7 +140,7 @@ class CommonService {
     RemainingPath: RemainingPath,
     data: payloadType,
     Param: Param,
-    value: string | number,
+    value: string | number
   ) {
     return http
       .post(`/${AppName}/${RemainingPath}?${Param}=${value}`, data, {
@@ -194,14 +165,8 @@ class CommonService {
     });
   }
 
-  put<payloadType>(
-    AppName: string,
-    RemainingPath: string | null,
-    data: payloadType,
-  ) {
-    const url = RemainingPath
-      ? `/${AppName}/${RemainingPath}/`
-      : `/${AppName}/`;
+  put<payloadType>(AppName: string, RemainingPath: string | null, data: payloadType) {
+    const url = RemainingPath ? `/${AppName}/${RemainingPath}/` : `/${AppName}/`;
     return http
       .put(url, data)
       .then((response) => response)
@@ -216,7 +181,7 @@ class CommonService {
   putWithFormData<payloadType>(
     AppName: AppName,
     RemainingPath: RemainingPath | string,
-    data: payloadType,
+    data: payloadType
   ) {
     return http
       .put(`/${AppName}/${RemainingPath}/`, data, {
@@ -234,11 +199,9 @@ class CommonService {
     AppName: AppName,
     RemainingPath: RemainingPath,
     value: string | number,
-    data: payloadType,
+    data: payloadType
   ) {
-    const url = RemainingPath
-      ? `/${AppName}/${RemainingPath}/${value}/`
-      : `/${AppName}/${value}/`;
+    const url = RemainingPath ? `/${AppName}/${RemainingPath}/${value}/` : `/${AppName}/${value}/`;
     return http.put(url, data).catch((err: Error) => {
       if (err.status !== STATUS_CODES.UPDATED) {
         this.handleError(err?.status || 500, err);
@@ -250,11 +213,9 @@ class CommonService {
   deleteWithSingleParam(
     AppName: AppName,
     RemainingPath: RemainingPath | null,
-    value: string | number,
+    value: string | number
   ) {
-    const url = RemainingPath
-      ? `/${AppName}/${RemainingPath}/${value}/`
-      : `/${AppName}/${value}/`;
+    const url = RemainingPath ? `/${AppName}/${RemainingPath}/${value}/` : `/${AppName}/${value}/`;
 
     return http.delete(url).catch((err: Error) => {
       if (err.status !== STATUS_CODES.DELETED) {
@@ -264,56 +225,46 @@ class CommonService {
     });
   }
 
-  deleteWithQueryParam(
-    AppName: AppName,
-    DesignId: string | number,
-    RemainingPath: RemainingPath,
-  ) {
-    return http
-      .delete(`/${AppName}/${DesignId}/${RemainingPath}`)
-      .catch((err: Error) => {
-        if (err.status == STATUS_CODES.UNAUTHORIZED) {
-          Cookies.remove('token', { path: '' });
-          localStorage.clear();
-          window.location.href = REDIRECT.UNAUTHORIZED;
-        }
-        throw err?.message;
-      });
+  deleteWithQueryParam(AppName: AppName, DesignId: string | number, RemainingPath: RemainingPath) {
+    return http.delete(`/${AppName}/${DesignId}/${RemainingPath}`).catch((err: Error) => {
+      if (err.status == STATUS_CODES.UNAUTHORIZED) {
+        Cookies.remove('token', { path: '' });
+        localStorage.clear();
+        window.location.href = REDIRECT.UNAUTHORIZED;
+      }
+      throw err?.message;
+    });
   }
 
   // ***** object services ***** //
   getObjectData(AppName: AppName, designId: string | number, objects: string) {
-    return http
-      .get(`/${AppName}/${designId}/${objects}/`)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.OK) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+    return http.get(`/${AppName}/${designId}/${objects}/`).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.OK) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
   postObjectData<payloadType>(
     AppName: AppName,
     designId: string | number,
     object: string,
-    data: payloadType,
+    data: payloadType
   ) {
-    return http
-      .post(`/${AppName}/${designId}/${object}/`, data)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.CREATED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+    return http.post(`/${AppName}/${designId}/${object}/`, data).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.CREATED) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
   putObjectData<payloadType>(
     AppName: AppName,
     designId: string | number,
     object: string,
-    formData: payloadType,
+    formData: payloadType
   ) {
     return http
       .put(`/${AppName}/${designId}/${object}/`, formData)
@@ -332,16 +283,14 @@ class CommonService {
     AppName: AppName,
     designId: string | number,
     object: string,
-    objectId: string | number,
+    objectId: string | number
   ) {
-    return http
-      .delete(`/${AppName}/${designId}/${object}/${objectId}/`)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.DELETED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+    return http.delete(`/${AppName}/${designId}/${object}/${objectId}/`).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.DELETED) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
   putObjectItemData<payloadType>(
@@ -349,7 +298,7 @@ class CommonService {
     designId: string | number,
     objects: string,
     objectItemId: string | number,
-    data: payloadType,
+    data: payloadType
   ) {
     return http
       .put(`/${AppName}/${designId}/${objects}/${objectItemId}/`, data)
@@ -365,7 +314,7 @@ class CommonService {
     AppName: AppName,
     designId: string | number,
     object: string,
-    data?: payloadType,
+    data?: payloadType
   ) {
     const config = {
       data,
@@ -373,14 +322,12 @@ class CommonService {
         'Content-Type': 'multipart/form-data',
       },
     };
-    return http
-      .delete(`/${AppName}/${designId}/${object}/`, config)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.DELETED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
+    return http.delete(`/${AppName}/${designId}/${object}/`, config).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.DELETED) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
   }
 
   private handleError(status: number, err?: Error): void {

@@ -7,8 +7,7 @@ export const updateGeometry = (mesh: THREE.Mesh, selectedShape: Shape) => {
     type: selectedShape.type,
     dimensions: selectedShape.properties.dimensions || {},
     color: selectedShape.properties.color || 0x808080,
-    material:
-      mesh.material instanceof THREE.Material ? mesh.material : undefined,
+    material: mesh.material instanceof THREE.Material ? mesh.material : undefined,
   };
   const newMesh = createObject(geometryData);
   const newGeometry = (newMesh as THREE.Mesh).geometry;
@@ -22,21 +21,9 @@ export const updateGeometry = (mesh: THREE.Mesh, selectedShape: Shape) => {
 };
 
 export const updateMeshTransform = (mesh: THREE.Mesh, selectedShape: Shape) => {
-  mesh.position.set(
-    selectedShape.position.x,
-    selectedShape.position.y,
-    selectedShape.position.z,
-  );
+  mesh.position.set(selectedShape.position.x, selectedShape.position.y, selectedShape.position.z);
 
-  mesh.rotation.set(
-    selectedShape.rotation.x,
-    selectedShape.rotation.y,
-    selectedShape.rotation.z,
-  );
+  mesh.rotation.set(selectedShape.rotation.x, selectedShape.rotation.y, selectedShape.rotation.z);
 
-  mesh.scale.set(
-    selectedShape.scale.x,
-    selectedShape.scale.y,
-    selectedShape.scale.z,
-  );
+  mesh.scale.set(selectedShape.scale.x, selectedShape.scale.y, selectedShape.scale.z);
 };

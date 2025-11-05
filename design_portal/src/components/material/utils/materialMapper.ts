@@ -43,21 +43,15 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
       categorySpecific.board_rough_thickness = m.properties.rough_thickness;
       // CNC variables for board_stock
       categorySpecific.board_cnc_optimize = m.properties.cnc_optimize;
-      categorySpecific.board_cnc_grain_dependent =
-        m.properties.cnc_grain_dependent;
+      categorySpecific.board_cnc_grain_dependent = m.properties.cnc_grain_dependent;
       categorySpecific.board_cnc_drop_width = m.properties.cnc_drop_width;
       categorySpecific.board_cnc_drop_length = m.properties.cnc_drop_length;
-      categorySpecific.board_cnc_feed_rate_percent =
-        m.properties.cnc_feed_rate_percent;
-      categorySpecific.board_cnc_spindle_speed_percent =
-        m.properties.cnc_spindle_speed_percent;
-      categorySpecific.board_cnc_minimize_face_chip =
-        m.properties.cnc_minimize_face_chip;
-      categorySpecific.board_cnc_minimize_back_chip =
-        m.properties.cnc_minimize_back_chip;
+      categorySpecific.board_cnc_feed_rate_percent = m.properties.cnc_feed_rate_percent;
+      categorySpecific.board_cnc_spindle_speed_percent = m.properties.cnc_spindle_speed_percent;
+      categorySpecific.board_cnc_minimize_face_chip = m.properties.cnc_minimize_face_chip;
+      categorySpecific.board_cnc_minimize_back_chip = m.properties.cnc_minimize_back_chip;
       categorySpecific.board_cnc_climb_cut = m.properties.cnc_climb_cut;
-      categorySpecific.board_cnc_maximum_depth_per_pass =
-        m.properties.cnc_maximum_depth_per_pass;
+      categorySpecific.board_cnc_maximum_depth_per_pass = m.properties.cnc_maximum_depth_per_pass;
       // Finishes
       categorySpecific.board_finishes_front = m.finishes?.front;
       categorySpecific.board_finishes_back = m.finishes?.back;
@@ -111,12 +105,9 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
 
     case 'drawer_guide':
       // Drawer Guide specific variables
-      categorySpecific.drawer_guide_side_clearance =
-        m.properties.side_clearance;
-      categorySpecific.drawer_guide_minimum_below_box =
-        m.properties.minimum_below_box;
-      categorySpecific.drawer_guide_minimum_above_box =
-        m.properties.minimum_above_box;
+      categorySpecific.drawer_guide_side_clearance = m.properties.side_clearance;
+      categorySpecific.drawer_guide_minimum_below_box = m.properties.minimum_below_box;
+      categorySpecific.drawer_guide_minimum_above_box = m.properties.minimum_above_box;
       categorySpecific.drawer_guide_type = m.properties.guide_type;
       categorySpecific.drawer_guide_height = m.properties.height;
       categorySpecific.drawer_guide_length = m.properties.length;
@@ -125,12 +116,9 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
         m.properties.screw_center_reference_to_top;
       categorySpecific.drawer_guide_screw_center_to_box_reference =
         m.properties.screw_center_to_box_reference;
-      categorySpecific.drawer_guide_back_notch_length =
-        m.properties.back_notch_length;
-      categorySpecific.drawer_guide_back_notch_height =
-        m.properties.back_notch_height;
-      categorySpecific.drawer_guide_back_notch_offset =
-        m.properties.back_notch_offset;
+      categorySpecific.drawer_guide_back_notch_length = m.properties.back_notch_length;
+      categorySpecific.drawer_guide_back_notch_height = m.properties.back_notch_height;
+      categorySpecific.drawer_guide_back_notch_offset = m.properties.back_notch_offset;
       // Finishes
       categorySpecific.drawer_guide_finishes_g1 = m.finishes?.g1;
       categorySpecific.drawer_guide_finishes_g2 = m.finishes?.g2;
@@ -145,8 +133,7 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
     case 'hinge':
       // Hinge specific variables
       categorySpecific.hinge_type = m.properties.hinge_type;
-      categorySpecific.hinge_horizontal_overlay =
-        m.properties.horizontal_overlay;
+      categorySpecific.hinge_horizontal_overlay = m.properties.horizontal_overlay;
       categorySpecific.hinge_vertical_overlay = m.properties.vertical_overlay;
       categorySpecific.hinge_door_end_to_hinge = m.properties.door_end_to_hinge;
       categorySpecific.hinge_inset = m.properties.inset;
@@ -154,8 +141,7 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
       categorySpecific.hinge_opening_angle = m.properties.opening_angle;
       categorySpecific.hinge_door_edge_to_reference_point =
         m.properties.door_edge_to_reference_point;
-      categorySpecific.hinge_roll_out_clearance =
-        m.properties.roll_out_clearance;
+      categorySpecific.hinge_roll_out_clearance = m.properties.roll_out_clearance;
       // Finishes
       categorySpecific.hinge_finishes_g1 = m.finishes?.g1;
       categorySpecific.hinge_finishes_g2 = m.finishes?.g2;
@@ -183,18 +169,13 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
       // Laminate specific variables
       // CNC variables for laminate
       categorySpecific.laminate_cnc_optimize = m.properties.cnc_optimize;
-      categorySpecific.laminate_cnc_grain_dependent =
-        m.properties.cnc_grain_dependent;
+      categorySpecific.laminate_cnc_grain_dependent = m.properties.cnc_grain_dependent;
       categorySpecific.laminate_cnc_drop_width = m.properties.cnc_drop_width;
       categorySpecific.laminate_cnc_drop_length = m.properties.cnc_drop_length;
-      categorySpecific.laminate_cnc_feed_rate_percent =
-        m.properties.cnc_feed_rate_percent;
-      categorySpecific.laminate_cnc_spindle_speed_percent =
-        m.properties.cnc_spindle_speed_percent;
-      categorySpecific.laminate_cnc_minimize_face_chip =
-        m.properties.cnc_minimize_face_chip;
-      categorySpecific.laminate_cnc_minimize_back_chip =
-        m.properties.cnc_minimize_back_chip;
+      categorySpecific.laminate_cnc_feed_rate_percent = m.properties.cnc_feed_rate_percent;
+      categorySpecific.laminate_cnc_spindle_speed_percent = m.properties.cnc_spindle_speed_percent;
+      categorySpecific.laminate_cnc_minimize_face_chip = m.properties.cnc_minimize_face_chip;
+      categorySpecific.laminate_cnc_minimize_back_chip = m.properties.cnc_minimize_back_chip;
       categorySpecific.laminate_cnc_climb_cut = m.properties.cnc_climb_cut;
       categorySpecific.laminate_cnc_maximum_depth_per_pass =
         m.properties.cnc_maximum_depth_per_pass;
@@ -276,19 +257,14 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
       // Panel Stock specific variables
       // CNC variables for panel_stock
       categorySpecific.panel_stock_cnc_optimize = m.properties.cnc_optimize;
-      categorySpecific.panel_stock_cnc_grain_dependent =
-        m.properties.cnc_grain_dependent;
+      categorySpecific.panel_stock_cnc_grain_dependent = m.properties.cnc_grain_dependent;
       categorySpecific.panel_stock_cnc_drop_width = m.properties.cnc_drop_width;
-      categorySpecific.panel_stock_cnc_drop_length =
-        m.properties.cnc_drop_length;
-      categorySpecific.panel_stock_cnc_feed_rate_percent =
-        m.properties.cnc_feed_rate_percent;
+      categorySpecific.panel_stock_cnc_drop_length = m.properties.cnc_drop_length;
+      categorySpecific.panel_stock_cnc_feed_rate_percent = m.properties.cnc_feed_rate_percent;
       categorySpecific.panel_stock_cnc_spindle_speed_percent =
         m.properties.cnc_spindle_speed_percent;
-      categorySpecific.panel_stock_cnc_minimize_face_chip =
-        m.properties.cnc_minimize_face_chip;
-      categorySpecific.panel_stock_cnc_minimize_back_chip =
-        m.properties.cnc_minimize_back_chip;
+      categorySpecific.panel_stock_cnc_minimize_face_chip = m.properties.cnc_minimize_face_chip;
+      categorySpecific.panel_stock_cnc_minimize_back_chip = m.properties.cnc_minimize_back_chip;
       categorySpecific.panel_stock_cnc_climb_cut = m.properties.cnc_climb_cut;
       categorySpecific.panel_stock_cnc_maximum_depth_per_pass =
         m.properties.cnc_maximum_depth_per_pass;
@@ -352,16 +328,11 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
     case 'sliding_door_roller':
       // Sliding Door Roller specific variables
       categorySpecific.sliding_door_roller_type = m.properties.type;
-      categorySpecific.sliding_door_roller_door_edge_inset =
-        m.properties.door_edge_inset;
-      categorySpecific.sliding_door_roller_door_end_inset =
-        m.properties.door_end_inset;
-      categorySpecific.sliding_door_roller_mount_on_back =
-        m.properties.mount_on_back;
-      categorySpecific.sliding_door_roller_dado_reference =
-        m.properties.dado_reference;
-      categorySpecific.sliding_door_roller_dado_offset =
-        m.properties.dado_offset;
+      categorySpecific.sliding_door_roller_door_edge_inset = m.properties.door_edge_inset;
+      categorySpecific.sliding_door_roller_door_end_inset = m.properties.door_end_inset;
+      categorySpecific.sliding_door_roller_mount_on_back = m.properties.mount_on_back;
+      categorySpecific.sliding_door_roller_dado_reference = m.properties.dado_reference;
+      categorySpecific.sliding_door_roller_dado_offset = m.properties.dado_offset;
       // Finishes
       categorySpecific.sliding_door_roller_finishes_g1 = m.finishes?.g1;
       // Finish Types

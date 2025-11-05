@@ -11,10 +11,7 @@ type Props = {
   refreshWorkOrders: () => void;
 };
 
-const CreateWorkOrder: React.FC<Props> = ({
-  setCreateWorkOrderPopup,
-  refreshWorkOrders,
-}) => {
+const CreateWorkOrder: React.FC<Props> = ({ setCreateWorkOrderPopup, refreshWorkOrders }) => {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [error, setError] = useState('');
   const [selectedDesign, setSelectedDesign] = useState('');
@@ -28,12 +25,7 @@ const CreateWorkOrder: React.FC<Props> = ({
       const response: {
         status: number;
         data: Design[];
-      } = await CommonService.getWithQueryParam(
-        'design',
-        '',
-        'is_custom',
-        'false',
-      );
+      } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
       if (response.status === 200) {
         setDesigns(response.data);
       } else {
@@ -65,7 +57,7 @@ const CreateWorkOrder: React.FC<Props> = ({
     const response: { status: number } = await CommonService.post(
       'mes_portal',
       'work_order',
-      formData,
+      formData
     );
     if (response.status === 201) {
       refreshWorkOrders();
@@ -99,16 +91,14 @@ const CreateWorkOrder: React.FC<Props> = ({
       label: 'Client Name',
       type: 'client name',
       placeholder: 'Enter Client Name',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setClientName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setClientName(e.target.value),
       error: '',
     },
     {
       label: 'Description',
       type: 'description',
       placeholder: 'Enter Description',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setDescription(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setDescription(e.target.value),
       error: '',
     },
     {
@@ -125,11 +115,7 @@ const CreateWorkOrder: React.FC<Props> = ({
   return (
     <div className={styles.createpopupOverlay}>
       <div className={styles.createpopup}>
-        <img
-          src={createicon.src}
-          className={styles.createicon}
-          alt="createicon"
-        />
+        <img src={createicon.src} className={styles.createicon} alt="createicon" />
         <img
           src={close.src}
           className={styles.createclose}
@@ -167,10 +153,7 @@ const CreateWorkOrder: React.FC<Props> = ({
           >
             Cancel
           </button>
-          <button
-            className={styles.createcontinueButton}
-            onClick={handleCreateWorkOrder}
-          >
+          <button className={styles.createcontinueButton} onClick={handleCreateWorkOrder}>
             Create
           </button>
         </div>

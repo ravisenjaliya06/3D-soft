@@ -13,7 +13,7 @@ const isMainObject = (object: Object3D): boolean => {
 };
 
 const findObjects = (
-  objects: Object3D[],
+  objects: Object3D[]
 ): { mainObjects: Object3D[]; childObjects: Object3D[] } => {
   const mainObjects: Object3D[] = [];
   const childObjects: Object3D[] = [];
@@ -64,17 +64,12 @@ const dataSlice = createSlice({
     },
     updateObject: (state, action: PayloadAction<Object3D>) => {
       const updatedObject = action.payload;
-      const index = state.objects.findIndex(
-        (obj) => obj.id === updatedObject.id,
-      );
+      const index = state.objects.findIndex((obj) => obj.id === updatedObject.id);
       if (index !== -1) {
         state.objects[index] = { ...state.objects[index], ...updatedObject };
       }
     },
-    updateObjectId: (
-      state,
-      action: PayloadAction<{ oldId: string; newId: string }>,
-    ) => {
+    updateObjectId: (state, action: PayloadAction<{ oldId: string; newId: string }>) => {
       const { oldId, newId } = action.payload;
       const index = state.objects.findIndex((obj) => obj.id === oldId);
       if (index !== -1) {
@@ -83,10 +78,7 @@ const dataSlice = createSlice({
         state.objects.push(updatedObject);
       }
     },
-    updateObjectPosition: (
-      state,
-      action: PayloadAction<{ id: string; position: Position }>,
-    ) => {
+    updateObjectPosition: (state, action: PayloadAction<{ id: string; position: Position }>) => {
       const { id, position } = action.payload;
       const index = state.objects.find((obj) => obj.id === id);
       if (index) {
@@ -141,10 +133,7 @@ const dataSlice = createSlice({
   },
 });
 
-const findAllChildrenIds = (
-  parentId: string,
-  allObjects: Object3D[],
-): string[] => {
+const findAllChildrenIds = (parentId: string, allObjects: Object3D[]): string[] => {
   const directChildren = allObjects.filter((obj) => obj.parent === parentId);
   let childrenIds = directChildren.map((child) => child.id);
   directChildren.forEach((child) => {
@@ -176,11 +165,9 @@ export const removeObjectWithHistory =
             data: {
               object: objectToRemove,
               mesh,
-              childObjects: state.objects.filter((obj) =>
-                childrenIds.includes(obj.id),
-              ),
+              childObjects: state.objects.filter((obj) => childrenIds.includes(obj.id)),
             },
-          }),
+          })
         );
       }
     } else {
@@ -196,19 +183,9 @@ export const addObjectsThunk =
     const scene = getState().scene.scene;
     try {
       dispatch(setCreationCancelHint(true));
-      const result = await Item.moveObject(
-        name,
-        catalog,
-        scene,
-        dispatch,
-        data,
-      );
+      const result = await Item.moveObject(name, catalog, scene, dispatch, data);
       dispatch(setCreationCancelHint(false));
-      if (
-        result?.threeDObject &&
-        result?.createResult &&
-        'objectsList' in result.createResult
-      ) {
+      if (result?.threeDObject && result?.createResult && 'objectsList' in result.createResult) {
         const objectsList = result.createResult.objectsList;
         dispatch(addElement(result.threeDObject));
 
@@ -223,7 +200,7 @@ export const addObjectsThunk =
                 mesh: result.threeDObject,
                 childObjects: childObjects,
               },
-            }),
+            })
           );
         }
       } else {
@@ -256,7 +233,7 @@ export const copyObjectsThunk = createAsyncThunk(
     }
 
     throw new Error('Failed to copy objects');
-  },
+  }
 );
 
 export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
@@ -281,8 +258,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
 
   mainObjects.forEach((object) => {
     const mesh = scene.children.find(
-      (child) =>
-        child.userData.objectId === object.id && (child as unknown as Object3D),
+      (child) => child.userData.objectId === object.id && (child as unknown as Object3D)
     ) as THREE.Mesh | undefined;
 
     if (mesh) {
@@ -309,7 +285,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
           meshes: historyData.meshes,
           childObjects: historyData.childObjects,
         },
-      }),
+      })
     );
 
     historyData.meshes.forEach((mesh) => {

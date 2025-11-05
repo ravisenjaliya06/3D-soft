@@ -17,15 +17,13 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const [isnavopen, setIsnavopen] = useState(false);
   const [isBasicOpen, setIsBasicOpen] = useState(true);
 
-  const selectedShapeId = useAppSelector(
-    (state) => state.customDesign.selectedShapeId,
-  );
+  const selectedShapeId = useAppSelector((state) => state.customDesign.selectedShapeId);
   const shapes = useAppSelector((state) => state.customDesign.shapes);
   const selectedObject = shapes.find((shape) => shape.id === selectedShapeId);
 
   const updateObjectInDatabase = async (
     objectData: ShapeData,
-    updatedData: UpdatedData,
+    updatedData: UpdatedData
   ): Promise<void> => {
     try {
       const designId = getDesignId();
@@ -117,10 +115,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
     setIsBasicOpen(!isBasicOpen);
   };
 
-  const handleDimensionChange = (
-    dimension: 'width' | 'height' | 'depth',
-    value: number,
-  ) => {
+  const handleDimensionChange = (dimension: 'width' | 'height' | 'depth', value: number) => {
     if (!selectedObject) return;
 
     const dimensions = selectedObject.properties.dimensions || {
@@ -145,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       updateShape({
         id: selectedObject.id,
         updates,
-      }),
+      })
     );
 
     updateObjectInDatabase(selectedObject, {
@@ -168,7 +163,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
             },
           },
         },
-      }),
+      })
     );
   };
 
@@ -188,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       updateShape({
         id: selectedObject.id,
         updates,
-      }),
+      })
     );
 
     updateObjectInDatabase(selectedObject, {
@@ -213,7 +208,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
             },
           },
         },
-      }),
+      })
     );
   };
 
@@ -230,7 +225,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       updateShape({
         id: selectedObject.id,
         updates,
-      }),
+      })
     );
 
     updateObjectInDatabase(selectedObject, {
@@ -268,16 +263,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
         />
       </div>
       <div className={style.switch_div}>
-        <button
-          onClick={handelsetting}
-          className={issettingopen ? style.btnactive : style.btn}
-        >
+        <button onClick={handelsetting} className={issettingopen ? style.btnactive : style.btn}>
           Setting
         </button>
-        <button
-          onClick={handelnavigation}
-          className={isnavopen ? style.btnactive : style.btn}
-        >
+        <button onClick={handelnavigation} className={isnavopen ? style.btnactive : style.btn}>
           Navigation
         </button>
       </div>
@@ -305,10 +294,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                   type="number"
                   value={selectedObject.properties.dimensions?.width ?? 0}
                   onChange={(e) =>
-                    handleDimensionChange(
-                      'width',
-                      Number.parseFloat(e.target.value),
-                    )
+                    handleDimensionChange('width', Number.parseFloat(e.target.value))
                   }
                   min={1}
                 />
@@ -319,10 +305,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                   type="number"
                   value={selectedObject.properties.dimensions?.height ?? 0}
                   onChange={(e) =>
-                    handleDimensionChange(
-                      'height',
-                      Number.parseFloat(e.target.value),
-                    )
+                    handleDimensionChange('height', Number.parseFloat(e.target.value))
                   }
                   min={1}
                 />
@@ -333,10 +316,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                   type="number"
                   value={selectedObject.properties.dimensions?.depth ?? 0}
                   onChange={(e) =>
-                    handleDimensionChange(
-                      'depth',
-                      Number.parseFloat(e.target.value),
-                    )
+                    handleDimensionChange('depth', Number.parseFloat(e.target.value))
                   }
                   min={1}
                 />
@@ -355,9 +335,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.scale?.x ?? 1}
-                  onChange={(e) =>
-                    handleScaleChange('x', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleScaleChange('x', Number.parseFloat(e.target.value))}
                   min={0.1}
                   step={0.1}
                 />
@@ -367,9 +345,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.scale?.y ?? 1}
-                  onChange={(e) =>
-                    handleScaleChange('y', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleScaleChange('y', Number.parseFloat(e.target.value))}
                   min={0.1}
                   step={0.1}
                 />
@@ -379,9 +355,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.scale?.z ?? 1}
-                  onChange={(e) =>
-                    handleScaleChange('z', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleScaleChange('z', Number.parseFloat(e.target.value))}
                   min={0.1}
                   step={0.1}
                 />
@@ -400,9 +374,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.rotation?.x ?? 0}
-                  onChange={(e) =>
-                    handleRotationChange('x', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleRotationChange('x', Number.parseFloat(e.target.value))}
                   min={1}
                 />
               </div>
@@ -411,9 +383,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.rotation?.y ?? 0}
-                  onChange={(e) =>
-                    handleRotationChange('y', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleRotationChange('y', Number.parseFloat(e.target.value))}
                   min={1}
                 />
               </div>
@@ -422,9 +392,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <input
                   type="number"
                   value={selectedObject.rotation?.z ?? 0}
-                  onChange={(e) =>
-                    handleRotationChange('z', Number.parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleRotationChange('z', Number.parseFloat(e.target.value))}
                   min={1}
                 />
               </div>

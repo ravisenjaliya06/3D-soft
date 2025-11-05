@@ -45,15 +45,13 @@ class CADImporter {
 
   private async loadSTL(
     file: File,
-    onProgress?: (event: ProgressEvent) => void,
+    onProgress?: (event: ProgressEvent) => void
   ): Promise<CADObjectData> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
-          const geometry = this.loaders.stl.parse(
-            event.target?.result as ArrayBuffer,
-          );
+          const geometry = this.loaders.stl.parse(event.target?.result as ArrayBuffer);
           const material = new THREE.MeshStandardMaterial({
             color: 0x808080,
             metalness: 0.5,
@@ -92,7 +90,7 @@ class CADImporter {
 
   private async loadOBJ(
     file: File,
-    onProgress?: (event: ProgressEvent) => void,
+    onProgress?: (event: ProgressEvent) => void
   ): Promise<CADObjectData> {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
@@ -113,8 +111,7 @@ class CADImporter {
               });
 
               if (geometries.length > 0) {
-                const mergedGeometry =
-                  BufferGeometryUtils.mergeGeometries(geometries);
+                const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
                 const material = new THREE.MeshStandardMaterial({
                   color: 0x808080,
                   metalness: 0.5,
@@ -129,7 +126,7 @@ class CADImporter {
                     color: 0x808080,
                     metalness: 0.5,
                     roughness: 0.5,
-                  }),
+                  })
                 );
               }
             }
@@ -159,14 +156,14 @@ class CADImporter {
         (error) => {
           URL.revokeObjectURL(url);
           reject(error);
-        },
+        }
       );
     });
   }
 
   private async loadGLTF(
     file: File,
-    onProgress?: (event: ProgressEvent) => void,
+    onProgress?: (event: ProgressEvent) => void
   ): Promise<CADObjectData> {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
@@ -198,14 +195,12 @@ class CADImporter {
         (error) => {
           URL.revokeObjectURL(url);
           reject(error);
-        },
+        }
       );
     });
   }
 
-  public async importCADFile(
-    options: CADImportOptions,
-  ): Promise<CADObjectData> {
+  public async importCADFile(options: CADImportOptions): Promise<CADObjectData> {
     const { file, onProgress, onError } = options;
     const extension = this.getFileExtension(file.name);
 
@@ -229,11 +224,11 @@ class CADImporter {
           break;
         case 'dwg':
           throw new Error(
-            'DWG files are not directly supported. Please convert your DWG file to STL, OBJ, or GLTF format before importing.',
+            'DWG files are not directly supported. Please convert your DWG file to STL, OBJ, or GLTF format before importing.'
           );
         default:
           throw new Error(
-            `Unsupported file format: ${extension}. Supported formats are STL, OBJ, GLTF/GLB, and SKP.`,
+            `Unsupported file format: ${extension}. Supported formats are STL, OBJ, GLTF/GLB, and SKP.`
           );
       }
 
@@ -281,7 +276,7 @@ class CADImporter {
 
   private async convertSKPtoGLTF(): Promise<File> {
     throw new Error(
-      'SKP to GLTF conversion is not implemented yet. Please convert your SketchUp file to GLTF format before importing.',
+      'SKP to GLTF conversion is not implemented yet. Please convert your SketchUp file to GLTF format before importing.'
     );
   }
 }

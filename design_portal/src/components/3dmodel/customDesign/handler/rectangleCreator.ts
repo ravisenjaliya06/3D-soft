@@ -14,7 +14,7 @@ export enum RectangleCreationState {
 export function createRectangleCreator(
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
-  renderer: THREE.WebGLRenderer,
+  renderer: THREE.WebGLRenderer
 ) {
   // State variables
   let state: RectangleCreationState = RectangleCreationState.INACTIVE;
@@ -39,10 +39,7 @@ export function createRectangleCreator(
     // Find intersection with plane
     const intersectionPoint = new THREE.Vector3();
     if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
-      if (
-        state === RectangleCreationState.PLACING_SECOND_CORNER &&
-        firstCorner
-      ) {
+      if (state === RectangleCreationState.PLACING_SECOND_CORNER && firstCorner) {
         // Update preview rectangle
         updatePreviewRectangle(firstCorner, intersectionPoint);
       }
@@ -67,10 +64,7 @@ export function createRectangleCreator(
         firstCorner = intersectionPoint.clone();
         createPreviewRectangle(firstCorner, firstCorner.clone());
         state = RectangleCreationState.PLACING_SECOND_CORNER;
-      } else if (
-        state === RectangleCreationState.PLACING_SECOND_CORNER &&
-        firstCorner
-      ) {
+      } else if (state === RectangleCreationState.PLACING_SECOND_CORNER && firstCorner) {
         finalizeRectangle(firstCorner, intersectionPoint);
         state = RectangleCreationState.INACTIVE;
         deactivate();
@@ -99,10 +93,7 @@ export function createRectangleCreator(
   };
 
   // Helper functions
-  const createPreviewRectangle = (
-    corner1: THREE.Vector3,
-    corner2: THREE.Vector3,
-  ) => {
+  const createPreviewRectangle = (corner1: THREE.Vector3, corner2: THREE.Vector3) => {
     if (previewRectangle) {
       scene.remove(previewRectangle);
       if (previewRectangle.geometry) previewRectangle.geometry.dispose();
@@ -139,24 +130,18 @@ export function createRectangleCreator(
     previewRectangle.position.set(
       (corner1.x + corner2.x) / 2,
       0.01, // Slight Y offset
-      (corner1.z + corner2.z) / 2,
+      (corner1.z + corner2.z) / 2
     );
     previewRectangle.rotation.x = -Math.PI / 2; // Align with XZ plane
 
     scene.add(previewRectangle);
   };
 
-  const updatePreviewRectangle = (
-    corner1: THREE.Vector3,
-    corner2: THREE.Vector3,
-  ) => {
+  const updatePreviewRectangle = (corner1: THREE.Vector3, corner2: THREE.Vector3) => {
     createPreviewRectangle(corner1, corner2);
   };
 
-  const finalizeRectangle = (
-    corner1: THREE.Vector3,
-    corner2: THREE.Vector3,
-  ) => {
+  const finalizeRectangle = (corner1: THREE.Vector3, corner2: THREE.Vector3) => {
     if (!corner1 || !corner2) {
       cancelRectangle();
       return;
@@ -229,7 +214,7 @@ export function createRectangleCreator(
       centerPosition,
       mesh.position,
       mesh.rotation,
-      mesh.scale,
+      mesh.scale
     );
 
     // Create rectangle data for Redux store
@@ -273,7 +258,7 @@ export function createRectangleCreator(
     center: THREE.Vector3,
     position: THREE.Vector3,
     rotation: THREE.Euler,
-    scale: THREE.Vector3,
+    scale: THREE.Vector3
   ) {
     const designId = getDesignId();
     if (!designId) {
@@ -320,7 +305,7 @@ export function createRectangleCreator(
       'design',
       designId,
       'object',
-      payload,
+      payload
     );
     if (response.status !== 200) {
       console.error('Failed to save rectangle to database');

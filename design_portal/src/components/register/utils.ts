@@ -15,13 +15,10 @@ export const handleSignIn = async (
   setUsernameError: (message: string | null) => void,
   setPhoneError: (message: string | null) => void,
   setPasswordError: (message: string | null) => void,
-  setConfirmPasswordError: (message: string | null) => void,
+  setConfirmPasswordError: (message: string | null) => void
 ) => {
   setIsLoading(true);
-  const { formData, errors } = handleFormData<RegisterForm>(
-    registerPayload,
-    setError,
-  );
+  const { formData, errors } = handleFormData<RegisterForm>(registerPayload, setError);
   setNameError(errors.name);
   setEmailError(errors.email);
   setUsernameError(errors.username);
