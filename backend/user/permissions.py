@@ -57,7 +57,7 @@ class AccountManager(IsAuthenticated):
         if request.method in [GET]:
             return permissions.filter(codename__in=allow_get_permission).exists()
 
-        if request.method in [POST, PUT, DELETE]:   
+        if request.method in [POST, PUT, DELETE]:
             return permissions.filter(codename__in=allow_permission).exists()
 
         return False
