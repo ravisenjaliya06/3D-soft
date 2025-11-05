@@ -111,7 +111,7 @@ class APIBaseTestCase(APITestCase):
                 codename=perm["codename"], name=perm["name"], content_type=content_type
             )
         role_permissions = {
-            "Accounts Manager": ["view_user", "manage_user"],
+            "Account Manager": ["view_user", "manage_user"],
             "Catalog Manager": ["view_catalog", "manage_catalog"],
             "Designer": ["view_design", "manage_design"],
             "Mes Editor": ["view_mes", "manage_mes"],
