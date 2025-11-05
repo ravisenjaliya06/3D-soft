@@ -1,5 +1,5 @@
-import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
+import { assets } from '@/svgPaths';
 import type React from 'react';
 import styles from '../material.module.css';
 

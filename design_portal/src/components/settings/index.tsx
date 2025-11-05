@@ -1,8 +1,8 @@
-import { assets } from '@/svgPaths';
 import Header from '@/components/header/header';
 import styles from '@/components/settings/setting.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import axios from 'axios';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { getTokenDetail } from '../helper/helper';

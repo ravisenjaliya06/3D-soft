@@ -1,8 +1,8 @@
-import { assets } from '@/svgPaths';
 import styles from '@/components/dashboard/dashboard.module.css';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
 

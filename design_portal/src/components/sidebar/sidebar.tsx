@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/sidebar/sidebar.module.css';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';

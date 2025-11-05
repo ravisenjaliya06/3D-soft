@@ -1,5 +1,5 @@
-import { assets } from '@/svgPaths';
 import styles from '@/components/inputfields/inputField.module.css';
+import { assets } from '@/svgPaths';
 import { IconButton, InputAdornment, TextField } from '@mui/material';
 
 const InputField = ({

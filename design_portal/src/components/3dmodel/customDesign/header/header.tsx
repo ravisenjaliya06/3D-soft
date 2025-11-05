@@ -1,4 +1,3 @@
-import { assets } from '@/svgPaths';
 import ImportImage from '@/components/3dmodel/customDesign/components/ImportImage';
 import {
   redoCustomAction,
@@ -8,6 +7,7 @@ import { removeAllShapes } from '@/components/3dmodel/store/customDesignSlice';
 import Loading_style from '@/components/loading.module.css';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';

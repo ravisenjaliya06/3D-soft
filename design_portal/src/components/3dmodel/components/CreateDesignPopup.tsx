@@ -1,6 +1,6 @@
-import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import styles from './CreateDesignPopup.module.css';

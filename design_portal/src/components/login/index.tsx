@@ -1,9 +1,9 @@
-import { assets } from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/login/login.module.css';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import { LoginForm } from '@/types/formTypes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';

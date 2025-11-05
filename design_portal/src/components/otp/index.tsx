@@ -1,6 +1,6 @@
-import { assets } from '@/svgPaths';
 import styles from '@/components/otp/otp.module.css';
 import { handleResendOtp, handleVerify } from '@/components/otp/utils';
+import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 

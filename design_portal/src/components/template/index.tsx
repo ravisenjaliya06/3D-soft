@@ -1,8 +1,8 @@
-import { assets } from '@/svgPaths';
 import Header from '@/components/header/header';
 import Loading_style from '@/components/loading.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import styles from '@/components/template/template.module.css';
+import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 

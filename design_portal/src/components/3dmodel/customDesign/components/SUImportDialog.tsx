@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import { MoveHandler as MoveHandlerClass } from '@/components/3dmodel/handler/moveHandler';
 import { MoveHandler } from '@/components/3dmodel/handler/moveHandlerInterface';
 import { cadImporter } from '@/components/3dmodel/utils/cadImporter';
+import { assets } from '@/svgPaths';
 import React, { useRef, useState } from 'react';
 import * as THREE from 'three';
 import { store } from '../../store';

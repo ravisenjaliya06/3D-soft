@@ -1,5 +1,5 @@
-import { assets } from '@/svgPaths';
 import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
+import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';

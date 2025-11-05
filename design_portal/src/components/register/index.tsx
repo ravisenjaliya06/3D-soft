@@ -1,8 +1,8 @@
-import {assets} from '@/svgPaths';
 import InputField from '@/components/inputfields/InputField.jsx';
 import styles from '@/components/register/register.module.css';
 import { handleSignIn } from '@/components/register/utils';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import { RegisterForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, useState } from 'react';

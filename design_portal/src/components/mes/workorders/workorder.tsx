@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
 import { WorkOrderData } from '../interface';

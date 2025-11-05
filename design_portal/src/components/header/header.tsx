@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import styles from '@/components/header/header.module.css';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';

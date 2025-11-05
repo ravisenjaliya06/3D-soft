@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/mes/workorders/workorder.module.css';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { useEffect, useRef, useState } from 'react';
 import { WorkOrderData } from '../interface';
 import WorkOrderDetails from './workorder';
@@ -181,7 +181,11 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
             style={{ cursor: 'pointer' }}
           >
             <p>Load More</p>
-            <img src={assets.progress_upload} alt="process upload" className={styles.process_upload} />
+            <img
+              src={assets.progress_upload}
+              alt="process upload"
+              className={styles.process_upload}
+            />
           </div>
         </div>
       )}

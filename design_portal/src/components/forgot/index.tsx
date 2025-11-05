@@ -1,9 +1,9 @@
-import { assets } from '@/svgPaths';
 import styles from '@/components/forgot/forgot.module.css';
 import { handleForgotAPI } from '@/components/forgot/utils';
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import { ForgotForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, FormEvent, useState } from 'react';
@@ -69,7 +69,11 @@ const Forgot = () => {
         {/* Right Section */}
         <div className={styles.right_side}>
           <div className={styles.back_button}>
-            <img src={assets.back_login_icon} onClick={() => router.push(REDIRECT.LOGIN)} alt="Logo" />
+            <img
+              src={assets.back_login_icon}
+              onClick={() => router.push(REDIRECT.LOGIN)}
+              alt="Logo"
+            />
             Back to Login
           </div>
           <h2>Forgot your Password?</h2>

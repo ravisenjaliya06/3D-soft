@@ -1,5 +1,5 @@
-import { assets } from '@/svgPaths';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import React, { useEffect, useState } from 'react';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';

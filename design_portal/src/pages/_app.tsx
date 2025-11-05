@@ -1,5 +1,5 @@
-import { assets } from '@/svgPaths';
 import { store } from '@/components/3dmodel/store';
+import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
 import localFont from 'next/font/local';
 import { useRouter } from 'next/router';

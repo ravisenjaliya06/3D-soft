@@ -1,8 +1,8 @@
-import { assets } from '@/svgPaths';
 import CreateDesignPopup from '@/components/3dmodel/components/CreateDesignPopup';
 import Loading_style from '@/components/loading.module.css';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';

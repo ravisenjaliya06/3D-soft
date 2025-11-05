@@ -1,7 +1,7 @@
-import { assets } from '@/svgPaths';
 import { useAppDispatch, useAppSelector } from '@/components/3dmodel/hooks';
 import { updateShape } from '@/components/3dmodel/store/customDesignSlice';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 
 import React, { useEffect, useState } from 'react';
 import { getDesignId } from '../handler/objectCreator';
