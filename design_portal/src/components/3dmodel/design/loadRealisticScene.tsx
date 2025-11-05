@@ -26,7 +26,7 @@ export interface RealisticMaterialOptions {
  */
 export async function createRealisticMaterial(
   scene: THREE.Scene,
-  options: RealisticMaterialOptions = {},
+  options: RealisticMaterialOptions = {}
 ): Promise<THREE.MeshStandardMaterial> {
   console.log(scene, 'scene');
   const { textures = {}, repeatX = 1, repeatY = 1 } = options;

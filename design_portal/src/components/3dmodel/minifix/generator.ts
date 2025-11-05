@@ -5,7 +5,7 @@ import type { MinifixConnection, MinifixHole, PlankData } from './types';
 export function generateMinifixSystem(
   cupboardId: string,
   planks: PlankData[],
-  spacing?: number,
+  spacing?: number
 ): {
   connections: MinifixConnection[];
   planksWithHoles: (PlankData & { minifixHoles: MinifixHole[] })[];
@@ -19,11 +19,7 @@ export function generateMinifixSystem(
     };
   }
 
-  const minifixConnections = calculateMinifixPositions(
-    connections,
-    cupboardId,
-    spacing,
-  );
+  const minifixConnections = calculateMinifixPositions(connections, cupboardId, spacing);
 
   const planksWithHoles = generatePlankHoles(planks, minifixConnections);
 
@@ -35,7 +31,7 @@ export function generateMinifixSystem(
 
 function generatePlankHoles(
   planks: PlankData[],
-  connections: MinifixConnection[],
+  connections: MinifixConnection[]
 ): (PlankData & { minifixHoles: MinifixHole[] })[] {
   return planks.map((plank) => {
     const holes: MinifixHole[] = [];

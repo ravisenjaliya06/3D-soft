@@ -36,9 +36,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFileDropdownOpen, setIsFileDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [importDialogType, setImportDialogType] = useState<
-    'none' | 'cad' | 'su' | 'image'
-  >('none');
+  const [importDialogType, setImportDialogType] = useState<'none' | 'cad' | 'su' | 'image'>('none');
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
   const fileDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -52,9 +50,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     return state.customDesignHistory;
   });
 
-  const customShapes = useSelector(
-    (state: RootState) => state.customDesign.shapes,
-  );
+  const customShapes = useSelector((state: RootState) => state.customDesign.shapes);
 
   const handleClear = async () => {
     if (!customdesignId) {
@@ -69,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
     if (
       !window.confirm(
-        'Are you sure you want to clear all catalogs and reset the scene? This cannot be undone.',
+        'Are you sure you want to clear all catalogs and reset the scene? This cannot be undone.'
       )
     ) {
       return;
@@ -79,12 +75,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     setErrorMessage('');
 
     try {
-      const response: { status: number } =
-        await commonService.deleteWithQueryParam(
-          'design',
-          `${customdesignId}`,
-          `object/?is_custom=True`,
-        );
+      const response: { status: number } = await commonService.deleteWithQueryParam(
+        'design',
+        `${customdesignId}`,
+        `object/?is_custom=True`
+      );
 
       if (response.status === 200 || response.status === 204) {
         if (design3D) {
@@ -116,8 +111,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }
   };
 
-  const pathName =
-    typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+  const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
   const customdesignId = pathName.length > 2 ? pathName[4] : '';
 
   const designId = pathName.length > 2 ? pathName[2] : '';
@@ -290,8 +284,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const size = boundingBox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.z);
     const fov = 45;
-    const cameraDistance =
-      (maxDim / (2 * Math.tan((fov * Math.PI) / 360))) * 0.8;
+    const cameraDistance = (maxDim / (2 * Math.tan((fov * Math.PI) / 360))) * 0.8;
     const camera = design3D.camera;
     const highestPoint = boundingBox.max.y;
 
@@ -299,15 +292,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const cameraPosition = new THREE.Vector3(
       center.x + Math.cos(angle) * cameraDistance,
       highestPoint * 0.7,
-      center.z + Math.sin(angle) * cameraDistance,
+      center.z + Math.sin(angle) * cameraDistance
     );
 
     const originalPosition = camera.position.clone();
     const originalTarget = design3D.controls.target.clone();
     const originalFov =
-      design3D.camera instanceof THREE.PerspectiveCamera
-        ? design3D.camera.fov
-        : 75;
+      design3D.camera instanceof THREE.PerspectiveCamera ? design3D.camera.fov : 75;
 
     camera.position.copy(cameraPosition);
     if (camera instanceof THREE.PerspectiveCamera) {
@@ -336,7 +327,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           }
         },
         'image/png',
-        1.0,
+        1.0
       );
     });
 
@@ -348,7 +339,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const response: { status: number } = await commonService.putWithFormData(
       'design',
       customdesignId,
-      formData,
+      formData
     );
 
     camera.position.copy(originalPosition);
@@ -390,18 +381,14 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       option: 'undo',
       name: 'Undo',
       icon: undo_svg,
-      disabled:
-        !historyState || !historyState.past || historyState.past.length === 0,
+      disabled: !historyState || !historyState.past || historyState.past.length === 0,
       onClick: handleUndo,
     },
     {
       option: 'redo',
       name: 'Redo',
       icon: redo_svg,
-      disabled:
-        !historyState ||
-        !historyState.future ||
-        historyState.future.length === 0,
+      disabled: !historyState || !historyState.future || historyState.future.length === 0,
       onClick: handleRedo,
     },
     {
@@ -430,9 +417,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           {headerTools.map(({ option, name, icon, disabled, onClick }) => (
             <div
               key={option}
-              className={
-                disabled ? styles.disabledHeaderIcon : styles.headerIcon
-              }
+              className={disabled ? styles.disabledHeaderIcon : styles.headerIcon}
               onClick={disabled ? undefined : onClick}
               title={name}
               data-option={option}
@@ -500,22 +485,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           <div className={`${styles.fileDropdownItem} ${styles.hasSubmenu}`}>
             Import File
             <div className={styles.fileDropdownSubmenu}>
-              <div
-                className={styles.fileDropdownSubItem}
-                onClick={handleCADImportClick}
-              >
+              <div className={styles.fileDropdownSubItem} onClick={handleCADImportClick}>
                 CAD file
               </div>
-              <div
-                className={styles.fileDropdownSubItem}
-                onClick={handleSUImportClick}
-              >
+              <div className={styles.fileDropdownSubItem} onClick={handleSUImportClick}>
                 SU file
               </div>
-              <div
-                className={styles.fileDropdownSubItem}
-                onClick={handleImageImportClick}
-              >
+              <div className={styles.fileDropdownSubItem} onClick={handleImageImportClick}>
                 Image file
               </div>
             </div>

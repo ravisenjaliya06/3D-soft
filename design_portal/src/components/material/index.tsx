@@ -72,21 +72,14 @@ const Material: React.FC = () => {
     fetchCompanyMaterials(itemId);
   };
 
-  const handleContextMenu = (
-    e: React.MouseEvent,
-    categoryId: string,
-    name: string,
-  ) => {
+  const handleContextMenu = (e: React.MouseEvent, categoryId: string, name: string) => {
     e.preventDefault();
     setExpandedCategory(categoryId);
     setSelectedType(name);
     setContextMenu({ x: e.clientX, y: e.clientY, categoryId });
   };
 
-  const handleMaterialContextMenu = (
-    e: React.MouseEvent,
-    companyId: string,
-  ) => {
+  const handleMaterialContextMenu = (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMaterialMenu({
@@ -121,18 +114,14 @@ const Material: React.FC = () => {
     let filteredMaterials = companyMaterials;
 
     if (expandedCategory && !selectedSubItem) {
-      const categoryName = materialCategories.find(
-        (c) => c.id === expandedCategory,
-      )?.name;
-      filteredMaterials = filteredMaterials.filter(
-        (m) => m.material_type === categoryName,
-      );
+      const categoryName = materialCategories.find((c) => c.id === expandedCategory)?.name;
+      filteredMaterials = filteredMaterials.filter((m) => m.material_type === categoryName);
     }
 
     const searchedMaterials = filteredMaterials.filter((row) =>
       Object.values(row).some((value) =>
-        value?.toString().toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
+        value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
 
     return [...searchedMaterials].sort((a, b) => {
@@ -177,10 +166,7 @@ const Material: React.FC = () => {
           />
 
           <div className={styles.materialrightside}>
-            <MaterialToolbar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
+            <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
             <MaterialTable
               materials={getFilteredMaterials()}

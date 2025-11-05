@@ -100,7 +100,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         DesignProps,
         DesignProps.scene,
         data,
-        DesignProps.selectedObject,
+        DesignProps.selectedObject
       );
       updatedScene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -124,7 +124,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         DesignProps,
         DesignProps.scene,
         null,
-        DesignProps.selectedObject,
+        DesignProps.selectedObject
       );
       DesignProps.setScene(updatedScene);
     }
@@ -138,10 +138,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const handleAddObject = (objectConfig: {
-    type: string;
-    dimensions: Record<string, number>;
-  }) => {
+  const handleAddObject = (objectConfig: { type: string; dimensions: Record<string, number> }) => {
     if (threeDView) {
       addObjectToScene(
         threeDView.scene,
@@ -150,7 +147,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           ...objectConfig,
           color: 0xd3d3d3,
         },
-        moveHandler,
+        moveHandler
       );
       threeDView.renderer.render(threeDView.scene, threeDView.camera);
     }
@@ -339,20 +336,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             />
           </div>
           <div className={styles.partLineGroup}>
-            <img
-              src={part_line.src}
-              className={styles.partLine}
-              alt="Toolbar Logo"
-            />
+            <img src={part_line.src} className={styles.partLine} alt="Toolbar Logo" />
           </div>
           <div className={styles.icon_style}>
             {options.map(({ option, icon }) => (
               <div
                 key={option}
                 onClick={() => handleOptionClick(option)}
-                className={
-                  activeOption === option ? styles.icon_active : styles.icon
-                }
+                className={activeOption === option ? styles.icon_active : styles.icon}
               >
                 <img src={icon.src} alt={`${option} Icon`} />
               </div>
@@ -365,48 +356,44 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             <div className={styles.activegroup}>
               {activeOption === 'Home' && (
                 <div className={styles.activegroup_tools_group}>
-                  {homeTools.map(
-                    ({ option, icon, onClick, disabled, isActive }) => (
-                      <div
-                        key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
-                        style={{
-                          cursor: disabled ? 'not-allowed' : 'pointer',
-                          opacity: disabled ? 0.3 : 1,
-                        }}
-                        onClick={onClick}
-                        title={disabled ? 'Coming Soon' : option}
-                      >
-                        <img src={icon.src} alt={`${option} Icon`} />
-                        <span>{option}</span>
-                      </div>
-                    ),
-                  )}
+                  {homeTools.map(({ option, icon, onClick, disabled, isActive }) => (
+                    <div
+                      key={option}
+                      className={`${styles.activegroup_tools} ${
+                        isActive ? styles.activegroup_tools_selected : ''
+                      }`}
+                      style={{
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        opacity: disabled ? 0.3 : 1,
+                      }}
+                      onClick={onClick}
+                      title={disabled ? 'Coming Soon' : option}
+                    >
+                      <img src={icon.src} alt={`${option} Icon`} />
+                      <span>{option}</span>
+                    </div>
+                  ))}
                 </div>
               )}
               {activeOption === 'View' && (
                 <div className={styles.activegroup_tools_group}>
-                  {viewTools.map(
-                    ({ option, icon, onClick, disabled, isActive }) => (
-                      <div
-                        key={option}
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
-                        style={{
-                          cursor: disabled ? 'not-allowed' : 'pointer',
-                          opacity: disabled ? 0.3 : 1,
-                        }}
-                        onClick={onClick}
-                        title={disabled ? 'Coming Soon' : option}
-                      >
-                        <img src={icon.src} alt={`${option} Icon`} />
-                        <span>{option}</span>
-                      </div>
-                    ),
-                  )}
+                  {viewTools.map(({ option, icon, onClick, disabled, isActive }) => (
+                    <div
+                      key={option}
+                      className={`${styles.activegroup_tools} ${
+                        isActive ? styles.activegroup_tools_selected : ''
+                      }`}
+                      style={{
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        opacity: disabled ? 0.3 : 1,
+                      }}
+                      onClick={onClick}
+                      title={disabled ? 'Coming Soon' : option}
+                    >
+                      <img src={icon.src} alt={`${option} Icon`} />
+                      <span>{option}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -417,40 +404,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           className={isToolOpen ? styles.toggle : styles.toggle_open}
           onClick={handleToolToggleClick}
         >
-          <img
-            src={isToolOpen ? tool_toggle.src : tool_toggle_open.src}
-            alt="toggle"
-          />
+          <img src={isToolOpen ? tool_toggle.src : tool_toggle_open.src} alt="toggle" />
         </div>
       </aside>
 
       {/* Catalog Menu */}
       {catalogMenu && (
-        <div
-          className={`${styles.catalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}
-        >
+        <div className={`${styles.catalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}>
           <div className={styles.firstpart}>
             <h3>Furniture</h3>
             <div className={styles.menuFunctionality}>
-              <img
-                src={close.src}
-                onClick={() => setcatalogMenu(false)}
-                alt="close"
-              />
+              <img src={close.src} onClick={() => setcatalogMenu(false)} alt="close" />
             </div>
           </div>
 
           <div className={styles.secondpart}>
             {catalogItems.map(({ id, image, name }) => (
-              <div
-                key={id}
-                className={styles.catalogbox}
-                onClick={() => handleAddObject(name)}
-              >
-                <img
-                  src={`${process.env.NEXT_PUBLIC_PUBLIC_API}` + `/${image}`}
-                  alt={name}
-                />
+              <div key={id} className={styles.catalogbox} onClick={() => handleAddObject(name)}>
+                <img src={`${process.env.NEXT_PUBLIC_PUBLIC_API}` + `/${image}`} alt={name} />
                 <p>{name}</p>
               </div>
             ))}
@@ -486,11 +457,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         >
           <div className={styles.materialfirstpart}>
             <h3>Texture</h3>
-            <img
-              src={close.src}
-              onClick={() => setmaterial(false)}
-              alt="close"
-            />
+            <img src={close.src} onClick={() => setmaterial(false)} alt="close" />
           </div>
 
           <div className={styles.materialescondpart}>
@@ -551,10 +518,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               >
                 Cancel
               </button>
-              <button
-                className={`${styles.button} ${styles.submitButton}`}
-                onClick={handleSubmit}
-              >
+              <button className={`${styles.button} ${styles.submitButton}`} onClick={handleSubmit}>
                 Create
               </button>
             </div>

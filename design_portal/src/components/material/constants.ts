@@ -79,23 +79,17 @@ export const CATEGORY_TABS: Record<
     {
       id: 'finishes',
       label: 'Finishes',
-      columns: [
-        { key: 'banding_finishes_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'banding_finishes_front', label: 'Front', sortable: false }],
     },
     {
       id: 'finish_type',
       label: 'Finish Type',
-      columns: [
-        { key: 'banding_finish_type_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'banding_finish_type_front', label: 'Front', sortable: false }],
     },
     {
       id: 'textures',
       label: 'Textures',
-      columns: [
-        { key: 'banding_textures_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'banding_textures_front', label: 'Front', sortable: false }],
     },
   ],
   board_stock: [
@@ -623,23 +617,17 @@ export const CATEGORY_TABS: Record<
     {
       id: 'finishes',
       label: 'Finishes',
-      columns: [
-        { key: 'hinge_plate_finishes_g1', label: 'G1', sortable: false },
-      ],
+      columns: [{ key: 'hinge_plate_finishes_g1', label: 'G1', sortable: false }],
     },
     {
       id: 'finish_type',
       label: 'Finish Type',
-      columns: [
-        { key: 'hinge_plate_finish_type_g1', label: 'G1', sortable: false },
-      ],
+      columns: [{ key: 'hinge_plate_finish_type_g1', label: 'G1', sortable: false }],
     },
     {
       id: 'textures',
       label: 'Textures',
-      columns: [
-        { key: 'hinge_plate_textures_g1', label: 'G1', sortable: false },
-      ],
+      columns: [{ key: 'hinge_plate_textures_g1', label: 'G1', sortable: false }],
     },
   ],
   laminate: [
@@ -729,9 +717,7 @@ export const CATEGORY_TABS: Record<
     {
       id: 'laminate',
       label: 'Laminate',
-      columns: [
-        { key: 'laminate_oversize', label: 'Oversize', sortable: false },
-      ],
+      columns: [{ key: 'laminate_oversize', label: 'Oversize', sortable: false }],
     },
     {
       id: 'size',
@@ -745,23 +731,17 @@ export const CATEGORY_TABS: Record<
     {
       id: 'finishes',
       label: 'Finishes',
-      columns: [
-        { key: 'laminate_finishes_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'laminate_finishes_front', label: 'Front', sortable: false }],
     },
     {
       id: 'finish_type',
       label: 'Finish Type',
-      columns: [
-        { key: 'laminate_finish_type_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'laminate_finish_type_front', label: 'Front', sortable: false }],
     },
     {
       id: 'textures',
       label: 'Textures',
-      columns: [
-        { key: 'laminate_textures_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'laminate_textures_front', label: 'Front', sortable: false }],
     },
   ],
   leg: [
@@ -860,9 +840,7 @@ export const CATEGORY_TABS: Record<
     {
       id: 'leg_leveler',
       label: 'Leg Leveler',
-      columns: [
-        { key: 'leg_leveler_height', label: 'Height', sortable: false },
-      ],
+      columns: [{ key: 'leg_leveler_height', label: 'Height', sortable: false }],
     },
     {
       id: 'finishes',
@@ -1037,23 +1015,17 @@ export const CATEGORY_TABS: Record<
     {
       id: 'finishes',
       label: 'Finishes',
-      columns: [
-        { key: 'molding_finishes_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'molding_finishes_front', label: 'Front', sortable: false }],
     },
     {
       id: 'finish_type',
       label: 'Finish Type',
-      columns: [
-        { key: 'molding_finish_type_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'molding_finish_type_front', label: 'Front', sortable: false }],
     },
     {
       id: 'textures',
       label: 'Textures',
-      columns: [
-        { key: 'molding_textures_front', label: 'Front', sortable: false },
-      ],
+      columns: [{ key: 'molding_textures_front', label: 'Front', sortable: false }],
     },
   ],
   panel_stock: [
@@ -1369,9 +1341,7 @@ export const CATEGORY_TABS: Record<
     {
       id: 'sliding_door_rail',
       label: 'Sliding Door Rail',
-      columns: [
-        { key: 'sliding_door_rail_length', label: 'Length', sortable: false },
-      ],
+      columns: [{ key: 'sliding_door_rail_length', label: 'Length', sortable: false }],
     },
     {
       id: 'finishes',

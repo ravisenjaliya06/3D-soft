@@ -10,10 +10,7 @@ import { Position } from '../../store/interface';
 import { CADData, CustomDesignProps, DXFEntity } from '../interface';
 import styles from './ImportDialog.module.css';
 
-const CADImportDialog: React.FC<CustomDesignProps> = ({
-  design3D,
-  onClose,
-}) => {
+const CADImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,12 +25,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
         camera:
           design3D.camera instanceof THREE.PerspectiveCamera
             ? design3D.camera
-            : new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000,
-              ),
+            : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
         renderer: design3D.renderer,
         movableObjects: [],
         gridBounds: {
@@ -59,12 +51,8 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
     const file = event.target.files?.[0] || null;
     if (file) {
       const extension = file.name.split('.').pop()?.toLowerCase();
-      if (
-        !['stl', 'obj', 'gltf', 'glb', 'dwg', 'dxf'].includes(extension || '')
-      ) {
-        setError(
-          'Please select a supported CAD file (STL, OBJ, GLTF/GLB, DWG, DXF).',
-        );
+      if (!['stl', 'obj', 'gltf', 'glb', 'dwg', 'dxf'].includes(extension || '')) {
+        setError('Please select a supported CAD file (STL, OBJ, GLTF/GLB, DWG, DXF).');
         setSelectedFile(null);
         return;
       }
@@ -91,7 +79,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
 
       if (extension === 'dwg') {
         setError(
-          'Please convert your DWG file to DXF format first using AutoCAD or other CAD software. DXF files are directly supported.',
+          'Please convert your DWG file to DXF format first using AutoCAD or other CAD software. DXF files are directly supported.'
         );
         setIsLoading(false);
         return;
@@ -124,16 +112,8 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
                 case 'LINE':
                   if (entity.start && entity.end) {
                     geometry = new THREE.BufferGeometry().setFromPoints([
-                      new THREE.Vector3(
-                        entity.start.x,
-                        entity.start.y,
-                        entity.start.z || 0,
-                      ),
-                      new THREE.Vector3(
-                        entity.end.x,
-                        entity.end.y,
-                        entity.end.z || 0,
-                      ),
+                      new THREE.Vector3(entity.start.x, entity.start.y, entity.start.z || 0),
+                      new THREE.Vector3(entity.end.x, entity.end.y, entity.end.z || 0),
                     ]);
                   }
                   break;
@@ -158,14 +138,13 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
                     const segments = 32;
 
                     for (let i = 0; i <= segments; i++) {
-                      const angle =
-                        startAngle + (endAngle - startAngle) * (i / segments);
+                      const angle = startAngle + (endAngle - startAngle) * (i / segments);
                       points.push(
                         new THREE.Vector3(
                           entity.center.x + entity.radius * Math.cos(angle),
                           entity.center.y + entity.radius * Math.sin(angle),
-                          entity.center.z || 0,
-                        ),
+                          entity.center.z || 0
+                        )
                       );
                     }
                     geometry.setFromPoints(points);
@@ -177,7 +156,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
                   const vertices = entity.vertices || entity.points;
                   if (vertices && vertices.length > 0) {
                     const points = vertices.map(
-                      (v: Position) => new THREE.Vector3(v.x, v.y, v.z || 0),
+                      (v: Position) => new THREE.Vector3(v.x, v.y, v.z || 0)
                     );
                     if (entity.closed) {
                       points.push(points[0]);
@@ -198,9 +177,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
 
               if (geometry) {
                 const material = new THREE.LineBasicMaterial({
-                  color: entity.color
-                    ? '#' + entity.color.toString(16)
-                    : '#000000',
+                  color: entity.color ? '#' + entity.color.toString(16) : '#000000',
                 });
                 const line = new THREE.Line(geometry, material);
 
@@ -322,9 +299,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
             setIsLoading(false);
           } catch (err) {
             console.error('Error loading DXF file:', err);
-            setError(
-              'Failed to load DXF file. Please ensure it is a valid DXF file.',
-            );
+            setError('Failed to load DXF file. Please ensure it is a valid DXF file.');
             setIsLoading(false);
           }
         };
@@ -462,12 +437,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
       <div className={styles.importDialogContainer}>
         <div className={styles.importDialogHeader}>
           <h3>Import CAD File</h3>
-          <img
-            src={closeIcon.src}
-            alt="Close"
-            className={styles.closeIcon}
-            onClick={onClose}
-          />
+          <img src={closeIcon.src} alt="Close" className={styles.closeIcon} onClick={onClose} />
         </div>
 
         <div className={styles.importDialogContent}>
@@ -479,34 +449,24 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({
               accept=".stl,.obj,.gltf,.glb,.dwg,.dxf"
               style={{ display: 'none' }}
             />
-            <button
-              className={styles.selectFileButton}
-              onClick={handleSelectFile}
-            >
+            <button className={styles.selectFileButton} onClick={handleSelectFile}>
               Select CAD File
             </button>
-            {selectedFile && (
-              <div className={styles.selectedFileName}>{selectedFile.name}</div>
-            )}
+            {selectedFile && <div className={styles.selectedFileName}>{selectedFile.name}</div>}
           </div>
 
           <div className={styles.supportedFormats}>
             <p>Supported formats: STL, GLTF/GLB, DWG, DXF</p>
             <p className={styles.warningMessage}>
-              Note: For best results, ensure your CAD files are properly scaled
-              and oriented before importing.
+              Note: For best results, ensure your CAD files are properly scaled and oriented before
+              importing.
             </p>
           </div>
 
           {isLoading && (
             <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
-              <span className={styles.progressText}>
-                {Math.round(progress)}%
-              </span>
+              <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+              <span className={styles.progressText}>{Math.round(progress)}%</span>
             </div>
           )}
 

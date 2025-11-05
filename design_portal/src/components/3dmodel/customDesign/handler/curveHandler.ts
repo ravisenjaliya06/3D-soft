@@ -71,11 +71,7 @@ export function createCurveHandler({
     ) {
       // Highlight edge under mouse
       highlightEdgeUnderMouse();
-    } else if (
-      state === CurveCreationState.PREVIEWING_CURVE &&
-      firstEdge &&
-      secondEdge
-    ) {
+    } else if (state === CurveCreationState.PREVIEWING_CURVE && firstEdge && secondEdge) {
       const intersectionPoint = new THREE.Vector3();
       if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
         const cornerPoint = getCornerPoint(firstEdge, secondEdge);
@@ -83,15 +79,11 @@ export function createCurveHandler({
           // Calculate maximum allowed radius based on nearest vertices
           const maxRadius = Math.min(
             cornerPoint.distanceTo(
-              firstEdge.end.equals(cornerPoint)
-                ? firstEdge.start
-                : firstEdge.end,
+              firstEdge.end.equals(cornerPoint) ? firstEdge.start : firstEdge.end
             ),
             cornerPoint.distanceTo(
-              secondEdge.end.equals(cornerPoint)
-                ? secondEdge.start
-                : secondEdge.end,
-            ),
+              secondEdge.end.equals(cornerPoint) ? secondEdge.start : secondEdge.end
+            )
           );
 
           // Calculate distance but cap it to the maximum allowed radius
@@ -104,23 +96,17 @@ export function createCurveHandler({
   };
 
   const handleWheel = (event: WheelEvent) => {
-    if (
-      state === CurveCreationState.PREVIEWING_CURVE &&
-      firstEdge &&
-      secondEdge
-    ) {
+    if (state === CurveCreationState.PREVIEWING_CURVE && firstEdge && secondEdge) {
       const cornerPoint = getCornerPoint(firstEdge, secondEdge);
       if (cornerPoint) {
         // Calculate maximum allowed radius based on nearest vertices
         const maxRadius = Math.min(
           cornerPoint.distanceTo(
-            firstEdge.end.equals(cornerPoint) ? firstEdge.start : firstEdge.end,
+            firstEdge.end.equals(cornerPoint) ? firstEdge.start : firstEdge.end
           ),
           cornerPoint.distanceTo(
-            secondEdge.end.equals(cornerPoint)
-              ? secondEdge.start
-              : secondEdge.end,
-          ),
+            secondEdge.end.equals(cornerPoint) ? secondEdge.start : secondEdge.end
+          )
         );
 
         // Adjust radius with mouse wheel, respecting the maximum allowed radius
@@ -181,9 +167,9 @@ export function createCurveHandler({
             !obj.name.includes('helper') &&
             !obj.name.includes('daysky') &&
             !obj.name.includes('nightsky') &&
-            !obj.name.includes('object_outline'),
+            !obj.name.includes('object_outline')
         ),
-        false,
+        false
       );
 
       if (intersects.length > 0) {
@@ -196,9 +182,7 @@ export function createCurveHandler({
       if (edge) {
         firstEdge = edge;
         state = CurveCreationState.SELECTING_SECOND_EDGE;
-        showError(
-          'Now select the second edge (must be perpendicular to first)',
-        );
+        showError('Now select the second edge (must be perpendicular to first)');
       }
     } else if (state === CurveCreationState.SELECTING_SECOND_EDGE) {
       const edge = selectEdge();
@@ -219,9 +203,7 @@ export function createCurveHandler({
         secondEdge = edge;
         state = CurveCreationState.PREVIEWING_CURVE;
         updatePreviewCurve();
-        showError(
-          'Move mouse to adjust curve radius, scroll to fine-tune, click to finalize',
-        );
+        showError('Move mouse to adjust curve radius, scroll to fine-tune, click to finalize');
       }
     } else if (state === CurveCreationState.PREVIEWING_CURVE) {
       finalizeCurve();
@@ -267,9 +249,7 @@ export function createCurveHandler({
         }
       }
 
-      return closestEdge
-        ? { start: closestEdge.start, end: closestEdge.end }
-        : null;
+      return closestEdge ? { start: closestEdge.start, end: closestEdge.end } : null;
     }
 
     return null;
@@ -278,7 +258,7 @@ export function createCurveHandler({
   const distanceToSegment = (
     point: THREE.Vector3,
     start: THREE.Vector3,
-    end: THREE.Vector3,
+    end: THREE.Vector3
   ): number => {
     const line = end.clone().sub(start);
     const pointToStart = point.clone().sub(start);
@@ -295,7 +275,7 @@ export function createCurveHandler({
 
   const areEdgesPerpendicular = (
     edge1: { start: THREE.Vector3; end: THREE.Vector3 },
-    edge2: { start: THREE.Vector3; end: THREE.Vector3 },
+    edge2: { start: THREE.Vector3; end: THREE.Vector3 }
   ): boolean => {
     const dir1 = edge1.end.clone().sub(edge1.start).normalize();
     const dir2 = edge2.end.clone().sub(edge2.start).normalize();
@@ -307,7 +287,7 @@ export function createCurveHandler({
 
   const getCornerPoint = (
     edge1: { start: THREE.Vector3; end: THREE.Vector3 },
-    edge2: { start: THREE.Vector3; end: THREE.Vector3 },
+    edge2: { start: THREE.Vector3; end: THREE.Vector3 }
   ): THREE.Vector3 | null => {
     // Find the common vertex (corner) between two edges
     const tolerance = 0.01;
@@ -350,22 +330,14 @@ export function createCurveHandler({
       : secondEdge.end.clone().sub(cornerPoint).normalize();
 
     // Calculate tangent points
-    const tangentPoint1 = cornerPoint
-      .clone()
-      .add(dir1.multiplyScalar(curveRadius));
-    const tangentPoint2 = cornerPoint
-      .clone()
-      .add(dir2.multiplyScalar(curveRadius));
+    const tangentPoint1 = cornerPoint.clone().add(dir1.multiplyScalar(curveRadius));
+    const tangentPoint2 = cornerPoint.clone().add(dir2.multiplyScalar(curveRadius));
 
     // Create control point for the curve (at the corner)
     const controlPoint = cornerPoint.clone();
 
     // Create a quadratic Bezier curve
-    const curve = new THREE.QuadraticBezierCurve3(
-      tangentPoint1,
-      controlPoint,
-      tangentPoint2,
-    );
+    const curve = new THREE.QuadraticBezierCurve3(tangentPoint1, controlPoint, tangentPoint2);
     const points = curve.getPoints(10);
 
     // Create curve geometry
@@ -382,12 +354,7 @@ export function createCurveHandler({
   };
 
   const finalizeCurve = async () => {
-    if (
-      !selectedObject ||
-      !firstEdge ||
-      !secondEdge ||
-      !selectedObject.geometry
-    ) {
+    if (!selectedObject || !firstEdge || !secondEdge || !selectedObject.geometry) {
       console.error('Cannot finalize curve: missing selected object or edges');
       return;
     }
@@ -428,13 +395,11 @@ export function createCurveHandler({
 
     // Convert vertices to Vector2 for Shape creation (XZ plane, relative to centroid)
     const points2D = uniqueVertices.map(
-      (v) => new THREE.Vector2(v.x - centroid.x, v.z - centroid.z),
+      (v) => new THREE.Vector2(v.x - centroid.x, v.z - centroid.z)
     );
 
     // Find the corner index
-    const cornerIndex = uniqueVertices.findIndex(
-      (v) => v.distanceTo(cornerPoint) < 0.01,
-    );
+    const cornerIndex = uniqueVertices.findIndex((v) => v.distanceTo(cornerPoint) < 0.01);
     if (cornerIndex === -1) {
       console.error('Corner point not found in vertices:', cornerPoint);
       return;
@@ -480,27 +445,16 @@ export function createCurveHandler({
         }
 
         // Calculate tangent points
-        const tangentPoint1 = corner
-          .clone()
-          .add(dir1.multiplyScalar(curveRadius));
-        const tangentPoint2 = corner
-          .clone()
-          .add(dir2.multiplyScalar(curveRadius));
+        const tangentPoint1 = corner.clone().add(dir1.multiplyScalar(curveRadius));
+        const tangentPoint2 = corner.clone().add(dir2.multiplyScalar(curveRadius));
 
         // Create a quadratic Bezier curve
-        const curve = new THREE.QuadraticBezierCurve3(
-          tangentPoint1,
-          corner,
-          tangentPoint2,
-        );
+        const curve = new THREE.QuadraticBezierCurve3(tangentPoint1, corner, tangentPoint2);
         const curvePoints = curve.getPoints(10);
 
         // Add curve points to shape (in 2D, relative to centroid)
         for (let j = 1; j < curvePoints.length - 1; j++) {
-          shape.lineTo(
-            curvePoints[j].x - centroid.x,
-            curvePoints[j].z - centroid.z,
-          );
+          shape.lineTo(curvePoints[j].x - centroid.x, curvePoints[j].z - centroid.z);
         }
       } else {
         shape.lineTo(points2D[currIndex].x, points2D[currIndex].y);
@@ -514,9 +468,7 @@ export function createCurveHandler({
 
     // Create new mesh
     const newMaterial = new THREE.MeshStandardMaterial({
-      color: (
-        selectedObject.material as THREE.MeshStandardMaterial
-      ).color.getHex(),
+      color: (selectedObject.material as THREE.MeshStandardMaterial).color.getHex(),
       side: THREE.DoubleSide,
     });
     const newMesh = new THREE.Mesh(newGeometry, newMaterial);
@@ -531,9 +483,7 @@ export function createCurveHandler({
     newMesh.userData = { ...selectedObject.userData };
 
     // Update wireframe
-    const wireframe = selectedObject.children.find(
-      (child) => child instanceof THREE.LineSegments,
-    );
+    const wireframe = selectedObject.children.find((child) => child instanceof THREE.LineSegments);
     if (wireframe) {
       selectedObject.remove(wireframe);
     }
@@ -599,7 +549,7 @@ export function createCurveHandler({
         'design',
         designId,
         'object',
-        payload,
+        payload
       );
       if (response.status === 200) {
         showError('Curve applied successfully!');
@@ -619,9 +569,7 @@ export function createCurveHandler({
           filletRadius: curveRadius,
           cornerIndex,
         },
-        color: (
-          selectedObject.material as THREE.MeshStandardMaterial
-        ).color.getHex(),
+        color: (selectedObject.material as THREE.MeshStandardMaterial).color.getHex(),
       },
       position: {
         x: newMesh.position.x,
@@ -658,9 +606,7 @@ export function createCurveHandler({
     secondEdge = null;
     selectedObject = null;
   };
-  const createCustomWireframe = (
-    geometry: THREE.BufferGeometry,
-  ): THREE.LineSegments => {
+  const createCustomWireframe = (geometry: THREE.BufferGeometry): THREE.LineSegments => {
     const edges = new THREE.EdgesGeometry(geometry);
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
     return new THREE.LineSegments(edges, lineMaterial);

@@ -17,21 +17,14 @@ const EditPopup: React.FC<{ onClose: () => void; onConfirm: () => void }> = ({
           <h2 className={styles.popupTitle}>Convert to Editable Model?</h2>
         </div>
         <div className={styles.popupContent}>
-          After conversion, the model can be customized and edited, but its
-          shape parameters will be lost. Double-click the model to quickly
-          convert it.
+          After conversion, the model can be customized and edited, but its shape parameters will be
+          lost. Double-click the model to quickly convert it.
         </div>
         <div className={styles.buttonContainer}>
-          <button
-            className={`${styles.button} ${styles.cancelButton}`}
-            onClick={onClose}
-          >
+          <button className={`${styles.button} ${styles.cancelButton}`} onClick={onClose}>
             Cancel
           </button>
-          <button
-            className={`${styles.button} ${styles.confirmButton}`}
-            onClick={onConfirm}
-          >
+          <button className={`${styles.button} ${styles.confirmButton}`} onClick={onConfirm}>
             Confirm
           </button>
         </div>
@@ -40,9 +33,7 @@ const EditPopup: React.FC<{ onClose: () => void; onConfirm: () => void }> = ({
   );
 };
 
-const HelperTools: React.FC<HelperToolsProps> = ({
-  position: initialPosition,
-}) => {
+const HelperTools: React.FC<HelperToolsProps> = ({ position: initialPosition }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentPosition, setCurrentPosition] = useState({
     x: initialPosition.x,
@@ -52,9 +43,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
   const dragRef = useRef<HTMLDivElement>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
 
-  const selectedShapeId = useAppSelector(
-    (state) => state.customDesign.selectedShapeId,
-  );
+  const selectedShapeId = useAppSelector((state) => state.customDesign.selectedShapeId);
   const scene = useAppSelector((state) => state.customDesign.sceneState.scene);
 
   // Set initial position when component mounts
@@ -93,9 +82,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
 
   const handleConfirmEdit = () => {
     // Add your conversion logic here
-    const object = scene.children.find(
-      (child) => child.userData.objectId === selectedShapeId,
-    );
+    const object = scene.children.find((child) => child.userData.objectId === selectedShapeId);
     // scene.remove(object as THREE.Object3D);
     const geometry = (object as THREE.Mesh).geometry as THREE.BufferGeometry;
     if (geometry.index) {
@@ -129,22 +116,13 @@ const HelperTools: React.FC<HelperToolsProps> = ({
             <FaGripVertical />
           </div>
           <div className={styles.toolsContainer}>
-            <div
-              className={styles.toolItem}
-              title="Edit"
-              onClick={handleShowEditPopup}
-            >
+            <div className={styles.toolItem} title="Edit" onClick={handleShowEditPopup}>
               <FaEdit />
             </div>
           </div>
         </div>
       </div>
-      {showEditPopup && (
-        <EditPopup
-          onClose={handleCloseEditPopup}
-          onConfirm={handleConfirmEdit}
-        />
-      )}
+      {showEditPopup && <EditPopup onClose={handleCloseEditPopup} onConfirm={handleConfirmEdit} />}
     </>
   );
 };

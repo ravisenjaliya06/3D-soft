@@ -132,11 +132,7 @@
   opacity: 0.5;
 
   &:hover {
-    background: linear-gradient(
-      90deg,
-      rgba(204, 188, 255, 0.2) 0%,
-      var(--primary-color) 87.74%
-    );
+    background: linear-gradient(90deg, rgba(204, 188, 255, 0.2) 0%, var(--primary-color) 87.74%);
   }
 }
 
@@ -150,11 +146,7 @@
   flex-direction: row;
   justify-content: center;
   cursor: pointer;
-  background: linear-gradient(
-    90deg,
-    rgba(204, 188, 255, 0.2) 0%,
-    var(--primary-color) 87.74%
-  );
+  background: linear-gradient(90deg, rgba(204, 188, 255, 0.2) 0%, var(--primary-color) 87.74%);
 }
 
 .icon img {

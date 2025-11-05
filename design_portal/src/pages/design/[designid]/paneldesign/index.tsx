@@ -5,12 +5,9 @@ import { NextPage } from 'next';
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 
-const PanelDesigner = dynamic(
-  () => import('@/components/3dmodel/panelDesign/index'),
-  {
-    ssr: false,
-  },
-);
+const PanelDesigner = dynamic(() => import('@/components/3dmodel/panelDesign/index'), {
+  ssr: false,
+});
 
 const DesignPage: NextPage = () => {
   useEffect(() => {

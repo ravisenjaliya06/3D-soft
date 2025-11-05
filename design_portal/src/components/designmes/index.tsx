@@ -67,7 +67,7 @@ const Template = () => {
         `${designId}/nesting/download`,
         data,
         // @ts-expect-error No time to update it at this moment
-        { responseType: 'blob' },
+        { responseType: 'blob' }
       );
 
       if (response.status === 200) {

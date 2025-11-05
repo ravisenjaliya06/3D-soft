@@ -4,7 +4,7 @@ import { Material, Object3D } from '../store/interface';
 const createComponentData = (
   child: Object3D,
   defaultMaterial: Material,
-  position?: { x: number; y: number; z: number },
+  position?: { x: number; y: number; z: number }
 ): ComponentData => ({
   id: child?.id,
   name: child?.name || '',
@@ -26,10 +26,7 @@ const createComponentData = (
   grooves: child?.grooves || [],
 });
 
-export const convertObjectData = (
-  object: Object3D,
-  childObjects?: Object3D[],
-) => {
+export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) => {
   const defaultMaterial: Material = {
     type: 'TEXTURE',
     value: 'wood_3',
@@ -97,9 +94,7 @@ export const convertObjectData = (
   });
   Object.entries(drawerGroups).forEach(([drawerName, drawerItems]) => {
     const drawerObject = drawerItems.find((item) => item.name === drawerName);
-    const drawerComponents = drawerItems.filter(
-      (item) => item.name !== drawerName,
-    );
+    const drawerComponents = drawerItems.filter((item) => item.name !== drawerName);
 
     const drawerPosition = drawerObject?.position || { x: 0, y: 0, z: 0 };
 
@@ -112,11 +107,7 @@ export const convertObjectData = (
       catalog: {
         id: drawerObject?.id || '',
         name: drawerName,
-        data: createComponentData(
-          drawerObject!,
-          defaultMaterial,
-          drawerPosition,
-        ),
+        data: createComponentData(drawerObject!, defaultMaterial, drawerPosition),
       },
       items: catalogItems,
     });

@@ -14,7 +14,7 @@ export enum LineCreationState {
 export function createLineCreator(
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
-  renderer: THREE.WebGLRenderer,
+  renderer: THREE.WebGLRenderer
 ) {
   // State variables
   let state: LineCreationState = LineCreationState.INACTIVE;
@@ -51,17 +51,13 @@ export function createLineCreator(
 
     // Find intersection with plane
     const intersectionPoint = new THREE.Vector3();
-    if (
-      raycaster.ray.intersectPlane(plane, intersectionPoint) &&
-      points.length > 0
-    ) {
+    if (raycaster.ray.intersectPlane(plane, intersectionPoint) && points.length > 0) {
       updatePreviewLine(intersectionPoint);
     }
   };
 
   const handleClick = (event: MouseEvent) => {
-    if (state !== LineCreationState.PLACING_POINTS || event.button !== 0)
-      return;
+    if (state !== LineCreationState.PLACING_POINTS || event.button !== 0) return;
 
     // Calculate mouse position
     const rect = renderer.domElement.getBoundingClientRect();
@@ -191,13 +187,7 @@ export function createLineCreator(
     mesh.name = `line-${objectId}`;
 
     // Save to database
-    saveLineToDatabase(
-      objectId,
-      points,
-      mesh.position,
-      mesh.rotation,
-      mesh.scale,
-    );
+    saveLineToDatabase(objectId, points, mesh.position, mesh.rotation, mesh.scale);
 
     // Notify parent component
     const lineData = {
@@ -241,7 +231,7 @@ export function createLineCreator(
     points: THREE.Vector3[],
     position: THREE.Vector3,
     rotation: THREE.Euler,
-    scale: THREE.Vector3,
+    scale: THREE.Vector3
   ) => {
     const designId = getDesignId();
     if (!designId) {

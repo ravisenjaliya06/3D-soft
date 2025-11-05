@@ -37,9 +37,7 @@ const Template = () => {
         <div className={styles.maincontent}>
           <div className={styles.createdesigns}>
             <div className={styles.createdesignscontent}>
-              <p className={styles.createdesignstext}>
-                Get Start with a template{' '}
-              </p>
+              <p className={styles.createdesignstext}>Get Start with a template </p>
               <p className={styles.createdesignssubtext}>
                 Follow the guide to create your first design project
               </p>
@@ -55,9 +53,7 @@ const Template = () => {
                 <div className={styles.createdesing}>
                   <div className={styles.createdesingtext}>
                     <h4>Create your custom design </h4>
-                    <p>
-                      All-in-one Template for modeling, visualizing, and drawing
-                    </p>
+                    <p>All-in-one Template for modeling, visualizing, and drawing</p>
                   </div>
                 </div>
                 <div className={styles.createbuttonimage}>
@@ -74,11 +70,7 @@ const Template = () => {
                 <ul></ul>
               </div>
               <div className={styles.searchWrapper}>
-                <img
-                  src={search.src}
-                  alt="Search Icon"
-                  className={styles.searchIcon}
-                />
+                <img src={search.src} alt="Search Icon" className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search Design"
@@ -96,9 +88,7 @@ const Template = () => {
                   onClick={() => handleCreateDesign()}
                 >
                   <img src={item.icon.src} alt="template" />
-                  <button className={styles.templateBoxButton}>
-                    Use This Template
-                  </button>
+                  <button className={styles.templateBoxButton}>Use This Template</button>
                 </div>
               ))}
             </div>

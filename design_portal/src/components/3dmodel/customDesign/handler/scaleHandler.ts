@@ -61,7 +61,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
             const direction = new THREE.Vector3(
               x === 0 ? -1 : x === GRID_SIZE - 1 ? 1 : 0,
               y === 0 ? -1 : y === GRID_SIZE - 1 ? 1 : 0,
-              z === 0 ? -1 : z === GRID_SIZE - 1 ? 1 : 0,
+              z === 0 ? -1 : z === GRID_SIZE - 1 ? 1 : 0
             );
 
             vertices.push({
@@ -107,10 +107,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
     }
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(positions, 3),
-    );
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     const lineMaterial = new THREE.LineBasicMaterial({
       color: 0x00faff,
       depthTest: false,
@@ -174,14 +171,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
 
   // Handle mouse move event
   const onMouseMove = (event: MouseEvent) => {
-    if (
-      !active ||
-      !isDragging ||
-      !selectedPoint ||
-      !selectedObject ||
-      !boundingBox
-    )
-      return;
+    if (!active || !isDragging || !selectedPoint || !selectedObject || !boundingBox) return;
 
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -202,25 +192,19 @@ export const createScaleHandler = (options: HandlerOptions) => {
     if (direction.x !== 0) {
       newScale.x = Math.max(
         0.1,
-        initialScale.x *
-          (1 +
-            dragDistance * movementFactor * dragSign * Math.abs(direction.x)),
+        initialScale.x * (1 + dragDistance * movementFactor * dragSign * Math.abs(direction.x))
       );
     }
     if (direction.y !== 0) {
       newScale.y = Math.max(
         0.1,
-        initialScale.y *
-          (1 +
-            dragDistance * movementFactor * dragSign * Math.abs(direction.y)),
+        initialScale.y * (1 + dragDistance * movementFactor * dragSign * Math.abs(direction.y))
       );
     }
     if (direction.z !== 0) {
       newScale.z = Math.max(
         0.1,
-        initialScale.z *
-          (1 +
-            dragDistance * movementFactor * dragSign * Math.abs(direction.z)),
+        initialScale.z * (1 + dragDistance * movementFactor * dragSign * Math.abs(direction.z))
       );
     }
 
@@ -229,7 +213,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
     const scaleRatio = new THREE.Vector3(
       newScale.x / initialScale.x,
       newScale.y / initialScale.y,
-      newScale.z / initialScale.z,
+      newScale.z / initialScale.z
     );
 
     boundingBox.scale.copy(scaleRatio);
@@ -257,11 +241,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
 
     if (boundingBox.geometry instanceof THREE.BufferGeometry) {
       const positionAttribute = boundingBox.geometry.getAttribute('position');
-      for (
-        let i = 0;
-        i < positions.length && i < positionAttribute.count * 3;
-        i++
-      ) {
+      for (let i = 0; i < positions.length && i < positionAttribute.count * 3; i++) {
         positionAttribute.array[i] = positions[i];
       }
       positionAttribute.needsUpdate = true;
@@ -293,7 +273,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
                 z: selectedObject.scale.z,
               },
             },
-          }),
+          })
         );
 
         updateObjectInDatabase(shapeData, {
@@ -395,8 +375,7 @@ export const createScaleHandler = (options: HandlerOptions) => {
       boundingBox = createBoundingBox(selectedObject);
       scene.add(boundingBox);
 
-      const material = (selectedObject as THREE.Mesh)
-        .material as THREE.MeshStandardMaterial;
+      const material = (selectedObject as THREE.Mesh).material as THREE.MeshStandardMaterial;
       if (material.emissive) {
         material.emissive.setHex(0x666666);
       }

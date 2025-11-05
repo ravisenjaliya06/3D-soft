@@ -14,7 +14,7 @@ export enum PolygonCreationState {
 export function createPolygonCreator(
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
-  renderer: THREE.WebGLRenderer,
+  renderer: THREE.WebGLRenderer
 ) {
   // State variables
   let state: PolygonCreationState = PolygonCreationState.INACTIVE;
@@ -66,10 +66,7 @@ export function createPolygonCreator(
         centerPoint = intersectionPoint.clone();
         createPreviewPolygon(0.1); // Start with small radius
         state = PolygonCreationState.ADJUSTING_RADIUS;
-      } else if (
-        state === PolygonCreationState.ADJUSTING_RADIUS &&
-        centerPoint
-      ) {
+      } else if (state === PolygonCreationState.ADJUSTING_RADIUS && centerPoint) {
         const radius = centerPoint.distanceTo(intersectionPoint);
         finalizePolygon(radius);
         state = PolygonCreationState.INACTIVE;
@@ -232,7 +229,7 @@ export function createPolygonCreator(
       centerPoint,
       mesh.position,
       mesh.rotation,
-      mesh.scale,
+      mesh.scale
     );
 
     // Create polygon data for Redux store
@@ -276,7 +273,7 @@ export function createPolygonCreator(
     center: THREE.Vector3,
     position: THREE.Vector3,
     rotation: THREE.Euler,
-    scale: THREE.Vector3,
+    scale: THREE.Vector3
   ) {
     const designId = getDesignId();
     if (!designId) {
@@ -323,7 +320,7 @@ export function createPolygonCreator(
       'design',
       designId,
       'object',
-      payload,
+      payload
     );
     if (response.status === 200) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {

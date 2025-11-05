@@ -13,9 +13,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
 }) => {
   return (
     <div className={styles.topToolbar}>
-      <div className={styles.toolbarLeft}>
-        {/* Dropdown can be added here if needed */}
-      </div>
+      <div className={styles.toolbarLeft}>{/* Dropdown can be added here if needed */}</div>
 
       <div className={styles.toolbarRight}>
         <button className={styles.filterButton}>
@@ -29,12 +27,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
-          <svg
-            className={styles.searchIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
+          <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>

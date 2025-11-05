@@ -8,7 +8,7 @@ export const updateObjectGeometry = (
   mesh: THREE.Mesh,
   object: Object3D,
   updatedData: Partial<Object3D>,
-  allObjects: Object3D[],
+  allObjects: Object3D[]
 ) => {
   const childUpdates: { [key: string]: Partial<Object3D> } = {};
   const grandChildUpdates: { [key: string]: Partial<Object3D> } = {};
@@ -29,7 +29,7 @@ export const updateObjectGeometry = (
   mesh.geometry = new THREE.BoxGeometry(
     mmToMeters(newWidth),
     mmToMeters(newHeight),
-    mmToMeters(newDepth),
+    mmToMeters(newDepth)
   );
   mesh.geometry.attributes.position.needsUpdate = true;
   mesh.geometry.computeVertexNormals();
@@ -39,7 +39,7 @@ export const updateObjectGeometry = (
     ratio: number,
     plankName: string,
     sizeKey: string,
-    posKey: string,
+    posKey: string
   ) => {
     let fixedTotal = 0;
     const segmentSizes: number[] = [];
@@ -63,10 +63,7 @@ export const updateObjectGeometry = (
 
     const fixedPlankObjects = allObjects
       .filter((o) => fixedPlank.includes(o.id))
-      .sort(
-        (a, b) =>
-          (a.position?.[positionKey] ?? 0) - (b.position?.[positionKey] ?? 0),
-      );
+      .sort((a, b) => (a.position?.[positionKey] ?? 0) - (b.position?.[positionKey] ?? 0));
 
     for (let i = 0; i < fixedPlankObjects.length - 1; i++) {
       const [start, end] = [
@@ -81,7 +78,7 @@ export const updateObjectGeometry = (
             o &&
             !fixedPlank.includes(o.id) &&
             (o.position?.[positionKey] ?? 0) > start &&
-            (o.position?.[positionKey] ?? 0) < end,
+            (o.position?.[positionKey] ?? 0) < end
         )
         .map((o) => o.id);
       plankSegments.push({
@@ -93,8 +90,7 @@ export const updateObjectGeometry = (
     }
 
     const total = segmentSizes.reduce((a, b) => a + b, 0);
-    if (total > 0)
-      segmentSizes.forEach((d, i) => (plankSegments[i].ratio = d / total));
+    if (total > 0) segmentSizes.forEach((d, i) => (plankSegments[i].ratio = d / total));
 
     plankSegments.forEach((seg) => {
       const newVal = getNewValue(key);
@@ -125,13 +121,7 @@ export const updateObjectGeometry = (
   } = widthRatio > 1 && allObjects
     ? updateSegments(itemType.VERTICAL, widthRatio, 'RIGHT_PLANK', 'width', 'x')
     : heightRatio > 1 && allObjects
-      ? updateSegments(
-          itemType.VERTICAL,
-          widthRatio,
-          'LEFT_PLANK',
-          'width',
-          'x',
-        )
+      ? updateSegments(itemType.VERTICAL, widthRatio, 'LEFT_PLANK', 'width', 'x')
       : {
           plankSegments: [],
           dynamicPlankIds: [],
@@ -140,13 +130,7 @@ export const updateObjectGeometry = (
 
   const { plankSegments: heightSegments, dynamicPlankIds: dynH } =
     heightRatio > 1 && allObjects
-      ? updateSegments(
-          itemType.HORIZONTAL,
-          heightRatio,
-          'TOP_PLANK',
-          'height',
-          'y',
-        )
+      ? updateSegments(itemType.HORIZONTAL, heightRatio, 'TOP_PLANK', 'height', 'y')
       : {
           plankSegments: [],
           dynamicPlankIds: [],
@@ -166,8 +150,7 @@ export const updateObjectGeometry = (
       const childMesh = mesh.children.find(
         (c) =>
           c instanceof THREE.Mesh &&
-          ((!c.userData.objectId && c.name === childObj.name) ||
-            c.userData.objectId === childId),
+          ((!c.userData.objectId && c.name === childObj.name) || c.userData.objectId === childId)
       );
       if (!childMesh) continue;
 
@@ -180,16 +163,9 @@ export const updateObjectGeometry = (
         z: childObj.position?.z ?? 0,
       };
 
-      const isBorder = (
-        coord: number,
-        halfParent: number,
-        size: number,
-        dir: 'pos' | 'neg',
-      ) =>
+      const isBorder = (coord: number, halfParent: number, size: number, dir: 'pos' | 'neg') =>
         Math.abs(
-          coord +
-            (dir === 'neg' ? 1 : -1) * halfParent +
-            ((dir === 'neg' ? -1 : 1) * size) / 2,
+          coord + (dir === 'neg' ? 1 : -1) * halfParent + ((dir === 'neg' ? -1 : 1) * size) / 2
         ) < 1e-3;
       const isLeft = isBorder(pos.x, object.width / 2, cw, 'neg');
       const isRight = isBorder(pos.x, object.width / 2, cw, 'pos');
@@ -216,24 +192,20 @@ export const updateObjectGeometry = (
       };
       if (isLeft) newPos.x = -newWidth / 2 + nw / 2;
       else if (isRight) newPos.x = newWidth / 2 - nw / 2;
-      else if (widthRatio > 1 && dynamicPlankIds.includes(childObj.id))
-        nw += minorRatio ?? 0;
+      else if (widthRatio > 1 && dynamicPlankIds.includes(childObj.id)) nw += minorRatio ?? 0;
 
       if (isBottom) newPos.y = -newHeight / 2 + nh / 2;
       else if (isTop) newPos.y = newHeight / 2 - nh / 2;
-      else if (heightRatio > 1 && dynamicPlankIds.includes(childObj.id))
-        nh += minorRatio ?? 0;
+      else if (heightRatio > 1 && dynamicPlankIds.includes(childObj.id)) nh += minorRatio ?? 0;
 
       if (childObj.name.includes('BACK_PLANK')) {
         if (widthRatio > 1)
           nw +=
-            widthRatio *
-              (getSideWidth('RIGHT_PLANK') + getSideWidth('LEFT_PLANK')) -
+            widthRatio * (getSideWidth('RIGHT_PLANK') + getSideWidth('LEFT_PLANK')) -
             (getSideWidth('RIGHT_PLANK') + getSideWidth('LEFT_PLANK'));
         else if (heightRatio > 1)
           nh +=
-            heightRatio *
-              (getSideHeight('TOP_PLANK') + getSideHeight('BOTTOM_PLANK')) -
+            heightRatio * (getSideHeight('TOP_PLANK') + getSideHeight('BOTTOM_PLANK')) -
             (getSideHeight('TOP_PLANK') + getSideHeight('BOTTOM_PLANK'));
       }
 
@@ -241,13 +213,9 @@ export const updateObjectGeometry = (
       (childMesh as THREE.Mesh).geometry = new THREE.BoxGeometry(
         mmToMeters(nw),
         mmToMeters(nh),
-        mmToMeters(nd),
+        mmToMeters(nd)
       );
-      childMesh.position.set(
-        mmToMeters(newPos.x),
-        mmToMeters(newPos.y),
-        mmToMeters(newPos.z),
-      );
+      childMesh.position.set(mmToMeters(newPos.x), mmToMeters(newPos.y), mmToMeters(newPos.z));
       (childMesh as THREE.Mesh).geometry.attributes.position.needsUpdate = true;
       (childMesh as THREE.Mesh).geometry.computeVertexNormals();
       childMesh.updateMatrix();
@@ -260,8 +228,7 @@ export const updateObjectGeometry = (
         position: newPos,
         child: childObj.child,
       };
-      (childObj.child?.length ? grandChildUpdates : childUpdates)[childId] =
-        updateData;
+      (childObj.child?.length ? grandChildUpdates : childUpdates)[childId] = updateData;
 
       if (childObj.child?.length) {
         for (const gcId of childObj.child) {
@@ -270,8 +237,7 @@ export const updateObjectGeometry = (
           const gcMesh = childMesh.children.find(
             (c) =>
               c instanceof THREE.Mesh &&
-              ((!c.userData.objectId && c.name === gcObj.name) ||
-                c.userData.objectId === gcId),
+              ((!c.userData.objectId && c.name === gcObj.name) || c.userData.objectId === gcId)
           );
           if (!gcMesh) continue;
 
@@ -288,15 +254,10 @@ export const updateObjectGeometry = (
           (gcMesh as THREE.Mesh).geometry = new THREE.BoxGeometry(
             mmToMeters(gcW),
             mmToMeters(gcH),
-            mmToMeters(gcD),
+            mmToMeters(gcD)
           );
-          gcMesh.position.set(
-            mmToMeters(gcPos.x),
-            mmToMeters(gcPos.y),
-            mmToMeters(gcPos.z),
-          );
-          (gcMesh as THREE.Mesh).geometry.attributes.position.needsUpdate =
-            true;
+          gcMesh.position.set(mmToMeters(gcPos.x), mmToMeters(gcPos.y), mmToMeters(gcPos.z));
+          (gcMesh as THREE.Mesh).geometry.attributes.position.needsUpdate = true;
           (gcMesh as THREE.Mesh).geometry.computeVertexNormals();
           gcMesh.updateMatrix();
           gcMesh.updateMatrixWorld(true);
@@ -314,15 +275,11 @@ export const updateObjectGeometry = (
   }
 
   function getSideWidth(name: string) {
-    return (
-      allObjects.filter((o: Object3D) => o.name.includes(name))[0]?.width ?? 0
-    );
+    return allObjects.filter((o: Object3D) => o.name.includes(name))[0]?.width ?? 0;
   }
 
   function getSideHeight(name: string) {
-    return (
-      allObjects.filter((o: Object3D) => o.name.includes(name))[0]?.height ?? 0
-    );
+    return allObjects.filter((o: Object3D) => o.name.includes(name))[0]?.height ?? 0;
   }
 
   return { childUpdates, grandChildUpdates };
@@ -341,10 +298,7 @@ function getChildConfig(child: Object3D) {
   };
 }
 
-export function buildMeshTree(
-  object: Object3D,
-  allObjects: Object3D[],
-): THREE.Mesh {
+export function buildMeshTree(object: Object3D, allObjects: Object3D[]): THREE.Mesh {
   const config = getChildConfig(object);
 
   // Create mesh for this object
@@ -352,14 +306,14 @@ export function buildMeshTree(
     new THREE.BoxGeometry(
       mmToMeters(config.width),
       mmToMeters(config.height),
-      mmToMeters(config.depth),
+      mmToMeters(config.depth)
     ),
-    new THREE.MeshStandardMaterial(),
+    new THREE.MeshStandardMaterial()
   );
   mesh.position.set(
     mmToMeters(config.position.x),
     mmToMeters(config.position.y),
-    mmToMeters(config.position.z),
+    mmToMeters(config.position.z)
   );
   mesh.userData.objectId = object.id;
 
@@ -379,7 +333,7 @@ export function buildMeshTree(
 export function updateSceneObject(
   scene: THREE.Scene,
   updatedObjects: Object3D[],
-  objectId: string,
+  objectId: string
 ) {
   const oldMesh = scene.getObjectByProperty('userData.objectId', objectId);
   if (oldMesh) {
@@ -387,10 +341,7 @@ export function updateSceneObject(
     oldMesh.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         if (obj.geometry) obj.geometry.dispose();
-        if (
-          obj.material &&
-          typeof (obj.material as THREE.Material).dispose === 'function'
-        ) {
+        if (obj.material && typeof (obj.material as THREE.Material).dispose === 'function') {
           (obj.material as THREE.Material).dispose();
         }
       }

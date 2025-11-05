@@ -86,11 +86,7 @@ const Sidebar = () => {
                 onClick={() => handleClick('dashboard', REDIRECT.DASHBOARD)}
               >
                 {activeItem === 'dashboard' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={dashboard.src}
@@ -106,11 +102,7 @@ const Sidebar = () => {
                 onClick={() => handleClick('mes', REDIRECT.MES)}
               >
                 {activeItem === 'mes' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={mes.src}
@@ -126,11 +118,7 @@ const Sidebar = () => {
                 onClick={() => handleClick('material', REDIRECT.MATERIAL)}
               >
                 {activeItem === 'material' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={material.src}
@@ -143,16 +131,10 @@ const Sidebar = () => {
               </li>
               <li
                 className={activeItem === 'catalogmanager' ? styles.active : ''}
-                onClick={() =>
-                  handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)
-                }
+                onClick={() => handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)}
               >
                 {activeItem === 'catalogmanager' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={catalogmanager.src}
@@ -168,11 +150,7 @@ const Sidebar = () => {
                 onClick={() => handleClick('designs', REDIRECT.DESIGNS)}
               >
                 {activeItem === 'designs' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={design.src}
@@ -192,11 +170,7 @@ const Sidebar = () => {
                   onClick={() => handleClick('settings', REDIRECT.SETTINGS)}
                 >
                   {activeItem === 'settings' && (
-                    <img
-                      src={selected.src}
-                      alt="Selected"
-                      className={styles.selected_icon}
-                    />
+                    <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                   )}
                   <img
                     src={Setting.src}
@@ -211,11 +185,7 @@ const Sidebar = () => {
                   className={activeItem === 'logout' ? styles.active : ''}
                   onClick={() => handleClick('logout', '/auth/login')}
                 >
-                  <img
-                    src={Logout.src}
-                    alt="logout"
-                    className={styles.sidebar_icon}
-                  />
+                  <img src={Logout.src} alt="logout" className={styles.sidebar_icon} />
                   Log out
                 </li>
               </div>
@@ -238,11 +208,7 @@ const Sidebar = () => {
                 data-title="Dashboard"
               >
                 {activeItem === 'dashboard' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={dashboard.src}
@@ -258,11 +224,7 @@ const Sidebar = () => {
                 data-title="MES"
               >
                 {activeItem === 'mes' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={mes.src}
@@ -278,11 +240,7 @@ const Sidebar = () => {
                 data-title="Material"
               >
                 {activeItem === 'material' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={material.src}
@@ -294,17 +252,11 @@ const Sidebar = () => {
               </li>
               <li
                 className={`${styles.listItem} ${activeItem === 'catalogmanager' ? styles.active_small : ''}`}
-                onClick={() =>
-                  handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)
-                }
+                onClick={() => handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)}
                 data-title="Catalog Manager"
               >
                 {activeItem === 'catalogmanager' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={catalogmanager.src}
@@ -320,11 +272,7 @@ const Sidebar = () => {
                 data-title="Design"
               >
                 {activeItem === 'designs' && (
-                  <img
-                    src={selected.src}
-                    alt="Selected"
-                    className={styles.selected_icon}
-                  />
+                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
                   src={design.src}
@@ -344,28 +292,16 @@ const Sidebar = () => {
                   data-title="Settings"
                 >
                   {activeItem === 'settings' && (
-                    <img
-                      src={selected.src}
-                      alt="Selected"
-                      className={styles.selected_icon}
-                    />
+                    <img src={selected.src} alt="Selected" className={styles.selected_icon} />
                   )}
-                  <img
-                    src={Setting.src}
-                    alt="setting"
-                    className={styles.sidebar_icon}
-                  />
+                  <img src={Setting.src} alt="setting" className={styles.sidebar_icon} />
                 </li>
                 <li
                   className={`${styles.listItem} ${activeItem === 'logout' ? styles.active_small : ''}`}
                   onClick={() => handleClick('logout', '/auth/login')}
                   data-title="Logout"
                 >
-                  <img
-                    src={Logout.src}
-                    alt="logout"
-                    className={styles.sidebar_icon}
-                  />
+                  <img src={Logout.src} alt="logout" className={styles.sidebar_icon} />
                 </li>
               </div>
             </ul>

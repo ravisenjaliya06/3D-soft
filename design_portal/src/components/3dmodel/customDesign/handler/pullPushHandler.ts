@@ -17,8 +17,7 @@ export class PushPullHandler {
   private initialMouseY: number = 0;
   private extrudeDistance: number = 0;
   private originalShape: THREE.Shape | null = null;
-  private originalSettings: { depth: number; bevelEnabled: boolean } | null =
-    null;
+  private originalSettings: { depth: number; bevelEnabled: boolean } | null = null;
   private originalPosition: THREE.Vector3 | null = null;
   private originalRotation: THREE.Euler | null = null;
   private originalScale: THREE.Vector3 | null = null;
@@ -78,13 +77,8 @@ export class PushPullHandler {
 
   private getIntersectedFace(): THREE.Intersection | null {
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(
-      this.scene.children,
-      true,
-    );
-    return (
-      intersects.find((i) => i.object instanceof THREE.Mesh && i.face) || null
-    );
+    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+    return intersects.find((i) => i.object instanceof THREE.Mesh && i.face) || null;
   }
 
   private getShapeFromMesh(mesh: THREE.Mesh): THREE.Shape | null {
@@ -138,9 +132,7 @@ export class PushPullHandler {
     this.originalScale = this.selectedMesh.scale.clone();
     this.initialMouseY = event.clientY;
 
-    const normalMatrix = new THREE.Matrix3().getNormalMatrix(
-      this.selectedMesh.matrixWorld,
-    );
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(this.selectedMesh.matrixWorld);
     this.normal = this.selectedFace
       ? this.selectedFace.normal.clone().applyMatrix3(normalMatrix).normalize()
       : null;
@@ -153,13 +145,8 @@ export class PushPullHandler {
     const vB = new THREE.Vector3().fromBufferAttribute(positionAttr, face.b);
     const vC = new THREE.Vector3().fromBufferAttribute(positionAttr, face.c);
 
-    const centerLocal = new THREE.Vector3()
-      .addVectors(vA, vB)
-      .add(vC)
-      .divideScalar(3);
-    const centerWorld = centerLocal
-      .clone()
-      .applyMatrix4(this.selectedMesh.matrixWorld);
+    const centerLocal = new THREE.Vector3().addVectors(vA, vB).add(vC).divideScalar(3);
+    const centerWorld = centerLocal.clone().applyMatrix4(this.selectedMesh.matrixWorld);
 
     this.faceCenter = centerWorld;
 
@@ -181,10 +168,7 @@ export class PushPullHandler {
         this.findedPoints.push(p);
       }
     });
-    if (
-      this.selectedMesh?.userData?.lineUUIDs?.length &&
-      this.selectedMesh.parent
-    ) {
+    if (this.selectedMesh?.userData?.lineUUIDs?.length && this.selectedMesh.parent) {
       const parent = this.selectedMesh.parent;
       this.selectedMesh.userData.lineUUIDs.forEach((uuid: string) => {
         const line = parent.getObjectByProperty('uuid', uuid);
@@ -221,13 +205,7 @@ export class PushPullHandler {
   }
 
   private onMouseMove(event: MouseEvent) {
-    if (
-      !this.selectedMesh ||
-      !this.selectedFace ||
-      !this.originalShape ||
-      !this.normal
-    )
-      return;
+    if (!this.selectedMesh || !this.selectedFace || !this.originalShape || !this.normal) return;
 
     this.updateMouse(event);
 
@@ -244,10 +222,7 @@ export class PushPullHandler {
     this.updateExtrusion();
   }
 
-  private isAnyTwoPointsAreEqual(
-    p1: THREE.Vector3,
-    p2: THREE.Vector3,
-  ): boolean {
+  private isAnyTwoPointsAreEqual(p1: THREE.Vector3, p2: THREE.Vector3): boolean {
     let equalCount = 0;
 
     if (p1.x === p2.x) equalCount++;
@@ -257,11 +232,7 @@ export class PushPullHandler {
     return equalCount >= 2;
   }
 
-  private createEdge(
-    extrusionLine: THREE.Line,
-    start: THREE.Vector3,
-    end: THREE.Vector3,
-  ) {
+  private createEdge(extrusionLine: THREE.Line, start: THREE.Vector3, end: THREE.Vector3) {
     const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
     const line = new THREE.Line(geometry, lineMaterial);
@@ -275,8 +246,7 @@ export class PushPullHandler {
     line.userData.basePoints = [start.clone(), end.clone()];
     line.userData.curruntExtrusion = this.extrudeDistance;
     if (extrusionLine.userData.baseLineConnectedId) {
-      line.userData.baseLineConnectedId =
-        extrusionLine.userData.baseLineConnectedId;
+      line.userData.baseLineConnectedId = extrusionLine.userData.baseLineConnectedId;
     } else {
       line.userData.baseLineConnectedId = extrusionLine.uuid;
     }
@@ -324,7 +294,7 @@ export class PushPullHandler {
     line: THREE.Line,
     newLine: THREE.Line,
     start: THREE.Vector3,
-    end: THREE.Vector3,
+    end: THREE.Vector3
   ) {
     this.baseLines.forEach((baseLine) => {
       const points = baseLine.userData.points;
@@ -332,8 +302,7 @@ export class PushPullHandler {
       if (
         (this.isAnyTwoPointsAreEqual(start, points.a) &&
           this.isAnyTwoPointsAreEqual(end, points.b)) ||
-        (this.isAnyTwoPointsAreEqual(start, points.b) &&
-          this.isAnyTwoPointsAreEqual(end, points.a))
+        (this.isAnyTwoPointsAreEqual(start, points.b) && this.isAnyTwoPointsAreEqual(end, points.a))
       ) {
         const matchingLineUUIDs: string[] = [];
 
@@ -423,10 +392,7 @@ export class PushPullHandler {
       depth: this.extrudeDistance,
       bevelEnabled: false,
     };
-    const newGeometry = new THREE.ExtrudeGeometry(
-      this.originalShape,
-      extrudeSettings,
-    );
+    const newGeometry = new THREE.ExtrudeGeometry(this.originalShape, extrudeSettings);
     newGeometry.center();
 
     const newMesh = new THREE.Mesh(newGeometry, this.selectedMesh.material);
@@ -444,22 +410,14 @@ export class PushPullHandler {
     this.selectedMesh.userData.points = this.originalPoints;
     this.selectedMesh.userData.shape = this.originalShape;
 
-    const basePoints = (this.selectedMesh.userData.points ??
-      []) as THREE.Vector3[];
+    const basePoints = (this.selectedMesh.userData.points ?? []) as THREE.Vector3[];
     const baseWorld = basePoints.map((p) =>
       p
         .clone()
-        .applyMatrix4(
-          this.selectedMesh
-            ? this.selectedMesh.matrixWorld
-            : new THREE.Matrix4(),
-        ),
+        .applyMatrix4(this.selectedMesh ? this.selectedMesh.matrixWorld : new THREE.Matrix4())
     );
 
-    const normalDir = this.normal
-      .clone()
-      .normalize()
-      .multiplyScalar(this.extrudeDistance);
+    const normalDir = this.normal.clone().normalize().multiplyScalar(this.extrudeDistance);
     const extrudedWorld = baseWorld.map((p) => p.clone().add(normalDir));
 
     const addEdge = (start: THREE.Vector3, end: THREE.Vector3) => {
@@ -489,13 +447,13 @@ export class PushPullHandler {
           new THREE.Vector3(
             line.userData.points.a.x,
             line.userData.points.a.y,
-            line.userData.points.a.z,
+            line.userData.points.a.z
           ),
           new THREE.Vector3(
             line.userData.points.b.x,
             line.userData.points.b.y,
-            line.userData.points.b.z,
-          ),
+            line.userData.points.b.z
+          )
         );
       });
     }
@@ -506,7 +464,7 @@ export class PushPullHandler {
       new_distance = new THREE.Vector3(
         extrudedWorld[0].x - basePoints[0].x,
         extrudedWorld[0].y - basePoints[0].y,
-        extrudedWorld[0].z - basePoints[0].z,
+        extrudedWorld[0].z - basePoints[0].z
       );
 
       if (line.userData.basePoints) {
@@ -514,27 +472,21 @@ export class PushPullHandler {
         const baseWorld = points.map((p) =>
           p
             .clone()
-            .applyMatrix4(
-              this.selectedMesh
-                ? this.selectedMesh.matrixWorld
-                : new THREE.Matrix4(),
-            ),
+            .applyMatrix4(this.selectedMesh ? this.selectedMesh.matrixWorld : new THREE.Matrix4())
         );
 
         const normalDir = this.normal
           ?.clone()
           .normalize()
-          .multiplyScalar(
-            this.extrudeDistance - line.userData.curruntExtrusion,
-          );
+          .multiplyScalar(this.extrudeDistance - line.userData.curruntExtrusion);
         const extrudedWorld = baseWorld.map((p) =>
-          p.clone().add(normalDir ? normalDir : new THREE.Vector3()),
+          p.clone().add(normalDir ? normalDir : new THREE.Vector3())
         );
 
         new_distance = new THREE.Vector3(
           extrudedWorld[0].x - points[0].x,
           extrudedWorld[0].y - points[0].y,
-          extrudedWorld[0].z - points[0].z,
+          extrudedWorld[0].z - points[0].z
         );
       }
       const start = this.original_points[line.uuid].a.clone().add(new_distance);
@@ -571,23 +523,19 @@ export class PushPullHandler {
         a: new THREE.Vector3(
           originalLine.userData.points.a.x,
           originalLine.userData.points.a.y,
-          originalLine.userData.points.a.z,
+          originalLine.userData.points.a.z
         ),
         b: new THREE.Vector3(
           originalLine.userData.points.b.x,
           originalLine.userData.points.b.y,
-          originalLine.userData.points.b.z,
+          originalLine.userData.points.b.z
         ),
       };
 
       for (const new_line of this.extrusionOutline) {
         let new_line_points = this.original_points[new_line.uuid];
-        if (
-          new_line.userData.baseLineConnectedId &&
-          originalLine.userData.isNewBaseLine !== true
-        ) {
-          new_line_points =
-            this.original_points[new_line.userData.baseLineConnectedId];
+        if (new_line.userData.baseLineConnectedId && originalLine.userData.isNewBaseLine !== true) {
+          new_line_points = this.original_points[new_line.userData.baseLineConnectedId];
         }
 
         // 2. line from opposite side
@@ -629,10 +577,7 @@ export class PushPullHandler {
     this.selectedMesh.userData.points = extrudedWorld;
   }
 
-  private mergeTwoLines(
-    line1: THREE.Line,
-    line2: THREE.Line,
-  ): THREE.Line | null {
+  private mergeTwoLines(line1: THREE.Line, line2: THREE.Line): THREE.Line | null {
     const { a: a1, b: b1 } = line1.userData.points;
     const { a: a2, b: b2 } = line2.userData.points;
 
@@ -729,18 +674,13 @@ export class PushPullHandler {
       let oppositeShape: THREE.Mesh | null = null;
       this.selectedMesh?.parent?.children.forEach((obj) => {
         const uuids = obj.userData.lineUUIDs;
-        if (
-          Array.isArray(uuids) &&
-          uuids.includes(line.uuid) &&
-          obj instanceof THREE.Mesh
-        ) {
+        if (Array.isArray(uuids) && uuids.includes(line.uuid) && obj instanceof THREE.Mesh) {
           if (!findedShapes.includes(obj)) {
             oppositeShape = obj;
             findedShapes.push(obj);
-            oppositeShape.userData.lineUUIDs =
-              oppositeShape.userData.lineUUIDs.filter(
-                (id: string) => id !== line.uuid,
-              );
+            oppositeShape.userData.lineUUIDs = oppositeShape.userData.lineUUIDs.filter(
+              (id: string) => id !== line.uuid
+            );
           }
         }
       });
@@ -751,20 +691,11 @@ export class PushPullHandler {
         lines = (oppositeShape as THREE.Mesh).userData.lines;
         for (const [lineId, points] of Object.entries(lines)) {
           const pointsTyped = points as { a: THREE.Vector3; b: THREE.Vector3 };
-          const a = new THREE.Vector3(
-            pointsTyped.a.x,
-            pointsTyped.a.y,
-            pointsTyped.a.z,
-          );
-          const b = new THREE.Vector3(
-            pointsTyped.b.x,
-            pointsTyped.b.y,
-            pointsTyped.b.z,
-          );
+          const a = new THREE.Vector3(pointsTyped.a.x, pointsTyped.a.y, pointsTyped.a.z);
+          const b = new THREE.Vector3(pointsTyped.b.x, pointsTyped.b.y, pointsTyped.b.z);
 
           const match =
-            (a.equals(targetA) && b.equals(targetB)) ||
-            (a.equals(targetB) && b.equals(targetA));
+            (a.equals(targetA) && b.equals(targetB)) || (a.equals(targetB) && b.equals(targetA));
 
           if (match) {
             delete lines[lineId];
@@ -780,10 +711,7 @@ export class PushPullHandler {
       shape_lines.push(line, ...new_not_required_shape_lines);
       shape_lines = shape_lines.filter((l) => l.uuid !== line.uuid);
       this.selectedMesh?.parent?.children.forEach((obj) => {
-        if (
-          obj instanceof THREE.Line &&
-          oppositeShape?.userData.lineUUIDs.includes(obj.uuid)
-        ) {
+        if (obj instanceof THREE.Line && oppositeShape?.userData.lineUUIDs.includes(obj.uuid)) {
           shape_lines.push(obj);
         }
       });
@@ -830,7 +758,7 @@ export class PushPullHandler {
       const index = lines.findIndex(
         (line) =>
           this.arePointsEqual(line.userData.points.a, lastPoint) ||
-          this.arePointsEqual(line.userData.points.b, lastPoint),
+          this.arePointsEqual(line.userData.points.b, lastPoint)
       );
 
       if (index === -1) break;
@@ -864,9 +792,7 @@ export class PushPullHandler {
       const vec = p.clone().sub(p0);
       return new THREE.Vector2(vec.dot(u), vec.dot(v));
     });
-    if (
-      !projectedPoints[0].equals(projectedPoints[projectedPoints.length - 1])
-    ) {
+    if (!projectedPoints[0].equals(projectedPoints[projectedPoints.length - 1])) {
       projectedPoints.push(projectedPoints[0].clone());
     }
     let area = 0;
@@ -884,18 +810,12 @@ export class PushPullHandler {
     if (area === 0) return p0.clone();
     cx /= 6 * area;
     cy /= 6 * area;
-    const center3D = p0
-      .clone()
-      .add(u.clone().multiplyScalar(cx))
-      .add(v.clone().multiplyScalar(cy));
+    const center3D = p0.clone().add(u.clone().multiplyScalar(cx)).add(v.clone().multiplyScalar(cy));
 
     return center3D;
   }
 
-  private createExtrudeMeshFromLines(
-    faces: THREE.Line[][],
-    depth = 0.0001,
-  ): THREE.Mesh[] {
+  private createExtrudeMeshFromLines(faces: THREE.Line[][], depth = 0.0001): THREE.Mesh[] {
     const extrudedMeshes: THREE.Mesh[] = [];
 
     for (const face of faces) {
@@ -906,8 +826,8 @@ export class PushPullHandler {
           new THREE.Vector3(
             line.userData.points.a.x,
             line.userData.points.a.y,
-            line.userData.points.a.z,
-          ),
+            line.userData.points.a.z
+          )
       );
       if (edgePoints.length < 3) continue;
 

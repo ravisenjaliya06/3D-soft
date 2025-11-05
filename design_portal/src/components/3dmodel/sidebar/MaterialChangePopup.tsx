@@ -43,12 +43,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedCategory, setSelectedCategory] = useState(initialTab);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(
-    null,
-  );
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [materialData, setMaterialData] = useState<any[]>([]);
-  const [selectedMaterialType, setSelectedMaterialType] =
-    useState<string>('Banding');
+  const [selectedMaterialType, setSelectedMaterialType] = useState<string>('Banding');
   const [materialSearch, setMaterialSearch] = useState<string>('');
 
   // Derive current rule and parts list from props
@@ -61,10 +58,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   // Fetch materials once
   React.useEffect(() => {
     const getMaterial = async () => {
-      const response: { status: number; data: any[] } = await commonService.get(
-        'material',
-        '',
-      );
+      const response: { status: number; data: any[] } = await commonService.get('material', '');
       if (response.status === 200) {
         setMaterialData(response.data);
       }
@@ -96,23 +90,18 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   ];
 
   const discoveredTypes = Array.from(
-    new Set((materialData || []).map((m) => m.type).filter(Boolean)),
+    new Set((materialData || []).map((m) => m.type).filter(Boolean))
   ) as string[];
-  const materialTypes =
-    discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
+  const materialTypes = discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
 
   // Filtered materials by type and search
   const filteredMaterials = (materialData || [])
-    .filter((m) =>
-      selectedMaterialType ? m.type === selectedMaterialType : true,
-    )
+    .filter((m) => (selectedMaterialType ? m.type === selectedMaterialType : true))
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-          (m.description || '')
-            .toLowerCase()
-            .includes(materialSearch.toLowerCase())
-        : true,
+          (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+        : true
     );
 
   // Whenever the active rule changes, refresh partsData
@@ -130,17 +119,15 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
     // optimistic update
     setPartsData((prev) =>
       prev.map((part) =>
-        part.id === partId
-          ? { ...part, material: { id: material.id, name: material.name } }
-          : part,
-      ),
+        part.id === partId ? { ...part, material: { id: material.id, name: material.name } } : part
+      )
     );
 
     try {
       const response: { status: number } = await commonService.put(
         'material',
         `catalog/part/${partId}`,
-        { material_id: materialId },
+        { material_id: materialId }
       );
       if (response.status === 200) {
         setSelectedPartId(null);
@@ -149,17 +136,13 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
     } catch (err) {
       // revert on error
       setPartsData((prev) =>
-        prev.map((part) =>
-          part.id === partId ? { ...part, material: undefined } : part,
-        ),
+        prev.map((part) => (part.id === partId ? { ...part, material: undefined } : part))
       );
     }
   };
 
   const handleSave = () => {
-    const assigned = partsData.map(
-      (p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`,
-    );
+    const assigned = partsData.map((p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`);
     onSave(assigned);
     onClose();
   };
@@ -186,19 +169,15 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
           <div className={styles.leftTabs}>
             <span className={styles.doorLabel}>Rules</span>
             <div className={styles.tabs}>
-              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map(
-                (tab) => (
-                  <button
-                    key={tab}
-                    className={`${styles.tab} ${
-                      activeTab === tab ? styles.activeTab : ''
-                    }`}
-                    onClick={() => setActiveTab(tab)}
-                  >
-                    {tab}
-                  </button>
-                ),
-              )}
+              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map((tab) => (
+                <button
+                  key={tab}
+                  className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -241,9 +220,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                 {partsData.map((part) => (
                   <tr
                     key={part.id}
-                    className={
-                      selectedPartId === part.id ? styles.selectedRow : ''
-                    }
+                    className={selectedPartId === part.id ? styles.selectedRow : ''}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       const materialId = e.dataTransfer.getData('materialId');
@@ -263,14 +240,12 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                 ))}
 
                 {/* Empty rows for consistent height */}
-                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map(
-                  (_, idx) => (
-                    <tr key={`empty-${idx}`}>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                    </tr>
-                  ),
-                )}
+                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map((_, idx) => (
+                  <tr key={`empty-${idx}`}>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -311,12 +286,8 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                   <tr
                     key={item.id}
                     draggable
-                    className={
-                      selectedMaterialId === item.id ? styles.selectedRow : ''
-                    }
-                    onDragStart={(e) =>
-                      e.dataTransfer.setData('materialId', item.id)
-                    }
+                    className={selectedMaterialId === item.id ? styles.selectedRow : ''}
+                    onDragStart={(e) => e.dataTransfer.setData('materialId', item.id)}
                     onClick={() => setSelectedMaterialId(item.id)}
                   >
                     <td>
@@ -328,14 +299,12 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                     <td>{item.description || ''}</td>
                   </tr>
                 ))}
-                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map(
-                  (_, idx) => (
-                    <tr key={`empty-${idx}`}>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                    </tr>
-                  ),
-                )}
+                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map((_, idx) => (
+                  <tr key={`empty-${idx}`}>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

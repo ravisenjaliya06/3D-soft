@@ -63,10 +63,7 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
           <button className={styles.cancelcreateButton} onClick={onClose}>
             Cancel
           </button>
-          <button
-            className={styles.createcontinueButton}
-            onClick={onCreateCompany}
-          >
+          <button className={styles.createcontinueButton} onClick={onCreateCompany}>
             Create
           </button>
         </div>

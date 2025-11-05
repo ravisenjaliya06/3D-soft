@@ -33,14 +33,7 @@ import axios from 'axios';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { getTokenDetail } from '../helper/helper';
 import InputField from '../inputfields/InputField';
-import {
-  Member,
-  Organization,
-  SettingConfigs,
-  TeamRole,
-  User,
-  addmember,
-} from './interface';
+import { Member, Organization, SettingConfigs, TeamRole, User, addmember } from './interface';
 
 const Settings = () => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -71,9 +64,7 @@ const Settings = () => {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileUrl, setprofileUrl] = useState('');
   const [organizationUrl, setorganizationUrl] = useState('');
-  const [organizationNameError, setOrganizationNameError] = useState<
-    string | null
-  >(null);
+  const [organizationNameError, setOrganizationNameError] = useState<string | null>(null);
 
   const [dropdownPosition, setDropdownPosition] = useState<{
     x: number;
@@ -99,19 +90,16 @@ const Settings = () => {
   const [grooveGap, setGrooveGap] = useState<number | null>();
   const [grooveDig, setGrooveDig] = useState<number | null>();
 
-  const rolesList = [
-    'Accounts Manager',
-    'Mes Editor',
-    'Designer',
-    'Catalog Manager',
-  ];
+  const rolesList = ['Accounts Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
 
   const [members, setMembers] = useState<Member[]>([]);
 
   const handalGetmember = async () => {
     try {
-      const response: { status: number; data: { users: Member[] } } =
-        await CommonService.get('user', 'organization/users');
+      const response: { status: number; data: { users: Member[] } } = await CommonService.get(
+        'user',
+        'organization/users'
+      );
       if (response.status === 200) {
         const membersData = response.data.users;
         setMembers(membersData);
@@ -124,16 +112,13 @@ const Settings = () => {
   };
 
   const filteredMembers = members.filter((member) =>
-    activeTab === 'active' ? !member.is_invited : member.is_invited,
+    activeTab === 'active' ? !member.is_invited : member.is_invited
   );
 
   useEffect(() => {
     handalGetmember();
   }, []);
-  const handleRoleAddClick = (
-    event: React.MouseEvent<HTMLImageElement>,
-    memberId: number,
-  ) => {
+  const handleRoleAddClick = (event: React.MouseEvent<HTMLImageElement>, memberId: number) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setDropdownPosition({
       x: rect.left + window.scrollX,
@@ -180,13 +165,11 @@ const Settings = () => {
     updatedRoles.forEach((r) => formData.append('groups[]', r));
 
     CommonService.put('user', `organization/edit_user/${memberId}`, formData)
-      .then(
-        (response: { status: number; data: TeamRole; memberId: number }) => {
-          if (response.status === 200) {
-            handalGetmember();
-          }
-        },
-      )
+      .then((response: { status: number; data: TeamRole; memberId: number }) => {
+        if (response.status === 200) {
+          handalGetmember();
+        }
+      })
       .catch((error) => console.error('Error updating roles:', error));
 
     setOpenDropdown(false);
@@ -208,8 +191,8 @@ const Settings = () => {
       prevMembers.map((member) =>
         member.id === memberId
           ? { ...member, groups: member.groups.filter((r) => r !== role) }
-          : member,
-      ),
+          : member
+      )
     );
 
     const selectedMember = members.find((member) => member.id === memberId);
@@ -254,30 +237,22 @@ const Settings = () => {
       label: 'Name',
       type: 'name',
       placeholder: 'Enter design name',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setAddMemberName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberName(e.target.value),
     },
     {
       label: 'Email',
       type: 'email',
       placeholder: 'Enter design name',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setAddMemberEmail(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberEmail(e.target.value),
     },
   ];
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get(
-        'user',
-        '',
-      );
+      const response: { status: number; data: User } = await CommonService.get('user', '');
       if (response.status === 200) {
         const UserDetails = response.data;
         setUserDetails(UserDetails);
-        if (
-          UserDetails.profile_picture &&
-          typeof UserDetails.profile_picture === 'string'
-        ) {
+        if (UserDetails.profile_picture && typeof UserDetails.profile_picture === 'string') {
           const serverImageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${UserDetails.profile_picture}`;
           setprofileUrl(serverImageUrl);
         } else {
@@ -306,8 +281,11 @@ const Settings = () => {
     formData.append('email', newMember.email);
     newMember.groups.forEach((groups) => formData.append('groups[]', groups));
 
-    const response: { status: number; data: addmember } =
-      await CommonService.post('user', 'organization/add_user', formData);
+    const response: { status: number; data: addmember } = await CommonService.post(
+      'user',
+      'organization/add_user',
+      formData
+    );
 
     if (response.status === 201) {
       setSuccessMessage('Member added successfully!');
@@ -355,16 +333,14 @@ const Settings = () => {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       );
       const data = response.data as User;
       if (response.status === 200) {
         setUserDetails(data);
         setPhoneError(data.phone);
         if (data.profile_picture && typeof data.profile_picture === 'string') {
-          setprofileUrl(
-            `${process.env.NEXT_PUBLIC_PUBLIC_API}/${data.profile_picture}`,
-          );
+          setprofileUrl(`${process.env.NEXT_PUBLIC_PUBLIC_API}/${data.profile_picture}`);
         }
         setSuccessMessage('Profile updated successfully!');
         fetchUserDetails();
@@ -402,8 +378,7 @@ const Settings = () => {
       label: 'Height',
       type: 'number',
       placeholder: 'Height',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setNestHeight(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setNestHeight(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: nestHeight,
@@ -412,8 +387,7 @@ const Settings = () => {
       label: 'Width',
       type: 'number',
       placeholder: 'Width',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setNestWidth(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setNestWidth(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: nestWidth,
@@ -424,8 +398,7 @@ const Settings = () => {
       label: 'Height',
       type: 'number',
       placeholder: 'Height',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setHeight(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setHeight(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: height,
@@ -439,8 +412,7 @@ const Settings = () => {
       label: 'Width',
       type: 'number',
       placeholder: 'Width',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setWidth(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setWidth(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: width,
@@ -456,8 +428,7 @@ const Settings = () => {
       label: 'Distance(mm)',
       type: 'number',
       placeholder: 'Distance',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setMinifixDistance(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: minifixDistance,
@@ -468,8 +439,7 @@ const Settings = () => {
       label: 'Gap(mm)',
       type: 'number',
       placeholder: 'Gap',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setGrooveGap(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveGap(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: grooveGap,
@@ -478,8 +448,7 @@ const Settings = () => {
       label: 'Dig(mm)',
       type: 'number',
       placeholder: 'Dig',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setGrooveDig(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveDig(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: grooveDig,
@@ -492,8 +461,7 @@ const Settings = () => {
       type: 'text',
       placeholder: 'Enter User Name',
       value: username,
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setUsername(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: '',
       mediumField: true,
       readOnly: true,
@@ -540,10 +508,7 @@ const Settings = () => {
   ];
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(false);
       }
     };
@@ -557,7 +522,7 @@ const Settings = () => {
   const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { id, checked } = event.target;
     setSelectedRoles((prevRoles) =>
-      checked ? [...prevRoles, id] : prevRoles.filter((role) => role !== id),
+      checked ? [...prevRoles, id] : prevRoles.filter((role) => role !== id)
     );
   };
 
@@ -584,30 +549,22 @@ const Settings = () => {
 
   const handleDeleteMember = async (memberId: number) => {
     const currentUserEmailId = getCurrentUserEmailId();
-    if (
-      members.find((member) => member.id === memberId)?.email ===
-      currentUserEmailId
-    ) {
+    if (members.find((member) => member.id === memberId)?.email === currentUserEmailId) {
       alert('You cannot remove yourself from the team.');
       return;
     }
 
-    const confirmDelete = window.confirm(
-      'Are you sure you want to remove this team member?',
-    );
+    const confirmDelete = window.confirm('Are you sure you want to remove this team member?');
     if (!confirmDelete) return;
 
     try {
-      const response: { status: number } =
-        await CommonService.deleteWithSingleParam(
-          'user',
-          'organization/remove_user',
-          memberId,
-        );
+      const response: { status: number } = await CommonService.deleteWithSingleParam(
+        'user',
+        'organization/remove_user',
+        memberId
+      );
       if (response.status === 200) {
-        setMembers((prevMembers) =>
-          prevMembers.filter((member) => member.id !== memberId),
-        );
+        setMembers((prevMembers) => prevMembers.filter((member) => member.id !== memberId));
         alert('Team member removed successfully!');
         await handalGetmember();
       } else {
@@ -616,9 +573,7 @@ const Settings = () => {
     } catch (error) {
       console.error('Error deleting member:', error);
       const errorMsg =
-        error instanceof Error
-          ? error.message
-          : 'An error occurred while removing member';
+        error instanceof Error ? error.message : 'An error occurred while removing member';
       setErrorMessage(errorMsg);
     }
   };
@@ -631,9 +586,7 @@ const Settings = () => {
     document.getElementById('organizationImageFile')?.click();
   };
 
-  const handleOrganizationImageChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleOrganizationImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const url = URL.createObjectURL(file);
@@ -643,9 +596,7 @@ const Settings = () => {
     }
   };
 
-  const handleProfileImageChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const url = URL.createObjectURL(file);
@@ -656,15 +607,14 @@ const Settings = () => {
 
   const handalSetOrganization = async () => {
     try {
-      const response: { status: number; data: Organization } =
-        await CommonService.get('user', 'organization/details');
+      const response: { status: number; data: Organization } = await CommonService.get(
+        'user',
+        'organization/details'
+      );
       if (response.status === 200) {
         const organizationdata = response.data;
         setorganization(organizationdata);
-        if (
-          organizationdata.logo &&
-          typeof organizationdata.logo === 'string'
-        ) {
+        if (organizationdata.logo && typeof organizationdata.logo === 'string') {
           const serverImageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organizationdata.logo}`;
           setorganizationUrl(serverImageUrl);
         }
@@ -703,7 +653,7 @@ const Settings = () => {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       );
 
       const data = response.data as Organization;
@@ -766,8 +716,10 @@ const Settings = () => {
   }, []);
 
   const fetchSettingsConfig = async () => {
-    const response: { status: number; data: SettingConfigs } =
-      await CommonService.get('design', 'setting');
+    const response: { status: number; data: SettingConfigs } = await CommonService.get(
+      'design',
+      'setting'
+    );
 
     if (response.status === 200) {
       const data = response.data;
@@ -790,20 +742,14 @@ const Settings = () => {
         <div className={styles.mainContent}>
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
-              <img
-                src={account_profile.src}
-                className={styles.accountprofile}
-                alt="profile"
-              />
+              <img src={account_profile.src} className={styles.accountprofile} alt="profile" />
               <p className={styles.useremail}> {UserDetails?.email}</p>
             </div>
             <div className={styles.menuImg}>
               <img src={simple_line.src} alt="line" />
             </div>
             <div
-              className={
-                activeMenu === 'profile' ? styles.activeMenu : styles.menuItems
-              }
+              className={activeMenu === 'profile' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('profile')}
             >
               {activeMenu === 'profile' ? (
@@ -818,9 +764,7 @@ const Settings = () => {
               )}
             </div>
             <div
-              className={
-                activeMenu === 'team' ? styles.activeMenu : styles.menuItems
-              }
+              className={activeMenu === 'team' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('team')}
             >
               {activeMenu === 'team' ? (
@@ -835,11 +779,7 @@ const Settings = () => {
               )}
             </div>
             <div
-              className={
-                activeMenu === 'organizations'
-                  ? styles.activeMenu
-                  : styles.menuItems
-              }
+              className={activeMenu === 'organizations' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('organizations')}
             >
               {activeMenu === 'organizations' ? (
@@ -855,11 +795,7 @@ const Settings = () => {
             </div>
             {/* Design setting menu */}
             <div
-              className={
-                activeMenu === 'Design setting'
-                  ? styles.activeMenu
-                  : styles.menuItems
-              }
+              className={activeMenu === 'Design setting' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('Design setting')}
             >
               {activeMenu === 'Design setting' ? (
@@ -900,10 +836,7 @@ const Settings = () => {
                   />
                   <p>{UserDetails?.username}</p>
                 </div>
-                <form
-                  className={styles.form}
-                  onSubmit={(e) => e.preventDefault()}
-                >
+                <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.inputGroup}>
                     {firstfieldsgroup.map((field, index) => (
                       <InputField
@@ -1003,11 +936,7 @@ const Settings = () => {
                 <div className={styles.heading_containar}>
                   <h4>Set your default design</h4>
                 </div>
-                <img
-                  src={design_line.src}
-                  alt="design"
-                  className={styles.designline}
-                />
+                <img src={design_line.src} alt="design" className={styles.designline} />
 
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
@@ -1035,11 +964,7 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                <img
-                  src={design_line.src}
-                  alt="design"
-                  className={styles.designline}
-                />
+                <img src={design_line.src} alt="design" className={styles.designline} />
 
                 <h4 className={styles.design_unit_size}>Design Unit Size</h4>
                 <div className={styles.rediogroup}>
@@ -1092,11 +1017,7 @@ const Settings = () => {
                     Feet
                   </label>
                 </div>
-                <img
-                  src={design_line.src}
-                  alt="design"
-                  className={styles.designline}
-                />
+                <img src={design_line.src} alt="design" className={styles.designline} />
                 {/*Minifix setting and grooving data */}
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
@@ -1146,9 +1067,7 @@ const Settings = () => {
                 <div className={styles.team}>
                   {/* Title Section */}
                   <div className={styles.designsettingTitle}>
-                    <p className={styles.designsettingTitleText}>
-                      Team Members
-                    </p>
+                    <p className={styles.designsettingTitleText}>Team Members</p>
                   </div>
                   <div className={styles.teamTopBar}>
                     <button
@@ -1172,10 +1091,7 @@ const Settings = () => {
                       </button>
                     </div>
                   </div>
-                  <div
-                    className={styles.tableContainer}
-                    ref={tableContainerRef}
-                  >
+                  <div className={styles.tableContainer} ref={tableContainerRef}>
                     <table>
                       <thead>
                         <tr>
@@ -1191,18 +1107,13 @@ const Settings = () => {
                         {filteredMembers.map((member) => (
                           <tr key={member.id}>
                             <td>
-                              <div style={{ marginLeft: '1rem' }}>
-                                {member.name}
-                              </div>
+                              <div style={{ marginLeft: '1rem' }}>{member.name}</div>
                             </td>
                             <td className={styles.emailbox}>{member.email}</td>
                             <td className={styles.rolebox}>
                               <div className={styles.roleContainer}>
                                 {member.groups.map((role, index) => (
-                                  <span
-                                    key={index}
-                                    className={styles.roleBadge}
-                                  >
+                                  <span key={index} className={styles.roleBadge}>
                                     <div>
                                       <img
                                         src={close.src}
@@ -1239,9 +1150,7 @@ const Settings = () => {
                                   src={roleaddicon.src}
                                   alt="role add"
                                   className={styles.roleaddicon}
-                                  onClick={(e) =>
-                                    handleRoleAddClick(e, member.id)
-                                  }
+                                  onClick={(e) => handleRoleAddClick(e, member.id)}
                                 />
                               </div>
                             </td>
@@ -1287,10 +1196,7 @@ const Settings = () => {
                       <div
                         key={index}
                         className={styles.dropdownItem}
-                        onClick={() =>
-                          selectedMemberId &&
-                          handleRoleSelect(role, selectedMemberId)
-                        }
+                        onClick={() => selectedMemberId && handleRoleSelect(role, selectedMemberId)}
                       >
                         <img
                           src={
@@ -1360,18 +1266,10 @@ const Settings = () => {
                         />
                         <label htmlFor="admin">Admin</label>
 
-                        <input
-                          type="checkbox"
-                          id="Mes Editor"
-                          onChange={handleCheckboxChange}
-                        />
+                        <input type="checkbox" id="Mes Editor" onChange={handleCheckboxChange} />
                         <label htmlFor="mes">MES</label>
 
-                        <input
-                          type="checkbox"
-                          id="Designer"
-                          onChange={handleCheckboxChange}
-                        />
+                        <input type="checkbox" id="Designer" onChange={handleCheckboxChange} />
                         <label htmlFor="designer">Designer</label>
 
                         <input
@@ -1384,10 +1282,7 @@ const Settings = () => {
                     </form>
                   </div>
                   <div className={styles.createButtonGrop}>
-                    <button
-                      className={styles.invitebutton}
-                      onClick={handleAddMemberClick}
-                    >
+                    <button className={styles.invitebutton} onClick={handleAddMemberClick}>
                       Invite Member
                     </button>
                   </div>

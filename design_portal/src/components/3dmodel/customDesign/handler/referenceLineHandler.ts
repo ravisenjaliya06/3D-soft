@@ -179,9 +179,7 @@ export class ReferenceLineHandler {
 
     // Update hover effect
     if (this.hoveredPoint) {
-      (this.hoveredPoint.material as THREE.MeshBasicMaterial).color.setHex(
-        0x00ff00,
-      );
+      (this.hoveredPoint.material as THREE.MeshBasicMaterial).color.setHex(0x00ff00);
       this.hoveredPoint = null;
     }
 
@@ -190,9 +188,7 @@ export class ReferenceLineHandler {
     for (const intersect of intersects) {
       if (intersect.object.userData.isReferencePoint) {
         this.hoveredPoint = intersect.object as THREE.Mesh;
-        (this.hoveredPoint.material as THREE.MeshBasicMaterial).color.setHex(
-          0x0000ff,
-        );
+        (this.hoveredPoint.material as THREE.MeshBasicMaterial).color.setHex(0x0000ff);
         document.body.style.cursor = 'pointer';
         return;
       }
@@ -238,7 +234,7 @@ export class ReferenceLineHandler {
       (obj) =>
         !obj.name.includes('reference_line') &&
         !obj.name.includes('helper') &&
-        !obj.name.includes('reference_start_marker'),
+        !obj.name.includes('reference_start_marker')
     );
 
     return this.raycaster.intersectObjects(objects, true);
@@ -252,10 +248,7 @@ export class ReferenceLineHandler {
     return this.raycaster.ray;
   }
 
-  private findNearestVertex(
-    point: THREE.Vector3,
-    object: THREE.Object3D,
-  ): THREE.Vector3 {
+  private findNearestVertex(point: THREE.Vector3, object: THREE.Object3D): THREE.Vector3 {
     let nearestVertex = point.clone();
     let minDistance = Infinity;
 
@@ -321,9 +314,7 @@ export class ReferenceLineHandler {
     const startPoint = this.firstPoint
       .clone()
       .sub(direction.clone().multiplyScalar(this.sceneSize));
-    const endPoint = this.secondPoint
-      .clone()
-      .add(direction.clone().multiplyScalar(this.sceneSize));
+    const endPoint = this.secondPoint.clone().add(direction.clone().multiplyScalar(this.sceneSize));
 
     // Create the permanent reference line
     const points = [startPoint, endPoint];
