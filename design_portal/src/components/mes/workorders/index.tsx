@@ -152,11 +152,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
               {activeDropdownId === item.id && showdropDown && (
                 <div className={styles.gridthree_dots} ref={dropdownRef}>
                   <ul className={styles.gridthree_dots_dropdown}>
-                    <li
-                    // onClick={(event) =>
-                    //     handleEditClickPopUp(event, design.id)
-                    // }
-                    >
+                    <li>
                       <img src={editiconsvg.src} alt="edit icon" />
                       Edit Work Order
                     </li>
@@ -167,11 +163,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
                       className={styles.grid_line}
                     />
 
-                    <li
-                    // onClick={(event) =>
-                    //     handleDeleteClickPopUp(event, design.id)
-                    // }
-                    >
+                    <li>
                       <img src={deleteiconsvg.src} alt="delete icon" />
                       Delete Work Order
                     </li>
@@ -182,11 +174,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
                       className={styles.grid_line}
                     />
 
-                    <li
-                    // onClick={(event) =>
-                    //     handleDeleteClickPopUp(event, design.id)
-                    // }
-                    >
+                    <li>
                       <img src={archiveiconsvg.src} alt="delete icon" />
                       Archive Work Order
                     </li>

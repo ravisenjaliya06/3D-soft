@@ -7,12 +7,6 @@
 }
 
 /* Right side main content part */
-/* 
-.rightside {
-  flex: 3;
-  max-width: 85rem;
-  min-width: none;
-} */
 .rightside {
   width: 100rem;
   color: var(--primary-color);

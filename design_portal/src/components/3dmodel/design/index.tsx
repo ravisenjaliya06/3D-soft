@@ -118,7 +118,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const hoverOutlineRef = useRef<THREE.LineSegments | null>(null);
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const alignmentIndicatorsRef = useRef<THREE.Object3D[]>([]);
-  // const linesRef = useRef(new Map<THREE.Mesh, THREE.Line[]>());
   const childOutlineGroupsRef = useRef(new Map<THREE.Mesh, THREE.Group>());
   const minifixMarkersRef = useRef<Map<THREE.Mesh, THREE.Object3D[]>>(
     new Map(),

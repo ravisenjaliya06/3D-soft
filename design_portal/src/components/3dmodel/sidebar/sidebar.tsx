@@ -343,10 +343,10 @@ const Sidebar: React.FC = () => {
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
-  
+
     if (!targetId) return;
     let doorMesh: any = null;
-      scene.traverse((node: any) => {
+    scene.traverse((node: any) => {
       if (!doorMesh && node.userData?.objectId === targetId) {
         if (node.parent && node.parent.name.includes('DoorGroup')) {
           doorMesh = node.parent;
@@ -377,7 +377,7 @@ const Sidebar: React.FC = () => {
       (min.y + max.y) / 2,
       (min.z + max.z) / 2,
     );
-    doorMesh.position.copy(doorPosition); 
+    doorMesh.position.copy(doorPosition);
 
     const padding = 0.12;
 
@@ -777,7 +777,6 @@ const Sidebar: React.FC = () => {
             </button>
           </div>
           <hr></hr>
-          {/* <hr /> */}
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>

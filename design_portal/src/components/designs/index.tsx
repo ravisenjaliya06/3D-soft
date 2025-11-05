@@ -883,8 +883,6 @@ const Designs = () => {
               </div>
             )}
 
-            {/* Delete Popup */}
-
             {showDeletePopup && (
               <div
                 className={styles.deletepopupOverlay}
