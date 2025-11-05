@@ -45,8 +45,8 @@ urlpatterns = [
     ),
     path(
         "organization/users/",
-        AddUserInOrganizationViewset.as_view({"get": "show_origanization_users"}),
-        name="show_origanization_users",
+        AddUserInOrganizationViewset.as_view({"get": "show_organization_users"}),
+        name="show_organization_users",
     ),
     path(
         "organization/invited_users/",

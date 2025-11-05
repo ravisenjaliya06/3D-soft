@@ -18,7 +18,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 # App imports
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 from umaboy.models import Organization, User
-from user.constant import ACCOUNTS_MANAGER, CATALOG_MANAGER, MES_EDITOR
+from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, MES_EDITOR
 from user.serializers import AddUserInOrganizationSerializer, SetPasswordSerializer
 
 FORGET_PASSWORD = "umaboy@321"  # noqa: S105
@@ -513,7 +513,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test456",
             "email": "testing_organization1@gmail.com",
-            "groups": [ACCOUNTS_MANAGER, MES_EDITOR, CATALOG_MANAGER],
+            "groups": [ACCOUNT_MANAGER, MES_EDITOR, CATALOG_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -536,7 +536,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test789",
             "email": "testing_organization@gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -562,7 +562,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "name": "test321",
             "email": "test321gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
 
         response = self.client.post(
@@ -584,7 +584,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "name": "test321",
             "email": "testing_organization@gmail.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"), data=data, format="json"
@@ -609,7 +609,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "user",
             "email": "existing_user@example.com",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -628,7 +628,7 @@ class APIViewTestCase(APIBaseTestCase):
         data = {
             "username": "test321",
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.post(
             reverse("add_organization_user"),
@@ -715,7 +715,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(
@@ -734,7 +734,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(
@@ -754,7 +754,7 @@ class APIViewTestCase(APIBaseTestCase):
     ) -> None:
         data = {
             "name": "test321",
-            "groups": [ACCOUNTS_MANAGER],
+            "groups": [ACCOUNT_MANAGER],
         }
         response = self.client.put(
             reverse(

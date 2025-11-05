@@ -11,7 +11,7 @@ from umaboy.models import User, UserOrganizationPermission
 
 # Local imports
 from .constant import (
-    ACCOUNTS_MANAGER,
+    ACCOUNT_MANAGER,
     CAN_MANAGE_CATALOG,
     CAN_MANAGE_DESIGN,
     CAN_MANAGE_MES,
@@ -45,8 +45,9 @@ class AccountManager(IsAuthenticated):
         user_permission = UserOrganizationPermission.objects.get(
             user=request.user, organization=user.selected_organization
         )
+
         user_groups = user_permission.groups.all()
-        group_check = user_groups.filter(name=ACCOUNTS_MANAGER).first()
+        group_check = user_groups.filter(name=ACCOUNT_MANAGER).first()
         if not group_check:
             return False
         permissions = group_check.permissions.all()
@@ -56,7 +57,7 @@ class AccountManager(IsAuthenticated):
         if request.method in [GET]:
             return permissions.filter(codename__in=allow_get_permission).exists()
 
-        if request.method in [POST, PUT, DELETE]:
+        if request.method in [POST, PUT, DELETE]:   
             return permissions.filter(codename__in=allow_permission).exists()
 
         return False
