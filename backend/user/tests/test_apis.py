@@ -825,9 +825,9 @@ class APIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_show_origanization_users(self: "APIViewTestCase") -> None:
+    def test_show_organization_users(self: "APIViewTestCase") -> None:
         response = self.client.get(
-            reverse("show_origanization_users"),
+            reverse("show_organization_users"),
             format="json",
             headers=self.get_headers,
         )
@@ -837,11 +837,11 @@ class APIViewTestCase(APIBaseTestCase):
             response_data["message"], "Organization users retrieved successfully."
         )
 
-    def test_show_origanization_users_with_invalid_token(
+    def test_show_organization_users_with_invalid_token(
         self: "APIViewTestCase",
     ) -> None:
         response = self.client.get(
-            reverse("show_origanization_users"),
+            reverse("show_organization_users"),
             format="json",
             headers=self.get_invalid_user_headers,
         )
@@ -853,7 +853,7 @@ class APIViewTestCase(APIBaseTestCase):
         )
 
     def test_delete_user_in_organization(self: "APIViewTestCase") -> None:
-        reponse = self.client.delete(
+        response = self.client.delete(
             reverse(
                 "remove_user_from_organization",
                 kwargs={"user_id": str(self.invited_user.id)},
@@ -865,9 +865,9 @@ class APIViewTestCase(APIBaseTestCase):
             Organization.objects.using(DEFAULT_DATABASE).filter(user=self.user).first()
         )
         is_user_in_org = organization.user.filter(id=self.invited_user.id).exists()
-        self.assertEqual(reponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            reponse.data["message"], "User removed from organization successfully."
+            response.data["message"], "User removed from organization successfully."
         )
         self.assertIsNotNone(organization)
         self.assertFalse(is_user_in_org)
