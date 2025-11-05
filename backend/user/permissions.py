@@ -11,7 +11,7 @@ from umaboy.models import User, UserOrganizationPermission
 
 # Local imports
 from .constant import (
-    ACCOUNTS_MANAGER,
+    ACCOUNT_MANAGER,
     CAN_MANAGE_CATALOG,
     CAN_MANAGE_DESIGN,
     CAN_MANAGE_MES,
@@ -32,7 +32,7 @@ from .constant import (
 
 class AccountManager(IsAuthenticated):
     """
-    Custom permission to allow access only to Accounts Managers for a specific organization.
+    Custom permission to allow access only to Account Managers for a specific organization.
     """
 
     def has_permission(
@@ -45,8 +45,9 @@ class AccountManager(IsAuthenticated):
         user_permission = UserOrganizationPermission.objects.get(
             user=request.user, organization=user.selected_organization
         )
+
         user_groups = user_permission.groups.all()
-        group_check = user_groups.filter(name=ACCOUNTS_MANAGER).first()
+        group_check = user_groups.filter(name=ACCOUNT_MANAGER).first()
         if not group_check:
             return False
         permissions = group_check.permissions.all()

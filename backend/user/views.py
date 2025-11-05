@@ -523,7 +523,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
             status=HTTP_200_OK,
         )
 
-    def show_origanization_users(
+    def show_organization_users(
         self: "AddUserInOrganizationViewset", request: Request
     ) -> Response:
         organization_user = request.user
@@ -549,7 +549,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
 
         return Response(
             {
-                "message": "Organization users retrieved successfully.",
+                "message": "Organization users retrieved",
                 "users": users_data,
             },
             status=HTTP_200_OK,
