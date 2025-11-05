@@ -698,12 +698,13 @@ class APIViewTestCase(APIBaseTestCase):
             "name": "test321",
             "email": "testing_organization@gmail.com",
             "phone": "1234567899",
-            "groups": ["Accounts Manager"],
+            "groups": [ACCOUNT_MANAGER],
         }
         serializer = AddUserInOrganizationSerializer(data=data)
         with self.assertRaises(serializers.ValidationError) as context:
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
         self.assertEqual(
             context.exception.detail["error"], "Request context is required."
         )

@@ -32,7 +32,7 @@ from .constant import (
 
 class AccountManager(IsAuthenticated):
     """
-    Custom permission to allow access only to Accounts Managers for a specific organization.
+    Custom permission to allow access only to Account Managers for a specific organization.
     """
 
     def has_permission(
