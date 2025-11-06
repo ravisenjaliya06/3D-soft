@@ -99,7 +99,7 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             "name": "Default Door",
             "description": "Default Door",
             "design": str(self.design.id),
-            "catalog_rule": [],
+            "catalog_rules": [],
             "height": 10,
             "width": 20,
             "length": 30,
