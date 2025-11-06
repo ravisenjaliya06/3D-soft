@@ -222,7 +222,7 @@ const SUImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
       <div className={styles.importDialogContainer}>
         <div className={styles.importDialogHeader}>
           <h3>Import 3D File</h3>
-          <img src={assets.closeIcon} alt="Close" className={styles.closeIcon} onClick={onClose} />
+          <img src={assets.close} alt="Close" className={styles.closeIcon} onClick={onClose} />
         </div>
 
         <div className={styles.importDialogContent}>

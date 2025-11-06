@@ -1,6 +1,3 @@
-// 🚀 Auto-generated file — do not edit manually
-// Generated from /public/assets
-
 export const _3dmodel = {
   plus_icon: '/assets/3dmodel/footerbar/plus_icon.svg',
   screenshot_svg: '/assets/3dmodel/footerbar/screenshot_svg.svg',

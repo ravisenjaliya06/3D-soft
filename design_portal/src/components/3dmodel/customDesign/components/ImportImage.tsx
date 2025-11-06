@@ -229,7 +229,7 @@ const ImportImage: React.FC<CustomDesignProps> = ({ design3D, onClose }) => {
           setImageSize({ width, height });
           setIsInitialized(true);
         };
-        img = dataUrl;
+        img.src = dataUrl;
       };
       reader.readAsDataURL(file);
     }

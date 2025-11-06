@@ -1,5 +1,4 @@
 import Design from '@/components/3dmodel/customDesign/design';
-import Footer from '@/components/3dmodel/customDesign/footer/footer';
 import Header from '@/components/3dmodel/customDesign/header/header';
 import { ThreeDView } from '@/components/3dmodel/customDesign/interface';
 import Sidebar from '@/components/3dmodel/customDesign/sidebar/sidebar';
@@ -16,7 +15,6 @@ const App: React.FC<AppProps> = ({ router }) => {
       <Design setDesign3D={setDesign3D} />
       <Toolbar threeDView={design3D} />
       <Sidebar design3D={design3D} />
-      <Footer design3D={design3D} />
     </div>
   );
 };

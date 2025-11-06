@@ -280,7 +280,7 @@ const CreateDesignPopup = ({
         >
           <div className={styles.deletepopup}>
             <img
-              src={assets.deletepopupicon}
+              src={assets.deletepopup}
               alt="deletepopupicon"
               className={styles.deletepopupicon}
             />
