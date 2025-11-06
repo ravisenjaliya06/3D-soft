@@ -36,7 +36,7 @@ const App: React.FC<AppProps> = ({ router }) => {
   useEffect(() => {
     fetchCatalogData();
     fetchDesignSettings();
-  }, []);
+  });
 
   useKeyboardShortcuts();
 

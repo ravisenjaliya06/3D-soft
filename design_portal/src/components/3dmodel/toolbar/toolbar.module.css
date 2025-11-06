@@ -212,7 +212,7 @@
 
 .activegroup {
   text-align: center;
-  padding: 0rem 0.5rem 0.5rem 0.5rem;
+  padding: 0rem 0rem 0.5rem 0rem;
 }
 
 .activegroup p {
@@ -223,11 +223,11 @@
   line-height: 1rem;
   color: var(--primary-color);
   margin-bottom: 0;
+  margin-top: 0rem;
 }
 
 .active_tool_part_line {
-  min-width: 9rem;
-  max-width: 9rem;
+  max-width: 11rem;
   height: 0.5rem;
   margin-top: 0.6rem;
 }
@@ -236,6 +236,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  margin: 0.5rem;
 }
 
 .toollistbox {
@@ -918,11 +919,17 @@
 .submenuHeader {
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  padding: 0rem;
   background: var(--primary-white);
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+.submenuHeaderTitle {
+  display: flex;
+  align-items: center;
+  margin-top: 0.65rem;
 }
 
 .backArrow {
@@ -942,27 +949,24 @@
   flex-grow: 1;
   text-align: center;
   font-style: normal;
-  margin-top: 0.5rem;
 }
 
 .searchWrapper {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
+  margin: 0rem 0.5rem;
 }
 
 .searchIcon {
   position: absolute;
   left: 0.5rem;
-  margin-top: 0.5rem;
   width: 1rem;
   height: 1rem;
 }
 
 .searchInput {
   width: 100%;
-  margin-top: 0.5rem;
   height: 0.1rem;
   padding: 0.5rem 1rem 0.5rem 2rem;
   background: var(--designpage-background-color);
@@ -991,7 +995,6 @@
   height: 1rem;
   cursor: pointer;
   position: absolute;
-  top: 0.5rem;
   right: 0.75rem;
 }
 
@@ -1019,7 +1022,7 @@
 }
 
 .submenuItem:hover {
-  box-shadow: 0 2px 4px var(--grid-item-shadow);
+  background: var(--toolbarhover-color);
 }
 
 .submenuItem img {
@@ -1040,10 +1043,16 @@
 .activegroup_header {
   display: flex;
   align-items: center;
+  margin-top: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+.activegroup_header.no_arrow p {
+  padding-left: 3.5rem;
 }
 
 .activegroup_header img {
-  width: 1.5rem;
+  width: 1.3rem;
+  cursor: pointer;
   margin-right: 1rem;
-  margin-top: 0.7rem;
 }

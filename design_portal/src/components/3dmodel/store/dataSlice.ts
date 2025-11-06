@@ -1,32 +1,14 @@
-import Item from '@/components/3dmodel/handler/items';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { removeExistingLines } from '../design';
 import { AppThunk } from '../store';
 import { addToHistory } from './historySlice';
 import { DataState, Object3D, Position } from './interface';
-import { addElement, removeElement } from './sceneSlice';
+import { removeElement } from './sceneSlice';
 
 const isMainObject = (object: Object3D): boolean => {
   return !object.parent || object.parent === null;
-};
-
-const findObjects = (
-  objects: Object3D[]
-): { mainObjects: Object3D[]; childObjects: Object3D[] } => {
-  const mainObjects: Object3D[] = [];
-  const childObjects: Object3D[] = [];
-
-  objects.forEach((obj) => {
-    if (isMainObject(obj)) {
-      mainObjects.push(obj);
-    } else {
-      childObjects.push(obj);
-    }
-  });
-
-  return { mainObjects, childObjects };
 };
 
 const initialState: DataState = {
@@ -174,67 +156,6 @@ export const removeObjectWithHistory =
       console.warn(`Cannot find object with ID: ${id} to remove`);
     }
   };
-
-export const addObjectsThunk =
-  (name: string): AppThunk =>
-  async (dispatch, getState) => {
-    const catalog = getState().catalog;
-    const data = getState().data.objects;
-    const scene = getState().scene.scene;
-    try {
-      dispatch(setCreationCancelHint(true));
-      const result = await Item.moveObject(name, catalog, scene, dispatch, data);
-      dispatch(setCreationCancelHint(false));
-      if (result?.threeDObject && result?.createResult && 'objectsList' in result.createResult) {
-        const objectsList = result.createResult.objectsList;
-        dispatch(addElement(result.threeDObject));
-
-        const { mainObjects, childObjects } = findObjects(objectsList);
-        for (const obj of mainObjects) {
-          dispatch(
-            addToHistory({
-              id: uuidv4(),
-              type: 'ADD',
-              data: {
-                object: obj,
-                mesh: result.threeDObject,
-                childObjects: childObjects,
-              },
-            })
-          );
-        }
-      } else {
-      }
-    } catch (Error) {
-      dispatch(setCreationCancelHint(false));
-      console.error('Error during object creation:', Error);
-    }
-  };
-
-export const copyObjectsThunk = createAsyncThunk(
-  'data/copyObjects',
-  async (selectedId: string, { dispatch }) => {
-    const result = await Item.copyObjects(selectedId);
-
-    if (result && result.objectsList && result.objectsList.length > 0) {
-      const idSet = new Set(result.objectsList.map((obj) => obj.id));
-      if (idSet.size !== result.objectsList.length) {
-        throw new Error('Duplicate IDs detected in copied objects');
-      }
-
-      dispatch(addObjects(result.objectsList));
-      const { mainObjects, childObjects } = findObjects(result.objectsList);
-
-      return {
-        objectId: mainObjects[0]?.id,
-        mainObjects,
-        childObjects,
-      };
-    }
-
-    throw new Error('Failed to copy objects');
-  }
-);
 
 export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   removeExistingLines();
