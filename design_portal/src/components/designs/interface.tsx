@@ -6,10 +6,9 @@ export interface Design {
   status: string;
   detail: string;
 }
-export interface editPopupData {
-  id: string;
-  design_name: string;
-  status: string;
+
+export interface DesignsResponse {
+  detail: string;
 }
 
 export interface User {

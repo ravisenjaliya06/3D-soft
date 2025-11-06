@@ -1,4 +1,3 @@
-src/components/designs/index.tsx
 src/components/3dmodel/toolbar/index.tsx
 src/components/3dmodel/customDesign/toolbar/index.tsx
 src/components/3d/design/index.tsx
