@@ -1,6 +1,4 @@
 import catalogReducer from '@/components/3dmodel/store/catalogSlice';
-import customDesignHistoryReducer from '@/components/3dmodel/store/customDesignHistorySlice';
-import customDesignReducer from '@/components/3dmodel/store/customDesignSlice';
 import dataReducer from '@/components/3dmodel/store/dataSlice';
 import designSettingsReducer from '@/components/3dmodel/store/designSettingsSlice';
 import historyReducer from '@/components/3dmodel/store/historySlice';
@@ -16,8 +14,6 @@ export const store = configureStore({
     catalog: catalogReducer,
     history: historyReducer,
     measurement: measurementReducer,
-    customDesign: customDesignReducer,
-    customDesignHistory: customDesignHistoryReducer,
     designSettings: designSettingsReducer,
   },
   middleware: (getDefaultMiddleware) =>

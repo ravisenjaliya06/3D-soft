@@ -2,7 +2,6 @@ import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { cleanupThreeDView } from '../customDesign/design/scene';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
@@ -98,10 +97,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
   const [outline, setOutline] = useState<THREE.Object3D | null>(null);
   const [helperTools, setHelperTools] = useState<boolean>(false);
-  const [toolPosition, setToolPosition] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
   const [moveHandler, setMoveHandler] = useState<MoveHandler | null>(null);
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   const originalMaterialsRef = useRef(new Map());
@@ -164,7 +159,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       return () => {
         if (design3D) {
-          cleanupThreeDView(design3D);
           setDesign3D(null);
           setLocalDesign3D(null);
           if (moveHandler) {
@@ -562,10 +556,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const vector = new THREE.Vector3();
       vector.setFromMatrixPosition(selectedObject.matrixWorld);
       vector.project(design3D.camera);
-      const offset = { x: 30, y: -40 };
-      const x = ((vector.x + 1) / 2) * window.innerWidth + offset.x;
-      const y = (-(vector.y - 1) / 2) * window.innerHeight + offset.y;
-      setToolPosition({ x, y });
     }
   }, [design3D, selectedObject]);
 
@@ -1137,7 +1127,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
       {helperTools && (
         <HelperTools
-          position={toolPosition}
           onCopy={handleCopyObject}
           onDelete={() => {
             if (selectedObject?.userData.objectId) {

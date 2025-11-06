@@ -1,4 +1,3 @@
-import CreateDesignPopup from '@/components/3dmodel/components/CreateDesignPopup';
 import Loading_style from '@/components/loading.module.css';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -28,7 +27,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [designName, setDesignName] = useState<Design[]>([]);
-  const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -273,10 +271,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     document.body.removeChild(link);
   };
 
-  const handleDesignClick = () => {
-    setShowCreatePopup(true);
-  };
-
   const handleOpenCloseClick = () => {
     design3D?.scene.traverse((child) => {
       if (child.name.includes('Door') && child instanceof THREE.Mesh) {
@@ -367,9 +361,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
 
         <div className={styles.header_rightmenu}>
-          <div className={styles.nestingbutton} onClick={handleDesignClick}>
-            <p>Design</p>
-          </div>
           <div className={styles.nestingbutton} onClick={handleNesting}>
             <p>Nesting</p>
           </div>
@@ -428,7 +419,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
       )}
 
-      {showCreatePopup && <CreateDesignPopup setShowCreatePopup={setShowCreatePopup} />}
       {showClearConfirm && (
         <div className={styles.confirmPopup}>
           <div className={styles.confirmContent}>

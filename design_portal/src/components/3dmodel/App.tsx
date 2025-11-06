@@ -5,11 +5,10 @@ import Sidebar from '@/components/3dmodel/sidebar/sidebar';
 import Toolbar from '@/components/3dmodel/toolbar';
 import CommonServices from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
-import { AppProps } from './customDesign/interface';
 import { CatalogWithChildren } from './handler/items';
 import { useAppDispatch } from './hooks';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { CatalogApiResponse } from './interface';
+import { AppProps, CatalogApiResponse } from './interface';
 import { setObjects } from './store/catalogSlice';
 import { setSettings } from './store/designSettingsSlice';
 

@@ -3,18 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { ShapeData } from '../customDesign/interface';
 import { CADImportOptions, CADObjectData } from '../interface';
-import { store } from '../store';
-import { addShape } from '../store/customDesignSlice';
-
-type ExtendedShapeData = ShapeData & {
-  type: ShapeData['type'] | 'su' | 'cad';
-  properties: ShapeData['properties'] & {
-    fileName?: string;
-    fileType?: string;
-  };
-};
 
 class CADImporter {
   private static instance: CADImporter;
@@ -234,36 +223,6 @@ class CADImporter {
 
       // Add the mesh to the scene
       options.scene.add(cadData.mesh);
-
-      // Create shape data for Redux store
-      const shapeData: ExtendedShapeData = {
-        id: `cad-${Date.now()}`,
-        type: extension === 'skp' ? 'su' : 'cad',
-        properties: {
-          dimensions: cadData.dimensions,
-          color: 0x808080,
-          fileName: file.name,
-          fileType: extension,
-        },
-        position: {
-          x: cadData.mesh.position.x,
-          y: cadData.mesh.position.y,
-          z: cadData.mesh.position.z,
-        },
-        rotation: {
-          x: cadData.mesh.rotation.x,
-          y: cadData.mesh.rotation.y,
-          z: cadData.mesh.rotation.z,
-        },
-        scale: {
-          x: cadData.mesh.scale.x,
-          y: cadData.mesh.scale.y,
-          z: cadData.mesh.scale.z,
-        },
-      };
-
-      // Store in Redux
-      store.dispatch(addShape(shapeData));
 
       return cadData;
     } catch (error) {

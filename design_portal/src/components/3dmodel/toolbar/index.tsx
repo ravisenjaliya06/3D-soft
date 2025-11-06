@@ -1,12 +1,12 @@
 // @ts-nocheck
+import InputField from '@/components/inputfields/InputField';
 import { assets } from '@/svgPaths';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
+import { removeExistingLines } from '../design/index';
 import { toggleMeasurement, toggleQuickHide } from '../store/dataSlice';
 import styles from './toolbar.module.css';
-import InputField from '@/components/inputfields/InputField';
-import { removeExistingLines } from '../design/index';
 // catalog modal photo
 import { objectName } from '@/components/3dmodel/handler/constant';
 import commonService from '@/services/CommonService';
