@@ -107,8 +107,12 @@ const CatalogManager = () => {
   const handleAddCatalog = () => setShowPopup(true);
 
   const getCatalog = useCallback(async () => {
-    const response: { status: number; data: Catalog[] } =
-      await commonService.getWithQueryParam('material', 'catalog', 'type', catalogType);
+    const response: { status: number; data: Catalog[] } = await commonService.getWithQueryParam(
+      'material',
+      'catalog',
+      'type',
+      catalogType
+    );
 
     if (response.status === 200) {
       setCatalogData(response.data);
@@ -196,9 +200,13 @@ const CatalogManager = () => {
       prevParts.map((part) => (part.id === partId ? { ...part, material } : part))
     );
 
-    const response: { status: number } = await commonService.put('material', `catalog/part/${partId}`, {
-      material_id: materialId,
-    });
+    const response: { status: number } = await commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: materialId,
+      }
+    );
 
     if (response.status === 200) {
       setRuleParts((prevParts) =>
@@ -215,9 +223,13 @@ const CatalogManager = () => {
       prevParts.map((part) => (part.id === partId ? { ...part, material: null } : part))
     );
 
-    const response: { status: number } = await commonService.put('material', `catalog/part/${partId}`, {
-      material_id: null,
-    });
+    const response: { status: number } = await commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: null,
+      }
+    );
 
     if (response.status === 200) {
       setRuleParts((prevParts) =>
@@ -369,22 +381,22 @@ const CatalogManager = () => {
                     <tbody>
                       {ruleParts.length > 0
                         ? ruleParts.map((part) => (
-                          <tr
-                            key={part.id}
-                            className={selectedPartId === part.id ? styles.selectedRow : ''}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              const materialId = e.dataTransfer.getData('materialId');
-                              handleAssignMaterial(part.id, materialId);
-                            }}
-                            onClick={() => {
-                              setSelectedPartId(part.id);
-                            }}
-                          >
-                            <td>{part.name}</td>
-                            <td>{part.material?.name || 'NO MATERIAL ASSIGNED'}</td>
-                          </tr>
-                        ))
+                            <tr
+                              key={part.id}
+                              className={selectedPartId === part.id ? styles.selectedRow : ''}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                const materialId = e.dataTransfer.getData('materialId');
+                                handleAssignMaterial(part.id, materialId);
+                              }}
+                              onClick={() => {
+                                setSelectedPartId(part.id);
+                              }}
+                            >
+                              <td>{part.name}</td>
+                              <td>{part.material?.name || 'NO MATERIAL ASSIGNED'}</td>
+                            </tr>
+                          ))
                         : null}
 
                       {/* Fill remaining rows up to 8 */}
@@ -456,7 +468,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
@@ -470,7 +482,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
@@ -484,7 +496,7 @@ const CatalogManager = () => {
                             onBlur={handleBlur(setIsEditingDescription)}
                           />
                         ) : (
-                          <p>{ }</p>
+                          <p>{}</p>
                         )}
                       </td>
                     </tr>
