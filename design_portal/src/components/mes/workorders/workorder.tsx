@@ -50,7 +50,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
 
   useEffect(() => {
     getDesignSheet();
-  }, []);
+  });
 
   const formatLabel = (label: string) => {
     return label

@@ -534,6 +534,7 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
     addDoubleDoorUpperCabinetsAbovePlatform,
   };
 };
+
 const createSkySet = (): {
   daySky: Sky;
   nightSky: Sky;

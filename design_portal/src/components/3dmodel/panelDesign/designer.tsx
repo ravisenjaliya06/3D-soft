@@ -77,6 +77,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     if (cornerRadius.length !== numPoints) {
       setcornerRadius(Array(numPoints).fill(0));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shapePoints]);
 
   // Initialize 3D scene and set originalGeometry
@@ -178,12 +179,20 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       renderer.dispose();
       controls.dispose();
     };
-  }, [state?.scene?.scene, state?.data?.selectedObject, state?.data?.selectedChildObject]);
+  }, [
+    state?.scene?.scene,
+    state?.data?.selectedObject,
+    state?.data?.selectedChildObject,
+    router,
+    designId,
+  ]);
 
-  useEffect(() => {
-    const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
-    updateMeshGeometry(points, holes, cornerRadius);
-  }, [shapePoints, holes, cornerRadius]);
+  const defaultPanelPoints = [
+    { x: -panelWidth / 2, y: -panelHeight / 2 },
+    { x: panelWidth / 2, y: -panelHeight / 2 },
+    { x: panelWidth / 2, y: panelHeight / 2 },
+    { x: -panelWidth / 2, y: panelHeight / 2 },
+  ];
 
   const updateMeshGeometry = (
     points: { x: number; y: number }[],
@@ -391,6 +400,11 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   useEffect(() => {
+    const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
+    updateMeshGeometry(points, holes, cornerRadius);
+  }, [shapePoints, holes, cornerRadius, defaultPanelPoints, updateMeshGeometry]);
+
+  useEffect(() => {
     const transformer = transformerRef.current;
     const selectedNode = panelRef.current;
 
@@ -541,13 +555,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     { name: 'Dig', icon: assets.dig },
     { name: 'Slotting', icon: assets.slotting },
     { name: 'Curve', icon: assets.curve },
-  ];
-
-  const defaultPanelPoints = [
-    { x: -panelWidth / 2, y: -panelHeight / 2 },
-    { x: panelWidth / 2, y: -panelHeight / 2 },
-    { x: panelWidth / 2, y: panelHeight / 2 },
-    { x: -panelWidth / 2, y: panelHeight / 2 },
   ];
 
   const buildPathData = (points: { x: number; y: number }[], cornerRadius: number[]) => {

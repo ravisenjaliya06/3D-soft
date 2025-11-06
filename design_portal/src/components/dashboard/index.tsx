@@ -35,13 +35,13 @@ const ProjectDashboard = () => {
         <div className={styles.mainContent}>
           <div className={styles.showdetails}>
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.design} alt="Design" />
+              <img className={styles.showprojectimage} src={assets.dashboarddesign} alt="Design" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Designs</p>
                 <p className={styles.showValues}>{designsCount}</p>
               </div>
             </div>
-            <img className={styles.Lines} src={assets.Line} alt="Line" />
+            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
             <div className={styles.showprojectdetails}>
               <img className={styles.showprojectimage} src={assets.projects} alt="Project" />
               <div className={styles.projectDetails}>
@@ -49,7 +49,7 @@ const ProjectDashboard = () => {
                 <p className={styles.showValues}>0</p>
               </div>
             </div>
-            <img className={styles.Lines} src={assets.Line} alt="Line" />
+            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
             <div className={styles.showprojectdetails}>
               <img className={styles.showprojectimage} src={assets.users} alt="Users" />
               <div className={styles.projectDetails}>
@@ -57,7 +57,7 @@ const ProjectDashboard = () => {
                 <p className={styles.showValues}>0</p>
               </div>
             </div>
-            <img className={styles.Lines} src={assets.Line} alt="Line" />
+            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
             <div className={styles.showprojectdetails}>
               <img className={styles.showprojectimage} src={assets.sells} alt="Sells" />
               <div className={styles.projectDetails}>
