@@ -1,6 +1,6 @@
 import { useAuthRedirect } from '@/components/helper/helper';
-import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
+import { usePageSetup } from '@/usePageSetup';
 import { NextPage } from 'next';
 import dynamic from 'next/dynamic';
 

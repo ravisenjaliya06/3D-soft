@@ -1,6 +1,6 @@
 import Forgot from '@/components/forgot';
-import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
+import { usePageSetup } from '@/usePageSetup';
 
 const ForgotPage = () => {
   usePageSetup(PAGE_TITLE.FORGOT);

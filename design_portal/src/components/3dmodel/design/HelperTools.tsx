@@ -9,7 +9,6 @@ import styles from './HelperTools.module.css';
 import { HelperToolsProps } from './interface';
 
 const HelperTools: React.FC<HelperToolsProps> = ({
-  position,
   onCopy,
   onDelete,
   onMove,
@@ -65,11 +64,7 @@ const HelperTools: React.FC<HelperToolsProps> = ({
   };
 
   return (
-    <div
-      className={styles.helperTools}
-      style={{ top: position.y, left: position.x }}
-      onClick={handleContainerClick}
-    >
+    <div className={styles.helperTools} onClick={handleContainerClick}>
       {isChildObject && (
         <div className={styles.toolItem} onClick={handlePanelDesign} title="Panel Design">
           <img src={assets.edit} />

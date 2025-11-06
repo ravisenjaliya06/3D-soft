@@ -1,7 +1,7 @@
 import CubeComponent from '@/components/3dmodel/index';
 import { useAuthRedirect } from '@/components/helper/helper';
-import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
+import { usePageSetup } from '@/usePageSetup';
 import { NextPage } from 'next';
 
 const DesignPage: NextPage = () => {

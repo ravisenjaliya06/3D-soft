@@ -46,7 +46,6 @@ export const itemType = {
 };
 
 export interface HelperToolsProps {
-  position: { x: number; y: number };
   onCopy: () => void;
   onDelete: () => void;
   onMove?: () => void;
