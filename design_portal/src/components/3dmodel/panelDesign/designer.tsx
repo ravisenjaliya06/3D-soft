@@ -77,7 +77,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     if (cornerRadius.length !== numPoints) {
       setcornerRadius(Array(numPoints).fill(0));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shapePoints]);
 
   // Initialize 3D scene and set originalGeometry

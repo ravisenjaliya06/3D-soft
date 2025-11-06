@@ -156,7 +156,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   useEffect(() => {
     if (showSettingsPopup) fetchSettingsConfig();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSettingsPopup]);
 
   const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
@@ -221,7 +220,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [design3D]);
 
   const handleProfileClick = () => {
