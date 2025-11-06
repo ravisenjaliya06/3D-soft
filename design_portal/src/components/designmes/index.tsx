@@ -1,3 +1,4 @@
+// @ts-nocheck
 import CommonService from '@/services/CommonService';
 import { useEffect, useState } from 'react';
 

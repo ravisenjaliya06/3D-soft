@@ -2610,7 +2610,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
     };
 
-    let sequence = sequences[materialType] || [
+    const sequence = sequences[materialType] || [
       {
         title: 'New Material',
         fields: [

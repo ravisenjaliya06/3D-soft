@@ -1,46 +1,48 @@
-// @ts-nocheck
 import { TEXTURE_MEDIA, TEXTURE_NAME } from '@/components/3dmodel/handler/constant';
 import { store } from '@/components/3dmodel/store';
 import * as Three from 'three';
 import {
+  ConvertInputElement,
   cylinderGeometryData,
   elementData,
   elementDataList,
   geoMetryData,
   GrooveDetail,
+  SimpleElementData,
+  SimpleElementDataList,
 } from './interfaces';
 
 const textureLoader = new Three.TextureLoader();
 
 function applyTexture(texture: string): Three.MeshPhongMaterial {
   if (texture === TEXTURE_NAME.WOOD) {
-    texture = TEXTURE_MEDIA.wood;
+    texture = TEXTURE_MEDIA.WOOD;
   } else if (texture === TEXTURE_NAME.LIGHT_WOOD) {
-    texture = TEXTURE_MEDIA.light_wood;
+    texture = TEXTURE_MEDIA.LIGHT_WOOD;
   } else if (texture === TEXTURE_NAME.DARK_BROWN) {
-    texture = TEXTURE_MEDIA.dark_brown;
+    texture = TEXTURE_MEDIA.DARK_BROWN;
   } else if (texture === TEXTURE_NAME.OFF_WHITE) {
-    texture = TEXTURE_MEDIA.off_white;
+    texture = TEXTURE_MEDIA.OFF_WHITE;
   } else if (texture === TEXTURE_NAME.GROSSY_BROWN) {
-    texture = TEXTURE_MEDIA.grossy_brown;
+    texture = TEXTURE_MEDIA.GROSSY_BROWN;
   } else if (texture === TEXTURE_NAME.LIGHT_BROWN) {
-    texture = TEXTURE_MEDIA.light_brown;
+    texture = TEXTURE_MEDIA.LIGHT_BROWN;
   } else if (texture === TEXTURE_NAME.WOOD_1) {
-    texture = TEXTURE_MEDIA.wood_1;
+    texture = TEXTURE_MEDIA.WOOD_1;
   } else if (texture === TEXTURE_NAME.WOOD_2) {
-    texture = TEXTURE_MEDIA.wood_2;
+    texture = TEXTURE_MEDIA.WOOD_2;
   } else if (texture === TEXTURE_NAME.WOOD_3) {
-    texture = TEXTURE_MEDIA.wood_3;
+    texture = TEXTURE_MEDIA.WOOD_3;
   } else if (texture === TEXTURE_NAME.WOOD_4) {
-    texture = TEXTURE_MEDIA.wood_4;
+    texture = TEXTURE_MEDIA.WOOD_4;
   } else if (texture === TEXTURE_NAME.WOOD_5) {
-    texture = TEXTURE_MEDIA.wood_5;
+    texture = TEXTURE_MEDIA.WOOD_5;
   } else if (texture === TEXTURE_NAME.WOOD_6) {
-    texture = TEXTURE_MEDIA.wood_6;
+    texture = TEXTURE_MEDIA.WOOD_6;
   } else if (texture === TEXTURE_NAME.WOOD_7) {
-    texture = TEXTURE_MEDIA.wood_7;
+    texture = TEXTURE_MEDIA.WOOD_7;
   }
-  const textureURL = texture || TEXTURE_MEDIA.wood;
+  const textureURL = texture || TEXTURE_MEDIA.WOOD;
   const material = new Three.MeshPhongMaterial();
   textureLoader.load(
     textureURL,
@@ -198,7 +200,7 @@ function createDesign(elementDataList: elementDataList, viewType: string): Three
   }
 }
 
-export function applyEdgeBanding(plank: Three.Mesh): Three.Mesh {
+export function applyEdgeBanding(plank: Three.Mesh): Three.Mesh | undefined {
   plank.geometry.computeBoundingBox();
   const box = plank.geometry.boundingBox;
   if (!box) return;
@@ -213,8 +215,8 @@ export function applyEdgeBanding(plank: Three.Mesh): Three.Mesh {
   const halfH = height / 2;
   const halfD = depth / 2;
 
-  const plank_width = plank.geometry.parameters.width;
-  const plank_height = plank.geometry.parameters.height;
+  const plank_width = (plank.geometry as Three.BoxGeometry).parameters.width;
+  const plank_height = (plank.geometry as Three.BoxGeometry).parameters.height;
   const isHorizontalPlank = plank_width > plank_height;
 
   const blackMaterial = new Three.MeshBasicMaterial({ color: 0x5c4033 });
@@ -260,7 +262,7 @@ export function applyEdgeBanding(plank: Three.Mesh): Three.Mesh {
   bandSides.forEach(({ size, position }, index) => {
     const bandGeometry = new Three.BoxGeometry(...size);
     const bandMesh = new Three.Mesh(bandGeometry, blackMaterial);
-    bandMesh.position.set(...position);
+    bandMesh.position.set(...(position as [number, number, number]));
     bandMesh.name = `edge_banding_${index}`;
     bandMesh.visible = false;
     plank.add(bandMesh);
@@ -305,18 +307,11 @@ function applyGroove(element: Three.Mesh): Three.Mesh {
           backPlank,
           sidePlank,
           'fitment',
-          sidePlank.name,
-          element
+          sidePlank.name
         );
         backPlank.userData.grooves.push(fitmentDetail);
 
-        const grooveDetail = calculateGrooveDetail(
-          sidePlank,
-          backPlank,
-          'groove',
-          backPlank.name,
-          element
-        );
+        const grooveDetail = calculateGrooveDetail(sidePlank, backPlank, 'groove', backPlank.name);
         sidePlank.userData.grooves.push(grooveDetail);
       }
     });
@@ -347,8 +342,7 @@ function calculateGrooveDetail(
   plankA: Three.Mesh,
   plankB: Three.Mesh,
   type: 'groove' | 'fitment',
-  connectedTo: string,
-  element: Three.Mesh
+  connectedTo: string
 ): GrooveDetail {
   const designSettings = store.getState().designSettings.settings[0];
   const boxA = new Three.Box3().setFromObject(plankA);
@@ -402,50 +396,40 @@ function calculateGrooveDetail(
   };
 }
 
-function convertDataToGeometry(data) {
-  const dataList = [];
-  data.forEach(
-    (element: {
-      name;
-      width;
-      height;
-      depth;
-      plankSize;
-      position: { x; y; z };
-      material: { type; value };
-      grooves: [];
-      openDirection: string;
-      catalog_type: string;
-    }) => {
-      if (element.material === undefined) {
-        element.material = { type: 'TEXTURE', value: 'wood' };
-      }
-      const geometry = {
-        type: 'GEOMETRY_DATA',
-        data: {
-          name: element.name,
-          width: element.width,
-          height: element.height,
-          depth: element.depth,
-          plankSize: element.plankSize,
-          position: {
-            x: element.position.x,
-            y: element.position.y,
-            z: element.position.z || 0,
-          },
-          material: {
-            type: 'TEXTURE',
-            value: element.material.value,
-          },
-          grooves: element.grooves || [],
-          openDirection: element.openDirection || '',
-          catalog_type: element.catalog_type || '',
-        },
-        minMax: 'BOTH',
-      };
-      dataList.push(geometry);
+function convertDataToGeometry(data: ConvertInputElement[]): SimpleElementDataList {
+  const dataList: SimpleElementDataList = [];
+
+  data.forEach((element) => {
+    if (element.material === undefined) {
+      element.material = { type: 'TEXTURE', value: 'wood' };
     }
-  );
+
+    const geometry: SimpleElementData = {
+      type: 'GEOMETRY_DATA',
+      data: {
+        name: element.name,
+        width: element.width,
+        height: element.height,
+        depth: element.depth,
+        plankSize: element.plankSize,
+        position: {
+          x: element.position.x,
+          y: element.position.y,
+          z: element.position.z || 0,
+        },
+        material: {
+          type: 'TEXTURE',
+          value: element.material.value,
+        },
+        grooves: element.grooves || [],
+        openDirection: element.openDirection || '',
+        catalog_type: element.catalog_type || '',
+      },
+      minMax: 'BOTH',
+    };
+
+    dataList.push(geometry);
+  });
 
   return dataList;
 }

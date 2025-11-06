@@ -1,19 +1,6 @@
-src/components/3d/sidebar/sidebar.tsx
-src/components/3d/design/handler/index.tsx
-src/components/3d/design/handler/utils.tsx
-src/components/3d/design/index.tsx
-src/components/designmes/index.tsx
-src/components/3d/header/header.tsx
-src/components/3d/catalog/object-creator/index.tsx
-src/components/3d/catalog/items/cupboard2.tsx
-src/components/3d/catalog/parts/plank.tsx
-src/components/3d/toolbar/index.tsx
-src/components/3d/catalog/parts/door.tsx
-src/components/3d/catalog/parts/drawer.tsx
 src/components/designs/index.tsx
 src/components/3dmodel/toolbar/index.tsx
 src/components/3dmodel/customDesign/toolbar/index.tsx
-src/components/3dmodel/catalog/object-creator/index.tsx
 src/components/3d/design/index.tsx
 src/components/3dmodel/handler/items.tsx
 src/components/3dmodel/handler/updateHandler.tsx
@@ -27,3 +14,4 @@ src/components/3dmodel/design/scene.tsx
 src/components/3dmodel/sidebar/sidebar.tsx
 src/components/3dmodel/sidebar/MaterialChangePopup.tsx
 src/components/3dmodel/design/items.tsx
+src/components/designmes/index.tsx

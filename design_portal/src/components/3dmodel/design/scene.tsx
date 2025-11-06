@@ -1831,7 +1831,7 @@ export const addDoorOnInvisibleBox = async (
   parent.add(doorGroup);
 
   // Set face position in world, then attach and convert to local
-  let worldFacePos = worldCenter.clone();
+  const worldFacePos = worldCenter.clone();
   if (isSide) {
     worldFacePos.x += w / 2;
   } else {
@@ -1902,7 +1902,7 @@ export const addDoorOnInvisibleBox = async (
     const marginX = 0.04;
     const offsetZ = doorSize.z / 2 + toAvoidOverlap;
 
-    let worldHandlePos = new THREE.Vector3();
+    const worldHandlePos = new THREE.Vector3();
 
     if (isSide) {
       if (dir > 0) {
@@ -2273,7 +2273,7 @@ export const addDrawersOnInvisibleBox = async (
 
         if (panelRule && Array.isArray(panelRule.rule_parts)) {
           // Loop through drawer meshes and assign IDs
-          let rulePartMap: Record<string, string> = {};
+          const rulePartMap: Record<string, string> = {};
 
           // Create map of partName -> rule_part id
           panelRule.rule_parts.forEach((rp: Object3D) => {
@@ -2365,8 +2365,8 @@ export const addUpperCabinetsAbovePlatform = async (
 
   if (!targetWall) return;
 
-  let cabinetWidth = isSidePlatform ? platformD : platformW;
-  let cabinetSpacing = cabinetWidth / count;
+  const cabinetWidth = isSidePlatform ? platformD : platformW;
+  const cabinetSpacing = cabinetWidth / count;
 
   await ensureHandleLoaded();
 
