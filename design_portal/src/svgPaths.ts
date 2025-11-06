@@ -1,4 +1,4 @@
-export const _3dmodel = {
+export const _3DMODEL = {
   plus_icon: '/assets/3dmodel/footerbar/plus_icon.svg',
   screenshot_svg: '/assets/3dmodel/footerbar/screenshot_svg.svg',
   clear: '/assets/3dmodel/header/clear.svg',
@@ -34,19 +34,19 @@ export const _3dmodel = {
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
 };
 
-export const arrow_svg = {
+export const ARROW_SVG = {
   arrow: '/assets/arrow.svg',
 };
 
-export const back_login_icon_svg = {
+export const BACK_LOGIN_ICON_SVG = {
   back_login_icon: '/assets/back-login-icon.svg',
 };
 
-export const brevento_background_logo_svg = {
+export const BREVENTO_BACKGROUND_LOGO_SVG = {
   brevento_background_logo: '/assets/brevento-background-logo.svg',
 };
 
-export const catalog = {
+export const CATALOG = {
   close: '/assets/catalog/close.svg',
   img2: '/assets/catalog/toolbaricon/img2.svg',
   logo: '/assets/catalog/logo.svg',
@@ -54,7 +54,7 @@ export const catalog = {
   img1: '/assets/catalog/toolbaricon/img1.svg',
 };
 
-export const catalogmanager = {
+export const CATALOGMANAGER = {
   add: '/assets/catalogmanager/add.svg',
   addMaterialIcon: '/assets/catalogmanager/addMaterial.svg',
   arrow: '/assets/catalogmanager/arrow.svg',
@@ -64,11 +64,11 @@ export const catalogmanager = {
   matariel: '/assets/catalogmanager/matireal.svg',
 };
 
-export const createicon_svg = {
+export const CREATEICON_SVG = {
   createicon: '/assets/createicon.svg',
 };
 
-export const customdesign = {
+export const CUSTOMDESIGN = {
   _2d: '/assets/customdesign/2d.svg',
   _3d: '/assets/customdesign/3d.svg',
   arrange: '/assets/customdesign/arrange.svg',
@@ -102,7 +102,7 @@ export const customdesign = {
   shape: '/assets/customdesign/shape.svg',
 };
 
-export const dashboard = {
+export const DASHBOARD = {
   design: '/assets/dashboard/design.svg',
   final_design: '/assets/dashboard/final_design.svg',
   floorplan: '/assets/dashboard/floorplan.svg',
@@ -114,15 +114,15 @@ export const dashboard = {
   users: '/assets/dashboard/users.svg',
 };
 
-export const deleteicon_svg = {
+export const DELETEICON_SVG = {
   deleteicon: '/assets/deleteicon.svg',
 };
 
-export const deletepopup_svg = {
+export const DELETEPOPUP_SVG = {
   deletepopup: '/assets/deletepopup.svg',
 };
 
-export const design = {
+export const DESIGN = {
   active_grid: '/assets/design/active-grid.svg',
   complate_svg: '/assets/design/complate-svg.svg',
   createdesignicon: '/assets/design/createdesignicon.svg',
@@ -143,52 +143,52 @@ export const design = {
   three_dots: '/assets/design/three_dots.svg',
 };
 
-export const download_jpeg = {
+export const DOWNLOAD_JPEG = {
   download: '/assets/download.jpeg',
 };
 
-export const dropdown_svg = {
+export const DROPDOWN_SVG = {
   dropdown: '/assets/dropdown.svg',
 };
 
-export const edit_delete_line_svg = {
+export const EDIT_DELETE_LINE_SVG = {
   edit_delete_line: '/assets/edit-delete-line.svg',
 };
 
-export const editicon_svg = {
+export const EDITICON_SVG = {
   editicon: '/assets/editicon.svg',
 };
 
-export const editpopupicon_svg = {
+export const EDITPOPUPICON_SVG = {
   editpopupicon: '/assets/editpopupicon.svg',
 };
 
-export const eye_off_svg = {
+export const EYE_OFF_SVG = {
   eye_off: '/assets/eye-off.svg',
 };
 
-export const eye_svg = {
+export const EYE_SVG = {
   eye: '/assets/eye.svg',
 };
 
-export const forgot_boy_svg = {
+export const FORGOT_BOY_SVG = {
   forgot_boy: '/assets/forgot-boy.svg',
 };
 
-export const header_part_line_svg = {
+export const HEADER_PART_LINE_SVG = {
   header_part_line: '/assets/header-part-line.svg',
 };
 
-export const login_background_svg = {
+export const LOGIN_BACKGROUND_SVG = {
   login_background: '/assets/login-background.svg',
 };
 
-export const Logo_svg = {
+export const LOGO_SVG = {
   Logo: '/assets/Logo.svg',
   close: '/assets/close.svg',
 };
 
-export const material = {
+export const MATERIAL = {
   banding: '/assets/material/banding.svg',
   brandstok: '/assets/material/brandstok.svg',
   caster: '/assets/material/caster.svg',
@@ -202,15 +202,15 @@ export const material = {
   up_arrow: '/assets/material/up arrow.svg',
 };
 
-export const menu_down_svg = {
+export const MENU_DOWN_SVG = {
   menu_down: '/assets/menu-down.svg',
 };
 
-export const menu_up_svg = {
+export const MENU_UP_SVG = {
   menu_up: '/assets/menu-up.svg',
 };
 
-export const mes = {
+export const MES = {
   add: '/assets/mes/add.svg',
   download: '/assets/mes/download.svg',
   archiveicon: '/assets/mes/work-order/archiveicon.svg',
@@ -219,11 +219,11 @@ export const mes = {
   editicon: '/assets/mes/work-order/editicon.svg',
 };
 
-export const otp_computer_svg = {
+export const OTP_COMPUTER_SVG = {
   otp_computer: '/assets/otp-computer.svg',
 };
 
-export const paneldesign = {
+export const PANELDESIGN = {
   design: '/assets/paneldesign/design.svg',
   dig: '/assets/paneldesign/dig.svg',
   pencil: '/assets/paneldesign/pencil.svg',
@@ -232,11 +232,11 @@ export const paneldesign = {
   undo: '/assets/paneldesign/undo.svg',
 };
 
-export const popup_logo_svg = {
+export const POPUP_LOGO_SVG = {
   popup_logo: '/assets/popup_logo.svg',
 };
 
-export const profile = {
+export const PROFILE = {
   account_not_selected: '/assets/profile/account-not-selected.svg',
   account_profile: '/assets/profile/account-profile.svg',
   account_svg: '/assets/profile/account-svg.svg',
@@ -263,11 +263,11 @@ export const profile = {
   user: '/assets/profile/user.png',
 };
 
-export const search_svg = {
+export const SEARCH_SVG = {
   search: '/assets/search.svg',
 };
 
-export const sidebar = {
+export const SIDEBAR = {
   arrow_down: '/assets/sidebar/arrow-down.svg',
   arrow_up: '/assets/sidebar/arrow-up.svg',
   catalogmanager: '/assets/sidebar/catalogmanager.svg',
@@ -288,25 +288,25 @@ export const sidebar = {
   tabledata: '/assets/sidebar/tabledata.svg',
 };
 
-export const sidebaricon_svg = {
+export const SIDEBARICON_SVG = {
   sidebaricon: '/assets/sidebaricon.svg',
 };
 
-export const simple_line_svg = {
+export const SIMPLE_LINE_SVG = {
   simple_line: '/assets/simple_line.svg',
 };
 
-export const template = {
+export const TEMPLATE = {
   blank: '/assets/template/blank.svg',
   createtemplatehome: '/assets/template/createtemplatehome.svg',
   home: '/assets/template/home.svg',
 };
 
-export const titleLogo_svg = {
+export const TITLELOGO_SVG = {
   titleLogo: '/assets/titleLogo.svg',
 };
 
-export const toolbar = {
+export const TOOLBAR = {
   _5996079: '/assets/toolbar/5996079.png',
   cabinet: '/assets/toolbar/cabinet.svg',
   cabinet_svg: '/assets/toolbar/cabinet_svg.svg',
@@ -342,42 +342,42 @@ export const toolbar = {
 };
 
 export const assets = {
-  ..._3dmodel,
-  ...arrow_svg,
-  ...back_login_icon_svg,
-  ...brevento_background_logo_svg,
-  ...catalog,
-  ...catalogmanager,
-  ...createicon_svg,
-  ...customdesign,
-  ...dashboard,
-  ...deleteicon_svg,
-  ...deletepopup_svg,
-  ...design,
-  ...download_jpeg,
-  ...dropdown_svg,
-  ...edit_delete_line_svg,
-  ...editicon_svg,
-  ...editpopupicon_svg,
-  ...eye_off_svg,
-  ...eye_svg,
-  ...forgot_boy_svg,
-  ...header_part_line_svg,
-  ...login_background_svg,
-  ...Logo_svg,
-  ...material,
-  ...menu_down_svg,
-  ...menu_up_svg,
-  ...mes,
-  ...otp_computer_svg,
-  ...paneldesign,
-  ...popup_logo_svg,
-  ...profile,
-  ...search_svg,
-  ...sidebar,
-  ...sidebaricon_svg,
-  ...simple_line_svg,
-  ...template,
-  ...titleLogo_svg,
-  ...toolbar,
+  ..._3DMODEL,
+  ...ARROW_SVG,
+  ...BACK_LOGIN_ICON_SVG,
+  ...BREVENTO_BACKGROUND_LOGO_SVG,
+  ...CATALOG,
+  ...CATALOGMANAGER,
+  ...CREATEICON_SVG,
+  ...CUSTOMDESIGN,
+  ...DASHBOARD,
+  ...DELETEICON_SVG,
+  ...DELETEPOPUP_SVG,
+  ...DESIGN,
+  ...DOWNLOAD_JPEG,
+  ...DROPDOWN_SVG,
+  ...EDIT_DELETE_LINE_SVG,
+  ...EDITICON_SVG,
+  ...EDITPOPUPICON_SVG,
+  ...EYE_OFF_SVG,
+  ...EYE_SVG,
+  ...FORGOT_BOY_SVG,
+  ...HEADER_PART_LINE_SVG,
+  ...LOGIN_BACKGROUND_SVG,
+  ...LOGO_SVG,
+  ...MATERIAL,
+  ...MENU_DOWN_SVG,
+  ...MENU_UP_SVG,
+  ...MES,
+  ...OTP_COMPUTER_SVG,
+  ...PANELDESIGN,
+  ...POPUP_LOGO_SVG,
+  ...PROFILE,
+  ...SEARCH_SVG,
+  ...SIDEBAR,
+  ...SIDEBARICON_SVG,
+  ...SIMPLE_LINE_SVG,
+  ...TEMPLATE,
+  ...TITLELOGO_SVG,
+  ...TOOLBAR,
 };
