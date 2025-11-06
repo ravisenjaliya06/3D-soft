@@ -150,7 +150,7 @@ const Sidebar = () => {
               </li>
               <div className={styles.userhelp}>
                 <div className={styles.dropdown} onClick={toggleSidebar}>
-                  <img src={assets.dropdown} alt="dropdown" />
+                  <img src={assets.arrow_down} alt="dropdown" />
                 </div>
                 <li
                   className={activeItem === 'settings' ? styles.active : ''}
@@ -185,7 +185,7 @@ const Sidebar = () => {
             <img src={assets.sidebaricon} alt="Bravento Logo" />
           </div>
           <div className={styles.simple_line2}>
-            <img src={assets.sidebaricon} alt="Simple line" />
+            <img src={assets.simple_line} alt="Simple line" />
           </div>
           <nav className={styles.nav}>
             <ul>

@@ -20,11 +20,11 @@ export const _3dmodel = {
   part_line: '/assets/3dmodel/part-line.svg',
   down_arrow: '/assets/3dmodel/sidebar/down-arrow.svg',
   up_arrow: '/assets/3dmodel/sidebar/up-arrow.svg',
-  aling: '/assets/3dmodel/toolbar/aling.svg',
+  alingDimension: '/assets/3dmodel/toolbar/aling.svg',
   arrow: '/assets/3dmodel/toolbar/arrow.svg',
   back: '/assets/3dmodel/toolbar/back.svg',
   drawer: '/assets/3dmodel/toolbar/drawer.svg',
-  homefur: '/assets/3dmodel/toolbar/homefur.svg',
+  homefurniture: '/assets/3dmodel/toolbar/homefur.svg',
   horizontal: '/assets/3dmodel/toolbar/horizontal.svg',
   mesurment: '/assets/3dmodel/toolbar/mesurment.svg',
   platform: '/assets/3dmodel/toolbar/platform.svg',
@@ -124,7 +124,6 @@ export const deletepopup_svg = {
 
 export const design = {
   active_grid: '/assets/design/active-grid.svg',
-  close: '/assets/design/close.svg',
   complate_svg: '/assets/design/complate-svg.svg',
   createdesignicon: '/assets/design/createdesignicon.svg',
   delete_svg: '/assets/design/delete-svg.svg',
@@ -186,6 +185,7 @@ export const login_background_svg = {
 
 export const Logo_svg = {
   Logo: '/assets/Logo.svg',
+  close: '/assets/close.svg',
 };
 
 export const material = {
@@ -244,7 +244,6 @@ export const profile = {
   addmemberclose: '/assets/profile/addmemberclose.svg',
   admindot: '/assets/profile/admindot.svg',
   catalogdot: '/assets/profile/catalogdot.svg',
-  close: '/assets/profile/close.svg',
   deleteteamicon: '/assets/profile/deleteteamicon.svg',
   delete_not_icon: '/assets/profile/delete_not_icon.svg',
   design_line: '/assets/profile/design-line.svg',
@@ -337,7 +336,7 @@ export const toolbar = {
   wood: '/assets/toolbar/texture/wood.jpg',
   tool_part_line: '/assets/toolbar/tool-part-line.svg',
   tv: '/assets/toolbar/tv.svg',
-  tvunit_scg: '/assets/toolbar/tvunit_scg.svg',
+  tvunit_svg: '/assets/toolbar/tvunit_scg.svg',
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };
