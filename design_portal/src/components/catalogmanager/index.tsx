@@ -1,10 +1,11 @@
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
+import { Catalog, CatalogRule, Material, RulePart } from './interface';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -16,11 +17,11 @@ const CatalogManager = () => {
   const [description, setDescription] = useState('1/2 millimeter');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [catalogType, setCatalogType] = useState('Door');
-  const [selectedCatalog, setSelectedCatalog] = useState<null | (typeof catalogData)[0]>(null);
-  const [catalogData, setCatalogData] = useState<any[]>([]);
   const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
-  const [ruleParts, setRuleParts] = useState<any[]>([]);
-  const [materialData, setMaterialData] = useState<any[]>([]);
+  const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
+  const [catalogData, setCatalogData] = useState<Catalog[]>([]);
+  const [ruleParts, setRuleParts] = useState<RulePart[]>([]);
+  const [materialData, setMaterialData] = useState<Material[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
   const [materialSearch, setMaterialSearch] = useState('');
   const [selectedPartId, setSelectedPartId] = useState<string>('');
@@ -32,12 +33,19 @@ const CatalogManager = () => {
     }
   }, [catalogData]);
 
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('name', name);
+      console.log('description', description);
+    }
+  });
+
   const filteredMaterials = materialData
     .filter((mat) => mat.type === selectedMaterialType) // keep type filter
     .filter(
       (mat) =>
         mat.name.toLowerCase().includes(materialSearch.toLowerCase()) ||
-        mat.description.toLowerCase().includes(materialSearch.toLowerCase())
+        mat.description?.toLowerCase().includes(materialSearch.toLowerCase())
     );
 
   const fields = [
@@ -88,14 +96,6 @@ const CatalogManager = () => {
     'Connection',
   ];
 
-  // ---------- UTILS ----------
-  const doorTableData = [
-    { name: 'Elder ven EB', description: 'Veneer Edgebanding' },
-    { name: 'Elder ven EB', description: '1/2 minute' },
-    { name: 'Up Elder ven EB', description: '10%' },
-    { name: 'Elder ven EB', description: 'No' },
-  ];
-
   const handleBlur = (setEditing: (v: boolean) => void) => () => setEditing(false);
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -105,24 +105,24 @@ const CatalogManager = () => {
   };
 
   const handleAddCatalog = () => setShowPopup(true);
-  const handleDeleteCatalog = () => setshowDeletePopup(true);
 
-  const getCatalog = async () => {
-    const response: { status: number; data: any } = await commonService.getWithQueryParam(
+  const getCatalog = useCallback(async () => {
+    const response: { status: number; data: Catalog[] } = await commonService.getWithQueryParam(
       'material',
       'catalog',
       'type',
       catalogType
     );
+
     if (response.status === 200) {
       setCatalogData(response.data);
     }
-  };
+  }, [catalogType]);
 
   const fetchRuleParts = async (ruleId: string) => {
     setActiveRuleId(ruleId); // mark active rule
     try {
-      const response: { status: number; data: any[] } = await commonService.get(
+      const response: { status: number; data: RulePart[] } = await commonService.get(
         'material',
         `catalog_rules/${ruleId}/parts`
       );
@@ -137,11 +137,11 @@ const CatalogManager = () => {
 
   useEffect(() => {
     getCatalog();
-  }, [catalogType]);
+  }, [getCatalog]);
 
   useEffect(() => {
-    if (selectedCatalog && selectedCatalog.catalog_rule.length > 0) {
-      fetchRuleParts(selectedCatalog.catalog_rule[0].id);
+    if (selectedCatalog && selectedCatalog.catalog_rules.length > 0) {
+      fetchRuleParts(selectedCatalog.catalog_rules[0].id);
     } else {
       setActiveRuleId(null);
       setRuleParts([]);
@@ -154,7 +154,7 @@ const CatalogManager = () => {
         setSelectedCatalog(catalogData[0]);
       }
     }
-  }, [catalogData]);
+  }, [catalogData, selectedCatalog]);
 
   const handleCreateCatalog = async () => {
     const payload = {
@@ -163,7 +163,7 @@ const CatalogManager = () => {
       description: newDescription,
     };
 
-    const response: { status: number; data: any } = await commonService.post(
+    const response: { status: number; data: Catalog } = await commonService.post(
       'material',
       'catalog',
       payload
@@ -171,7 +171,7 @@ const CatalogManager = () => {
 
     if (response.status === 201) {
       // fetch all catalogs
-      const catalogResponse: { status: number; data: any[] } =
+      const catalogResponse: { status: number; data: Catalog[] } =
         await commonService.getWithQueryParam('material', 'catalog', 'type', catalogType);
       if (catalogResponse.status === 200) {
         setCatalogData(catalogResponse.data);
@@ -182,7 +182,7 @@ const CatalogManager = () => {
   };
 
   const getMaterial = async () => {
-    const response: { status: number; data: any } = await commonService.get('material', '');
+    const response: { status: number; data: Material[] } = await commonService.get('material', '');
     if (response.status === 200) {
       setMaterialData(response.data);
     }
@@ -190,40 +190,46 @@ const CatalogManager = () => {
 
   useEffect(() => {
     getMaterial();
-  }, []);
+  });
 
-  const handleAssignMaterial = (partId: string, materialId: string | null) => {
+  const handleAssignMaterial = async (partId: string, materialId: string | null) => {
     const material = materialData.find((m) => m.id === materialId);
     if (!material) return;
 
     setRuleParts((prevParts) =>
       prevParts.map((part) => (part.id === partId ? { ...part, material } : part))
     );
-    // @ts-ignore
-    const response: { status: number } = commonService.put('material', `catalog/part/${partId}`, {
-      material_id: materialId,
-    });
+
+    const response: { status: number } = await commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: materialId,
+      }
+    );
+
     if (response.status === 200) {
       setRuleParts((prevParts) =>
         prevParts.map((part) => (part.id === partId ? { ...part, material } : part))
       );
-      setSelectedPartId('');
-      setSelectedMaterialId('');
-    } else {
-      setSelectedPartId('');
-      setSelectedMaterialId('');
     }
+
+    setSelectedPartId('');
+    setSelectedMaterialId('');
   };
 
-  const handleDeleteMaterial = (partId: string) => {
+  const handleDeleteMaterial = async (partId: string) => {
     setRuleParts((prevParts) =>
       prevParts.map((part) => (part.id === partId ? { ...part, material: null } : part))
     );
 
-    // @ts-ignore
-    const response: { status: number } = commonService.put('material', `catalog/part/${partId}`, {
-      material_id: null,
-    });
+    const response: { status: number } = await commonService.put(
+      'material',
+      `catalog/part/${partId}`,
+      {
+        material_id: null,
+      }
+    );
 
     if (response.status === 200) {
       setRuleParts((prevParts) =>
@@ -350,7 +356,7 @@ const CatalogManager = () => {
                 {/* MENU */}
                 <div className={styles.topBoxLeft}>
                   <div className={styles.matirealmanu}>
-                    {selectedCatalog?.catalog_rule.map((rule: any) => (
+                    {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
                       <div
                         key={rule.id}
                         className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
@@ -563,7 +569,7 @@ const CatalogManager = () => {
                 className={styles.addMaterialDesign}
                 onClick={() => handleAssignMaterialButton()}
               >
-                <img src={assets.addMaterialIcon}></img>
+                <img src={assets.addMaterialIcon} alt="Add Material"></img>
                 Assign Material to Part
               </div>
             </div>
