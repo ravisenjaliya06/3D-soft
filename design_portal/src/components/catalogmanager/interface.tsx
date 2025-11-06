@@ -8,7 +8,7 @@ export interface Material {
 export interface RulePart {
   id: string;
   name: string;
-  material: Material | null;
+  material?: Material | null;
   height?: number | null;
   width?: number | null;
   length?: number | null;
