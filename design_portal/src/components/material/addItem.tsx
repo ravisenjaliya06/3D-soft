@@ -1,6 +1,6 @@
-import close from '@/assets/design/close.svg';
 import InputField from '@/components/inputfields/InputField';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
 import styles from './materialWizard.module.css';
@@ -3104,7 +3104,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               </p>
             </div>
             <button className={styles.closeButton} onClick={() => setCreateWorkOrderPopup(false)}>
-              <img src={close.src || '/placeholder.svg'} alt="Close" />
+              <img src={assets.close || '/placeholder.svg'} alt="Close" />
             </button>
           </div>
 

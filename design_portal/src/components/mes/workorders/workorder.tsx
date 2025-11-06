@@ -1,7 +1,7 @@
-import download from '@/assets/mes/download.svg';
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
 import { WorkOrderData } from '../interface';
@@ -184,7 +184,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
                 {' '}
                 <img
                   onClick={handleDownload}
-                  src={download.src}
+                  src={assets.download}
                   alt="download"
                   className={styles.download}
                 />

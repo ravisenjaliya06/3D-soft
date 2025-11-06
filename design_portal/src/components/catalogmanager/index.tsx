@@ -1,12 +1,6 @@
-import createicon from '@/assets/createicon.svg';
-import deletepopupicon from '@/assets/deletepopup.svg';
-import close from '@/assets/design/close.svg';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import React, { useEffect, useState } from 'react';
-import add from '../../assets/catalogmanager/add.svg';
-import addMaterialIcon from '../../assets/catalogmanager/addMaterial.svg';
-import deleteIconOne from '../../assets/catalogmanager/deleteIcon.svg';
-import matariel from '../../assets/catalogmanager/matireal.svg';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
@@ -322,7 +316,7 @@ const CatalogManager = () => {
                 </select>
                 <div className={styles.iconContainer}>
                   <img
-                    src={add.src}
+                    src={assets.add}
                     alt="Add"
                     className={styles.addIcon}
                     onClick={handleAddCatalog}
@@ -346,7 +340,7 @@ const CatalogManager = () => {
                     className={styles.deleteButtonRule}
                     onClick={() => handleShowDeletePopup()}
                   >
-                    <img src={deleteIconOne.src} alt="" className={styles.deleteIconButton} />{' '}
+                    <img src={assets.deleteIconOne} alt="" className={styles.deleteIconButton} />{' '}
                     Delete
                   </button>
                 </div>
@@ -362,7 +356,7 @@ const CatalogManager = () => {
                         className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
                         onClick={() => fetchRuleParts(rule.id)}
                       >
-                        <img src={matariel.src} alt="" />
+                        <img src={assets.matariel} alt="" />
                         <span>{rule.name}</span>
                       </div>
                     )) || <p>No rules available</p>}
@@ -569,7 +563,7 @@ const CatalogManager = () => {
                 className={styles.addMaterialDesign}
                 onClick={() => handleAssignMaterialButton()}
               >
-                <img src={addMaterialIcon.src}></img>
+                <img src={assets.addMaterialIcon}></img>
                 Assign Material to Part
               </div>
             </div>
@@ -580,9 +574,9 @@ const CatalogManager = () => {
       {showPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img src={createicon.src} className={styles.createicon} alt="createicon" />
+            <img src={assets.createicon} className={styles.createicon} alt="createicon" />
             <img
-              src={close.src}
+              src={assets.close}
               className={styles.createclose}
               alt="close"
               onClick={() => setShowPopup(false)}
@@ -633,13 +627,13 @@ const CatalogManager = () => {
         >
           <div className={styles.deletepopup}>
             <img
-              src={deletepopupicon.src}
+              src={assets.deletepopup}
               alt="deletepopupicon"
               className={styles.deletepopupicon}
             />
 
             <img
-              src={close.src}
+              src={assets.close}
               alt="close"
               onClick={() => setshowDeletePopup(false)}
               className={styles.close}

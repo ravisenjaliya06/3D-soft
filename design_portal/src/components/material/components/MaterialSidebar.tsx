@@ -1,5 +1,4 @@
-import down_arrow from '@/assets/material/down arrow.svg';
-import up_arrow from '@/assets/material/up arrow.svg';
+import { assets } from '@/svgPaths';
 import type React from 'react';
 import styles from '../material.module.css';
 import type { MaterialItem } from '../types';
@@ -59,7 +58,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
           </div>
           {!isSubItem && hasSubItems && (
             <span className={styles.dropdownArrow}>
-              <img src={isExpanded ? up_arrow.src : down_arrow.src} alt="" />
+              <img src={isExpanded ? assets.up_arrow : assets.down_arrow} alt="" />
             </span>
           )}
         </div>

@@ -1,34 +1,8 @@
-import profile_not_selected from '@/assets/profile/account-not-selected.svg';
-import account_profile from '@/assets/profile/account-profile.svg';
-import profile_svg from '@/assets/profile/account-svg.svg';
-import addmembericon from '@/assets/profile/addmembar.svg';
-import addmemberclose from '@/assets/profile/addmemberclose.svg';
-import admindot from '@/assets/profile/admindot.svg';
-import catalogdot from '@/assets/profile/catalogdot.svg';
-import close from '@/assets/profile/close.svg';
-import delete_not_icon from '@/assets/profile/delete_not_icon.svg';
-import deleteteamicon from '@/assets/profile/deleteteamicon.svg';
-import design_line from '@/assets/profile/design-line.svg';
-import designdot from '@/assets/profile/designdot.svg';
-import {
-  default as designmenuicon1,
-  default as designmenuicon_not,
-} from '@/assets/profile/designmenuicon_not.svg';
-import error from '@/assets/profile/error.svg';
-import mesdot from '@/assets/profile/mesdot.svg';
-import organization_blank_image from '@/assets/profile/organization-blank-image.svg';
-import organizations_not_selected from '@/assets/profile/organization-not-selected.svg';
-import organizations_svg from '@/assets/profile/organizations-svg.svg';
-import roleaddicon from '@/assets/profile/roleaddicon.svg';
-import simple_line from '@/assets/profile/simple_line.svg';
-import success from '@/assets/profile/success.svg';
-import team_not_selected from '@/assets/profile/team-not-selected.svg';
-import team_svg from '@/assets/profile/team-svg.svg';
-import user from '@/assets/profile/user.png';
 import Header from '@/components/header/header';
 import styles from '@/components/settings/setting.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import axios from 'axios';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { getTokenDetail } from '../helper/helper';
@@ -742,20 +716,20 @@ const Settings = () => {
         <div className={styles.mainContent}>
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
-              <img src={account_profile.src} className={styles.accountprofile} alt="profile" />
+              <img src={assets.account_profile} className={styles.accountprofile} alt="profile" />
               <p className={styles.useremail}> {UserDetails?.email}</p>
             </div>
             <div className={styles.menuImg}>
-              <img src={simple_line.src} alt="line" />
+              <img src={assets.simple_line} alt="line" />
             </div>
             <div
               className={activeMenu === 'profile' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('profile')}
             >
               {activeMenu === 'profile' ? (
-                <img src={profile_svg.src} alt="profile" />
+                <img src={assets.account_svg} alt="profile" />
               ) : (
-                <img src={profile_not_selected.src} alt="profile" />
+                <img src={assets.account_not_selected} alt="profile" />
               )}
               {activeMenu === 'profile' ? (
                 <p className={styles.activeMenuTitle}>Profile</p>
@@ -768,9 +742,9 @@ const Settings = () => {
               onClick={() => handleActiveMenu('team')}
             >
               {activeMenu === 'team' ? (
-                <img src={team_not_selected.src} alt="team" />
+                <img src={assets.team_not_selected} alt="team" />
               ) : (
-                <img src={team_svg.src} alt="team" />
+                <img src={assets.team_svg} alt="team" />
               )}
               {activeMenu === 'team' ? (
                 <p className={styles.activeMenuTitle}>Team</p>
@@ -783,9 +757,9 @@ const Settings = () => {
               onClick={() => handleActiveMenu('organizations')}
             >
               {activeMenu === 'organizations' ? (
-                <img src={organizations_not_selected.src} alt="organizations" />
+                <img src={assets.organization_not_selected} alt="organizations" />
               ) : (
-                <img src={organizations_svg.src} alt="organizations" />
+                <img src={assets.organizations_svg} alt="organizations" />
               )}
               {activeMenu === 'organizations' ? (
                 <p className={styles.activeMenuTitle}>Organizations</p>
@@ -799,9 +773,9 @@ const Settings = () => {
               onClick={() => handleActiveMenu('Design setting')}
             >
               {activeMenu === 'Design setting' ? (
-                <img src={designmenuicon1.src} alt="Design setting'" />
+                <img src={assets.designmenuicon_not} alt="Design setting'" />
               ) : (
-                <img src={designmenuicon_not.src} alt="Design setting'" />
+                <img src={assets.designmenuicon_not} alt="Design setting'" />
               )}
               {activeMenu === 'Design setting' ? (
                 <p className={styles.activeMenuTitle}>Design setting</p>
@@ -820,7 +794,7 @@ const Settings = () => {
                       profileUrl ||
                       (UserDetails?.profile_picture &&
                         `${process.env.NEXT_PUBLIC_PUBLIC_API}/${UserDetails.profile_picture}`) ||
-                      user.src
+                      assets.user
                     }
                     alt="profile"
                     onClick={handleImageClick}
@@ -861,13 +835,13 @@ const Settings = () => {
                 </form>
                 {successMessage && (
                   <div className={styles.successPopup}>
-                    <img src={success.src} alt="Success" />
+                    <img src={assets.success} alt="Success" />
                     <p>{successMessage}</p>
                   </div>
                 )}
                 {errorMessage && (
                   <div className={styles.errorPopup}>
-                    <img src={error.src} alt="Error" />
+                    <img src={assets.error} alt="Error" />
                     <p>{errorMessage}</p>
                   </div>
                 )}
@@ -883,7 +857,7 @@ const Settings = () => {
                           organizationUrl ||
                           (organization?.logo &&
                             `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organization.logo}`) ||
-                          organization_blank_image.src
+                          assets.organization_blank_image
                         }
                         alt="organization"
                         onClick={handleOrganizationImageFile}
@@ -922,7 +896,7 @@ const Settings = () => {
                 <p className={styles.commingsoon}>Coming Soon............</p>
                 {successMessage && (
                   <div className={styles.successPopup}>
-                    <img src={success.src} alt="Success" />
+                    <img src={assets.success} alt="Success" />
                     <p>{successMessage}</p>
                   </div>
                 )}
@@ -936,7 +910,7 @@ const Settings = () => {
                 <div className={styles.heading_containar}>
                   <h4>Set your default design</h4>
                 </div>
-                <img src={design_line.src} alt="design" className={styles.designline} />
+                <img src={assets.design_line} alt="design" className={styles.designline} />
 
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
@@ -964,7 +938,7 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                <img src={design_line.src} alt="design" className={styles.designline} />
+                <img src={assets.design_line} alt="design" className={styles.designline} />
 
                 <h4 className={styles.design_unit_size}>Design Unit Size</h4>
                 <div className={styles.rediogroup}>
@@ -1017,7 +991,7 @@ const Settings = () => {
                     Feet
                   </label>
                 </div>
-                <img src={design_line.src} alt="design" className={styles.designline} />
+                <img src={assets.design_line} alt="design" className={styles.designline} />
                 {/*Minifix setting and grooving data */}
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
@@ -1053,7 +1027,7 @@ const Settings = () => {
                 </button>
                 {successMessage && (
                   <div className={styles.successPopup}>
-                    <img src={success.src} alt="Success" />
+                    <img src={assets.success} alt="Success" />
                     <p>{successMessage}</p>
                   </div>
                 )}
@@ -1074,7 +1048,7 @@ const Settings = () => {
                       className={styles.teantopbarleftButton}
                       onClick={() => setAddMambarPopup(true)}
                     >
-                      <img src={addmembericon.src} alt="addmember" /> Add Member
+                      <img src={assets.addmembar} alt="addmember" /> Add Member
                     </button>
                     <div className={styles.toggleContainer}>
                       <button
@@ -1116,7 +1090,7 @@ const Settings = () => {
                                   <span key={index} className={styles.roleBadge}>
                                     <div>
                                       <img
-                                        src={close.src}
+                                        src={assets.close}
                                         alt="close"
                                         className={styles.closeteam}
                                         onClick={() => {
@@ -1127,13 +1101,13 @@ const Settings = () => {
                                       <img
                                         src={
                                           role === 'Account Manager'
-                                            ? admindot.src
+                                            ? assets.admindot
                                             : role === 'Mes Editor'
-                                              ? mesdot.src
+                                              ? assets.mesdot
                                               : role === 'Designer'
-                                                ? designdot.src
+                                                ? assets.designdot
                                                 : role === 'Catalog Manager'
-                                                  ? catalogdot.src
+                                                  ? assets.catalogdot
                                                   : ''
                                         }
                                         alt="dot"
@@ -1147,7 +1121,7 @@ const Settings = () => {
                                   </span>
                                 ))}
                                 <img
-                                  src={roleaddicon.src}
+                                  src={assets.roleaddicon}
                                   alt="role add"
                                   className={styles.roleaddicon}
                                   onClick={(e) => handleRoleAddClick(e, member.id)}
@@ -1158,8 +1132,8 @@ const Settings = () => {
                               <img
                                 src={
                                   isDeleteHovered == member.id
-                                    ? deleteteamicon.src
-                                    : delete_not_icon.src
+                                    ? assets.deleteteamicon
+                                    : assets.delete_not_icon
                                 }
                                 alt="team delete"
                                 className={styles.teamdeleteicon}
@@ -1177,7 +1151,7 @@ const Settings = () => {
 
                 {successMessage && (
                   <div className={styles.successPopup}>
-                    <img src={success.src} alt="Success" />
+                    <img src={assets.success} alt="Success" />
                     <p>{successMessage}</p>
                   </div>
                 )}
@@ -1201,13 +1175,13 @@ const Settings = () => {
                         <img
                           src={
                             role === 'Account Manager'
-                              ? admindot.src
+                              ? assets.admindot
                               : role === 'Mes Editor'
-                                ? mesdot.src
+                                ? assets.mesdot
                                 : role === 'Designer'
-                                  ? designdot.src
+                                  ? assets.designdot
                                   : role === 'Catalog Manager'
-                                    ? catalogdot.src
+                                    ? assets.catalogdot
                                     : ''
                           }
                           alt="dot"
@@ -1227,7 +1201,7 @@ const Settings = () => {
                   <div className={styles.firstpart}>
                     <h5 className={styles.addmembartitle}> Add member</h5>
                     <img
-                      src={addmemberclose.src}
+                      src={assets.addmemberclose}
                       className={styles.createclose}
                       alt="close"
                       onClick={() => {

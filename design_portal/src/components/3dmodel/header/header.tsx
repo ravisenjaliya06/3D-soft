@@ -1,17 +1,8 @@
-import screenshot_svg from '@/assets/3dmodel/footerbar/screenshot_svg.svg';
-import clear_svg from '@/assets/3dmodel/header/newclear.svg';
-import door_sliding from '@/assets/3dmodel/header/newopenclose.svg';
-import redo_svg from '@/assets/3dmodel/header/newredu.svg';
-import undo_svg from '@/assets/3dmodel/header/newundo.svg';
-import zoom_svg from '@/assets/3dmodel/header/newzoom.svg';
-import settings_svg from '@/assets/3dmodel/header/Setting.svg';
-import close from '@/assets/catalog/close.svg';
-import profile from '@/assets/catalog/profile.svg';
-import edit_delete_line from '@/assets/edit-delete-line.svg';
-import success from '@/assets/profile/success.svg';
+import CreateDesignPopup from '@/components/3dmodel/components/CreateDesignPopup';
 import Loading_style from '@/components/loading.module.css';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
@@ -300,42 +291,42 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     {
       option: 'undo',
       name: 'Undo',
-      icon: undo_svg,
+      icon: assets.newundo,
       disabled: !history?.past?.length,
       onClick: () => dispatch(undoAction() as unknown as UnknownAction),
     },
     {
       option: 'redo',
       name: 'Redo',
-      icon: redo_svg,
+      icon: assets.newredu,
       disabled: !history?.future?.length,
       onClick: () => dispatch(redoAction() as unknown as UnknownAction),
     },
     {
       option: 'clear',
       name: 'Clear',
-      icon: clear_svg,
+      icon: assets.newclear,
       disabled: data?.objects?.length === 0,
       onClick: handleClear,
     },
     {
       option: 'zoom',
       name: 'Zoom',
-      icon: zoom_svg,
+      icon: assets.newzoom,
       disabled: false,
       onClick: handleZoomModeToggle,
     },
     {
       option: 'screenshot',
       name: 'Screenshot',
-      icon: screenshot_svg,
+      icon: assets.screenshot_svg,
       disabled: false,
       onClick: handleScreenshot,
     },
     {
       option: 'Open/Close',
       name: 'Open/Close',
-      icon: door_sliding,
+      icon: assets.newopenclose,
       disabled: false,
       onClick: handleOpenCloseClick,
     },
@@ -363,7 +354,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                 onClick={disabled ? undefined : onClick}
                 title={name}
               >
-                <img src={icon.src || '/placeholder.svg'} alt={name} />
+                <img src={icon || '/placeholder.svg'} alt={name} />
                 {name}
               </div>
             </div>
@@ -381,7 +372,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             </div>
           )}
           <img
-            src={profile.src || '/placeholder.svg'}
+            src={assets.profile || '/placeholder.svg'}
             alt="profile"
             onClick={handleProfileClick}
             ref={dropdownButtonRef}
@@ -407,7 +398,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             />
           )}
           <img
-            src={close.src || '/placeholder.svg'}
+            src={assets.close || '/placeholder.svg'}
             alt="close"
             onClick={() => handleClick(REDIRECT.DESIGNS)}
             className={styles.close}
@@ -420,7 +411,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           <ul className={styles.ProfiledropdownList}>
             <li onClick={profileSetting}>Profile Settings</li>
             <img
-              src={edit_delete_line.src || '/placeholder.svg'}
+              src={assets.edit_delete_line || '/placeholder.svg'}
               alt="edit-delete-line"
               className={styles.edit_delete_line}
             />
@@ -454,13 +445,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             {/* Header with icon and title */}
             <div className={styles.popupHeader}>
               <div className={styles.settingsTitleContainer}>
-                <img src={settings_svg.src || '/placeholder.svg'} alt="Settings Icon" />
+                <img src={assets.Setting || '/placeholder.svg'} alt="Settings Icon" />
                 <div>
                   <h2>Design Settings</h2>
                 </div>
               </div>
               <img
-                src={close.src || '/placeholder.svg'}
+                src={assets.close || '/placeholder.svg'}
                 alt="Close"
                 className={styles.minifixCancelButton}
                 onClick={() => setShowSettingsPopup(false)}
@@ -535,7 +526,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                 </button>
                 {successMessage && (
                   <div className={styles.successPopup}>
-                    <img src={success.src} alt="Success" />
+                    <img src={assets.success} alt="Success" />
                     <p>{successMessage}</p>
                   </div>
                 )}

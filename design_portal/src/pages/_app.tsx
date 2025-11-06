@@ -1,5 +1,5 @@
-import brevento_background_logo from '@/assets/brevento-background-logo.svg';
 import { store } from '@/components/3dmodel/store';
+import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
 import localFont from 'next/font/local';
 import { useRouter } from 'next/router';
@@ -47,7 +47,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
           {!isDesignPage && !isMaterialPage && !isCatalogPage && (
             <div className="fixed-image">
-              <img src={brevento_background_logo.src} alt="Background" />
+              <img src={assets.brevento_background_logo} alt="Background" />
             </div>
           )}
         </main>

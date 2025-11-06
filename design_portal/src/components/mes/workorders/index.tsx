@@ -1,12 +1,7 @@
-import Process_upload from '@/assets/design/progress-upload.svg';
-import three_dot_svg from '@/assets/design/three_dots.svg';
-import archiveiconsvg from '@/assets/mes/work-order/archiveicon.svg';
-import compartmentlinesvg from '@/assets/mes/work-order/compartmentline.svg';
-import deleteiconsvg from '@/assets/mes/work-order/deleteicon.svg';
-import editiconsvg from '@/assets/mes/work-order/editicon.svg';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/mes/workorders/workorder.module.css';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { useEffect, useRef, useState } from 'react';
 import { WorkOrderData } from '../interface';
 import WorkOrderDetails from './workorder';
@@ -136,7 +131,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
               <div className={styles.data}>0/0</div>
               <div className={styles.data}>
                 <img
-                  src={three_dot_svg.src}
+                  src={assets.three_dots}
                   alt="process upload"
                   onClick={(event) => handlathreedot(event, item.id)}
                 />
@@ -145,29 +140,29 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
                 <div className={styles.gridthree_dots} ref={dropdownRef}>
                   <ul className={styles.gridthree_dots_dropdown}>
                     <li>
-                      <img src={editiconsvg.src} alt="edit icon" />
+                      <img src={assets.editicon} alt="edit icon" />
                       Edit Work Order
                     </li>
 
                     <img
-                      src={compartmentlinesvg.src}
+                      src={assets.compartmentline}
                       alt="edit-delete-line"
                       className={styles.grid_line}
                     />
 
                     <li>
-                      <img src={deleteiconsvg.src} alt="delete icon" />
+                      <img src={assets.deleteicon} alt="delete icon" />
                       Delete Work Order
                     </li>
 
                     <img
-                      src={compartmentlinesvg.src}
+                      src={assets.compartmentline}
                       alt="edit-delete-line"
                       className={styles.grid_line}
                     />
 
                     <li>
-                      <img src={archiveiconsvg.src} alt="delete icon" />
+                      <img src={assets.archiveicon} alt="delete icon" />
                       Archive Work Order
                     </li>
                   </ul>
@@ -186,7 +181,11 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
             style={{ cursor: 'pointer' }}
           >
             <p>Load More</p>
-            <img src={Process_upload.src} alt="process upload" className={styles.process_upload} />
+            <img
+              src={assets.progress_upload}
+              alt="process upload"
+              className={styles.process_upload}
+            />
           </div>
         </div>
       )}
