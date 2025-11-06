@@ -1,7 +1,12 @@
 import commonService from '@/services/CommonService';
-import { getDesignId } from '../customDesign/handler/objectCreator';
 import { Object3D, Position } from '../store/interface';
 import { safeNameIncludes } from './nameUtils';
+
+function getDesignId(): string | null {
+  const path = window.location.pathname;
+  const segments = path.split('/');
+  return segments[4] || null;
+}
 
 export function safeGet<T, K extends keyof T>(
   obj: T | null | undefined,

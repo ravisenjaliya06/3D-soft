@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
-import { Shape } from '../customDesign/interface';
+import { ShapeData } from '../interface';
 import { AppThunk, store } from '../store';
 import {
   ImageDataMap,
@@ -11,23 +11,23 @@ import {
 } from './interface';
 
 export interface ImageShapesMap {
-  [id: string]: Shape;
+  [id: string]: ShapeData;
 }
 
 export interface CustomHistoryAction {
   id: string;
   type: 'ADD' | 'REMOVE' | 'UPDATE' | 'PROPERTY_CHANGE' | 'CLEAR';
   data: {
-    shape?: Shape;
-    previousState?: Shape;
+    shape?: ShapeData;
+    previousState?: ShapeData;
     mesh?: THREE.Mesh;
-    shapes?: Shape[];
+    shapes?: ShapeData[];
     meshes?: THREE.Mesh[];
     propertyChanges?: PropertyChange[];
-    childShapes?: Shape[];
+    childShapes?: ShapeData[];
     // Image-specific data for better restoration
     imageData?: ImageMetadata | Record<string, ImageMetadata>;
-    imageShapes?: Shape[];
+    imageShapes?: ShapeData[];
     isImage?: boolean;
   };
 }
@@ -80,7 +80,7 @@ export const { undo, redo, addToHistory, clearHistory, moveToPresent } = customH
 export default customHistorySlice.reducer;
 
 export const addShapeToHistory =
-  (shape: Shape, mesh?: THREE.Mesh): AppThunk =>
+  (shape: ShapeData, mesh?: THREE.Mesh): AppThunk =>
   (dispatch) => {
     const isImage =
       shape.type === 'image' ||
@@ -115,7 +115,7 @@ export const addShapeToHistory =
   };
 
 export const updateShapeInHistory =
-  (shape: Shape, previousState: Shape, mesh?: THREE.Mesh): AppThunk =>
+  (shape: ShapeData, previousState: ShapeData, mesh?: THREE.Mesh): AppThunk =>
   (dispatch) => {
     const isImage =
       shape.type === 'image' ||
@@ -151,7 +151,7 @@ export const updateShapeInHistory =
   };
 
 export const removeShapeFromHistory =
-  (shape: Shape, mesh?: THREE.Mesh): AppThunk =>
+  (shape: ShapeData, mesh?: THREE.Mesh): AppThunk =>
   (dispatch) => {
     const isImage = !!(
       shape.type === 'image' ||
@@ -174,12 +174,12 @@ export const removeShapeFromHistory =
 
 export const trackShapePropertyChange =
   (
-    shape: Shape,
+    shape: ShapeData,
     property: string,
     oldValue: number | { x: number; y: number; z: number } | string,
     newValue: number | { x: number; y: number; z: number } | string,
     isRecursive = false,
-    childShapes?: Shape[]
+    childShapes?: ShapeData[]
   ): AppThunk =>
   (dispatch) => {
     const action: CustomHistoryAction = {
@@ -204,7 +204,7 @@ export const trackShapePropertyChange =
 
 // Track when all shapes are cleared from the scene
 export const trackClearAllShapes =
-  (shapes: Shape[], meshes?: THREE.Mesh[]): AppThunk =>
+  (shapes: ShapeData[], meshes?: THREE.Mesh[]): AppThunk =>
   (dispatch) => {
     // Process images separately for better recovery
     const imageShapes: ImageShapesMap = {};
@@ -514,7 +514,7 @@ export const undoCustomAction = (): AppThunk => (dispatch, getState) => {
   }
 };
 
-function recreateObjectFromShape(shape: Shape, scene: THREE.Scene): THREE.Mesh | null {
+function recreateObjectFromShape(shape: ShapeData, scene: THREE.Scene): THREE.Mesh | null {
   if (shape.type === 'image') {
     return recreateImageFromShape(shape, scene);
   }
@@ -588,7 +588,7 @@ function recreateObjectFromShape(shape: Shape, scene: THREE.Scene): THREE.Mesh |
 
 // Helper function specifically for recreating images with texture restoration
 function recreateImageFromShape(
-  shape: Shape,
+  shape: ShapeData,
   scene: THREE.Scene,
   imageData?: ImageMetadata
 ): THREE.Mesh | null {

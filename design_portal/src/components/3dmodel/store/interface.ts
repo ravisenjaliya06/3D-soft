@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ShapeData } from '../customDesign/interface';
+import { ShapeData } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix';
 
 export interface Position {

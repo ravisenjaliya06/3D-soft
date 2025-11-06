@@ -5,6 +5,10 @@ import { CatalogWithChildren } from './handler/items';
 import { MinifixConnection, MinifixHole } from './minifix';
 import { Material, Position } from './store/interface';
 
+export interface AppProps {
+  router: NextRouter;
+}
+
 export interface DesignProps {
   isReady: boolean;
   scene?: THREE.Scene | null;
@@ -194,3 +198,104 @@ export interface ResponseStatus {
 }
 
 export type PositionKey = 'x' | 'y' | 'z';
+
+export type GeometryType =
+  | 'box'
+  | 'sphere'
+  | 'cylinder'
+  | 'cone'
+  | 'torus'
+  | 'plane'
+  | 'tetrahedron'
+  | 'circle'
+  | 'polygon'
+  | 'rectangle'
+  | 'arc'
+  | 'steppedCube'
+  | 'line'
+  | 'image'
+  | 'segmentedBox'
+  | 'box2'
+  | 'box3'
+  | 'boxFromPoints'
+  | `${string}`;
+
+export interface GeometryData {
+  type: GeometryType;
+  dimensions?: {
+    width?: number;
+    height?: number;
+    depth?: number;
+    radius?: number;
+    radiusTop?: number;
+    radiusBottom?: number;
+    segments?: number;
+    tube?: number;
+    sides?: number;
+    points?: THREE.Vector3[] | Position[];
+    steps?: number;
+    filletRadius?: number;
+    cornerIndex?: number;
+    widthSegments?: number;
+    heightSegments?: number;
+    depthSegments?: number;
+    radialSegments?: number;
+    tubularSegments?: number;
+    arc?: number;
+    imageUrl?: string;
+    imageSize?: { width: number; height: number };
+    fileName?: string;
+    aspectRatio?: number;
+    // Arc specific properties
+    start?: THREE.Vector3 | Position;
+    end?: THREE.Vector3 | Position;
+    bulge?: THREE.Vector3 | Position;
+    curvePoints?: THREE.Vector3[] | Position[];
+  };
+  preloadedTexture?: THREE.Texture | null;
+  position?: Position;
+  rotation?: Position;
+  scale?: Position;
+  image?: string;
+  imageData?: {
+    dataUrl: string;
+    fileName: string;
+    aspectRatio: number;
+    scaleFactor?: number;
+  };
+  color?: number;
+  material?: THREE.Material;
+}
+
+export interface ShapeData {
+  id: string;
+  type: GeometryData['type'];
+  properties: {
+    width?: number;
+    height?: number;
+    dimensions: GeometryData['dimensions'];
+    color: number;
+    // Image specific properties
+    imageUrl?: string;
+    imageSize?: {
+      width: number;
+      height: number;
+    };
+    aspectRatio?: number;
+    fileName?: string;
+    isImageMaterial?: boolean;
+    // Arc specific properties
+    points?: {
+      start?: Position;
+      end?: Position;
+      bulge?: Position;
+    };
+    curvePoints?: Position[];
+    transparent?: boolean;
+    opacity?: number;
+  };
+  position: Position;
+  rotation: Position;
+  scale: Position;
+  parentId?: string;
+}

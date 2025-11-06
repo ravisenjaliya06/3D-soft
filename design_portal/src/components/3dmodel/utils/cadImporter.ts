@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { ShapeData } from '../customDesign/interface';
+import type { ShapeData } from '../interface';
 import { CADImportOptions, CADObjectData } from '../interface';
 import { store } from '../store';
 import { addShape } from '../store/customDesignSlice';

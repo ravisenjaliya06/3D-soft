@@ -2,7 +2,6 @@ import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { cleanupThreeDView } from '../customDesign/design/scene';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
@@ -278,7 +277,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       return () => {
         if (design3D) {
-          cleanupThreeDView(design3D);
           setDesign3D(null);
           setLocalDesign3D(null);
           if (moveHandler) {
