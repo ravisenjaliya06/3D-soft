@@ -30,7 +30,6 @@ import { ToolbarProps } from '../interface';
 import { store } from '../store';
 import {
   addObjects,
-  addObjectsThunk,
   setHoverdMesh,
   setSelectedChildObject,
   setobjectSelected,
@@ -784,10 +783,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: false,
     },
   ];
-  const handleAddObject = (name: string) => {
-    dispatch(addObjectsThunk(name));
-    setcatalogMenu(false);
-  };
 
   const handleback = () => {
     setActiveOption('Home');
@@ -1041,78 +1036,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           </div>
         )}
       </aside>
-
-      {/* Catalog Menu */}
-      {catalogMenu && (
-        <div className={`${styles.catalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}>
-          <div className={styles.firstpart}>
-            <h3>Catalog</h3>
-            <div className={styles.menuFunctionality}>
-              <img src={assets.close} onClick={() => setcatalogMenu(false)} alt="close" />
-            </div>
-          </div>
-          <div className={styles.catalogTabs}>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'furniture' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('furniture')}
-            >
-              Product Catalog
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'parts' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('parts')}
-            >
-              Part
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'custom' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('custom')}
-            >
-              My Custom
-            </button>
-          </div>
-          <div className={styles.secondpart}>
-            <div className={styles.scrollContainer}>
-              {(activeCatalogTab === 'furniture'
-                ? furnitureItems
-                : activeCatalogTab === 'parts'
-                  ? partItems
-                  : customItems
-              ).map(({ id, image, name }) => (
-                <div key={id} className={styles.catalogbox} onClick={() => handleAddObject(name)}>
-                  <img
-                    src={
-                      image
-                        ? image.startsWith('http')
-                          ? image
-                          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${image}`
-                        : ''
-                    }
-                    alt={name || 'Design'}
-                  />
-                  <p>{formatName(name)}</p>
-                </div>
-              ))}
-              {(activeCatalogTab === 'furniture'
-                ? furnitureItems
-                : activeCatalogTab === 'parts'
-                  ? partItems
-                  : customItems
-              ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {createCompanyPopup && selectedCabinetItem && (
         <div
