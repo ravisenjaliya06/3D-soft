@@ -864,7 +864,7 @@ class CatalogRuleReadSerializer(serializers.ModelSerializer):
 
 
 class CatalogReadHierarchySerializer(serializers.ModelSerializer):
-    catalog_rule = CatalogRuleReadSerializer(many=True, read_only=True)
+    catalog_rules = CatalogRuleReadSerializer(many=True, read_only=True, source="catalog_rule")
     children = serializers.SerializerMethodField()
 
     class Meta:
@@ -876,7 +876,7 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
             "description",
             "design",
             "parent",
-            "catalog_rule",
+            "catalog_rules",
             "height",
             "width",
             "length",
@@ -895,7 +895,7 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
 
 
 class CatalogSerializer(serializers.ModelSerializer):
-    catalog_rule = CatalogRuleSerializer(many=True, required=False)
+    catalog_rules = CatalogRuleSerializer(many=True, required=False, source="catalog_rule")
 
     class Meta:
         model = Catalog
@@ -906,7 +906,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             "description",
             "design",
             "parent",
-            "catalog_rule",
+            "catalog_rules",
             "height",
             "width",
             "length",
@@ -927,7 +927,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         if not design_id:
             raise serializers.ValidationError("Missing required field 'design_id'.")
 
-        catalog_rules_data = validated_data.pop("catalog_rule", [])
+        catalog_rules_data = validated_data.pop("catalog_rules", [])
         catalog = Catalog.objects.create(**validated_data)
 
         override_rules = {rule["name"]: rule for rule in catalog_rules_data}

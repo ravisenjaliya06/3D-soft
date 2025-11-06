@@ -34,7 +34,7 @@ const CatalogManager = () => {
   }, [catalogData]);
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_DEBUG === 'false') {
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log('name', name);
       console.log('description', description);
     }
@@ -140,8 +140,8 @@ const CatalogManager = () => {
   }, [getCatalog]);
 
   useEffect(() => {
-    if (selectedCatalog && selectedCatalog.catalog_rule.length > 0) {
-      fetchRuleParts(selectedCatalog.catalog_rule[0].id);
+    if (selectedCatalog && selectedCatalog.catalog_rules.length > 0) {
+      fetchRuleParts(selectedCatalog.catalog_rules[0].id);
     } else {
       setActiveRuleId(null);
       setRuleParts([]);
@@ -356,7 +356,7 @@ const CatalogManager = () => {
                 {/* MENU */}
                 <div className={styles.topBoxLeft}>
                   <div className={styles.matirealmanu}>
-                    {selectedCatalog?.catalog_rule.map((rule: CatalogRule) => (
+                    {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
                       <div
                         key={rule.id}
                         className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}

@@ -30,5 +30,5 @@ export interface Catalog {
   type: string;
   name: string;
   description: string;
-  catalog_rule: CatalogRule[];
+  catalog_rules: CatalogRule[];
 }
