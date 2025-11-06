@@ -22,7 +22,7 @@ const RegisterPage = () => {
 
   useEffect(() => {
     handleRegister();
-  }, []);
+  });
 
   if (isLoading) {
     return null;

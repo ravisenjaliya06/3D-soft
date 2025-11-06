@@ -1,7 +1,6 @@
 import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
@@ -9,17 +8,14 @@ import { ResponseStatus } from '../interface';
 import { store } from '../store';
 import {
   addObjects,
-  copyObjectsThunk,
   removeObjectWithHistory,
   setHoverdMesh,
   setobjectSelected,
   setSelectedChildObject,
   updateObjectPosition,
 } from '../store/dataSlice';
-import { addToHistory } from '../store/historySlice';
 import { Object3D } from '../store/interface';
 import { setScene } from '../store/sceneSlice';
-import HelperTools from './HelperTools';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import {
@@ -167,7 +163,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         }
       };
     }
-  }, [design3D, setDesign3D, dispatch, isAlignmentActive]);
+  }, [design3D, setDesign3D, dispatch, isAlignmentActive, moveHandler]);
 
   useEffect(() => {
     if (design3D && sceneFromState) {
@@ -467,24 +463,29 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
     toggleOutline();
 
+    const outlines = outlinesRef.current;
+    const dimensionLabels = dimensionLabelsRef.current;
+    const minifixMarkers = minifixMarkersRef.current;
+    const childOutlineGroups = childOutlineGroupsRef.current;
+
     return () => {
-      outlinesRef.current.forEach((outline) => {
+      outlines.forEach((outline) => {
         design3D.scene.remove(outline);
         outline.geometry?.dispose();
         if (outline.material instanceof THREE.Material) outline.material.dispose();
       });
-      outlinesRef.current.clear();
+      outlines.clear();
 
-      dimensionLabelsRef.current.forEach((labels) => {
+      dimensionLabels.forEach((labels) => {
         labels.forEach((label) => {
           design3D.scene.remove(label);
           if (label.material.map) label.material.map.dispose();
           if (label.material instanceof THREE.Material) label.material.dispose();
         });
       });
-      dimensionLabelsRef.current.clear();
+      dimensionLabels.clear();
 
-      childOutlineGroupsRef.current.forEach((group) => {
+      childOutlineGroups.forEach((group) => {
         group.children.forEach((child) => {
           if (child instanceof THREE.LineSegments) {
             child.geometry.dispose();
@@ -493,14 +494,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         });
         design3D.scene.remove(group);
       });
-      childOutlineGroupsRef.current.clear();
+      childOutlineGroups.clear();
 
-      minifixMarkersRef.current.forEach((markers) => {
+      minifixMarkers.forEach((markers) => {
         markers.forEach((marker) => {
           design3D.scene.remove(marker);
         });
       });
-      minifixMarkersRef.current.clear();
+      minifixMarkers.clear();
     };
   }, [design3D, isQuickHideActive, objects]);
 
@@ -817,7 +818,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       hoverOutlineRef.current = null;
       lastHoveredObjectRef.current = null;
     }
-  }, [isMeasurementActive, design3D]);
+  }, [isMeasurementActive, design3D, hoverOutlineRef]);
 
   const handleCanvasClick = useCallback(
     (event: MouseEvent) => {
@@ -1050,103 +1051,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyboardEvents);
     };
-  }, [selectedObject, design3D, moveHandler, isMoveMode]);
-
-  const handleCopyObject = async () => {
-    if (!selectedObject || !design3D || !moveHandler) return;
-
-    const objectId = selectedObject?.userData.objectId;
-    if (!objectId) return;
-
-    const clonedObject = selectedObject.clone();
-    clonedObject.userData = {
-      ...selectedObject.userData,
-      isTemporaryCopy: true,
-    };
-    clonedObject.position.x += 0.1;
-    design3D.scene.add(clonedObject);
-
-    if (design3D.controls) {
-      design3D.controls.enabled = false;
-    }
-    const finalPosition = await moveHandler.enableDragging(clonedObject);
-
-    if (design3D.controls) {
-      design3D.controls.enabled = true;
-    }
-
-    if (finalPosition) {
-      clonedObject.position.copy(finalPosition);
-
-      const result = await dispatch(copyObjectsThunk(objectId)).unwrap();
-      if (!result || !result.mainObjects.length) {
-        design3D.scene.remove(clonedObject);
-        throw new Error('Failed to copy object');
-      }
-
-      const newObjectId = result.mainObjects[0].id;
-      const mainObject = result.mainObjects[0];
-
-      clonedObject.userData.objectId = newObjectId;
-      clonedObject.userData.isTemporaryCopy = false;
-      clonedObject.name = mainObject.name;
-
-      const updateSuccess = await updateObjectPositionInDatabase(
-        newObjectId,
-        mainObject,
-        finalPosition
-      );
-
-      if (!updateSuccess) {
-        design3D.scene.remove(clonedObject);
-        console.error('Failed to update position in DB');
-        return;
-      }
-      for (const obj of result.mainObjects) {
-        dispatch(
-          addToHistory({
-            id: uuidv4(),
-            type: 'ADD',
-            data: {
-              object: obj,
-              mesh: clonedObject,
-              childObjects: result.childObjects,
-            },
-          })
-        );
-      }
-      setSelectedObject(clonedObject);
-      setHelperTools(true);
-      dispatch(setobjectSelected(newObjectId));
-    } else {
-      design3D.scene.remove(clonedObject);
-    }
-  };
+  }, [selectedObject, design3D, moveHandler, isMoveMode, isSelectableMesh]);
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
-      {helperTools && (
-        <HelperTools
-          onCopy={handleCopyObject}
-          onDelete={() => {
-            if (selectedObject?.userData.objectId) {
-              deleteObject()
-                .then(() => {
-                  removeObjectAndChildrenFromScene(selectedObject);
-                  setSelectedObject(null);
-                  setHelperTools(false);
-                })
-                .catch((error) => {
-                  console.error('Error during object deletion:', error);
-                });
-            }
-          }}
-          onMove={() => {
-            setIsMoveMode(true);
-            handleMoveObject();
-          }}
-        />
-      )}
       <div ref={mountRef} style={{ width: '100%', height: '100%' }}></div>
       {design3D && (
         <MeasurementTool

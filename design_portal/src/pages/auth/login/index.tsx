@@ -22,7 +22,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     handleLogin();
-  }, []);
+  });
 
   if (isLoading) {
     return null;

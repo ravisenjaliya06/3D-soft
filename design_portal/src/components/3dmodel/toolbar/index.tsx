@@ -30,7 +30,6 @@ import { ToolbarProps } from '../interface';
 import { store } from '../store';
 import {
   addObjects,
-  addObjectsThunk,
   setHoverdMesh,
   setSelectedChildObject,
   setobjectSelected,
@@ -784,10 +783,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: false,
     },
   ];
-  const handleAddObject = (name: string) => {
-    dispatch(addObjectsThunk(name));
-    setcatalogMenu(false);
-  };
 
   const handleback = () => {
     setActiveOption('Home');
@@ -841,8 +836,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     Drawer: assets.drawer,
     'Sliding Door': assets.door,
     Door: assets.door_icon,
-    'Horizontal Plank': assets.horizontal_plank,
-    'Vertical Plank': assets.vertical_plank,
+    'Horizontal Plank': assets.horizontal,
+    'Vertical Plank': assets.vertical,
     'Tv Unit': assets.tv,
     'Computer Desk': assets.table,
     Plank: assets.vertical_plank,
@@ -878,8 +873,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           <div className={styles.activegroup_tools_container}>
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
-                <div className={styles.activegroup_header}>
-                  <img src={assets.back} alt="back" onClick={handleback} />
+                <div
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
+                >
+                  {!options.some((item) => item.option === activeOption) && (
+                    <img src={assets.back} onClick={handleback} alt="Back" />
+                  )}
                   <p>{activeOptionName}</p>
                 </div>
               )}
@@ -948,13 +949,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                       </div>
                       <span>{option}</span>
                       <img
-                        src={assets.list_line_arrow}
+                        src={assets.down_arrow}
                         alt=""
                         style={{
                           transform:
                             selectedFurnitureCategory === option
-                              ? 'rotate(180deg)'
-                              : 'rotate(0deg)',
+                              ? 'rotate(90deg)'
+                              : 'rotate(270deg)',
                           transition: 'transform 0.3s ease',
                         }}
                       />
@@ -971,7 +972,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         {selectedFurnitureCategory && isToolOpen && (
           <div className={styles.submenuPanel}>
             <div className={styles.submenuHeader}>
-              <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
+              <div className={styles.submenuHeaderTitle}>
+                <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
+                <img
+                  src={assets.close}
+                  alt="close"
+                  className={styles.closeIcon}
+                  onClick={() => setSelectedFurnitureCategory(null)}
+                />
+              </div>
+              <img
+                src={assets.tool_part_line}
+                className={styles.active_tool_part_line}
+                alt="active group"
+              />
               <div className={styles.searchWrapper}>
                 <img src={assets.searchIcon} alt="search" className={styles.searchIcon} />
                 <input
@@ -983,12 +997,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                   }}
                 />
               </div>
-              <img
-                src={assets.close}
-                alt="close"
-                className={styles.closeIcon}
-                onClick={() => setSelectedFurnitureCategory(null)}
-              />
             </div>
             <div className={styles.submenuContent}>
               {getFilteredCabinetItems(selectedFurnitureCategory).map((item: any) => (
@@ -1027,86 +1035,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             </div>
           </div>
         )}
-
-        <div
-          className={isToolOpen ? styles.toggle : styles.toggle_open}
-          onClick={handleToolToggleClick}
-        >
-          <img src={isToolOpen ? assets.tool_toggle : assets.tool_toggle_open} alt="toggle" />
-        </div>
       </aside>
-
-      {/* Catalog Menu */}
-      {catalogMenu && (
-        <div className={`${styles.catalogcontainer} ${!isToolOpen ? styles.catalogClosed : ''}`}>
-          <div className={styles.firstpart}>
-            <h3>Catalog</h3>
-            <div className={styles.menuFunctionality}>
-              <img src={assets.close} onClick={() => setcatalogMenu(false)} alt="close" />
-            </div>
-          </div>
-          <div className={styles.catalogTabs}>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'furniture' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('furniture')}
-            >
-              Product Catalog
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'parts' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('parts')}
-            >
-              Part
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeCatalogTab === 'custom' ? styles.activeTab : ''}`}
-              onClick={() => setActiveCatalogTab('custom')}
-            >
-              My Custom
-            </button>
-          </div>
-          <div className={styles.secondpart}>
-            <div className={styles.scrollContainer}>
-              {(activeCatalogTab === 'furniture'
-                ? furnitureItems
-                : activeCatalogTab === 'parts'
-                  ? partItems
-                  : customItems
-              ).map(({ id, image, name }) => (
-                <div key={id} className={styles.catalogbox} onClick={() => handleAddObject(name)}>
-                  <img
-                    src={
-                      image
-                        ? image.startsWith('http')
-                          ? image
-                          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${image}`
-                        : ''
-                    }
-                    alt={name || 'Design'}
-                  />
-                  <p>{formatName(name)}</p>
-                </div>
-              ))}
-              {(activeCatalogTab === 'furniture'
-                ? furnitureItems
-                : activeCatalogTab === 'parts'
-                  ? partItems
-                  : customItems
-              ).length === 0 && (
-                <div className={styles.noItems}>
-                  No{' '}
-                  {activeCatalogTab === 'furniture'
-                    ? 'furniture'
-                    : activeCatalogTab === 'parts'
-                      ? 'parts'
-                      : 'custom designs'}{' '}
-                  found
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {createCompanyPopup && selectedCabinetItem && (
         <div

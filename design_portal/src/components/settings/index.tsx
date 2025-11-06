@@ -158,7 +158,7 @@ const Settings = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  });
 
   const handleRoleRemove = (role: string, memberId: number) => {
     setMembers((prevMembers) =>

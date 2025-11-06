@@ -103,10 +103,10 @@ export const CUSTOMDESIGN = {
 };
 
 export const DASHBOARD = {
-  design: '/assets/dashboard/design.svg',
+  dashboarddesign: '/assets/dashboard/design.svg',
   final_design: '/assets/dashboard/final_design.svg',
   floorplan: '/assets/dashboard/floorplan.svg',
-  Line: '/assets/dashboard/Line.svg',
+  tab_line: '/assets/dashboard/Line.svg',
   nesting: '/assets/dashboard/nesting.svg',
   projects: '/assets/dashboard/projects.svg',
   public_library: '/assets/dashboard/public_library.svg',
