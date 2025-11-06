@@ -864,7 +864,9 @@ class CatalogRuleReadSerializer(serializers.ModelSerializer):
 
 
 class CatalogReadHierarchySerializer(serializers.ModelSerializer):
-    catalog_rules = CatalogRuleReadSerializer(many=True, read_only=True, source="catalog_rule")
+    catalog_rules = CatalogRuleReadSerializer(
+        many=True, read_only=True, source="catalog_rule"
+    )
     children = serializers.SerializerMethodField()
 
     class Meta:
@@ -895,7 +897,9 @@ class CatalogReadHierarchySerializer(serializers.ModelSerializer):
 
 
 class CatalogSerializer(serializers.ModelSerializer):
-    catalog_rules = CatalogRuleSerializer(many=True, required=False, source="catalog_rule")
+    catalog_rules = CatalogRuleSerializer(
+        many=True, required=False, source="catalog_rule"
+    )
 
     class Meta:
         model = Catalog
