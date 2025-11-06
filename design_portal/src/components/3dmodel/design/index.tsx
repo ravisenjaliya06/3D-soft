@@ -108,122 +108,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const dimensionLabelsRef = useRef(new Map<THREE.Mesh, THREE.Sprite[]>());
   const hoverOutlineRef = useRef<THREE.LineSegments | null>(null);
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
-  const alignmentIndicatorsRef = useRef<THREE.Object3D[]>([]);
   const childOutlineGroupsRef = useRef(new Map<THREE.Mesh, THREE.Group>());
   const minifixMarkersRef = useRef<Map<THREE.Mesh, THREE.Object3D[]>>(new Map());
-
-  const showAlignmentDistances = useCallback(() => {
-    if (!design3D) return;
-
-    alignmentIndicatorsRef.current.forEach((indicator) => {
-      design3D.scene.remove(indicator);
-      if (indicator instanceof THREE.Line && indicator.geometry) {
-        indicator.geometry.dispose();
-      }
-      if (indicator instanceof THREE.Sprite && indicator.material) {
-        if (indicator.material.map) indicator.material.map.dispose();
-        indicator.material.dispose();
-      }
-    });
-    alignmentIndicatorsRef.current = [];
-
-    const topLevelObjects: THREE.Mesh[] = [];
-    design3D.scene.traverse((object) => {
-      if (
-        object instanceof THREE.Mesh &&
-        object.parent instanceof THREE.Scene &&
-        object.name !== 'grid' &&
-        object.name !== 'floor' &&
-        object.name !== 'daysky' &&
-        object.name !== 'nightsky' &&
-        !(object instanceof THREE.GridHelper)
-      ) {
-        topLevelObjects.push(object);
-      }
-    });
-
-    if (topLevelObjects.length < 2) {
-      design3D.renderer.render(design3D.scene, design3D.camera);
-      return;
-    }
-
-    for (let i = 0; i < topLevelObjects.length; i++) {
-      for (let j = i + 1; j < topLevelObjects.length; j++) {
-        const obj1 = topLevelObjects[i];
-        const obj2 = topLevelObjects[j];
-
-        const box1 = new THREE.Box3().setFromObject(obj1);
-        const box2 = new THREE.Box3().setFromObject(obj2);
-
-        const closestPoint1 = new THREE.Vector3();
-        const closestPoint2 = new THREE.Vector3();
-
-        const findClosestPoints = (
-          boxA: THREE.Box3,
-          boxB: THREE.Box3,
-          pointA: THREE.Vector3,
-          pointB: THREE.Vector3
-        ) => {
-          pointA.copy(boxA.clampPoint(boxB.getCenter(new THREE.Vector3()), new THREE.Vector3()));
-          pointB.copy(boxB.clampPoint(pointA, new THREE.Vector3()));
-        };
-
-        findClosestPoints(box1, box2, closestPoint1, closestPoint2);
-
-        const distance = closestPoint1.distanceTo(closestPoint2);
-        if (distance < 0.01) continue;
-
-        const distanceInUnit = currentUnitType === 'cm' ? distance * 100 : distance;
-        const distanceText = `${distanceInUnit.toFixed(2)} ${currentUnitType}`;
-
-        const line = createDistanceLine(closestPoint1, closestPoint2);
-        design3D.scene.add(line);
-        alignmentIndicatorsRef.current.push(line);
-
-        const midPoint = closestPoint1.clone().lerp(closestPoint2, 0.5);
-        const sprite = createAlignDimension(distanceText, midPoint);
-        if (sprite) {
-          design3D.scene.add(sprite);
-          alignmentIndicatorsRef.current.push(sprite);
-        }
-      }
-    }
-
-    design3D.renderer.render(design3D.scene, design3D.camera);
-  }, [design3D, currentUnitType]);
-
-  useEffect(() => {
-    if (!design3D) return;
-
-    const clearAlignmentIndicators = () => {
-      alignmentIndicatorsRef.current.forEach((indicator) => {
-        if (design3D) {
-          design3D.scene.remove(indicator);
-        }
-
-        if (indicator instanceof THREE.Line && indicator.geometry) {
-          indicator.geometry.dispose();
-        }
-
-        if (indicator instanceof THREE.Sprite && indicator.material) {
-          if (indicator.material.map) indicator.material.map.dispose();
-          indicator.material.dispose();
-        }
-      });
-
-      alignmentIndicatorsRef.current = [];
-    };
-
-    if (isAlignmentActive) {
-      showAlignmentDistances();
-    } else {
-      clearAlignmentIndicators();
-    }
-
-    return () => {
-      clearAlignmentIndicators();
-    };
-  }, [design3D, isAlignmentActive, showAlignmentDistances]);
 
   useEffect(() => {
     if (mountRef.current && !design3D) {
@@ -297,50 +183,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       design3D.renderer.render(design3D.scene, design3D.camera);
     }
   }, [sceneFromState, design3D]);
-
-  const createAlignDimension = (message: string, position: THREE.Vector3) => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) {
-      console.error('Failed to get 2D context for text sprite');
-      return null;
-    }
-
-    canvas.width = 8000;
-    canvas.height = 1120;
-    context.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = 'rgba(0, 0, 0, 1)';
-    context.lineWidth = 2;
-    context.strokeRect(0, 0, canvas.width, canvas.height);
-    context.font = 'Bold 60rem Arial';
-    context.fillStyle = 'rgba(0, 0, 0, 1.0)';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillText(message, canvas.width / 2, canvas.height / 2);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.position.copy(position);
-    sprite.scale.set(0.15, 0.06, 1);
-    return sprite;
-  };
-
-  // Create a line for distance visualization
-  const createDistanceLine = (start: THREE.Vector3, end: THREE.Vector3) => {
-    const material = new THREE.LineBasicMaterial({
-      color: 0xff0000,
-      linewidth: 2,
-    });
-    const points = [start, end];
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, material);
-    line.name = 'distance_line';
-    return line;
-  };
-
-  // Calculate and display distances for alignment
 
   useEffect(() => {
     if (!design3D) return;
@@ -1165,8 +1007,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         if (!success) {
           console.error('Failed to update position in DB, reverting...');
           selectedObject.position.copy(originalPosition);
-        } else if (isAlignmentActive) {
-          showAlignmentDistances(); // Final update
         }
       } else {
         selectedObject.position.copy(originalPosition);
@@ -1291,10 +1131,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   };
 
-  const handleLock = () => {};
-
-  const handleUnlock = () => {};
-
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
       {helperTools && (
@@ -1318,8 +1154,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             setIsMoveMode(true);
             handleMoveObject();
           }}
-          onLock={handleLock}
-          onUnlock={handleUnlock}
         />
       )}
       <div ref={mountRef} style={{ width: '100%', height: '100%' }}></div>

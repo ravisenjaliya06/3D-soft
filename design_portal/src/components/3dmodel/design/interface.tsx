@@ -50,8 +50,6 @@ export interface HelperToolsProps {
   onCopy: () => void;
   onDelete: () => void;
   onMove?: () => void;
-  onLock: () => void;
-  onUnlock: () => void;
   isLocked?: boolean;
 }
 export interface DesignProps {
