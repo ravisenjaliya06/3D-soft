@@ -1,6 +1,9 @@
 import { Position } from '../../store/interface';
 
 export interface geoMetryData {
+  id: string;
+  name: string;
+  type?: string;
   width: number;
   height: number;
   depth: number;
@@ -9,10 +12,13 @@ export interface geoMetryData {
     type: 'COLOR' | 'TEXTURE';
     value: string;
   };
-  name: string;
+  catalog_type: string;
+  openDirection: string;
+  grooves: GrooveDetail[];
 }
 
 export interface cylinderGeometryData {
+  name: string;
   radiusTop: number;
   radiusBottom: number;
   height: number;
@@ -22,6 +28,7 @@ export interface cylinderGeometryData {
     type: 'COLOR' | 'TEXTURE';
     value: string;
   };
+  grooves: GrooveDetail[];
 }
 
 export interface elementData {
@@ -41,4 +48,42 @@ export interface GrooveDetail {
   connectedTo: string;
   groove_gap: number;
   groove_dig: number;
+  position: Position;
 }
+
+export type ConvertInputElement = {
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  plankSize: number;
+  position: { x: number; y: number; z?: number };
+  material?: { type: string; value: string };
+  grooves?: GrooveDetail[];
+  openDirection?: string;
+  catalog_type?: string;
+};
+
+export interface SimpleGeometryData {
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  plankSize: number;
+  position: { x: number; y: number; z: number };
+  material: {
+    type: 'COLOR' | 'TEXTURE';
+    value: string;
+  };
+  grooves: GrooveDetail[];
+  openDirection: string;
+  catalog_type: string;
+}
+
+export interface SimpleElementData {
+  type: 'GEOMETRY_DATA';
+  data: SimpleGeometryData;
+  minMax: 'BOTH';
+}
+
+export type SimpleElementDataList = SimpleElementData[];

@@ -6,7 +6,7 @@ import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { Design, editPopupData, User } from './interface';
+import { Design, DesignsResponse, User } from './interface';
 type StatusStylesType = {
   [key: string]: { [key: string]: string };
 };
@@ -26,7 +26,6 @@ const Designs = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
-  const [editPopupData, setEditPopupData] = useState<editPopupData | null>(null);
   const [showEdtiPopup, setshowEdtiPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -133,13 +132,12 @@ const Designs = () => {
       setLoading(true);
       const response: {
         status: number;
-        data: Design[];
+        data: Design[] | DesignsResponse;
       } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
       if (response.status === 200) {
-        setDesigns(response.data);
+        setDesigns(response.data as Design[]);
       } else if (response.status === 403) {
-        //@ts-ignore
-        setError(response.data.error);
+        setError((response.data as DesignsResponse).detail);
       } else {
         setError('Something went wrong');
       }
@@ -309,11 +307,6 @@ const Designs = () => {
       setSelectedDesign(design);
       setDesingName(design.design_name);
       setDesingStatus(design.status);
-      setEditPopupData({
-        id: design.id,
-        design_name: design.design_name,
-        status: design.status,
-      });
       setshowEdtiPopup(true);
     }
   };

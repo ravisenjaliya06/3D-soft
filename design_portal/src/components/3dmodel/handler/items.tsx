@@ -2414,7 +2414,7 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
   }
 
   // Decide direction based on wall type
-  let direction = new THREE.Vector3();
+  const direction = new THREE.Vector3();
   switch (wallType) {
     case 'center':
       direction.set(0, 0, 1);

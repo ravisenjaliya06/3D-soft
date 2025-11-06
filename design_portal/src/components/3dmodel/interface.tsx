@@ -174,6 +174,8 @@ export interface CatalogApiResponse {
   catalog: DefaultCatalogData;
   items: CatalogItem[];
   child_catalogs: CatalogApiResponse[];
+  groove_dig?: number;
+  groove_gap?: number;
 }
 
 export interface PlankSegment {
