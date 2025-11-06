@@ -1,5 +1,5 @@
 import Otp from '@/components/otp';
-import { usePageSetup } from '@/pages/usePageSetup';
+import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
 
 const OtpPage = () => {

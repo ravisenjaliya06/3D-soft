@@ -1,6 +1,6 @@
 import { getTokenDetail } from '@/components/helper/helper';
 import Login from '@/components/login';
-import { usePageSetup } from '@/pages/usePageSetup';
+import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE, REDIRECT } from '@/services/CommonStatus';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';

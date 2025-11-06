@@ -1,7 +1,7 @@
 import CatalogManager from '@/components/catalogmanager';
 import { useAuthRedirect } from '@/components/helper/helper';
 import { PAGE_TITLE } from '@/services/CommonStatus';
-import { usePageSetup } from '../usePageSetup';
+import { usePageSetup } from '../../usePageSetup';
 
 const MaterialPage = () => {
   usePageSetup(PAGE_TITLE.MATERIAL);

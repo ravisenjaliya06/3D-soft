@@ -1,6 +1,6 @@
 import Mes from '@/components/designmes';
 import { useAuthRedirect } from '@/components/helper/helper';
-import { usePageSetup } from '@/pages/usePageSetup';
+import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
 
 const MesPage = () => {

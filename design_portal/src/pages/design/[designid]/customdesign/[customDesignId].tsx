@@ -1,6 +1,6 @@
 import { CustomDesignRootComponent } from '@/components/3dmodel/customDesign/index';
 import { useAuthRedirect } from '@/components/helper/helper';
-import { usePageSetup } from '@/pages/usePageSetup';
+import { usePageSetup } from '@/usePageSetup';
 import { PAGE_TITLE } from '@/services/CommonStatus';
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';

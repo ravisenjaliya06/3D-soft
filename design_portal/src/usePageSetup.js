@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { assets } from '../svgPaths';
+import { assets } from './svgPaths';
 // import logo from '@/assets/titleLogo.svg';
 
 export const usePageSetup = (title) => {
