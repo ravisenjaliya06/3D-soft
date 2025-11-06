@@ -1,6 +1,5 @@
-import EyeOffIcon from '@/assets/eye-off.svg';
-import EyeIcon from '@/assets/eye.svg';
 import styles from '@/components/inputfields/inputField.module.css';
+import { assets } from '@/svgPaths';
 import { IconButton, InputAdornment, TextField } from '@mui/material';
 
 const InputField = ({
@@ -46,7 +45,7 @@ const InputField = ({
                     <IconButton onClick={onClickShowPassword}>
                       {showPassword ? (
                         <img
-                          src={EyeIcon.src}
+                          src={assets.eye}
                           alt="Hide Password"
                           style={{
                             width: '1rem',
@@ -55,7 +54,7 @@ const InputField = ({
                         />
                       ) : (
                         <img
-                          src={EyeOffIcon.src}
+                          src={assets.eye_off}
                           alt="Show Password"
                           style={{
                             width: '1rem',

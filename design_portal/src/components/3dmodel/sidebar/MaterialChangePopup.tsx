@@ -1,6 +1,5 @@
-import close from '@/assets/design/close.svg';
-import tableicon from '@/assets/sidebar/tabledata.svg';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './MaterialChangePopup.module.css';
@@ -156,7 +155,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
         <div className={styles.header}>
           <h2>Custom Design created</h2>
           <img
-            src={close.src || '/placeholder.svg'}
+            src={assets.close || '/placeholder.svg'}
             className={styles.closeButton}
             alt="close"
             onClick={onClose}
@@ -230,7 +229,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                   >
                     <td>
                       <div className={styles.partlItem}>
-                        <img src={tableicon.src} alt="" />
+                        <img src={assets.tabledata} alt="" />
                         {part.name || 'Part'}
                       </div>
                     </td>
@@ -292,7 +291,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                   >
                     <td>
                       <div className={styles.materialItem}>
-                        <img src={tableicon.src} alt="" />
+                        <img src={assets.tabledata} alt="" />
                         {item.name}
                       </div>
                     </td>

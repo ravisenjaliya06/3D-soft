@@ -1,16 +1,8 @@
-import Line from '@/assets/dashboard/Line.svg';
-import Designs from '@/assets/dashboard/design.svg';
-import Final_design from '@/assets/dashboard/final_design.svg';
-import FloorPlan from '@/assets/dashboard/floorplan.svg';
-import Nesting from '@/assets/dashboard/nesting.svg';
-import Projects from '@/assets/dashboard/projects.svg';
-import Public_library from '@/assets/dashboard/public_library.svg';
-import Sells from '@/assets/dashboard/sells.svg';
-import Users from '@/assets/dashboard/users.svg';
 import styles from '@/components/dashboard/dashboard.module.css';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import CommonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
 
@@ -43,31 +35,31 @@ const ProjectDashboard = () => {
         <div className={styles.mainContent}>
           <div className={styles.showdetails}>
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={Designs.src} alt="Design" />
+              <img className={styles.showprojectimage} src={assets.design} alt="Design" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Designs</p>
                 <p className={styles.showValues}>{designsCount}</p>
               </div>
             </div>
-            <img className={styles.Lines} src={Line.src} alt="Line" />
+            <img className={styles.Lines} src={assets.Line} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={Projects.src} alt="Project" />
+              <img className={styles.showprojectimage} src={assets.projects} alt="Project" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Projects</p>
                 <p className={styles.showValues}>0</p>
               </div>
             </div>
-            <img className={styles.Lines} src={Line.src} alt="Line" />
+            <img className={styles.Lines} src={assets.Line} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={Users.src} alt="Users" />
+              <img className={styles.showprojectimage} src={assets.users} alt="Users" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Users</p>
                 <p className={styles.showValues}>0</p>
               </div>
             </div>
-            <img className={styles.Lines} src={Line.src} alt="Line" />
+            <img className={styles.Lines} src={assets.Line} alt="Line" />
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={Sells.src} alt="Sells" />
+              <img className={styles.showprojectimage} src={assets.sells} alt="Sells" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Sells</p>
                 <p className={styles.showValues}>0</p>
@@ -76,19 +68,19 @@ const ProjectDashboard = () => {
           </div>
           <div className={styles.CardSectionlist}>
             <div className={styles.CardSection}>
-              <img src={FloorPlan.src} alt="Floorplan" />
+              <img src={assets.floorplan} alt="Floorplan" />
               <p>Floor plan</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={Public_library.src} alt="Public_library" />
+              <img src={assets.public_library} alt="Public_library" />
               <p>Public library</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={Final_design.src} alt="Final_design" />
+              <img src={assets.final_design} alt="Final_design" />
               <p>Final Design</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={Nesting.src} alt="Nesting" />
+              <img src={assets.nesting} alt="Nesting" />
               <p>Nesting</p>
             </div>
           </div>

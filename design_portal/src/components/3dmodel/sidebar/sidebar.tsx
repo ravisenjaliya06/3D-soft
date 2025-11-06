@@ -1,9 +1,5 @@
-import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
-import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
-import menu_down from '@/assets/sidebar/menu-down.svg';
-import menu_up from '@/assets/sidebar/menu-up.svg';
-import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
+import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -706,7 +702,7 @@ const Sidebar: React.FC = () => {
       >
         <p>Viewport Navigation</p>
         <img
-          src={isSidebarOpen ? down_arrow.src : up_arrow.src}
+          src={isSidebarOpen ? assets.down_arrow : assets.up_arrow}
           alt="toggle_arrow"
           style={{ cursor: 'pointer' }}
         />
@@ -729,7 +725,7 @@ const Sidebar: React.FC = () => {
           {isNavOpen && (
             <div>
               <div className={style.nav_div}>
-                <img src={navigationdetail.src} alt="" className={style.zoomoption_img} />
+                <img src={assets.navigationdetail} alt="" className={style.zoomoption_img} />
               </div>
             </div>
           )}
@@ -852,7 +848,7 @@ const Sidebar: React.FC = () => {
                       >
                         {selectedHandle ? selectedHandle : 'Select Position'}
                         <img
-                          src={isHandleDropdownOpen ? menu_up.src : menu_down.src}
+                          src={isHandleDropdownOpen ? assets.menu_up : assets.menu_down}
                           alt="dropdown arrow"
                         />
                       </div>

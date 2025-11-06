@@ -1,20 +1,7 @@
-import bravento_logo from '@/assets/Logo.svg';
-import simple_line from '@/assets/sidebar/Line.svg';
-import simple_line2 from '@/assets/sidebar/Line2.svg';
-import Logout from '@/assets/sidebar/Logout.svg';
-import Setting from '@/assets/sidebar/Setting.svg';
-import dropdown from '@/assets/sidebar/arrow-down.svg';
-import dropup from '@/assets/sidebar/arrow-up.svg';
-import catalogmanager from '@/assets/sidebar/catalogmanager.svg';
-import dashboard from '@/assets/sidebar/dashboard.svg';
-import design from '@/assets/sidebar/design.svg';
-import material from '@/assets/sidebar/material.svg';
-import mes from '@/assets/sidebar/mes.svg';
-import selected from '@/assets/sidebar/selected.svg';
-import dropup_icon from '@/assets/sidebar/sidebaricon.svg';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/sidebar/sidebar.module.css';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -72,12 +59,12 @@ const Sidebar = () => {
           <div className={styles.project_logo}>
             <img
               onClick={() => router.push(REDIRECT.DASHBOARD)}
-              src={bravento_logo.src}
+              src={assets.Logo}
               alt="Bravento Logo"
             />
           </div>
           <div className={styles.simple_line}>
-            <img src={simple_line.src} alt="Simple line" />
+            <img src={assets.simple_line} alt="Simple line" />
           </div>
           <nav className={styles.nav}>
             <ul>
@@ -86,10 +73,10 @@ const Sidebar = () => {
                 onClick={() => handleClick('dashboard', REDIRECT.DASHBOARD)}
               >
                 {activeItem === 'dashboard' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={dashboard.src}
+                  src={assets.dashboard}
                   alt="Dashboard"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'dashboard' ? styles.icon_adjusted : ''
@@ -102,10 +89,10 @@ const Sidebar = () => {
                 onClick={() => handleClick('mes', REDIRECT.MES)}
               >
                 {activeItem === 'mes' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={mes.src}
+                  src={assets.mes}
                   alt="MES"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'mes' ? styles.icon_adjusted : ''
@@ -118,10 +105,10 @@ const Sidebar = () => {
                 onClick={() => handleClick('material', REDIRECT.MATERIAL)}
               >
                 {activeItem === 'material' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={material.src}
+                  src={assets.material}
                   alt="Material"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'material' ? styles.icon_adjusted : ''
@@ -134,10 +121,10 @@ const Sidebar = () => {
                 onClick={() => handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)}
               >
                 {activeItem === 'catalogmanager' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={catalogmanager.src}
+                  src={assets.catalogmanager}
                   alt="Catalog Manager"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
@@ -150,10 +137,10 @@ const Sidebar = () => {
                 onClick={() => handleClick('designs', REDIRECT.DESIGNS)}
               >
                 {activeItem === 'designs' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={design.src}
+                  src={assets.design}
                   alt="design"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'designs' ? styles.icon_adjusted : ''
@@ -163,17 +150,17 @@ const Sidebar = () => {
               </li>
               <div className={styles.userhelp}>
                 <div className={styles.dropdown} onClick={toggleSidebar}>
-                  <img src={dropdown.src} alt="dropdown" />
+                  <img src={assets.arrow_down} alt="dropdown" />
                 </div>
                 <li
                   className={activeItem === 'settings' ? styles.active : ''}
                   onClick={() => handleClick('settings', REDIRECT.SETTINGS)}
                 >
                   {activeItem === 'settings' && (
-                    <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                    <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                   )}
                   <img
-                    src={Setting.src}
+                    src={assets.Setting}
                     alt="settings"
                     className={`${styles.sidebar_icon} ${
                       activeItem === 'settings' ? styles.icon_adjusted : ''
@@ -185,7 +172,7 @@ const Sidebar = () => {
                   className={activeItem === 'logout' ? styles.active : ''}
                   onClick={() => handleClick('logout', '/auth/login')}
                 >
-                  <img src={Logout.src} alt="logout" className={styles.sidebar_icon} />
+                  <img src={assets.Logout} alt="logout" className={styles.sidebar_icon} />
                   Log out
                 </li>
               </div>
@@ -195,10 +182,10 @@ const Sidebar = () => {
       ) : (
         <div className={styles.leftsidebar}>
           <div className={styles.project_logo}>
-            <img src={dropup_icon.src} alt="Bravento Logo" />
+            <img src={assets.sidebaricon} alt="Bravento Logo" />
           </div>
           <div className={styles.simple_line2}>
-            <img src={simple_line2.src} alt="Simple line" />
+            <img src={assets.simple_line} alt="Simple line" />
           </div>
           <nav className={styles.nav}>
             <ul>
@@ -208,10 +195,10 @@ const Sidebar = () => {
                 data-title="Dashboard"
               >
                 {activeItem === 'dashboard' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={dashboard.src}
+                  src={assets.dashboard}
                   alt="Dashboard"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'dashboard' ? styles.icon_adjusted : ''
@@ -224,10 +211,10 @@ const Sidebar = () => {
                 data-title="MES"
               >
                 {activeItem === 'mes' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={mes.src}
+                  src={assets.mes}
                   alt="MES"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'mes' ? styles.icon_adjusted : ''
@@ -240,10 +227,10 @@ const Sidebar = () => {
                 data-title="Material"
               >
                 {activeItem === 'material' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={material.src}
+                  src={assets.material}
                   alt="Material"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'material' ? styles.icon_adjusted : ''
@@ -256,10 +243,10 @@ const Sidebar = () => {
                 data-title="Catalog Manager"
               >
                 {activeItem === 'catalogmanager' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={catalogmanager.src}
+                  src={assets.catalogmanager}
                   alt="Catalog Manager"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
@@ -272,10 +259,10 @@ const Sidebar = () => {
                 data-title="Design"
               >
                 {activeItem === 'designs' && (
-                  <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                 )}
                 <img
-                  src={design.src}
+                  src={assets.design}
                   alt="design"
                   className={`${styles.sidebar_icon} ${
                     activeItem === 'designs' ? styles.icon_adjusted : ''
@@ -284,7 +271,7 @@ const Sidebar = () => {
               </li>
               <div className={styles.userhelp}>
                 <div className={styles.dropup} onClick={toggleSidebar}>
-                  <img src={dropup.src} alt="dropup" />
+                  <img src={assets.arrow_up} alt="dropup" />
                 </div>
                 <li
                   className={`${styles.listItem} ${activeItem === 'settings' ? styles.active_small : ''}`}
@@ -292,16 +279,16 @@ const Sidebar = () => {
                   data-title="Settings"
                 >
                   {activeItem === 'settings' && (
-                    <img src={selected.src} alt="Selected" className={styles.selected_icon} />
+                    <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
                   )}
-                  <img src={Setting.src} alt="setting" className={styles.sidebar_icon} />
+                  <img src={assets.Setting} alt="setting" className={styles.sidebar_icon} />
                 </li>
                 <li
                   className={`${styles.listItem} ${activeItem === 'logout' ? styles.active_small : ''}`}
                   onClick={() => handleClick('logout', '/auth/login')}
                   data-title="Logout"
                 >
-                  <img src={Logout.src} alt="logout" className={styles.sidebar_icon} />
+                  <img src={assets.Logout} alt="logout" className={styles.sidebar_icon} />
                 </li>
               </div>
             </ul>

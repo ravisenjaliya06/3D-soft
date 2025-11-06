@@ -1,11 +1,3 @@
-import clear_svg from '@/assets/3dmodel/header/clear.svg';
-import redo_svg from '@/assets/3dmodel/header/redo.svg';
-import undo_svg from '@/assets/3dmodel/header/undo.svg';
-import close from '@/assets/catalog/close.svg';
-import profile from '@/assets/catalog/profile.svg';
-import file_svg from '@/assets/customdesign/header/file.svg';
-import save_svg from '@/assets/customdesign/header/save.svg';
-import profile_setting_line from '@/assets/edit-delete-line.svg';
 import ImportImage from '@/components/3dmodel/customDesign/components/ImportImage';
 import {
   redoCustomAction,
@@ -15,6 +7,7 @@ import { removeAllShapes } from '@/components/3dmodel/store/customDesignSlice';
 import Loading_style from '@/components/loading.module.css';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
@@ -366,35 +359,35 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     {
       option: 'file',
       name: 'File',
-      icon: file_svg,
+      icon: assets.file,
       disabled: false,
       onClick: handleFileClick,
     },
     {
       option: 'publish',
       name: 'Publish',
-      icon: save_svg,
+      icon: assets.save,
       disabled: false,
       onClick: handleScreenshot,
     },
     {
       option: 'undo',
       name: 'Undo',
-      icon: undo_svg,
+      icon: assets.undo,
       disabled: !historyState || !historyState.past || historyState.past.length === 0,
       onClick: handleUndo,
     },
     {
       option: 'redo',
       name: 'Redo',
-      icon: redo_svg,
+      icon: assets.redo,
       disabled: !historyState || !historyState.future || historyState.future.length === 0,
       onClick: handleRedo,
     },
     {
       option: 'clear',
       name: 'Clear',
-      icon: clear_svg,
+      icon: assets.clear,
       disabled: !customShapes || Object.keys(customShapes).length === 0,
       onClick: handleClear,
     },
@@ -422,7 +415,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
               title={name}
               data-option={option}
             >
-              <img src={icon.src} alt={name} />
+              <img src={icon} alt={name} />
               {name}
             </div>
           ))}
@@ -430,7 +423,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         <div className={styles.header_rightmenu}>
           <img
-            src={profile.src}
+            src={assets.profile}
             alt="profile"
             onClick={handleProfileClick}
             ref={dropdownButtonRef}
@@ -456,7 +449,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             />
           )}
           <img
-            src={close.src}
+            src={assets.close}
             alt="close"
             onClick={() => handleClick(REDIRECT.DESIGNPAGE(designId))}
             className={styles.close}
@@ -469,7 +462,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           <ul className={styles.ProfiledropdownList}>
             <li onClick={profileSetting}>Profile Settings</li>
             <img
-              src={profile_setting_line.src}
+              src={assets.edit_delete_line}
               alt="edit-delete-line"
               className={styles.profile_setting_line}
             />

@@ -1,9 +1,8 @@
-import bravento_logo from '@/assets/Logo.svg';
-import popup_logo from '@/assets/popup_logo.svg';
 import InputField from '@/components/inputfields/InputField.jsx';
 import styles from '@/components/register/register.module.css';
 import { handleSignIn } from '@/components/register/utils';
 import { REDIRECT } from '@/services/CommonStatus';
+import { assets } from '@/svgPaths';
 import { RegisterForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, useState } from 'react';
@@ -141,14 +140,14 @@ const Register = () => {
         <div className={styles.card}>
           <div className={styles.left_side}>
             <div className={styles.popup_logo}>
-              <img src={popup_logo.src} alt="Popup Logo" />
+              <img src={assets.popup_logo} alt="Popup Logo" />
             </div>
             <h1>
               3D Models of <span>wooden sheet cutting</span>
             </h1>
             <p>Make your design and nesting with 3D to less wastage</p>
             <div className={styles.logo}>
-              <img src={bravento_logo.src} alt="Bravento Logo" />
+              <img src={assets.Logo} alt="Bravento Logo" />
             </div>
           </div>
           <div className={styles.right_side}>

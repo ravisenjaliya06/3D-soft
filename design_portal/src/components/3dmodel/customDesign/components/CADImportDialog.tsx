@@ -1,7 +1,7 @@
-import closeIcon from '@/assets/catalog/close.svg';
 import { MoveHandler as MoveHandlerClass } from '@/components/3dmodel/handler/moveHandler';
 import { MoveHandler } from '@/components/3dmodel/handler/moveHandlerInterface';
 import { cadImporter } from '@/components/3dmodel/utils/cadImporter';
+import { assets } from '@/svgPaths';
 import DxfParser from 'dxf-parser';
 import React, { useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -437,7 +437,7 @@ const CADImportDialog: React.FC<CustomDesignProps> = ({ design3D, onClose }) => 
       <div className={styles.importDialogContainer}>
         <div className={styles.importDialogHeader}>
           <h3>Import CAD File</h3>
-          <img src={closeIcon.src} alt="Close" className={styles.closeIcon} onClick={onClose} />
+          <img src={assets.close} alt="Close" className={styles.closeIcon} onClick={onClose} />
         </div>
 
         <div className={styles.importDialogContent}>

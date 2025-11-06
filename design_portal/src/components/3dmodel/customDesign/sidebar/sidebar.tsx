@@ -1,9 +1,7 @@
-import down_arrow from '@/assets/3dmodel/sidebar/down-arrow.svg';
-import up_arrow from '@/assets/3dmodel/sidebar/up-arrow.svg';
-import navigationdetail from '@/assets/sidebar/navigationdetail.svg';
 import { useAppDispatch, useAppSelector } from '@/components/3dmodel/hooks';
 import { updateShape } from '@/components/3dmodel/store/customDesignSlice';
 import commonService from '@/services/CommonService';
+import { assets } from '@/svgPaths';
 
 import React, { useEffect, useState } from 'react';
 import { getDesignId } from '../handler/objectCreator';
@@ -242,7 +240,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       <div className={style.sidebar_close_title} onClick={toggleSidebar}>
         <p>Viewport Navigation</p>
         <img
-          src={up_arrow.src}
+          src={assets.up_arrow}
           alt="Open Sidebar"
           title="Open Sidebar"
           style={{ cursor: 'pointer' }}
@@ -256,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       <div className={style.sidebar_title} onClick={toggleSidebar}>
         <p>Viewport Navigation</p>
         <img
-          src={down_arrow.src}
+          src={assets.down_arrow}
           alt="Close Sidebar"
           title="Close Sidebar"
           style={{ cursor: 'pointer' }}
@@ -272,14 +270,14 @@ const Sidebar: React.FC<SidebarProps> = () => {
       </div>
       {isnavopen && (
         <div className={style.navigation}>
-          <img src={navigationdetail.src} alt="Navigation Details" />
+          <img src={assets.navigationdetail} alt="Navigation Details" />
         </div>
       )}
       {issettingopen && selectedObject && (
         <div className={style.field_main_div}>
           <div className={style.field_group_title_div}>
             <img
-              src={isBasicOpen ? up_arrow.src : down_arrow.src}
+              src={isBasicOpen ? assets.up_arrow : assets.down_arrow}
               alt="toggle_arrow"
               onClick={toggleBasic}
               style={{ cursor: 'pointer' }}

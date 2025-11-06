@@ -1,4 +1,4 @@
-import filter from '@/assets/material/filter.svg';
+import { assets } from '@/svgPaths';
 import type React from 'react';
 import styles from '../material.module.css';
 
@@ -17,7 +17,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
 
       <div className={styles.toolbarRight}>
         <button className={styles.filterButton}>
-          <img src={filter.src || '/placeholder.svg'} alt="" />
+          <img src={assets.filter || '/placeholder.svg'} alt="" />
         </button>
         <div className={styles.searchContainer}>
           <input

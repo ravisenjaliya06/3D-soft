@@ -1,31 +1,24 @@
-import banding from '@/assets/material/banding.svg';
-import boardstock from '@/assets/material/brandstok.svg';
-import caster from '@/assets/material/caster.svg';
-import connector from '@/assets/material/connector.svg';
-import drawerguide from '@/assets/material/drawerguid.svg';
-import hinge from '@/assets/material/hing.svg';
-import misc from '@/assets/material/mis.svg';
-import molding from '@/assets/material/molding.svg';
+import { assets } from '@/svgPaths';
 import type { MaterialItem, TableColumn } from './types';
 
 export const STATIC_MATERIAL_TYPES: MaterialItem[] = [
-  { id: 'banding', name: 'Banding', icon: banding.src },
-  { id: 'board_stock', name: 'Board Stock', icon: boardstock.src },
-  { id: 'caster', name: 'Caster', icon: caster.src },
-  { id: 'connector', name: 'Connector', icon: connector.src },
-  { id: 'drawer_guide', name: 'Drawer Guide', icon: drawerguide.src },
-  { id: 'hinge', name: 'Hinge', icon: hinge.src },
-  { id: 'hinge_plate', name: 'Hinge Plate', icon: hinge.src },
-  { id: 'laminate', name: 'Laminate', icon: boardstock.src },
-  { id: 'leg', name: 'Leg', icon: banding.src },
-  { id: 'leg_leveler', name: 'Leg Leveler', icon: banding.src },
-  { id: 'miscellaneous', name: 'Miscellaneous', icon: misc.src },
-  { id: 'molding', name: 'Molding', icon: molding.src },
-  { id: 'panel_stock', name: 'Panel Stock', icon: banding.src },
-  { id: 'rod', name: 'Rod', icon: banding.src },
-  { id: 'sliding_door_rail', name: 'Sliding Door Rail', icon: banding.src },
-  { id: 'sliding_door_roller', name: 'Sliding Door Roller', icon: banding.src },
-  { id: 'wire_basket', name: 'Wire Basket', icon: banding.src },
+  { id: 'banding', name: 'Banding', icon: assets.banding },
+  { id: 'board_stock', name: 'Board Stock', icon: assets.brandstok },
+  { id: 'caster', name: 'Caster', icon: assets.caster },
+  { id: 'connector', name: 'Connector', icon: assets.connector },
+  { id: 'drawer_guide', name: 'Drawer Guide', icon: assets.drawerguid },
+  { id: 'hinge', name: 'Hinge', icon: assets.hing },
+  { id: 'hinge_plate', name: 'Hinge Plate', icon: assets.hing },
+  { id: 'laminate', name: 'Laminate', icon: assets.brandstok },
+  { id: 'leg', name: 'Leg', icon: assets.banding },
+  { id: 'leg_leveler', name: 'Leg Leveler', icon: assets.banding },
+  { id: 'miscellaneous', name: 'Miscellaneous', icon: assets.mis },
+  { id: 'molding', name: 'Molding', icon: assets.molding },
+  { id: 'panel_stock', name: 'Panel Stock', icon: assets.banding },
+  { id: 'rod', name: 'Rod', icon: assets.banding },
+  { id: 'sliding_door_rail', name: 'Sliding Door Rail', icon: assets.banding },
+  { id: 'sliding_door_roller', name: 'Sliding Door Roller', icon: assets.banding },
+  { id: 'wire_basket', name: 'Wire Basket', icon: assets.banding },
 ];
 
 export const CATEGORY_TABS: Record<
