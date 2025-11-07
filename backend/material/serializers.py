@@ -80,7 +80,7 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "sales_tax",
             "default_tax_rate",
             "waste",
-            "eslimate",
+            "estimate",
         ]
         read_only_fields = ["id", "material"]
 
@@ -606,15 +606,15 @@ class MaterialSerializer(serializers.ModelSerializer):
         textures = attrs.get("textures", [])
 
         def find_duplicates(items: List[Dict[str, str]]) -> List[str]:
-            seen, dups = set(), set()
+            seen, duplicates = set(), set()
             for item in items:
                 n = item.get("name")
                 if n:
                     if n in seen:
-                        dups.add(n)
+                        duplicates.add(n)
                     else:
                         seen.add(n)
-            return dups
+            return duplicates
 
         errors = {}
         dup_finish = find_duplicates(finishes)
@@ -735,8 +735,8 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update finishes
         if finishes_data:
-            recieve_finishes = self.initial_data["finishes"]
-            for finish in recieve_finishes:
+            receive_finishes = self.initial_data["finishes"]
+            for finish in receive_finishes:
                 finish_id_obj = finish.get("id")
                 updated_finish = finish.get("finish")
                 MaterialFinish.objects.filter(id=finish_id_obj).update(
@@ -755,8 +755,8 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         # Update textures
         if textures_data:
-            recieve_textures = self.initial_data["textures"]
-            for texture in recieve_textures:
+            receive_textures = self.initial_data["textures"]
+            for texture in receive_textures:
                 texture_id = texture.get("id")
                 updated_texture = texture.get("texture")
                 MaterialTexture.objects.filter(id=texture_id).update(

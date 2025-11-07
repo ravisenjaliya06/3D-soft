@@ -1,7 +1,3 @@
-src/components/material/index.tsx
-src/components/material/addItem.tsx
-src/components/material/types.ts
-src/components/material/utils/materialMapper.ts
 src/components/3dmodel/toolbar/index.tsx
 src/components/3dmodel/handler/items.tsx
 src/components/3dmodel/handler/updateHandler.tsx

@@ -126,8 +126,8 @@ const Material: React.FC = () => {
 
     return [...searchedMaterials].sort((a, b) => {
       if (!sortColumn) return 0;
-      const aValue = a[sortColumn as keyof typeof a];
-      const bValue = b[sortColumn as keyof typeof b];
+      const aValue = a[sortColumn as keyof typeof a] || 0;
+      const bValue = b[sortColumn as keyof typeof b] || 0;
       if (aValue === undefined || bValue === undefined) return 0;
       return aValue < bValue ? 1 : -1;
     });
@@ -199,7 +199,7 @@ const Material: React.FC = () => {
       {addMaterialPopup && (
         <AddMaterialPopup
           setCreateWorkOrderPopup={setAddMaterialPopup}
-          companyState={companyID}
+          companyId={companyID}
           handleGetCompanyMaterials={fetchCompanyMaterials}
         />
       )}

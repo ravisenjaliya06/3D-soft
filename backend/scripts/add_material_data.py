@@ -472,7 +472,7 @@ MATERIAL = [
             "sales_tax": False,
             "default_tax_rate": 0.00,
             "waste": 5.00,
-            "eslimate": False,
+            "estimate": False,
             "length_trim": 25.4,
             "thickness": 0.8,
         },

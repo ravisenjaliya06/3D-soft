@@ -1,10 +1,10 @@
-import type { TableRow } from '../types';
+import type { CategoryMap, MaterialMap, TableRow } from '../types';
 
 export const normalizeMaterialType = (typeName: string): string => {
   return typeName.trim().toLowerCase().replace(/\s+/g, '_');
 };
 
-export const mapMaterial = (m: any, type?: string): TableRow => {
+export const mapMaterial = (m: MaterialMap, type?: string): TableRow => {
   // Base material variables (common to all categories)
   const baseMaterial = {
     id: m.id,
@@ -19,13 +19,13 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
     material_sales_tax: m.properties.sales_tax,
     material_default_tax_rate: m.properties.default_tax_rate,
     material_waste: m.properties.waste,
-    material_estimate: m.properties.estimate || m.properties.eslimate,
+    material_estimate: m.properties.estimate,
     material_model: m.properties.model,
   };
 
   // Initialize empty object for category-specific properties
-  const categorySpecific: any = {};
-  const normalizedType = normalizeMaterialType(type || m.type);
+  const categorySpecific: CategoryMap = {};
+  const normalizedType = normalizeMaterialType(type || m.type || '');
   // Map properties based on material type (category)
   switch (normalizedType) {
     case 'banding':
@@ -344,7 +344,7 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
     case 'wire_basket':
       // Wire Basket specific variables
       categorySpecific.wire_basket_type = m.properties.type;
-      categorySpecific.wire_basket_depth = m.properties.depth; // Fixed typo from 'dpeth'
+      categorySpecific.wire_basket_depth = m.properties.depth; // Fixed typo from 'depth'
       categorySpecific.wire_basket_width = m.properties.width;
       categorySpecific.wire_basket_height = m.properties.height;
       // Finishes
@@ -370,9 +370,9 @@ export const mapMaterial = (m: any, type?: string): TableRow => {
     default:
       console.warn(`Unknown material type: ${type}`);
       // Return only base material for unknown types, but ensure 'name' exists
-      return { ...baseMaterial, name: m.name };
+      return { ...baseMaterial, name: m.name ? m.name : '' };
   }
 
   // Combine base material and category-specific properties
-  return { ...baseMaterial, ...categorySpecific };
+  return { ...baseMaterial, name: m.name || '', ...categorySpecific };
 };

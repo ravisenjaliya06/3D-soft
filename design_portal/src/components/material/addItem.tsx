@@ -4,16 +4,13 @@ import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
 import styles from './materialWizard.module.css';
+import { MaterialProperties, MaterialPropertiesInput } from './types';
 
 type Props = {
   setCreateWorkOrderPopup: (value: boolean) => void;
-  companyState: any;
+  companyId: string;
   handleGetCompanyMaterials: (companyId: string) => void;
 };
-
-interface FormData {
-  [key: string]: string | number | boolean | string[] | undefined;
-}
 
 interface PopupStep {
   title: string;
@@ -28,7 +25,7 @@ interface PopupStep {
 }
 
 interface Field {
-  key: string;
+  key: keyof MaterialPropertiesInput | string;
   type: string;
   options?: string[];
   disabled?: boolean;
@@ -38,14 +35,14 @@ interface Field {
 
 const AddMaterialPopup: React.FC<Props> = ({
   setCreateWorkOrderPopup,
-  companyState,
+  companyId,
   handleGetCompanyMaterials,
 }) => {
   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-    console.log(companyState);
+    console.log(companyId);
   }
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<FormData>({});
+  const [formData, setFormData] = useState<MaterialPropertiesInput>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
 
   // Material type options
@@ -104,7 +101,7 @@ const AddMaterialPopup: React.FC<Props> = ({
         placeholder: 'Enter waste',
       },
       { key: 'salesTax', label: 'Sales Tax', type: 'toggle' },
-      { key: 'eslimate', label: 'Eslimate', type: 'toggle' },
+      { key: 'estimate', label: 'Estimate', type: 'toggle' },
     ],
   };
 
@@ -2683,11 +2680,11 @@ const AddMaterialPopup: React.FC<Props> = ({
       sales_tax: formData.salesTax || false,
       default_tax_rate: formData.defaultTaxRate || 0,
       waste: formData.waste || 0,
-      eslimate: formData.eslimate || false,
+      estimate: formData.estimate || false,
     };
 
     // Material type specific properties
-    const materialSpecificProperties: any = {};
+    const materialSpecificProperties: MaterialProperties = {};
 
     // Banding specific properties
     if (selectedMaterialType === 'Banding') {
@@ -2989,7 +2986,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       name: formData.name || '',
       type: formData.type || selectedMaterialType,
       description: formData.description || '',
-      company: companyState,
+      company: companyId,
       properties: {
         ...baseProperties,
         ...materialSpecificProperties,
@@ -3006,13 +3003,13 @@ const AddMaterialPopup: React.FC<Props> = ({
     try {
       const response = await commonService.post(
         'material',
-        `company/${companyState}/material`,
+        `company/${companyId}/material`,
         finalData
       );
 
       if (response.status === 201 || response.status === 200) {
         setCreateWorkOrderPopup(false);
-        handleGetCompanyMaterials(companyState);
+        handleGetCompanyMaterials(companyId);
       } else {
         console.error('Something went wrong');
       }
@@ -3020,8 +3017,9 @@ const AddMaterialPopup: React.FC<Props> = ({
       console.error('Error creating material:', error);
     }
   };
+
   const renderField = (field: Field) => {
-    const value = formData[field.key] ?? '';
+    const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 
     switch (field.type) {
       case 'select':
@@ -3091,10 +3089,6 @@ const AddMaterialPopup: React.FC<Props> = ({
   return (
     <div className={styles.popupOverlay}>
       <div className={styles.popup}>
-        {/* <div className={styles.popupLeft}>
-                      <img src={createicon.src || "/placeholder.svg"} className={styles.illustration} alt="Material Creation" />
-                  </div> */}
-
         <div className={styles.popupRight}>
           <div className={styles.popupHeader}>
             <div>
