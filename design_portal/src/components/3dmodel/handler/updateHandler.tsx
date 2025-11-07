@@ -1,4 +1,3 @@
-//@ts-nocheck
 import commonService, { AppName } from '@/services/CommonService';
 import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
@@ -10,7 +9,7 @@ import { updateObject } from '../store/dataSlice';
 import { trackPropertyChange } from '../store/historySlice';
 import { Object3D } from '../store/interface';
 import { updateObjectGeometry } from '../utils/geometryUtils';
-import { ITEM, ItemData, PLANK, PlankDataItem, UpdatedItemData } from './interface';
+import { ITEM, ItemData, PLANK, UpdatedItemData } from './interface';
 
 function getDesignId(): string | null {
   const url = window.location.href;
@@ -388,7 +387,7 @@ export const updateObjectInScene = (
               objectId,
               serializableObject,
               serializableObject,
-              updatedItems,
+              updatedItems as CatalogItem[],
               [],
               appName,
               designCatalog
@@ -713,6 +712,7 @@ export const updateObjectInScene = (
         minifixConnections: [],
         grooves: [],
       },
+      material: childObject.material?.value ?? null,
     });
   });
 
@@ -885,6 +885,7 @@ export const updateObjectInScene = (
                 value: 'wood_3',
               },
             },
+            material: childObject.material?.value ?? null,
           },
           items: catalogItems,
         });
@@ -896,18 +897,6 @@ export const updateObjectInScene = (
     !selectedObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
     !selectedObject.name.includes(PLANK.VERTICAL_PLANK)
   ) {
-    const allObjects = store.getState().data.objects;
-    const plankDataList: PlankDataItem[] = allObjects
-      .filter((obj) => obj.parent === selectedObject.id && itemCheck(obj))
-      .map((obj) => ({
-        id: obj.id,
-        name: obj.name,
-        width: obj.width,
-        height: obj.height,
-        depth: obj.depth,
-        position: obj.position,
-      }));
-
     const objectsToRemove: THREE.Object3D[] = [];
     threeDObject.traverse((child) => {
       if (child.name === 'invisibleBox') {
@@ -1002,7 +991,7 @@ export const updateCatalogItemObject = async (catalog: CatalogItem, data: Catalo
     },
   };
 
-  const response = await commonService.putObjectItemData(
+  const response: { status: number } = await commonService.putObjectItemData(
     'design',
     gettingDesignID(),
     'object',

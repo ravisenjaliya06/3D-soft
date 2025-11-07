@@ -75,11 +75,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
   };
 
-  const handleToolToggleClick = () => {
-    setIsToolOpen((prevState) => !prevState);
-    setcatalogMenu(false);
-  };
-
   const handleToAddPlatform = async (catalogId: string) => {
     const textureLoader = new THREE.TextureLoader();
     const counterTexture = textureLoader.load('/img14_64.jpg');

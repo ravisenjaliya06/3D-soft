@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MinifixConnection, MinifixHole } from '../minifix/types';
 import { Position } from '../store/interface';
 
 export const ITEM = {
@@ -24,17 +25,6 @@ export const PLANK = {
   TOP_SIDE: 'TOP_PLANK',
 };
 
-export interface MinifixHole {
-  type: 'SCREW' | 'CAM' | 'DOWEL' | 'BOLT_DRILL';
-  connectorId: string;
-  position: Position;
-  direction: Position;
-  diameter?: number;
-  length?: number;
-  depth?: number;
-  localPosition2D: { x: number; y: number };
-}
-
 export interface CatalogItemData {
   id: string;
   name: string;
@@ -50,7 +40,7 @@ export interface CatalogItemData {
     material: { type: string; value: string };
     parent: string;
     child: string[];
-    grooves: [];
+    grooves: Position[];
     catalog_type: string;
     minifixHoles: [];
   };
@@ -70,7 +60,7 @@ export interface CatalogResponseData {
   rotationY?: number;
   rotationZ?: number;
   plankSize?: number;
-  grooves: [];
+  grooves: Position[];
   catalog_type?: string;
   minifixHoles: [];
   minifixConnections: [];
@@ -86,7 +76,7 @@ export interface CatalogResponse {
   parent: string | null;
   parent_name: string | null;
   design_catalog_items: CatalogItemData[] | null;
-  grooves: [] | null;
+  grooves: Position[] | null;
   catalog_type: string | null;
 }
 
@@ -127,24 +117,6 @@ export interface ItemData {
   material: null;
 }
 
-export interface UpdatedItemData {
-  id: string;
-  name: string;
-  data: {
-    name: string;
-    width: number;
-    height: number;
-    depth: number;
-    position: Position;
-    material: { type: string; value: string };
-    parent: string;
-    child: string[];
-    minifixHoles: MinifixHole[];
-    grooves: Position[];
-  };
-  material: string;
-}
-
 export interface AllItemsData {
   id: string;
   name: string;
@@ -160,7 +132,60 @@ export interface AllItemsData {
     material: { type: string; value: string };
     parent: string;
     child: string[];
-    grooves: [];
+    grooves: Position[];
+    catalog_type: string;
+    minifixHoles: MinifixHole[];
+    minifixConnections: MinifixConnection[];
+  };
+}
+
+export type Material = { type: string; value: string };
+
+export interface CatalogItem {
+  id: string;
+  name: string;
+  data: {
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+    position: Position;
+    material: Material;
+    parent?: string;
+    child?: string[];
+    id?: string;
+    layer?: number;
+    altitude?: number;
+    plankSize?: number;
+    rotateX?: number;
+    rotateY?: number;
+    rotateZ?: number;
+    catalog_type?: string;
+    grooves?: Position[];
+    minifixHoles?: MinifixHole[];
+    minifixConnections?: MinifixConnection[];
+  };
+  material: string | null;
+}
+
+export type UpdatedItemData = CatalogItem;
+
+export interface CatalogItemData {
+  id: string;
+  name: string;
+  data: {
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+    layer: number;
+    altitude: number;
+    plankSize: number;
+    position: Position;
+    material: Material;
+    parent: string;
+    child: string[];
+    grooves: Position[];
     catalog_type: string;
     minifixHoles: [];
   };

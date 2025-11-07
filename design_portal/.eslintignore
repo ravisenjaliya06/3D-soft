@@ -1,8 +1,4 @@
-src/components/3dmodel/toolbar/index.tsx
 src/components/3dmodel/handler/items.tsx
-src/components/3dmodel/handler/updateHandler.tsx
-src/components/3dmodel/store/customDesignSlice.ts
 src/components/3dmodel/design/scene.tsx
 src/components/3dmodel/sidebar/sidebar.tsx
 src/components/3dmodel/sidebar/MaterialChangePopup.tsx
-src/components/3dmodel/design/items.tsx
