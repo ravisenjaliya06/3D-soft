@@ -222,9 +222,7 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
     const mesh = counterMesh as THREE.Mesh;
 
     const sinkModel = await GLBLoader(url, 'SinkGLB', { width: 0.6, height: 0.35, depth: 0.35 });
-    sinkModel.position.x = mesh.position.x - 2;
-    sinkModel.position.y = 0.52;
-    sinkModel.position.z = mesh.position.z;
+    sinkModel.position.set(mesh.position.x - 2, 0.52, mesh.position.z);
     scene.add(sinkModel);
   };
 
