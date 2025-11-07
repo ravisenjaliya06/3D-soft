@@ -19,12 +19,6 @@ export class MoveHandler implements IMoveHandler {
   private planePoint: THREE.Vector3;
   private dragOffset: THREE.Vector3;
   private initialClickPosition: THREE.Vector3;
-  private objectUnderCursor: THREE.Mesh | null = null;
-  private hoveredParent: THREE.Mesh<
-    THREE.BufferGeometry<THREE.NormalBufferAttributes>,
-    THREE.Material | THREE.Material[],
-    THREE.Object3DEventMap
-  > | null = null;
 
   constructor(options: MoveHandlerOptions) {
     this.raycaster = new THREE.Raycaster();
@@ -103,9 +97,7 @@ export class MoveHandler implements IMoveHandler {
       this.draggedObject.name.includes('DRAWER') ||
       this.draggedObject.name.includes('DOOR')
     ) {
-      this.objectUnderCursor = null;
       const targetObject = store.getState().data.hoverdMesh;
-      this.hoveredParent = targetObject;
 
       if (targetObject) {
         const worldPoint = targetObject.getWorldPosition(new THREE.Vector3());
