@@ -509,8 +509,8 @@ export async function createMeshRecursively(
     );
   }
 
-  if (Array.isArray(data.catalog_rule)) {
-    for (const rule of data.catalog_rule) {
+  if (Array.isArray(data.catalog_rules)) {
+    for (const rule of data.catalog_rules) {
       if (Array.isArray(rule.rule_parts) && rule.name === 'Panel') {
         for (const part of rule.rule_parts) {
           const partWidth = mmToMeters(part.width || part.length) || 1;
@@ -2009,9 +2009,7 @@ export const addCabinetItemToDesign = async (
     additional_data?: any;
     parts?: Array<{
       name: string;
-      width: number;
-      height: number;
-      depth: number;
+      rule_parts: RulePart[];
     }>;
   }
 ) => {
@@ -2026,7 +2024,7 @@ export const addCabinetItemToDesign = async (
     depth: itemData.depth,
     position: itemData.position,
     additional_data: itemData.additional_data,
-    catalog_rule: itemData.parts,
+    catalog_rules: itemData.parts,
     parent: itemData.parent,
   };
   try {

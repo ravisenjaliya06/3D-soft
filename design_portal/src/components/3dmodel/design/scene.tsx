@@ -1618,7 +1618,7 @@ export const addHorizontalPlanksInsideBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem = null,
+  selectedCabinetItem: any = null,
   itemData: any = null
 ) => {
   showFullScreenLoader('Loading design objects.');

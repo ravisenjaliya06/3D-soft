@@ -1,30 +1,21 @@
-// @ts-nocheck
 import InputField from '@/components/inputfields/InputField';
+import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
-import { toggleMeasurement, toggleQuickHide } from '../store/dataSlice';
-import styles from './toolbar.module.css';
-// catalog modal photo
-import { objectName } from '@/components/3dmodel/handler/constant';
-import commonService from '@/services/CommonService';
-import React from 'react';
 import {
   addDoorOnInvisibleBox,
   addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addPlatformOnWall,
-  addSimpleCabinet,
-  addSimpleTVUnit,
   addUpperCabinetsAbovePlatform,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { addCabinetItemToDesign } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
-import { updateCatalogItemObject, updateObjectInDatabase } from '../handler/updateHandler';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { store } from '../store';
@@ -34,32 +25,38 @@ import {
   setSelectedChildObject,
   setobjectSelected,
   togglAlignment,
+  toggleMeasurement,
+  toggleQuickHide,
 } from '../store/dataSlice';
+import {
+  CabinetItem,
+  Datastate,
+  IconMap,
+  PlatformReturn,
+  ResultType,
+  RulePart,
+  SelectedCabinetItem,
+  platformData,
+} from './interface';
+import styles from './toolbar.module.css';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const dispatch = useAppDispatch();
-
-  const isQuickHideActive = useSelector((state) => state.data.isQuickHideActive);
-  const isMeasurementActive = useSelector((state) => state.data.isMeasurementActive);
-  const isAlignmentActive = useSelector((state) => state.data.isAlignmentActive);
+  const state = useSelector((state: { data: Datastate }) => state.data);
+  const isQuickHideActive = state.isQuickHideActive;
+  const isMeasurementActive = state.isMeasurementActive;
+  const isAlignmentActive = state.isAlignmentActive;
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
   const [catalogMenu, setcatalogMenu] = useState(false);
-  const [furnitureItems, setFurnitureItems] = useState([]);
-  const [partItems, setPartItems] = useState([]);
-  const [customItems, setCustomItems] = useState([]);
-  const [activeCatalogTab, setActiveCatalogTab] = useState('furniture');
   const [isExlightActive, setIsExlightActive] = useState(false);
-  const [cabinetItems, setCabinetItems] = useState([]);
+  const [cabinetItems, setCabinetItems] = useState<CabinetItem[]>([]);
   const [createCompanyPopup, setCreateCompanyPopup] = useState(false);
-  const [selectedCabinetItem, setSelectedCabinetItem] = useState(null);
+  const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
-  const [activeSubOption, setActiveSubOption] = useState<string | null>(null);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
-  const [popupVisible, setPopupVisible] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
-  const [selectedItem, setSelectedItem] = useState(null);
 
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
@@ -67,16 +64,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setActiveOption(option);
   };
 
-  const handleSubmenuClick = (event: React.MouseEvent, item: any) => {
+  const handleSubmenuClick = (event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setPopupPosition({ x: rect.right + 12, y: rect.top + 55 });
-    setSelectedItem(item);
-    setPopupVisible(true);
   };
 
   const closePopup = () => {
-    setPopupVisible(false);
-    setSelectedItem(null);
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
@@ -93,7 +86,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
     counterTexture.repeat.set(10, 1);
 
-    const scene = threeDView.scene as THREE.Scene;
+    const scene = threeDView!.scene;
     let wallFromSelection: THREE.Mesh | null = null;
 
     const outline = scene.children.find((o) => o.name.startsWith('outline-')) as
@@ -124,10 +117,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         ? hovered
         : null);
 
-    let platformData: any[] = [];
+    let platformData: platformData[] = [];
     let platFormGroup;
     if (targetWall) {
-      const platform = await addPlatformOnWall(scene, targetWall, counterTexture);
+      const platform = (await addPlatformOnWall(
+        scene,
+        targetWall,
+        counterTexture
+      )) as PlatformReturn;
       platformData = platform.addedMeshes;
       platFormGroup = platform.platformGroup;
     }
@@ -149,7 +146,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         if (apiResponse) {
           dispatch(addObjects([apiResponse]));
           if (apiResponse.id) dispatch(setobjectSelected(apiResponse.id));
-          platFormGroup.userData.objectId = apiResponse.id;
+          if (platFormGroup) {
+            platFormGroup.userData.objectId = apiResponse.id;
+          }
         }
       } catch (e) {
         console.error('Platform API failed', e);
@@ -162,98 +161,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     { option: 'View', name: 'View', icon: assets.img2 },
   ];
 
-  const handleTextureClick = async (name: string) => {
-    const formattedTextureName = name.toLowerCase().replaceAll(' ', '_');
-    const textureURL = `/textures/${formattedTextureName}.jpg`;
-
-    const texture = new THREE.TextureLoader().load(textureURL);
-
-    const objects = store.getState().data.objects;
-    const selectedObjectId = store.getState().data.selectedObject;
-    const selectedChildObjectId = store.getState().data.selectedChildObject;
-
-    const selectedObject = threeDView?.scene.children.find(
-      (child) => child.userData.objectId === selectedObjectId
-    );
-
-    const selectedObjectData = objects.find((object) => object.id === selectedObjectId);
-
-    const selectedChildObject = selectedObject?.children.find(
-      (child) => child.userData.objectId === selectedChildObjectId
-    );
-
-    const selectedChildObjectData = objects.find((object) => object.id === selectedChildObjectId);
-
-    if (selectedChildObject && selectedChildObjectData) {
-      selectedChildObject.material = new THREE.MeshPhongMaterial({
-        map: texture,
-      });
-      updateCatalogItemObject(selectedObjectData, {
-        ...selectedChildObjectData,
-        material: { type: 'TEXTURE', value: name },
-      });
-    } else if (selectedObject) {
-      const items = [];
-      const childCatalogList = [];
-
-      selectedObject.traverse((child) => {
-        if (child.name.includes(objectName.PLANK)) {
-          child.material = new THREE.MeshPhongMaterial({ map: texture });
-
-          const object = objects.find((o) => o.id === child.userData.objectId);
-
-          if (object) {
-            items.push({
-              id: object.id,
-              name: object.name,
-              data: {
-                ...object,
-                material: { type: 'TEXTURE', value: name },
-              },
-            });
-
-            const catalogObj = objects.find((o) => o.id === object.parent);
-            if (catalogObj) {
-              let catalogEntry = childCatalogList.find(
-                (entry) => entry.catalog.id === catalogObj.id
-              );
-
-              if (!catalogEntry) {
-                catalogEntry = {
-                  catalog: {
-                    id: catalogObj.id,
-                    name: catalogObj.name,
-                    data: catalogObj,
-                  },
-                  items: [],
-                };
-                childCatalogList.push(catalogEntry);
-              }
-
-              catalogEntry.items.push({
-                id: object.id,
-                name: object.name,
-                data: {
-                  ...object,
-                  material: { type: 'TEXTURE', value: name },
-                },
-              });
-            }
-          }
-        }
-      });
-      updateObjectInDatabase(
-        selectedObjectData.id,
-        { material: { type: 'TEXTURE', value: name } },
-        selectedObjectData,
-        items,
-        childCatalogList
-      );
-    }
-  };
-
   const fetchCabinetItem = async () => {
-    const cabinetResponse: { status: number; data: any } = await commonService.get(
+    const cabinetResponse: { status: number; data: CabinetItem[] } = await commonService.get(
       'material',
       'catalog'
     );
@@ -265,13 +174,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
-  const handleCabinetClick = () => {
-    setActiveOption('Furniture');
-    setActiveOptionName('Furniture');
-    fetchCabinetItem();
-  };
-
-  const handleCabinetItemSelect = async (item: any) => {
+  const handleCabinetItemSelect = async (item: ResultType) => {
     if (item.type === 'Platform') {
       handleToAddPlatform(item.id);
       return;
@@ -280,7 +183,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     // For Cabinet items: no quantity popup, no target selection; create via API and add directly
     if (item?.type === 'Cabinet') {
       try {
-        const scene = threeDView.scene as THREE.Scene;
+        const scene = threeDView!.scene;
         const designId = window.location.pathname.split('/')[2];
         const catalogId = item.id;
         const lowerName = (item?.name || '').toLowerCase();
@@ -290,8 +193,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
         // Add to scene first to get actual dimensions
         if (lowerName.includes('tv')) {
-          if (typeof threeDView.addSimpleTVUnit === 'function') {
-            threeDView.addSimpleTVUnit();
+          if (typeof threeDView!.addSimpleTVUnit === 'function') {
+            threeDView!.addSimpleTVUnit();
             // Find the created TV unit (get the last one added)
             const tvUnits: THREE.Object3D[] = [];
             scene.traverse((obj) => {
@@ -302,8 +205,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             createdObject = tvUnits[tvUnits.length - 1] || null;
           }
         } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
-          if (typeof threeDView.addComputerDesk === 'function') {
-            threeDView.addComputerDesk();
+          if (typeof threeDView!.addComputerDesk === 'function') {
+            threeDView!.addComputerDesk();
             // Find the created computer desk (get the last one added)
             const desks: THREE.Object3D[] = [];
             scene.traverse((obj) => {
@@ -314,8 +217,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             createdObject = desks[desks.length - 1] || null;
           }
         } else {
-          if (typeof threeDView.addSimpleCabinet === 'function') {
-            threeDView.addSimpleCabinet();
+          if (typeof threeDView!.addSimpleCabinet === 'function') {
+            threeDView!.addSimpleCabinet();
             // Find the created cabinet (get the last one added)
             const cabinets: THREE.Object3D[] = [];
             scene.traverse((obj) => {
@@ -333,16 +236,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         }
 
         // Convert to mm for storage (meters * 1000 = mm)
-        const width = metersToMM(createdObject.geometry.parameters.width);
-        const height = metersToMM(createdObject.geometry.parameters.height);
-        const depth = metersToMM(createdObject.geometry.parameters.depth);
+        const mesh = createdObject as THREE.Mesh<THREE.BoxGeometry>;
+        const width = metersToMM(mesh.geometry.parameters.width);
+        const height = metersToMM(mesh.geometry.parameters.height);
+        const depth = metersToMM(mesh.geometry.parameters.depth);
+
         const position = {
           x: metersToMM(createdObject.position.x),
           y: metersToMM(createdObject.position.y),
           z: metersToMM(createdObject.position.z),
         };
 
-        const ruleParts: any[] = [];
+        const ruleParts: RulePart[] = [];
 
         createdObject.traverse((child) => {
           if (child instanceof THREE.Mesh && child.name.includes('PLANK')) {
@@ -380,7 +285,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
           },
         ];
 
-        let apiResponse: any = null;
+        let apiResponse = null;
         try {
           apiResponse = await addCabinetItemToDesign(catalogId, {
             type: item.type,
@@ -426,7 +331,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setCreateCompanyPopup(true);
   };
   const handleAddUpperCabinets = async (type: 'UpperCabinet' | 'DoubleDoorUpperCabinet') => {
-    const scene = threeDView.scene as THREE.Scene;
+    const scene = threeDView!.scene;
     const outline = scene.children.find((o) => o.name.startsWith('outline-')) as
       | THREE.Object3D
       | undefined;
@@ -478,16 +383,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
   const onAddItems = async () => {
+    if (!selectedCabinetItem) {
+      console.error('No cabinet item selected');
+      return;
+    }
     setCreateCompanyPopup(false);
     const num = parseInt(quantityValue.toString(), 10);
     if (!Number.isFinite(num) || num <= 0) {
       return;
     }
 
-    const scene = threeDView.scene as THREE.Scene;
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as
-      | THREE.Object3D
-      | undefined;
+    const scene = threeDView!.scene;
     let targetBox: THREE.Mesh | null = null;
     const selectedChildObject = store.getState().data.selectedChildObject;
 
@@ -517,7 +423,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     };
 
     if (['Door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem, itemData, num);
+      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem, itemData);
     } else if (itemType === 'Drawer') {
       await addDrawersOnInvisibleBox(scene, targetBox, num, itemData);
     } else if (itemType === 'Plank') {
@@ -527,12 +433,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem, itemData);
       }
-    } else if (itemType === 'Cabinet' && itemName === 'Simple Cabinet') {
-      await addSimpleCabinet(scene, targetBox, num, selectedCabinetItem, apiResponses);
-    } else if (itemType === 'Cabinet' && itemName === 'Tv Unit') {
-      await addSimpleTVUnit(scene, targetBox, num, selectedCabinetItem, apiResponses);
-    } else if (itemType === 'Cabinet' && itemName === 'Computer Desk') {
-      await addComputerDesk(scene, targetBox, num, selectedCabinetItem, apiResponses);
     } else if (itemType === 'UpperCabinet') {
       await handleAddUpperCabinets('UpperCabinet');
     } else if (itemType === 'DoubleDoorUpperCabinet') {
@@ -546,12 +446,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     dispatch(setSelectedChildObject(null));
     dispatch(setHoverdMesh(null));
     removeExistingLines();
-  };
-
-  const onClose = () => {
-    setCreateCompanyPopup(false);
-    setSelectedCabinetItem(null);
-    setQuantityValue(1);
   };
 
   const homeTools = [
@@ -646,8 +540,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     };
 
     const allowedTypes = categoryFilters[category] || [];
-    let result: any[] = [];
-
+    let result: ResultType[] = [];
     // For Kitchen, add alwaysFields items first
     if (category === 'Kitchen') {
       result = alwaysFields.map((field) => ({
@@ -662,7 +555,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
     // Then add filtered API items
     if (cabinetItems && cabinetItems.length > 0) {
-      const filtered = cabinetItems.filter((item: any) => {
+      const filtered = cabinetItems.filter((item) => {
         // Check if item type or name matches allowed types
         return allowedTypes.some((type) => {
           const itemNameLower = (item.name || '').toLowerCase();
@@ -693,9 +586,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       });
 
       // Remove duplicates from filtered results
-      const uniqueFiltered = filtered.reduce((acc: any[], item: any) => {
+      const uniqueFiltered = filtered.reduce((acc: CabinetItem[], item) => {
         const key = `${item.type}-${item.name}`;
-        const exists = acc.find((i: any) => `${i.type}-${i.name}` === key);
+        const exists = acc.find((i) => `${i.type}-${i.name}` === key);
         if (!exists) {
           acc.push(item);
         }
@@ -714,33 +607,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const handleFurnitureCategoryClick = (category: string) => {
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
-    setPopupVisible(false);
-    setSelectedItem(null);
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
-  };
-
-  const handleSubMenuItemClick = (item: any) => {
-    // Find the corresponding catalog item from API and handle selection
-    const catalogItem = cabinetItems.find((ci: any) => {
-      // Match by exact name or by type
-      return (
-        ci.name === item.name ||
-        (ci.type === 'Plank' &&
-          item.name.includes('Plank') &&
-          ci.name.includes(item.name.split(' ')[0])) ||
-        (ci.type === 'Door' && item.name === 'Door') ||
-        (ci.type === 'Drawer' && item.name === 'Drawer') ||
-        (ci.type === 'Platform' && item.name === 'Platform')
-      );
-    });
-
-    if (catalogItem) {
-      handleCabinetItemSelect(catalogItem);
-    } else {
-      console.warn(`No catalog item found for ${item.name}`);
-    }
   };
 
   const alwaysFields = [
@@ -789,58 +658,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setActiveOptionName('Home');
     setSelectedFurnitureCategory(null);
     setcatalogMenu(false);
-    setPopupVisible(false);
-    setSelectedItem(null);
     setCreateCompanyPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
-  useEffect(() => {
-    const fetchCatalogItems = async () => {
-      const response = await commonService.get('design', 'catalog/default');
-      if (response.status === 200 && Array.isArray(response.data)) {
-        const allItems = response.data.map((catalog) => ({
-          id: catalog.catalog.id,
-          name: catalog.catalog.name,
-          image: catalog.catalog.image,
-          type: catalog.catalog.data.type,
-          data: catalog.catalog.data,
-        }));
 
-        setFurnitureItems(allItems.filter((item) => item.type === 'furniture'));
-        setPartItems(allItems.filter((item) => item.type === 'parts'));
-      }
-      const customResponse = await commonService.getWithQueryParam(
-        'design',
-        '',
-        'is_custom',
-        'true'
-      );
-
-      if (customResponse.status === 200 && Array.isArray(customResponse.data)) {
-        const customDesigns = customResponse.data.map((design) => ({
-          id: design.id,
-          name: design.design_name,
-          image: design.custom_design_picture,
-          type: 'custom',
-          data: design,
-        }));
-        setCustomItems(customDesigns);
-      }
-    };
-
-    fetchCatalogItems();
-  }, []);
-
-  const iconMap = {
+  const iconMap: IconMap = {
     Drawer: assets.drawer,
     'Sliding Door': assets.door,
     Door: assets.door_icon,
     'Horizontal Plank': assets.horizontal,
     'Vertical Plank': assets.vertical,
     'Tv Unit': assets.tv,
-    'Computer Desk': assets.table,
-    Plank: assets.vertical_plank,
+    'Computer Desk': assets.computer,
+    Plank: assets.vertical,
     Cabinet: assets.cabinet,
     Platform: assets.platform,
   };
@@ -917,7 +748,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
               {activeOption === 'View' && (
                 <div className={styles.activegroup_tools_group}>
-                  {viewTools.map(({ option, icon, onClick, disabled, isActive }) => (
+                  {viewTools.map(({ option, icon, onClick, disabled }) => (
                     <div
                       key={option}
                       className={styles.toollistbox}
@@ -999,16 +830,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               </div>
             </div>
             <div className={styles.submenuContent}>
-              {getFilteredCabinetItems(selectedFurnitureCategory).map((item: any) => (
+              {getFilteredCabinetItems(selectedFurnitureCategory).map((item) => (
                 <div
                   key={item.id}
                   className={styles.submenuItem}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSubmenuClick(e, item);
+                    handleSubmenuClick(e);
                     if (item.isAlwaysField) {
                       // For alwaysFields items, call their onClick directly
-                      item.onClick();
+                      item?.onClick?.();
                     } else {
                       // For API items, use handleCabinetItemSelect
                       handleCabinetItemSelect(item);
@@ -1071,7 +902,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
                     borderColor="var(--primary-color-grey-2)"
                     value={quantityValue}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setQuantityValue(e.target.value)
+                      setQuantityValue(Number(e.target.value))
                     }
                     placeholder="Enter quantity"
                     label={`Quantity for ${selectedCabinetItem.name}`}

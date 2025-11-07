@@ -8,6 +8,12 @@ export interface Position {
   z: number;
 }
 
+export interface Rotation {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface Material {
   type: string;
   value: string;

@@ -6,7 +6,7 @@ import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { Design, DesignsResponse, User } from './interface';
+import { Design, DesignResponse, User } from './interface';
 type StatusStylesType = {
   [key: string]: { [key: string]: string };
 };
@@ -132,12 +132,12 @@ const Designs = () => {
       setLoading(true);
       const response: {
         status: number;
-        data: Design[] | DesignsResponse;
+        data: Design[] | DesignResponse;
       } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
       if (response.status === 200) {
         setDesigns(response.data as Design[]);
       } else if (response.status === 403) {
-        setError((response.data as DesignsResponse).detail);
+        setError((response.data as DesignResponse).detail);
       } else {
         setError('Something went wrong');
       }

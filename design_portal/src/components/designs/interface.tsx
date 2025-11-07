@@ -7,7 +7,7 @@ export interface Design {
   detail: string;
 }
 
-export interface DesignsResponse {
+export interface DesignResponse {
   detail: string;
 }
 

@@ -163,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   useEffect(() => {
     fetchDesigns();
-  });
+  }, []);
 
   const fetchDesigns = async () => {
     try {
