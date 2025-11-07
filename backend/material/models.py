@@ -430,7 +430,7 @@ class Properties(models.Model):
     sales_tax = models.BooleanField(default=False)
     default_tax_rate = models.FloatField(default=0.00)
     waste = models.FloatField(default=0.00)
-    eslimate = models.BooleanField(default=False)
+    estimate = models.BooleanField(default=False)
     length_trim = models.FloatField(default=0.00)
     rough_thickness = models.FloatField(default=0.00)
 
