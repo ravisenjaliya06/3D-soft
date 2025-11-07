@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -19,8 +18,9 @@ import {
   showFullScreenLoader,
 } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
+import { GLBLoader } from '../helper/glbLoader';
+import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
-import { createSky } from '../helper/sky/sky';
 import { store } from '../store';
 import {
   addObjects,
@@ -204,7 +204,6 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   };
 
   // Walls will be added after design objects load to ensure correct ordering
-
   const loadSinkModel = async (url: string) => {
     let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
     if (!counterMesh) {
@@ -222,42 +221,11 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
     if (!counterMesh) return;
     const mesh = counterMesh as THREE.Mesh;
 
-    const loader = new GLTFLoader();
-    loader.load(
-      url,
-      (gltf) => {
-        const model = gltf.scene;
-        model.traverse((n: any) => {
-          if (n.isMesh) {
-            n.castShadow = true;
-            n.receiveShadow = true;
-          }
-        });
-        const box = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const targetW = 0.8;
-        const targetD = 0.45;
-        const scale = Math.min(
-          targetW / Math.max(size.x, 0.0001),
-          targetD / Math.max(size.z, 0.0001)
-        );
-        model.scale.setScalar(scale);
-        const box2 = new THREE.Box3().setFromObject(model);
-        const center = new THREE.Vector3();
-        box2.getCenter(center);
-        model.position.sub(center);
-        model.position.x = mesh.position.x - 2;
-        model.position.y = 0.52;
-        model.position.z = mesh.position.z;
-        model.name = 'SinkGLB';
-        scene.add(model);
-      },
-      undefined,
-      (err) => {
-        console.error('Failed to load sink model', err);
-      }
-    );
+    const sinkModel = await GLBLoader(url, 'SinkGLB', { width: 0.6, height: 0.35, depth: 0.35 });
+    sinkModel.position.x = mesh.position.x - 2;
+    sinkModel.position.y = 0.52;
+    sinkModel.position.z = mesh.position.z;
+    scene.add(sinkModel);
   };
 
   const toggleZoomMode = (enable: boolean) => {
@@ -2882,34 +2850,10 @@ export const addDoubleDoorUpperCabinetsAbovePlatform = async (
 
 export const ensureHandleLoaded = async () => {
   if (cachedHandleModel) return;
-  const loader = new GLTFLoader();
-  await new Promise<void>((resolve) => {
-    loader.load(
-      '/door_handle.glb',
-      (glb) => {
-        const model = glb.scene;
-        const box = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const targetLen = 0.12;
-        const sizeRatio = targetLen / (Math.max(size.x, size.y, size.z) || 1);
-        model.scale.setScalar(sizeRatio);
-        const box2 = new THREE.Box3().setFromObject(model);
-        const center = new THREE.Vector3();
-        box2.getCenter(center);
-        model.position.sub(center);
-        model.traverse((n: any) => {
-          if (n.isMesh) {
-            n.castShadow = true;
-            n.receiveShadow = true;
-          }
-        });
-        cachedHandleModel = model;
-        resolve();
-      },
-      undefined,
-      () => resolve()
-    );
+  cachedHandleModel = await GLBLoader('/glb/door_handle.glb', 'DoorHandleGLB', {
+    width: 0.02,
+    height: 0.03,
+    depth: 0.1,
   });
 };
 
