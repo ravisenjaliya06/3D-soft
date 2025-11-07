@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 # App imports
-from backend.umaboy.models import Organization
+from umaboy.models import Organization
 
 # Local imports
 from .models import (
