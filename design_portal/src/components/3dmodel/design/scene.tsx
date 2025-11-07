@@ -19,6 +19,8 @@ import {
   showFullScreenLoader,
 } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
+import { SKY_SETS } from '../helper/sky/constants';
+import { createSky } from '../helper/sky/sky';
 import { store } from '../store';
 import {
   addObjects,
@@ -540,28 +542,8 @@ const createSkySet = (): {
   nightSky: Sky;
   stars: THREE.Points;
 } => {
-  // --- DaySky ---
-  const daySky = new Sky();
-  daySky.scale.setScalar(450000);
-  const sunDay = new THREE.Vector3();
-  sunDay.setFromSphericalCoords(1, THREE.MathUtils.degToRad(70), THREE.MathUtils.degToRad(0));
-  daySky.name = 'daysky';
-  daySky.material.uniforms['sunPosition'].value.copy(sunDay);
-  daySky.material.uniforms['rayleigh'].value = 2;
-  daySky.material.uniforms['turbidity'].value = 2;
-  daySky.material.uniforms['mieCoefficient'].value = 0.0001;
-
-  // night
-  const nightSky = new Sky();
-  nightSky.scale.setScalar(450000);
-  const sunNight = new THREE.Vector3();
-  sunNight.setFromSphericalCoords(1, THREE.MathUtils.degToRad(190), THREE.MathUtils.degToRad(180));
-  nightSky.name = 'nightsky';
-  nightSky.material.uniforms['sunPosition'].value.copy(sunNight);
-  nightSky.material.uniforms['rayleigh'].value = 0.1;
-  nightSky.material.uniforms['turbidity'].value = 0.1;
-  nightSky.material.uniforms['mieCoefficient'].value = 0.005;
-  nightSky.material.uniforms['mieDirectionalG'].value = 0.8;
+  const daySky = createSky(SKY_SETS.daySky);
+  const nightSky = createSky(SKY_SETS.nightSky);
 
   const starGeometry = new THREE.BufferGeometry();
   const starVertices = [];
