@@ -38,6 +38,8 @@ type Error = {
 };
 
 class CommonService {
+
+  // GET
   get(AppName: AppName, RemainingPath: RemainingPath | null) {
     const url = RemainingPath === '' ? `/${AppName}/` : `/${AppName}/${RemainingPath}/`;
     return http.get(url).catch((err: Error) => {
@@ -86,6 +88,21 @@ class CommonService {
     });
   }
 
+  getObjectData(AppName: AppName, designId: string | number, objects: string) {
+    return http.get(`/${AppName}/${designId}/${objects}/`).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.OK) {
+        this.handleError(err?.status || 500, err);
+      }
+      throw err?.message;
+    });
+  }
+
+
+
+
+
+
+  // POST
   post<T>(AppName: string, RemainingPath: string | null, data: T) {
     const url = RemainingPath ? `/${AppName}/${RemainingPath}/` : `/${AppName}/`;
     return http
@@ -154,17 +171,28 @@ class CommonService {
       });
   }
 
-  delete(AppName: AppName, RemainingPath: RemainingPath | string | null) {
-    return http.delete(`/${AppName}/${RemainingPath}/`).catch((err: Error) => {
-      if (err.status == STATUS_CODES.UNAUTHORIZED) {
-        Cookies.remove('token', { path: '' });
-        localStorage.clear();
-        window.location.href = REDIRECT.UNAUTHORIZED;
+  postObjectData<payloadType>(
+    AppName: AppName,
+    designId: string | number,
+    object: string,
+    data: payloadType
+  ) {
+    return http.post(`/${AppName}/${designId}/${object}/`, data).catch((err: Error) => {
+      if (err.status !== STATUS_CODES.CREATED) {
+        this.handleError(err?.status || 500, err);
       }
       throw err?.message;
     });
   }
 
+
+
+
+
+
+
+
+  // PUT
   put<payloadType>(AppName: string, RemainingPath: string | null, data: payloadType) {
     const url = RemainingPath ? `/${AppName}/${RemainingPath}/` : `/${AppName}/`;
     return http
@@ -210,6 +238,62 @@ class CommonService {
     });
   }
 
+  putObjectItemData<payloadType>(
+    AppName: AppName,
+    designId: string | number,
+    objects: string,
+    objectItemId: string | number,
+    data: payloadType
+  ) {
+    return http
+      .put(`/${AppName}/${designId}/${objects}/${objectItemId}/`, data)
+      .catch((err: Error) => {
+        if (err.status !== STATUS_CODES.UPDATED) {
+          this.handleError(err?.status || 500, err);
+        }
+        throw err?.message;
+      });
+  }
+
+  putObjectData<payloadType>(
+    AppName: AppName,
+    designId: string | number,
+    object: string,
+    formData: payloadType
+  ) {
+    return http
+      .put(`/${AppName}/${designId}/${object}/`, formData)
+      .then((response) => {
+        return { status: response.status, data: response.data };
+      })
+      .catch((err: Error) => {
+        if (err.status !== STATUS_CODES.UPDATED) {
+          this.handleError(err?.status || 500, err);
+        }
+        throw err?.message;
+      });
+  }
+
+
+
+
+
+
+
+
+
+  // DELETE
+  delete(AppName: AppName, RemainingPath: RemainingPath | string | null) {
+    return http.delete(`/${AppName}/${RemainingPath}/`).catch((err: Error) => {
+      if (err.status == STATUS_CODES.UNAUTHORIZED) {
+        Cookies.remove('token', { path: '' });
+        localStorage.clear();
+        window.location.href = REDIRECT.UNAUTHORIZED;
+      }
+      throw err?.message;
+    });
+  }
+
   deleteWithSingleParam(
     AppName: AppName,
     RemainingPath: RemainingPath | null,
@@ -236,49 +320,6 @@ class CommonService {
     });
   }
 
-  // ***** object services ***** //
-  getObjectData(AppName: AppName, designId: string | number, objects: string) {
-    return http.get(`/${AppName}/${designId}/${objects}/`).catch((err: Error) => {
-      if (err.status !== STATUS_CODES.OK) {
-        this.handleError(err?.status || 500, err);
-      }
-      throw err?.message;
-    });
-  }
-
-  postObjectData<payloadType>(
-    AppName: AppName,
-    designId: string | number,
-    object: string,
-    data: payloadType
-  ) {
-    return http.post(`/${AppName}/${designId}/${object}/`, data).catch((err: Error) => {
-      if (err.status !== STATUS_CODES.CREATED) {
-        this.handleError(err?.status || 500, err);
-      }
-      throw err?.message;
-    });
-  }
-
-  putObjectData<payloadType>(
-    AppName: AppName,
-    designId: string | number,
-    object: string,
-    formData: payloadType
-  ) {
-    return http
-      .put(`/${AppName}/${designId}/${object}/`, formData)
-      .then((response) => {
-        return { status: response.status, data: response.data };
-      })
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.UPDATED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
-  }
-
   deleteObjectData(
     AppName: AppName,
     designId: string | number,
@@ -291,23 +332,6 @@ class CommonService {
       }
       throw err?.message;
     });
-  }
-
-  putObjectItemData<payloadType>(
-    AppName: AppName,
-    designId: string | number,
-    objects: string,
-    objectItemId: string | number,
-    data: payloadType
-  ) {
-    return http
-      .put(`/${AppName}/${designId}/${objects}/${objectItemId}/`, data)
-      .catch((err: Error) => {
-        if (err.status !== STATUS_CODES.UPDATED) {
-          this.handleError(err?.status || 500, err);
-        }
-        throw err?.message;
-      });
   }
 
   deleteDesignObjectsData<payloadType>(
