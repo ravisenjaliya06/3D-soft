@@ -83,6 +83,7 @@ export interface ComponentData {
 export interface CatalogItem {
   id: string;
   name: string;
+  material: string;
   data: ComponentData;
 }
 

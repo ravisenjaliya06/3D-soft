@@ -3032,7 +3032,7 @@ function createDimensionLine(
 
   // Extension ticks
   const axis = endOffset.clone().sub(startOffset).normalize();
-  let tickDir = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0));
+  const tickDir = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0));
   if (tickDir.lengthSq() < 1e-6) tickDir.set(1, 0, 0);
   tickDir.normalize();
 

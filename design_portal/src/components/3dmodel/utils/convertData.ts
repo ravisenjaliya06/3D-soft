@@ -88,6 +88,7 @@ export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) =
       items.push({
         id: child?.id,
         name: `CUPBOARD_${child.name}`,
+        material: child.material?.value || 'wood_3',
         data: createComponentData(child, defaultMaterial),
       });
     }
@@ -102,12 +103,14 @@ export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) =
       id: child?.id,
       name: child.name.includes('FRONT') ? 'DRAWER_FRONT' : child.name,
       data: createComponentData(child, defaultMaterial),
+      material: child.material?.value || 'wood_3',
     }));
     childCatalogs.push({
       catalog: {
         id: drawerObject?.id || '',
         name: drawerName,
         data: createComponentData(drawerObject!, defaultMaterial, drawerPosition),
+        material: drawerObject?.material?.value || 'wood_3',
       },
       items: catalogItems,
     });
@@ -123,6 +126,7 @@ export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) =
       id: child?.id,
       name: child.name,
       data: createComponentData(child, defaultMaterial),
+      material: child.material?.value || 'wood_3',
     }));
 
     childCatalogs.push({
@@ -130,6 +134,7 @@ export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) =
         id: doorObject?.id || '',
         name: doorName,
         data: createComponentData(doorObject!, defaultMaterial, doorPosition),
+        material: doorObject?.material?.value || 'wood_3',
       },
       items: catalogItems,
     });
