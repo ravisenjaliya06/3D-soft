@@ -721,9 +721,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'INVISIBLEBOX',
     'WALL',
     'CABINET',
-    'COMPUTER',
     'TABLE',
-    'TVUNIT',
     'UPPERCABINET',
     'PLATFORM',
   ];

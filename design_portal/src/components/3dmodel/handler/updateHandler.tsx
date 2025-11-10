@@ -30,7 +30,7 @@ export const updateObjectInDatabase = async (
   updatedMainData: Partial<Object3D>,
   selectedObject: Object3D,
   items: CatalogItem[] = [],
-  childCatalogs: ChildCatalog[] = [],
+  childCatalogs: ChildCatalog[] = []
 ): Promise<THREE.Scene | null> => {
   const designId = getDesignId();
   if (!designId) {
@@ -154,10 +154,7 @@ export const updateObjectInDatabase = async (
     },
   };
 
-  const response = await commonService.put(
-    API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
-    payload
-  );
+  const response = await commonService.put(API_ENDPOINT.UPDATE_OBJECT_DATA(designId), payload);
 
   if ((response as ResponseStatus).status === 200) {
     return response;
@@ -172,7 +169,7 @@ export const updateObjectInScene = (
   updatedData: Partial<Object3D>,
   scene: THREE.Scene,
   dispatch: AppDispatch,
-  selectedObject: Object3D | null,
+  selectedObject: Object3D | null
 ): void => {
   if (!scene || !selectedObject) return;
   removeExistingLines();
@@ -388,7 +385,7 @@ export const updateObjectInScene = (
               serializableObject,
               serializableObject,
               updatedItems as CatalogItem[],
-              [],
+              []
             );
           }
         }
@@ -906,13 +903,7 @@ export const updateObjectInScene = (
     });
   }
 
-  updateObjectInDatabase(
-    objectId,
-    { ...updatedData },
-    selectedObject,
-    items,
-    childCatalogs,
-  );
+  updateObjectInDatabase(objectId, { ...updatedData }, selectedObject, items, childCatalogs);
 
   updateObjectOutline(selectedObject, scene);
 };

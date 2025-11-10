@@ -8,11 +8,9 @@ import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
 import {
   addDoorOnInvisibleBox,
-  addDoubleDoorUpperCabinetsAbovePlatform,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addPlatformOnWall,
-  addUpperCabinetsAbovePlatform,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { addCabinetItemToDesign } from '../handler/items';
@@ -181,48 +179,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         const scene = threeDView!.scene;
         const designId = window.location.pathname.split('/')[2];
         const catalogId = item.id;
-        const lowerName = (item?.name || '').toLowerCase();
 
         // Get actual dimensions from the created object instead of static values
         let createdObject: THREE.Object3D | null = null;
 
         // Add to scene first to get actual dimensions
-        if (lowerName.includes('tv')) {
-          if (typeof threeDView!.addSimpleTVUnit === 'function') {
-            threeDView!.addSimpleTVUnit();
-            // Find the created TV unit (get the last one added)
-            const tvUnits: THREE.Object3D[] = [];
-            scene.traverse((obj) => {
-              if (obj.name === 'SimpleTVUnit') {
-                tvUnits.push(obj);
-              }
-            });
-            createdObject = tvUnits[tvUnits.length - 1] || null;
-          }
-        } else if (lowerName.includes('computer') || lowerName.includes('desk')) {
-          if (typeof threeDView!.addComputerDesk === 'function') {
-            threeDView!.addComputerDesk();
-            // Find the created computer desk (get the last one added)
-            const desks: THREE.Object3D[] = [];
-            scene.traverse((obj) => {
-              if (obj.name === 'ComputerDesk') {
-                desks.push(obj);
-              }
-            });
-            createdObject = desks[desks.length - 1] || null;
-          }
-        } else {
-          if (typeof threeDView!.addSimpleCabinet === 'function') {
-            threeDView!.addSimpleCabinet();
-            // Find the created cabinet (get the last one added)
-            const cabinets: THREE.Object3D[] = [];
-            scene.traverse((obj) => {
-              if (obj.name === 'SimpleCabinet') {
-                cabinets.push(obj);
-              }
-            });
-            createdObject = cabinets[cabinets.length - 1] || null;
-          }
+        if (typeof threeDView!.addSimpleCabinet === 'function') {
+          threeDView!.addSimpleCabinet();
+          // Find the created cabinet (get the last one added)
+          const cabinets: THREE.Object3D[] = [];
+          scene.traverse((obj) => {
+            if (obj.name === 'SimpleCabinet') {
+              cabinets.push(obj);
+            }
+          });
+          createdObject = cabinets[cabinets.length - 1] || null;
         }
 
         if (!createdObject) {
@@ -325,58 +296,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
     setCreateCompanyPopup(true);
   };
-  const handleAddUpperCabinets = async (type: 'UpperCabinet' | 'DoubleDoorUpperCabinet') => {
-    const scene = threeDView!.scene;
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as
-      | THREE.Object3D
-      | undefined;
-    let targetPlatform: THREE.Mesh | null = null;
 
-    if (outline) {
-      const outlineCenter = outline.position.clone();
-      scene.traverse((o) => {
-        if (
-          o instanceof THREE.Mesh &&
-          (o.name.startsWith('Counter_') ||
-            o.name === 'Back Counter' ||
-            o.name === 'Left Counter' ||
-            o.name === 'Right Counter')
-        ) {
-          const b = new THREE.Box3().setFromObject(o);
-          const c = new THREE.Vector3();
-          b.getCenter(c);
-          if (c.distanceTo(outlineCenter) < 1e-3) targetPlatform = o;
-        }
-      });
-    }
-
-    if (!targetPlatform) {
-      const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-      if (
-        hovered &&
-        (hovered.name.startsWith('Counter_') ||
-          hovered.name === 'Back Counter' ||
-          hovered.name === 'Left Counter' ||
-          hovered.name === 'Right Counter')
-      ) {
-        targetPlatform = hovered;
-      }
-    }
-
-    if (!targetPlatform) {
-      alert('Please select a platform/counter first.');
-      return;
-    }
-
-    const num = parseInt(quantityValue.toString(), 10);
-    if (!Number.isFinite(num) || num <= 0) return;
-
-    if (type === 'UpperCabinet') {
-      addUpperCabinetsAbovePlatform(scene, targetPlatform, num);
-    } else if (type === 'DoubleDoorUpperCabinet') {
-      addDoubleDoorUpperCabinetsAbovePlatform(scene, targetPlatform, num);
-    }
-  };
   const onAddItems = async () => {
     if (!selectedCabinetItem) {
       console.error('No cabinet item selected');
@@ -428,10 +348,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem, itemData);
       }
-    } else if (itemType === 'UpperCabinet') {
-      await handleAddUpperCabinets('UpperCabinet');
-    } else if (itemType === 'DoubleDoorUpperCabinet') {
-      await handleAddUpperCabinets('DoubleDoorUpperCabinet');
     }
 
     setCreateCompanyPopup(false);
@@ -506,8 +422,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const furnitureTools = [
     { option: 'Kitchen', icon: assets.kitchen_svg },
     { option: 'Cabinet', icon: assets.cabinet_svg },
-    { option: 'Tv unit', icon: assets.tvunit_svg },
-    { option: 'Computer Desk', icon: assets.table_svg },
   ];
 
   // Submenu items for each furniture category - dynamically filtered from API
@@ -516,22 +430,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     const categoryFilters: Record<string, string[]> = {
       Kitchen: ['Platform', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
       Cabinet: ['Simple Cabinet', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
-      'Tv unit': [
-        'Tv Unit',
-        'Simple TV Unit',
-        'Vertical Plank',
-        'Horizontal Plank',
-        'Drawer',
-        'Door',
-      ],
-      'Computer Desk': [
-        'Computer Desk',
-        'Simple Computer Desk',
-        'Vertical Plank',
-        'Horizontal Plank',
-        'Drawer',
-        'Door',
-      ],
     };
 
     const allowedTypes = categoryFilters[category] || [];
@@ -569,13 +467,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
             // Match Simple Cabinet
             (type === 'Simple Cabinet' &&
               itemNameLower.includes('simple') &&
-              itemNameLower.includes('cabinet')) ||
-            // Match TV Unit variations
-            (type.includes('TV') && itemNameLower.includes('tv')) ||
-            (type.includes('Tv') && itemNameLower.includes('tv')) ||
-            // Match Computer Desk variations
-            (type.includes('Computer') && itemNameLower.includes('computer')) ||
-            (type.includes('Desk') && itemNameLower.includes('desk'))
+              itemNameLower.includes('cabinet'))
           );
         });
       });
@@ -609,34 +501,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const alwaysFields = [
     {
-      option: 'Upper Cabinets',
-      icon: assets.double_door,
-      onClick: () => {
-        setSelectedCabinetItem({
-          id: 'upper-cabinet',
-          name: 'Upper Cabinets',
-          type: 'UpperCabinet',
-        });
-        setQuantityValue(1);
-        setCreateCompanyPopup(true);
-      },
-      isActive: false,
-    },
-    {
-      option: 'Double Door Upper Cabinets',
-      icon: assets.single,
-      onClick: () => {
-        setSelectedCabinetItem({
-          id: 'double-door-upper-cabinet',
-          name: 'Double Door Upper Cabinets',
-          type: 'DoubleDoorUpperCabinet',
-        });
-        setQuantityValue(1);
-        setCreateCompanyPopup(true);
-      },
-      isActive: false,
-    },
-    {
       option: 'Load Sink GLB',
       icon: assets.sink,
       onClick: () => {
@@ -664,8 +528,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     Door: assets.door_icon,
     'Horizontal Plank': assets.horizontal,
     'Vertical Plank': assets.vertical,
-    'Tv Unit': assets.tv,
-    'Computer Desk': assets.computer,
     Plank: assets.vertical,
     Cabinet: assets.cabinet,
     Platform: assets.platform,
