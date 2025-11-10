@@ -55,4 +55,4 @@ export const API_ENDPOINT = {
   REMOVE_USER_FROM_ORGANIZATION: (userID: string) => `user/organization/remove_user/${userID}/`,
   DELETE_ALL_OBJECTS: (designID: string) => `material/catalog/design/${designID}/`,
   DELETE_OBJECT: (designID: string) => `design/${designID}/object/`,
-} as const;
+};
