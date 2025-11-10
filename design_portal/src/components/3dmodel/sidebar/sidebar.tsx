@@ -560,12 +560,7 @@ const Sidebar: React.FC = () => {
       if (container) return;
       if (o && o.isMesh && o.userData && o.userData.objectId === objectId) {
         const n = (o.name || '').toLowerCase();
-        if (
-          n === 'simplecabinet'.toLowerCase() ||
-          n === 'simpletvunit'.toLowerCase() ||
-          n === 'simpletable'.toLowerCase() ||
-          n === 'computerdesk'.toLowerCase()
-        ) {
+        if (n === 'simplecabinet'.toLowerCase() || n === 'simpletable'.toLowerCase()) {
           container = o as THREE.Mesh;
         }
       }

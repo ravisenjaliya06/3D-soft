@@ -310,7 +310,6 @@ export const TOOLBAR = {
   _5996079: '/assets/toolbar/5996079.png',
   cabinet: '/assets/toolbar/cabinet.svg',
   cabinet_svg: '/assets/toolbar/cabinet_svg.svg',
-  computer: '/assets/toolbar/computer.svg',
   door_icon: '/assets/toolbar/door-icon.svg',
   door: '/assets/toolbar/door.svg',
   double_door: '/assets/toolbar/double_door.svg',
@@ -335,8 +334,6 @@ export const TOOLBAR = {
   off_white: '/assets/toolbar/texture/off_white.jpg',
   wood: '/assets/toolbar/texture/wood.jpg',
   tool_part_line: '/assets/toolbar/tool-part-line.svg',
-  tv: '/assets/toolbar/tv.svg',
-  tvunit_svg: '/assets/toolbar/tvunit_scg.svg',
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };

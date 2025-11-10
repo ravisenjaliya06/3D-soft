@@ -27,7 +27,7 @@ const Designs = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
-  const [showEdtiPopup, setshowEdtiPopup] = useState(false);
+  const [showEditPopup, setshowEditPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
@@ -215,7 +215,7 @@ const Designs = () => {
       } = await CommonService.put(API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id), formData);
 
       if (response.status === 200) {
-        setshowEdtiPopup(false);
+        setshowEditPopup(false);
         await fetchDesigns();
       }
     } catch (error) {
@@ -307,7 +307,7 @@ const Designs = () => {
       setSelectedDesign(design);
       setDesingName(design.design_name);
       setDesingStatus(design.status);
-      setshowEdtiPopup(true);
+      setshowEditPopup(true);
     }
   };
 
@@ -696,13 +696,13 @@ const Designs = () => {
             )}
 
             {/* edit popup */}
-            {showEdtiPopup && (
+            {showEditPopup && (
               <div
                 className={styles.popupOverlay}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (e.target === e.currentTarget) {
-                    setshowEdtiPopup(false);
+                    setshowEditPopup(false);
                   }
                 }}
               >
@@ -715,7 +715,7 @@ const Designs = () => {
                   <img
                     src={assets.close}
                     alt="close"
-                    onClick={() => setshowEdtiPopup(false)}
+                    onClick={() => setshowEditPopup(false)}
                     className={styles.editclose}
                   />
 
@@ -741,7 +741,7 @@ const Designs = () => {
                   <div className={styles.editButtonGrop}>
                     <button
                       className={styles.canceleditButton}
-                      onClick={() => setshowEdtiPopup(false)}
+                      onClick={() => setshowEditPopup(false)}
                     >
                       Cancel
                     </button>

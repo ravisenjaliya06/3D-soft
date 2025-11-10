@@ -721,10 +721,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'INVISIBLEBOX',
     'WALL',
     'CABINET',
-    'COMPUTER',
     'TABLE',
-    'TVUNIT',
-    'UPPERCABINET',
     'PLATFORM',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>

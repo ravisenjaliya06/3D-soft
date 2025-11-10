@@ -15,20 +15,7 @@ export interface ThreeDView {
   isDay: boolean;
   isZoomMode: boolean;
   addSimpleCabinet: () => void;
-  addSimpleTVUnit: () => void;
-  addComputerDesk: () => void;
   loadSinkModel: (url: string) => Promise<void>;
-  addUpperCabinetsAbovePlatform: (
-    scene: THREE.Scene,
-    platformMesh: THREE.Mesh,
-    count: number,
-    doorType?: 'single' | 'double'
-  ) => Promise<void>;
-  addDoubleDoorUpperCabinetsAbovePlatform: (
-    scene: THREE.Scene,
-    platformMesh: THREE.Mesh,
-    count: number
-  ) => Promise<void>;
 }
 
 export const itemType = {
