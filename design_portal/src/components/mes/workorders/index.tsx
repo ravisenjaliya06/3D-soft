@@ -1,6 +1,6 @@
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/mes/workorders/workorder.module.css';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useEffect, useRef, useState } from 'react';

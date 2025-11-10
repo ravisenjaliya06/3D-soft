@@ -1,4 +1,4 @@
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';

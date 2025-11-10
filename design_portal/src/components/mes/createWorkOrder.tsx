@@ -1,5 +1,5 @@
 import styles from '@/components/mes/mes.module.css';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { ChangeEvent, useEffect, useState } from 'react';

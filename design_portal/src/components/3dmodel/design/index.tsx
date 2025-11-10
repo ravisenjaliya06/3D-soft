@@ -1,4 +1,4 @@
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';

@@ -1,5 +1,5 @@
 import styles from '@/components/header/header.module.css';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';

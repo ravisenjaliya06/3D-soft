@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import { Dispatch } from 'redux';

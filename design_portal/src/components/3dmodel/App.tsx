@@ -3,7 +3,7 @@ import { ThreeDView } from '@/components/3dmodel/design/interface';
 import Header from '@/components/3dmodel/header/header';
 import Sidebar from '@/components/3dmodel/sidebar/sidebar';
 import Toolbar from '@/components/3dmodel/toolbar';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonServices from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
 import { CatalogWithChildren } from './handler/items';

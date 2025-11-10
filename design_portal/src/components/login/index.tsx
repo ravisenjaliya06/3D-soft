@@ -1,7 +1,7 @@
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/login/login.module.css';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';

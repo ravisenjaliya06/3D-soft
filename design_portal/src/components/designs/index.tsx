@@ -2,7 +2,7 @@ import styles from '@/components/designs/designs.module.css';
 import Header from '@/components/header/header';
 import InputField from '@/components/inputfields/InputField';
 import Sidebar from '@/components/sidebar/sidebar';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';

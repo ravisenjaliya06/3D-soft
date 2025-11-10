@@ -1,6 +1,6 @@
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { QRCodeCanvas } from 'qrcode.react';

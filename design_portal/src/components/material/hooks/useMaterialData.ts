@@ -1,4 +1,4 @@
-import { API_ENDPOINT } from '@/services/ApiEndpoints';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { useCallback, useState } from 'react';
 import { STATIC_MATERIAL_TYPES } from '../constants';
