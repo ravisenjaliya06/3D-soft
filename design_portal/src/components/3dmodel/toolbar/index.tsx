@@ -51,7 +51,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [catalogMenu, setcatalogMenu] = useState(false);
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<CabinetItem[]>([]);
-  const [createCompanyPopup, setCreateCompanyPopup] = useState(false);
+  const [addPartPopup, setAddPartPopup] = useState(false);
   const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
@@ -69,7 +69,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   };
 
   const closePopup = () => {
-    setCreateCompanyPopup(false);
+    setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
@@ -294,7 +294,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     // Default flow (non-cabinet): add directly with quantity 1 (no popup)
     setSelectedCabinetItem(item);
     setQuantityValue(1);
-    setCreateCompanyPopup(true);
+    setAddPartPopup(true);
   };
 
   const onAddItems = async () => {
@@ -302,7 +302,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       console.error('No cabinet item selected');
       return;
     }
-    setCreateCompanyPopup(false);
+    setAddPartPopup(false);
     const num = parseInt(quantityValue.toString(), 10);
     if (!Number.isFinite(num) || num <= 0) {
       return;
@@ -350,7 +350,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       }
     }
 
-    setCreateCompanyPopup(false);
+    setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
     dispatch(setobjectSelected(null));
@@ -494,7 +494,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const handleFurnitureCategoryClick = (category: string) => {
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
-    setCreateCompanyPopup(false);
+    setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
@@ -517,7 +517,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setActiveOptionName('Home');
     setSelectedFurnitureCategory(null);
     setcatalogMenu(false);
-    setCreateCompanyPopup(false);
+    setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
@@ -725,7 +725,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         )}
       </aside>
 
-      {createCompanyPopup && selectedCabinetItem && (
+      {addPartPopup && selectedCabinetItem && (
         <div
           className={styles.createpopupOverlay}
           style={{ top: popupPosition.y, left: popupPosition.x }}

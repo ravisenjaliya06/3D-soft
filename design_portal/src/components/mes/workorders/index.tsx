@@ -45,7 +45,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
     };
   }, []);
 
-  const handlathreedot = (
+  const handlethreedot = (
     event: React.MouseEvent<HTMLImageElement, MouseEvent>,
     workOrderId: string
   ) => {
@@ -133,7 +133,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
                 <img
                   src={assets.three_dots}
                   alt="process upload"
-                  onClick={(event) => handlathreedot(event, item.id)}
+                  onClick={(event) => handlethreedot(event, item.id)}
                 />
               </div>
               {activeDropdownId === item.id && showdropDown && (
