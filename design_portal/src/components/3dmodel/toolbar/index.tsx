@@ -641,7 +641,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       icon: assets.sink,
       onClick: () => {
         if (threeDView && typeof threeDView.loadSinkModel === 'function') {
-          threeDView.loadSinkModel('/sink.glb');
+          threeDView.loadSinkModel('/glb/sink.glb');
         }
       },
       isActive: false,
