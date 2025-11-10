@@ -1728,6 +1728,7 @@ function getDesignId(): string | null {
   return designId || null;
 }
 
+export { initializeMoveHandler, loadDesignObjects, create, moveObject };
 export default {
   initializeMoveHandler,
   loadDesignObjects,
