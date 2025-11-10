@@ -11,7 +11,7 @@ import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
 import {
   addItemtoDatabase,
-  addItemToDataBaseWihoutCatalog,
+  addItemToDataBaseWithoutCatalog,
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
   initializeMoveHandler,
@@ -1080,7 +1080,7 @@ export const addVerticalPlanksToBox = async (
         color: '0x555555',
       },
     };
-    const apiResponse = await addItemToDataBaseWihoutCatalog(data);
+    const apiResponse = await addItemToDataBaseWithoutCatalog(data);
     skirting.userData.objectId = apiResponse.data.id;
     skirting.userData.type = 'Skirting';
     skirting.userData.apiData = apiResponse;

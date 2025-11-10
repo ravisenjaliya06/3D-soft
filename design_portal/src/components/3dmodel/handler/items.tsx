@@ -1728,128 +1728,11 @@ function getDesignId(): string | null {
   return designId || null;
 }
 
-interface CopyObjectsResult {
-  objectsList: Object3D[];
-  mainObjects: Object3D[];
-  catalogMap: Record<string, Object3D[]>;
-}
-
-async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
-  const designId = getDesignId();
-  if (!designId) {
-    console.error('No design ID found in URL');
-    return null;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append('catalog_id', id);
-
-    const response = await commonService.post(
-      API_ENDPOINT.CREATE_DESIGN_OBJECT(designId),
-      formData
-    );
-
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-      const dataArray = Array.isArray(responseData)
-        ? responseData
-        : responseData
-          ? [responseData]
-          : [];
-
-      const allObjects: Object3D[] = [];
-      const mainObjects: Object3D[] = [];
-      const catalogMap: { [key: string]: Object3D[] } = {};
-      const idMap = new Map<string, string>();
-
-      dataArray.forEach((entry: CatalogResponse) => {
-        const newId = entry.id && !idMap.has(entry.id) ? entry.id : crypto.randomUUID();
-        idMap.set(newId, newId);
-
-        const mainObject: Object3D = {
-          id: newId,
-          name: entry.name || '',
-          width: entry.data?.width || 0,
-          height: entry.data?.height || 0,
-          depth: entry.data?.depth || 0,
-          altitude: 0,
-          position: {
-            x: (entry.data?.position?.x || 0) + 0.1,
-            y: entry.data?.position?.y || 0,
-            z: entry.data?.position?.z || 0,
-          },
-          material: { type: 'TEXTURE', value: 'default' },
-          parent: entry.parent ? idMap.get(entry.parent) || entry.parent : null,
-          child: [],
-          layer: 0,
-          rotationX: 0,
-          rotationY: 0,
-          rotationZ: 0,
-        };
-
-        const childObjects = entry.design_catalog_items?.map((item) => {
-          const childId = item.id && !idMap.has(item.id) ? item.id : crypto.randomUUID();
-          idMap.set(childId, childId);
-          return {
-            id: childId,
-            name: item.data.name,
-            width: item.data.width,
-            height: item.data.height,
-            depth: item.data.depth,
-            altitude: item.data.altitude,
-            position: { ...item.data.position },
-            material: item.data.material,
-            parent: newId,
-            child: item.data.child ? item.data.child.map(() => crypto.randomUUID()) : [],
-            layer: item.data.layer,
-            rotationX: 0,
-            rotationY: 0,
-            rotationZ: 0,
-          };
-        });
-
-        mainObject.child = childObjects?.map((child) => child.id) || [];
-        catalogMap[mainObject.name] = [mainObject, ...(childObjects || [])];
-        allObjects.push(mainObject, ...(childObjects || []));
-
-        if (!entry.parent) {
-          mainObjects.push(mainObject);
-        }
-      });
-
-      dataArray.forEach((entry: CatalogResponse) => {
-        if (entry.parent) {
-          const parentObj = allObjects.find((o) => o.id === idMap.get(entry.parent ?? ''));
-          const currentObj = allObjects.find((o) => o.id === idMap.get(entry.id));
-          if (parentObj && currentObj && !parentObj.child.includes(currentObj.id)) {
-            parentObj.child.push(currentObj.id);
-          }
-        }
-      });
-
-      return {
-        objectsList: allObjects,
-        mainObjects,
-        catalogMap,
-      };
-    } else {
-      console.error('Failed to copy object:', response);
-      return null;
-    }
-  } catch (error) {
-    console.error('Error copying object:', error);
-    return null;
-  }
-}
-
-export { copyObjects, create, initializeMoveHandler, loadDesignObjects, moveObject };
 export default {
   initializeMoveHandler,
   loadDesignObjects,
   create,
   moveObject,
-  copyObjects,
 };
 
 export function toggleDoor(child: THREE.Mesh) {
@@ -2061,7 +1944,7 @@ export const addItemtoDatabase = async (data: any) => {
   return null;
 };
 
-export const addItemToDataBaseWihoutCatalog = async (data: any) => {
+export const addItemToDataBaseWithoutCatalog = async (data: any) => {
   try {
     const apiResponse = await commonService.post(
       API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,
