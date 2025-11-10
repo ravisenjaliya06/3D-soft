@@ -87,6 +87,8 @@ export interface PlankDataItem {
   height: number;
   depth: number;
   position: Position;
+  parent?: string | undefined;
+  material?: { type: string; value: string };
 }
 
 export interface MoveHandlerOptions {
@@ -189,4 +191,40 @@ export interface CatalogItemData {
     catalog_type: string;
     minifixHoles: [];
   };
+}
+
+export interface RulePart {
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  length?: number;
+  icon?: string;
+  thickness: number | null;
+  position: Position;
+  handle_position: Position | null;
+  additional_data: { texture: string };
+}
+
+export interface CatalogRule {
+  name: string;
+  rule_parts?: RulePart[];
+}
+
+export interface AddItemDatabasePayload {
+  catalogId: string;
+  type: string;
+  name: string;
+  description: string;
+  design_id: string;
+  parent?: string;
+  width?: number;
+  height?: number;
+  depth?: number;
+  position?: { x: number; y: number; z: number };
+  additional_data?: { texture: string; color?: string };
+  parts?: Array<{
+    name: string;
+    rule_parts: RulePart[];
+  }>;
 }

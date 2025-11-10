@@ -2,14 +2,11 @@ import { TEXTURE_MEDIA, TEXTURE_NAME } from '@/components/3dmodel/handler/consta
 import { store } from '@/components/3dmodel/store';
 import * as Three from 'three';
 import {
-  ConvertInputElement,
   cylinderGeometryData,
   elementData,
   elementDataList,
   geoMetryData,
   GrooveDetail,
-  SimpleElementData,
-  SimpleElementDataList,
 } from './interfaces';
 
 const textureLoader = new Three.TextureLoader();
@@ -148,7 +145,7 @@ function createDesign(elementDataList: elementDataList, viewType: string): Three
       (viewType === 'MIN' && (elementData.minMax === 'MIN' || elementData.minMax === 'BOTH'))
     ) {
       const childMesh = handleElementData(new Three.Mesh(), elementData);
-      if (elementData.data.grooves.length > 0) {
+      if (elementData.data.grooves && elementData.data.grooves.length > 0) {
         childMesh.userData.grooves = elementData.data.grooves;
       }
       if (
@@ -396,17 +393,18 @@ function calculateGrooveDetail(
   };
 }
 
-function convertDataToGeometry(data: ConvertInputElement[]): SimpleElementDataList {
-  const dataList: SimpleElementDataList = [];
+function convertDataToGeometry(data: geoMetryData[]): elementDataList {
+  const dataList: elementDataList = [];
 
   data.forEach((element) => {
     if (element.material === undefined) {
       element.material = { type: 'TEXTURE', value: 'wood' };
     }
 
-    const geometry: SimpleElementData = {
+    const geometry: elementData = {
       type: 'GEOMETRY_DATA',
       data: {
+        id: element.id,
         name: element.name,
         width: element.width,
         height: element.height,

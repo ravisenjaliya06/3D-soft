@@ -1,4 +1,3 @@
-src/components/3dmodel/handler/items.tsx
 src/components/3dmodel/design/scene.tsx
 src/components/3dmodel/sidebar/sidebar.tsx
 src/components/3dmodel/sidebar/MaterialChangePopup.tsx

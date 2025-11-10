@@ -50,7 +50,7 @@ export interface RulePart {
   depth: number;
   icon?: string;
   thickness: number | null;
-  position: Position | null;
+  position: Position;
   handle_position: Position | null;
   additional_data: { texture: string };
 }

@@ -16,16 +16,8 @@ export interface RealisticMaterialOptions {
   rotation?: number | null;
 }
 
-/**
- * Creates a physically realistic PBR material and applies an HDR environment map
- * for lighting/reflections. Can be reused anywhere in your Three.js or React-Three-Fiber app.
- *
- * @param scene - The THREE.Scene instance where the environment will be applied.
- * @param options - Optional configuration for textures, repeats, and HDR path.
- * @returns A Promise that resolves to a MeshStandardMaterial ready to use.
- */
 export async function createRealisticMaterial(
-  scene: THREE.Scene,
+  scene: THREE.Scene | undefined,
   options: RealisticMaterialOptions = {}
 ): Promise<THREE.MeshStandardMaterial> {
   console.log(scene, 'scene');
@@ -38,8 +30,12 @@ export async function createRealisticMaterial(
   const hdrPromise = new Promise<void>((resolve) => {
     new RGBELoader().load(hdrPath, (hdrTexture) => {
       hdrTexture.mapping = THREE.EquirectangularReflectionMapping;
-      if (!scene.environment) scene.environment = hdrTexture;
-      if (!scene.background) scene.background = hdrTexture;
+      if (scene) {
+        if (!scene.environment) scene.environment = hdrTexture;
+        if (!scene.background) scene.background = hdrTexture;
+      } else {
+        console.warn('Scene is undefined');
+      }
       resolve();
     });
   });

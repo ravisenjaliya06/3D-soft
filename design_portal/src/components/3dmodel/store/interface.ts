@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CatalogRule } from '../handler/interface';
 import { ShapeData } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix';
 
@@ -40,7 +41,7 @@ export interface Object3D {
   material: Material;
   parent?: string | null;
   child: string[];
-  grooves?: [];
+  grooves?: Position[];
   rotationX?: number;
   rotationY?: number;
   rotationZ?: number;
@@ -52,6 +53,12 @@ export interface Object3D {
   // Optional server/API enrichment
   apiData?: ApiData;
   rules?: [];
+  length?: number | null;
+  type?: string;
+  description?: string;
+  additional_data?: { texture: string; color?: string };
+  catalog_rules?: CatalogRule[];
+  children?: Object3D[];
 }
 
 // New interfaces for API requests

@@ -8,24 +8,23 @@ export interface geoMetryData {
   height: number;
   depth: number;
   position: Position;
-  material: {
-    type: 'COLOR' | 'TEXTURE';
-    value: string;
-  };
+  plankSize?: number;
+  material: { type: string; value: string };
   catalog_type: string;
   openDirection: string;
-  grooves: GrooveDetail[];
+  grooves?: GrooveDetail[];
 }
-
 export interface cylinderGeometryData {
+  id: string;
   name: string;
   radiusTop: number;
   radiusBottom: number;
   height: number;
   radialSegments: number;
   position: Position;
+  plankSize?: number;
   material: {
-    type: 'COLOR' | 'TEXTURE';
+    type: string;
     value: string;
   };
   grooves: GrooveDetail[];
@@ -71,10 +70,7 @@ export interface SimpleGeometryData {
   depth: number;
   plankSize: number;
   position: { x: number; y: number; z: number };
-  material: {
-    type: 'COLOR' | 'TEXTURE';
-    value: string;
-  };
+  material: { type: 'COLOR' | 'TEXTURE'; value: string };
   grooves: GrooveDetail[];
   openDirection: string;
   catalog_type: string;

@@ -132,7 +132,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         if (designId) {
           try {
             const loadedObjects = await loadDesignObjects(designId, threeDView.scene);
-            dispatch(addObjects(loadedObjects));
+            if (loadedObjects) {
+              dispatch(addObjects(loadedObjects));
+            }
           } catch (error) {
             console.error('Failed to load design objects:', error);
           }

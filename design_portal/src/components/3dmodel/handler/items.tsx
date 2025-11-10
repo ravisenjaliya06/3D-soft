@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
@@ -6,6 +5,7 @@ import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { applyEdgeBanding, convertDataToGeometry, createDesign } from '../catalog/object-creator';
+import { GrooveDetail } from '../catalog/object-creator/interfaces';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
@@ -14,9 +14,16 @@ import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
 import { objectName } from './constant';
-import { AllItemsData, CatalogResponse, ITEM, PLANK, PlankDataItem } from './interface';
+import {
+  AddItemDatabasePayload,
+  AllItemsData,
+  CatalogResponse,
+  ITEM,
+  PLANK,
+  PlankDataItem,
+  RulePart,
+} from './interface';
 import { MoveHandler } from './moveHandler';
-import { addCabinetItemToDesign } from './toolbar';
 import { updateObjectInDatabase } from './updateHandler';
 
 let moveHandler: MoveHandler | null = null;
@@ -451,7 +458,7 @@ export function generateCompartmentsFromPlanks(plankData: PlankDataItem[], objec
 }
 
 export async function createMeshRecursively(
-  data,
+  data: Object3D,
   parent: THREE.Object3D | null = null,
   scene?: THREE.Scene
 ): Promise<THREE.Mesh | null> {
@@ -587,9 +594,9 @@ export async function createMeshRecursively(
   return mesh;
 }
 
-async function loadDesignObjects(designId: string, scene: THREE.Scene): Promise<Object3D[]> {
+async function loadDesignObjects(designId: string, scene: THREE.Scene) {
   try {
-    const response: { status: number; data: CatalogResponse[] } = await commonService.get(
+    const response: { status: number; data: Object3D[] } = await commonService.get(
       API_ENDPOINT.GET_DESIGN_OBJECTS(designId)
     );
     if (response.status === 200 && response.data) {
@@ -609,15 +616,15 @@ async function loadDesignObjects(designId: string, scene: THREE.Scene): Promise<
 interface CatalogData {
   id: string;
   name: string;
-  width?: number;
-  height?: number;
-  depth?: number;
+  width: number;
+  height: number;
+  depth: number;
   position: {
     x: number;
     y: number;
     z: number;
   };
-  material?: {
+  material: {
     type: string;
     value: string;
   };
@@ -625,9 +632,10 @@ interface CatalogData {
   rotationX?: number;
   rotationY?: number;
   rotationZ?: number;
-  plankSize?: number;
-  catalog_type?: string;
-
+  plankSize: number;
+  catalog_type: string;
+  grooves?: GrooveDetail[];
+  openDirection: string;
   [key: string]: unknown;
 }
 
@@ -706,7 +714,6 @@ async function create(
               value: 'default',
             },
             parent: entry.parent || null,
-            grooves: entry.grooves || [],
             catalog_type: entry.data?.catalog_type ?? '',
             child: [],
             layer: 0,
@@ -791,6 +798,7 @@ async function create(
                   data: {
                     ...itemEntry.data,
                     grooves: matchingPlank.userData.grooves,
+                    minifixConnections: [],
                   },
                 });
               }
@@ -1278,7 +1286,7 @@ async function moveObject(
 
   let dataList: CatalogData[];
   if (catalogEntry.items && catalogEntry.items.length > 0) {
-    dataList = catalogEntry.items.map((item: CatalogChildItem) => item.data);
+    dataList = catalogEntry.items.map((item) => item.data);
   } else if (catalogEntry.catalog.data) {
     dataList = [catalogEntry.catalog.data];
   } else {
@@ -1289,7 +1297,7 @@ async function moveObject(
   const childObjects: THREE.Mesh[] = [];
   for (const childCatalog of childCatalogs) {
     if (childCatalog.items && childCatalog.items.length > 0) {
-      const childDataList = childCatalog.items.map((item: CatalogChildItem) => item.data);
+      const childDataList = childCatalog.items.map((item) => item.data);
       const convertedChildData = convertDataToGeometry(childDataList);
       const childObject = createDesign(convertedChildData, 'MAX');
       const position = childCatalog.catalog.data.position;
@@ -1314,15 +1322,12 @@ async function moveObject(
   ) {
     const compartments = generateCompartmentsFromPlanks(
       dataList.map((item) => ({
-        name: String(item.name || ''),
-        width: Number(item.width || 0),
-        height: Number(item.height || 0),
-        depth: Number(item.depth || 0),
-        position: {
-          x: Number((item.position as { x: number; y: number; z: number })?.x || 0),
-          y: Number((item.position as { x: number; y: number; z: number })?.y || 0),
-          z: Number((item.position as { x: number; y: number; z: number })?.z || 0),
-        },
+        id: item.id,
+        name: item.name,
+        width: item.width,
+        height: item.height,
+        depth: item.depth || 0,
+        position: item.position,
       }))
     );
     compartments.forEach((compartment, index) => {
@@ -1376,6 +1381,7 @@ async function moveObject(
               !obj.name.includes(ITEM.DOOR)
           )
           .map((obj) => ({
+            id: obj.id,
             name: obj.name,
             width: obj.width,
             height: obj.height,
@@ -1386,7 +1392,7 @@ async function moveObject(
         const objectsToRemove: THREE.Mesh[] = [];
         cupboardObject.traverse((child) => {
           if (child.name === 'invisibleBox') {
-            objectsToRemove.push(child);
+            objectsToRemove.push(child as THREE.Mesh);
           }
         });
         objectsToRemove.forEach((obj) => {
@@ -1437,12 +1443,13 @@ async function moveObject(
             // Optionally dispose geometry and material
             if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
             if ((child as THREE.Mesh).material instanceof THREE.Material) {
-              (child as THREE.Mesh).material.dispose();
+              ((child as THREE.Mesh).material as THREE.Material).dispose();
             }
           });
-
         const edge_banding = applyEdgeBanding(threeDObject);
-        threeDObject.add(edge_banding);
+        if (edge_banding) {
+          threeDObject.add(edge_banding);
+        }
         const parentId = threeDObject.parent?.parent?.userData.objectId;
         createResult = await createItem(
           name,
@@ -1457,7 +1464,7 @@ async function moveObject(
       } else {
         // Handle non-plank objects (e.g., cupboard with children
         createResult = await create(name, catalogList, threeDObject);
-        createResult.objectsList[0].position = finalPosition;
+        if (createResult) createResult.objectsList[0].position = finalPosition;
         // Assign userData.objectId to all objects in the scene based on objectsList
         if (createResult?.objectsList?.length) {
           // Iterate through objectsList to assign IDs to child objects
@@ -1477,7 +1484,7 @@ async function moveObject(
           });
           try {
             const cupboardId = createResult.objectsList[0].id;
-            const cupboardPlanks: PlankDataItem[] = createResult.objectsList.filter(
+            const cupboardPlanks = createResult.objectsList.filter(
               (obj) =>
                 obj.parent === cupboardId &&
                 obj.name.includes(ITEM.PLANK) &&
@@ -1524,7 +1531,7 @@ async function moveObject(
                 });
               }
             }
-            const updatedObjects = [];
+            const updatedObjects: Object3D[] = [];
             const updatedCupboard = {
               ...createResult.objectsList[0],
               minifixConnections: cupboardMinifixSystem.connections || [],
@@ -1536,6 +1543,9 @@ async function moveObject(
               );
               return {
                 ...plank,
+                layer: 0,
+                child: [],
+                material: plank.material || { type: '', value: '' },
                 minifixHoles: plankWithHoles?.minifixHoles || [],
               };
             });
@@ -1897,11 +1907,11 @@ export const addCabinetItemToDesign = async (
     height?: number;
     depth?: number;
     position?: { x: number; y: number; z: number };
-    additional_data?: any;
-    parts?: Array<{
+    additional_data?: unknown;
+    parts?: {
       name: string;
       rule_parts: RulePart[];
-    }>;
+    }[];
   }
 ) => {
   const payload = {
@@ -1932,7 +1942,7 @@ export const addCabinetItemToDesign = async (
   }
 };
 
-export const addItemtoDatabase = async (data: any) => {
+export const addItemtoDatabase = async (data: AddItemDatabasePayload) => {
   try {
     const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
@@ -1945,7 +1955,7 @@ export const addItemtoDatabase = async (data: any) => {
   return null;
 };
 
-export const addItemToDataBaseWithoutCatalog = async (data: any) => {
+export const addItemToDataBaseWithoutCatalog = async (data: AddItemDatabasePayload) => {
   try {
     const apiResponse = await commonService.post(
       API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,

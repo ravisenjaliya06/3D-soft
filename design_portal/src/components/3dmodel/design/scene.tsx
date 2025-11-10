@@ -929,7 +929,7 @@ export const addVerticalPlanksToBox = async (
 ) => {
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) return;
-
+  let designId = window.location.pathname.split('/')[2];
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
@@ -1002,6 +1002,8 @@ export const addVerticalPlanksToBox = async (
 
     const data = {
       ...itemData,
+      type: 'Plank',
+      name: plank.name,
       width: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.width),
       height: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.height),
       depth: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.depth),
@@ -1060,8 +1062,8 @@ export const addVerticalPlanksToBox = async (
     };
 
     const skirting = createMeshObject(skirtingPart);
-    const designId = window.location.pathname.split('/')[2];
     const data = {
+      ...itemData,
       name: skirting.name,
       type: 'Skirting',
       description: '',
