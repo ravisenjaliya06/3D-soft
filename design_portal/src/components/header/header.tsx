@@ -1,4 +1,5 @@
 import styles from '@/components/header/header.module.css';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
@@ -55,7 +56,9 @@ const Header = ({
 
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get('user', '');
+      const response: { status: number; data: User } = await CommonService.get(
+        API_ENDPOINT.GET_USER_DETAILS
+      );
       if (response.status === 200) {
         const userdetails = response.data;
         setUserDetails(userdetails);

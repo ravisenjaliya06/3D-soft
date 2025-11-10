@@ -1,4 +1,5 @@
 import Loading_style from '@/components/loading.module.css';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
@@ -65,8 +66,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
     try {
       const response: { status: number } = await commonService.delete(
-        'material',
-        `catalog/design/${designId}`
+        API_ENDPOINT.DELETE_ALL_OBJECTS(designId)
       );
 
       if (response.status === 200 || response.status === 204) {
@@ -113,8 +113,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const designId = window.location.pathname.split('/')[2];
 
     const response: { status: number; data: DesignIDSettingData } = await commonService.get(
-      'design',
-      `${designId}/settings`
+      API_ENDPOINT.GET_DESIGN_SETTINGS(designId)
     );
     if (response.status === 200) {
       setMinifixDistance(response.data.minifix_distance ?? 30);
@@ -134,7 +133,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     formData.append('minifix_distance', String(minifixDistance));
 
     try {
-      const response = await commonService.put('design', `${designId}/settings`, formData);
+      const response = await commonService.put(
+        API_ENDPOINT.UPDATE_DESIGN_SETTINGS(designId),
+        formData
+      );
       if (response.status === 200) {
         // Update the Minifix calculator with new spacing
         const { updateMinifixSpacing } = await import('../minifix/calculator');
@@ -167,7 +169,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const fetchDesigns = async () => {
     try {
-      const response: { status: number; data: Design[] } = await commonService.get('design', '');
+      const response: { status: number; data: Design[] } = await commonService.get(
+        API_ENDPOINT.GET_DESIGNS
+      );
       if (response.status === 200) {
         const designs = response.data;
         const selectedDesign = designs.find((design) => design.id === designId);
@@ -242,8 +246,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     setIsLoading(true); // 🔄 Show loading spinner
     try {
       const response: { status: number; data: Design[] } = await commonService.get(
-        'design',
-        `${designId}/nesting`
+        API_ENDPOINT.GET_DESIGN_NESTING(designId)
       );
       if (response.status === 200) {
         router.push(`/mes/${designId}`);

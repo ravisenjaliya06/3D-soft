@@ -1,11 +1,10 @@
 import Header from '@/components/header/header';
 import styles from '@/components/settings/setting.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import axios from 'axios';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { getTokenDetail } from '../helper/helper';
 import InputField from '../inputfields/InputField';
 import { Member, Organization, SettingConfigs, TeamRole, User, addmember } from './interface';
 
@@ -45,9 +44,9 @@ const Settings = () => {
     y: number;
   } | null>(null);
 
-  const [isDeleteHovered, setIsDeleteHovered] = useState<number | null>(null);
+  const [isDeleteHovered, setIsDeleteHovered] = useState<string | null>(null);
 
-  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
@@ -71,8 +70,7 @@ const Settings = () => {
   const handalGetmember = async () => {
     try {
       const response: { status: number; data: { users: Member[] } } = await CommonService.get(
-        'user',
-        'organization/users'
+        API_ENDPOINT.GET_ORGANIZATION_USERS
       );
       if (response.status === 200) {
         const membersData = response.data.users;
@@ -92,7 +90,7 @@ const Settings = () => {
   useEffect(() => {
     handalGetmember();
   }, []);
-  const handleRoleAddClick = (event: React.MouseEvent<HTMLImageElement>, memberId: number) => {
+  const handleRoleAddClick = (event: React.MouseEvent<HTMLImageElement>, memberId: string) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setDropdownPosition({
       x: rect.left + window.scrollX,
@@ -124,7 +122,7 @@ const Settings = () => {
     };
   }, [openDropdown]);
 
-  const handleRoleSelect = (role: string, memberId: number) => {
+  const handleRoleSelect = (role: string, memberId: string) => {
     if (memberId === null) return;
 
     const selectedMember = members.find((member) => member.id === memberId);
@@ -138,7 +136,7 @@ const Settings = () => {
     const formData = new FormData();
     updatedRoles.forEach((r) => formData.append('groups[]', r));
 
-    CommonService.put('user', `organization/edit_user/${memberId}`, formData)
+    CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response: { status: number; data: TeamRole; memberId: number }) => {
         if (response.status === 200) {
           handalGetmember();
@@ -160,7 +158,7 @@ const Settings = () => {
     }
   });
 
-  const handleRoleRemove = (role: string, memberId: number) => {
+  const handleRoleRemove = (role: string, memberId: string) => {
     setMembers((prevMembers) =>
       prevMembers.map((member) =>
         member.id === memberId
@@ -189,7 +187,7 @@ const Settings = () => {
     const formData = new FormData();
     updatedRoles.forEach((r) => formData.append('groups[]', r));
 
-    CommonService.put('user', `organization/edit_user/${memberId}`, formData)
+    CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response) => {
         if (response.status === 200) {
           handalGetmember(); // Ensure this fetches the updated members list
@@ -222,7 +220,9 @@ const Settings = () => {
   ];
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get('user', '');
+      const response: { status: number; data: User } = await CommonService.get(
+        API_ENDPOINT.GET_USER_DETAILS
+      );
       if (response.status === 200) {
         const UserDetails = response.data;
         setUserDetails(UserDetails);
@@ -256,8 +256,7 @@ const Settings = () => {
     newMember.groups.forEach((groups) => formData.append('groups[]', groups));
 
     const response: { status: number; data: addmember } = await CommonService.post(
-      'user',
-      'organization/add_user',
+      API_ENDPOINT.ADD_ORGANIZATION_USER,
       formData
     );
 
@@ -297,18 +296,9 @@ const Settings = () => {
     if (profileImage && profileImage instanceof File) {
       formData.append('profile_picture', profileImage);
     }
-    const token = getTokenDetail();
+
     try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_PUBLIC_API}/${process.env.NEXT_PUBLIC_APP_VERSION}/user/`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await CommonService.put(API_ENDPOINT.UPDATE_USER_DETAILS, formData);
       const data = response.data as User;
       if (response.status === 200) {
         setUserDetails(data);
@@ -509,7 +499,7 @@ const Settings = () => {
     ignoreTypeErrors();
   }, []);
 
-  const handleMouseEnter = (memberId: number) => {
+  const handleMouseEnter = (memberId: string) => {
     setIsDeleteHovered(memberId);
   };
 
@@ -521,7 +511,7 @@ const Settings = () => {
     return UserDetails?.email;
   };
 
-  const handleDeleteMember = async (memberId: number) => {
+  const handleDeleteMember = async (memberId: string) => {
     const currentUserEmailId = getCurrentUserEmailId();
     if (members.find((member) => member.id === memberId)?.email === currentUserEmailId) {
       alert('You cannot remove yourself from the team.');
@@ -532,10 +522,8 @@ const Settings = () => {
     if (!confirmDelete) return;
 
     try {
-      const response: { status: number } = await CommonService.deleteWithSingleParam(
-        'user',
-        'organization/remove_user',
-        memberId
+      const response: { status: number } = await CommonService.delete(
+        API_ENDPOINT.REMOVE_USER_FROM_ORGANIZATION(memberId)
       );
       if (response.status === 200) {
         setMembers((prevMembers) => prevMembers.filter((member) => member.id !== memberId));
@@ -566,6 +554,7 @@ const Settings = () => {
       const url = URL.createObjectURL(file);
 
       setorganizationUrl(url);
+      console.log('file', file);
       setOrganizationImage(file);
     }
   };
@@ -582,8 +571,7 @@ const Settings = () => {
   const handalSetOrganization = async () => {
     try {
       const response: { status: number; data: Organization } = await CommonService.get(
-        'user',
-        'organization/details'
+        API_ENDPOINT.GET_ORGANIZATION_DETAILS
       );
       if (response.status === 200) {
         const organizationdata = response.data;
@@ -618,18 +606,7 @@ const Settings = () => {
         formData.append('logo', organizationImage);
       }
 
-      const token = getTokenDetail();
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_PUBLIC_API}/${process.env.NEXT_PUBLIC_APP_VERSION}/user/organization/update/`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await CommonService.put(API_ENDPOINT.UPDATE_ORGANIZATION_DETAILS, formData);
       const data = response.data as Organization;
 
       if (response.status === 200) {
@@ -667,7 +644,7 @@ const Settings = () => {
     formData.append('groove_dig', String(grooveDig ?? 0));
 
     try {
-      const response = await CommonService.put('design', `setting`, formData);
+      const response = await CommonService.put(API_ENDPOINT.UPDATE_DESIGN_SETTING, formData);
 
       if (response.status === 200) {
         setSuccessMessage('Settings updated successfully!');
@@ -691,8 +668,7 @@ const Settings = () => {
 
   const fetchSettingsConfig = async () => {
     const response: { status: number; data: SettingConfigs } = await CommonService.get(
-      'design',
-      'setting'
+      API_ENDPOINT.GET_DESIGN_SETTING
     );
 
     if (response.status === 200) {

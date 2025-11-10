@@ -1,6 +1,7 @@
 import styles from '@/components/dashboard/dashboard.module.css';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useEffect, useState } from 'react';
@@ -12,7 +13,9 @@ const ProjectDashboard = () => {
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
-        const response: { status: number; data: Design[] } = await CommonService.get('design', '');
+        const response: { status: number; data: Design[] } = await CommonService.get(
+          API_ENDPOINT.GET_DESIGNS
+        );
         if (response.status === 200) {
           setDesignsCount(response.data.length);
         } else {

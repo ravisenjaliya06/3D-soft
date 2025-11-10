@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { OTPVerifyForm, ResendOtp } from '@/types/formTypes';
@@ -16,7 +17,7 @@ export const handleVerify = async (
     setIsLoading(false);
     return;
   }
-  const response = await CommonService.post('user', 'otp/validate', formData);
+  const response = await CommonService.post(API_ENDPOINT.VALIDATE_OTP, formData);
 
   if (response.status === 200) {
     setIsLoading(false);
@@ -45,7 +46,7 @@ export const handleResendOtp = async (
     setIsLoading(false);
     return;
   }
-  const response = await CommonService.post('user', 'otp', formData);
+  const response = await CommonService.post(API_ENDPOINT.SENT_OTP, formData);
 
   if (response.status === 200) {
     setIsLoading(false);

@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { ForgotForm } from '@/types/formTypes';
 import { NextRouter } from 'next/router';
@@ -20,7 +21,7 @@ export const handleForgotAPI = async (
     setIsLoading(false);
     return;
   }
-  const response = await CommonService.post('user', 'forgot_password', formData);
+  const response = await CommonService.post(API_ENDPOINT.FORGOT_PASSWORD, formData);
   if (response.status === 200) {
     setSuccessMessage('Password reset email sent successfully');
   } else {

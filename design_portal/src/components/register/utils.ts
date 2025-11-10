@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { RegisterForm } from '@/types/formTypes';
@@ -30,7 +31,7 @@ export const handleSignIn = async (
     setIsLoading(false);
     return;
   }
-  const response = await CommonService.post('user', 'register', formData);
+  const response = await CommonService.post(API_ENDPOINT.REGISTER, formData);
   if (response.status === 201) {
     router.push({
       pathname: REDIRECT.OTP,

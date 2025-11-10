@@ -1,5 +1,6 @@
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/mes/workorders/workorder.module.css';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useEffect, useRef, useState } from 'react';
@@ -59,8 +60,7 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
     }
     setIsLoading(true);
     const response: { status: number } = await commonService.get(
-      'design',
-      `${workOrder.design}/nesting`
+      API_ENDPOINT.GET_DESIGN_NESTING(workOrder.design)
     );
     if (response.status === 200) {
       setSelectedWorkOrder(workOrder);

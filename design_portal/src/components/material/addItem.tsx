@@ -1,4 +1,5 @@
 import InputField from '@/components/inputfields/InputField';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import type React from 'react';
@@ -3002,8 +3003,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
     try {
       const response = await commonService.post(
-        'material',
-        `company/${companyId}/material`,
+        API_ENDPOINT.CREATE_COMPANY_MATERIAL(companyId),
         finalData
       );
 

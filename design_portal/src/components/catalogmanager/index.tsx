@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -107,11 +108,8 @@ const CatalogManager = () => {
   const handleAddCatalog = () => setShowPopup(true);
 
   const getCatalog = useCallback(async () => {
-    const response: { status: number; data: Catalog[] } = await commonService.getWithQueryParam(
-      'material',
-      'catalog',
-      'type',
-      catalogType
+    const response: { status: number; data: Catalog[] } = await commonService.get(
+      API_ENDPOINT.GET_MATERIAL_USING_TYPE(catalogType)
     );
 
     if (response.status === 200) {
@@ -123,8 +121,7 @@ const CatalogManager = () => {
     setActiveRuleId(ruleId); // mark active rule
     try {
       const response: { status: number; data: RulePart[] } = await commonService.get(
-        'material',
-        `catalog_rules/${ruleId}/parts`
+        API_ENDPOINT.GET_CATALOG_RULES_PARTS(ruleId)
       );
       if (response.status === 200) {
         setRuleParts(response.data);
@@ -164,15 +161,15 @@ const CatalogManager = () => {
     };
 
     const response: { status: number; data: Catalog } = await commonService.post(
-      'material',
-      'catalog',
+      API_ENDPOINT.CREATE_MATERIAL_CATALOG,
       payload
     );
 
     if (response.status === 201) {
       // fetch all catalogs
-      const catalogResponse: { status: number; data: Catalog[] } =
-        await commonService.getWithQueryParam('material', 'catalog', 'type', catalogType);
+      const catalogResponse: { status: number; data: Catalog[] } = await commonService.get(
+        API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
+      );
       if (catalogResponse.status === 200) {
         setCatalogData(catalogResponse.data);
         setSelectedCatalog(response.data);
@@ -182,7 +179,9 @@ const CatalogManager = () => {
   };
 
   const getMaterial = async () => {
-    const response: { status: number; data: Material[] } = await commonService.get('material', '');
+    const response: { status: number; data: Material[] } = await commonService.get(
+      API_ENDPOINT.GET_MATERIAL
+    );
     if (response.status === 200) {
       setMaterialData(response.data);
     }
@@ -201,8 +200,7 @@ const CatalogManager = () => {
     );
 
     const response: { status: number } = await commonService.put(
-      'material',
-      `catalog/part/${partId}`,
+      API_ENDPOINT.UPDATE_PART_MATERIAL(partId),
       {
         material_id: materialId,
       }
@@ -224,8 +222,7 @@ const CatalogManager = () => {
     );
 
     const response: { status: number } = await commonService.put(
-      'material',
-      `catalog/part/${partId}`,
+      API_ENDPOINT.UPDATE_PART_MATERIAL(partId),
       {
         material_id: null,
       }

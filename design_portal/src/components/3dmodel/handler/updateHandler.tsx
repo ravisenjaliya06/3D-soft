@@ -1,4 +1,5 @@
-import commonService, { AppName } from '@/services/CommonService';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
 import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
 import { mmToMeters } from '../handler/unitConversion';
@@ -30,8 +31,6 @@ export const updateObjectInDatabase = async (
   selectedObject: Object3D,
   items: CatalogItem[] = [],
   childCatalogs: ChildCatalog[] = [],
-  appName: AppName = 'design',
-  designCatalog: string = 'object'
 ): Promise<THREE.Scene | null> => {
   const designId = getDesignId();
   if (!designId) {
@@ -155,7 +154,10 @@ export const updateObjectInDatabase = async (
     },
   };
 
-  const response = await commonService.putObjectData(appName, designId, designCatalog, payload);
+  const response = await commonService.put(
+    API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
+    payload
+  );
 
   if ((response as ResponseStatus).status === 200) {
     return response;
@@ -171,8 +173,6 @@ export const updateObjectInScene = (
   scene: THREE.Scene,
   dispatch: AppDispatch,
   selectedObject: Object3D | null,
-  appName: AppName = 'design',
-  designCatalog: string = 'object'
 ): void => {
   if (!scene || !selectedObject) return;
   removeExistingLines();
@@ -389,8 +389,6 @@ export const updateObjectInScene = (
               serializableObject,
               updatedItems as CatalogItem[],
               [],
-              appName,
-              designCatalog
             );
           }
         }
@@ -914,8 +912,6 @@ export const updateObjectInScene = (
     selectedObject,
     items,
     childCatalogs,
-    appName,
-    designCatalog
   );
 
   updateObjectOutline(selectedObject, scene);
@@ -991,11 +987,8 @@ export const updateCatalogItemObject = async (catalog: CatalogItem, data: Catalo
     },
   };
 
-  const response: { status: number } = await commonService.putObjectItemData(
-    'design',
-    gettingDesignID(),
-    'object',
-    data.id,
+  const response: { status: number } = await commonService.put(
+    API_ENDPOINT.UPDATE_OBJECT_ITEMS_DATA(gettingDesignID(), data.id),
     payload
   );
 
