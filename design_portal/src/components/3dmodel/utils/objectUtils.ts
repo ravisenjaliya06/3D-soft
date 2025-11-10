@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import { Object3D, Position } from '../store/interface';
 import { safeNameIncludes } from './nameUtils';
@@ -201,7 +202,7 @@ export const updateObjectInDatabase = async (
       },
     };
 
-    await commonService.putObjectData('design', designId, 'object', payload);
+    await commonService.put(API_ENDPOINT.UPDATE_OBJECT_DATA(designId), payload);
   } catch (error) {
     console.error('Error updating object:', error);
     throw error;

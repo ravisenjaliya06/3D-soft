@@ -2,6 +2,7 @@ import styles from '@/components/designs/designs.module.css';
 import Header from '@/components/header/header';
 import InputField from '@/components/inputfields/InputField';
 import Sidebar from '@/components/sidebar/sidebar';
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
@@ -133,7 +134,7 @@ const Designs = () => {
       const response: {
         status: number;
         data: Design[] | DesignResponse;
-      } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
+      } = await CommonService.get(API_ENDPOINT.GET_NON_CUSTOM_DESIGNS);
       if (response.status === 200) {
         setDesigns(response.data as Design[]);
       } else if (response.status === 403) {
@@ -182,8 +183,7 @@ const Designs = () => {
     formData.append('design_name', designName);
 
     const response: { status: number; data: Design } = await CommonService.post(
-      'design',
-      '',
+      API_ENDPOINT.CREATE_DESIGN,
       formData
     );
 
@@ -212,7 +212,7 @@ const Designs = () => {
       const response: {
         status: number;
         data: Design;
-      } = await CommonService.put(`design`, selectedDesign.id, formData);
+      } = await CommonService.put(API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id), formData);
 
       if (response.status === 200) {
         setshowEdtiPopup(false);
@@ -241,7 +241,7 @@ const Designs = () => {
       const response: {
         status: number;
         data: Design;
-      } = await CommonService.put('design', selectedDesign.id, formData);
+      } = await CommonService.put(API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id), formData);
 
       if (response.status === 200) {
         setshowDeletePopup(false);
@@ -327,10 +327,12 @@ const Designs = () => {
 
   const fetchUserDetails = async () => {
     try {
-      const response: { status: number; data: User } = await CommonService.get('user', '');
+      const response: { status: number; data: User } = await CommonService.get(
+        API_ENDPOINT.GET_USER_DETAILS
+      );
       if (response.status === 200) {
-        const userdetails = response.data;
-        setUserDetails(userdetails);
+        const userDetails = response.data;
+        setUserDetails(userDetails);
       } else {
         console.error('Failed to fetch user details:', response.status);
       }

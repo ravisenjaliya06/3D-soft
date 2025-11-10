@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
@@ -272,7 +273,7 @@ export const createObject =
       },
     };
 
-    const response = await commonService.post('design', `${designId}/object`, data);
+    const response = await commonService.post(API_ENDPOINT.CREATE_DESIGN_OBJECT(designId), data);
 
     if (response.status === 200 || response.status === 201) {
       const state = getState();
@@ -376,10 +377,8 @@ export const updateMainObjectInDatabase =
         items: items,
       },
     };
-    const response: { status: number } = await commonService.putObjectData(
-      'design',
-      designId,
-      'object',
+    const response: { status: number } = await commonService.put(
+      API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
       payload
     );
 
@@ -395,10 +394,8 @@ export const deleteObject =
     const formData = new FormData();
     formData.append('ids', objectId);
 
-    const response = (await commonService.deleteDesignObjectsData(
-      'design',
-      gettingDesignID(),
-      'object',
+    const response = (await commonService.delete(
+      API_ENDPOINT.DELETE_OBJECT(gettingDesignID()),
       formData
     )) as ResponseStatus;
 

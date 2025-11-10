@@ -1,5 +1,6 @@
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -16,8 +17,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
 
   const getDesignSheet = async () => {
     const response: { status: number; data: SettingConfigs } = await CommonService.get(
-      'design',
-      `${workOrderData.design}/settings`
+      API_ENDPOINT.GET_DESIGN_SETTINGS(workOrderData.design)
     );
 
     if (response.status === 200) {
@@ -34,8 +34,7 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
     const details = await Promise.all(
       ids.map(async (id) => {
         const res: { status: number; data: CatalogItem } = await CommonService.get(
-          'design',
-          `${workOrderData.design}/catalog/item/${id}`
+          API_ENDPOINT.GET_DESIGN_NESTING_SHEET(workOrderData.design, id)
         );
         return res.status === 200 ? res.data : { id, error: 'Not found' };
       })
@@ -65,11 +64,8 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
       data.append('format', selectedFormat);
 
       const response = await CommonService.put(
-        'design',
-        `${workOrderData.design}/nesting/download`,
-        data,
-        // @ts-expect-error No time to update it at this moment
-        { responseType: 'blob' }
+        API_ENDPOINT.DOWNLOAD_NESTING_PDF(workOrderData.design),
+        data
       );
 
       if (response.status === 200) {

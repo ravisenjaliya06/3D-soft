@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService, { AppName } from '@/services/CommonService';
 import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
@@ -156,7 +157,10 @@ export const updateObjectInDatabase = async (
     },
   };
 
-  const response = await commonService.putObjectData(appName, designId, designCatalog, payload);
+  const response = await commonService.putObjectData(
+    API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
+    payload
+  );
 
   if ((response as ResponseStatus).status === 200) {
     return response;
@@ -1002,11 +1006,8 @@ export const updateCatalogItemObject = async (catalog: CatalogItem, data: Catalo
     },
   };
 
-  const response = await commonService.putObjectItemData(
-    'design',
-    gettingDesignID(),
-    'object',
-    data.id,
+  const response = await commonService.put(
+    API_ENDPOINT.UPDATE_OBJECT_ITEMS_DATA(gettingDesignID(), data.id),
     payload
   );
 

@@ -1,6 +1,7 @@
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/login/login.module.css';
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
@@ -49,7 +50,7 @@ const Login = () => {
 
     localStorage.clear();
     Cookies.remove('token');
-    const response = await CommonService.post('user', 'login', formData);
+    const response = await CommonService.post(API_ENDPOINT.LOGIN, formData);
     if (response.status === 200) {
       localStorage.setItem('token', response.data.payload.access);
       Cookies.set('token', response.data.payload.access);

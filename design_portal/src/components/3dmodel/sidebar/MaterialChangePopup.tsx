@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
@@ -57,7 +58,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   // Fetch materials once
   React.useEffect(() => {
     const getMaterial = async () => {
-      const response: { status: number; data: any[] } = await commonService.get('material', '');
+      const response: { status: number; data: any[] } = await commonService.get(
+        API_ENDPOINT.GET_MATERIAL
+      );
       if (response.status === 200) {
         setMaterialData(response.data);
       }
@@ -124,8 +127,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
 
     try {
       const response: { status: number } = await commonService.put(
-        'material',
-        `catalog/part/${partId}`,
+        API_ENDPOINT.UPDATE_PART_MATERIAL(partId),
         { material_id: materialId }
       );
       if (response.status === 200) {

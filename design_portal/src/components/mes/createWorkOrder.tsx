@@ -1,4 +1,5 @@
 import styles from '@/components/mes/mes.module.css';
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -24,7 +25,7 @@ const CreateWorkOrder: React.FC<Props> = ({ setCreateWorkOrderPopup, refreshWork
       const response: {
         status: number;
         data: Design[];
-      } = await CommonService.getWithQueryParam('design', '', 'is_custom', 'false');
+      } = await CommonService.get(API_ENDPOINT.GET_NON_CUSTOM_DESIGNS);
       if (response.status === 200) {
         setDesigns(response.data);
       } else {
@@ -54,8 +55,7 @@ const CreateWorkOrder: React.FC<Props> = ({ setCreateWorkOrderPopup, refreshWork
     formData.append('delivery_date', date);
 
     const response: { status: number } = await CommonService.post(
-      'mes_portal',
-      'work_order',
+      API_ENDPOINT.CREATE_WORKORDER,
       formData
     );
     if (response.status === 201) {

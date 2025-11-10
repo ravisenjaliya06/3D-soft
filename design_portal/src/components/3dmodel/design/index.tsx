@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -899,10 +900,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const formData = new FormData();
       formData.append('catalog_ids[]', selectedObject.userData.objectId);
 
-      const response = (await commonService.deleteDesignObjectsData(
-        'material',
-        'catalog',
-        `design/${gettingDesignID()}`,
+      const response = (await commonService.delete(
+        API_ENDPOINT.DELETE_ALL_OBJECTS(gettingDesignID()),
         formData
       )) as ResponseStatus;
 
@@ -943,10 +942,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           catalog: { id: objectId, name: updatedObj.name, data: updatedObj },
         },
       };
-      const response: { status: number } = await commonService.putObjectData(
-        'design',
-        gettingDesignID(),
-        'object',
+      const response: { status: number } = await commonService.put(
+        API_ENDPOINT.UPDATE_OBJECT_DATA(gettingDesignID()),
         payload
       );
       if (response && response.status === 200) {

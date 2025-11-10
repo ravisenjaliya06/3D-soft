@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import { useCallback, useState } from 'react';
 import { STATIC_MATERIAL_TYPES } from '../constants';
@@ -12,7 +13,9 @@ export const useMaterialData = () => {
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const response: MaterialResponse = await commonService.get('material', 'company');
+      const response: MaterialResponse = await commonService.get(
+        API_ENDPOINT.GET_MATERIAL_COMPANIES
+      );
       if (response.status === 200) {
         const companies: TableRow[] = response.data;
         const updatedCategories = STATIC_MATERIAL_TYPES.map((category) => {
@@ -35,11 +38,8 @@ export const useMaterialData = () => {
 
   const fetchMaterialsByType = useCallback(async (type: string) => {
     try {
-      const response: MaterialResponse = await commonService.getWithQueryParam(
-        'material',
-        '',
-        'type',
-        type
+      const response: MaterialResponse = await commonService.get(
+        API_ENDPOINT.GET_MATERIAL_USING_TYPE(type)
       );
 
       if (response.status === 200) {
@@ -55,8 +55,7 @@ export const useMaterialData = () => {
   const fetchCompanyMaterials = useCallback(async (companyId: string) => {
     try {
       const response: MaterialResponse = await commonService.get(
-        `material`,
-        `company/${companyId}/material`
+        API_ENDPOINT.GET_COMPANY_MATERIALS(companyId)
       );
 
       if (response.status === 200) {
@@ -81,7 +80,7 @@ export const useMaterialData = () => {
           name: companyName,
           material_type: selectedType || '',
         };
-        const response = await commonService.post('material', 'company', payload);
+        const response = await commonService.post(API_ENDPOINT.CREATE_COMPANY, payload);
         if (response.status === 201 || response.status === 200) {
           setError(null);
           await fetchCompanies();

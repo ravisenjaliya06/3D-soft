@@ -14,7 +14,7 @@ export interface addmember {
 }
 
 export interface Member {
-  id: number;
+  id: string;
   name: string;
   email: string;
   groups: string[];

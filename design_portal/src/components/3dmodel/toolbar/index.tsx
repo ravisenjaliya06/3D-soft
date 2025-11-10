@@ -1,4 +1,5 @@
 import InputField from '@/components/inputfields/InputField';
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
@@ -163,8 +164,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 
   const fetchCabinetItem = async () => {
     const cabinetResponse: { status: number; data: CabinetItem[] } = await commonService.get(
-      'material',
-      'catalog'
+      API_ENDPOINT.GET_CATALOG_ITEMS
     );
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {

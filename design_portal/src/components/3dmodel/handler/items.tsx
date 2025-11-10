@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { API_ENDPOINT } from '@/services/ApiEndpoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import { Dispatch } from 'redux';
@@ -588,8 +589,9 @@ export async function createMeshRecursively(
 
 async function loadDesignObjects(designId: string, scene: THREE.Scene): Promise<Object3D[]> {
   try {
-    const response: { status: number; data: CatalogResponse[] } =
-      await commonService.getWithQueryParam('material', 'catalog', 'design_id', designId);
+    const response: { status: number; data: CatalogResponse[] } = await commonService.get(
+      API_ENDPOINT.GET_DESIGN_OBJECTS(designId)
+    );
     if (response.status === 200 && response.data) {
       const data = response.data;
       const createdObjects: Object3D[] = [];
@@ -678,7 +680,10 @@ async function create(
   try {
     const formData = new FormData();
     formData.append('catalog_id', catalogEntry?.catalog.id || '');
-    const response = await commonService.post('design', `${designId}/object`, formData);
+    const response = await commonService.post(
+      API_ENDPOINT.CREATE_DESIGN_OBJECT(designId),
+      formData
+    );
 
     if (response.status === 200 || response.status === 201) {
       if (response.data) {
@@ -805,8 +810,7 @@ async function create(
           };
 
           const patchResponse = await commonService.put(
-            'design',
-            `${designId}/object`,
+            API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
             data as unknown as FormData
           );
 
@@ -1072,7 +1076,10 @@ async function createItem(
               };
 
               try {
-                const patchResponse = await commonService.put('design', `${designId}/object`, data);
+                const patchResponse = await commonService.put(
+                  API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
+                  data
+                );
 
                 if (patchResponse.status === 200 || patchResponse.status === 201) {
                   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
@@ -1183,8 +1190,7 @@ async function createItem(
 
   try {
     const response = await commonService.post(
-      'design',
-      `${designId}/catalog/${parentId}/item`,
+      API_ENDPOINT.CREATE_CATALOG_ITEM(designId, parentId),
       payload
     );
 
@@ -1606,8 +1612,7 @@ async function moveObject(
                 },
               };
               const cupboardResponse = await commonService.put(
-                'design',
-                `${designId}/object`,
+                API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
                 cupboardPayload
               );
 
@@ -1673,8 +1678,7 @@ async function moveObject(
                   console.log('drawerPayload', drawerPayload);
                 }
                 const drawerResponse = await commonService.put(
-                  'design',
-                  `${designId}/object`,
+                  API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
                   drawerPayload
                 );
 
@@ -1741,7 +1745,10 @@ async function copyObjects(id: string): Promise<CopyObjectsResult | null> {
     const formData = new FormData();
     formData.append('catalog_id', id);
 
-    const response = await commonService.post('design', `${designId}/object`, formData);
+    const response = await commonService.post(
+      API_ENDPOINT.CREATE_DESIGN_OBJECT(designId),
+      formData
+    );
 
     if (response.status === 200 || response.status === 201) {
       const responseData = response.data;
@@ -2028,7 +2035,10 @@ export const addCabinetItemToDesign = async (
     parent: itemData.parent,
   };
   try {
-    const response = await commonService.post(`material/catalog`, `${catalogId}/design`, payload);
+    const response = await commonService.post(
+      API_ENDPOINT.CREATE_MATERIAL_DESIGN_CATALOG(catalogId),
+      payload
+    );
     if (response.status === 200 || response.status === 201) {
       return response.data;
     }
@@ -2053,7 +2063,10 @@ export const addItemtoDatabase = async (data: any) => {
 
 export const addItemToDataBaseWihoutCatalog = async (data: any) => {
   try {
-    const apiResponse = await commonService.post('material', 'catalog/design', data);
+    const apiResponse = await commonService.post(
+      API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,
+      data
+    );
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(apiResponse, 'apiResponse');
     }
