@@ -1,5 +1,5 @@
 import { API_ENDPOINT } from '@/services/ApiEndpoints';
-import commonService, { AppName } from '@/services/CommonService';
+import commonService from '@/services/CommonService';
 import * as THREE from 'three';
 import { createOutlineForObject, removeExistingLines } from '../design';
 import { mmToMeters } from '../handler/unitConversion';
@@ -31,8 +31,6 @@ export const updateObjectInDatabase = async (
   selectedObject: Object3D,
   items: CatalogItem[] = [],
   childCatalogs: ChildCatalog[] = [],
-  appName: AppName = 'design',
-  designCatalog: string = 'object'
 ): Promise<THREE.Scene | null> => {
   const designId = getDesignId();
   if (!designId) {
@@ -175,8 +173,6 @@ export const updateObjectInScene = (
   scene: THREE.Scene,
   dispatch: AppDispatch,
   selectedObject: Object3D | null,
-  appName: AppName = 'design',
-  designCatalog: string = 'object'
 ): void => {
   if (!scene || !selectedObject) return;
   removeExistingLines();
@@ -393,8 +389,6 @@ export const updateObjectInScene = (
               serializableObject,
               updatedItems as CatalogItem[],
               [],
-              appName,
-              designCatalog
             );
           }
         }
@@ -918,8 +912,6 @@ export const updateObjectInScene = (
     selectedObject,
     items,
     childCatalogs,
-    appName,
-    designCatalog
   );
 
   updateObjectOutline(selectedObject, scene);

@@ -2,34 +2,6 @@ import { REDIRECT, STATUS_CODES } from '@/services/CommonStatus';
 import http from '@/services/http-common';
 import Cookies from 'js-cookie';
 
-export type AppName = 'user' | 'design' | 'mes_portal' | 'material';
-export type RemainingPath =
-  | ''
-  | 'register'
-  | 'catalog_item'
-  | 'project'
-  | 'delete_project'
-  | 'design'
-  | 'catalog'
-  | 'organization/users'
-  | 'organization/remove_user'
-  | 'organization/details'
-  | 'setting'
-  | 'settings'
-  | `${string}/settings`
-  | `${string}/object`
-  | 'catalog/default'
-  | `${string}/object/?is_custom=True`
-  | `object/?is_custom=True`
-  | `object/?is_custom=False`
-  | `${string}/nesting`
-  | `${string}/catalog/item/${string}`
-  | 'work_order'
-  | 'material'
-  | 'company'
-  | `company/${string}/material`
-  | `catalog_rules/${string}/parts`;
-
 type Error = {
   message: string;
   status: number;
