@@ -156,7 +156,7 @@ export const updateObjectInDatabase = async (
     },
   };
 
-  const response = await commonService.putObjectData(
+  const response = await commonService.put(
     API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
     payload
   );
