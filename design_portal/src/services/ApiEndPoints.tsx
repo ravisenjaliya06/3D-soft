@@ -33,8 +33,6 @@ export const API_ENDPOINT = {
   CREATE_MATERIAL_WITHOUT_CATALOG: 'material/catalog/design/',
   CREATE_COMPANY_MATERIAL: (companyID: string) => `material/company/${companyID}/material/`,
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
-  CREATE_CATALOG_ITEM: (designID: string, catalogID: string) =>
-    `design/${designID}/catalog/${catalogID}/item/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
 
   //PUT
