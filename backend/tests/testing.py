@@ -11,18 +11,14 @@ from rest_framework.test import APITestCase
 
 # App imports
 from tests.model_factory import (
-    new_catalog,
     new_catalog_for_material,
-    new_catalog_item,
     new_catalog_rule_parts,
     new_catalog_rules,
     new_company,
     new_design,
     new_design_setting,
-    new_material,
     new_material_for_material,
     new_organization,
-    new_texture,
     new_user,
     new_user_organization_permission,
 )
@@ -51,9 +47,6 @@ class APIBaseTestCase(APITestCase):
         self.seed_organization(DEFAULT_DATABASE)
         self.seed_invalid_user(DEFAULT_DATABASE)
         self.seed_new_design(DEFAULT_DATABASE)
-        self.seed_new_texture(DEFAULT_DATABASE)
-        self.seed_new_material(DEFAULT_DATABASE)
-        self.seed_new_catalog_structure(DEFAULT_DATABASE)
         self.seed_new_design_setting(DEFAULT_DATABASE)
         self.seed_new_user_organization_permission(DEFAULT_DATABASE)
         self.seed_new_company(DEFAULT_DATABASE)
@@ -191,50 +184,6 @@ class APIBaseTestCase(APITestCase):
             user=self.user,
             organization=self.organization,
             design_name="test design",
-        )
-
-    def seed_new_texture(self: "APIBaseTestCase", db: str) -> None:
-        self.new_texture = new_texture(database=db, name="test", image="test")
-
-    def seed_new_material(self: "APIBaseTestCase", db: str) -> None:
-        self.new_material = new_material(
-            database=db, name="test", texture=self.new_texture
-        )
-
-    def seed_new_catalog_structure(self: "APIBaseTestCase", db: str) -> None:
-        # Create main catalog
-        self.new_catalog = new_catalog(
-            database=db,
-            name="Main Cabinet",
-            design=self.design,
-            data={"width": 100, "height": 200, "depth": 50},
-        )
-
-        # Create catalog item for main catalog
-        self.new_catalog_item = new_catalog_item(
-            database=db,
-            name="TOP_PLANK",
-            catalog=self.new_catalog,
-            data={"width": 100, "height": 20, "depth": 50},
-            material=self.new_material,
-        )
-
-        # Create child catalog
-        self.child_catalog = new_catalog(
-            database=db,
-            name="Drawer",
-            design=self.design,
-            parent=self.new_catalog,
-            data={"position": {"x": 10, "y": 10, "z": 0}},
-        )
-
-        # Create catalog item for child catalog
-        self.child_catalog_item = new_catalog_item(
-            database=db,
-            name="DRAWER_FRONT",
-            catalog=self.child_catalog,
-            data={"width": 60, "height": 15, "depth": 2},
-            material=self.new_material,
         )
 
     def seed_new_design_setting(self: "APIBaseTestCase", db: str) -> None:

@@ -9,12 +9,8 @@ from django.utils import timezone
 
 # App imports
 from design.models import (
-    Catalog as DesignCatalog,
-    CatalogItem,
     Design,
     DesignSetting,
-    Material as DesignMaterial,
-    Texture,
 )
 from material.models import (
     Catalog as MaterialCatalog,
@@ -111,39 +107,6 @@ def new_design(
         status=status,
         created_at=created_at,
         updated_at=updated_at,
-    )
-
-
-def new_texture(database: str, name: str, image: str) -> Texture:
-    return Texture.objects.using(database).create(name=name, image=image)
-
-
-def new_material(database: str, name: str, texture: Texture) -> DesignMaterial:
-    return DesignMaterial.objects.using(database).create(name=name, texture=texture)
-
-
-def new_catalog(
-    database: str,
-    name: str,
-    design: Optional[Design] = None,
-    parent: Optional["DesignCatalog"] = None,
-    data: Optional[dict] = None,
-    is_default: bool = False,
-) -> DesignCatalog:
-    return DesignCatalog.objects.using(database).create(
-        name=name, design=design, parent=parent, data=data or {}, is_default=is_default
-    )
-
-
-def new_catalog_item(
-    database: str,
-    name: str,
-    catalog: DesignCatalog,
-    data: dict,
-    material: Optional[DesignMaterial] = None,
-) -> CatalogItem:
-    return CatalogItem.objects.using(database).create(
-        name=name, catalog=catalog, data=data, material=material
     )
 
 
