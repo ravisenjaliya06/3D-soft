@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { CatalogWithChildren } from '../handler/items';
+import { CatalogWithChildren } from '../handler/interface';
 import { InitialState } from '../interface';
 
 const initialState = {

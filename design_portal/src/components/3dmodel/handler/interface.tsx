@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { GrooveDetail } from '../catalog/object-creator/interfaces';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { Position } from '../store/interface';
+import { Object3D, Position } from '../store/interface';
 
 export const ITEM = {
   DRAWER: 'DRAWER',
@@ -226,5 +227,77 @@ export interface AddItemDatabasePayload {
   parts?: Array<{
     name: string;
     rule_parts: RulePart[];
+  }>;
+}
+
+export interface CatalogData {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  material: {
+    type: string;
+    value: string;
+  };
+  layer?: number;
+  rotationX?: number;
+  rotationY?: number;
+  rotationZ?: number;
+  plankSize: number;
+  catalog_type: string;
+  grooves?: GrooveDetail[];
+  openDirection: string;
+  [key: string]: unknown;
+}
+
+interface CreateResult {
+  objectsList: Object3D[];
+  mainObjects: Object3D[];
+  catalogMap: Record<string, Object3D[]>;
+}
+
+interface CreateItemResponse {
+  id: string;
+  status: number;
+  data: {
+    id: string;
+    name: string;
+    data: CatalogData;
+  };
+}
+
+export interface MoveObjectResult {
+  createResult?: CreateResult | CreateItemResponse | null;
+  threeDObject?: THREE.Mesh;
+}
+
+export interface CatalogWithChildren {
+  catalog: {
+    name: string;
+    id: string;
+    data: CatalogData;
+  };
+  items?: Array<{
+    id: string;
+    name: string;
+    data: CatalogData;
+  }>;
+  child_catalogs?: Array<{
+    catalog: {
+      name: string;
+      id: string;
+      data: CatalogData;
+    };
+    items?: Array<{
+      id: string;
+      name: string;
+      data: CatalogData;
+    }>;
   }>;
 }

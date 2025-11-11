@@ -5,14 +5,22 @@ import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { convertDataToGeometry, createDesign } from '../catalog/object-creator';
-import { GrooveDetail } from '../catalog/object-creator/interfaces';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
-import { AddItemDatabasePayload, ITEM, PLANK, PlankDataItem, RulePart } from './interface';
+import {
+  AddItemDatabasePayload,
+  CatalogData,
+  CatalogWithChildren,
+  ITEM,
+  MoveObjectResult,
+  PLANK,
+  PlankDataItem,
+  RulePart,
+} from './interface';
 import { MoveHandler } from './moveHandler';
 
 let moveHandler: MoveHandler | null = null;
@@ -600,78 +608,6 @@ async function loadDesignObjects(designId: string, scene: THREE.Scene) {
     console.error('Error loading design objects:', error);
     return [];
   }
-}
-
-interface CatalogData {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  depth: number;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  material: {
-    type: string;
-    value: string;
-  };
-  layer?: number;
-  rotationX?: number;
-  rotationY?: number;
-  rotationZ?: number;
-  plankSize: number;
-  catalog_type: string;
-  grooves?: GrooveDetail[];
-  openDirection: string;
-  [key: string]: unknown;
-}
-
-interface CreateResult {
-  objectsList: Object3D[];
-  mainObjects: Object3D[];
-  catalogMap: Record<string, Object3D[]>;
-}
-
-interface CreateItemResponse {
-  id: string;
-  status: number;
-  data: {
-    id: string;
-    name: string;
-    data: CatalogData;
-  };
-}
-
-interface MoveObjectResult {
-  createResult?: CreateResult | CreateItemResponse | null;
-  threeDObject?: THREE.Mesh;
-}
-
-export interface CatalogWithChildren {
-  catalog: {
-    name: string;
-    id: string;
-    data: CatalogData;
-  };
-  items?: Array<{
-    id: string;
-    name: string;
-    data: CatalogData;
-  }>;
-  child_catalogs?: Array<{
-    catalog: {
-      name: string;
-      id: string;
-      data: CatalogData;
-    };
-    items?: Array<{
-      id: string;
-      name: string;
-      data: CatalogData;
-    }>;
-  }>;
 }
 
 async function moveObject(
