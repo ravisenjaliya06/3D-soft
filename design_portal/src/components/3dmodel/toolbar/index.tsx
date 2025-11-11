@@ -13,6 +13,7 @@ import {
   addPlatformOnWall,
   addVerticalPlanksToBox,
 } from '../design/scene';
+import { RulePart } from '../handler/interface';
 import { addCabinetItemToDesign } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
 import { useAppDispatch } from '../hooks';
@@ -33,7 +34,6 @@ import {
   IconMap,
   PlatformReturn,
   ResultType,
-  RulePart,
   SelectedCabinetItem,
   platformData,
 } from './interface';
@@ -226,6 +226,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
               .replace(/\b\w/g, (char) => char.toUpperCase());
 
             ruleParts.push({
+              id: '',
               name: formattedName,
               width: metersToMM(child.geometry.parameters.width),
               height: metersToMM(child.geometry.parameters.height),

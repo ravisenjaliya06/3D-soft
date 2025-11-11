@@ -14,6 +14,7 @@ import {
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
+import { setUnitType } from '../store/measurementSlice';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
 
@@ -42,6 +43,9 @@ const Sidebar: React.FC = () => {
     z: 0,
   });
   const colorInputRef = useRef<HTMLInputElement>(null);
+  let targetMesh: THREE.Mesh | null = null;
+  let doorMesh: THREE.Mesh | null = null;
+  let handleMesh: THREE.Mesh | null = null;
 
   const materialModal = [
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
@@ -236,10 +240,14 @@ const Sidebar: React.FC = () => {
     if (!scene) return;
     try {
       rescaleByObjectId(scene, objectId);
-    } catch { }
-    let targetMesh: THREE.Mesh | null = null;
+    } catch {}
     scene.traverse((child) => {
-      if (child instanceof THREE.Mesh && !targetMesh && child?.isMesh && child?.userData?.objectId === objectId) {
+      if (
+        child instanceof THREE.Mesh &&
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === objectId
+      ) {
         targetMesh = child;
       }
     });
@@ -251,7 +259,7 @@ const Sidebar: React.FC = () => {
     const height = metersToMM(params.height);
     const depth = metersToMM(params.depth);
     const thickness = 18;
-    const existing = (mesh.children.find((c) => c && c.name === 'invisibleBox_cabinet') || null);
+    const existing = mesh.children.find((c) => c && c.name === 'invisibleBox_cabinet') || null;
     if (existing) {
       mesh.remove(existing);
       (existing as THREE.Mesh).geometry?.dispose?.();
@@ -303,12 +311,12 @@ const Sidebar: React.FC = () => {
       }
     });
   };
+
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
 
     if (!targetId) return;
-    let doorMesh: THREE.Mesh | null = null;
 
     scene.traverse((node) => {
       if (node instanceof THREE.Mesh && !doorMesh && node.userData?.objectId === targetId) {
@@ -324,8 +332,6 @@ const Sidebar: React.FC = () => {
       console.warn('No door mesh found for target ID:', targetId);
       return;
     }
-
-    let handleMesh: THREE.Mesh | null = null;
 
     (doorMesh as THREE.Mesh).traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -397,15 +403,23 @@ const Sidebar: React.FC = () => {
       : objects.find((o) => o.id === selectedObjectId!);
     const nameLower = (obj?.name || '').toLowerCase();
     if (nameLower.includes('door') || nameLower.includes('drawer')) return;
-    let targetMesh: THREE.Mesh;
     scene.traverse((child) => {
-      if (child instanceof THREE.Mesh && !targetMesh && child?.isMesh && child?.userData?.objectId === targetId) {
+      if (
+        child instanceof THREE.Mesh &&
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === targetId
+      ) {
         targetMesh = child;
       }
     });
 
+    if (!targetMesh) return;
     const color = new THREE.Color(value);
-    if (targetMesh?.material) {
+    if (
+      targetMesh.material instanceof THREE.MeshPhongMaterial &&
+      Array.isArray(targetMesh?.material)
+    ) {
       targetMesh.material = targetMesh.material.map((m) => {
         if (m && typeof m.clone === 'function') {
           const cloned = m.clone();
@@ -415,7 +429,7 @@ const Sidebar: React.FC = () => {
         }
         return new THREE.MeshPhongMaterial({ color });
       });
-    } else if (targetMesh?.material) {
+    } else if (targetMesh?.material instanceof THREE.MeshPhongMaterial) {
       if (targetMesh.material.color) {
         if (targetMesh.material.map) targetMesh.material.map = null;
         targetMesh.material.color.set(color);
@@ -424,16 +438,10 @@ const Sidebar: React.FC = () => {
         targetMesh.material = new THREE.MeshPhongMaterial({ color });
       }
     } else {
-      targetMesh?.material = new THREE.MeshPhongMaterial({ color });
+      targetMesh.material = new THREE.MeshPhongMaterial({ color });
     }
     if (obj && update) {
-      updateObjectInScene(
-        obj.id,
-        { material: { type: 'COLOR', value } },
-        scene,
-        dispatch,
-        obj
-      );
+      updateObjectInScene(obj.id, { material: { type: 'COLOR', value } }, scene, dispatch, obj);
     }
   };
 
@@ -442,9 +450,7 @@ const Sidebar: React.FC = () => {
     setDisplayUnit(u);
 
     try {
-      // in scene keep the unit type - smit commit
-      const { setUnitType } = require('../store/measurementSlice');
-      dispatch(setUnitType(u === 'inch' ? 'in' : u));
+      dispatch(setUnitType(u === 'inch' ? 'in' : u === 'feet' ? 'ft' : u));
     } catch (err) {
       console.error('Failed to set unit type:', err);
     }
@@ -457,7 +463,6 @@ const Sidebar: React.FC = () => {
     const obj = selectedChildObjectId
       ? objects.find((o) => o.id === selectedChildObjectId)
       : objects.find((o) => o.id === selectedObjectId!);
-    let targetMesh: THREE.Mesh | null = null;
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && !targetMesh && child?.userData?.objectId === targetId) {
         targetMesh = child;

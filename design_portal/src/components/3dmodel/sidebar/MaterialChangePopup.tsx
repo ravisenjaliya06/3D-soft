@@ -3,30 +3,8 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { CatalogRule, RulePart } from '../handler/interface';
 import styles from './MaterialChangePopup.module.css';
-
-interface RulePartMaterial {
-  id?: string;
-  name?: string;
-}
-
-interface RulePart {
-  id: string;
-  name?: string;
-  material?: RulePartMaterial;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
-  depth?: number | null;
-  position?: unknown;
-  handle_position?: unknown;
-}
-
-interface CatalogRule {
-  id: string;
-  name: string;
-  rule_parts: RulePart[];
-}
 
 interface MaterialChangePopupProps {
   onClose: () => void;
