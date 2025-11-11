@@ -8,10 +8,7 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 
 # App imports
-from design.models import (
-    Design,
-    DesignSetting,
-)
+from design.models import Design, DesignSetting
 from material.models import (
     Catalog as MaterialCatalog,
     CatalogRuleParts,

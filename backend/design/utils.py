@@ -1,5 +1,5 @@
 # Python imports
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # App imports
 from design.models import Design, DesignSetting

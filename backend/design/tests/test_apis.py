@@ -1,10 +1,7 @@
 # Python imports
 import uuid
-from unittest import mock
-from unittest.mock import MagicMock, patch
 
 # Django imports
-from django.http import JsonResponse
 from django.urls import reverse
 
 # External imports

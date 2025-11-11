@@ -2,11 +2,7 @@
 from django.contrib import admin
 
 # App imports
-from design.models import (
-    Design,
-    DesignScreenshot,
-    DesignSetting,
-)
+from design.models import Design, DesignScreenshot, DesignSetting
 
 
 class DesignAdmin(admin.ModelAdmin):

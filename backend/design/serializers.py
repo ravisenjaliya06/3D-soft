@@ -1,5 +1,5 @@
 # Python imports
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 # External imports
 from rest_framework import serializers

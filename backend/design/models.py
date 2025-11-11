@@ -1,6 +1,5 @@
 # Python imports
 import uuid
-from typing import Any, Dict, List, Optional
 
 # Django imports
 from django.db import models
