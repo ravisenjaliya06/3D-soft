@@ -22,13 +22,11 @@ const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [, setSubMenu] = useState<string | null>('layout');
   const [doorPosition, setDoorPosition] = useState('None');
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
   const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
-  const [, setSelectedTexture] = useState<string | null>(null);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<Unit>('mm');
   const [displayedDimensions, setDisplayedDimensions] = useState({
@@ -118,12 +116,6 @@ const Sidebar: React.FC = () => {
       });
     }
   }, [selectedObject, displayUnit]);
-
-  useEffect(() => {
-    if (isSidebarOpen) {
-      setSubMenu('layout');
-    }
-  }, [isSidebarOpen]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -284,7 +276,6 @@ const Sidebar: React.FC = () => {
   };
 
   const handleTextureSelect = (texturePath: string) => {
-    setSelectedTexture(texturePath);
     applyTextureToSelected(texturePath, 'updateTexture');
     setIsTextureListOpen(false);
   };
@@ -417,7 +408,7 @@ const Sidebar: React.FC = () => {
     if (!targetMesh) return;
     const color = new THREE.Color(value);
     if (
-      targetMesh.material instanceof THREE.MeshPhongMaterial &&
+      targetMesh.material instanceof THREE.MeshStandardMaterial &&
       Array.isArray(targetMesh?.material)
     ) {
       targetMesh.material = targetMesh.material.map((m) => {
@@ -427,18 +418,18 @@ const Sidebar: React.FC = () => {
           if (cloned.color) cloned.color.set(color);
           return cloned;
         }
-        return new THREE.MeshPhongMaterial({ color });
+        return new THREE.MeshStandardMaterial({ color });
       });
-    } else if (targetMesh?.material instanceof THREE.MeshPhongMaterial) {
+    } else if (targetMesh?.material instanceof THREE.MeshStandardMaterial) {
       if (targetMesh.material.color) {
         if (targetMesh.material.map) targetMesh.material.map = null;
         targetMesh.material.color.set(color);
         targetMesh.material.needsUpdate = true;
       } else {
-        targetMesh.material = new THREE.MeshPhongMaterial({ color });
+        targetMesh.material = new THREE.MeshStandardMaterial({ color });
       }
     } else {
-      targetMesh.material = new THREE.MeshPhongMaterial({ color });
+      targetMesh.material = new THREE.MeshStandardMaterial({ color });
     }
     if (obj && update) {
       updateObjectInScene(obj.id, { material: { type: 'COLOR', value } }, scene, dispatch, obj);
