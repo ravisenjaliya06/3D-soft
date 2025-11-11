@@ -959,31 +959,3 @@ export const gettingDesignID = () => {
   const designID = window.location.pathname.split('/')[2];
   return designID;
 };
-
-export const updateCatalogItemObject = async (catalog: CatalogItem, data: CatalogItem) => {
-  const payload = {
-    data: {
-      catalog: {
-        id: catalog.id,
-        name: catalog.name,
-        data: catalog,
-      },
-      items: [
-        {
-          id: data.id,
-          name: data.name,
-          data: data,
-        },
-      ],
-    },
-  };
-
-  const response: { status: number } = await commonService.put(
-    API_ENDPOINT.UPDATE_OBJECT_ITEMS_DATA(gettingDesignID(), data.id),
-    payload
-  );
-
-  if (response.status !== 200) {
-    console.error('Failed to update catalog items');
-  }
-};
