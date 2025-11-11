@@ -109,7 +109,7 @@ const CatalogManager = () => {
 
   const getCatalog = useCallback(async () => {
     const response: { status: number; data: Catalog[] } = await commonService.get(
-      API_ENDPOINT.GET_MATERIAL_USING_TYPE(catalogType)
+      API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
     );
 
     if (response.status === 200) {

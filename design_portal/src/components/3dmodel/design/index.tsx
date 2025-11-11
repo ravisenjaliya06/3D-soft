@@ -553,16 +553,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return outlineLines;
   };
 
-  const updateHelperToolsPosition = useCallback(() => {
-    if (!design3D || !selectedObject) return;
-
-    if (selectedObject instanceof THREE.Mesh) {
-      const vector = new THREE.Vector3();
-      vector.setFromMatrixPosition(selectedObject.matrixWorld);
-      vector.project(design3D.camera);
-    }
-  }, [design3D, selectedObject]);
-
   useEffect(() => {
     if (!design3D) return;
 
@@ -600,20 +590,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         }
         setOutline(newOutline);
       }
-
-      updateHelperToolsPosition();
-
-      if (design3D.controls) {
-        design3D.controls.addEventListener('change', updateHelperToolsPosition);
-      }
     }
-
-    return () => {
-      if (design3D && design3D.controls) {
-        design3D.controls.removeEventListener('change', updateHelperToolsPosition);
-      }
-    };
-  }, [selectedObject, design3D, updateHelperToolsPosition]);
+  }, [selectedObject, design3D]);
 
   const createBoundingBoxOutline = (object: THREE.Object3D): THREE.LineSegments | null => {
     if (!object) return null;
