@@ -5,12 +5,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CatalogRule, RulePart } from '../handler/interface';
 import styles from './MaterialChangePopup.module.css';
-
-interface MaterialChangePopupProps {
-  onClose: () => void;
-  onSave: (selectedMaterials: string[]) => void;
-  rules?: CatalogRule[];
-}
+import { CatalogRule, MaterialChangePopupProps, MaterialResponse, RulePart } from './interface';
 
 export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   onClose,
@@ -22,7 +17,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   const [selectedCategory, setSelectedCategory] = useState(initialTab);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
-  const [materialData, setMaterialData] = useState<any[]>([]);
+  const [materialData, setMaterialData] = useState<MaterialResponse[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('Banding');
   const [materialSearch, setMaterialSearch] = useState<string>('');
 
@@ -36,7 +31,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   // Fetch materials once
   React.useEffect(() => {
     const getMaterial = async () => {
-      const response: { status: number; data: any[] } = await commonService.get(
+      const response: { status: number; data: MaterialResponse[] } = await commonService.get(
         API_ENDPOINT.GET_MATERIAL
       );
       if (response.status === 200) {
@@ -112,7 +107,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
         setSelectedPartId(null);
         setSelectedMaterialId(null);
       }
-    } catch (err) {
+    } catch {
       // revert on error
       setPartsData((prev) =>
         prev.map((part) => (part.id === partId ? { ...part, material: undefined } : part))
