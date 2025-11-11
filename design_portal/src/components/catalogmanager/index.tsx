@@ -2,11 +2,12 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
+import { CatalogRule, RulePart } from '../3dmodel/handler/interface';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
-import { Catalog, CatalogRule, Material, RulePart } from './interface';
+import { Catalog, Material } from './interface';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);

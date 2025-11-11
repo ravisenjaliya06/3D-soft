@@ -206,7 +206,7 @@ export interface RulePart {
   depth: number;
   length?: number;
   icon?: string;
-  material?: RulePartMaterial;
+  material?: RulePartMaterial | null;
   thickness: number | null;
   position: Position;
   handle_position: Position | null;

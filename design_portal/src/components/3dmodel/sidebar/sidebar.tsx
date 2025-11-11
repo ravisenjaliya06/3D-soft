@@ -937,7 +937,7 @@ const Sidebar: React.FC = () => {
             }
             setShowMaterialPopup(false);
           }}
-          rules={selectedObject?.catalog_rules}
+          rules={selectedObject?.catalog_rules || []}
         />
       )}
     </div>
