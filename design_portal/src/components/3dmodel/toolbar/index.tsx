@@ -23,7 +23,6 @@ import {
   setHoverdMesh,
   setSelectedChildObject,
   setobjectSelected,
-  togglAlignment,
   toggleMeasurement,
   toggleQuickHide,
 } from '../store/dataSlice';
@@ -44,7 +43,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const state = useSelector((state: { data: Datastate }) => state.data);
   const isQuickHideActive = state.isQuickHideActive;
   const isMeasurementActive = state.isMeasurementActive;
-  const isAlignmentActive = state.isAlignmentActive;
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
@@ -393,16 +391,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: isMeasurementActive,
       disabled: false,
     },
-    {
-      option: 'Align Dimension',
-      icon: assets.alingDimension,
-      onClick: () => {
-        dispatch(togglAlignment(!isAlignmentActive));
-        setcatalogMenu(false);
-      },
-      isActive: isAlignmentActive,
-      disabled: false,
-    },
+    
   ];
 
   const viewTools = [
