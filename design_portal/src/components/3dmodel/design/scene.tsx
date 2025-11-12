@@ -391,8 +391,8 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
 
     const { min, max, center } = objectBounds;
 
+    const width = max.x - min.x;
     if (camera instanceof THREE.PerspectiveCamera) {
-      const width = max.x - min.x;
       const height = max.y - min.y;
       const depth = max.z - min.z;
       const fovRad = camera.fov * (Math.PI / 180);
@@ -415,7 +415,6 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
       camera.lookAt(center);
       controls.target.copy(center);
     } else {
-      const width = max.x - min.x;
       const height = max.z - min.z;
       const aspect = window.innerWidth / window.innerHeight;
       const maxDimension = Math.max(width, height);
@@ -460,7 +459,9 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   };
   animate();
 
+
   const handleResize = () => {
+    /* Resize three js scene with the resize of the window */
     if (camera instanceof THREE.PerspectiveCamera) {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -2234,80 +2235,6 @@ function applyPositionDelta(target: THREE.Object3D, axis: string, delta: number)
   if (axis === 'x') target.position.x += delta;
   else if (axis === 'y') target.position.y += delta;
   else target.position.z += delta;
-}
-
-export function updateCompartmentBoxes(parent: THREE.Object3D) {
-  const config = parent.userData.compartmentConfig;
-  if (!config) return;
-
-  // Remove old invisible boxes
-  const children = [...parent.children];
-  for (const child of children) {
-    if (child.name.startsWith('invisibleBox_compartment_')) {
-      parent.remove(child);
-      disposeObjectResources(child);
-    }
-  }
-
-  const isHorizontal = config.divisionAxis === 'y';
-  const planks = children.filter(
-    (child) =>
-      (isHorizontal ? child.userData.isHorizontalPlank : child.userData.isVerticalPlank) &&
-      child instanceof THREE.Mesh
-  );
-
-  if (planks.length === 0) return;
-
-  const plankCenters = planks
-    .map((p) => p.position[config.divisionAxis as 'x' | 'y' | 'z'])
-    .sort((a, b) => a - b);
-
-  const boundsMin = config.localCenter[config.divisionAxis] - config.span / 2;
-  const boundsMax = config.localCenter[config.divisionAxis] + config.span / 2;
-  const innerMin = boundsMin + config.edgeClearance;
-  const innerMax = boundsMax - config.edgeClearance;
-
-  // repair compartment box
-  const halfThick = config.thickness / 2;
-  const starts = [innerMin + halfThick];
-  for (const center of plankCenters) {
-    starts.push(center + halfThick);
-  }
-  const ends = [];
-  for (const center of plankCenters) {
-    ends.push(center - halfThick);
-  }
-  ends.push(innerMax - halfThick);
-
-  for (let i = 0; i < starts.length; i++) {
-    const start = starts[i];
-    const end = ends[i];
-    const compSize = Math.max(end - start, 0.02);
-    const compCenterLocal = (start + end) / 2;
-
-    // Position
-    const localPos = new THREE.Vector3();
-    localPos.x = config.divisionAxis === 'x' ? compCenterLocal : config.localCenter.x;
-    localPos.y = config.divisionAxis === 'y' ? compCenterLocal : config.localCenter.y;
-    localPos.z = config.divisionAxis === 'z' ? compCenterLocal : config.localCenter.z;
-
-    const dims = {
-      width: config.perpDims.x || compSize,
-      height: config.perpDims.y || compSize,
-      depth: config.perpDims.z || compSize,
-    };
-    if (config.divisionAxis === 'x') dims.width = compSize;
-    if (config.divisionAxis === 'y') dims.height = compSize;
-    if (config.divisionAxis === 'z') dims.depth = compSize;
-
-    const invisiblebox = createInvisibleBox(
-      dims,
-      { x: localPos.x, y: localPos.y, z: localPos.z },
-      `invisibleBox_compartment_${i}_for_${config.suffix}`,
-      { type: 'INVISIBLE_COMPARTMENT', dimensions: dims }
-    );
-    parent.add(invisiblebox);
-  }
 }
 
 export function enablePlankDimensionEditing(view: ThreeDView) {
