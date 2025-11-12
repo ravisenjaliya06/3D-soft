@@ -39,6 +39,9 @@ function initializeMoveHandler(options: {
 }
 
 export function showFullScreenLoader(message = 'Loading...') {
+  /**
+   * Shows a full screen loader with a message
+  */
   if (document.getElementById('global-loader')) return;
 
   const loader = document.createElement('div');
@@ -75,11 +78,18 @@ export function showFullScreenLoader(message = 'Loading...') {
 }
 
 export function hideFullScreenLoader() {
+  /*
+   Hides a full screen loader from the full page
+  */
   const loader = document.getElementById('global-loader');
   if (loader) loader.remove();
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
+  /**
+   Generates invisible boxes for empty compartments in a given box mesh object.
+  */
+
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
