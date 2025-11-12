@@ -3,8 +3,9 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { CatalogRule, RulePart } from '../handler/interface';
 import styles from './MaterialChangePopup.module.css';
-import { CatalogRule, MaterialChangePopupProps, MaterialResponse, RulePart } from './interface';
+import { MaterialChangePopupProps, MaterialResponse } from './interface';
 
 export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   onClose,

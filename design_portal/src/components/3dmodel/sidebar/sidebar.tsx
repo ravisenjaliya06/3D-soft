@@ -14,6 +14,7 @@ import {
 import { updateObjectInScene } from '../handler/updateHandler';
 import { RootState } from '../store';
 import { Object3D } from '../store/interface';
+import { setUnitType } from '../store/measurementSlice';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
 
@@ -21,13 +22,11 @@ const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
-  const [subMenu, setSubMenu] = useState<string | null>('layout');
   const [doorPosition, setDoorPosition] = useState('None');
   const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
   const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
-  const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<Unit>('mm');
   const [displayedDimensions, setDisplayedDimensions] = useState({
@@ -42,6 +41,9 @@ const Sidebar: React.FC = () => {
     z: 0,
   });
   const colorInputRef = useRef<HTMLInputElement>(null);
+  let targetMesh: THREE.Mesh | null = null;
+  let doorMesh: THREE.Mesh | null = null;
+  let handleMesh: THREE.Mesh | null = null;
 
   const materialModal = [
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
@@ -114,12 +116,6 @@ const Sidebar: React.FC = () => {
       });
     }
   }, [selectedObject, displayUnit]);
-
-  useEffect(() => {
-    if (isSidebarOpen) {
-      setSubMenu('layout');
-    }
-  }, [isSidebarOpen]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -235,27 +231,30 @@ const Sidebar: React.FC = () => {
   const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
     if (!scene) return;
     try {
-      rescaleByObjectId(scene as any, objectId);
+      rescaleByObjectId(scene, objectId);
     } catch {}
-    let targetMesh: THREE.Mesh | null = null;
-    scene.traverse((child: any) => {
-      if (!targetMesh && child?.isMesh && child?.userData?.objectId === objectId) {
-        targetMesh = child as THREE.Mesh;
+    scene.traverse((child) => {
+      if (
+        child instanceof THREE.Mesh &&
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === objectId
+      ) {
+        targetMesh = child;
       }
     });
     if (!targetMesh) return;
-    const mesh = targetMesh as any;
+    const mesh: THREE.Mesh = targetMesh;
     if (mesh.name !== 'SimpleCabinet') return;
-    const params = (mesh.geometry as THREE.BoxGeometry).parameters as any;
+    const params = (mesh.geometry as THREE.BoxGeometry).parameters;
     const width = metersToMM(params.width);
     const height = metersToMM(params.height);
     const depth = metersToMM(params.depth);
     const thickness = 18;
-    const existing = (mesh.children.find((c: any) => c && c.name === 'invisibleBox_cabinet') ||
-      null) as any as THREE.Mesh | null;
+    const existing = mesh.children.find((c) => c && c.name === 'invisibleBox_cabinet') || null;
     if (existing) {
       mesh.remove(existing);
-      (existing as any).geometry?.dispose?.();
+      (existing as THREE.Mesh).geometry?.dispose?.();
     }
     const invMat = new THREE.MeshBasicMaterial({
       color: 0x000000,
@@ -277,7 +276,6 @@ const Sidebar: React.FC = () => {
   };
 
   const handleTextureSelect = (texturePath: string) => {
-    setSelectedTexture(texturePath);
     applyTextureToSelected(texturePath, 'updateTexture');
     setIsTextureListOpen(false);
   };
@@ -292,10 +290,6 @@ const Sidebar: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleSubMenu = (value: string) => {
-    setSubMenu(subMenu === value ? null : value);
-  };
-
   const handleNavigation = () => {
     setSettingOpen(false);
     setNavOpen(true);
@@ -308,15 +302,16 @@ const Sidebar: React.FC = () => {
       }
     });
   };
+
   const handleHandlePositionChange = (position: string) => {
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
 
     if (!targetId) return;
-    let doorMesh: any = null;
-    scene.traverse((node: any) => {
-      if (!doorMesh && node.userData?.objectId === targetId) {
-        if (node.parent && node.parent.name.includes('DoorGroup')) {
+
+    scene.traverse((node) => {
+      if (node instanceof THREE.Mesh && !doorMesh && node.userData?.objectId === targetId) {
+        if (node.parent instanceof THREE.Mesh && node.parent.name.includes('DoorGroup')) {
           doorMesh = node.parent;
         } else {
           doorMesh = node;
@@ -324,16 +319,21 @@ const Sidebar: React.FC = () => {
       }
     });
 
-    if (!doorMesh) return;
-    let handleMesh: any = null;
-    doorMesh.traverse((child: any) => {
-      const name = (child?.name || '').toLowerCase();
-      if (!handleMesh && (name.includes('handle') || name.includes('knob'))) {
-        handleMesh = child;
+    if (!doorMesh) {
+      console.warn('No door mesh found for target ID:', targetId);
+      return;
+    }
+
+    (doorMesh as THREE.Mesh).traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = (child?.name || '').toLowerCase();
+        if (!handleMesh && (name.includes('handle') || name.includes('knob'))) {
+          handleMesh = child;
+        }
       }
     });
-    if (!handleMesh) return;
 
+    if (!handleMesh) return;
     const currentZ = handleMesh.position.z;
     const doorPosition = doorMesh.position.clone();
 
@@ -394,43 +394,45 @@ const Sidebar: React.FC = () => {
       : objects.find((o) => o.id === selectedObjectId!);
     const nameLower = (obj?.name || '').toLowerCase();
     if (nameLower.includes('door') || nameLower.includes('drawer')) return;
-    let targetMesh: any = null;
-    scene.traverse((child: any) => {
-      if (!targetMesh && child?.isMesh && child?.userData?.objectId === targetId) {
+    scene.traverse((child) => {
+      if (
+        child instanceof THREE.Mesh &&
+        !targetMesh &&
+        child?.isMesh &&
+        child?.userData?.objectId === targetId
+      ) {
         targetMesh = child;
       }
     });
+
     if (!targetMesh) return;
     const color = new THREE.Color(value);
-    if (Array.isArray(targetMesh.material)) {
-      targetMesh.material = targetMesh.material.map((m: any) => {
+    if (
+      targetMesh.material instanceof THREE.MeshStandardMaterial &&
+      Array.isArray(targetMesh?.material)
+    ) {
+      targetMesh.material = targetMesh.material.map((m) => {
         if (m && typeof m.clone === 'function') {
           const cloned = m.clone();
           if (cloned.map) cloned.map = null;
           if (cloned.color) cloned.color.set(color);
           return cloned;
         }
-        return new THREE.MeshPhongMaterial({ color });
+        return new THREE.MeshStandardMaterial({ color });
       });
-    } else if (targetMesh.material) {
+    } else if (targetMesh?.material instanceof THREE.MeshStandardMaterial) {
       if (targetMesh.material.color) {
         if (targetMesh.material.map) targetMesh.material.map = null;
         targetMesh.material.color.set(color);
         targetMesh.material.needsUpdate = true;
       } else {
-        targetMesh.material = new THREE.MeshPhongMaterial({ color });
+        targetMesh.material = new THREE.MeshStandardMaterial({ color });
       }
     } else {
-      targetMesh.material = new THREE.MeshPhongMaterial({ color });
+      targetMesh.material = new THREE.MeshStandardMaterial({ color });
     }
     if (obj && update) {
-      updateObjectInScene(
-        obj.id,
-        { material: { type: 'COLOR', value } },
-        scene,
-        dispatch,
-        obj as any
-      );
+      updateObjectInScene(obj.id, { material: { type: 'COLOR', value } }, scene, dispatch, obj);
     }
   };
 
@@ -439,9 +441,7 @@ const Sidebar: React.FC = () => {
     setDisplayUnit(u);
 
     try {
-      // in scene keep the unit type - smit commit
-      const { setUnitType } = require('../store/measurementSlice');
-      dispatch(setUnitType(u === 'inch' ? 'in' : (u as any)));
+      dispatch(setUnitType(u === 'inch' ? 'in' : u === 'feet' ? 'ft' : u));
     } catch (err) {
       console.error('Failed to set unit type:', err);
     }
@@ -454,9 +454,8 @@ const Sidebar: React.FC = () => {
     const obj = selectedChildObjectId
       ? objects.find((o) => o.id === selectedChildObjectId)
       : objects.find((o) => o.id === selectedObjectId!);
-    let targetMesh: any = null;
-    scene.traverse((child: any) => {
-      if (!targetMesh && child?.userData?.objectId === targetId) {
+    scene.traverse((child) => {
+      if (child instanceof THREE.Mesh && !targetMesh && child?.userData?.objectId === targetId) {
         targetMesh = child;
       }
     });
@@ -466,10 +465,10 @@ const Sidebar: React.FC = () => {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(2, 1);
       texture.needsUpdate = true;
-      targetMesh.traverse((child: any) => {
-        if (child.isMesh) {
+      targetMesh?.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.isMesh) {
           if (Array.isArray(child.material)) {
-            child.material = child.material.map((m: any) => {
+            child.material = child.material.map((m) => {
               if (m && typeof m.clone === 'function') {
                 const cloned = m.clone();
                 cloned.map = texture;
@@ -504,7 +503,7 @@ const Sidebar: React.FC = () => {
           { material: { type: 'TEXTURE', value: texturePath } },
           scene,
           dispatch,
-          obj as any
+          obj
         );
       }
     });
@@ -516,13 +515,13 @@ const Sidebar: React.FC = () => {
 
   // Proportionally rescale and reposition children of a container when its geometry changes
   function rescaleChildrenForContainer(container: THREE.Mesh) {
-    const params = (container.geometry as THREE.BoxGeometry).parameters as any;
+    const params = (container.geometry as THREE.BoxGeometry).parameters;
     const newDims = {
-      width: params.width as number,
-      height: params.height as number,
-      depth: params.depth as number,
+      width: params.width,
+      height: params.height,
+      depth: params.depth,
     };
-    const userData: any = (container as any).userData || {};
+    const userData = container.userData || {};
     const last = userData.lastDims || newDims;
     const sx = (newDims.width || 1) / (last.width || 1);
     const sy = (newDims.height || 1) / (last.height || 1);
@@ -534,7 +533,7 @@ const Sidebar: React.FC = () => {
 
     container.children.forEach((child) => {
       // Only scale real meshes; skip invisible helper boxes so they can be rebuilt precisely
-      const isMesh = (child as any).isMesh || child instanceof THREE.Mesh;
+      const isMesh = child instanceof THREE.Mesh;
       if (!isMesh) return;
       const name = (child.name || '').toLowerCase();
       if (name.startsWith('invisiblebox')) return;
@@ -547,7 +546,7 @@ const Sidebar: React.FC = () => {
     });
 
     // Update lastDims to current
-    (container as any).userData = {
+    container.userData = {
       ...userData,
       lastDims: { ...newDims },
     };
@@ -556,9 +555,9 @@ const Sidebar: React.FC = () => {
   // Find container by objectId and rescale its children proportionally
   function rescaleByObjectId(scene: THREE.Scene, objectId: string) {
     let container: THREE.Mesh | null = null;
-    scene.traverse((o: any) => {
+    scene.traverse((o) => {
       if (container) return;
-      if (o && o.isMesh && o.userData && o.userData.objectId === objectId) {
+      if (o instanceof THREE.Mesh && o.isMesh && o.userData && o.userData.objectId === objectId) {
         const n = (o.name || '').toLowerCase();
         if (n === 'simplecabinet'.toLowerCase() || n === 'simpletable'.toLowerCase()) {
           container = o as THREE.Mesh;
@@ -929,7 +928,7 @@ const Sidebar: React.FC = () => {
             }
             setShowMaterialPopup(false);
           }}
-          rules={(selectedObject as any)?.catalog_rule || []}
+          rules={selectedObject?.catalog_rules || []}
         />
       )}
     </div>
