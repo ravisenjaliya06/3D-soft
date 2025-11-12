@@ -770,14 +770,3 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
 };
 
 export default Toolbar;
-
-export const formatName = (name: string) => {
-  if (!name) return '';
-  const words = name.replace(/_/g, ' ').split(' ');
-  return words
-    .map((word) => {
-      if (!word) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(' ');
-};

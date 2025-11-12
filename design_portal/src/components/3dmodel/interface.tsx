@@ -1,7 +1,7 @@
 import type { ThreeDView } from '@/components/3dmodel/design/interface';
 import type { NextRouter } from 'next/router';
 import * as THREE from 'three';
-import { CatalogWithChildren } from './handler/items';
+import { CatalogWithChildren } from './handler/interface';
 import { MinifixConnection, MinifixHole } from './minifix';
 import { Material, Position } from './store/interface';
 

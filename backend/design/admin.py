@@ -2,15 +2,7 @@
 from django.contrib import admin
 
 # App imports
-from design.models import (
-    Catalog,
-    CatalogItem,
-    Design,
-    DesignScreenshot,
-    DesignSetting,
-    Material,
-    Texture,
-)
+from design.models import Design, DesignScreenshot, DesignSetting
 
 
 class DesignAdmin(admin.ModelAdmin):
@@ -57,10 +49,6 @@ class CatalogAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "parent", "is_default", "is_custom")
 
 
-admin.site.register(Catalog, CatalogAdmin)
 admin.site.register(Design, DesignAdmin)
-admin.site.register(CatalogItem, CatalogItemAdmin)
-admin.site.register(Texture, TexturesAdmin)
-admin.site.register(Material, MaterialAdmin)
 admin.site.register(DesignSetting, DesignSettingsAdmin)
 admin.site.register(DesignScreenshot)

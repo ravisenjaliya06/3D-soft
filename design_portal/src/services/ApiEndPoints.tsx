@@ -6,7 +6,6 @@ export const API_ENDPOINT = {
   GET_ORGANIZATION_USERS: 'user/organization/users/',
   GET_ORGANIZATION_DETAILS: 'user/organization/details/',
   GET_DESIGN_SETTING: 'design/setting/',
-  GET_DEFAULT_CATALOG: 'design/catalog/default/',
   GET_CATALOG_ITEMS: 'material/catalog/',
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
   GET_MATERIAL_COMPANIES: 'material/company/',
@@ -34,8 +33,6 @@ export const API_ENDPOINT = {
   CREATE_MATERIAL_WITHOUT_CATALOG: 'material/catalog/design/',
   CREATE_COMPANY_MATERIAL: (companyID: string) => `material/company/${companyID}/material/`,
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
-  CREATE_CATALOG_ITEM: (designID: string, catalogID: string) =>
-    `design/${designID}/catalog/${catalogID}/item/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
 
   //PUT
@@ -45,8 +42,6 @@ export const API_ENDPOINT = {
   EDIT_ORGANIZATION_USER: (userID: string) => `user/organization/edit_user/${userID}/`,
   UPDATE_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,
   UPDATE_OBJECT_DATA: (designID: string) => `design/${designID}/object/`,
-  UPDATE_OBJECT_ITEMS_DATA: (designID: string, itemID: string) =>
-    `design/${designID}/object/${itemID}/`,
   UPDATE_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   UPDATE_PART_MATERIAL: (partID: string) => `material/catalog/part/${partID}/`,
   DOWNLOAD_NESTING_PDF: (designID: string) => `design/${designID}/nesting/download/`,

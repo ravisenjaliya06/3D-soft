@@ -1,8 +1,8 @@
 # Python imports
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # App imports
-from design.models import Catalog, CatalogItem, Design, DesignSetting
+from design.models import Design, DesignSetting
 from umaboy.models import Organization
 
 
@@ -105,55 +105,3 @@ def parse_design_data(data: List[Dict]) -> Dict:
         result[plank_id] = plank_data
 
     return result
-
-
-def clone_catalog_with_items(
-    source_catalog_id: str, design: Design
-) -> Tuple[Catalog, List[Catalog]]:
-    """Clone a catalog with all its items and child catalogs"""
-    source_catalog = Catalog.objects.filter(id=source_catalog_id).first()
-    if not source_catalog:
-        return None, []
-
-    # Create parent catalog
-    parent_catalog = Catalog.objects.create(
-        name=source_catalog.name, design=design, parent=None, data=source_catalog.data
-    )
-
-    for item in CatalogItem.objects.filter(catalog=source_catalog_id):
-        CatalogItem.objects.create(
-            catalog=parent_catalog,
-            data=item.data,
-            name=item.name,
-            material=item.material,
-        )
-
-    created_child_catalogs = []
-    for child_catalog in get_all_child_catalogs(source_catalog_id):
-        child_catalog_data = Catalog.objects.create(
-            design=design,
-            name=child_catalog.name,
-            parent=parent_catalog,
-            data=child_catalog.data,
-        )
-        created_child_catalogs.append(child_catalog_data)
-
-        for item in CatalogItem.objects.filter(catalog=child_catalog):
-            CatalogItem.objects.create(
-                catalog=child_catalog_data,
-                name=item.name,
-                data=item.data,
-                material=item.material,
-            )
-    return parent_catalog, created_child_catalogs
-
-
-def get_all_child_catalogs(catalog_id: str) -> List[Catalog]:
-    """Recursively fetch all child catalogs for a given catalog_id"""
-    child_catalogs = Catalog.objects.filter(parent=catalog_id)
-    all_child_catalogs = list(child_catalogs)
-
-    for child_catalog in child_catalogs:
-        nested_child_catalogs = get_all_child_catalogs(child_catalog.id)
-        all_child_catalogs.extend(nested_child_catalogs)
-    return all_child_catalogs
