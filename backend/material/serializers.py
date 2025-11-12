@@ -946,7 +946,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         if not design_id:
             raise serializers.ValidationError("Missing required field 'design_id'.")
 
-        catalog_rules_data = validated_data.pop("catalog_rules", [])
+        catalog_rules_data = validated_data.pop("catalog_rule", [])
         catalog = Catalog.objects.create(**validated_data)
 
         override_rules = {rule["name"]: rule for rule in catalog_rules_data}

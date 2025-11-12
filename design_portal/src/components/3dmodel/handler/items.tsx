@@ -969,7 +969,7 @@ export const addCabinetItemToDesign = async (
     depth: itemData.depth,
     position: itemData.position,
     additional_data: itemData.additional_data,
-    catalog_rules: itemData.parts,
+    catalog_rule: itemData.parts,
     parent: itemData.parent,
   };
   try {
