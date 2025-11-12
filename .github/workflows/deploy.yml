@@ -67,7 +67,6 @@ jobs:
             pipenv install --deploy --ignore-pipfile --python 3.11
             pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
             pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
-            pipenv run python scripts/design_add_data.py --settings=umaboy.settings.production
             pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
 
             systemctl restart gunicorn
