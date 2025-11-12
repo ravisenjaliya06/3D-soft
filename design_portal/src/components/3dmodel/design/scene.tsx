@@ -1692,6 +1692,7 @@ export const addDrawersOnInvisibleBox = async (
 
         const geom = child.geometry.parameters;
         ruleParts.push({
+          id: '',
           name: formattedName,
           width: metersToMM(geom.width || 0),
           height: metersToMM(geom.height || 0),

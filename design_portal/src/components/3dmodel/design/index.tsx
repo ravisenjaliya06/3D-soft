@@ -164,7 +164,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         }
       };
     }
-  }, [design3D, setDesign3D, dispatch , moveHandler]);
+  }, [design3D, setDesign3D, dispatch, moveHandler]);
 
   useEffect(() => {
     if (design3D && sceneFromState) {

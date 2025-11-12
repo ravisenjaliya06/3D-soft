@@ -392,7 +392,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       isActive: isMeasurementActive,
       disabled: false,
     },
-    
   ];
 
   const viewTools = [
