@@ -34,17 +34,12 @@ pipenv run python manage.py migrate
 pipenv run python scripts/create_initial_permission_and_group.py
 ```
 
-6. Create textures, catalogs
-```bash
-pipenv run python scripts/design_add_data.py
-```
-
-7. Create Materials
+6. Create Materials
 ```bash
 pipenv run python scripts/add_material_data.py
 ```
 
-8. Run Project
+7. Run Project
 ```bash
 pipenv run python manage.py runserver
 ```
