@@ -194,13 +194,20 @@ export interface CatalogItemData {
   };
 }
 
+interface RulePartMaterial {
+  id?: string;
+  name?: string;
+}
+
 export interface RulePart {
+  id: string;
   name: string;
   width: number;
   height: number;
   depth: number;
   length?: number;
   icon?: string;
+  material?: RulePartMaterial | null;
   thickness: number | null;
   position: Position;
   handle_position: Position | null;
@@ -208,6 +215,7 @@ export interface RulePart {
 }
 
 export interface CatalogRule {
+  id: string;
   name: string;
   rule_parts?: RulePart[];
 }

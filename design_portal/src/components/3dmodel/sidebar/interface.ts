@@ -1,3 +1,5 @@
+import { CatalogRule } from '../handler/interface';
+
 export interface MaterialResponse {
   id: string;
   name: string;
@@ -16,24 +18,6 @@ export interface MaterialResponse {
 export interface RulePartMaterial {
   id?: string;
   name?: string;
-}
-
-export interface RulePart {
-  id: string;
-  name?: string;
-  material?: RulePartMaterial;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
-  depth?: number | null;
-  position?: unknown;
-  handle_position?: unknown;
-}
-
-export interface CatalogRule {
-  id: string;
-  name: string;
-  rule_parts: RulePart[];
 }
 
 export interface MaterialChangePopupProps {

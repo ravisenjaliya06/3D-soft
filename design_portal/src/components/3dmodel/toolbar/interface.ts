@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RulePart } from '../handler/interface';
 import { Position, Rotation } from '../store/interface';
 export interface Datastate {
   isQuickHideActive: boolean;
@@ -43,18 +44,8 @@ export interface CabinetItem {
   icon: string;
 }
 
-export interface RulePart {
-  name: string;
-  width: number;
-  height: number;
-  depth: number;
-  icon?: string;
-  thickness: number | null;
-  position: Position;
-  handle_position: Position | null;
-  additional_data: { texture: string };
-}
 export interface parts {
+  id: string;
   name: string;
   rule_parts: RulePart[];
 }
