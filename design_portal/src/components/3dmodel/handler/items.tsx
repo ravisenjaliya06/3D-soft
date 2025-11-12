@@ -8,13 +8,8 @@ import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
-import { Object3D, Position } from '../store/interface';
-import {
-  AddItemDatabasePayload,
-  ITEM,
-  PlankDataItem,
-  RulePart,
-} from './interface';
+import { Object3D } from '../store/interface';
+import { AddItemDatabasePayload, RulePart } from './interface';
 
 export function showFullScreenLoader(message = 'Loading...') {
   if (document.getElementById('global-loader')) return;
