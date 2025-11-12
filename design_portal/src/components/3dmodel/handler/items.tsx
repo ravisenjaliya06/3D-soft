@@ -1,10 +1,8 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
-import { Dispatch } from 'redux';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { convertDataToGeometry, createDesign } from '../catalog/object-creator';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
@@ -13,30 +11,10 @@ import { addObjects } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
 import {
   AddItemDatabasePayload,
-  CatalogData,
-  CatalogWithChildren,
   ITEM,
-  MoveObjectResult,
-  PLANK,
   PlankDataItem,
   RulePart,
 } from './interface';
-import { MoveHandler } from './moveHandler';
-
-let moveHandler: MoveHandler | null = null;
-
-function initializeMoveHandler(options: {
-  scene: THREE.Scene;
-  camera: THREE.PerspectiveCamera;
-  renderer: THREE.WebGLRenderer;
-}) {
-  moveHandler = new MoveHandler({
-    scene: options.scene,
-    camera: options.camera,
-    renderer: options.renderer,
-    movableObjects: [],
-  });
-}
 
 export function showFullScreenLoader(message = 'Loading...') {
   if (document.getElementById('global-loader')) return;
@@ -610,184 +588,9 @@ async function loadDesignObjects(designId: string, scene: THREE.Scene) {
   }
 }
 
-async function moveObject(
-  name: string,
-  catalogList: { catalog: CatalogWithChildren[][] },
-  scene: THREE.Scene,
-  dispatch: Dispatch,
-  dataObjects?: Object3D[]
-): Promise<MoveObjectResult | void> {
-  if (!scene) {
-    return;
-  }
-
-  const catalogEntry = catalogList.catalog[0].find(
-    (catObj: CatalogWithChildren) => catObj.catalog.name === name
-  );
-  if (!catalogEntry) {
-    console.error('Catalog entry not found for:', name);
-    return;
-  }
-
-  let dataList: CatalogData[];
-  if (catalogEntry.items && catalogEntry.items.length > 0) {
-    dataList = catalogEntry.items.map((item) => item.data);
-  } else if (catalogEntry.catalog.data) {
-    dataList = [catalogEntry.catalog.data];
-  } else {
-    console.error('No items or catalog data found for', name);
-    return;
-  }
-  const childCatalogs = catalogEntry.child_catalogs || [];
-  const childObjects: THREE.Mesh[] = [];
-  for (const childCatalog of childCatalogs) {
-    if (childCatalog.items && childCatalog.items.length > 0) {
-      const childDataList = childCatalog.items.map((item) => item.data);
-      const convertedChildData = convertDataToGeometry(childDataList);
-      const childObject = createDesign(convertedChildData, 'MAX');
-      const position = childCatalog.catalog.data.position;
-      childObject.position.set(position.x, position.y, position.z);
-      childObject.scale.set(1, 1, 1);
-      childObject.name = childCatalog.catalog.name;
-      childObject.userData.type = childCatalog.catalog.data.catalog_type;
-      childObjects.push(childObject);
-    }
-  }
-
-  const convertedData = convertDataToGeometry(dataList);
-  const threeDObject = createDesign(convertedData, 'MAX');
-  threeDObject.scale.set(0.01, 0.01, 0.01);
-  threeDObject.name = catalogEntry.catalog.name;
-  threeDObject.userData.type = catalogEntry.catalog.data.catalog_type;
-
-  if (
-    !threeDObject.name.includes(PLANK.HORIZONTAL_PLANK) &&
-    !threeDObject.name.includes(PLANK.VERTICAL_PLANK) &&
-    !threeDObject.name.includes(ITEM.DRAWER)
-  ) {
-    const compartments = generateCompartmentsFromPlanks(
-      dataList.map((item) => ({
-        id: item.id,
-        name: item.name,
-        width: item.width,
-        height: item.height,
-        depth: item.depth || 0,
-        position: item.position,
-      }))
-    );
-    compartments.forEach((compartment, index) => {
-      const geometry = new THREE.BoxGeometry(
-        compartment.width,
-        compartment.height,
-        compartment.depth
-      );
-      const material = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-      });
-      const box = new THREE.Mesh(geometry, material);
-      box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
-      box.name = 'invisibleBox';
-      box.userData = { objectId: `invisibleBox_${index}_${name}` };
-      threeDObject.add(box);
-    });
-  }
-
-  childObjects.forEach((child) => {
-    threeDObject.add(child);
-  });
-
-  if (!threeDObject.name.includes(ITEM.PLANK)) {
-    scene.add(threeDObject);
-  }
-
-  let createResult;
-
-  if (threeDObject.name.includes(ITEM.PLANK) || threeDObject.name.includes(ITEM.DRAWER)) {
-    const allObjects: Object3D[] = dataObjects || [];
-    const cupboards = allObjects.filter(
-      (obj) =>
-        !obj.name.includes(ITEM.PLANK) &&
-        !obj.name.includes(ITEM.DOOR) &&
-        !obj.name.includes(ITEM.DRAWER) &&
-        (obj.parent === null || obj.parent === undefined)
-    );
-
-    cupboards.forEach((cupboard) => {
-      const cupboardObject = scene.children.find(
-        (obj) => obj.userData.objectId === cupboard.id
-      ) as THREE.Mesh;
-      if (cupboardObject) {
-        const plankDataList: PlankDataItem[] = allObjects
-          .filter(
-            (obj) =>
-              obj.parent === cupboard.id &&
-              (obj.name.includes(ITEM.PLANK) || obj.name.includes(ITEM.DRAWER)) &&
-              !obj.name.includes(ITEM.DOOR)
-          )
-          .map((obj) => ({
-            id: obj.id,
-            name: obj.name,
-            width: obj.width,
-            height: obj.height,
-            depth: obj.depth,
-            position: obj.position,
-          }));
-
-        const objectsToRemove: THREE.Mesh[] = [];
-        cupboardObject.traverse((child) => {
-          if (child.name === 'invisibleBox') {
-            objectsToRemove.push(child as THREE.Mesh);
-          }
-        });
-        objectsToRemove.forEach((obj) => {
-          cupboardObject.remove(obj);
-          obj.geometry.dispose();
-          if (obj.material instanceof THREE.Material) {
-            obj.material.dispose();
-          }
-        });
-
-        const compartments = generateCompartmentsFromPlanks(plankDataList, threeDObject.name);
-        compartments.forEach((compartment, index) => {
-          const geometry = new THREE.BoxGeometry(
-            compartment.width,
-            compartment.height,
-            compartment.depth
-          );
-          const material = new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0,
-          });
-          const box = new THREE.Mesh(geometry, material);
-          box.position.set(compartment.position.x, compartment.position.y, compartment.position.z);
-          box.name = 'invisibleBox';
-          box.userData = {
-            objectId: `invisibleBox_${index}_${cupboard.id}`,
-          };
-          cupboardObject.add(box);
-        });
-      }
-    });
-  }
-
-  if (moveHandler) {
-    const finalPosition = await moveHandler.enableDragging(threeDObject);
-    if (finalPosition) {
-      threeDObject.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
-    } else {
-      console.error('Final position is null for', threeDObject.name);
-    }
-  }
-
-  return { createResult, threeDObject };
-}
-
-export { initializeMoveHandler, loadDesignObjects, moveObject };
+export { loadDesignObjects };
 export default {
-  initializeMoveHandler,
   loadDesignObjects,
-  moveObject,
 };
 
 export function toggleDoor(child: THREE.Mesh) {

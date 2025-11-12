@@ -15,7 +15,6 @@ import {
   addItemToDataBaseWithoutCatalog,
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
-  initializeMoveHandler,
   showFullScreenLoader,
 } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
@@ -145,8 +144,6 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   mount.appendChild(renderer.domElement);
-
-  initializeMoveHandler({ scene, camera, renderer });
 
   // Grid
   const gridSize = 1000;

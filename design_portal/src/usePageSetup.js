@@ -9,7 +9,7 @@ export const usePageSetup = (title) => {
     // Set favicon dynamically
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = assets.titleLogo;
+    link.href = assets.headerbraventologo;
     document.head.appendChild(link);
 
     return () => {
