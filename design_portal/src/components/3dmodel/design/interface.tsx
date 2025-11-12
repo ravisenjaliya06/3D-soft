@@ -47,3 +47,34 @@ export interface MeasurementToolProps {
   unitType: 'mm' | 'cm' | 'in' | 'ft' | 'mi' | 'm';
   onComplete?: (distance: number) => void;
 }
+
+export interface Part {
+  name: string;
+  dimensions: {
+    width: number;
+    height: number;
+    depth: number;
+  };
+  material: THREE.MeshStandardMaterialParameters | THREE.Material;
+  position?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  rotation?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  userData?: {
+    objectId: string;
+    type: string;
+  };
+}
+
+export interface DimensionMeta {
+  targetUuid: string;
+  side: string;
+  ref: number;
+  axis: 'x' | 'y' | 'z';
+}

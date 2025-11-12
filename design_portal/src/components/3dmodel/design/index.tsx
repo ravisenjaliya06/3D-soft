@@ -84,8 +84,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const sceneFromState = useAppSelector((state) => state.scene.scene);
   const isQuickHideActive = useAppSelector((state) => state.data.isQuickHideActive);
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
-  const isAlignmentActive = useAppSelector((state) => state.data.isAlignmentActive);
-
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
   const mountRef = useRef<HTMLDivElement>(null);
@@ -166,7 +164,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         }
       };
     }
-  }, [design3D, setDesign3D, dispatch, isAlignmentActive, moveHandler]);
+  }, [design3D, setDesign3D, dispatch , moveHandler]);
 
   useEffect(() => {
     if (design3D && sceneFromState) {
@@ -642,7 +640,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       hoveredMesh?.parent?.userData.type === itemType.CUPBOARD
     ) {
       dispatch(setobjectSelected(hoveredMesh?.parent?.userData.objectId));
-      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
@@ -653,14 +650,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         hoveredMesh?.parent?.userData.type === itemType.DOOR)
     ) {
       dispatch(setSelectedChildObject(hoveredMesh?.parent?.userData.objectId));
-      // setHelperTools(true);
       if (hoveredMesh.parent instanceof THREE.Mesh) {
         setSelectedObject(hoveredMesh.parent);
       }
       newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
     } else {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
-      // setHelperTools(true);
       setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
         setHelperTools(false);

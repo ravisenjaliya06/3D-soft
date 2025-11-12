@@ -9,6 +9,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { v4 as uuidv4 } from 'uuid';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
+import { AddItemDatabasePayload, RulePart } from '../handler/interface';
 import {
   addItemtoDatabase,
   addItemToDataBaseWithoutCatalog,
@@ -30,8 +31,9 @@ import {
   updateObject,
 } from '../store/dataSlice';
 import { Object3D } from '../store/interface';
+import { SelectedCabinetItem } from '../toolbar/interface';
 import { createGrid } from './grid-creator';
-import { ThreeDView } from './interface';
+import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
 
 let cachedHandleModel: THREE.Object3D | null = null;
@@ -78,8 +80,8 @@ const unitToMeters = (v: number, unit: Unit): number => {
 };
 const getActiveUnit = (): Unit => {
   try {
-    const u = (store.getState() as any)?.measurement?.unitType as Unit | undefined;
-    return (u as Unit) || 'mm';
+    const unit = store.getState()?.measurement?.unitType as Unit | undefined;
+    return (unit as Unit) || 'mm';
   } catch {
     return 'mm';
   }
@@ -540,7 +542,7 @@ function getPlacementZAgainstCenterWall(scene: THREE.Scene, depth: number): numb
   let placeZ = depth / 2 + 0.02;
   const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
   if (centerWall) {
-    const params = (centerWall.geometry as THREE.BoxGeometry).parameters as any;
+    const params = (centerWall.geometry as THREE.BoxGeometry).parameters;
     const wallDepth = params.depth as number;
     placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
   }
@@ -562,7 +564,7 @@ export function createInvisibleBox(
   dimensions: { width: number; height: number; depth: number },
   position: { x: number; y: number; z: number },
   name: string,
-  userData: any = {}
+  userData = {}
 ): THREE.Mesh {
   const geometry = new THREE.BoxGeometry(dimensions.width, dimensions.height, dimensions.depth);
   const material = createInvisibleMaterial();
@@ -573,18 +575,19 @@ export function createInvisibleBox(
   return mesh;
 }
 export function createMeshObject(
-  part: any,
+  part: Part,
   setShadows: boolean = true,
-  userData: any = {}
+  userData = {}
 ): THREE.Mesh {
   const geometry = new THREE.BoxGeometry(
     part.dimensions.width,
     part.dimensions.height,
     part.dimensions.depth
   );
-
-  const materialProps = part.material;
-  const material = new THREE.MeshStandardMaterial(materialProps);
+  const material =
+    part.material instanceof THREE.Material
+      ? part.material
+      : new THREE.MeshStandardMaterial(part.material);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = part.name || 'unnamed_plank';
 
@@ -779,14 +782,12 @@ export const addPlatformOnWall = async (
   const countertopThickness = 0.05;
   const defaultProtrusion = 0.74;
 
-  const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters as any;
+  const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters;
   const wallW = params.width as number;
   const wallD = params.depth as number;
 
   const platformGroup = new THREE.Group();
   platformGroup.name = `Platform_${wallMesh?.name}`;
-
-  const floorY = getFloorY(scene);
 
   const addedMeshes: Array<{
     name: string;
@@ -855,7 +856,7 @@ export const addPlatformOnWall = async (
         z: metersToMM(topPart.position.z),
       },
       data: {
-        rotation: topMesh.rotation as any,
+        rotation: topMesh.rotation,
         wall: wallMesh?.name || '',
       },
     });
@@ -904,7 +905,7 @@ export const addPlatformOnWall = async (
         z: metersToMM(topPart.position.z),
       },
       data: {
-        rotation: topMesh.rotation as any,
+        rotation: topMesh.rotation,
         wall: wallMesh?.name || '',
       },
     });
@@ -924,12 +925,12 @@ export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: any = null,
-  itemData: any = null
+  selectedCabinetItem: SelectedCabinetItem | null = null,
+  itemData: AddItemDatabasePayload | null = null
 ) => {
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) return;
-  let designId = window.location.pathname.split('/')[2];
+  const designId = window.location.pathname.split('/')[2];
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
@@ -1001,7 +1002,9 @@ export const addVerticalPlanksToBox = async (
     parent.add(plank);
 
     const data = {
-      ...itemData,
+      catalogId: itemData?.catalogId || '',
+      design_id: designId,
+      description: itemData?.description || 'vertical plank',
       type: 'Plank',
       name: plank.name,
       width: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.width),
@@ -1027,7 +1030,7 @@ export const addVerticalPlanksToBox = async (
     plank.userData.apiData = apiResponse;
 
     const plankDimensionsMM = plank.userData.dimensions;
-    const plankPositionMM = convertPositionToMM(plank.position as any);
+    const plankPositionMM = convertPositionToMM(plank.position);
 
     if (plank.userData.objectId) {
       const objInStore = store
@@ -1042,7 +1045,7 @@ export const addVerticalPlanksToBox = async (
             height: plankDimensionsMM.height,
             depth: plankDimensionsMM.depth,
             position: plankPositionMM,
-          } as any)
+          })
         );
       }
     }
@@ -1055,6 +1058,7 @@ export const addVerticalPlanksToBox = async (
     const skirtingLocalPos = boxMesh.worldToLocal(skirtingWorldPos.clone());
 
     const skirtingPart = {
+      catalogID: itemData?.catalogId || '',
       name: `Skirting`,
       dimensions: { width, height: skirtingHeight, depth },
       position: skirtingLocalPos,
@@ -1063,7 +1067,7 @@ export const addVerticalPlanksToBox = async (
 
     const skirting = createMeshObject(skirtingPart);
     const data = {
-      ...itemData,
+      catalogId: '',
       name: skirting.name,
       type: 'Skirting',
       description: '',
@@ -1079,6 +1083,7 @@ export const addVerticalPlanksToBox = async (
       },
       parent: parent.userData.objectId,
       additional_data: {
+        texture: '/textures/skirting.jpg',
         color: '0x555555',
       },
     };
@@ -1097,8 +1102,8 @@ export const addHorizontalPlanksInsideBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: any = null,
-  itemData: any = null
+  selectedCabinetItem: SelectedCabinetItem | null = null,
+  itemData: AddItemDatabasePayload | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
   if (!boxMesh || count <= 0) return;
@@ -1174,7 +1179,11 @@ export const addHorizontalPlanksInsideBox = async (
     shelf.position.copy(parent.worldToLocal(worldPos));
 
     const data = {
-      ...itemData,
+      type: itemData?.type || 'Plank',
+      name: itemData?.name || shelf.name,
+      description: itemData?.description || '',
+      design_id: itemData?.design_id || window.location.pathname.split('/')[2],
+      catalogId: itemData?.catalogId || '',
       width: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.width),
       height: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.height),
       depth: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.depth),
@@ -1214,8 +1223,8 @@ export const addHorizontalPlanksInsideBox = async (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: convertPositionToMM(shelf.position as any),
-          } as any)
+            position: convertPositionToMM(shelf.position),
+          })
         );
       }
     }
@@ -1228,8 +1237,8 @@ export const addHorizontalPlanksInsideBox = async (
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
-  selectedCabinetItem: any = null,
-  itemData: any = null
+  selectedCabinetItem: SelectedCabinetItem | null = null,
+  itemData: AddItemDatabasePayload | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
   const bbox = new THREE.Box3().setFromObject(boxMesh);
@@ -1303,7 +1312,11 @@ export const addDoorOnInvisibleBox = async (
   face.position.copy(parent.worldToLocal(worldFacePos));
 
   const data = {
-    ...itemData,
+    catalogId: itemData?.catalogId || '',
+    type: itemData?.type || 'DOOR',
+    name: itemData?.name || face.name,
+    description: itemData?.description || '',
+    design_id: itemData?.design_id || window.location.pathname.split('/')[2],
     width: metersToMM((face.geometry as THREE.BoxGeometry).parameters.width),
     height: metersToMM((face.geometry as THREE.BoxGeometry).parameters.height),
     depth: metersToMM((face.geometry as THREE.BoxGeometry).parameters.depth),
@@ -1345,8 +1358,8 @@ export const addDoorOnInvisibleBox = async (
             height: dims.height,
             depth: dims.depth,
           }),
-          position: convertPositionToMM(doorGroup.position as any),
-        } as any)
+          position: convertPositionToMM(doorGroup.position),
+        })
       );
     }
   }
@@ -1402,7 +1415,7 @@ export const addDrawersOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   drawers: number,
-  itemData: any = null
+  itemData: AddItemDatabasePayload | null = null
 ) => {
   if (drawers <= 0) return;
 
@@ -1477,10 +1490,10 @@ export const addDrawersOnInvisibleBox = async (
     // Handle
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
-      handle.traverse((n: any) => {
-        if (n.isMesh) {
-          n.castShadow = true;
-          n.receiveShadow = true;
+      handle.traverse((handle_traversal) => {
+        if ((handle_traversal as THREE.Mesh).isMesh) {
+          handle_traversal.castShadow = true;
+          handle_traversal.receiveShadow = true;
         }
       });
 
@@ -1662,7 +1675,7 @@ export const addDrawersOnInvisibleBox = async (
     };
 
     // --- Build rule parts for all meshes inside this drawer ---
-    const ruleParts: any[] = [];
+    const ruleParts: RulePart[] = [];
 
     drawerGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -1713,7 +1726,11 @@ export const addDrawersOnInvisibleBox = async (
     ];
 
     const drawerPayload = {
-      ...itemData,
+      type: itemData?.type || 'Drawer',
+      name: itemData?.name || drawerGroup.name,
+      description: itemData?.description || '',
+      design_id: itemData?.design_id || window.location.pathname.split('/')[2],
+      catalogId: itemData?.catalogId || '',
       width,
       height,
       depth,
@@ -1785,8 +1802,8 @@ export const addDrawersOnInvisibleBox = async (
               height: dims.height,
               depth: dims.depth,
             }),
-            position: convertPositionToMM(drawerGroup.position as any),
-          } as any)
+            position: convertPositionToMM(drawerGroup.position),
+          })
         );
       }
     }
@@ -1878,7 +1895,7 @@ function isSideWallPlank(mesh: THREE.Mesh, box: THREE.Box3): boolean {
 
 // Geometry analyz
 function analyzePlankGeometry(mesh: THREE.Mesh, box: THREE.Box3) {
-  const params = (mesh.geometry as any).parameters || {};
+  const params = (mesh.geometry as THREE.BoxGeometry).parameters || {};
   const size = getBoxSize(box);
 
   const width = params.width ?? size.x;
@@ -1899,12 +1916,7 @@ function createDimensionLine(
   end: THREE.Vector3,
   viewOffsetDir: THREE.Vector3,
   label: string,
-  meta?: {
-    axis: 'x' | 'y' | 'z';
-    side: 'min' | 'max';
-    ref: number;
-    targetUuid: string;
-  }
+  meta: DimensionMeta | null = null
 ) {
   const offset = 0.03;
   const startOffset = start.clone().addScaledVector(viewOffsetDir, offset);
@@ -2033,13 +2045,13 @@ function createDimensionForAxis({
   secondaryAxes,
   offsetDirFn,
 }: {
-  group: any;
-  mesh: any;
-  box: any;
-  scene: any;
-  mainAxis: any;
-  secondaryAxes: any;
-  offsetDirFn: any;
+  group: THREE.Group;
+  mesh: THREE.Mesh;
+  box: THREE.Box3;
+  scene: THREE.Scene;
+  mainAxis: 'x' | 'y' | 'z';
+  secondaryAxes: Array<'x' | 'y' | 'z'>;
+  offsetDirFn: { (mesh: THREE.Mesh, box: THREE.Box3): THREE.Vector3 };
 }): void {
   const { minPos, maxPos } = findNearestReferences(scene, mesh, box, mainAxis, secondaryAxes);
 
@@ -2149,16 +2161,10 @@ function createVerticalZDimensions(
 }
 // Cleanup functions
 function disposeObjectResources(obj: THREE.Object3D) {
-  obj.traverse((node: any) => {
-    if (node.geometry) node.geometry.dispose?.();
-    if (node.material) {
-      if (Array.isArray(node.material)) {
-        node.material.forEach((mat: any) => mat.dispose?.());
-      } else {
-        node.material.dispose?.();
-      }
+  obj.traverse((node: THREE.Object3D) => {
+    if (node instanceof THREE.Mesh) {
+      if (node.geometry) node.geometry.dispose?.();
     }
-    if (node.material?.map) node.material.map.dispose?.();
   });
 }
 
@@ -2206,7 +2212,7 @@ export function showPlankDimensions(scene: THREE.Scene, mesh: THREE.Mesh) {
     scene.add(group);
   }
 }
-function calculateDistance(box: THREE.Box3, meta: any): number {
+function calculateDistance(box: THREE.Box3, meta: DimensionMeta): number {
   const { axis, side, ref } = meta;
 
   if (axis === 'x') {
@@ -2218,7 +2224,7 @@ function calculateDistance(box: THREE.Box3, meta: any): number {
   }
 }
 
-function getCurrentFacePosition(box: THREE.Box3, meta: any): number {
+function getCurrentFacePosition(box: THREE.Box3, meta: DimensionMeta): number {
   const { axis, side } = meta;
 
   if (axis === 'x') return side === 'min' ? box.min.x : box.max.x;
@@ -2327,7 +2333,7 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const hits = ray.intersectObjects(sprites, true);
     if (!hits.length) return;
 
-    const sprite = hits[0].object as THREE.Sprite & { userData: any };
+    const sprite = hits[0].object;
     const meta = sprite.userData?.dimMeta;
     if (!meta) return;
 
