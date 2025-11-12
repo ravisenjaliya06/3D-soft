@@ -204,6 +204,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }[],
     cornerRadius: number[]
   ) => {
+    /** Updates the geometry of the selected mesh based on points, holes, and corner radiuses. */
+
     const selectedObject = state?.data?.selectedObject;
     const selectedChildObject = state?.data?.selectedChildObject;
     const scene = state?.scene?.scene;
@@ -426,6 +428,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   }, []);
 
   const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+    /** Handles mouse wheel zooming for the Konva stage with position and scale adjustments. */
+
     e.evt.preventDefault();
     const stage = stageRef.current;
     const scaleBy = 1.05;
@@ -452,6 +456,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   const renderHorizontalRuler = () => {
+    /** Renders the horizontal ruler with tick marks and distance labels for the editor view. */
+
     const ticks = [];
     const tickSpacing = 100;
     const viewWidth = stageSize.width;
@@ -493,6 +499,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   const renderVerticalRuler = () => {
+    /** Renders the vertical ruler with tick marks and distance labels for the editor view. */
+
     const ticks = [];
     const tickSpacing = 100;
     const viewHeight = stageSize.height;
@@ -536,14 +544,20 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   const handleCancel = () => {
+    /** Opens a confirmation dialog before exiting the current editor or panel view. */
+
     setShowConfirmExit(true);
   };
 
   const confirmExit = () => {
+    /** Confirms the exit action and redirects the user to the design view page. */
+
     router.push(`/design/${designId}`);
   };
 
   const closeModal = () => {
+    /** Closes the confirmation modal without exiting the current editor. */
+
     setShowConfirmExit(false);
   };
 
@@ -557,6 +571,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   ];
 
   const buildPathData = (points: { x: number; y: number }[], cornerRadius: number[]) => {
+    /** Builds an SVG-style path string with rounded corners from shape points and corner radiuses. */
+
     const n = points.length;
     if (n < 3) return '';
 
@@ -638,11 +654,15 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   const handleCurveClick = (index: number) => {
+    /** Handles user clicks on corner points to enable radius input editing. */
+
     setSelectedCornerIndex(index);
     setShowRadiusInput(true);
   };
 
   const renderRadiusInput = () => {
+    /** Renders an input box overlay for editing the corner radius of a selected vertex. */
+    
     if (!showRadiusInput || selectedCornerIndex === null) return null;
 
     const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;

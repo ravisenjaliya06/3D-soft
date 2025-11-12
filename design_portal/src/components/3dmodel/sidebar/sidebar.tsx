@@ -135,10 +135,14 @@ const Sidebar: React.FC = () => {
     min: number = 0,
     max: number = Infinity
   ): number | null => {
+    /** Validates a numeric input to ensure it falls within a given range, returning null if invalid. */
+
     return isNaN(value) || value < min || value > max ? null : value;
   };
 
   const updateObject = (updates: Partial<Object3D>) => {
+    /** Updates the selected 3D object’s properties in the scene and triggers invisible box rebuilding. */
+
     if (!selectedObject || isQuickHideActive) return;
     updateObjectInScene(selectedObject.id, updates, scene, dispatch, selectedObject);
     tryRebuildInvisibleBoxesForCabinet(selectedObject.id);
@@ -146,6 +150,8 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionChange =
     (dim: 'width' | 'height' | 'depth') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      /** Handles dimension (width, height, depth) input changes in the UI. */
+
       setDisplayedDimensions((prev) => ({
         ...prev,
         [dim]: Number(e.target.value),
@@ -169,6 +175,8 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionKeyDown =
     (dim: 'width' | 'height' | 'depth') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      /** Handles Enter key press events for committing dimension changes. */
+
       if (e.key === 'Enter') {
         handleDimensionCommit(dim, displayedDimensions[dim]);
       }
@@ -180,6 +188,8 @@ const Sidebar: React.FC = () => {
 
   const handleRotationChange =
     (axis: 'x' | 'y' | 'z') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      /** Handles rotation input changes for the given axis. */
+
       setRotations((prev) => ({ ...prev, [axis]: Number(e.target.value) }));
     };
 
@@ -192,6 +202,8 @@ const Sidebar: React.FC = () => {
 
   const handleRotationKeyDown =
     (axis: 'x' | 'y' | 'z') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      /** Handles Enter key events for committing rotation changes. */
+
       if (e.key === 'Enter') {
         handleRotationCommit(axis, rotations[axis]);
       }
@@ -203,6 +215,8 @@ const Sidebar: React.FC = () => {
 
   const handlePositionChange =
     (axis: 'x' | 'y' | 'z') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      /** Handles position input changes for the given axis. */
+
       setDisplayedPositions((prev) => ({
         ...prev,
         [axis]: Number(e.target.value),
@@ -219,6 +233,8 @@ const Sidebar: React.FC = () => {
 
   const handlePositionKeyDown =
     (axis: 'x' | 'y' | 'z') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      /** Handles Enter key events for committing position changes. */
+
       if (e.key === 'Enter') {
         handlePositionCommit(axis, displayedPositions[axis]);
       }
@@ -229,6 +245,8 @@ const Sidebar: React.FC = () => {
   };
 
   const tryRebuildInvisibleBoxesForCabinet = (objectId: string) => {
+    /** Attempts to rebuild invisible collision boxes for a cabinet mesh based on its dimensions. */
+
     if (!scene) return;
     try {
       rescaleByObjectId(scene, objectId);
@@ -276,26 +294,36 @@ const Sidebar: React.FC = () => {
   };
 
   const handleTextureSelect = (texturePath: string) => {
+    /** Applies a selected texture to the currently selected 3D object and updates the scene. */
+
     applyTextureToSelected(texturePath, 'updateTexture');
     setIsTextureListOpen(false);
   };
 
   const handleSetting = () => {
+    /** Opens the object settings sidebar, closing navigation if active. */
+
     if (isQuickHideActive) return;
     setSettingOpen(true);
     setNavOpen(false);
   };
 
   const toggleSidebar = () => {
+    /** Toggles the visibility of the right-hand settings sidebar. */
+
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   const handleNavigation = () => {
+    /** Opens the navigation panel and closes settings if open. */
+
     setSettingOpen(false);
     setNavOpen(true);
   };
 
   const handleDoorPositionChange = (position: string) => {
+    /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
+
     scene.traverse((child) => {
       if (child.userData.objectId === selectedObject?.id) {
         child.userData.openDirection = position.toLowerCase();
@@ -304,6 +332,8 @@ const Sidebar: React.FC = () => {
   };
 
   const handleHandlePositionChange = (position: string) => {
+    /** Repositions the handle on a door mesh according to the selected position label. */
+
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
 
@@ -378,10 +408,14 @@ const Sidebar: React.FC = () => {
   };
 
   const handleMaterialChange = () => {
+    /** Opens the material selection popup for the selected object. */
+
     setShowMaterialPopup(true);
   };
 
   const applyColorToSelected = (value: string, update?: string) => {
+    /** Applies a color material to the selected 3D object and optionally updates the database. */
+
     setSelectedColor(value);
     if (colorInputRef.current) {
       colorInputRef.current.style.backgroundColor = value;
@@ -437,6 +471,8 @@ const Sidebar: React.FC = () => {
   };
 
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    /** Updates the display unit (mm, inch, feet) and syncs it with the Redux state. */
+
     const u = e.target.value as Unit;
     setDisplayUnit(u);
 
@@ -448,6 +484,8 @@ const Sidebar: React.FC = () => {
   };
 
   const applyTextureToSelected = (texturePath: string, update?: string) => {
+    /** Applies a texture material to the selected 3D object and optionally updates the database. */
+
     if (!scene) return;
     const targetId = selectedChildObjectId || selectedObjectId;
     if (!targetId) return;
@@ -510,6 +548,8 @@ const Sidebar: React.FC = () => {
   };
 
   const toggleTextureList = () => {
+    /** Toggles the visibility of the texture selection list. */
+
     setIsTextureListOpen((prev) => !prev);
   };
 

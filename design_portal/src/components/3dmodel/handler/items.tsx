@@ -469,6 +469,13 @@ export async function createMeshRecursively(
   parent: THREE.Object3D | null = null,
   scene?: THREE.Scene
 ): Promise<THREE.Mesh | null> {
+  /**
+   Recursively create a THREE.Mesh object from api data.
+   
+   This function recursively goes through the children of the given Object3D data and creates a THREE.Mesh object for each one.
+   It also adds the created mesh to the given scene or parent object.
+   
+  */
   showFullScreenLoader('Loading design objects...');
   if (!data) return null;
 
@@ -602,6 +609,9 @@ export async function createMeshRecursively(
 }
 
 async function loadDesignObjects(designId: string, scene: THREE.Scene) {
+  /**
+   Loads design objects from the API based on the given design ID.
+  */
   try {
     const response: { status: number; data: Object3D[] } = await commonService.get(
       API_ENDPOINT.GET_DESIGN_OBJECTS(designId)
@@ -801,6 +811,7 @@ export default {
 };
 
 export function toggleDoor(child: THREE.Mesh) {
+  /** Toggles a 3D door’s open/close animation based on its open direction type. */
   if (!child) return;
 
   const isClosed = child.userData.isClosed ?? true;
@@ -896,6 +907,7 @@ export function toggleDoor(child: THREE.Mesh) {
 }
 
 export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
+  /** Toggles a drawer open or closed by sliding it along its inferred direction. */
   if (!child) return;
 
   const isClosed = child.userData.isClosed ?? true;
@@ -949,6 +961,7 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
   child.userData.closedPos = closedPos;
 }
 
+
 export const addCabinetItemToDesign = async (
   catalogId: string,
   itemData: {
@@ -968,6 +981,8 @@ export const addCabinetItemToDesign = async (
     }[];
   }
 ) => {
+  /** Adds a cabinet item to the current design using its catalog and metadata via API. */
+
   const payload = {
     type: itemData.type,
     name: itemData.name,
@@ -997,6 +1012,7 @@ export const addCabinetItemToDesign = async (
 };
 
 export const addItemtoDatabase = async (data: AddItemDatabasePayload) => {
+  /** Adds an item to the database using catalog-based API. */
   try {
     const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
@@ -1010,6 +1026,7 @@ export const addItemtoDatabase = async (data: AddItemDatabasePayload) => {
 };
 
 export const addItemToDataBaseWithoutCatalog = async (data: AddItemDatabasePayload) => {
+  /** Adds an item directly to the database without linking it to a catalog. */
   try {
     const apiResponse = await commonService.post(
       API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,
