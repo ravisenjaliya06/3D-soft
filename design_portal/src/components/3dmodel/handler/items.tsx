@@ -514,7 +514,7 @@ export async function createMeshRecursively(
     );
   }
 
-  if (Array.isArray(data.catalog_rules)) {
+  if (Array.isArray(data.catalog_rules) && !(data.type === 'Plank')) {
     for (const rule of data.catalog_rules) {
       if (Array.isArray(rule.rule_parts) && rule.name === 'Panel') {
         for (const part of rule.rule_parts) {

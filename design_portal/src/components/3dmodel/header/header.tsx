@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
+import { clearAllPlankDimensions } from '../design/scene';
 import { toggleDoor, toggleDrawer } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
@@ -72,6 +73,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       if (response.status === 200 || response.status === 204) {
         if (design3D) {
           dispatch(removeAllObjects() as unknown as UnknownAction);
+          clearAllPlankDimensions(design3D.scene);
         }
         fetchDesigns();
         setSuccessMessage('Design cleared successfully!');
