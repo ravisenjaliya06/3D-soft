@@ -27,6 +27,7 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
+  /* Login function */
   const handleLogin = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setIsLoading(true);

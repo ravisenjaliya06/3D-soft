@@ -106,8 +106,10 @@ const CatalogManager = () => {
     if (e.key === 'Enter') setEditing(false);
   };
 
+  /** Open the popup to create a new catalog */
   const handleAddCatalog = () => setShowPopup(true);
 
+  /** Fetch catalog list based on the selected catalog type */
   const getCatalog = useCallback(async () => {
     const response: { status: number; data: Catalog[] } = await commonService.get(
       API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
@@ -118,6 +120,7 @@ const CatalogManager = () => {
     }
   }, [catalogType]);
 
+  /** Load all rule parts for the selected rule */
   const fetchRuleParts = async (ruleId: string) => {
     setActiveRuleId(ruleId); // mark active rule
     try {
@@ -154,6 +157,7 @@ const CatalogManager = () => {
     }
   }, [catalogData, selectedCatalog]);
 
+  /** Create a new catalog and refresh the catalog list */
   const handleCreateCatalog = async () => {
     const payload = {
       type: catalogType,
@@ -179,6 +183,7 @@ const CatalogManager = () => {
     }
   };
 
+  /** Fetch all available materials from the server */
   const getMaterial = async () => {
     const response: { status: number; data: Material[] } = await commonService.get(
       API_ENDPOINT.GET_MATERIAL
@@ -192,6 +197,7 @@ const CatalogManager = () => {
     getMaterial();
   });
 
+  /** Assign a selected material to a selected part */
   const handleAssignMaterial = async (partId: string, materialId: string | null) => {
     const material = materialData.find((m) => m.id === materialId);
     if (!material) return;
@@ -217,6 +223,7 @@ const CatalogManager = () => {
     setSelectedMaterialId('');
   };
 
+  /** Remove the assigned material from a selected part */
   const handleDeleteMaterial = async (partId: string) => {
     setRuleParts((prevParts) =>
       prevParts.map((part) => (part.id === partId ? { ...part, material: null } : part))
@@ -243,6 +250,7 @@ const CatalogManager = () => {
     }
   };
 
+  /** Confirm and assign the chosen material to the chosen part */
   const handleAssignMaterialButton = () => {
     if (!selectedPartId || !selectedMaterialId) {
       alert('Please select a part and material');
@@ -254,6 +262,7 @@ const CatalogManager = () => {
     setSelectedMaterialId('');
   };
 
+  /** Confirm and delete material assignment from the selected part */
   const handleDeleteAssignMaterial = () => {
     if (!selectedPartId) {
       alert('Please select a part');
@@ -280,7 +289,6 @@ const CatalogManager = () => {
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Catalog Manager" />
 
-        {/* TOP TOOLBAR */}
         {/* TOP TOOLBAR */}
         <div className={styles.maincontainer}>
           <div className={styles.topToolbar}>

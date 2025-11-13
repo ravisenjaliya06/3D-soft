@@ -52,7 +52,7 @@ const Material: React.FC = () => {
     setCompanyName,
   } = useMaterialState();
 
-  // Event handlers
+  /** When a category is clicked, open it and load its materials */
   const handleCategoryClick = (categoryId: string, name: string) => {
     setActiveCategory(categoryId);
     const tabs = CATEGORY_TABS[categoryId];
@@ -62,16 +62,19 @@ const Material: React.FC = () => {
     fetchMaterialsByType(name);
   };
 
+  /** Open or close a category section when the arrow is clicked */
   const handleToggleCategory = (categoryId: string) => {
     setExpandedCategory(expandedCategory === categoryId ? '' : categoryId);
     setSelectedSubItem(null);
   };
 
+  /** Select a sub-item and load all materials for that company */
   const handleSubItemClick = (itemId: string) => {
     setSelectedSubItem(itemId);
     fetchCompanyMaterials(itemId);
   };
 
+  /** Show right-click menu for a category */
   const handleContextMenu = (e: React.MouseEvent, categoryId: string, name: string) => {
     e.preventDefault();
     setExpandedCategory(categoryId);
@@ -79,6 +82,7 @@ const Material: React.FC = () => {
     setContextMenu({ x: e.clientX, y: e.clientY, categoryId });
   };
 
+  /** Show right-click menu for a company’s materials */
   const handleMaterialContextMenu = (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -89,6 +93,7 @@ const Material: React.FC = () => {
     });
   };
 
+  /** Create a new company and reset popup fields */
   const handleCreateCompany = async () => {
     const success = await createCompany(companyName, selectedType);
     if (success) {
@@ -98,11 +103,13 @@ const Material: React.FC = () => {
     }
   };
 
+  /** Open the popup to add a new company */
   const handleAddCompany = () => {
     setCreateCompanyPopup(true);
     setContextMenu(null);
   };
 
+  /** Open the popup to add a new material under a company */
   const handleAddMaterial = (companyId: string) => {
     setAddMaterialPopup(true);
     setContextMaterialMenu(null);

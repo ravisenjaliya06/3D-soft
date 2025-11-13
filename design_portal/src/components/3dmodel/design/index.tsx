@@ -12,10 +12,8 @@ import {
   removeObjectWithHistory,
   setHoverdMesh,
   setobjectSelected,
-  setSelectedChildObject,
-  updateObjectPosition,
+  setSelectedChildObject
 } from '../store/dataSlice';
-import { Object3D } from '../store/interface';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
@@ -97,9 +95,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
 
   const [outline, setOutline] = useState<THREE.Object3D | null>(null);
-  const [helperTools, setHelperTools] = useState<boolean>(false);
   const [moveHandler, setMoveHandler] = useState<MoveHandler | null>(null);
-  const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   const originalMaterialsRef = useRef(new Map());
   const outlinesRef = useRef(new Map<THREE.Mesh, THREE.LineSegments>());
   const dimensionLabelsRef = useRef(new Map<THREE.Mesh, THREE.Sprite[]>());
@@ -601,34 +597,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   }, [selectedObject, design3D]);
 
-  const createBoundingBoxOutline = (object: THREE.Object3D): THREE.LineSegments | null => {
-    /** Creates a bounding box-style yellow outline around a given 3D object. */
-
-    if (!object) return null;
-
-    try {
-      const box = new THREE.Box3().setFromObject(object);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const wireframe = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ color: 0xffff00 })
-      );
-      wireframe.position.copy(center);
-      wireframe.rotation.copy(object.rotation);
-
-      wireframe.name = `outline-${object.id}`;
-
-      return wireframe;
-    } catch (error) {
-      console.error('Error creating outline:', error);
-      return null;
-    }
-  };
-
   const handleObjectSelection = () => {
     /** Handles 3D object selection, updates Redux state, and displays outlines or dimensions. */
 
@@ -672,7 +640,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
       setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
-        setHelperTools(false);
         setSelectedObject(null);
       }
       newOutline = createOutlineForObject(hoveredMesh || null);
@@ -876,7 +843,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           .then(() => {
             removeObjectAndChildrenFromScene(selectedObject);
             setSelectedObject(null);
-            setHelperTools(false);
           })
           .catch((error) => {
             console.error('Error during object deletion:', error);
@@ -890,7 +856,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyboardEvents);
     };
-  }, [selectedObject, design3D, moveHandler, isMoveMode, isSelectableMesh]);
+  }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
