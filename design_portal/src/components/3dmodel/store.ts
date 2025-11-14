@@ -7,6 +7,7 @@ import sceneReducer from '@/components/3dmodel/store/sceneSlice';
 import { Action, configureStore } from '@reduxjs/toolkit';
 import { ThunkAction } from 'redux-thunk';
 
+/* This is main store which i show in console in dev mode and using this store we can access all the states */
 export const store = configureStore({
   reducer: {
     scene: sceneReducer,
@@ -22,6 +23,7 @@ export const store = configureStore({
     }),
 });
 
+/* registers a callback function that runs every time the Redux store updates.*/
 store.subscribe(() => {
   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
     console.log('Updated store state:', store.getState());

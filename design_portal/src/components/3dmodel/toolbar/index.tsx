@@ -55,23 +55,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
+
+  /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
   };
 
+  /** Set popup position based on submenu button click */
   const handleSubmenuClick = (event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setPopupPosition({ x: rect.right + 12, y: rect.top + 55 });
   };
 
+  /** Close the all popup which is open in toolbar */
   const closePopup = () => {
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
 
+  /** Add platform on the selected wall and create API entry */
   const handleToAddPlatform = async (catalogId: string) => {
     const textureLoader = new THREE.TextureLoader();
     const counterTexture = textureLoader.load('/img14_64.jpg');
@@ -153,6 +158,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     { option: 'View', name: 'View', icon: assets.img2 },
   ];
 
+  /** Fetch cabinet items from API and update setCabinetItems state */
   const fetchCabinetItem = async () => {
     const cabinetResponse: { status: number; data: CabinetItem[] } = await commonService.get(
       API_ENDPOINT.GET_CATALOG_ITEMS
@@ -165,6 +171,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     }
   };
 
+  /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (item: ResultType) => {
     if (item.type === 'Platform') {
       handleToAddPlatform(item.id);
@@ -296,7 +303,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setAddPartPopup(true);
   };
 
-  const onAddItems = async () => {
+  /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
+  const onAddItems = async () => { 
     if (!selectedCabinetItem) {
       console.error('No cabinet item selected');
       return;
@@ -413,7 +421,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     { option: 'Cabinet', icon: assets.cabinet_svg },
   ];
 
-  // Submenu items for each furniture category - dynamically filtered from API
+
+  /** Return filtered cabinet items based on selected category */
   const getFilteredCabinetItems = (category: string) => {
     // Define what types should appear for each category
     const categoryFilters: Record<string, string[]> = {
@@ -481,6 +490,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     return result;
   };
 
+  /** Open the Second Popup for selected furniture category */
   const handleFurnitureCategoryClick = (category: string) => {
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
     setAddPartPopup(false);
@@ -501,6 +511,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     },
   ];
 
+  /** Reset toolbar to Home option and clear selected states */
   const handleback = () => {
     setActiveOption('Home');
     setActiveOptionName('Home');
@@ -511,6 +522,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
   };
 
+  /* Map item types/names to their respective icons */ 
   const iconMap: IconMap = {
     Drawer: assets.drawer,
     'Sliding Door': assets.door,

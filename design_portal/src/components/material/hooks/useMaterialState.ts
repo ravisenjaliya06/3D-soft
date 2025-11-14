@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ContextMenu, MaterialContextMenu, MaterialState } from '../types';
 
+/** Initial state for the material state which we show in matirial page-relod  */
 const initialState: Omit<MaterialState, 'companyMaterials' | 'materialCategories' | 'error'> = {
   expandedCategory: 'banding',
   selectedType: null,
@@ -17,6 +18,8 @@ const initialState: Omit<MaterialState, 'companyMaterials' | 'materialCategories
   companyName: '',
 };
 
+
+// * Update manage material state
 export const useMaterialState = () => {
   const [state, setState] = useState(initialState);
 

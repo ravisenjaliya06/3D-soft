@@ -88,6 +88,8 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   }, [activeTab]);
 
   const handleAssignMaterial = async (partId: string, materialId: string) => {
+    /* Update part material */
+
     const material = materialData.find((m) => m.id === materialId);
     if (!material) return;
 
@@ -116,6 +118,8 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
   };
 
   const handleSave = () => {
+    /* Build list of assigned materials */
+
     const assigned = partsData.map((p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`);
     onSave(assigned);
     onClose();

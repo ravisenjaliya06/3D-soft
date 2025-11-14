@@ -55,6 +55,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   }
 
   const handleClear = () => {
+    /** Opens the confirmation popup to clear the current design. */
+
     if (!designId) {
       return;
     }
@@ -62,6 +64,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const confirmClear = async () => {
+    /** Confirms and clears all design data from the backend and 3D scene. */
+
     setShowClearConfirm(false);
     setIsLoading(true);
 
@@ -95,12 +99,16 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   }, [showSettingsPopup]);
 
   const handleZoomModeToggle = () => {
+    /** Toggles zoom mode in the 3D design viewer. */
+
     if (design3D) {
       design3D.toggleZoomMode?.(!design3D.isZoomMode);
     }
   };
 
   const handleClick = (route: string) => {
+    /** Handles navigation to a specific route, exiting fullscreen if active. */
+
     setIsLoading(true);
     if (document.fullscreenElement) {
       document.exitFullscreen().then(() => {
@@ -112,6 +120,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }
   };
   const fetchSettingsConfig = async () => {
+    /** Fetches current design settings (Minifix, groove, etc.) from the backend. */
+
     const designId = window.location.pathname.split('/')[2];
 
     const response: { status: number; data: DesignIDSettingData } = await commonService.get(
@@ -126,6 +136,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }
   };
   const handleSettingsSubmit = async () => {
+    /** Submits updated Minifix and design settings to the backend and refreshes the view. */
+
     const designId = window.location.pathname.split('/')[2];
     if (!designId) return;
 
@@ -170,6 +182,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   }, []);
 
   const fetchDesigns = async () => {
+    /** Fetches all designs from the backend. */
+
     try {
       const response: { status: number; data: Design[] } = await commonService.get(
         API_ENDPOINT.GET_DESIGNS
@@ -205,6 +219,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   }, []);
 
   const toggleFullscreen = () => {
+    /** Toggles fullscreen mode for the browser view. */
+
     if (!isFullscreen) {
       document.documentElement.requestFullscreen();
     } else {
@@ -229,14 +245,20 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   }, [design3D]);
 
   const handleProfileClick = () => {
+    /** Toggles the visibility of the user profile dropdown menu. */
+
     setIsDropdownOpen((prev) => !prev);
   };
 
   const profileSetting = () => {
+    /** Redirects the user to profile settings. */
+
     router.push(REDIRECT.SETTINGS);
   };
 
   const handleLogout = () => {
+    /** Logs out the user, clears tokens, and redirects to the unauthorized screen. */
+
     localStorage.removeItem('token');
     Cookies.remove('token', { path: '' });
     router.push({
@@ -245,6 +267,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const handleNesting = async () => {
+    /** Fetches nesting data for the current design and navigates to the MES screen. */
+
     setIsLoading(true); // 🔄 Show loading spinner
     try {
       const response: { status: number; data: Design[] } = await commonService.get(
@@ -261,6 +285,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const handleScreenshot = () => {
+    /** Captures a screenshot of the 3D scene and downloads it as a PNG file. */
+
     if (!design3D || !design3D.renderer) {
       console.error('Renderer not available');
       return;
@@ -277,6 +303,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const handleOpenCloseClick = () => {
+    /** Toggles open/close animations for doors and drawers in the 3D scene. */
+
     design3D?.scene.traverse((child) => {
       if (child.name.includes('Door') && child instanceof THREE.Mesh) {
         const direction = child.userData.openDirection;

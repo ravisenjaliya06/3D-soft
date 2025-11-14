@@ -4,6 +4,7 @@ import { mmToMeters } from '../handler/unitConversion';
 import { PlankSegment, PositionKey } from '../interface';
 import { Object3D } from '../store/interface';
 
+/** Update the main mesh and all of its child parts mostly use in update child object  */
 export const updateObjectGeometry = (
   mesh: THREE.Mesh,
   object: Object3D,
@@ -284,72 +285,3 @@ export const updateObjectGeometry = (
 
   return { childUpdates, grandChildUpdates };
 };
-
-function getChildConfig(child: Object3D) {
-  return {
-    width: child.width,
-    height: child.height,
-    depth: child.depth,
-    position: {
-      x: child.position?.x || 0,
-      y: child.position?.y || 0,
-      z: child.position?.z || 0,
-    },
-  };
-}
-
-export function buildMeshTree(object: Object3D, allObjects: Object3D[]): THREE.Mesh {
-  const config = getChildConfig(object);
-
-  // Create mesh for this object
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      mmToMeters(config.width),
-      mmToMeters(config.height),
-      mmToMeters(config.depth)
-    ),
-    new THREE.MeshStandardMaterial()
-  );
-  mesh.position.set(
-    mmToMeters(config.position.x),
-    mmToMeters(config.position.y),
-    mmToMeters(config.position.z)
-  );
-  mesh.userData.objectId = object.id;
-
-  // Recursively add children
-  if (object.child && object.child.length > 0) {
-    for (const childId of object.child) {
-      const childObj = allObjects.find((obj) => obj.id === childId);
-      if (!childObj) continue;
-      const childMesh = buildMeshTree(childObj, allObjects);
-      mesh.add(childMesh);
-    }
-  }
-
-  return mesh;
-}
-
-export function updateSceneObject(
-  scene: THREE.Scene,
-  updatedObjects: Object3D[],
-  objectId: string
-) {
-  const oldMesh = scene.getObjectByProperty('userData.objectId', objectId);
-  if (oldMesh) {
-    scene.remove(oldMesh);
-    oldMesh.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material && typeof (obj.material as THREE.Material).dispose === 'function') {
-          (obj.material as THREE.Material).dispose();
-        }
-      }
-    });
-  }
-  const updatedObject = updatedObjects.find((obj) => obj.id === objectId);
-  if (!updatedObject) return;
-  // Build and add new mesh
-  const newMesh = buildMeshTree(updatedObject, updatedObjects);
-  scene.add(newMesh);
-}

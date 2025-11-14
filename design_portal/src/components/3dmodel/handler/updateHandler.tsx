@@ -13,18 +13,23 @@ import { updateObjectGeometry } from '../utils/geometryUtils';
 import { ITEM, ItemData, PLANK, UpdatedItemData } from './interface';
 
 function getDesignId(): string | null {
+  /** Retrieves the design ID from the current URL. */
+
   const url = window.location.href;
   const designId = url.split('/').pop();
   return designId || null;
 }
 
 function itemCheck(object: Object3D): boolean {
+  /** Checks if the given object is a valid plank (excluding doors and drawers). */
+
   return (
     object.name.includes(ITEM.PLANK) &&
     !object.name.includes(ITEM.DRAWER) &&
     !object.name.includes(ITEM.DOOR)
   );
 }
+
 export const updateObjectInDatabase = async (
   objectId: string,
   updatedMainData: Partial<Object3D>,
@@ -32,6 +37,8 @@ export const updateObjectInDatabase = async (
   items: CatalogItem[] = [],
   childCatalogs: ChildCatalog[] = []
 ): Promise<THREE.Scene | null> => {
+  /** Updates the given object and its related items in the backend database. */
+
   const designId = getDesignId();
   if (!designId) {
     console.error('No design ID found in URL');
@@ -171,6 +178,8 @@ export const updateObjectInScene = (
   dispatch: AppDispatch,
   selectedObject: Object3D | null
 ): void => {
+  /** Updates a 3D object’s geometry, dimensions, position, and children in the scene and database. */
+
   if (!scene || !selectedObject) return;
   removeExistingLines();
   const allObjects = store.getState().data.objects;
@@ -912,6 +921,8 @@ export const updateObjectOutline = (
   selectedObject: Object3D | null,
   scene: THREE.Scene | null
 ): void => {
+  /** Regenerates and updates the outline for a selected 3D object in the scene. */
+
   if (!scene || !selectedObject) return;
 
   const threeDObject = scene.children.find(
@@ -956,6 +967,8 @@ export const updateObjectOutline = (
 };
 
 export const gettingDesignID = () => {
+  /** Retrieves the design ID from the URL path for API requests. */
+
   const designID = window.location.pathname.split('/')[2];
   return designID;
 };

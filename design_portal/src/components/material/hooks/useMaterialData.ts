@@ -11,6 +11,7 @@ export const useMaterialData = () => {
     useState<MaterialItem[]>(STATIC_MATERIAL_TYPES);
   const [error, setError] = useState<string | null>(null);
 
+  /** Get all material companies from the API and update the category list */
   const fetchCompanies = useCallback(async () => {
     try {
       const response: MaterialResponse = await commonService.get(
@@ -36,6 +37,7 @@ export const useMaterialData = () => {
     }
   }, []);
 
+  /** Get materials based on the selected material type */
   const fetchMaterialsByType = useCallback(async (type: string) => {
     try {
       const response: MaterialResponse = await commonService.get(
@@ -52,6 +54,7 @@ export const useMaterialData = () => {
     }
   }, []);
 
+  /** Get all materials that belong to a specific company */
   const fetchCompanyMaterials = useCallback(async (companyId: string) => {
     try {
       const response: MaterialResponse = await commonService.get(
@@ -68,6 +71,7 @@ export const useMaterialData = () => {
     }
   }, []);
 
+  /** Create a new material company and refresh the company list */
   const createCompany = useCallback(
     async (companyName: string, selectedType: string | null) => {
       if (!companyName.trim()) {

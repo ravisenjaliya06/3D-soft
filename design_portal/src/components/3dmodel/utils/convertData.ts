@@ -1,6 +1,7 @@
 import { CatalogItem, ChildCatalog, ComponentData } from '../interface';
 import { Material, Object3D } from '../store/interface';
 
+/** Make a simple data object from a child object  */
 const createComponentData = (
   child: Object3D,
   defaultMaterial: Material,
@@ -26,6 +27,8 @@ const createComponentData = (
   grooves: child?.grooves || [],
 });
 
+
+/** Convert object and its child objects into catalog format */
 export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) => {
   const defaultMaterial: Material = {
     type: 'TEXTURE',

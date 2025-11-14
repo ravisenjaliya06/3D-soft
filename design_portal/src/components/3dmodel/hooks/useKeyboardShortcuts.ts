@@ -4,6 +4,8 @@ import { UnknownAction } from 'redux';
 import { redoAction, undoAction } from '../store/historySlice';
 
 export const useKeyboardShortcuts = () => {
+  /** Custom hook that enables Ctrl+Z (undo) and Ctrl+Y (redo) keyboard shortcuts for design history actions. */
+
   const dispatch = useDispatch();
 
   useEffect(() => {

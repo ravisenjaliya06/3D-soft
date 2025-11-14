@@ -2645,6 +2645,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
 
+  /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
     setFormData((prev) => ({
       ...prev,
@@ -2659,18 +2660,21 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   };
 
+  /** Go to the next step in the popup wizard */
   const handleNext = () => {
     if (currentStep < currentSequence.length - 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
+  /** Go to the previous step in the popup wizard */
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
   };
 
+  /** Collect all form data and submit the final material to the server */
   const handleFinish = async () => {
     // Base properties that are common to all material types
     const baseProperties = {
@@ -3018,6 +3022,7 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   };
 
+  /** Show the correct input field based on field type (text, number, select, toggle) */
   const renderField = (field: Field) => {
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 

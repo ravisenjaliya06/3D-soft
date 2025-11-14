@@ -12,10 +12,8 @@ import {
   removeObjectWithHistory,
   setHoverdMesh,
   setobjectSelected,
-  setSelectedChildObject,
-  updateObjectPosition,
+  setSelectedChildObject
 } from '../store/dataSlice';
-import { Object3D } from '../store/interface';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
@@ -28,11 +26,15 @@ import {
 } from './scene';
 
 export const gettingDesignID = () => {
+  /** Retrieves the current design ID from the URL path. */
+
   const designID = window.location.pathname.split('/')[2];
   return designID;
 };
 
 export function removeExistingLines() {
+  /** Removes all existing outline line objects from the 3D scene. */
+
   const design3D = store.getState().scene.scene;
 
   const toRemove: THREE.Object3D[] = [];
@@ -51,6 +53,8 @@ export function removeExistingLines() {
 }
 
 export function createOutlineForObject(mesh: THREE.Mesh): THREE.LineSegments | null {
+  /** Creates a yellow outline (edge highlight) for the given 3D mesh object. */
+
   if (!mesh.geometry) return null;
 
   const edges = new THREE.EdgesGeometry(mesh.geometry);
@@ -91,9 +95,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
 
   const [outline, setOutline] = useState<THREE.Object3D | null>(null);
-  const [helperTools, setHelperTools] = useState<boolean>(false);
   const [moveHandler, setMoveHandler] = useState<MoveHandler | null>(null);
-  const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   const originalMaterialsRef = useRef(new Map());
   const outlinesRef = useRef(new Map<THREE.Mesh, THREE.LineSegments>());
   const dimensionLabelsRef = useRef(new Map<THREE.Mesh, THREE.Sprite[]>());
@@ -507,6 +509,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   }, [design3D, isQuickHideActive, objects]);
 
   const createSelectionOutline = (mesh: THREE.Mesh) => {
+    /** Creates a yellow outline around a selected 3D mesh for visual selection indication. */
+
     if (!mesh.geometry) return null;
 
     const edges = new THREE.EdgesGeometry(mesh.geometry);
@@ -528,6 +532,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   };
 
   const createHoverOutline = (mesh: THREE.Mesh, worldPosition: THREE.Vector3) => {
+    /** Creates a blue hover outline around a 3D mesh at its world position. */
+
     if (!mesh.geometry) return null;
 
     const edges = new THREE.EdgesGeometry(mesh.geometry);
@@ -591,33 +597,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   }, [selectedObject, design3D]);
 
-  const createBoundingBoxOutline = (object: THREE.Object3D): THREE.LineSegments | null => {
-    if (!object) return null;
-
-    try {
-      const box = new THREE.Box3().setFromObject(object);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const wireframe = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ color: 0xffff00 })
-      );
-      wireframe.position.copy(center);
-      wireframe.rotation.copy(object.rotation);
-
-      wireframe.name = `outline-${object.id}`;
-
-      return wireframe;
-    } catch (error) {
-      console.error('Error creating outline:', error);
-      return null;
-    }
-  };
-
   const handleObjectSelection = () => {
+    /** Handles 3D object selection, updates Redux state, and displays outlines or dimensions. */
+
     removeExistingLines();
     if (design3D) {
       clearAllPlankDimensions(design3D.scene);
@@ -658,7 +640,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
       setSelectedObject(hoveredMesh as THREE.Mesh);
       if (!hoveredMesh.name.includes('WALL')) {
-        setHelperTools(false);
         setSelectedObject(null);
       }
       newOutline = createOutlineForObject(hoveredMesh || null);
@@ -704,6 +685,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     SELECTABLE_KEYS.some((key) => obj.name.toUpperCase().includes(key));
 
   const handleObjectHover = useCallback(
+    /** Handles mouse hover over 3D objects, updating outlines and hover states dynamically. */
+
     (event: MouseEvent) => {
       if (!design3D || isQuickHideActive || isMeasurementActive) return;
       const selectedChildObjectId = store.getState().data.selectedChildObject;
@@ -793,60 +776,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
   }, [isMeasurementActive, design3D, hoverOutlineRef]);
 
-  const handleCanvasClick = useCallback(
-    (event: MouseEvent) => {
-      if (!design3D || !helperTools) return;
-
-      const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, design3D.camera);
-      const intersects = raycaster.intersectObjects(design3D.scene.children, true);
-
-      if (intersects.length === 0) {
-        setHelperTools(false);
-        return;
-      }
-      let hitFurnitureObject = false;
-
-      for (const intersect of intersects) {
-        let currentObject = intersect.object;
-
-        while (currentObject && !(currentObject instanceof THREE.Mesh)) {
-          currentObject = currentObject.parent as THREE.Object3D;
-        }
-        if (
-          currentObject &&
-          currentObject instanceof THREE.Mesh &&
-          currentObject.name !== 'grid' &&
-          !(currentObject instanceof THREE.GridHelper) &&
-          currentObject.name !== 'floor' &&
-          currentObject.name !== 'daysky' &&
-          currentObject.name !== 'nightsky' &&
-          currentObject.userData.objectId
-        ) {
-          hitFurnitureObject = true;
-          break;
-        }
-      }
-
-      if (!hitFurnitureObject) {
-        setHelperTools(false);
-      }
-    },
-    [design3D, helperTools]
-  );
-
   useEffect(() => {
     window.addEventListener('dblclick', handleObjectSelection);
-    window.addEventListener('click', handleCanvasClick);
     window.addEventListener('mousemove', handleObjectHover);
 
     return () => {
       window.removeEventListener('dblclick', handleObjectSelection);
-      window.removeEventListener('click', handleCanvasClick);
       window.removeEventListener('mousemove', handleObjectHover);
 
       // Clean up hover outline
@@ -859,9 +794,11 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         hoverOutlineRef.current = null;
       }
     };
-  }, [design3D, handleObjectHover, handleCanvasClick]);
+  }, [design3D, handleObjectHover]);
 
   const deleteObject = async () => {
+    /** Deletes the currently selected 3D object from both the scene and backend database. */
+
     removeExistingLines();
     return new Promise<void>(async (reject) => {
       if (!selectedObject || !selectedObject.userData.objectId) {
@@ -888,6 +825,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   };
 
   const removeObjectAndChildrenFromScene = (parentObject: THREE.Object3D) => {
+    /** Removes a 3D object and all its children from the scene hierarchy. */
+
     if (!design3D || !parentObject) return;
 
     parentObject.children.forEach((child) => {
@@ -895,101 +834,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     });
 
     parentObject.parent?.remove(parentObject);
-  };
-  const updateObjectPositionInDatabase = async (
-    objectId: string,
-    originalObj: Object3D,
-    position: THREE.Vector3
-  ) => {
-    try {
-      const updatedObj = { ...originalObj };
-      updatedObj.position = {
-        x: position.x,
-        y: position.y,
-        z: position.z,
-      };
-
-      const payload = {
-        data: {
-          catalog: { id: objectId, name: updatedObj.name, data: updatedObj },
-        },
-      };
-      const response: { status: number } = await commonService.put(
-        API_ENDPOINT.UPDATE_OBJECT_DATA(gettingDesignID()),
-        payload
-      );
-      if (response && response.status === 200) {
-        dispatch(
-          updateObjectPosition({
-            id: objectId,
-            position: { x: position.x, y: position.y, z: position.z },
-          })
-        );
-        return true;
-      }
-      console.error('Failed to update object position in DB:', response);
-      return false;
-    } catch (error) {
-      console.error('Error updating object position:', error);
-      return false;
-    }
-  };
-
-  const handleMoveObject = async () => {
-    if (!selectedObject || !design3D || !moveHandler) return;
-
-    const objectId = selectedObject.userData.objectId;
-    if (!objectId) return;
-
-    const object = store.getState().data.objects.find((obj) => obj.id === objectId);
-    if (!object) return;
-
-    try {
-      const originalPosition = selectedObject.position.clone();
-      if (outline) {
-        design3D.scene.remove(outline);
-        setOutline(null);
-      }
-      if (selectedObject instanceof THREE.Mesh) {
-        const moveOutline = createSelectionOutline(selectedObject);
-        if (moveOutline && moveOutline.material instanceof THREE.LineBasicMaterial) {
-          moveOutline.material.color.set(0x00ff00);
-          design3D.scene.add(moveOutline);
-          setOutline(moveOutline);
-        }
-      }
-      if (design3D.controls) design3D.controls.enabled = false;
-
-      const finalPosition = await moveHandler.enableDragging(selectedObject);
-
-      if (design3D.controls) design3D.controls.enabled = true;
-      if (finalPosition) {
-        selectedObject.position.copy(finalPosition);
-        const success = await updateObjectPositionInDatabase(objectId, object, finalPosition);
-        if (!success) {
-          console.error('Failed to update position in DB, reverting...');
-          selectedObject.position.copy(originalPosition);
-        }
-      } else {
-        selectedObject.position.copy(originalPosition);
-      }
-
-      if (outline) {
-        design3D.scene.remove(outline);
-        setOutline(null);
-      }
-      const newOutline = createBoundingBoxOutline(selectedObject);
-      if (newOutline) {
-        design3D.scene.add(newOutline);
-        setOutline(newOutline);
-      }
-
-      setIsMoveMode(false);
-    } catch (error) {
-      console.error('Error during move operation:', error);
-      setIsMoveMode(false);
-      if (design3D.controls) design3D.controls.enabled = true;
-    }
   };
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
@@ -999,18 +843,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           .then(() => {
             removeObjectAndChildrenFromScene(selectedObject);
             setSelectedObject(null);
-            setHelperTools(false);
           })
           .catch((error) => {
             console.error('Error during object deletion:', error);
           });
-      }
-    }
-
-    if (event.key === 'm' || event.key === 'M') {
-      if (selectedObject && selectedObject.userData.objectId) {
-        setIsMoveMode(true);
-        handleMoveObject();
       }
     }
   };
@@ -1020,7 +856,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyboardEvents);
     };
-  }, [selectedObject, design3D, moveHandler, isMoveMode, isSelectableMesh]);
+  }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
 
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
