@@ -45,7 +45,7 @@ class CommonService {
   }
 
   delete<payloadType>(url: string, data?: payloadType) {
-    return http.delete(url, data ? data : {}).catch((err: Error) => {
+    return http.delete(url, data || {}).catch((err: Error) => {
       if (err.status == STATUS_CODES.UNAUTHORIZED) {
         Cookies.remove('token', { path: '' });
         localStorage.clear();

@@ -528,7 +528,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
       <aside className={styles.aside}>
         <div style={{ flexDirection: 'column', display: 'flex' }}>
           <div className={styles.group}>
-            <img src={assets.logo} className={styles.projectLogo} alt="Toolbar Logo" />
+            <img
+              src={assets.headerbraventologo}
+              className={styles.projectLogo}
+              alt="Toolbar Logo"
+            />
           </div>
           <div className={styles.partLineGroup}>
             <img src={assets.tool_part_line} className={styles.partLine} alt="Toolbar Logo" />
