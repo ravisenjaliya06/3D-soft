@@ -7,7 +7,7 @@ import sceneReducer from '@/components/3dmodel/store/sceneSlice';
 import { Action, configureStore } from '@reduxjs/toolkit';
 import { ThunkAction } from 'redux-thunk';
 
-/* This is main stoore which i show in console in dev mode and using this store we can access all the states */
+/* This is main store which i show in console in dev mode and using this store we can access all the states */
 export const store = configureStore({
   reducer: {
     scene: sceneReducer,
