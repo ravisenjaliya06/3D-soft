@@ -304,6 +304,7 @@ export const TEMPLATE = {
 
 export const TITLELOGO_SVG = {
   titleLogo: '/assets/titleLogo.svg',
+  headerbraventologo: '/assets/headerbraventologo.svg',
 };
 
 export const TOOLBAR = {

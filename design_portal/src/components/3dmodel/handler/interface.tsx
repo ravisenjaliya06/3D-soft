@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GrooveDetail } from '../catalog/object-creator/interfaces';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
 import { Object3D, Position } from '../store/interface';
 
@@ -236,6 +235,18 @@ export interface AddItemDatabasePayload {
     name: string;
     rule_parts: RulePart[];
   }>;
+}
+
+export interface GrooveDetail {
+  type: 'groove' | 'fitment';
+  x: number;
+  y: number;
+  length: number;
+  orientation: 'horizontal' | 'vertical';
+  connectedTo: string;
+  groove_gap: number;
+  groove_dig: number;
+  position: Position;
 }
 
 export interface CatalogData {
