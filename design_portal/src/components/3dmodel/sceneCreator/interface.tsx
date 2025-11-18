@@ -19,6 +19,8 @@ type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
 interface Material {
   type: MaterialType;
   value: string;
+  repeatX?: number;
+  repeatY?: number;
 }
 
 export interface InitialDataForCreateMesh {

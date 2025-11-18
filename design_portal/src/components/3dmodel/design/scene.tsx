@@ -706,73 +706,114 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
   woodTex.repeat.set(2, 1);
 
-  const plankMaterialProps = { map: woodTex, roughness: 0.6, metalness: 0 };
+  const woodTexturePath = '/textures/light_wood.jpg';
 
-  const cabinetContainer = createInvisibleBox(
-    { width, height, depth },
-    { x: placeX, y: floorY + height / 2, z: placeZ },
-    'SimpleCabinet',
-    { baseDims: { width, height, depth }, lastDims: { width, height, depth } }
-  );
-
-  const leftPart = {
-    name: 'LEFT_PLANK',
-    dimensions: { width: thickness, height: height, depth: depth },
-    position: { x: -(width / 2 - thickness / 2), y: 0, z: 0 },
-    material: plankMaterialProps,
-  };
-  const left = createMeshObject(leftPart, false, { type: 'Plank' });
-
-  const rightPart = {
-    name: 'RIGHT_PLANK',
-    dimensions: { width: thickness, height: height, depth: depth },
-    position: { x: width / 2 - thickness / 2, y: 0, z: 0 },
-    material: plankMaterialProps,
-  };
-  const right = createMeshObject(rightPart, false, { type: 'Plank' });
-
-  const bottomPart = {
-    name: 'BOTTOM_PLANK',
-    dimensions: {
+  const planks = [
+    {
+      id: crypto.randomUUID(),
+      name: "LEFT_PLANK",
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      width: thickness,
+      height: height,
+      depth: depth,
+      position: {
+        x: placeX - (width / 2 - thickness / 2),
+        y: floorY + height / 2,
+        z: placeZ
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1
+      }
+    },
+    {
+      id: crypto.randomUUID(),
+      name: "RIGHT_PLANK",
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      width: thickness,
+      height: height,
+      depth: depth,
+      position: {
+        x: placeX + (width / 2 - thickness / 2),
+        y: floorY + height / 2,
+        z: placeZ
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1
+      }
+    },
+    {
+      id: crypto.randomUUID(),
+      name: "TOP_PLANK",
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: thickness,
       depth: depth,
+      position: {
+        x: placeX,
+        y: floorY + height - thickness / 2,
+        z: placeZ
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1
+      }
     },
-    position: { x: 0, y: -(height / 2 - thickness / 2), z: 0 },
-    material: plankMaterialProps,
-  };
-  const bottom = createMeshObject(bottomPart, false, { type: 'Plank' });
-
-  const topPart = {
-    name: 'TOP_PLANK',
-    dimensions: {
+    {
+      id: crypto.randomUUID(),
+      name: "BOTTOM_PLANK",
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: thickness,
       depth: depth,
+      position: {
+        x: placeX,
+        y: floorY + thickness / 2,
+        z: placeZ
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1
+      }
     },
-    position: { x: 0, y: height / 2 - thickness / 2, z: 0 },
-    material: plankMaterialProps,
-  };
-  const top = createMeshObject(topPart, false, { type: 'Plank' });
-
-  const backPart = {
-    name: 'BACK_PLANK',
-    dimensions: {
+    {
+      id: crypto.randomUUID(),
+      name: "BACK_PLANK",
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: height - thickness * 2,
       depth: thickness,
-    },
-    position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
-    material: plankMaterialProps,
-  };
-  const back = createMeshObject(backPart);
+      position: {
+        x: placeX,
+        y: floorY + height / 2,
+        z: placeZ - (depth / 2 - thickness / 2)
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1
+      }
+    }
+  ];
 
-  cabinetContainer.add(left, right, bottom, top, back);
-
-  generateCompartmentsFromMesh(cabinetContainer);
-  cabinetContainer.userData.isMain = true;
-  cabinetContainer.userData.objectId = uuidv4();
-  scene.add(cabinetContainer);
+  const designBuilder = new DesignBuilder(planks);
+  const design = designBuilder.getDesign();
+  scene.add(design);
 };
 
 export const addPlatformOnWall = async (

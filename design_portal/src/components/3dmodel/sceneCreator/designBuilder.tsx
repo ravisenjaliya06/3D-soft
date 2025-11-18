@@ -11,7 +11,9 @@ export class DesignBuilder {
 
   /* create mesh texture loader */
   public getTexture(): THREE.Texture {
-    return new THREE.TextureLoader().load(this.meshData.material.value);
+    const texture = new THREE.TextureLoader().load(this.meshData.material.value);
+    texture.repeat.set(this.meshData.material?.repeatX || 1, this.meshData.material?.repeatY || 1);
+    return texture;
   }
 
   /*  create color material */
