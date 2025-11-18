@@ -6,7 +6,6 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { v4 as uuidv4 } from 'uuid';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
 import { AddItemDatabasePayload, RulePart } from '../handler/interface';
@@ -711,7 +710,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const planks = [
     {
       id: crypto.randomUUID(),
-      name: "LEFT_PLANK",
+      name: 'LEFT_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       width: thickness,
       height: height,
@@ -719,19 +718,19 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       position: {
         x: placeX - (width / 2 - thickness / 2),
         y: floorY + height / 2,
-        z: placeZ
+        z: placeZ,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: woodTexturePath,
         repeatX: 2,
-        repeatY: 1
-      }
+        repeatY: 1,
+      },
     },
     {
       id: crypto.randomUUID(),
-      name: "RIGHT_PLANK",
+      name: 'RIGHT_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       width: thickness,
       height: height,
@@ -739,19 +738,19 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       position: {
         x: placeX + (width / 2 - thickness / 2),
         y: floorY + height / 2,
-        z: placeZ
+        z: placeZ,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: woodTexturePath,
         repeatX: 2,
-        repeatY: 1
-      }
+        repeatY: 1,
+      },
     },
     {
       id: crypto.randomUUID(),
-      name: "TOP_PLANK",
+      name: 'TOP_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: thickness,
@@ -759,19 +758,19 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       position: {
         x: placeX,
         y: floorY + height - thickness / 2,
-        z: placeZ
+        z: placeZ,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: woodTexturePath,
         repeatX: 2,
-        repeatY: 1
-      }
+        repeatY: 1,
+      },
     },
     {
       id: crypto.randomUUID(),
-      name: "BOTTOM_PLANK",
+      name: 'BOTTOM_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: thickness,
@@ -779,19 +778,19 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       position: {
         x: placeX,
         y: floorY + thickness / 2,
-        z: placeZ
+        z: placeZ,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: woodTexturePath,
         repeatX: 2,
-        repeatY: 1
-      }
+        repeatY: 1,
+      },
     },
     {
       id: crypto.randomUUID(),
-      name: "BACK_PLANK",
+      name: 'BACK_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       width: width - thickness * 2,
       height: height - thickness * 2,
@@ -799,16 +798,16 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       position: {
         x: placeX,
         y: floorY + height / 2,
-        z: placeZ - (depth / 2 - thickness / 2)
+        z: placeZ - (depth / 2 - thickness / 2),
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: woodTexturePath,
         repeatX: 2,
-        repeatY: 1
-      }
-    }
+        repeatY: 1,
+      },
+    },
   ];
 
   const designBuilder = new DesignBuilder(planks);
