@@ -3,9 +3,9 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { SkySet } from './interfaces';
 
 export const createSky = (skySet: SkySet): Sky => {
-  /** 
+  /**
    * Creates and configures a Three.js Sky object with custom atmospheric and sun parameters.
-  */
+   */
 
   const sky = new Sky();
   sky.name = skySet.name;

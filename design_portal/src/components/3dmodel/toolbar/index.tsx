@@ -55,7 +55,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
-
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
     setIsToolOpen(true);
@@ -304,7 +303,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
   };
 
   /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
-  const onAddItems = async () => { 
+  const onAddItems = async () => {
     if (!selectedCabinetItem) {
       console.error('No cabinet item selected');
       return;
@@ -421,7 +420,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     { option: 'Cabinet', icon: assets.cabinet_svg },
   ];
 
-
   /** Return filtered cabinet items based on selected category */
   const getFilteredCabinetItems = (category: string) => {
     // Define what types should appear for each category
@@ -522,7 +520,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
     setQuantityValue(1);
   };
 
-  /* Map item types/names to their respective icons */ 
+  /* Map item types/names to their respective icons */
   const iconMap: IconMap = {
     Drawer: assets.drawer,
     'Sliding Door': assets.door,

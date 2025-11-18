@@ -7,7 +7,7 @@ export function useThreeRenderer(
   containerRef: React.RefObject<HTMLDivElement>
 ) {
   /** Initializes and manages a Three.js renderer, camera, and orbit controls within a React component. */
-  
+
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);

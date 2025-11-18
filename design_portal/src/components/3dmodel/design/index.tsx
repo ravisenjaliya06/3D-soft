@@ -12,7 +12,7 @@ import {
   removeObjectWithHistory,
   setHoverdMesh,
   setobjectSelected,
-  setSelectedChildObject
+  setSelectedChildObject,
 } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, itemType, ThreeDView } from './interface';

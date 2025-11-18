@@ -6,9 +6,9 @@ export const GLBLoader = (
   name: string,
   target: { width: number; height: number; depth: number }
 ): Promise<THREE.Object3D> => {
-  /** 
-   * Loads a GLB model, uniformly scales it to the target dimensions, centers it, and returns the 3D object. 
-  */
+  /**
+   * Loads a GLB model, uniformly scales it to the target dimensions, centers it, and returns the 3D object.
+   */
 
   return new Promise((resolve, reject) => {
     const loader = new GLTFLoader();
