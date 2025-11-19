@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { GEOMETRY, InitialDataForCreateMesh, MATERIAL_TYPE, userData } from './interface';
+import { GEOMETRY, InitialDataForCreateMesh, MATERIAL_TYPE } from './interface';
 
 export class DesignBuilder {
   private meshData: InitialDataForCreateMesh;
@@ -155,4 +155,3 @@ export class DesignsBuilder {
     compartments.forEach((box) => mesh.add(box));
   }
 }
-

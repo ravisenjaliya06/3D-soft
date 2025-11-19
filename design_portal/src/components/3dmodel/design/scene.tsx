@@ -315,7 +315,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       width: width,
       height: height,
       depth: depth,
-      position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2), },
+      position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2) },
       rotation: { x: 0, y: 0, z: 0 },
     },
     {
