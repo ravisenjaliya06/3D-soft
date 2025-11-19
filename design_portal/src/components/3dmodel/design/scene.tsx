@@ -20,7 +20,7 @@ import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
+import { DesignBuilder, DesignsBuilder } from '../sceneCreator/designBuilder';
 import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
 import { store } from '../store';
 import {
@@ -667,9 +667,9 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'Floor',
-      geometryType: GEOMETRY.BOX_GEOMETRY, // OR "ExtrudeGeometry" — choose what you want
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       width: wallLength,
-      height: 0.01, // very thin panel so it fits your interface
+      height: 0.01,
       depth: wallLength,
       position: {
         x: 0,
@@ -684,9 +684,9 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
     },
   ];
 
-  const designBuilder = new DesignBuilder(cTypeWallWithFloorObjects);
+  const designsBuilder = new DesignsBuilder(cTypeWallWithFloorObjects);
 
-  const design = designBuilder.getDesign();
+  const design = designsBuilder.createDesign();
   scene.add(design);
 };
 
@@ -810,8 +810,9 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     },
   ];
 
-  const designBuilder = new DesignBuilder(planks);
-  const design = designBuilder.getDesign();
+  const designsBuilder = new DesignBuilder(planks[0]);
+  // const design = designsBuilder.createDesign();
+  const design = designsBuilder.createMesh();
   scene.add(design);
 };
 
