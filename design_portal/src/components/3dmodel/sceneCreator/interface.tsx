@@ -34,7 +34,7 @@ export interface InitialDataForCreateMesh {
   depth: number;
   position: Position;
   rotation: Rotation;
-  material: Material;
+  material?: Material;
 }
 
 export interface userData {

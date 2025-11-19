@@ -315,12 +315,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       width: width,
       height: height,
       depth: depth,
-      position: { x: placeX, y: floorY + height / 2, z: placeZ },
+      position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2), },
       rotation: { x: 0, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: '',
-      },
     },
     {
       id: crypto.randomUUID(),
