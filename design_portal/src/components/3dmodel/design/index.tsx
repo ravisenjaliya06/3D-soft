@@ -6,6 +6,7 @@ import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { ResponseStatus } from '../interface';
+import { SceneBuilder } from '../sceneCreator/sceneBuilder';
 import { store } from '../store';
 import {
   addObjects,
@@ -21,7 +22,6 @@ import {
   addCTypeWallWithFloor,
   clearAllPlankDimensions,
   enablePlankDimensionEditing,
-  init3DDesign,
   showPlankDimensions,
 } from './scene';
 
@@ -109,7 +109,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const initializeScene = async () => {
         if (!mountRef.current) return;
 
-        const threeDView = await init3DDesign(mountRef.current);
+        const builder = new SceneBuilder({
+          mount: mountRef.current,
+        });
+        const threeDView = builder.build();
         setLocalDesign3D(threeDView);
         setDesign3D(threeDView);
         dispatch(setScene(threeDView.scene));

@@ -1,10 +1,11 @@
+import * as THREE from 'three';
 import { Position, Rotation } from '../store/interface';
 
 // type const
 export const GEOMETRY = {
   BOX_GEOMETRY: 'BoxGeometry',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
-} as const;
+};
 
 export const MATERIAL_TYPE = {
   COLOR: 'COLOR',
@@ -27,10 +28,45 @@ export interface InitialDataForCreateMesh {
   id: string;
   name: string;
   geometryType: GeometryType;
+  parent?: string;
   width: number;
   height: number;
   depth: number;
   position: Position;
   rotation: Rotation;
   material: Material;
+}
+
+export interface userData {
+  objectId: string;
+}
+
+export interface SceneBuilderConfig {
+  mount: HTMLDivElement;
+  cameraConfig?: {
+    fov?: number;
+    near?: number;
+    far?: number;
+    position?: THREE.Vector3;
+  };
+  rendererConfig?: {
+    antialias?: boolean;
+    alpha?: boolean;
+    preserveDrawingBuffer?: boolean;
+  };
+  lightingConfig?: {
+    ambientIntensity?: number;
+    directionalIntensity?: number;
+    hemiIntensity?: number;
+  };
+  gridConfig?: {
+    size?: number;
+    divisions?: number;
+  };
+  controlsConfig?: {
+    enableDamping?: boolean;
+    dampingFactor?: number;
+    enableZoom?: boolean;
+    enablePan?: boolean;
+  };
 }

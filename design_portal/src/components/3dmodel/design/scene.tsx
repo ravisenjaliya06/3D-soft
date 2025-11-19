@@ -20,7 +20,7 @@ import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
-import { DesignBuilder, DesignsBuilder } from '../sceneCreator/designBuilder';
+import { DesignsBuilder } from '../sceneCreator/designBuilder';
 import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
 import { store } from '../store';
 import {
@@ -557,6 +557,27 @@ function createInvisibleMaterial(): THREE.MeshBasicMaterial {
   });
 }
 
+export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
+  let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
+  if (!counterMesh) {
+    const lShape = scene.getObjectByName('LShapeKitchenPlatform') as THREE.Group | null;
+    if (lShape) {
+      counterMesh = lShape.children.find((c) => c.name === 'Back Counter') as THREE.Mesh | null;
+    }
+  }
+  if (!counterMesh) {
+    scene.traverse((o) => {
+      if (!counterMesh && o instanceof THREE.Mesh && o.name.startsWith('Counter_')) counterMesh = o;
+    });
+  }
+  if (!counterMesh) return;
+  const mesh = counterMesh as THREE.Mesh;
+
+  const sinkModel = await GLBLoader(url, 'SinkGLB', { width: 0.6, height: 0.35, depth: 0.35 });
+  sinkModel.position.set(mesh.position.x - 2, 0.52, mesh.position.z);
+  scene.add(sinkModel);
+};
+
 // Helper function to create invisible box mesh
 export function createInvisibleBox(
   dimensions: { width: number; height: number; depth: number },
@@ -626,6 +647,8 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
       },
     },
     {
@@ -644,6 +667,8 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
       },
     },
     {
@@ -662,6 +687,8 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
       },
     },
     {
@@ -680,6 +707,8 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
       material: {
         type: MATERIAL_TYPE.TEXTURE,
         value: TEXTURES_URLS.FLOOR,
+        repeatX: 4,
+        repeatY: 4,
       },
     },
   ];
@@ -707,11 +736,27 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
 
   const woodTexturePath = '/textures/light_wood.jpg';
 
+  const mainCupboardID = crypto.randomUUID();
   const planks = [
+    {
+      id: mainCupboardID,
+      name: 'CUPBOARD',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      width: width,
+      height: height,
+      depth: depth,
+      position: { x: placeX, y: floorY + height / 2, z: placeZ },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: '',
+      },
+    },
     {
       id: crypto.randomUUID(),
       name: 'LEFT_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
       width: thickness,
       height: height,
       depth: depth,
@@ -732,6 +777,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       id: crypto.randomUUID(),
       name: 'RIGHT_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
       width: thickness,
       height: height,
       depth: depth,
@@ -752,6 +798,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       id: crypto.randomUUID(),
       name: 'TOP_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
       width: width - thickness * 2,
       height: thickness,
       depth: depth,
@@ -772,6 +819,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       id: crypto.randomUUID(),
       name: 'BOTTOM_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
       width: width - thickness * 2,
       height: thickness,
       depth: depth,
@@ -792,6 +840,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       id: crypto.randomUUID(),
       name: 'BACK_PLANK',
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
       width: width - thickness * 2,
       height: height - thickness * 2,
       depth: thickness,
@@ -810,9 +859,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     },
   ];
 
-  const designsBuilder = new DesignBuilder(planks[0]);
-  // const design = designsBuilder.createDesign();
-  const design = designsBuilder.createMesh();
+  const designsBuilder = new DesignsBuilder(planks);
+  const design = designsBuilder.createDesign();
   scene.add(design);
 };
 
