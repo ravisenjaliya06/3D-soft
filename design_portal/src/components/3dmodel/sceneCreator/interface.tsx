@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Position, Rotation } from '../store/interface';
+import { Dimensions } from '../interface';
 
 // type const
 export const GEOMETRY = {
@@ -24,14 +25,12 @@ interface Material {
   repeatY?: number;
 }
 
-export interface InitialDataForCreateMesh {
+export interface MeshObjectData {
   id: string;
   name: string;
   geometryType: GeometryType;
   parent?: string;
-  width: number;
-  height: number;
-  depth: number;
+  dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
   material?: Material;

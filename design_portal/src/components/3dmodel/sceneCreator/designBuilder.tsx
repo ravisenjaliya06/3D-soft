@@ -1,16 +1,15 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { GEOMETRY, InitialDataForCreateMesh, MATERIAL_TYPE } from './interface';
+import { GEOMETRY, MeshObjectData, MATERIAL_TYPE, userData } from './interface';
 
-export class DesignBuilder {
-  private meshData: InitialDataForCreateMesh;
+export class MeshBuilder {
+  private meshData: MeshObjectData;
 
-  constructor(data: InitialDataForCreateMesh) {
+  constructor(data: MeshObjectData) {
     this.meshData = data;
   }
 
-  /* create mesh texture loader */
   private _createTexture(): THREE.Texture {
     const texture = new THREE.TextureLoader().load(this.meshData.material?.value || '');
     texture.wrapS = THREE.RepeatWrapping;
@@ -19,7 +18,6 @@ export class DesignBuilder {
     return texture;
   }
 
-  /*  create color material */
   private _createColorMaterial(): THREE.MeshBasicMaterial {
     return new THREE.MeshBasicMaterial({
       color: this.meshData.material?.value,
@@ -27,7 +25,6 @@ export class DesignBuilder {
     });
   }
 
-  /* create mesh material */
   private _createTextureMaterial(): THREE.MeshStandardMaterial {
     const texture = this._createTexture();
     return new THREE.MeshStandardMaterial({
@@ -35,25 +32,22 @@ export class DesignBuilder {
     });
   }
 
-  /* fetch mesh material type from data */
   private _getMaterial(): THREE.Material | null {
-    const mat = this.meshData.material;
-    if (!mat) return null;
-    if (mat.type === MATERIAL_TYPE.COLOR) {
+    const material = this.meshData.material;
+    if (!material) return null;
+    if (material.type === MATERIAL_TYPE.COLOR && material.value) {
       return this._createColorMaterial();
     }
-    if (mat.type === MATERIAL_TYPE.TEXTURE && mat.value) {
+    if (material.type === MATERIAL_TYPE.TEXTURE && material.value) {
       return this._createTextureMaterial();
     }
     return null;
   }
 
-  /*  create box geometry for mesh */
   private _createBoxGeometry(): THREE.BoxGeometry {
-    return new THREE.BoxGeometry(this.meshData.width, this.meshData.height, this.meshData.depth);
+    return new THREE.BoxGeometry(this.meshData.dimensions.width, this.meshData.dimensions.height, this.meshData.dimensions.depth);
   }
 
-  /* fetch geometry type from data */
   private _getGeometry() {
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
@@ -61,7 +55,6 @@ export class DesignBuilder {
     }
   }
 
-  /* set position of mesh */
   private _setPosition(mesh: THREE.Mesh) {
     mesh.position.set(this.meshData.position.x, this.meshData.position.y, this.meshData.position.z);
   }
@@ -70,7 +63,6 @@ export class DesignBuilder {
     mesh.userData.objectId = this.meshData.id;
   }
 
-  /* generate invisible box using mesh object */
   private _createInvisibleBox(mesh: THREE.Mesh) {
     const invisibleBoxes = generateCompartmentsFromMesh(mesh);
     invisibleBoxes.forEach((box) => {
@@ -78,7 +70,6 @@ export class DesignBuilder {
     });
   }
 
-  /* create mesh object*/
   public createMesh(): THREE.Mesh {
     const geometry = this._getGeometry();
     const material = this._getMaterial();
@@ -94,24 +85,26 @@ export class DesignBuilder {
   }
 }
 
-export class DesignsBuilder {
+export class DesignBuilder {
   private scene: THREE.Scene | null;
-  private data: InitialDataForCreateMesh[];
+  private data: MeshObjectData[];
 
-  constructor(data: InitialDataForCreateMesh[], scene?: THREE.Scene) {
+  constructor(data: MeshObjectData[], scene?: THREE.Scene) {
     this.data = data;
     this.scene = scene || null;
   }
 
-  // create blank mesh
   private _createRootContainer(): THREE.Mesh {
     return new THREE.Mesh();
   }
 
-  // correctly find parent mesh by id
   private _findParent(meshesMap: Map<string, THREE.Mesh>, parentId?: string): THREE.Mesh | null {
     if (!parentId) return null;
     return meshesMap.get(parentId) || null;
+  }
+
+  private _setUserData(mesh: THREE.Mesh, userData: userData) {
+    mesh.userData = userData;
   }
 
   /**
@@ -125,10 +118,10 @@ export class DesignsBuilder {
     const meshMap = new Map<string, THREE.Mesh>();
 
     this.data.forEach((meshData) => {
-      const builder = new DesignBuilder(meshData);
+      const builder = new MeshBuilder(meshData);
       const mesh = builder.createMesh();
 
-      mesh.userData.objectId = meshData.id;
+      this._setUserData(mesh, { objectId: meshData.id });
       meshList.push(mesh);
       meshMap.set(meshData.id, mesh);
     });
@@ -145,7 +138,7 @@ export class DesignsBuilder {
     });
 
     this._createInitialCompartments(initialMesh);
-    initialMesh.userData.objectId = uuidv4();
+    this._setUserData(initialMesh, { objectId: uuidv4() });
 
     return initialMesh;
   }

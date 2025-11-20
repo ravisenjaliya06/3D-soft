@@ -59,8 +59,6 @@ export function hideFullScreenLoader() {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
-  console.log('generateCompartmentsFromMesh');
-  console.log('generateCompartmentsFromMesh', boxMesh);
   /**
    Generates invisible boxes for empty compartments in a given box mesh object.
   */

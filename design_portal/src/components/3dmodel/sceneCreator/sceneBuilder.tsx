@@ -12,6 +12,7 @@ import { addSimpleCabinet, loadSinkModel } from '../design/scene';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
+import { ZoomSelectionController } from './tools';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -28,7 +29,6 @@ export class SceneBuilder {
   // Core Three.js components
   private scene: THREE.Scene;
   private perspectiveCamera: THREE.PerspectiveCamera;
-  private orthographicCamera: THREE.OrthographicCamera;
   private camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   private renderer: THREE.WebGLRenderer;
   private mount: HTMLDivElement;
@@ -53,13 +53,12 @@ export class SceneBuilder {
 
   // State
   private isDay: boolean = true;
-  private isZoomMode: boolean = false;
   private animationId: number | null = null;
+  private isZoomMode: boolean = false;
+  private zoomController: ZoomSelectionController;
 
   // Zoom mode state
-  private startPoint: THREE.Vector2 | null = null;
   private overlayCanvas: HTMLCanvasElement | null = null;
-  private overlayContext: CanvasRenderingContext2D | null = null;
 
   // Configuration
   private config: SceneBuilderConfig;
@@ -71,7 +70,6 @@ export class SceneBuilder {
     // Initialize core components
     this.scene = this.createScene();
     this.perspectiveCamera = this.createPerspectiveCamera();
-    this.orthographicCamera = this.createOrthographicCamera();
     this.camera = this.perspectiveCamera;
     this.renderer = this.createRenderer();
 
@@ -92,6 +90,15 @@ export class SceneBuilder {
     this.controls = this.createOrbitControls();
     this.transformControls = this.createTransformControls();
 
+    // Initialize zoom controller
+    this.zoomController = new ZoomSelectionController(
+      this.scene,
+      this.camera,
+      this.renderer,
+      this.mount,
+      this.controls
+    );
+
     // Initialize post-processing
     this.composer = this.createComposer();
 
@@ -105,16 +112,10 @@ export class SceneBuilder {
     this.startAnimation();
   }
 
-  /**
-   * Creates the Three.js scene
-   */
   private createScene(): THREE.Scene {
     return new THREE.Scene();
   }
 
-  /**
-   * Creates the perspective camera
-   */
   private createPerspectiveCamera(): THREE.PerspectiveCamera {
     const cameraConfig = this.config.cameraConfig || {};
     const camera = new THREE.PerspectiveCamera(
@@ -131,30 +132,6 @@ export class SceneBuilder {
     return camera;
   }
 
-  /**
-   * Creates the orthographic camera for 2D mode
-   */
-  private createOrthographicCamera(): THREE.OrthographicCamera {
-    const aspect = window.innerWidth / window.innerHeight;
-    const zoom = 10;
-    const camera = new THREE.OrthographicCamera(
-      -zoom * aspect,
-      zoom * aspect,
-      zoom,
-      -zoom,
-      0.1,
-      1000
-    );
-    camera.position.set(0, 10, 0);
-    camera.lookAt(0, 0, 0);
-    camera.zoom = 1;
-
-    return camera;
-  }
-
-  /**
-   * Creates the WebGL renderer
-   */
   private createRenderer(): THREE.WebGLRenderer {
     const rendererConfig = this.config.rendererConfig || {};
     const renderer = new THREE.WebGLRenderer({
@@ -177,17 +154,11 @@ export class SceneBuilder {
     return renderer;
   }
 
-  /**
-   * Creates the grid helper
-   */
   private createGrid(): THREE.GridHelper {
     const gridConfig = this.config.gridConfig || {};
     return createGrid(gridConfig.size || 1000, gridConfig.divisions || 1000);
   }
 
-  /**
-   * Creates sky objects (day, night, and stars)
-   */
   private createSkySet(): { daySky: Sky; nightSky: Sky; stars: THREE.Points } {
     const daySky = createSky(SKY_SETS.daySky);
     const nightSky = createSky(SKY_SETS.nightSky);
@@ -210,9 +181,6 @@ export class SceneBuilder {
     return { daySky, nightSky, stars };
   }
 
-  /**
-   * Creates all lighting for the scene
-   */
   private createLighting(): {
     ambientLight: THREE.AmbientLight;
     directionalLight: THREE.DirectionalLight;
@@ -243,9 +211,6 @@ export class SceneBuilder {
     return { ambientLight, directionalLight, hemiLight };
   }
 
-  /**
-   * Creates orbit controls
-   */
   private createOrbitControls(): OrbitControls {
     const controlsConfig = this.config.controlsConfig || {};
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -261,9 +226,6 @@ export class SceneBuilder {
     return controls;
   }
 
-  /**
-   * Creates transform controls
-   */
   private createTransformControls(): TransformControls {
     const transformControls = new TransformControls(this.camera, this.renderer.domElement);
     transformControls.size = 0.3;
@@ -271,9 +233,6 @@ export class SceneBuilder {
     return transformControls;
   }
 
-  /**
-   * Creates post-processing composer
-   */
   private createComposer(): EffectComposer {
     const composer = new EffectComposer(this.renderer);
     composer.addPass(new RenderPass(this.scene, this.camera));
@@ -292,9 +251,6 @@ export class SceneBuilder {
     return composer;
   }
 
-  /**
-   * Sets up the scene by adding all objects
-   */
   private setupScene(): void {
     // Add grid
     this.scene.add(this.grid);
@@ -308,29 +264,12 @@ export class SceneBuilder {
     this.scene.add(this.daySky);
   }
 
-  /**
-   * Sets up event listeners
-   */
   private setupEventListeners(): void {
     window.addEventListener('resize', () => this.handleResize());
   }
 
-  /**
-   * Handles window resize
-   */
   private handleResize(): void {
-    if (this.camera instanceof THREE.PerspectiveCamera) {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-    } else {
-      const aspect = window.innerWidth / window.innerHeight;
-      const zoom = this.camera.zoom;
-      this.camera.left = -zoom * aspect;
-      this.camera.right = zoom * aspect;
-      this.camera.top = zoom;
-      this.camera.bottom = -zoom;
-      this.camera.updateProjectionMatrix();
-    }
+    this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -342,9 +281,6 @@ export class SceneBuilder {
     this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  /**
-   * Starts the animation loop
-   */
   private startAnimation(): void {
     const animate = () => {
       this.animationId = requestAnimationFrame(animate);
@@ -355,9 +291,6 @@ export class SceneBuilder {
     animate();
   }
 
-  /**
-   * Toggles between day and night sky
-   */
   public toggleSky(): void {
     if (this.isDay) {
       this.scene.remove(this.daySky);
@@ -371,232 +304,8 @@ export class SceneBuilder {
     this.isDay = !this.isDay;
   }
 
-  /**
-   * Toggles between 2D and 3D mode
-   */
-  public toggle2DMode(is2D: boolean): void {
-    if (is2D) {
-      this.camera = this.orthographicCamera;
-      this.controls.enableRotate = false;
-      this.controls.enablePan = true;
-      this.controls.enableZoom = true;
-      this.transformControls.showY = false;
-      this.camera.position.set(0, 10, 0);
-      this.camera.lookAt(0, 0, 0);
-    } else {
-      this.camera = this.perspectiveCamera;
-      this.controls.enableRotate = true;
-      this.controls.enablePan = true;
-      this.controls.enableZoom = true;
-      this.transformControls.showY = true;
-      this.camera.position.set(0, 1, 4.5);
-      this.camera.lookAt(0, 0, 0);
-    }
-
-    this.controls.object = this.camera;
-    this.transformControls.camera = this.camera;
-    this.controls.update();
-    this.camera.updateProjectionMatrix();
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  /**
-   * Toggles zoom mode
-   */
-  public toggleZoomMode(enable: boolean): void {
-    this.isZoomMode = enable;
-    if (enable) {
-      document.body.style.cursor = 'zoom-in';
-      this.controls.enabled = false;
-      this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
-    } else {
-      document.body.style.cursor = 'default';
-      this.controls.enabled = true;
-      this.renderer.domElement.removeEventListener('mousedown', (e) => this.onMouseDown(e));
-      if (this.overlayCanvas && this.overlayCanvas.parentNode) {
-        this.overlayCanvas.parentNode.removeChild(this.overlayCanvas);
-        this.overlayCanvas = null;
-        this.overlayContext = null;
-      }
-    }
-  }
-
-  /**
-   * Handles mouse down for zoom mode
-   */
-  private onMouseDown(event: MouseEvent): void {
-    if (!this.isZoomMode) return;
-
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    this.startPoint = new THREE.Vector2(x, y);
-
-    this.overlayCanvas = document.createElement('canvas');
-    this.overlayCanvas.style.position = 'absolute';
-    this.overlayCanvas.style.top = '0';
-    this.overlayCanvas.style.left = '0';
-    this.overlayCanvas.style.pointerEvents = 'none';
-    this.overlayCanvas.width = window.innerWidth;
-    this.overlayCanvas.height = window.innerHeight;
-    this.mount.appendChild(this.overlayCanvas);
-    this.overlayContext = this.overlayCanvas.getContext('2d');
-
-    this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    this.renderer.domElement.addEventListener('mouseup', (e) => this.onMouseUp(e), { once: true });
-  }
-
-  /**
-   * Handles mouse move for zoom mode
-   */
-  private onMouseMove(event: MouseEvent): void {
-    if (!this.startPoint || !this.isZoomMode || !this.overlayCanvas || !this.overlayContext) return;
-
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
-
-    const startX = ((this.startPoint.x + 1) / 2) * rect.width;
-    const startY = ((-this.startPoint.y + 1) / 2) * rect.height;
-
-    this.overlayContext.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
-
-    const width = currentX - startX;
-    const height = currentY - startY;
-
-    this.overlayContext.strokeStyle = 'green';
-    this.overlayContext.fillStyle = 'rgba(0, 255, 0, 0.1)';
-    this.overlayContext.lineWidth = 2;
-    this.overlayContext.beginPath();
-    this.overlayContext.rect(startX, startY, width, height);
-    this.overlayContext.fill();
-    this.overlayContext.stroke();
-  }
-
-  /**
-   * Handles mouse up for zoom mode
-   */
-  private onMouseUp(event: MouseEvent): void {
-    if (!this.startPoint) return;
-
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    const endPoint = new THREE.Vector2(x, y);
-
-    if (this.overlayCanvas && this.overlayCanvas.parentNode) {
-      this.overlayCanvas.parentNode.removeChild(this.overlayCanvas);
-      this.overlayCanvas = null;
-      this.overlayContext = null;
-    }
-
-    const objectBounds = this.getObjectsBoundingBox(this.startPoint, endPoint);
-
-    if (!objectBounds) {
-      this.startPoint = null;
-      this.renderer.domElement.removeEventListener('mousemove', (e) => this.onMouseMove(e));
-      this.toggleZoomMode(false);
-      return;
-    }
-
-    const { min, max, center } = objectBounds;
-    const width = max.x - min.x;
-
-    if (this.camera instanceof THREE.PerspectiveCamera) {
-      const height = max.y - min.y;
-      const depth = max.z - min.z;
-      const fovRad = this.camera.fov * (Math.PI / 180);
-      const aspect = window.innerWidth / window.innerHeight;
-      const maxDimension = Math.max(width, height, depth);
-      let distance: number;
-
-      if (width / height > aspect) {
-        distance = maxDimension / 2 / Math.tan(fovRad / 2);
-      } else {
-        distance = maxDimension / 2 / (Math.tan(fovRad / 2) * aspect);
-      }
-
-      distance = Math.max(distance * 1.2, 0.1);
-
-      const direction = this.camera.getWorldDirection(new THREE.Vector3()).normalize();
-      const newPosition = center.clone().add(direction.clone().negate().multiplyScalar(distance));
-
-      this.camera.position.copy(newPosition);
-      this.camera.lookAt(center);
-      this.controls.target.copy(center);
-    } else {
-      const height = max.z - min.z;
-      const aspect = window.innerWidth / window.innerHeight;
-      const maxDimension = Math.max(width, height);
-      const newZoom = Math.min(
-        window.innerWidth / maxDimension,
-        window.innerHeight / (maxDimension / aspect)
-      );
-
-      this.camera.zoom = newZoom * 0.8;
-      this.camera.position.set(center.x, 10, center.z);
-      this.camera.lookAt(center.x, 0, center.z);
-      this.controls.target.set(center.x, 0, center.z);
-      this.camera.updateProjectionMatrix();
-    }
-
-    this.controls.update();
-
-    this.startPoint = null;
-    this.renderer.domElement.removeEventListener('mousemove', (e) => this.onMouseMove(e));
-    this.toggleZoomMode(false);
-  }
-
-  /**
-   * Gets bounding box of objects in selection area
-   */
-  private getObjectsBoundingBox(
-    startPoint: THREE.Vector2,
-    endPoint: THREE.Vector2
-  ): { min: THREE.Vector3; max: THREE.Vector3; center: THREE.Vector3 } | null {
-    const raycaster = new THREE.Raycaster();
-    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-
-    const selectableObjects = this.scene.children.filter(
-      (obj) =>
-        obj.visible &&
-        !(obj instanceof THREE.GridHelper) &&
-        !(obj instanceof Sky) &&
-        obj.name !== 'stars'
-    );
-
-    const xMin = Math.min(startPoint.x, endPoint.x);
-    const xMax = Math.max(startPoint.x, endPoint.x);
-    const yMin = Math.min(startPoint.y, endPoint.y);
-    const yMax = Math.max(startPoint.y, endPoint.y);
-
-    let hitAnyObject = false;
-    const steps = 5;
-
-    for (let i = 0; i <= steps; i++) {
-      for (let j = 0; j <= steps; j++) {
-        const x = xMin + (xMax - xMin) * (i / steps);
-        const y = yMin + (yMax - yMin) * (j / steps);
-
-        raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
-        const intersects = raycaster.intersectObjects(selectableObjects, true);
-
-        if (intersects.length) {
-          const { point } = intersects[0];
-          min.min(point);
-          max.max(point);
-          hitAnyObject = true;
-        }
-      }
-    }
-
-    if (!hitAnyObject) return null;
-
-    const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
-    return { min, max, center };
+  public toggleZoomMode(enable: boolean) {
+    this.zoomController.toggleZoomMode(enable);
   }
 
   /**
@@ -670,7 +379,6 @@ export class SceneBuilder {
       isDay: this.isDay,
       toggleZoomMode: (enable: boolean) => this.toggleZoomMode(enable),
       isZoomMode: this.isZoomMode,
-      toggle2DMode: (is2D: boolean) => this.toggle2DMode(is2D),
       addSimpleCabinet: () => {
         addSimpleCabinet(this.scene);
       },
