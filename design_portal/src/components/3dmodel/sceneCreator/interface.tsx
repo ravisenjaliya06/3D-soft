@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Position, Rotation } from '../store/interface';
 import { Dimensions } from '../interface';
+import { Position, Rotation } from '../store/interface';
 
 // type const
 export const GEOMETRY = {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { findXY } from './utils';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { findXY } from './utils';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 /**
  * Handles drag-to-zoom functionality.
@@ -12,10 +13,11 @@ export class ZoomSelectionController {
   private camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   private renderer: THREE.WebGLRenderer;
   private mount: HTMLDivElement;
-  private controls: any;
+  private controls: OrbitControls;
 
   private isZoomMode = false;
   private startPoint: THREE.Vector2 | null = null;
+
   private overlayCanvas: HTMLCanvasElement | null = null;
   private overlayContext: CanvasRenderingContext2D | null = null;
 
@@ -24,7 +26,7 @@ export class ZoomSelectionController {
     camera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
     renderer: THREE.WebGLRenderer,
     mount: HTMLDivElement,
-    controls: any
+    controls: OrbitControls
   ) {
     this.scene = scene;
     this.camera = camera;
@@ -33,62 +35,64 @@ export class ZoomSelectionController {
     this.controls = controls;
   }
 
+  /** Enable / disable zoom mode */
   public toggleZoomMode(enable: boolean): void {
     this.isZoomMode = enable;
 
     if (enable) {
-      document.body.style.cursor = 'zoom-in';
-      this.controls.enabled = false;
-
-      this.renderer.domElement.addEventListener('mousedown', this.onMouseDown);
+      this._enableZoomMode();
     } else {
-      document.body.style.cursor = 'default';
-      this.controls.enabled = true;
-
-      this.renderer.domElement.removeEventListener('mousedown', this.onMouseDown);
-
-      // Remove overlay canvas
-      if (this.overlayCanvas && this.overlayCanvas.parentNode) {
-        this.overlayCanvas.parentNode.removeChild(this.overlayCanvas);
-      }
-      this.overlayCanvas = null;
-      this.overlayContext = null;
+      this._disableZoomMode();
     }
   }
 
-  /** MOUSE DOWN */
-  private onMouseDown = (event: MouseEvent) => {
+  private _enableZoomMode() {
+    document.body.style.cursor = 'zoom-in';
+    this.controls.enabled = false;
+
+    this.renderer.domElement.addEventListener('mousedown', this._handleMouseDown);
+  }
+
+  private _disableZoomMode() {
+    document.body.style.cursor = 'default';
+    this.controls.enabled = true;
+
+    this.renderer.domElement.removeEventListener('mousedown', this._handleMouseDown);
+    this._removeOverlayCanvas();
+  }
+
+  private _handleMouseDown = (event: MouseEvent) => {
     if (!this.isZoomMode) return;
 
+    this._startSelection(event);
+
+    this.renderer.domElement.addEventListener('mousemove', this._handleMouseMove);
+    this.renderer.domElement.addEventListener('mouseup', this._handleMouseUp, { once: true });
+  };
+
+  private _handleMouseMove = (event: MouseEvent) => {
+    this._updateSelectionRect(event);
+  };
+
+  private _handleMouseUp = (event: MouseEvent) => {
+    this._completeSelection(event);
+
+    this.renderer.domElement.removeEventListener('mousemove', this._handleMouseMove);
+    this.toggleZoomMode(false);
+  };
+
+  private _startSelection(event: MouseEvent) {
     const { x, y } = findXY(this.renderer, event);
     this.startPoint = new THREE.Vector2(x, y);
 
-    // Canvas overlay for rectangle
-    this.overlayCanvas = document.createElement('canvas');
-    this.overlayCanvas.style.position = 'absolute';
-    this.overlayCanvas.style.top = '0';
-    this.overlayCanvas.style.left = '0';
-    this.overlayCanvas.style.pointerEvents = 'none';
-    this.overlayCanvas.width = window.innerWidth;
-    this.overlayCanvas.height = window.innerHeight;
+    this._createOverlayCanvas();
+  }
 
-    this.mount.appendChild(this.overlayCanvas);
-    this.overlayContext = this.overlayCanvas.getContext('2d');
-
-    this.renderer.domElement.addEventListener('mousemove', this.onMouseMove);
-    this.renderer.domElement.addEventListener('mouseup', this.onMouseUp, { once: true });
-  };
-
-  /** MOUSE MOVE — draw selection rectangle */
-  private onMouseMove = (event: MouseEvent) => {
-    if (!this.startPoint || !this.isZoomMode || !this.overlayCanvas || !this.overlayContext) return;
+  private _updateSelectionRect(event: MouseEvent) {
+    if (!this.startPoint || !this.overlayContext || !this.overlayCanvas) return;
 
     const rect = this.renderer.domElement.getBoundingClientRect();
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
-
-    const startX = ((this.startPoint.x + 1) / 2) * rect.width;
-    const startY = ((-this.startPoint.y + 1) / 2) * rect.height;
+    const { startX, startY, currentX, currentY } = this._getSelectionScreenCoords(event, rect);
 
     this.overlayContext.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
 
@@ -102,45 +106,65 @@ export class ZoomSelectionController {
     this.overlayContext.rect(startX, startY, w, h);
     this.overlayContext.fill();
     this.overlayContext.stroke();
-  };
+  }
 
-  /** MOUSE UP — zoom on selected objects */
-  private onMouseUp = (event: MouseEvent) => {
+  private _completeSelection(event: MouseEvent) {
     if (!this.startPoint) return;
 
     const { x, y } = findXY(this.renderer, event);
     const endPoint = new THREE.Vector2(x, y);
 
+    this._removeOverlayCanvas();
+
+    const bounds = this._computeBoundingBox(this.startPoint, endPoint);
+
+    if (bounds) {
+      this._zoomCameraToBounds(bounds);
+    }
+
+    this.startPoint = null;
+  }
+
+  private _createOverlayCanvas() {
+    this.overlayCanvas = document.createElement('canvas');
+    this.overlayCanvas.style.position = 'absolute';
+    this.overlayCanvas.style.top = '0';
+    this.overlayCanvas.style.left = '0';
+    this.overlayCanvas.style.pointerEvents = 'none';
+
+    this.overlayCanvas.width = window.innerWidth;
+    this.overlayCanvas.height = window.innerHeight;
+
+    this.mount.appendChild(this.overlayCanvas);
+    this.overlayContext = this.overlayCanvas.getContext('2d');
+  }
+
+  private _removeOverlayCanvas() {
     if (this.overlayCanvas && this.overlayCanvas.parentNode) {
       this.overlayCanvas.parentNode.removeChild(this.overlayCanvas);
     }
     this.overlayCanvas = null;
     this.overlayContext = null;
+  }
 
-    const bounds = this.getObjectsBoundingBox(this.startPoint, endPoint);
+  private _getSelectionScreenCoords(event: MouseEvent, rect: DOMRect) {
+    const currentX = event.clientX - rect.left;
+    const currentY = event.clientY - rect.top;
 
-    if (!bounds) {
-      this.startPoint = null;
-      this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove);
-      this.toggleZoomMode(false);
-      return;
-    }
+    const startX = ((this.startPoint!.x + 1) / 2) * rect.width;
+    const startY = ((-this.startPoint!.y + 1) / 2) * rect.height;
 
-    this.zoomCameraToBounds(bounds);
-
-    this.startPoint = null;
-    this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove);
-    this.toggleZoomMode(false);
-  };
+    return { startX, startY, currentX, currentY };
+  }
 
   /** 
    * When the mouse goes up, we get two points.
    * Using those points, we create the rectangle’s bounding box for the zoom.
   */
-  private getObjectsBoundingBox(
+  private _computeBoundingBox(
     start: THREE.Vector2,
     end: THREE.Vector2
-  ): { min: THREE.Vector3; max: THREE.Vector3; center: THREE.Vector3 } | null {
+  ) {
     const raycaster = new THREE.Raycaster();
     const min = new THREE.Vector3(Infinity, Infinity, Infinity);
     const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
@@ -158,8 +182,8 @@ export class ZoomSelectionController {
     const yMin = Math.min(start.y, end.y);
     const yMax = Math.max(start.y, end.y);
 
-    let hit = false;
     const steps = 5;
+    let found = false;
 
     for (let i = 0; i <= steps; i++) {
       for (let j = 0; j <= steps; j++) {
@@ -167,31 +191,30 @@ export class ZoomSelectionController {
         const y = yMin + (yMax - yMin) * (j / steps);
 
         raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
-        const intersects = raycaster.intersectObjects(selectable, true);
+        const hits = raycaster.intersectObjects(selectable, true);
 
-        if (intersects.length) {
-          min.min(intersects[0].point);
-          max.max(intersects[0].point);
-          hit = true;
+        if (hits.length) {
+          min.min(hits[0].point);
+          max.max(hits[0].point);
+          found = true;
         }
       }
     }
 
-    if (!hit) return null;
+    if (!found) return null;
 
     const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
     return { min, max, center };
   }
 
-  /** Move camera to fit bounding box */
-  private zoomCameraToBounds(bounds: {
+  private _zoomCameraToBounds(bounds: {
     min: THREE.Vector3;
     max: THREE.Vector3;
     center: THREE.Vector3;
-  }): void {
-    const { min, max, center } = bounds;
-
+  }) {
     if (!(this.camera instanceof THREE.PerspectiveCamera)) return;
+
+    const { min, max, center } = bounds;
 
     const width = max.x - min.x;
     const height = max.y - min.y;
@@ -199,28 +222,21 @@ export class ZoomSelectionController {
 
     const fovRad = this.camera.fov * (Math.PI / 180);
     const aspect = window.innerWidth / window.innerHeight;
-
     const maxDim = Math.max(width, height, depth);
-    let distance;
 
-    if (width / height > aspect) {
-      distance = maxDim / (2 * Math.tan(fovRad / 2));
-    } else {
-      distance = maxDim / (2 * Math.tan(fovRad / 2) * aspect);
-    }
+    let distance =
+      width / height > aspect
+        ? maxDim / (2 * Math.tan(fovRad / 2))
+        : maxDim / (2 * Math.tan(fovRad / 2) * aspect);
 
     distance = Math.max(distance * 1.2, 0.1);
 
-    const dir = this.camera.getWorldDirection(new THREE.Vector3()).normalize();
+    const direction = this.camera.getWorldDirection(new THREE.Vector3()).normalize();
 
-    const newPos = center.clone().add(dir.clone().negate().multiplyScalar(distance));
-
-    this.camera.position.copy(newPos);
+    this.camera.position.copy(center.clone().add(direction.negate().multiplyScalar(distance)));
     this.camera.lookAt(center);
 
-    if (this.controls) {
-      this.controls.target.copy(center);
-      this.controls.update();
-    }
+    this.controls.target.copy(center);
+    this.controls.update();
   }
 }

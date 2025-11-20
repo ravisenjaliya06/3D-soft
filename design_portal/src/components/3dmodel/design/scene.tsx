@@ -12,7 +12,7 @@ import {
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from '../sceneCreator/interface';
+import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
 import { store } from '../store';
 import {
   addObjects,
@@ -132,12 +132,15 @@ export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   if (!counterMesh) {
     const lShape = scene.getObjectByName('LShapeKitchenPlatform') as THREE.Group | null;
     if (lShape) {
-      counterMesh = lShape.children.find((children) => children.name === 'Back Counter') as THREE.Mesh | null;
+      counterMesh = lShape.children.find(
+        (children) => children.name === 'Back Counter'
+      ) as THREE.Mesh | null;
     }
   }
   if (!counterMesh) {
     scene.traverse((object) => {
-      if (!counterMesh && object instanceof THREE.Mesh && object.name.startsWith('Counter_')) counterMesh = object;
+      if (!counterMesh && object instanceof THREE.Mesh && object.name.startsWith('Counter_'))
+        counterMesh = object;
     });
   }
   if (!counterMesh) return;
@@ -322,7 +325,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: width,
         height: height,
-        depth: depth
+        depth: depth,
       },
       position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2) },
       rotation: { x: 0, y: 0, z: 0 },
@@ -335,7 +338,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: thickness,
         height: height,
-        depth: depth
+        depth: depth,
       },
       position: {
         x: placeX - (width / 2 - thickness / 2),
@@ -358,7 +361,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: thickness,
         height: height,
-        depth: depth
+        depth: depth,
       },
       position: {
         x: placeX + (width / 2 - thickness / 2),
@@ -381,7 +384,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: width - thickness * 2,
         height: thickness,
-        depth: depth
+        depth: depth,
       },
       position: {
         x: placeX,
@@ -404,7 +407,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: width - thickness * 2,
         height: thickness,
-        depth: depth
+        depth: depth,
       },
       position: {
         x: placeX,
@@ -427,7 +430,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       dimensions: {
         width: width - thickness * 2,
         height: height - thickness * 2,
-        depth: thickness
+        depth: thickness,
       },
       position: {
         x: placeX,
@@ -653,15 +656,15 @@ export const addVerticalPlanksToBox = async (
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
       ? {
-        name: `VERTICAL_PLANK_${i}`,
-        dimensions: { width: thickness, height: effectiveHeight, depth },
-        material: plankMatProps,
-      }
+          name: `VERTICAL_PLANK_${i}`,
+          dimensions: { width: thickness, height: effectiveHeight, depth },
+          material: plankMatProps,
+        }
       : {
-        name: `VERTICAL_PLANK_${i}`,
-        dimensions: { width, height: effectiveHeight, depth: thickness },
-        material: plankMatProps,
-      };
+          name: `VERTICAL_PLANK_${i}`,
+          dimensions: { width, height: effectiveHeight, depth: thickness },
+          material: plankMatProps,
+        };
 
     const plank = createMeshObject(plankPart, true, {
       isVerticalPlank: true,
@@ -957,17 +960,17 @@ export const addDoorOnInvisibleBox = async (
 
   const facePart = isSide
     ? {
-      name: `Door_for_${boxMesh.name}`,
-      dimensions: { width: 0.02, height: h, depth: d },
-      position: { x: 0, y: 0, z: 0 },
-      material: doorMatProps,
-    }
+        name: `Door_for_${boxMesh.name}`,
+        dimensions: { width: 0.02, height: h, depth: d },
+        position: { x: 0, y: 0, z: 0 },
+        material: doorMatProps,
+      }
     : {
-      name: `Door_for_${boxMesh.name}`,
-      dimensions: { width: w, height: h, depth: 0.02 },
-      position: { x: 0, y: 0, z: 0 },
-      material: doorMatProps,
-    };
+        name: `Door_for_${boxMesh.name}`,
+        dimensions: { width: w, height: h, depth: 0.02 },
+        position: { x: 0, y: 0, z: 0 },
+        material: doorMatProps,
+      };
 
   const face = createMeshObject(facePart, true, { openDirection: 'right' });
 
@@ -1150,21 +1153,21 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer face
     const facePart = isSide
       ? {
-        name: `DRAWER_FACE_PLANK`,
-        dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
-        position: {
-          x: center.x + dir * (w / 2 + 0.01),
-          y: yCenter,
-          z: center.z,
-        },
-        material: drawerMatProps,
-      }
+          name: `DRAWER_FACE_PLANK`,
+          dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
+          position: {
+            x: center.x + dir * (w / 2 + 0.01),
+            y: yCenter,
+            z: center.z,
+          },
+          material: drawerMatProps,
+        }
       : {
-        name: `DRAWER_FACE_PLANK`,
-        dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
-        position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
-        material: drawerMatProps,
-      };
+          name: `DRAWER_FACE_PLANK`,
+          dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+          position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
+          material: drawerMatProps,
+        };
     const face = createMeshObject(facePart);
     scene.add(face);
     drawerGroup.attach(face);
@@ -1387,10 +1390,10 @@ export const addDrawersOnInvisibleBox = async (
           },
           handle_position: child.name.toLowerCase().includes('handle')
             ? {
-              x: metersToMM(child.position.x),
-              y: metersToMM(child.position.y),
-              z: metersToMM(child.position.z),
-            }
+                x: metersToMM(child.position.x),
+                y: metersToMM(child.position.y),
+                z: metersToMM(child.position.z),
+              }
             : null,
           additional_data: {
             texture: formattedName.includes('Face')

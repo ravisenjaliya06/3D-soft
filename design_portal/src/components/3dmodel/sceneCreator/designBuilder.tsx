@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { GEOMETRY, MeshObjectData, MATERIAL_TYPE, userData } from './interface';
+import { GEOMETRY, MATERIAL_TYPE, MeshObjectData, userData } from './interface';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -45,7 +45,11 @@ export class MeshBuilder {
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
-    return new THREE.BoxGeometry(this.meshData.dimensions.width, this.meshData.dimensions.height, this.meshData.dimensions.depth);
+    return new THREE.BoxGeometry(
+      this.meshData.dimensions.width,
+      this.meshData.dimensions.height,
+      this.meshData.dimensions.depth
+    );
   }
 
   private _getGeometry() {
