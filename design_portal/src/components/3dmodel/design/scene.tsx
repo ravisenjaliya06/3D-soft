@@ -448,7 +448,7 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   );
   composer.addPass(bloomPass);
 
-  const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
+  const smaaPass = new SMAAPass();
   composer.addPass(smaaPass);
 
   const animate = () => {
@@ -610,17 +610,18 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
-  const wallMaterial = await createRealisticMaterial(scene, {
-    textures: TEXTURES_URLS.WALL,
-    repeatX: 4,
-    repeatY: 4,
-  });
 
-  const floorMaterial = await createRealisticMaterial(scene, {
-    textures: TEXTURES_URLS.FLOOR,
-    repeatX: 5,
-    repeatY: 4,
-  });
+  const wallTexture = new THREE.TextureLoader().load(TEXTURES_URLS.WALL.color);
+  wallTexture.colorSpace = THREE.SRGBColorSpace;
+  wallTexture.generateMipmaps = false;
+  wallTexture.minFilter = THREE.LinearFilter;
+  const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.DoubleSide });
+
+  const floorTexture = new THREE.TextureLoader().load(TEXTURES_URLS.FLOOR.color);
+  floorTexture.colorSpace = THREE.SRGBColorSpace;
+  floorTexture.generateMipmaps = false;
+  floorTexture.minFilter = THREE.LinearFilter;
+  const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, side: THREE.DoubleSide });
   // ---------- Panels ----------
   // Back wall
   const centerWallPart = {
@@ -968,15 +969,15 @@ export const addVerticalPlanksToBox = async (
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
       ? {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width: thickness, height: effectiveHeight, depth },
-          material: plankMatProps,
-        }
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width: thickness, height: effectiveHeight, depth },
+        material: plankMatProps,
+      }
       : {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width, height: effectiveHeight, depth: thickness },
-          material: plankMatProps,
-        };
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width, height: effectiveHeight, depth: thickness },
+        material: plankMatProps,
+      };
 
     const plank = createMeshObject(plankPart, true, {
       isVerticalPlank: true,
@@ -1272,17 +1273,17 @@ export const addDoorOnInvisibleBox = async (
 
   const facePart = isSide
     ? {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: 0.02, height: h, depth: d },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      }
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: 0.02, height: h, depth: d },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    }
     : {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: w, height: h, depth: 0.02 },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      };
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: w, height: h, depth: 0.02 },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    };
 
   const face = createMeshObject(facePart, true, { openDirection: 'right' });
 
@@ -1465,21 +1466,21 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer face
     const facePart = isSide
       ? {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
-          position: {
-            x: center.x + dir * (w / 2 + 0.01),
-            y: yCenter,
-            z: center.z,
-          },
-          material: drawerMatProps,
-        }
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
+        position: {
+          x: center.x + dir * (w / 2 + 0.01),
+          y: yCenter,
+          z: center.z,
+        },
+        material: drawerMatProps,
+      }
       : {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
-          position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
-          material: drawerMatProps,
-        };
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+        position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
+        material: drawerMatProps,
+      };
     const face = createMeshObject(facePart);
     scene.add(face);
     drawerGroup.attach(face);
@@ -1702,10 +1703,10 @@ export const addDrawersOnInvisibleBox = async (
           },
           handle_position: child.name.toLowerCase().includes('handle')
             ? {
-                x: metersToMM(child.position.x),
-                y: metersToMM(child.position.y),
-                z: metersToMM(child.position.z),
-              }
+              x: metersToMM(child.position.x),
+              y: metersToMM(child.position.y),
+              z: metersToMM(child.position.z),
+            }
             : null,
           additional_data: {
             texture: formattedName.includes('Face')
