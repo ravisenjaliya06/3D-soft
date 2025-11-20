@@ -1,4 +1,5 @@
 import { RecordOf } from 'immutable';
+import { JSX } from 'react';
 
 export interface Dimansions {
   width: number;
