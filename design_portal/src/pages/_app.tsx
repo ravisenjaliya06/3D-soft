@@ -37,6 +37,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   const isDesignPage = router.pathname.startsWith('/design/');
   const isCatalogPage = router.pathname.startsWith('/catalogmanager');
   const isMaterialPage = router.pathname.startsWith('/material');
+  const is2dPage = router.pathname.startsWith('lab/design/');
 
   return (
     <>
@@ -45,7 +46,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
         >
           <Component {...pageProps} />
-          {!isDesignPage && !isMaterialPage && !isCatalogPage && (
+          {!isDesignPage && !isMaterialPage && !isCatalogPage && is2dPage && (
             <div className="fixed-image">
               <img src={assets.brevento_background_logo} alt="Background" />
             </div>
