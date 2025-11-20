@@ -9,6 +9,7 @@
   justify-content: space-between;
   z-index: 1;
   margin-left: 4rem;
+  position: relative;
 }
 
 .headreTitle {

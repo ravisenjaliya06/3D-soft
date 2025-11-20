@@ -18,7 +18,6 @@ const initialState: Omit<MaterialState, 'companyMaterials' | 'materialCategories
   companyName: '',
 };
 
-
 // * Update manage material state
 export const useMaterialState = () => {
   const [state, setState] = useState(initialState);

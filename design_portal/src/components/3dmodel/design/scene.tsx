@@ -459,7 +459,6 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   };
   animate();
 
-
   const handleResize = () => {
     /* Resize three js scene with the resize of the window */
     if (camera instanceof THREE.PerspectiveCamera) {

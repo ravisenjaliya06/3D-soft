@@ -27,7 +27,6 @@ const createComponentData = (
   grooves: child?.grooves || [],
 });
 
-
 /** Convert object and its child objects into catalog format */
 export const convertObjectData = (object: Object3D, childObjects?: Object3D[]) => {
   const defaultMaterial: Material = {

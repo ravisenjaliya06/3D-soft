@@ -662,7 +662,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
   const renderRadiusInput = () => {
     /** Renders an input box overlay for editing the corner radius of a selected vertex. */
-    
+
     if (!showRadiusInput || selectedCornerIndex === null) return null;
 
     const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;

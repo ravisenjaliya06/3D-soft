@@ -14,7 +14,7 @@ import { AddItemDatabasePayload, RulePart } from './interface';
 export function showFullScreenLoader(message = 'Loading...') {
   /**
    * Shows a full screen loader with a message
-  */
+   */
   if (document.getElementById('global-loader')) return;
 
   const loader = document.createElement('div');
@@ -575,7 +575,6 @@ export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
   child.userData.isClosed = !isClosed;
   child.userData.closedPos = closedPos;
 }
-
 
 export const addCabinetItemToDesign = async (
   catalogId: string,
