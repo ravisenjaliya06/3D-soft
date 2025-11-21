@@ -25,9 +25,9 @@ export const store = configureStore({
 
 /* registers a callback function that runs every time the Redux store updates.*/
 store.subscribe(() => {
-  if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-    console.log('Updated store state:', store.getState());
-  }
+  // if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+  //   console.log('Updated store state:', store.getState());
+  // }
 });
 
 export type RootState = ReturnType<typeof store.getState>;

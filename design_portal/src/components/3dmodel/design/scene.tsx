@@ -133,15 +133,11 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   const { daySky, nightSky, stars } = createSkySet();
 
   // Renderer
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    preserveDrawingBuffer: true,
-  });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-  renderer.toneMappingExposure = 1;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft shadows
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   mount.appendChild(renderer.domElement);
 
@@ -152,17 +148,33 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
   scene.add(grid);
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  ambientLight.intensity = 0.8;
-  scene.add(ambientLight);
+  const ambient = new THREE.AmbientLight(0xffffff);
+  scene.add(ambient);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  directionalLight.position.set(10, 15, 10);
-  directionalLight.intensity = 0.8;
-  directionalLight.castShadow = true;
-  directionalLight.shadow.mapSize.width = 2048;
-  directionalLight.shadow.mapSize.height = 2048;
-  scene.add(directionalLight);
+  const hemi = new THREE.HemisphereLight(0xbfefff, 0x443322, 0.45);
+  scene.add(hemi);
+
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+  dir.position.set(5, 8, 2);
+  dir.castShadow = true;
+  dir.shadow.camera.near = 0.5;
+  dir.shadow.camera.far = 30;
+  dir.shadow.camera.left = -10;
+  dir.shadow.camera.right = 10;
+  dir.shadow.camera.top = 10;
+  dir.shadow.camera.bottom = -10;
+  dir.shadow.mapSize.set(2048, 2048);
+  dir.shadow.radius = 4; // soften shadow edges
+  scene.add(dir);
+
+  // Ground plane (receives shadows)
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  ground.receiveShadow = true;
+  scene.add(ground);
 
   // Orbit Controls
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -437,25 +449,14 @@ export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> =
     toggleZoomMode(false);
   };
 
-  const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-
-  const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.1,
-    0.1,
-    0.1
-  );
-  composer.addPass(bloomPass);
-
-  const smaaPass = new SMAAPass();
-  composer.addPass(smaaPass);
-
+  const clock = new THREE.Clock();
   const animate = () => {
     requestAnimationFrame(animate);
     controls.update();
+
+    const t = clock.getElapsedTime() * 0.4;
+
     renderer.render(scene, camera);
-    composer.render();
   };
   animate();
 
@@ -606,25 +607,44 @@ export function createMeshObject(
   mesh.userData = { ...mesh.userData, ...userData };
   return mesh;
 }
+
+export const loadTexture = (url: string, x: number = 1, y: number = 1): Promise<THREE.Texture> => {
+  const loader = new THREE.TextureLoader();
+
+  return new Promise((resolve, reject) => {
+    loader.load(
+      url,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(x, y);
+        resolve(texture);
+      },
+      undefined,
+      reject
+    );
+  });
+};
+
 export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
 
-  const wallTexture = new THREE.TextureLoader().load(TEXTURES_URLS.WALL.color);
-  wallTexture.colorSpace = THREE.SRGBColorSpace;
-  wallTexture.generateMipmaps = false;
-  wallTexture.minFilter = THREE.LinearFilter;
-  const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.DoubleSide });
-
-  const floorTexture = new THREE.TextureLoader().load(TEXTURES_URLS.FLOOR.color);
-  floorTexture.colorSpace = THREE.SRGBColorSpace;
-  floorTexture.generateMipmaps = false;
-  floorTexture.minFilter = THREE.LinearFilter;
+  const wallTexture = await loadTexture('/textures/1.jpg');
+  const floorTexture = await loadTexture('/textures/2.jpg', 2, 2);
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    map: wallTexture,
+    side: THREE.DoubleSide
+  });
   const floorMaterial = new THREE.MeshStandardMaterial({
     map: floorTexture,
     side: THREE.DoubleSide,
   });
+
   // ---------- Panels ----------
   // Back wall
   const centerWallPart = {
@@ -972,15 +992,15 @@ export const addVerticalPlanksToBox = async (
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
       ? {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width: thickness, height: effectiveHeight, depth },
-          material: plankMatProps,
-        }
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width: thickness, height: effectiveHeight, depth },
+        material: plankMatProps,
+      }
       : {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width, height: effectiveHeight, depth: thickness },
-          material: plankMatProps,
-        };
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width, height: effectiveHeight, depth: thickness },
+        material: plankMatProps,
+      };
 
     const plank = createMeshObject(plankPart, true, {
       isVerticalPlank: true,
@@ -1276,17 +1296,17 @@ export const addDoorOnInvisibleBox = async (
 
   const facePart = isSide
     ? {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: 0.02, height: h, depth: d },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      }
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: 0.02, height: h, depth: d },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    }
     : {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: w, height: h, depth: 0.02 },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      };
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: w, height: h, depth: 0.02 },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    };
 
   const face = createMeshObject(facePart, true, { openDirection: 'right' });
 
@@ -1469,21 +1489,21 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer face
     const facePart = isSide
       ? {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
-          position: {
-            x: center.x + dir * (w / 2 + 0.01),
-            y: yCenter,
-            z: center.z,
-          },
-          material: drawerMatProps,
-        }
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
+        position: {
+          x: center.x + dir * (w / 2 + 0.01),
+          y: yCenter,
+          z: center.z,
+        },
+        material: drawerMatProps,
+      }
       : {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
-          position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
-          material: drawerMatProps,
-        };
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+        position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
+        material: drawerMatProps,
+      };
     const face = createMeshObject(facePart);
     scene.add(face);
     drawerGroup.attach(face);
@@ -1706,10 +1726,10 @@ export const addDrawersOnInvisibleBox = async (
           },
           handle_position: child.name.toLowerCase().includes('handle')
             ? {
-                x: metersToMM(child.position.x),
-                y: metersToMM(child.position.y),
-                z: metersToMM(child.position.z),
-              }
+              x: metersToMM(child.position.x),
+              y: metersToMM(child.position.y),
+              z: metersToMM(child.position.z),
+            }
             : null,
           additional_data: {
             texture: formattedName.includes('Face')
