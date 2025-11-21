@@ -25,6 +25,7 @@ import { Object3D } from '../store/interface';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { textureLoader } from '../sceneCreator/utils';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -201,34 +202,13 @@ export function createMeshObject(
   return mesh;
 }
 
-export const loadTexture = (url: string, x: number = 1, y: number = 1): Promise<THREE.Texture> => {
-  const loader = new THREE.TextureLoader();
-
-  return new Promise((resolve, reject) => {
-    loader.load(
-      url,
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.LinearFilter;
-        texture.generateMipmaps = false;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(x, y);
-        resolve(texture);
-      },
-      undefined,
-      reject
-    );
-  });
-};
-
 export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
 
-  const wallTexture = await loadTexture('/textures/1.jpg');
-  const floorTexture = await loadTexture('/textures/2.jpg', 2, 2);
+  const wallTexture = await textureLoader('/textures/1.jpg');
+  const floorTexture = await textureLoader('/textures/2.jpg', 2, 2);
   const wallMaterial = new THREE.MeshStandardMaterial({
     map: wallTexture,
     side: THREE.DoubleSide
@@ -306,11 +286,6 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const floorY = getFloorY(scene);
   const placeZ = getPlacementZAgainstCenterWall(scene, depth);
   const placeX = 0;
-
-  const textureLoader = new THREE.TextureLoader();
-  const woodTex = textureLoader.load('/textures/light_wood.jpg');
-  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
-  woodTex.repeat.set(2, 1);
 
   const woodTexturePath = '/textures/light_wood.jpg';
 
