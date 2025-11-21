@@ -52,10 +52,34 @@ export class MeshBuilder {
     );
   }
 
+  // NOTE: Right now, we only support square shapes. In the future, we’ll add more shape options when we need to create custom shapes.
+  private _createShape(): THREE.Shape {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.lineTo(1, 0);
+    shape.lineTo(1, 1);
+    shape.lineTo(0, 1);
+    shape.closePath();
+    return shape;
+  }
+
+  private _createExtrudeGeometry(): THREE.ExtrudeGeometry {
+    const shape = this._createShape();
+
+    // NOTE: Right now, it only has two external properties (depth and bevelEnabled). Later on, we’ll add more properties when we need to support custom shapes.
+    const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+      depth: this.meshData.dimensions.depth,
+      bevelEnabled: false,
+    };
+    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  }
+
   private _getGeometry() {
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
         return this._createBoxGeometry();
+      case GEOMETRY.EXTRUDE_GEOMETRY:
+        return this._createExtrudeGeometry();
     }
   }
 
