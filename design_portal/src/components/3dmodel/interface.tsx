@@ -9,6 +9,12 @@ export interface AppProps {
   router: NextRouter;
 }
 
+export interface Dimensions {
+  width: number;
+  height: number;
+  depth: number;
+}
+
 export interface DesignProps {
   isReady: boolean;
   scene?: THREE.Scene | null;
