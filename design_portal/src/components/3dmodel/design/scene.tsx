@@ -220,61 +220,96 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
 
   // ---------- Panels ----------
   // Back wall
-  const centerWallPart = {
-    name: 'Center Wall',
-    dimensions: {
-      width: wallLength - 2 * wallThickness,
-      height: wallHeight,
-      depth: wallThickness,
+  const cTypeWallWithFloorObjects = [
+    {
+      id: crypto.randomUUID(),
+      name: 'Center Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallLength - 2 * wallThickness,
+        height: wallHeight,
+        depth: wallThickness,
+      },
+      position: { x: 0, y: wallHeight / 2, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    position: { x: 0, y: wallHeight / 2, z: 0 },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const centerPanel = createMeshObject(centerWallPart, false, centerWallPart.userData);
-
-  // Left wall part
-  const leftWallPart = {
-    name: 'Left Wall',
-    dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
-    position: {
-      x: -wallLength / 2 + wallThickness / 2,
-      y: wallHeight / 2,
-      z: wallLength / 2 - wallThickness / 2,
+    {
+      id: crypto.randomUUID(),
+      name: 'Left Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallThickness,
+        height: wallHeight,
+        depth: wallLength,
+      },
+      position: {
+        x: -wallLength / 2 + wallThickness / 2,
+        y: wallHeight / 2,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const leftwall = createMeshObject(leftWallPart, false, leftWallPart.userData);
-
-  // Right wall part
-  const rightwallPart = {
-    name: 'Right Wall',
-    dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
-    position: {
-      x: wallLength / 2 - wallThickness / 2,
-      y: wallHeight / 2,
-      z: wallLength / 2 - wallThickness / 2,
+    {
+      id: crypto.randomUUID(),
+      name: 'Right Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallThickness,
+        height: wallHeight,
+        depth: wallLength,
+      },
+      position: {
+        x: wallLength / 2 - wallThickness / 2,
+        y: wallHeight / 2,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const rightwall = createMeshObject(rightwallPart, false, rightwallPart.userData);
+    {
+      id: crypto.randomUUID(),
+      name: 'Floor',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallLength,
+        height: 0.01,
+        depth: wallLength,
+      },
+      position: {
+        x: 0,
+        y: toAvoidOverlap,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: -Math.PI / 2, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.FLOOR,
+        repeatX: 4,
+        repeatY: 4,
+      },
+    },
+  ];
 
-  // Floor (using PlaneGeometry)
-  const floorPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(wallLength, wallLength), // square floor
-    floorMaterial
-  );
-  floorPanel.rotation.x = -Math.PI / 2;
-  floorPanel.castShadow = true;
-  floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, toAvoidOverlap, wallLength / 2 - wallThickness / 2);
-
-  const cWallGroup = new THREE.Group();
-  cWallGroup.name = 'cWallWithFloor';
-  cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
-  scene.add(cWallGroup);
+  const designsBuilder = new DesignBuilder(cTypeWallWithFloorObjects);
+  const design = designsBuilder.createDesign();
+  scene.add(design);
 };
 
 export const addSimpleCabinet = (scene: THREE.Scene) => {
@@ -629,15 +664,15 @@ export const addVerticalPlanksToBox = async (
   for (let i = 1; i <= count; i++) {
     const plankPart = divideAlongX
       ? {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width: thickness, height: effectiveHeight, depth },
-          material: plankMatProps,
-        }
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width: thickness, height: effectiveHeight, depth },
+        material: plankMatProps,
+      }
       : {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width, height: effectiveHeight, depth: thickness },
-          material: plankMatProps,
-        };
+        name: `VERTICAL_PLANK_${i}`,
+        dimensions: { width, height: effectiveHeight, depth: thickness },
+        material: plankMatProps,
+      };
 
     const plank = createMeshObject(plankPart, true, {
       isVerticalPlank: true,
@@ -933,17 +968,17 @@ export const addDoorOnInvisibleBox = async (
 
   const facePart = isSide
     ? {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: 0.02, height: h, depth: d },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      }
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: 0.02, height: h, depth: d },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    }
     : {
-        name: `Door_for_${boxMesh.name}`,
-        dimensions: { width: w, height: h, depth: 0.02 },
-        position: { x: 0, y: 0, z: 0 },
-        material: doorMatProps,
-      };
+      name: `Door_for_${boxMesh.name}`,
+      dimensions: { width: w, height: h, depth: 0.02 },
+      position: { x: 0, y: 0, z: 0 },
+      material: doorMatProps,
+    };
 
   const face = createMeshObject(facePart, true, { openDirection: 'right' });
 
@@ -1126,21 +1161,21 @@ export const addDrawersOnInvisibleBox = async (
     // Drawer face
     const facePart = isSide
       ? {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
-          position: {
-            x: center.x + dir * (w / 2 + 0.01),
-            y: yCenter,
-            z: center.z,
-          },
-          material: drawerMatProps,
-        }
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: 0.02, height: eachH - 0.005, depth: d - 0.01 },
+        position: {
+          x: center.x + dir * (w / 2 + 0.01),
+          y: yCenter,
+          z: center.z,
+        },
+        material: drawerMatProps,
+      }
       : {
-          name: `DRAWER_FACE_PLANK`,
-          dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
-          position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
-          material: drawerMatProps,
-        };
+        name: `DRAWER_FACE_PLANK`,
+        dimensions: { width: w - 0.01, height: eachH - 0.005, depth: 0.02 },
+        position: { x: center.x, y: yCenter, z: center.z + d / 2 + 0.01 },
+        material: drawerMatProps,
+      };
     const face = createMeshObject(facePart);
     scene.add(face);
     drawerGroup.attach(face);
@@ -1363,10 +1398,10 @@ export const addDrawersOnInvisibleBox = async (
           },
           handle_position: child.name.toLowerCase().includes('handle')
             ? {
-                x: metersToMM(child.position.x),
-                y: metersToMM(child.position.y),
-                z: metersToMM(child.position.z),
-              }
+              x: metersToMM(child.position.x),
+              y: metersToMM(child.position.y),
+              z: metersToMM(child.position.z),
+            }
             : null,
           additional_data: {
             texture: formattedName.includes('Face')
