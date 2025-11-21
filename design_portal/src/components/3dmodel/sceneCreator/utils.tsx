@@ -30,7 +30,7 @@ export const textureLoader = (
       },
       undefined,
       (error) => {
-        console.warn("Failed to load texture:", error);
+        console.warn('Failed to load texture:', error);
         reject(error);
       }
     );
