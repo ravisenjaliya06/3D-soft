@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { MeshBuilder } from './meshBuilder';
 import { MeshObjectData, userData } from './interface';
+import { MeshBuilder } from './meshBuilder';
 
 export class DesignBuilder {
   private scene: THREE.Scene | null;
