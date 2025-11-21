@@ -1,12 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { Sky } from 'three/examples/jsm/objects/Sky.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { v4 as uuidv4 } from 'uuid';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
 import { AddItemDatabasePayload, RulePart } from '../handler/interface';
@@ -19,8 +11,8 @@ import {
 } from '../handler/items';
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
-import { createSky } from '../helper/sky';
-import { SKY_SETS } from '../helper/sky/constants';
+import { DesignBuilder } from '../sceneCreator/designBuilder';
+import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
 import { store } from '../store';
 import {
   addObjects,
@@ -31,7 +23,6 @@ import {
 } from '../store/dataSlice';
 import { Object3D } from '../store/interface';
 import { SelectedCabinetItem } from '../toolbar/interface';
-import { createGrid } from './grid-creator';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
 
@@ -103,426 +94,6 @@ const convertPositionToMM = (position: { x: number; y: number; z: number }) => (
   z: Math.round(position.z * 1000),
 });
 
-export const init3DDesign = async (mount: HTMLDivElement): Promise<ThreeDView> => {
-  const scene = new THREE.Scene();
-  const perspectiveCamera = new THREE.PerspectiveCamera(
-    50,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  perspectiveCamera.position.set(0, 1, 4.5);
-  perspectiveCamera.lookAt(0, 0, 0);
-
-  const aspect = window.innerWidth / window.innerHeight;
-  const zoom = 10;
-  const orthographicCamera = new THREE.OrthographicCamera(
-    -zoom * aspect,
-    zoom * aspect,
-    zoom,
-    -zoom,
-    0.1,
-    1000
-  );
-  orthographicCamera.position.set(0, 10, 0);
-  orthographicCamera.lookAt(0, 0, 0);
-  orthographicCamera.zoom = 1;
-
-  let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera = perspectiveCamera;
-
-  const { daySky, nightSky, stars } = createSkySet();
-
-  // Renderer
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    preserveDrawingBuffer: true,
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-  renderer.toneMappingExposure = 1;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  mount.appendChild(renderer.domElement);
-
-  // Grid
-  const gridSize = 1000;
-  const gridDivisions = 1000;
-  const grid = createGrid(gridSize, gridDivisions);
-  scene.add(grid);
-
-  // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  ambientLight.intensity = 0.8;
-  scene.add(ambientLight);
-
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  directionalLight.position.set(10, 15, 10);
-  directionalLight.intensity = 0.8;
-  directionalLight.castShadow = true;
-  directionalLight.shadow.mapSize.width = 2048;
-  directionalLight.shadow.mapSize.height = 2048;
-  scene.add(directionalLight);
-
-  // Orbit Controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = false;
-  controls.dampingFactor = 0.05;
-  controls.enableZoom = true;
-  controls.enablePan = true;
-  controls.target.set(0, 0, 0);
-
-  const transformControls = new TransformControls(camera, renderer.domElement);
-  transformControls.size = 0.3;
-  transformControls.space = 'world';
-  controls.target.set(0, 0, 0);
-
-  // State
-  let isDay = true;
-  let isZoomMode = false;
-  let startPoint: THREE.Vector2 | null = null;
-  let overlayCanvas: HTMLCanvasElement | null = null;
-  let overlayContext: CanvasRenderingContext2D | null = null;
-
-  scene.add(daySky);
-
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-  scene.add(hemiLight);
-
-  const toggleSky = () => {
-    if (isDay) {
-      scene.remove(daySky);
-      scene.add(nightSky);
-      scene.add(stars);
-    } else {
-      scene.remove(nightSky);
-      scene.remove(stars);
-      scene.add(daySky);
-    }
-    isDay = !isDay;
-  };
-
-  // Walls will be added after design objects load to ensure correct ordering
-  const loadSinkModel = async (url: string) => {
-    let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
-    if (!counterMesh) {
-      const lShape = scene.getObjectByName('LShapeKitchenPlatform') as THREE.Group | null;
-      if (lShape) {
-        counterMesh = lShape.children.find((c) => c.name === 'Back Counter') as THREE.Mesh | null;
-      }
-    }
-    if (!counterMesh) {
-      scene.traverse((o) => {
-        if (!counterMesh && o instanceof THREE.Mesh && o.name.startsWith('Counter_'))
-          counterMesh = o;
-      });
-    }
-    if (!counterMesh) return;
-    const mesh = counterMesh as THREE.Mesh;
-
-    const sinkModel = await GLBLoader(url, 'SinkGLB', { width: 0.6, height: 0.35, depth: 0.35 });
-    sinkModel.position.set(mesh.position.x - 2, 0.52, mesh.position.z);
-    scene.add(sinkModel);
-  };
-
-  const toggleZoomMode = (enable: boolean) => {
-    isZoomMode = enable;
-    if (enable) {
-      document.body.style.cursor = 'zoom-in';
-      controls.enabled = false;
-      renderer.domElement.addEventListener('mousedown', onMouseDown);
-    } else {
-      document.body.style.cursor = 'default';
-      controls.enabled = true;
-      renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      if (overlayCanvas && overlayCanvas.parentNode) {
-        overlayCanvas.parentNode.removeChild(overlayCanvas);
-        overlayCanvas = null;
-        overlayContext = null;
-      }
-    }
-  };
-
-  const toggle2DMode = (is2D: boolean) => {
-    if (is2D) {
-      camera = orthographicCamera;
-      controls.enableRotate = false;
-      controls.enablePan = true;
-      controls.enableZoom = true;
-      transformControls.showY = false;
-      camera.position.set(0, 10, 0);
-      camera.lookAt(0, 0, 0);
-    } else {
-      camera = perspectiveCamera;
-      controls.enableRotate = true;
-      controls.enablePan = true;
-      controls.enableZoom = true;
-      transformControls.showY = true;
-      camera.position.set(0, 1, 4.5);
-      camera.lookAt(0, 0, 0);
-    }
-    controls.object = camera;
-    transformControls.camera = camera;
-    controls.update();
-    camera.updateProjectionMatrix();
-    renderer.render(scene, camera);
-  };
-
-  const getObjectsBoundingBox = (
-    scene: THREE.Scene,
-    camera: THREE.Camera,
-    startPoint: THREE.Vector2,
-    endPoint: THREE.Vector2
-  ): {
-    min: THREE.Vector3;
-    max: THREE.Vector3;
-    center: THREE.Vector3;
-  } | null => {
-    const raycaster = new THREE.Raycaster();
-    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-    const selectableObjects = scene.children.filter(
-      (obj) =>
-        obj.visible &&
-        !(obj instanceof THREE.GridHelper) &&
-        !(obj instanceof Sky) &&
-        obj.name !== 'stars'
-    );
-
-    const xMin = Math.min(startPoint.x, endPoint.x);
-    const xMax = Math.max(startPoint.x, endPoint.x);
-    const yMin = Math.min(startPoint.y, endPoint.y);
-    const yMax = Math.max(startPoint.y, endPoint.y);
-
-    let hitAnyObject = false;
-    const steps = 5;
-    for (let i = 0; i <= steps; i++) {
-      for (let j = 0; j <= steps; j++) {
-        const x = xMin + (xMax - xMin) * (i / steps);
-        const y = yMin + (yMax - yMin) * (j / steps);
-
-        raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-        const intersects = raycaster.intersectObjects(selectableObjects, true);
-
-        if (intersects.length) {
-          const { point } = intersects[0];
-          min.min(point);
-          max.max(point);
-          hitAnyObject = true;
-        }
-      }
-    }
-
-    if (!hitAnyObject) return null;
-    const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
-    return { min, max, center };
-  };
-
-  const onMouseDown = (event: MouseEvent) => {
-    if (!isZoomMode) return;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    startPoint = new THREE.Vector2(x, y);
-
-    overlayCanvas = document.createElement('canvas');
-    overlayCanvas.style.position = 'absolute';
-    overlayCanvas.style.top = '0';
-    overlayCanvas.style.left = '0';
-    overlayCanvas.style.pointerEvents = 'none';
-    overlayCanvas.width = window.innerWidth;
-    overlayCanvas.height = window.innerHeight;
-    mount.appendChild(overlayCanvas);
-    overlayContext = overlayCanvas.getContext('2d');
-
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mouseup', onMouseUp, { once: true });
-  };
-
-  const onMouseMove = (event: MouseEvent) => {
-    if (!startPoint || !isZoomMode || !overlayCanvas || !overlayContext) return;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
-
-    const startX = ((startPoint.x + 1) / 2) * rect.width;
-    const startY = ((-startPoint.y + 1) / 2) * rect.height;
-
-    overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-    const width = currentX - startX;
-    const height = currentY - startY;
-
-    overlayContext.strokeStyle = 'green';
-    overlayContext.fillStyle = 'rgba(0, 255, 0, 0.1)';
-    overlayContext.lineWidth = 2;
-    overlayContext.beginPath();
-    overlayContext.rect(startX, startY, width, height);
-    overlayContext.fill();
-    overlayContext.stroke();
-  };
-
-  const onMouseUp = (event: MouseEvent) => {
-    if (!startPoint) return;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    const endPoint = new THREE.Vector2(x, y);
-
-    if (overlayCanvas && overlayCanvas.parentNode) {
-      overlayCanvas.parentNode.removeChild(overlayCanvas);
-      overlayCanvas = null;
-      overlayContext = null;
-    }
-
-    const objectBounds = getObjectsBoundingBox(scene, camera, startPoint, endPoint);
-
-    if (!objectBounds) {
-      startPoint = null;
-      renderer.domElement.removeEventListener('mousemove', onMouseMove);
-      toggleZoomMode(false);
-      return;
-    }
-
-    const { min, max, center } = objectBounds;
-
-    const width = max.x - min.x;
-    if (camera instanceof THREE.PerspectiveCamera) {
-      const height = max.y - min.y;
-      const depth = max.z - min.z;
-      const fovRad = camera.fov * (Math.PI / 180);
-      const aspect = window.innerWidth / window.innerHeight;
-      const maxDimension = Math.max(width, height, depth);
-      let distance: number;
-
-      if (width / height > aspect) {
-        distance = maxDimension / 2 / Math.tan(fovRad / 2);
-      } else {
-        distance = maxDimension / 2 / (Math.tan(fovRad / 2) * aspect);
-      }
-
-      distance = Math.max(distance * 1.2, 0.1);
-
-      const direction = camera.getWorldDirection(new THREE.Vector3()).normalize();
-      const newPosition = center.clone().add(direction.clone().negate().multiplyScalar(distance));
-
-      camera.position.copy(newPosition);
-      camera.lookAt(center);
-      controls.target.copy(center);
-    } else {
-      const height = max.z - min.z;
-      const aspect = window.innerWidth / window.innerHeight;
-      const maxDimension = Math.max(width, height);
-      const newZoom = Math.min(
-        window.innerWidth / maxDimension,
-        window.innerHeight / (maxDimension / aspect)
-      );
-
-      camera.zoom = newZoom * 0.8;
-      camera.position.set(center.x, 10, center.z);
-      camera.lookAt(center.x, 0, center.z);
-      controls.target.set(center.x, 0, center.z);
-      camera.updateProjectionMatrix();
-    }
-
-    controls.update();
-
-    startPoint = null;
-    renderer.domElement.removeEventListener('mousemove', onMouseMove);
-    toggleZoomMode(false);
-  };
-
-  const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-
-  const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.1,
-    0.1,
-    0.1
-  );
-  composer.addPass(bloomPass);
-
-  const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
-  composer.addPass(smaaPass);
-
-  const animate = () => {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-    composer.render();
-  };
-  animate();
-
-  const handleResize = () => {
-    /* Resize three js scene with the resize of the window */
-    if (camera instanceof THREE.PerspectiveCamera) {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    } else {
-      const aspect = window.innerWidth / window.innerHeight;
-      const zoom = camera.zoom;
-      camera.left = -zoom * aspect;
-      camera.right = zoom * aspect;
-      camera.top = zoom;
-      camera.bottom = -zoom;
-      camera.updateProjectionMatrix();
-    }
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    if (overlayCanvas) {
-      overlayCanvas.width = window.innerWidth;
-      overlayCanvas.height = window.innerHeight;
-    }
-  };
-  window.addEventListener('resize', handleResize);
-
-  return {
-    scene,
-    camera,
-    renderer,
-    controls,
-    mount,
-    transformControls,
-    toggleSky,
-    isDay,
-    toggleZoomMode,
-    isZoomMode,
-    toggle2DMode,
-    addSimpleCabinet: () => addSimpleCabinet(scene),
-    loadSinkModel,
-  };
-};
-
-const createSkySet = (): {
-  daySky: Sky;
-  nightSky: Sky;
-  stars: THREE.Points;
-} => {
-  const daySky = createSky(SKY_SETS.daySky);
-  const nightSky = createSky(SKY_SETS.nightSky);
-
-  const starGeometry = new THREE.BufferGeometry();
-  const starVertices = [];
-  for (let i = 0; i < 5000; i++) {
-    starVertices.push(
-      (Math.random() - 0.5) * 2000,
-      (Math.random() - 0.5) * 2000,
-      (Math.random() - 0.5) * 2000
-    );
-  }
-  starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-  const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-  const stars = new THREE.Points(starGeometry, starMaterial);
-  stars.name = 'stars';
-
-  return { daySky, nightSky, stars };
-};
-
 function getFloorY(scene: THREE.Scene): number {
   let floorY = 0;
   const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
@@ -555,6 +126,29 @@ function createInvisibleMaterial(): THREE.MeshBasicMaterial {
     depthWrite: false,
   });
 }
+
+export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
+  let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
+  if (!counterMesh) {
+    const lShape = scene.getObjectByName('LShapeKitchenPlatform') as THREE.Group | null;
+    if (lShape) {
+      counterMesh = lShape.children.find(
+        (children) => children.name === 'Back Counter'
+      ) as THREE.Mesh | null;
+    }
+  }
+  if (!counterMesh) {
+    scene.traverse((object) => {
+      if (!counterMesh && object instanceof THREE.Mesh && object.name.startsWith('Counter_'))
+        counterMesh = object;
+    });
+  }
+  if (!counterMesh) return;
+
+  const sinkModel = await GLBLoader(url, 'SinkGLB', { width: 0.6, height: 0.35, depth: 0.35 });
+  sinkModel.position.set(counterMesh.position.x - 2, 0.52, counterMesh.position.z);
+  scene.add(sinkModel);
+};
 
 // Helper function to create invisible box mesh
 export function createInvisibleBox(
@@ -606,78 +200,103 @@ export function createMeshObject(
   mesh.userData = { ...mesh.userData, ...userData };
   return mesh;
 }
+
 export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallHeight = 3;
   const wallThickness = 0.05;
   const wallLength = 5;
-  const wallMaterial = await createRealisticMaterial(scene, {
-    textures: TEXTURES_URLS.WALL,
-    repeatX: 4,
-    repeatY: 4,
-  });
 
-  const floorMaterial = await createRealisticMaterial(scene, {
-    textures: TEXTURES_URLS.FLOOR,
-    repeatX: 5,
-    repeatY: 4,
-  });
-  // ---------- Panels ----------
-  // Back wall
-  const centerWallPart = {
-    name: 'Center Wall',
-    dimensions: {
-      width: wallLength - 2 * wallThickness,
-      height: wallHeight,
-      depth: wallThickness,
+  const cTypeWallWithFloorObjects = [
+    {
+      id: crypto.randomUUID(),
+      name: 'Center Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallLength - 2 * wallThickness,
+        height: wallHeight,
+        depth: wallThickness,
+      },
+      position: { x: 0, y: wallHeight / 2, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    position: { x: 0, y: wallHeight / 2, z: 0 },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const centerPanel = createMeshObject(centerWallPart, false, centerWallPart.userData);
-
-  // Left wall part
-  const leftWallPart = {
-    name: 'Left Wall',
-    dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
-    position: {
-      x: -wallLength / 2 + wallThickness / 2,
-      y: wallHeight / 2,
-      z: wallLength / 2 - wallThickness / 2,
+    {
+      id: crypto.randomUUID(),
+      name: 'Left Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallThickness,
+        height: wallHeight,
+        depth: wallLength,
+      },
+      position: {
+        x: -wallLength / 2 + wallThickness / 2,
+        y: wallHeight / 2,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const leftwall = createMeshObject(leftWallPart, false, leftWallPart.userData);
-
-  // Right wall part
-  const rightwallPart = {
-    name: 'Right Wall',
-    dimensions: { width: wallThickness, height: wallHeight, depth: wallLength },
-    position: {
-      x: wallLength / 2 - wallThickness / 2,
-      y: wallHeight / 2,
-      z: wallLength / 2 - wallThickness / 2,
+    {
+      id: crypto.randomUUID(),
+      name: 'Right Wall',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallThickness,
+        height: wallHeight,
+        depth: wallLength,
+      },
+      position: {
+        x: wallLength / 2 - wallThickness / 2,
+        y: wallHeight / 2,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.WALL,
+        repeatX: 4,
+        repeatY: 4,
+      },
     },
-    material: wallMaterial,
-    userData: { objectId: window.crypto.randomUUID(), type: 'wall' },
-  };
-  const rightwall = createMeshObject(rightwallPart, false, rightwallPart.userData);
+    {
+      id: crypto.randomUUID(),
+      name: 'Floor',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallLength,
+        height: 0.01,
+        depth: wallLength,
+      },
+      position: {
+        x: 0,
+        y: toAvoidOverlap,
+        z: wallLength / 2 - wallThickness / 2,
+      },
+      rotation: { x: -Math.PI / 2, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES_URLS.FLOOR,
+        repeatX: 4,
+        repeatY: 4,
+      },
+    },
+  ];
 
-  // Floor (using PlaneGeometry)
-  const floorPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(wallLength, wallLength), // square floor
-    floorMaterial
-  );
-  floorPanel.rotation.x = -Math.PI / 2;
-  floorPanel.castShadow = true;
-  floorPanel.receiveShadow = true;
-  floorPanel.position.set(0, toAvoidOverlap, wallLength / 2 - wallThickness / 2);
+  const designsBuilder = new DesignBuilder(cTypeWallWithFloorObjects);
 
-  const cWallGroup = new THREE.Group();
-  cWallGroup.name = 'cWallWithFloor';
-  cWallGroup.add(centerPanel, leftwall, rightwall, floorPanel);
-  scene.add(cWallGroup);
+  const design = designsBuilder.createDesign();
+  scene.add(design);
 };
 
 export const addSimpleCabinet = (scene: THREE.Scene) => {
@@ -695,73 +314,142 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
   woodTex.repeat.set(2, 1);
 
-  const plankMaterialProps = { map: woodTex, roughness: 0.6, metalness: 0 };
+  const woodTexturePath = '/textures/light_wood.jpg';
 
-  const cabinetContainer = createInvisibleBox(
-    { width, height, depth },
-    { x: placeX, y: floorY + height / 2, z: placeZ },
-    'SimpleCabinet',
-    { baseDims: { width, height, depth }, lastDims: { width, height, depth } }
-  );
-
-  const leftPart = {
-    name: 'LEFT_PLANK',
-    dimensions: { width: thickness, height: height, depth: depth },
-    position: { x: -(width / 2 - thickness / 2), y: 0, z: 0 },
-    material: plankMaterialProps,
-  };
-  const left = createMeshObject(leftPart, false, { type: 'Plank' });
-
-  const rightPart = {
-    name: 'RIGHT_PLANK',
-    dimensions: { width: thickness, height: height, depth: depth },
-    position: { x: width / 2 - thickness / 2, y: 0, z: 0 },
-    material: plankMaterialProps,
-  };
-  const right = createMeshObject(rightPart, false, { type: 'Plank' });
-
-  const bottomPart = {
-    name: 'BOTTOM_PLANK',
-    dimensions: {
-      width: width - thickness * 2,
-      height: thickness,
-      depth: depth,
+  const mainCupboardID = crypto.randomUUID();
+  const planks = [
+    {
+      id: mainCupboardID,
+      name: 'CUPBOARD',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: width,
+        height: height,
+        depth: depth,
+      },
+      position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2) },
+      rotation: { x: 0, y: 0, z: 0 },
     },
-    position: { x: 0, y: -(height / 2 - thickness / 2), z: 0 },
-    material: plankMaterialProps,
-  };
-  const bottom = createMeshObject(bottomPart, false, { type: 'Plank' });
-
-  const topPart = {
-    name: 'TOP_PLANK',
-    dimensions: {
-      width: width - thickness * 2,
-      height: thickness,
-      depth: depth,
+    {
+      id: crypto.randomUUID(),
+      name: 'LEFT_PLANK',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: thickness,
+        height: height,
+        depth: depth,
+      },
+      position: {
+        x: placeX - (width / 2 - thickness / 2),
+        y: floorY + height / 2,
+        z: placeZ,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
     },
-    position: { x: 0, y: height / 2 - thickness / 2, z: 0 },
-    material: plankMaterialProps,
-  };
-  const top = createMeshObject(topPart, false, { type: 'Plank' });
-
-  const backPart = {
-    name: 'BACK_PLANK',
-    dimensions: {
-      width: width - thickness * 2,
-      height: height - thickness * 2,
-      depth: thickness,
+    {
+      id: crypto.randomUUID(),
+      name: 'RIGHT_PLANK',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: thickness,
+        height: height,
+        depth: depth,
+      },
+      position: {
+        x: placeX + (width / 2 - thickness / 2),
+        y: floorY + height / 2,
+        z: placeZ,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
     },
-    position: { x: 0, y: 0, z: -(depth / 2 - thickness / 2) },
-    material: plankMaterialProps,
-  };
-  const back = createMeshObject(backPart);
+    {
+      id: crypto.randomUUID(),
+      name: 'TOP_PLANK',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: thickness,
+        depth: depth,
+      },
+      position: {
+        x: placeX,
+        y: floorY + height - thickness / 2,
+        z: placeZ,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'BOTTOM_PLANK',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: thickness,
+        depth: depth,
+      },
+      position: {
+        x: placeX,
+        y: floorY + thickness / 2,
+        z: placeZ,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'BACK_PLANK',
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: height - thickness * 2,
+        depth: thickness,
+      },
+      position: {
+        x: placeX,
+        y: floorY + height / 2,
+        z: placeZ - (depth / 2 - thickness / 2),
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+  ];
 
-  cabinetContainer.add(left, right, bottom, top, back);
-
-  generateCompartmentsFromMesh(cabinetContainer);
-  cabinetContainer.userData.isMain = true;
-  cabinetContainer.userData.objectId = uuidv4();
-  scene.add(cabinetContainer);
+  const designsBuilder = new DesignBuilder(planks);
+  const design = designsBuilder.createDesign();
+  scene.add(design);
 };
 
 export const addPlatformOnWall = async (

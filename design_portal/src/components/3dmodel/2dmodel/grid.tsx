@@ -11,7 +11,7 @@ export class Grid extends GridRecordFactory implements GridRecord {
   }
 }
 
-function createGrid(id: string, type:string): GridRecord {
+function createGrid(id: string, type: string): GridRecord {
   return new Grid({
     id,
     type,

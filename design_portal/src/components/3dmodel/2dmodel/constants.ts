@@ -29,7 +29,6 @@ export const REACTSVGPANZOOM_INITIAL_VALUE: Value = {
   miniatureOpen: false,
 };
 
-
 export const GridRecordFactory = Record<GridData>({
   id: '',
   type: 'horizontal-streak',
