@@ -279,65 +279,38 @@ export class SceneBuilder {
     this.zoomController.toggleZoomMode(enable);
   }
 
-  /**
-   * Gets the Three.js scene
-   */
   public getScene(): THREE.Scene {
     return this.scene;
   }
 
-  /**
-   * Gets the current camera
-   */
   public getCamera(): THREE.PerspectiveCamera | THREE.OrthographicCamera {
     return this.camera;
   }
 
-  /**
-   * Gets the renderer
-   */
   public getRenderer(): THREE.WebGLRenderer {
     return this.renderer;
   }
 
-  /**
-   * Gets the orbit controls
-   */
   public getControls(): OrbitControls {
     return this.controls;
   }
 
-  /**
-   * Gets the transform controls
-   */
   public getTransformControls(): TransformControls {
     return this.transformControls;
   }
 
-  /**
-   * Gets the mount element
-   */
   public getMount(): HTMLDivElement {
     return this.mount;
   }
 
-  /**
-   * Gets the current day/night state
-   */
   public getIsDayState(): boolean {
     return this.isDay;
   }
 
-  /**
-   * Gets the current zoom mode state
-   */
   public getIsZoomMode(): boolean {
     return this.isZoomMode;
   }
 
-  /**
-   * Builds and returns the complete ThreeDView object
-   */
   public build(): ThreeDView {
     return {
       scene: this.scene,
