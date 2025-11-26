@@ -34,3 +34,22 @@ export interface GridComponentProps {
   grid: GridRecord;
   key: string;
 }
+
+export interface WallPoint {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface Wall {
+  id: string;
+  startPoint: WallPoint;
+  endPoint: WallPoint;
+  width: number;
+  height: number;
+  thickness: number;
+  depth: number;
+  length: number;
+  connectedTo: string[];
+  selected?: boolean;
+}

@@ -52,6 +52,8 @@ export interface HistoryState {
 export interface RootState {
   data: {
     objects: Object3D[];
+    points: [];
+    walls: [];
   };
   customDesign: CustomDesignState;
   customDesignHistory: HistoryState;

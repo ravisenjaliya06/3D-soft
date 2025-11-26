@@ -306,3 +306,10 @@ export interface ShapeData {
   scale: Position;
   parentId?: string;
 }
+
+// create toolbarprops for wall when i select wall directly open 2d view
+// this 2d/3d will be temporary create now it will be removed and this will be add in redux
+export interface ToolbarProps {
+  threeDView?: ThreeDView;
+  onViewModeChange?: (mode: '3d' | '2d') => void;
+}
