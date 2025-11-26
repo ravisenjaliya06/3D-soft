@@ -5,6 +5,7 @@ export interface Datastate {
   isQuickHideActive: boolean;
   isMeasurementActive: boolean;
   isAlignmentActive: boolean;
+  isWallDrawingActive: boolean;
 }
 
 export interface PlatformReturn {

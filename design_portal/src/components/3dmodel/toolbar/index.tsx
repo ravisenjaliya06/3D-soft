@@ -26,6 +26,7 @@ import {
   setobjectSelected,
   toggleMeasurement,
   toggleQuickHide,
+  toggleWallDrawing,
 } from '../store/dataSlice';
 import {
   CabinetItem,
@@ -38,11 +39,12 @@ import {
 } from './interface';
 import styles from './toolbar.module.css';
 
-const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
   const state = useSelector((state: { data: Datastate }) => state.data);
   const isQuickHideActive = state.isQuickHideActive;
   const isMeasurementActive = state.isMeasurementActive;
+  const isWallDrawingActive = state.isWallDrawingActive;
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
@@ -397,6 +399,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView }) => {
         setcatalogMenu(false);
       },
       isActive: isMeasurementActive,
+      disabled: false,
+    },
+    {
+      option: 'Wall',
+      icon: assets.mesurment,
+      onClick: () => {
+        dispatch(toggleWallDrawing(!isWallDrawingActive));
+        if (onViewModeChange && !isWallDrawingActive) {
+          onViewModeChange('2d');
+        }
+        setcatalogMenu(false);
+      },
+      isActive: isWallDrawingActive,
       disabled: false,
     },
   ];

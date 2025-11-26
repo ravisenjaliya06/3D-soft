@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
+import { Wall, WallPoint } from '../2dmodel/interface';
 import { removeExistingLines } from '../design';
 import { AppThunk } from '../store';
 import { addToHistory } from './historySlice';
@@ -22,7 +23,10 @@ const initialState: DataState = {
   currentUnitType: 'cm',
   showCreationCancelHint: false,
   isAlignmentActive: false,
+  isWallDrawingActive: false,
   hoverdMesh: null,
+  points: [],
+  walls: [],
 };
 
 const dataSlice = createSlice({
@@ -91,14 +95,21 @@ const dataSlice = createSlice({
         state.isAlignmentActive = false;
       }
     },
-
+    toggleWallDrawing: (state, action: PayloadAction<boolean>) => {
+      state.isWallDrawingActive = action.payload;
+      // Turn off other modes when wall drawing is active
+      if (action.payload) {
+        state.isQuickHideActive = false;
+        state.isMeasurementActive = false;
+        state.isAlignmentActive = false;
+      }
+    },
     setUnitType: (state, action: PayloadAction<'mm' | 'cm' | 'in'>) => {
       state.currentUnitType = action.payload;
     },
     setCreationCancelHint: (state, action: PayloadAction<boolean>) => {
       state.showCreationCancelHint = action.payload;
     },
-
     togglAlignment: (state, action: PayloadAction<boolean>) => {
       state.isAlignmentActive = action.payload;
       if (action.payload) {
@@ -111,6 +122,32 @@ const dataSlice = createSlice({
     },
     setInvisibleBox: (state, action: PayloadAction<string | null>) => {
       state.selectedInvisibleBox = action.payload;
+    },
+    // Wall-related reducers
+    addPoint: (state, action: PayloadAction<WallPoint>) => {
+      state.points.push(action.payload);
+    },
+    setPoints: (state, action: PayloadAction<WallPoint[]>) => {
+      state.points = action.payload;
+    },
+    addWall: (state, action: PayloadAction<Wall>) => {
+      state.walls.push(action.payload);
+    },
+    setWalls: (state, action: PayloadAction<Wall[]>) => {
+      state.walls = action.payload;
+    },
+    updateWall: (state, action: PayloadAction<Wall>) => {
+      const index = state.walls.findIndex((wall) => wall.id === action.payload.id);
+      if (index !== -1) {
+        state.walls[index] = action.payload;
+      }
+    },
+    removeWall: (state, action: PayloadAction<Wall>) => {
+      state.walls = state.walls.filter((wall) => wall.id !== action.payload.id);
+    },
+    clearWalls: (state) => {
+      state.walls = [];
+      state.points = [];
     },
   },
 });
@@ -225,6 +262,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
 export const {
   toggleQuickHide,
   toggleMeasurement,
+  toggleWallDrawing,
   setUnitType,
   setCreationCancelHint,
   togglAlignment,
@@ -242,6 +280,13 @@ export const {
   removeObject,
   setHoverdMesh,
   setInvisibleBox,
+  addPoint,
+  setPoints,
+  addWall,
+  setWalls,
+  updateWall,
+  removeWall,
+  clearWalls,
 } = dataSlice.actions;
 
 export default dataSlice.reducer;

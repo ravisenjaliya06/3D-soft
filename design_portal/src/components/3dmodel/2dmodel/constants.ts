@@ -7,6 +7,9 @@ export const GRID_SIZE = {
   HEIGHT: 1000,
 };
 
+// step of grid which is snapping point
+export const GRID_STEP = 20;
+
 // initial value of react-svg-pan-zoom
 export const REACTSVGPANZOOM_INITIAL_VALUE: Value = {
   version: 2,
