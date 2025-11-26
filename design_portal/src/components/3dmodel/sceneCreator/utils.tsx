@@ -11,3 +11,28 @@ export const findXY = (renderer: THREE.WebGLRenderer, event: MouseEvent) => {
 
   return { x, y };
 };
+
+export const textureLoader = (
+  url: string,
+  repeatX: number = 1,
+  repeatY: number = 1
+): Promise<THREE.Texture> => {
+  const loader = new THREE.TextureLoader();
+
+  return new Promise((resolve, reject) => {
+    loader.load(
+      url,
+      (texture) => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(repeatX, repeatY);
+        resolve(texture);
+      },
+      undefined,
+      (error) => {
+        console.warn('Failed to load texture:', error);
+        reject(error);
+      }
+    );
+  });
+};

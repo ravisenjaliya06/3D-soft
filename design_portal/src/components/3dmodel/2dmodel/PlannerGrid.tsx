@@ -45,7 +45,7 @@ export default function PlannerGrid() {
   }, [resetDrawing]);
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-screen overflow-hidden bg-[#fafafa]">
+    <div className="fixed top-0 left-0 h-screen w-screen overflow-hidden bg-[#fafafa]">
       <ReactSVGPanZoom
         ref={Viewer}
         width={window.innerWidth}

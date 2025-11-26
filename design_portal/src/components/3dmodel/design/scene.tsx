@@ -13,6 +13,7 @@ import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
 import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
+import { textureLoader } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
   addObjects,
@@ -206,6 +207,19 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   const wallThickness = 0.05;
   const wallLength = 5;
 
+  const wallTexture = await textureLoader('/textures/1.jpg');
+  const floorTexture = await textureLoader('/textures/2.jpg', 2, 2);
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    map: wallTexture,
+    side: THREE.DoubleSide,
+  });
+  const floorMaterial = new THREE.MeshStandardMaterial({
+    map: floorTexture,
+    side: THREE.DoubleSide,
+  });
+
+  // ---------- Panels ----------
+  // Back wall
   const cTypeWallWithFloorObjects = [
     {
       id: crypto.randomUUID(),
@@ -294,7 +308,6 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
   ];
 
   const designsBuilder = new DesignBuilder(cTypeWallWithFloorObjects);
-
   const design = designsBuilder.createDesign();
   scene.add(design);
 };
@@ -308,11 +321,6 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const floorY = getFloorY(scene);
   const placeZ = getPlacementZAgainstCenterWall(scene, depth);
   const placeX = 0;
-
-  const textureLoader = new THREE.TextureLoader();
-  const woodTex = textureLoader.load('/textures/light_wood.jpg');
-  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
-  woodTex.repeat.set(2, 1);
 
   const woodTexturePath = '/textures/light_wood.jpg';
 

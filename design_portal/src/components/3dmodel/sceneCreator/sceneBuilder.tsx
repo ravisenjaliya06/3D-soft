@@ -2,10 +2,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
 import { addSimpleCabinet, loadSinkModel } from '../design/scene';
@@ -13,6 +9,7 @@ import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
 import { ZoomSelectionController } from './tools';
+import { textureLoader } from './utils';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -47,9 +44,6 @@ export class SceneBuilder {
   private daySky: Sky;
   private nightSky: Sky;
   private stars: THREE.Points;
-
-  // Post-processing
-  private composer: EffectComposer;
 
   // State
   private isDay: boolean = true;
@@ -98,9 +92,6 @@ export class SceneBuilder {
       this.mount,
       this.controls
     );
-
-    // Initialize post-processing
-    this.composer = this.createComposer();
 
     // Setup scene
     this.setupScene();
@@ -233,25 +224,7 @@ export class SceneBuilder {
     return transformControls;
   }
 
-  private createComposer(): EffectComposer {
-    const composer = new EffectComposer(this.renderer);
-    composer.addPass(new RenderPass(this.scene, this.camera));
-
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.1,
-      0.1,
-      0.1
-    );
-    composer.addPass(bloomPass);
-
-    const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
-    composer.addPass(smaaPass);
-
-    return composer;
-  }
-
-  private setupScene(): void {
+  private async setupScene(): Promise<void> {
     // Add grid
     this.scene.add(this.grid);
 
@@ -260,6 +233,7 @@ export class SceneBuilder {
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
 
+    this.scene.background = await textureLoader('/textures/background.png');
     // Add day sky by default
     this.scene.add(this.daySky);
   }
@@ -277,8 +251,6 @@ export class SceneBuilder {
       this.overlayCanvas.width = window.innerWidth;
       this.overlayCanvas.height = window.innerHeight;
     }
-
-    this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 
   private startAnimation(): void {
@@ -286,7 +258,6 @@ export class SceneBuilder {
       this.animationId = requestAnimationFrame(animate);
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
-      this.composer.render();
     };
     animate();
   }
@@ -308,65 +279,38 @@ export class SceneBuilder {
     this.zoomController.toggleZoomMode(enable);
   }
 
-  /**
-   * Gets the Three.js scene
-   */
   public getScene(): THREE.Scene {
     return this.scene;
   }
 
-  /**
-   * Gets the current camera
-   */
   public getCamera(): THREE.PerspectiveCamera | THREE.OrthographicCamera {
     return this.camera;
   }
 
-  /**
-   * Gets the renderer
-   */
   public getRenderer(): THREE.WebGLRenderer {
     return this.renderer;
   }
 
-  /**
-   * Gets the orbit controls
-   */
   public getControls(): OrbitControls {
     return this.controls;
   }
 
-  /**
-   * Gets the transform controls
-   */
   public getTransformControls(): TransformControls {
     return this.transformControls;
   }
 
-  /**
-   * Gets the mount element
-   */
   public getMount(): HTMLDivElement {
     return this.mount;
   }
 
-  /**
-   * Gets the current day/night state
-   */
   public getIsDayState(): boolean {
     return this.isDay;
   }
 
-  /**
-   * Gets the current zoom mode state
-   */
   public getIsZoomMode(): boolean {
     return this.isZoomMode;
   }
 
-  /**
-   * Builds and returns the complete ThreeDView object
-   */
   public build(): ThreeDView {
     return {
       scene: this.scene,
