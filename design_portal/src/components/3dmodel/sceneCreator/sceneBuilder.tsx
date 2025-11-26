@@ -9,7 +9,6 @@ import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
 import { ZoomSelectionController } from './tools';
-import { textureLoader } from './utils';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -233,7 +232,6 @@ export class SceneBuilder {
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
 
-    this.scene.background = await textureLoader('/textures/background.png');
     // Add day sky by default
     this.scene.add(this.daySky);
   }

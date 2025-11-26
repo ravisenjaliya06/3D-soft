@@ -306,10 +306,6 @@ export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
       },
     },
   ];
-
-  const designsBuilder = new DesignBuilder(cTypeWallWithFloorObjects);
-  const design = designsBuilder.createDesign();
-  scene.add(design);
 };
 
 export const addSimpleCabinet = (scene: THREE.Scene) => {
@@ -329,6 +325,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: mainCupboardID,
       name: 'CUPBOARD',
+      type: 'Cupboard',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: width,
@@ -341,6 +338,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'LEFT_PLANK',
+      type: 'Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -364,6 +362,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'RIGHT_PLANK',
+      type: 'Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -387,6 +386,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'TOP_PLANK',
+      type: 'Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -410,6 +410,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'BOTTOM_PLANK',
+      type: 'Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -433,6 +434,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'BACK_PLANK',
+      type: 'Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {

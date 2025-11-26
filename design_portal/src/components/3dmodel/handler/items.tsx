@@ -62,7 +62,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   /**
    Generates invisible boxes for empty compartments in a given box mesh object.
   */
-
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
@@ -144,6 +143,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     opacity: 0,
   });
 
+  console.log(planks, 'planks');
   // --- CASE 1: No planks found → single invisible box ---
   if (planks.length === 0) {
     const geo = new THREE.BoxGeometry(width, height, depth);
@@ -152,6 +152,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     mesh.userData.isInvisibleBox = true;
     mesh.position.copy(boxCenterLocal);
     boxMesh.add(mesh);
+    console.log('Added invisible box for', boxMesh.name);
     return [mesh];
   }
 
@@ -240,13 +241,15 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   }
 
   const meshes: THREE.Mesh[] = [];
+  console.log(compartments, "compartments");
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.position.copy(c.position);
-    mesh.name = `INVISIBLE_COMPARTMENT_${idx}_for_${boxMesh.name}`;
-    mesh.userData.objectId = uuidv4();
-    mesh.userData.isInvisibleBox = true;
+    mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
+    console.log("mesh.name", mesh.name);
+    mesh.userData.objectId = `INVISIBLE_COMPARTMENT_1`;
+    mesh.userData.isInvisibleBox = false;
     boxMesh.add(mesh);
     meshes.push(mesh);
   });

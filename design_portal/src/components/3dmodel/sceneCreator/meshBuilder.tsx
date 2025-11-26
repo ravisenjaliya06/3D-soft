@@ -87,14 +87,13 @@ export class MeshBuilder {
   }
 
   private _setUserData(mesh: THREE.Mesh) {
+    console.log(this.meshData.type, "meshData");
+    mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
   }
 
-  private _createInvisibleBox(mesh: THREE.Mesh) {
-    const invisibleBoxes = generateCompartmentsFromMesh(mesh);
-    invisibleBoxes.forEach((box) => {
-      mesh.add(box);
-    });
+  private _setName(mesh: THREE.Mesh) {
+    mesh.name = this.meshData.name;
   }
 
   public createMesh(): THREE.Mesh {
@@ -106,8 +105,10 @@ export class MeshBuilder {
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
 
+    this._setName(mesh);
     this._setPosition(mesh);
     this._setUserData(mesh);
+    console.log(mesh, "mesh 123");
     return mesh;
   }
 }

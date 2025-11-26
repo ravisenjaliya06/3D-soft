@@ -28,6 +28,7 @@ interface Material {
 export interface MeshObjectData {
   id: string;
   name: string;
+  type: string;
   geometryType: GeometryType;
   parent?: string;
   dimensions: Dimensions;

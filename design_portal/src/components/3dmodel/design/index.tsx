@@ -680,6 +680,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'INVISIBLEBOX',
     'WALL',
     'CABINET',
+    'CUPBOARD',
     'TABLE',
     'PLATFORM',
   ];
@@ -750,7 +751,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         lastHoveredObjectRef.current = hoveredMesh;
 
         const worldPosition = hoveredMesh.getWorldPosition(new THREE.Vector3());
+        console.log(hoveredMesh, 'hoveredMesh');
         const outline = createHoverOutline(hoveredMesh, worldPosition);
+        console.log(outline, 'outline 2');
         if (outline) {
           design3D.scene.add(outline);
           hoverOutlineRef.current = outline;
