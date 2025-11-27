@@ -65,6 +65,7 @@ const Sidebar: React.FC = () => {
   const isDisabled = isQuickHideActive;
 
   let selectedObject: Object3D | null | undefined;
+  console.log('selectedChildObjectId', selectedChildObjectId);
   if (selectedChildObjectId) {
     selectedObject = objects.find((obj) => obj.id === selectedChildObjectId);
   } else if (selectedObjectId) {

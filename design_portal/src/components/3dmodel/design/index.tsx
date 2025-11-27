@@ -196,6 +196,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         ) {
           const mesh = object as THREE.Mesh;
           const isTopLevel = object.parent instanceof THREE.Scene;
+          const applyOutline = mesh.userData?.type === itemType.CUPBOARD ||
+            mesh.name.includes("PLANK") ||
+            mesh.name.includes("VERTICAL") ||
+            mesh.name.includes("HORIZONTAL");
 
           if (isQuickHideActive) {
             if (!originalMaterialsRef.current.has(mesh)) {
@@ -217,16 +221,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
               mesh.material.needsUpdate = true;
             }
 
-            if (isTopLevel) {
+            if (applyOutline) {
               const labels: THREE.Sprite[] = [];
               const outlineGroup = new THREE.Group();
               outlineGroup.position.copy(mesh.position);
-              outlineGroup.scale.set(0.01, 0.01, 0.01);
+              outlineGroup.scale.set(1,1,1);
               outlineGroup.name = `outline_group_${mesh.uuid}`;
 
               const processedPlankTypes = new Set<string>();
               mesh.userData.processedPlankTypes = processedPlankTypes;
-
               const minifixMarkers: THREE.Object3D[] = [];
 
               mesh.traverse((child) => {
@@ -328,7 +331,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                       depthTest: false,
                     });
                     const childOutline = new THREE.LineSegments(edges, outlineMaterial);
-                    childOutline.position.copy(child.position);
+                    // childOutline.position.copy(child.position);
+                    console.log(child.position , "child.position");
                     childOutline.rotation.copy(child.rotation);
                     childOutline.scale.set(1, 1, 1);
                     childOutline.name = `outline_${childName}`;
@@ -733,6 +737,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       const hitsSelectable = raycaster.intersectObjects(selectableParts, false);
 
       let hoveredMesh: THREE.Mesh | null = null;
+      console.log(hitsSelectable, 'hitsSelectable');
 
       if (hitsSelectable.length > 0) {
         hoveredMesh = hitsSelectable[0].object as THREE.Mesh;
@@ -751,9 +756,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         lastHoveredObjectRef.current = hoveredMesh;
 
         const worldPosition = hoveredMesh.getWorldPosition(new THREE.Vector3());
-        console.log(hoveredMesh, 'hoveredMesh');
+        console.log(hoveredMesh, 'hoveredMesh 123');
         const outline = createHoverOutline(hoveredMesh, worldPosition);
-        console.log(outline, 'outline 2');
+        console.log(outline, 'outline 123');
         if (outline) {
           design3D.scene.add(outline);
           hoverOutlineRef.current = outline;

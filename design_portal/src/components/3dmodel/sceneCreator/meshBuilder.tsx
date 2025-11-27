@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../handler/items';
 import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { addObjects } from '../store/dataSlice';
+import { store } from '../store';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -8,6 +9,7 @@ export class MeshBuilder {
   constructor(data: MeshObjectData) {
     this.meshData = data;
   }
+
 
   private _createTexture(): THREE.Texture {
     const texture = new THREE.TextureLoader().load(this.meshData.material?.value || '');
@@ -96,6 +98,10 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
+  private _setDataInObjectsState() {
+    store.dispatch(addObjects([this.meshData]));
+  }
+
   public createMesh(): THREE.Mesh {
     const geometry = this._getGeometry();
     const material = this._getMaterial();
@@ -108,6 +114,7 @@ export class MeshBuilder {
     this._setName(mesh);
     this._setPosition(mesh);
     this._setUserData(mesh);
+    this._setDataInObjectsState();
     console.log(mesh, "mesh 123");
     return mesh;
   }

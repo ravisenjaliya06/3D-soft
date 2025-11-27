@@ -241,7 +241,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   }
 
   const meshes: THREE.Mesh[] = [];
-  console.log(compartments, "compartments");
+  console.log(compartments, "compartments 1");
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
@@ -249,7 +249,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
     console.log("mesh.name", mesh.name);
     mesh.userData.objectId = `INVISIBLE_COMPARTMENT_1`;
-    mesh.userData.isInvisibleBox = false;
+    mesh.userData.isInvisibleBox = true;
     boxMesh.add(mesh);
     meshes.push(mesh);
   });

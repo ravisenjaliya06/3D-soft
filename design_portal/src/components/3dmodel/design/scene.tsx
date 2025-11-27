@@ -97,7 +97,7 @@ const convertPositionToMM = (position: { x: number; y: number; z: number }) => (
 
 function getFloorY(scene: THREE.Scene): number {
   let floorY = 0;
-  const cWallGroup = scene.getObjectByName('cWallWithFloor') as THREE.Group | null;
+  const cWallGroup = scene.getObjectByName('grid') as THREE.Group | null;
   if (cWallGroup) {
     const floorObj = cWallGroup.children.find(
       (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry
@@ -314,8 +314,6 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const depth = 0.4;
   const thickness = 0.018;
 
-  const floorY = getFloorY(scene);
-  const placeZ = getPlacementZAgainstCenterWall(scene, depth);
   const placeX = 0;
 
   const woodTexturePath = '/textures/light_wood.jpg';
@@ -332,7 +330,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
         height: height,
         depth: depth,
       },
-      position: { x: 0, y: 0, z: placeZ - (depth / 2 - thickness / 2) },
+      position: { x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
     },
     {
@@ -348,8 +346,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       },
       position: {
         x: placeX - (width / 2 - thickness / 2),
-        y: floorY + height / 2,
-        z: placeZ,
+        y: 0,
+        z: 0,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
@@ -372,8 +370,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       },
       position: {
         x: placeX + (width / 2 - thickness / 2),
-        y: floorY + height / 2,
-        z: placeZ,
+        y: 0,
+        z: 0,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
@@ -396,8 +394,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       },
       position: {
         x: placeX,
-        y: floorY + height - thickness / 2,
-        z: placeZ,
+        y: height / 2 - thickness / 2,
+        z: 0,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
@@ -420,8 +418,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       },
       position: {
         x: placeX,
-        y: floorY + thickness / 2,
-        z: placeZ,
+        y: -(height / 2 - thickness / 2),
+        z: 0,
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
@@ -444,8 +442,8 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       },
       position: {
         x: placeX,
-        y: floorY + height / 2,
-        z: placeZ - (depth / 2 - thickness / 2),
+        y: 0,
+        z: -(depth / 2 - thickness / 2),
       },
       rotation: { x: 0, y: 0, z: 0 },
       material: {
