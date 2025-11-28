@@ -9,6 +9,5 @@ export const createGrid = (size: number, divisions: number): THREE.GridHelper =>
   gridHelper.material.opacity = 0.9;
   gridHelper.material.depthWrite = false;
   gridHelper.material.transparent = true;
-  gridHelper.position.y = -0.61;
   return gridHelper;
 };

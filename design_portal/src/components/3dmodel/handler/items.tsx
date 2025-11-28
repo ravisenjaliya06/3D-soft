@@ -70,6 +70,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   boxMesh.traverse((child) => {
     if (child.userData.isInvisibleBox) toRemove.push(child);
   });
+  console.log('toRemove', toRemove);
   toRemove.forEach((c) => boxMesh.remove(c));
 
   // --- Determine orientation and grid axes ---
@@ -164,7 +165,9 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   const maxH = height / 2;
 
   const gridWidth = Math.ceil((maxW - minW) / step);
+  console.log(gridWidth, 'gridWidth');
   const gridHeight = Math.ceil((maxH - minH) / step);
+  console.log(gridHeight, 'gridHeight');
 
   const grid: string[][] = Array(gridHeight)
     .fill(null)
@@ -184,6 +187,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       }
     }
   });
+  console.log(grid, 'grid after planks');
 
   // --- Detect empty compartments ---
   const compartments: {
@@ -241,13 +245,12 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   }
 
   const meshes: THREE.Mesh[] = [];
-  console.log(compartments, "compartments 1");
+  console.log(compartments, "compartments 123");
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.position.copy(c.position);
     mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
-    console.log("mesh.name", mesh.name);
     mesh.userData.objectId = `INVISIBLE_COMPARTMENT_1`;
     mesh.userData.isInvisibleBox = true;
     boxMesh.add(mesh);

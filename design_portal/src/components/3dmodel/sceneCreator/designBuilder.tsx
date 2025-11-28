@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
 import { MeshObjectData, userData } from './interface';
 import { MeshBuilder } from './meshBuilder';
+import { Console } from 'console';
 
 export class DesignBuilder {
   private scene: THREE.Scene | null;
@@ -20,7 +21,7 @@ export class DesignBuilder {
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
-    const compartments = generateCompartmentsFromMesh(mesh);
+    generateCompartmentsFromMesh(mesh);
   }
 
   /**

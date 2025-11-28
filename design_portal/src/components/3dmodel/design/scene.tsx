@@ -330,7 +330,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
         height: height,
         depth: depth,
       },
-      position: { x: 0, y: 0, z: 0 },
+      position: { x: 0, y: 1, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
     },
     {
@@ -432,7 +432,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'BACK_PLANK',
-      type: 'Plank',
+      type: 'Back_Plank',
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -715,12 +715,7 @@ export const addVerticalPlanksToBox = async (
         texture: '/textures/light_wood.jpg',
       },
     };
-
-    const apiResponse = await addItemtoDatabase(data);
-    store.dispatch(addObjects([apiResponse]));
-    plank.userData.objectId = apiResponse.id;
     plank.userData.type = 'Plank';
-    plank.userData.apiData = apiResponse;
 
     const plankDimensionsMM = plank.userData.dimensions;
     const plankPositionMM = convertPositionToMM(plank.position);
@@ -891,11 +886,7 @@ export const addHorizontalPlanksInsideBox = async (
       },
     };
 
-    const apiResponse = await addItemtoDatabase(data);
-    store.dispatch(addObjects([apiResponse]));
-    shelf.userData.objectId = apiResponse.id;
-    shelf.userData.type = apiResponse.type;
-    shelf.userData.apiData = apiResponse;
+    shelf.userData.type = 'Plank';
     parent.add(shelf);
 
     // Sync with store
