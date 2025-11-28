@@ -182,10 +182,10 @@ export class ZoomSelectionController {
     const steps = 5;
     let found = false;
 
-    /* 
-      * Check many points inside the selection area to see which objects are hit,
-      * and use those hits to figure out the full bounding box of the selected region.
-    */
+    /*
+     * Check many points inside the selection area to see which objects are hit,
+     * and use those hits to figure out the full bounding box of the selected region.
+     */
     for (let i = 0; i <= steps; i++) {
       for (let j = 0; j <= steps; j++) {
         const x = xMin + (xMax - xMin) * (i / steps);
