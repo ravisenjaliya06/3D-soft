@@ -11,6 +11,7 @@ import {
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addPlatformOnWall,
+  addSimpleCabinet1,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { RulePart } from '../handler/interface';
@@ -352,9 +353,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     } else if (itemType === 'Plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
-        await addVerticalPlanksToBox(scene, targetBox, num, selectedCabinetItem, itemData);
+        await addVerticalPlanksToBox(scene, targetBox, num, selectedCabinetItem);
       } else if (nameLower.includes('horizontal')) {
-        await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem, itemData);
+        await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
     }
 
@@ -519,6 +520,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         if (threeDView && typeof threeDView.loadSinkModel === 'function') {
           threeDView.loadSinkModel('/glb/sink.glb');
         }
+      },
+      isActive: false,
+    },
+    {
+      option: 'cu',
+      icon: assets.sink,
+      onClick: () => {
+        addSimpleCabinet1(threeDView?.scene!);
       },
       isActive: false,
     },

@@ -1,9 +1,7 @@
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { MeshObjectData, userData } from './interface';
+import { MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { Console } from 'console';
 
 export class DesignBuilder {
   private scene: THREE.Scene | null;
@@ -14,10 +12,6 @@ export class DesignBuilder {
     this.data = data;
     this.scene = scene || null;
     this.meshMap = new Map<string, THREE.Mesh>();
-  }
-
-  private _setUserData(mesh: THREE.Mesh, userData: userData) {
-    mesh.userData = userData;
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
@@ -32,7 +26,6 @@ export class DesignBuilder {
     const meshList: THREE.Mesh[] = [];
 
     this.data.forEach((meshData) => {
-      console.log(meshData, "meshData");
       const builder = new MeshBuilder(meshData);
       const mesh = builder.createMesh();
       meshList.push(mesh);
@@ -56,7 +49,7 @@ export class DesignBuilder {
     });
 
     if (!rootMesh) {
-      throw new Error("Root mesh not found. Your data must contain one item with no parent.");
+      throw new Error('Root mesh not found. Your data must contain one item with no parent.');
     }
 
     this._createInitialCompartments(rootMesh);

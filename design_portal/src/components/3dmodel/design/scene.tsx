@@ -4,7 +4,6 @@ import { TEXTURES_URLS } from '../constants';
 import { AddItemDatabasePayload, RulePart } from '../handler/interface';
 import {
   addItemtoDatabase,
-  addItemToDataBaseWithoutCatalog,
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
   showFullScreenLoader,
@@ -12,8 +11,7 @@ import {
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { GEOMETRY, MATERIAL_TYPE } from '../sceneCreator/interface';
-import { textureLoader } from '../sceneCreator/utils';
+import { GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 import { store } from '../store';
 import {
   addObjects,
@@ -94,29 +92,6 @@ const convertPositionToMM = (position: { x: number; y: number; z: number }) => (
   y: Math.round(position.y * 1000),
   z: Math.round(position.z * 1000),
 });
-
-function getFloorY(scene: THREE.Scene): number {
-  let floorY = 0;
-  const cWallGroup = scene.getObjectByName('grid') as THREE.Group | null;
-  if (cWallGroup) {
-    const floorObj = cWallGroup.children.find(
-      (o) => (o as THREE.Mesh).geometry instanceof THREE.PlaneGeometry
-    ) as THREE.Mesh | undefined;
-    if (floorObj) floorY = floorObj.position.y;
-  }
-  return floorY;
-}
-
-function getPlacementZAgainstCenterWall(scene: THREE.Scene, depth: number): number {
-  let placeZ = depth / 2 + 0.02;
-  const centerWall = scene.getObjectByName('Center Wall') as THREE.Mesh | null;
-  if (centerWall) {
-    const params = (centerWall.geometry as THREE.BoxGeometry).parameters;
-    const wallDepth = params.depth as number;
-    placeZ = centerWall.position.z + wallDepth / 2 + depth / 2 + 0.005;
-  }
-  return placeZ;
-}
 
 // Helper function to create invisible material
 function createInvisibleMaterial(): THREE.MeshBasicMaterial {
@@ -202,112 +177,6 @@ export function createMeshObject(
   return mesh;
 }
 
-export const addCTypeWallWithFloor = async (scene: THREE.Scene) => {
-  const wallHeight = 3;
-  const wallThickness = 0.05;
-  const wallLength = 5;
-
-  const wallTexture = await textureLoader('/textures/1.jpg');
-  const floorTexture = await textureLoader('/textures/2.jpg', 2, 2);
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    map: wallTexture,
-    side: THREE.DoubleSide,
-  });
-  const floorMaterial = new THREE.MeshStandardMaterial({
-    map: floorTexture,
-    side: THREE.DoubleSide,
-  });
-
-  // ---------- Panels ----------
-  // Back wall
-  const cTypeWallWithFloorObjects = [
-    {
-      id: crypto.randomUUID(),
-      name: 'Center Wall',
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: {
-        width: wallLength - 2 * wallThickness,
-        height: wallHeight,
-        depth: wallThickness,
-      },
-      position: { x: 0, y: wallHeight / 2, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: TEXTURES_URLS.WALL,
-        repeatX: 4,
-        repeatY: 4,
-      },
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Left Wall',
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: {
-        width: wallThickness,
-        height: wallHeight,
-        depth: wallLength,
-      },
-      position: {
-        x: -wallLength / 2 + wallThickness / 2,
-        y: wallHeight / 2,
-        z: wallLength / 2 - wallThickness / 2,
-      },
-      rotation: { x: 0, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: TEXTURES_URLS.WALL,
-        repeatX: 4,
-        repeatY: 4,
-      },
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Right Wall',
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: {
-        width: wallThickness,
-        height: wallHeight,
-        depth: wallLength,
-      },
-      position: {
-        x: wallLength / 2 - wallThickness / 2,
-        y: wallHeight / 2,
-        z: wallLength / 2 - wallThickness / 2,
-      },
-      rotation: { x: 0, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: TEXTURES_URLS.WALL,
-        repeatX: 4,
-        repeatY: 4,
-      },
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Floor',
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: {
-        width: wallLength,
-        height: 0.01,
-        depth: wallLength,
-      },
-      position: {
-        x: 0,
-        y: toAvoidOverlap,
-        z: wallLength / 2 - wallThickness / 2,
-      },
-      rotation: { x: -Math.PI / 2, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: TEXTURES_URLS.FLOOR,
-        repeatX: 4,
-        repeatY: 4,
-      },
-    },
-  ];
-};
-
 export const addSimpleCabinet = (scene: THREE.Scene) => {
   const width = 1.5;
   const height = 2;
@@ -323,7 +192,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: mainCupboardID,
       name: 'CUPBOARD',
-      type: 'Cupboard',
+      type: OBJECT_TYPES.CUPBOARD,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: width,
@@ -336,7 +205,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'LEFT_PLANK',
-      type: 'Plank',
+      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -360,7 +229,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'RIGHT_PLANK',
-      type: 'Plank',
+      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -384,7 +253,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'TOP_PLANK',
-      type: 'Plank',
+      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -408,7 +277,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'BOTTOM_PLANK',
-      type: 'Plank',
+      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -432,7 +301,159 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
     {
       id: crypto.randomUUID(),
       name: 'BACK_PLANK',
-      type: 'Back_Plank',
+      type: PART_TYPES.BACK_PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: height - thickness * 2,
+        depth: thickness,
+      },
+      position: {
+        x: placeX,
+        y: 0,
+        z: -(depth / 2 - thickness / 2),
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+  ];
+
+  const designsBuilder = new DesignBuilder(planks);
+  const design = designsBuilder.createDesign();
+  scene.add(design);
+};
+
+export const addSimpleCabinet1 = (scene: THREE.Scene) => {
+  const width = 1.5;
+  const height = 2;
+  const depth = 0.4;
+  const thickness = 0.018;
+
+  const placeX = 0;
+
+  const woodTexturePath = '/textures/light_wood.jpg';
+
+  const mainCupboardID = crypto.randomUUID();
+  const planks = [
+    {
+      id: mainCupboardID,
+      name: 'CUPBOARD',
+      type: OBJECT_TYPES.CUPBOARD,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: width,
+        height: height,
+        depth: depth,
+      },
+      position: { x: 2, y: 1, z: 1 },
+      rotation: { x: 0, y: 0, z: 0 },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'LEFT_PLANK',
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: thickness,
+        height: height,
+        depth: depth,
+      },
+      position: {
+        x: placeX - (width / 2 - thickness / 2),
+        y: 0,
+        z: 0,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'RIGHT_PLANK',
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: thickness,
+        height: height,
+        depth: depth,
+      },
+      position: {
+        x: placeX + (width / 2 - thickness / 2),
+        y: 0,
+        z: 0,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'TOP_PLANK',
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: thickness,
+        depth: depth,
+      },
+      position: {
+        x: placeX,
+        y: height / 2 - thickness / 2,
+        z: 0,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'BOTTOM_PLANK',
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: mainCupboardID,
+      dimensions: {
+        width: width - thickness * 2,
+        height: thickness,
+        depth: depth,
+      },
+      position: {
+        x: placeX,
+        y: -(height / 2 - thickness / 2),
+        z: 0,
+      },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: woodTexturePath,
+        repeatX: 2,
+        repeatY: 1,
+      },
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'BACK_PLANK',
+      type: PART_TYPES.BACK_PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: mainCupboardID,
       dimensions: {
@@ -618,12 +639,10 @@ export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: SelectedCabinetItem | null = null,
-  itemData: AddItemDatabasePayload | null = null
+  selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) return;
-  const designId = window.location.pathname.split('/')[2];
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
@@ -694,27 +713,6 @@ export const addVerticalPlanksToBox = async (
 
     parent.add(plank);
 
-    const data = {
-      catalogId: itemData?.catalogId || '',
-      design_id: designId,
-      description: itemData?.description || 'vertical plank',
-      type: 'Plank',
-      name: plank.name,
-      width: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.width),
-      height: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.height),
-      depth: metersToMM((plank.geometry as THREE.BoxGeometry).parameters.depth),
-      position: {
-        x: metersToMM(plank.position.x),
-        y: metersToMM(plank.position.y),
-        z: metersToMM(plank.position.z),
-      },
-      parent: parent.userData.objectId,
-      additional_data: {
-        isPlatform: isPlatform,
-        isSideWallBox: isSideWallBox,
-        texture: '/textures/light_wood.jpg',
-      },
-    };
     plank.userData.type = 'Plank';
 
     const plankDimensionsMM = plank.userData.dimensions;
@@ -738,50 +736,6 @@ export const addVerticalPlanksToBox = async (
       }
     }
   }
-
-  // Skirting for platforms
-  if (isPlatform) {
-    const floorY = center.y - height / 2;
-    const skirtingWorldPos = new THREE.Vector3(center.x, floorY + skirtingHeight / 2, center.z);
-    const skirtingLocalPos = boxMesh.worldToLocal(skirtingWorldPos.clone());
-
-    const skirtingPart = {
-      catalogID: itemData?.catalogId || '',
-      name: `Skirting`,
-      dimensions: { width, height: skirtingHeight, depth },
-      position: skirtingLocalPos,
-      material: { color: 0x555555, roughness: 0.8 },
-    };
-
-    const skirting = createMeshObject(skirtingPart);
-    const data = {
-      catalogId: '',
-      name: skirting.name,
-      type: 'Skirting',
-      description: '',
-      design_id: designId,
-      height: metersToMM(skirtingPart.dimensions.height),
-      width: metersToMM(skirtingPart.dimensions.width),
-      length: metersToMM(skirtingPart.dimensions.depth),
-      depth: metersToMM(skirtingPart.dimensions.depth),
-      position: {
-        x: metersToMM(skirting.position.x),
-        y: metersToMM(skirting.position.y),
-        z: metersToMM(skirting.position.z),
-      },
-      parent: parent.userData.objectId,
-      additional_data: {
-        texture: '/textures/skirting.jpg',
-        color: '0x555555',
-      },
-    };
-    const apiResponse = await addItemToDataBaseWithoutCatalog(data);
-    skirting.userData.objectId = apiResponse.data.id;
-    skirting.userData.type = 'Skirting';
-    skirting.userData.apiData = apiResponse;
-    boxMesh.add(skirting);
-  }
-
   generateCompartmentsFromMesh(parent);
   hideFullScreenLoader();
 };
@@ -790,8 +744,7 @@ export const addHorizontalPlanksInsideBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: SelectedCabinetItem | null = null,
-  itemData: AddItemDatabasePayload | null = null
+  selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
   if (!boxMesh || count <= 0) return;
@@ -865,26 +818,6 @@ export const addHorizontalPlanksInsideBox = async (
     const worldPos = center.clone();
     worldPos.y += yLocal;
     shelf.position.copy(parent.worldToLocal(worldPos));
-
-    const data = {
-      type: itemData?.type || 'Plank',
-      name: itemData?.name || shelf.name,
-      description: itemData?.description || '',
-      design_id: itemData?.design_id || window.location.pathname.split('/')[2],
-      catalogId: itemData?.catalogId || '',
-      width: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.width),
-      height: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.height),
-      depth: metersToMM((shelf.geometry as THREE.BoxGeometry).parameters.depth),
-      position: {
-        x: metersToMM(shelf.position.x),
-        y: metersToMM(shelf.position.y),
-        z: metersToMM(shelf.position.z),
-      },
-      parent: parent.userData.objectId,
-      additional_data: {
-        texture: '/textures/light_wood.jpg',
-      },
-    };
 
     shelf.userData.type = 'Plank';
     parent.add(shelf);

@@ -91,12 +91,12 @@ const Sidebar: React.FC = () => {
   }, [selectedObjectId, selectedChildObjectId]);
 
   useEffect(() => {
-    if (selectedObject) {
+    if (selectedObject?.dimensions) {
       if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       }
-      const w = convertFromMM(selectedObject.width, displayUnit);
-      const h = convertFromMM(selectedObject.height, displayUnit);
-      const d = convertFromMM(selectedObject.depth, displayUnit);
+      const w = convertFromMM(selectedObject.dimensions.width, displayUnit);
+      const h = convertFromMM(selectedObject.dimensions.height, displayUnit);
+      const d = convertFromMM(selectedObject.dimensions.depth, displayUnit);
       setDisplayedDimensions({
         width: w,
         height: h,

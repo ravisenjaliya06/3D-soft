@@ -3,6 +3,15 @@ import { Dimensions } from '../interface';
 import { Position, Rotation } from '../store/interface';
 
 // type const
+export const OBJECT_TYPES = {
+  CUPBOARD: 'cupboard',
+};
+
+export const PART_TYPES = {
+  PLANK: 'plank',
+  BACK_PLANK: 'backPlank',
+};
+
 export const GEOMETRY = {
   BOX_GEOMETRY: 'BoxGeometry',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',

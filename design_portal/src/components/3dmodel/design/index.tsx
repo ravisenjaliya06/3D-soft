@@ -1,6 +1,6 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
@@ -13,17 +13,11 @@ import {
   removeObjectWithHistory,
   setHoverdMesh,
   setobjectSelected,
-  setSelectedChildObject,
 } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
-import {
-  addCTypeWallWithFloor,
-  clearAllPlankDimensions,
-  enablePlankDimensionEditing,
-  showPlankDimensions,
-} from './scene';
+import { enablePlankDimensionEditing } from './scene';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -125,12 +119,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         });
         setMoveHandler(handler);
 
-        try {
-          await addCTypeWallWithFloor(threeDView.scene);
-          threeDView.renderer.render(threeDView.scene, threeDView.camera);
-        } catch (e) {
-          console.error('Failed to add walls after loading design:', e);
-        }
         const designId = gettingDesignID();
         if (designId) {
           try {
@@ -196,10 +184,11 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         ) {
           const mesh = object as THREE.Mesh;
           const isTopLevel = object.parent instanceof THREE.Scene;
-          const applyOutline = mesh.userData?.type === itemType.CUPBOARD ||
-            mesh.name.includes("PLANK") ||
-            mesh.name.includes("VERTICAL") ||
-            mesh.name.includes("HORIZONTAL");
+          const applyOutline =
+            mesh.userData?.type === itemType.CUPBOARD ||
+            mesh.name.includes('PLANK') ||
+            mesh.name.includes('VERTICAL') ||
+            mesh.name.includes('HORIZONTAL');
 
           if (isQuickHideActive) {
             if (!originalMaterialsRef.current.has(mesh)) {
@@ -225,7 +214,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
               const labels: THREE.Sprite[] = [];
               const outlineGroup = new THREE.Group();
               outlineGroup.position.copy(mesh.position);
-              outlineGroup.scale.set(1,1,1);
+              outlineGroup.scale.set(1, 1, 1);
               outlineGroup.name = `outline_group_${mesh.uuid}`;
 
               const processedPlankTypes = new Set<string>();
@@ -332,7 +321,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                     });
                     const childOutline = new THREE.LineSegments(edges, outlineMaterial);
                     // childOutline.position.copy(child.position);
-                    console.log(child.position , "child.position");
+                    console.log(child.position, 'child.position');
                     childOutline.rotation.copy(child.rotation);
                     childOutline.scale.set(1, 1, 1);
                     childOutline.name = `outline_${childName}`;
@@ -538,32 +527,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     return outlineLines;
   };
 
-  const createHoverOutline = (mesh: THREE.Mesh, worldPosition: THREE.Vector3) => {
-    /** Creates a blue hover outline around a 3D mesh at its world position. */
-
-    if (!mesh.geometry) return null;
-
-    const edges = new THREE.EdgesGeometry(mesh.geometry);
-    const outlineMaterial = new THREE.LineBasicMaterial({
-      color: 0x0088ff,
-      linewidth: 2,
-      depthTest: false,
-    });
-    const outlineLines = new THREE.LineSegments(edges, outlineMaterial);
-
-    const parent = mesh.parent;
-    if (parent && parent.userData?.objectId) {
-      // safely copy parent scale
-      outlineLines.scale.copy(parent.scale);
-    } else {
-      outlineLines.scale.copy(mesh.scale);
-    }
-    outlineLines.position.copy(worldPosition);
-    outlineLines.name = 'hover_outline';
-
-    return outlineLines;
-  };
-
   useEffect(() => {
     if (!design3D) return;
 
@@ -602,80 +565,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         setOutline(newOutline);
       }
     }
-  }, [selectedObject, design3D]);
-
-  const handleObjectSelection = () => {
-    /** Handles 3D object selection, updates Redux state, and displays outlines or dimensions. */
-
-    removeExistingLines();
-    if (design3D) {
-      clearAllPlankDimensions(design3D.scene);
-    }
-    if (!design3D) return;
-
-    let newOutline: THREE.LineSegments | null = null;
-    const hoveredMesh = store.getState().data.hoverdMesh as unknown as THREE.Mesh | null;
-    const selectedObjectId = store.getState().data.selectedObject;
-    const selectedChildObjectId = store.getState().data.selectedChildObject;
-
-    if (!hoveredMesh) {
-      dispatch(setobjectSelected(null));
-      dispatch(setSelectedChildObject(null));
-      return;
-    }
-
-    if (
-      hoveredMesh?.parent?.userData.objectId !== selectedObjectId &&
-      hoveredMesh?.parent?.userData.type === itemType.CUPBOARD
-    ) {
-      dispatch(setobjectSelected(hoveredMesh?.parent?.userData.objectId));
-      if (hoveredMesh.parent instanceof THREE.Mesh) {
-        setSelectedObject(hoveredMesh.parent);
-      }
-      newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
-    } else if (
-      hoveredMesh?.parent?.userData.objectId !== selectedChildObjectId &&
-      (hoveredMesh?.parent?.userData.type === itemType.DRAWER ||
-        hoveredMesh?.parent?.userData.type === itemType.DOOR)
-    ) {
-      dispatch(setSelectedChildObject(hoveredMesh?.parent?.userData.objectId));
-      if (hoveredMesh.parent instanceof THREE.Mesh) {
-        setSelectedObject(hoveredMesh.parent);
-      }
-      newOutline = createOutlineForObject(hoveredMesh.parent as THREE.Mesh);
-    } else {
-      dispatch(setSelectedChildObject(hoveredMesh?.userData.objectId));
-      setSelectedObject(hoveredMesh as THREE.Mesh);
-      if (!hoveredMesh.name.includes('WALL')) {
-        setSelectedObject(null);
-      }
-      newOutline = createOutlineForObject(hoveredMesh || null);
-    }
-    if (newOutline) design3D.scene.add(newOutline);
-
-    // If a plank is selected, show CAD-like dimensions
-    const tryShowDims = (m: THREE.Object3D | null) => {
-      if (!design3D || !m) return;
-      const name = m.name.toUpperCase();
-      if (
-        name.includes('VERTICAL_PLANK') ||
-        name.includes('HORIZONTAL_PLANK') ||
-        m.userData.type === 'Plank'
-      ) {
-        if (m instanceof THREE.Mesh) {
-          showPlankDimensions(design3D.scene, m);
-        }
-      }
-    };
-
-    const hoveredObj = hoveredMesh as unknown as THREE.Object3D | null;
-    if (hoveredMesh instanceof THREE.Mesh) {
-      tryShowDims(hoveredMesh);
-    } else if (hoveredObj?.parent instanceof THREE.Mesh) {
-      tryShowDims(hoveredObj.parent);
-    }
-    design3D.renderer.render(design3D.scene, design3D.camera);
-  };
+  }, [design3D]);
 
   const SELECTABLE_KEYS = [
     'PLANK',
@@ -692,87 +582,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     obj instanceof THREE.Mesh &&
     SELECTABLE_KEYS.some((key) => obj.name.toUpperCase().includes(key));
 
-  const handleObjectHover = useCallback(
-    /** Handles mouse hover over 3D objects, updating outlines and hover states dynamically. */
-
-    (event: MouseEvent) => {
-      if (!design3D || isQuickHideActive || isMeasurementActive) return;
-      const selectedChildObjectId = store.getState().data.selectedChildObject;
-      const selectedInvisibleBoxId = store.getState().data.selectedInvisibleBox;
-
-      /** 1. Mouse setup */
-      const mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1 + 0.15
-      );
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, design3D.camera);
-
-      /** 2. Remove previous hover outline if any */
-      if (hoverOutlineRef.current) {
-        design3D.scene.remove(hoverOutlineRef.current);
-        hoverOutlineRef.current.geometry?.dispose();
-        if (hoverOutlineRef.current.material instanceof THREE.Material) {
-          hoverOutlineRef.current.material.dispose();
-        }
-        hoverOutlineRef.current = null;
-        lastHoveredObjectRef.current = null;
-      }
-
-      /** 3. Collect relevant meshes */
-      const invisibleBoxes: THREE.Object3D[] = [];
-      const selectableParts: THREE.Mesh[] = [];
-
-      design3D.scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          if (isSelectableMesh(obj)) {
-            selectableParts.push(obj);
-          } else if (obj.name.includes(itemType.INVISIBLE_BOX)) {
-            invisibleBoxes.push(obj);
-          }
-        }
-      });
-
-      /** 4. Raycasting */
-      const hitsSelectable = raycaster.intersectObjects(selectableParts, false);
-
-      let hoveredMesh: THREE.Mesh | null = null;
-      console.log(hitsSelectable, 'hitsSelectable');
-
-      if (hitsSelectable.length > 0) {
-        hoveredMesh = hitsSelectable[0].object as THREE.Mesh;
-        if (hoveredMesh?.userData.objectId === selectedChildObjectId && hitsSelectable.length > 1) {
-          hoveredMesh = hitsSelectable[1].object as THREE.Mesh;
-        } else if (
-          hoveredMesh?.name.includes(itemType.INVISIBLE_BOX) &&
-          (hoveredMesh as THREE.Mesh)?.userData.objectId === selectedInvisibleBoxId
-        ) {
-          hoveredMesh = hitsSelectable[2].object as THREE.Mesh;
-        }
-      }
-
-      if (hoveredMesh) {
-        dispatch(setHoverdMesh(hoveredMesh));
-        lastHoveredObjectRef.current = hoveredMesh;
-
-        const worldPosition = hoveredMesh.getWorldPosition(new THREE.Vector3());
-        console.log(hoveredMesh, 'hoveredMesh 123');
-        const outline = createHoverOutline(hoveredMesh, worldPosition);
-        console.log(outline, 'outline 123');
-        if (outline) {
-          design3D.scene.add(outline);
-          hoverOutlineRef.current = outline;
-        }
-      } else {
-        dispatch(setHoverdMesh(null));
-      }
-
-      /** 5. Re-render */
-      design3D.renderer.render(design3D.scene, design3D.camera);
-    },
-    [design3D, isQuickHideActive, isMeasurementActive, dispatch]
-  );
-
   useEffect(() => {
     if (isMeasurementActive && design3D && hoverOutlineRef.current) {
       design3D.scene.remove(hoverOutlineRef.current);
@@ -788,24 +597,29 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   }, [isMeasurementActive, design3D, hoverOutlineRef]);
 
   useEffect(() => {
-    window.addEventListener('dblclick', handleObjectSelection);
-    window.addEventListener('mousemove', handleObjectHover);
+    if (!design3D) return;
 
-    return () => {
-      window.removeEventListener('dblclick', handleObjectSelection);
-      window.removeEventListener('mousemove', handleObjectHover);
+    const selector = design3D.selector;
+    if (!selector) return;
 
-      // Clean up hover outline
-      if (design3D && hoverOutlineRef.current) {
-        design3D.scene.remove(hoverOutlineRef.current);
-        if (hoverOutlineRef.current.geometry) hoverOutlineRef.current.geometry.dispose();
-        if (hoverOutlineRef.current.material instanceof THREE.Material) {
-          hoverOutlineRef.current.material.dispose();
-        }
-        hoverOutlineRef.current = null;
-      }
+    selector.onHover = (mesh) => {
+      dispatch(setHoverdMesh(mesh));
     };
-  }, [design3D, handleObjectHover]);
+
+    selector.onSelect = (mesh) => {
+      if (!mesh) {
+        dispatch(setobjectSelected(null));
+        return;
+      }
+
+      dispatch(setobjectSelected(mesh.userData.objectId));
+      setSelectedObject(mesh);
+
+      // Create selection outline
+      // const outline = createOutlineForObject(mesh);
+      // if (outline) design3D.scene.add(outline);
+    };
+  }, [design3D]);
 
   const deleteObject = async () => {
     /** Deletes the currently selected 3D object from both the scene and backend database. */
