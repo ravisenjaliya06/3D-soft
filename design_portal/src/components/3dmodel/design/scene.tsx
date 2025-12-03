@@ -24,6 +24,7 @@ import { Object3D } from '../store/interface';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -645,63 +646,50 @@ export const addVerticalPlanksToBox = async (
 ) => {
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) return;
+
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
 
-  let parent: THREE.Mesh;
-  if (!boxMesh.parent?.userData.isMain) {
-    parent = boxMesh;
-  } else {
-    parent = boxMesh.parent as THREE.Mesh;
-  }
   const width = size.x;
   const height = size.y;
   const depth = size.z;
+
   const thickness = 0.018;
   const edgeClearance = Math.max(0.01, thickness);
   const skirtingHeight = 0.06;
 
   const isPlatform = boxMesh.userData.isPlatformInvisibleBox;
   const isSideWallBox =
-    boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
+    boxMesh.name.includes("platform_leftwall") ||
+    boxMesh.name.includes("platform_rightwall");
 
   const divideAlongX = !isSideWallBox;
   const span = divideAlongX ? width : depth;
   const innerSpan = span - 2 * edgeClearance;
+
   if (innerSpan <= thickness) return;
 
-  const interval = innerSpan / (count + 1);
-  const textureLoader = new THREE.TextureLoader();
-  const woodTex = textureLoader.load('/textures/light_wood.jpg');
-  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
-  woodTex.repeat.set(2, 1);
+  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+    ? boxMesh
+    : (boxMesh.parent as THREE.Mesh);
 
-  const plankMatProps = { map: woodTex, roughness: 0.6, metalness: 0 };
+  const interval = innerSpan / (count + 1);
+
   const effectiveHeight = isPlatform ? height - skirtingHeight : height;
 
-  for (let i = 1; i <= count; i++) {
-    const plankPart = divideAlongX
-      ? {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width: thickness, height: effectiveHeight, depth },
-          material: plankMatProps,
-        }
-      : {
-          name: `VERTICAL_PLANK_${i}`,
-          dimensions: { width, height: effectiveHeight, depth: thickness },
-          material: plankMatProps,
-        };
+  // COMMON MATERIAL FOR ALL PLANKS
+  const commonMaterial = {
+    type: MATERIAL_TYPE.TEXTURE,
+    value: "/textures/light_wood.jpg",
+    repeatX: 2,
+    repeatY: 1,
+  };
 
-    const plank = createMeshObject(plankPart, true, {
-      isVerticalPlank: true,
-      isPlatform,
-      isSideWall: isSideWallBox,
-      cabinetItem: selectedCabinetItem,
-      dimensions: convertDimensionsToMM(plankPart.dimensions),
-    });
+  for (let i = 1; i <= count; i++) {
+    const dims = divideAlongX
+      ? { width: thickness, height: effectiveHeight, depth }
+      : { width, height: effectiveHeight, depth: thickness };
 
     const worldPos = new THREE.Vector3(
       divideAlongX ? -width / 2 + edgeClearance + interval * i : 0,
@@ -711,33 +699,54 @@ export const addVerticalPlanksToBox = async (
 
     const parentWorldPos = boxMesh.localToWorld(worldPos.clone());
     const localPos = parent.worldToLocal(parentWorldPos);
-    plank.position.copy(localPos);
+
+    // ⭐ CREATE PLANK USING MESHBUILDER
+    const meshBuilder = new MeshBuilder({
+      id: crypto.randomUUID(),
+      name: `VERTICAL_PLANK_${i}`,
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: parent.userData.objectId,
+      dimensions: dims,
+      position: localPos,
+      rotation: { x: 0, y: 0, z: 0 },
+      material: commonMaterial,
+      isMain: false,
+    });
+
+    const plank = meshBuilder.createMesh();
+
+    plank.userData.isVerticalPlank = true;
+    plank.userData.isPlatform = isPlatform;
+    plank.userData.isSideWall = isSideWallBox;
+    plank.userData.cabinetItem = selectedCabinetItem;
+    plank.userData.dimensions = convertDimensionsToMM(dims);
 
     parent.add(plank);
 
-    plank.userData.type = PART_TYPES.PLANK;
-
-    const plankDimensionsMM = plank.userData.dimensions;
-    const plankPositionMM = convertPositionToMM(plank.position);
+    const plankDimsMM = plank.userData.dimensions;
+    const plankPosMM = convertPositionToMM(plank.position);
 
     if (plank.userData.objectId) {
       const objInStore = store
         .getState()
         .data.objects.find((o) => o.id === plank.userData.objectId);
+
       if (objInStore) {
         store.dispatch(
           updateObject({
             ...objInStore,
             apiData: plank.userData.apiData,
-            width: plankDimensionsMM.width,
-            height: plankDimensionsMM.height,
-            depth: plankDimensionsMM.depth,
-            position: plankPositionMM,
+            width: plankDimsMM.width,
+            height: plankDimsMM.height,
+            depth: plankDimsMM.depth,
+            position: plankPosMM,
           })
         );
       }
     }
   }
+
   generateCompartmentsFromMesh(parent);
   hideFullScreenLoader();
 };
@@ -748,14 +757,12 @@ export const addHorizontalPlanksInsideBox = async (
   count: number,
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
-  showFullScreenLoader('Loading design objects.');
+  showFullScreenLoader("Loading design objects.");
   if (!boxMesh || count <= 0) return;
 
   const bbox = new THREE.Box3().setFromObject(boxMesh);
   const size = new THREE.Vector3();
   bbox.getSize(size);
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
 
   const width = size.x;
   const height = size.y;
@@ -768,20 +775,22 @@ export const addHorizontalPlanksInsideBox = async (
   if (innerHeight <= thickness) return;
 
   const interval = innerHeight / (count + 1);
-  let parent: THREE.Mesh;
-  if (!boxMesh.parent?.userData.isMain) {
-    parent = boxMesh;
-  } else {
-    parent = boxMesh.parent as THREE.Mesh;
-  }
+
+  let parent: THREE.Mesh =
+    !boxMesh.parent?.userData.isMain
+      ? boxMesh
+      : (boxMesh.parent as THREE.Mesh);
+
+  const center = new THREE.Vector3();
+  bbox.getCenter(center);
   const localCenter = parent.worldToLocal(center.clone());
 
-  const textureLoader = new THREE.TextureLoader();
-  const woodTex = textureLoader.load('/textures/light_wood.jpg');
-  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
-  woodTex.repeat.set(2, 1);
-
-  const plankMatProps = { map: woodTex, roughness: 0.6, metalness: 0 };
+  const commonMaterial = {
+    type: MATERIAL_TYPE.TEXTURE,
+    value: "/textures/light_wood.jpg",
+    repeatX: 2,
+    repeatY: 1,
+  };
 
   parent.userData.compartmentConfig = {
     isHorizontal: true,
@@ -795,7 +804,7 @@ export const addHorizontalPlanksInsideBox = async (
     centerZ: localCenter.z,
     thickness: thickness,
     groupName: boxMesh.name,
-    divisionAxis: 'y',
+    divisionAxis: "y",
     localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
     span: height,
     perpDims: { x: width, z: depth },
@@ -805,42 +814,52 @@ export const addHorizontalPlanksInsideBox = async (
   for (let i = 1; i <= count; i++) {
     const yLocal = -innerHeight / 2 + interval * i;
 
-    const shelfPart = {
-      name: `HORIZONTAL_PLANK_${i}`,
-      dimensions: { width: innerWidth, height: thickness, depth },
-      material: plankMatProps,
+    const dims = {
+      width: innerWidth,
+      height: thickness,
+      depth,
     };
-
-    const shelf = createMeshObject(shelfPart, true, {
-      isHorizontalPlank: true,
-      dimensions: convertDimensionsToMM(shelfPart.dimensions),
-      cabinetItem: selectedCabinetItem,
-    });
 
     const worldPos = center.clone();
     worldPos.y += yLocal;
-    shelf.position.copy(parent.worldToLocal(worldPos));
 
-    shelf.userData.type = PART_TYPES.PLANK;
+    const meshBuilder = new MeshBuilder({
+      id: crypto.randomUUID(),
+      name: `HORIZONTAL_PLANK_${i}`,
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: dims,
+      position: parent.worldToLocal(worldPos),
+      rotation: { x: 0, y: 0, z: 0 },
+      material: commonMaterial,
+      isMain: false,
+    });
+
+    const shelf = meshBuilder.createMesh();
+    shelf.userData.isHorizontalPlank = true;
+    shelf.userData.cabinetItem = selectedCabinetItem;
+    shelf.userData.dimensions = convertDimensionsToMM(dims);
+
     parent.add(shelf);
 
-    // Sync with store
     if (shelf.userData.objectId) {
       const objInStore = store
         .getState()
         .data.objects.find((o) => o.id === shelf.userData.objectId);
+
       if (objInStore) {
+        const dimsMM = shelf.userData.dimensions;
         const rules = shelf.userData?.apiData?.rules;
-        const dims = shelf.userData?.dimensions;
+
         store.dispatch(
           updateObject({
             ...objInStore,
             apiData: shelf.userData.apiData,
             rules,
-            ...(dims && {
-              width: dims.width,
-              height: dims.height,
-              depth: dims.depth,
+            ...(dimsMM && {
+              width: dimsMM.width,
+              height: dimsMM.height,
+              depth: dimsMM.depth,
             }),
             position: convertPositionToMM(shelf.position),
           })
@@ -849,7 +868,7 @@ export const addHorizontalPlanksInsideBox = async (
     }
   }
 
-  generateCompartmentsFromMesh(parent as THREE.Mesh);
+  generateCompartmentsFromMesh(parent);
   hideFullScreenLoader();
 };
 
