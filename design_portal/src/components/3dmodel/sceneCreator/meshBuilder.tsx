@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { store } from '../store';
-import { addObjects } from '../store/dataSlice';
 import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 
 export class MeshBuilder {
@@ -98,10 +96,10 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
-  /** 
-   * NOTE: It will be use to add objects to the design later. 
+  /**
+   * NOTE: It will be use to add objects to the design later.
    * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-  */
+   */
 
   // private _setDataInObjectsState() {
   //   store.dispatch(addObjects([this.meshData]));

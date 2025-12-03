@@ -8,12 +8,7 @@ import { useAppDispatch, useAppSelector } from '../hooks';
 import { ResponseStatus } from '../interface';
 import { SceneBuilder } from '../sceneCreator/sceneBuilder';
 import { store } from '../store';
-import {
-  addObjects,
-  removeObjectWithHistory,
-  setHoverdMesh,
-  setobjectSelected,
-} from '../store/dataSlice';
+import { addObjects, removeObjectWithHistory, setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, itemType, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';

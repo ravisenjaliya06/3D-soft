@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { OBJECT_TYPES, PART_TYPES } from '../interface';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
+import { OBJECT_TYPES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.Camera;
@@ -75,8 +75,9 @@ export class SelectObjectController {
     }
 
     if (
-      (Object.values(PART_TYPES).includes(object.userData.type) || object.userData.isInvisibleBox === true) &&
-        object.parent?.userData.objectId === this.selectedCupboard?.userData.objectId
+      (Object.values(PART_TYPES).includes(object.userData.type) ||
+        object.userData.isInvisibleBox === true) &&
+      object.parent?.userData.objectId === this.selectedCupboard?.userData.objectId
     ) {
       if (!this.selectedCupboard) return;
       this.clearAllOutlines();
@@ -116,7 +117,7 @@ export class SelectObjectController {
 
     let hits = this.raycaster.intersectObjects(targets, true);
     if (this.selectedPart) {
-      hits = hits.filter(h => h.object !== this.selectedPart);
+      hits = hits.filter((h) => h.object !== this.selectedPart);
     }
 
     let newHover: THREE.Mesh | null = null;
