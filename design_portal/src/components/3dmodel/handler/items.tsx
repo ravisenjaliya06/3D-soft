@@ -251,7 +251,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.position.copy(c.position);
     mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
-    mesh.userData.objectId = `INVISIBLE_COMPARTMENT_1`;
+    mesh.userData.objectId = `invisibleBox_${idx}_for_${boxMesh.name}`;
     mesh.userData.isInvisibleBox = true;
     boxMesh.add(mesh);
     meshes.push(mesh);

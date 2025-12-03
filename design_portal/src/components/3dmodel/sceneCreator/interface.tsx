@@ -44,6 +44,7 @@ export interface MeshObjectData {
   position: Position;
   rotation: Rotation;
   material?: Material;
+  isMain?: boolean;
 }
 
 export interface userData {

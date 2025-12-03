@@ -90,6 +90,8 @@ export class MeshBuilder {
   private _setUserData(mesh: THREE.Mesh) {
     mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
+    console.log(this.meshData, 'meshData');
+    mesh.userData.isMain = this.meshData.isMain;
   }
 
   private _setName(mesh: THREE.Mesh) {
@@ -121,8 +123,6 @@ export class MeshBuilder {
     // NOTE: It will be use to add objects to the design later.
     // TODO: SMIT you need to uncomment it for the sidebar code refactoring.
     // this._setDataInObjectsState();
-
-    console.log(mesh, 'mesh 123');
     return mesh;
   }
 }

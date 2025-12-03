@@ -194,6 +194,7 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
       name: 'CUPBOARD',
       type: OBJECT_TYPES.CUPBOARD,
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      isMain: true,
       dimensions: {
         width: width,
         height: height,
@@ -346,6 +347,7 @@ export const addSimpleCabinet1 = (scene: THREE.Scene) => {
       name: 'CUPBOARD',
       type: OBJECT_TYPES.CUPBOARD,
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      isMain: true,
       dimensions: {
         width: width,
         height: height,
@@ -713,7 +715,7 @@ export const addVerticalPlanksToBox = async (
 
     parent.add(plank);
 
-    plank.userData.type = 'Plank';
+    plank.userData.type = PART_TYPES.PLANK;
 
     const plankDimensionsMM = plank.userData.dimensions;
     const plankPositionMM = convertPositionToMM(plank.position);
@@ -819,7 +821,7 @@ export const addHorizontalPlanksInsideBox = async (
     worldPos.y += yLocal;
     shelf.position.copy(parent.worldToLocal(worldPos));
 
-    shelf.userData.type = 'Plank';
+    shelf.userData.type = PART_TYPES.PLANK;
     parent.add(shelf);
 
     // Sync with store

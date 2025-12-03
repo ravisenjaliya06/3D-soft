@@ -607,12 +607,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
 
     selector.onSelect = (mesh) => {
-      if (!mesh) {
-        dispatch(setobjectSelected(null));
-        return;
-      }
-
-      dispatch(setobjectSelected(mesh.userData.objectId));
       setSelectedObject(mesh);
 
       // Create selection outline

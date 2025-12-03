@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
+import { store } from '../../store';
+import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 
 export class SelectObjectController {
   private camera: THREE.Camera;
@@ -66,6 +68,8 @@ export class SelectObjectController {
       this.selectedCupboard = object;
       this.selectedPart = null;
 
+      store.dispatch(setobjectSelected(object.userData.objectId));
+
       this._applySmallCupboardSelectOutline(object);
       return;
     }
@@ -78,9 +82,11 @@ export class SelectObjectController {
       if (!this.selectedCupboard) return;
       this.clearAllOutlines();
       this.selectedPart = object;
-      if (this.onSelect) this.onSelect(object);
-      this._applyPartSelectOutline(object);
 
+      if (this.onSelect) this.onSelect(object);
+      store.dispatch(setSelectedChildObject(object.userData.objectId));
+
+      this._applyPartSelectOutline(object);
       this._applyObjectBigOutline(this.selectedCupboard);
       return;
     }
@@ -109,7 +115,11 @@ export class SelectObjectController {
       });
     }
 
-    const hits = this.raycaster.intersectObjects(targets, true);
+    let hits = this.raycaster.intersectObjects(targets, true);
+    if (this.selectedPart) {
+      hits = hits.filter(h => h.object !== this.selectedPart);
+    }
+
     let newHover: THREE.Mesh | null = null;
 
     if (hits.length > 0) {
@@ -247,7 +257,7 @@ export class SelectObjectController {
     }
 
     const center = this._getBoxCenter(object);
-    const outline = this._createDashedLineObject(object, 0xffff00, center);
+    const outline = this._createDashedLineObject(object, 0x000000, center);
     this.scene.add(outline);
     this.selectedOutline = outline;
   }
