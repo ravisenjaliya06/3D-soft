@@ -75,9 +75,8 @@ export class SelectObjectController {
     }
 
     if (
-      Object.values(PART_TYPES).includes(object.userData.type) ||
-      (object.userData.isInvisibleBox === true &&
-        object.parent?.userData.objectId === this.selectedCupboard?.userData.objectId)
+      (Object.values(PART_TYPES).includes(object.userData.type) || object.userData.isInvisibleBox === true) &&
+        object.parent?.userData.objectId === this.selectedCupboard?.userData.objectId
     ) {
       if (!this.selectedCupboard) return;
       this.clearAllOutlines();

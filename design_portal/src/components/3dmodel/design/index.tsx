@@ -320,8 +320,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
                       depthTest: false,
                     });
                     const childOutline = new THREE.LineSegments(edges, outlineMaterial);
-                    // childOutline.position.copy(child.position);
-                    console.log(child.position, 'child.position');
                     childOutline.rotation.copy(child.rotation);
                     childOutline.scale.set(1, 1, 1);
                     childOutline.name = `outline_${childName}`;
@@ -608,10 +606,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
     selector.onSelect = (mesh) => {
       setSelectedObject(mesh);
-
-      // Create selection outline
-      // const outline = createOutlineForObject(mesh);
-      // if (outline) design3D.scene.add(outline);
     };
   }, [design3D]);
 

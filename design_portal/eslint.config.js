@@ -5,7 +5,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules', '.next', 'dist', 'build', 'public'], // ⭐ Fixes your issue
+    ignores: ['node_modules', '.next', 'dist', 'build', 'public'],
   },
 
   js.configs.recommended,
