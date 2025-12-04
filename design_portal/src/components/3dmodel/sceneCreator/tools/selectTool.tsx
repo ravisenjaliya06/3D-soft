@@ -11,7 +11,7 @@ export class SelectObjectController {
 
   private hoveredObject: THREE.Mesh | null = null;
   private hoverOutline: THREE.LineSegments | null = null;
-  private selectedCupboard: THREE.Mesh | null = null;
+  private selectedMainObject: THREE.Mesh | null = null;
   private selectedPart: THREE.Mesh | null = null;
   private selectedOutline: THREE.LineSegments | null = null;
   private objectSelectOutline: THREE.LineSegments | null = null;
@@ -49,72 +49,88 @@ export class SelectObjectController {
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   }
 
+  private _selectMainObject() {
+    const object = this.hoveredObject;
+    if (!object) return;
+
+    this.clearAllOutlines();
+    this.selectedMainObject = object;
+    this.selectedPart = null;
+
+    store.dispatch(setobjectSelected(object.userData.objectId));
+
+    this._applySmallCupboardSelectOutline(object);
+    return;
+  }
+
+  private _selectChildObject() {
+    const object = this.hoveredObject;
+    if (!object) return;
+
+    if (!this.selectedMainObject) return;
+    this.clearAllOutlines();
+    this.selectedPart = object;
+
+    if (this.onSelect) this.onSelect(object);
+    store.dispatch(setSelectedChildObject(object.userData.objectId));
+
+    this._applyPartSelectOutline(object);
+    this._applyObjectBigOutline(this.selectedMainObject);
+    return;
+  }
+
   private _onDoubleClick() {
     if (!this.hoveredObject) {
       this.clearAllOutlines();
       this.hoveredObject = null;
-      this.selectedCupboard = null;
+      this.selectedMainObject = null;
       this.selectedPart = null;
       return;
     }
 
     const object = this.hoveredObject;
-
     if (
-      this.selectedCupboard !== object &&
+      this.selectedMainObject !== object &&
       Object.values(OBJECT_TYPES).includes(object.userData.type)
     ) {
-      this.clearAllOutlines();
-      this.selectedCupboard = object;
-      this.selectedPart = null;
-
-      store.dispatch(setobjectSelected(object.userData.objectId));
-
-      this._applySmallCupboardSelectOutline(object);
-      return;
+      this._selectMainObject();
     }
 
+    // select the child object if this parent main object is selected
     if (
       (Object.values(PART_TYPES).includes(object.userData.type) ||
         object.userData.isInvisibleBox === true) &&
-      object.parent?.userData.objectId === this.selectedCupboard?.userData.objectId
+      object.parent?.userData.objectId === this.selectedMainObject?.userData.objectId
     ) {
-      if (!this.selectedCupboard) return;
-      this.clearAllOutlines();
-      this.selectedPart = object;
-
-      if (this.onSelect) this.onSelect(object);
-      store.dispatch(setSelectedChildObject(object.userData.objectId));
-
-      this._applyPartSelectOutline(object);
-      this._applyObjectBigOutline(this.selectedCupboard);
-      return;
+      this._selectChildObject();
     }
   }
 
-  private _handleHover() {
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-
+  private _findTargetToHover(): THREE.Mesh[] {
     const targets: THREE.Mesh[] = [];
 
     this.scene.traverse((object) => {
       if (
         object instanceof THREE.Mesh &&
         Object.values(OBJECT_TYPES).includes(object.userData.type) &&
-        object.userData.objectId !== this.selectedCupboard?.userData.objectId
+        object.userData.objectId !== this.selectedMainObject?.userData.objectId
       ) {
         targets.push(object);
       }
     });
 
-    if (this.selectedCupboard) {
-      this.selectedCupboard?.children.forEach((child) => {
+    if (this.selectedMainObject) {
+      this.selectedMainObject?.children.forEach((child) => {
         if (child instanceof THREE.Mesh) {
           targets.push(child);
         }
       });
     }
 
+    return targets;
+  }
+
+  private _findHoverObject(targets: THREE.Mesh[]) {
     let hits = this.raycaster.intersectObjects(targets, true);
     if (this.selectedPart) {
       hits = hits.filter((h) => h.object !== this.selectedPart);
@@ -127,6 +143,19 @@ export class SelectObjectController {
     } else {
       newHover = null;
     }
+
+    return newHover;
+  }
+
+  // check if the mouse is hovering over a selectable object
+  private _handleHover() {
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // get all object behinds of the mouse cursor
+    const targets = this._findTargetToHover();
+
+    // find the closest object to the mouse using raycasting
+    const newHover = this._findHoverObject(targets);
 
     if (newHover !== this.hoveredObject) {
       this._removeHoverEffect();

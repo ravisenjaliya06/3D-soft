@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { OBJECT_TYPES, PART_TYPES } from "../interface";
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { store } from "../../store";
 
@@ -35,17 +34,15 @@ export class OutlineManager {
             console.error("OutlineManager: Scene is undefined. Toggle aborted.");
             return;
         }
-        console.log(this.scene, 'this.isQuickHideActive');
         this.scene.children.forEach((object) => {
-            if (object instanceof THREE.Mesh) {
-                if (this._shouldSkipMesh(object)) return;
-                const applyOutline = object.userData.isMain === true;
+            if (!(object instanceof THREE.Mesh)) return;
+            if (this._shouldSkipMesh(object)) return;
+            const applyOutline = object.userData.isMain === true;
 
-                if (this.isQuickHideActive) {
-                    this._applyQuickHide(object, applyOutline);
-                } else {
-                    this._restoreMesh();
-                }
+            if (this.isQuickHideActive) {
+                this._applyQuickHide(object, applyOutline);
+            } else {
+                this._restoreMesh();
             }
         });
     }
@@ -78,36 +75,23 @@ export class OutlineManager {
         else mat.needsUpdate = true;
     }
 
-    private _generateOutline(mainMesh: THREE.Mesh) {
-        if (!mainMesh.userData.isMain) return;
-
+    private _createOutlineGroup(mesh: THREE.Mesh): THREE.Group {
         const outlineGroup = new THREE.Group();
-        outlineGroup.name = `outline_group_${mainMesh.uuid}`;
-        outlineGroup.position.copy(mainMesh.position);
-        outlineGroup.rotation.copy(mainMesh.rotation);
-        outlineGroup.scale.copy(mainMesh.scale);
+        outlineGroup.name = `outline_group_${mesh.uuid}`;
+        outlineGroup.position.copy(mesh.position);
+        outlineGroup.rotation.copy(mesh.rotation);
+        outlineGroup.scale.copy(mesh.scale);
 
-        const mergedGeometries: THREE.BufferGeometry[] = [];
+        return outlineGroup;
+    }
 
-        mainMesh.traverse((child) => {
-            if (child instanceof THREE.Mesh && child.geometry && (!child.userData.isInvisibleBox)) {
-                // Clone geometry and apply child's world matrix
-                const clonedGeo = child.geometry.clone();
-                clonedGeo.applyMatrix4(child.matrixWorld);
-                clonedGeo.applyMatrix4(mainMesh.matrixWorld.clone().invert());
-                mergedGeometries.push(clonedGeo);
-            }
-        });
-
-        if (mergedGeometries.length === 0) return;
-
-        const finalGeo = BufferGeometryUtils.mergeGeometries(
+    private _createOutlines(mergedGeometries: THREE.BufferGeometry[]): THREE.LineSegments {
+        const finalGeometry = BufferGeometryUtils.mergeGeometries(
             mergedGeometries,
             false
         );
-        
-        const edges = new THREE.EdgesGeometry(finalGeo, 1);
 
+        const edges = new THREE.EdgesGeometry(finalGeometry, 1); 
         const outlineMat = new THREE.LineBasicMaterial({
             color: 0x392579,
             depthTest: false,
@@ -116,6 +100,29 @@ export class OutlineManager {
         const outline = new THREE.LineSegments(edges, outlineMat);
         outline.renderOrder = 2;
 
+        return outline;
+    };
+
+    private _generateOutline(mainMesh: THREE.Mesh) {
+        if (!mainMesh.userData.isMain) return;
+        const outlineGroup = this._createOutlineGroup(mainMesh);
+
+        const mergedGeometries: THREE.BufferGeometry[] = [];
+
+        mainMesh.traverse((child) => {
+            if (child instanceof THREE.Mesh &&
+                child.geometry &&
+                (!child.userData.isInvisibleBox)
+            ) {
+                const clonedGeo = child.geometry.clone();
+                clonedGeo.applyMatrix4(child.matrixWorld);
+                clonedGeo.applyMatrix4(mainMesh.matrixWorld.clone().invert());
+                mergedGeometries.push(clonedGeo);
+            }
+        });
+
+        if (mergedGeometries.length === 0) return;
+        const outline = this._createOutlines(mergedGeometries);
         outlineGroup.add(outline);
 
         this.scene.add(outlineGroup);
