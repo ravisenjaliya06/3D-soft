@@ -2,6 +2,7 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import * as THREE from 'three';
+import { v4 as uuidv4 } from 'uuid';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
@@ -10,7 +11,6 @@ import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { Object3D } from '../store/interface';
 import { AddItemDatabasePayload, RulePart } from './interface';
-import { v4 as uuidv4 } from 'uuid';
 
 export function showFullScreenLoader(message = 'Loading...') {
   /**

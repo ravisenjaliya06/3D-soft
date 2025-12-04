@@ -12,6 +12,7 @@ import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
 import { GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import {
   addObjects,
@@ -24,7 +25,6 @@ import { Object3D } from '../store/interface';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
-import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -661,8 +661,7 @@ export const addVerticalPlanksToBox = async (
 
   const isPlatform = boxMesh.userData.isPlatformInvisibleBox;
   const isSideWallBox =
-    boxMesh.name.includes("platform_leftwall") ||
-    boxMesh.name.includes("platform_rightwall");
+    boxMesh.name.includes('platform_leftwall') || boxMesh.name.includes('platform_rightwall');
 
   const divideAlongX = !isSideWallBox;
   const span = divideAlongX ? width : depth;
@@ -681,7 +680,7 @@ export const addVerticalPlanksToBox = async (
   // COMMON MATERIAL FOR ALL PLANKS
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: "/textures/light_wood.jpg",
+    value: '/textures/light_wood.jpg',
     repeatX: 2,
     repeatY: 1,
   };
@@ -757,7 +756,7 @@ export const addHorizontalPlanksInsideBox = async (
   count: number,
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
-  showFullScreenLoader("Loading design objects.");
+  showFullScreenLoader('Loading design objects.');
   if (!boxMesh || count <= 0) return;
 
   const bbox = new THREE.Box3().setFromObject(boxMesh);
@@ -776,10 +775,9 @@ export const addHorizontalPlanksInsideBox = async (
 
   const interval = innerHeight / (count + 1);
 
-  let parent: THREE.Mesh =
-    !boxMesh.parent?.userData.isMain
-      ? boxMesh
-      : (boxMesh.parent as THREE.Mesh);
+  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+    ? boxMesh
+    : (boxMesh.parent as THREE.Mesh);
 
   const center = new THREE.Vector3();
   bbox.getCenter(center);
@@ -787,7 +785,7 @@ export const addHorizontalPlanksInsideBox = async (
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: "/textures/light_wood.jpg",
+    value: '/textures/light_wood.jpg',
     repeatX: 2,
     repeatY: 1,
   };
@@ -804,7 +802,7 @@ export const addHorizontalPlanksInsideBox = async (
     centerZ: localCenter.z,
     thickness: thickness,
     groupName: boxMesh.name,
-    divisionAxis: "y",
+    divisionAxis: 'y',
     localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
     span: height,
     perpDims: { x: width, z: depth },

@@ -7,13 +7,13 @@ import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { ResponseStatus } from '../interface';
 import { SceneBuilder } from '../sceneCreator/sceneBuilder';
+import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { store } from '../store';
 import { addObjects, removeObjectWithHistory, setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
-import { DesignProps, itemType, ThreeDView } from './interface';
+import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { enablePlankDimensionEditing } from './scene';
-import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -155,7 +155,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!outlineRef.current) {
       outlineRef.current = new OutlineManager();
     }
-
   }, [design3D]);
 
   useEffect(() => {
@@ -352,7 +351,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => { }}
+          onComplete={() => {}}
         />
       )}
     </div>
