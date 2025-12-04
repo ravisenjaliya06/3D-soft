@@ -8,8 +8,8 @@ import { addSimpleCabinet, loadSinkModel } from '../design/scene';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
-import { ZoomSelectionController } from './tools';
-import { textureLoader } from './utils';
+import { SelectObjectController } from './tools/selectTool';
+import { ZoomSelectionController } from './tools/zoomTools';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -57,6 +57,9 @@ export class SceneBuilder {
   // Configuration
   private config: SceneBuilderConfig;
 
+  private cupboards: THREE.Mesh[] = [];
+  private selector: SelectObjectController | null = null;
+
   constructor(config: SceneBuilderConfig) {
     this.config = config;
     this.mount = config.mount;
@@ -93,8 +96,8 @@ export class SceneBuilder {
       this.controls
     );
 
-    // Setup scene
     this.setupScene();
+    this.initSelector();
 
     // Setup event listeners
     this.setupEventListeners();
@@ -233,7 +236,6 @@ export class SceneBuilder {
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
 
-    this.scene.background = await textureLoader('/textures/background.png');
     // Add day sky by default
     this.scene.add(this.daySky);
   }
@@ -257,6 +259,7 @@ export class SceneBuilder {
     const animate = () => {
       this.animationId = requestAnimationFrame(animate);
       this.controls.update();
+      if (this.selector) this.selector.update();
       this.renderer.render(this.scene, this.camera);
     };
     animate();
@@ -273,6 +276,10 @@ export class SceneBuilder {
       this.scene.add(this.daySky);
     }
     this.isDay = !this.isDay;
+  }
+
+  private initSelector() {
+    this.selector = new SelectObjectController(this.camera, this.scene);
   }
 
   public toggleZoomMode(enable: boolean) {
@@ -329,6 +336,7 @@ export class SceneBuilder {
       loadSinkModel: async (url: string) => {
         loadSinkModel(this.scene, url);
       },
+      selector: this.selector,
     };
   }
 

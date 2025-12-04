@@ -1,30 +1,34 @@
 import js from '@eslint/js';
-import next from '@next/eslint-plugin-next';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
+import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/**', '.next/**'],
+    ignores: ['node_modules', '.next', 'dist', 'build', 'public'],
   },
+
   js.configs.recommended,
+
   {
+    files: ['**/*.{ts,tsx,js,jsx}'],
+    languageOptions: {
+      parser: tsparser,
+      globals: {
+        ...globals.browser,
+      },
+    },
     plugins: {
-      react,
-      'react-hooks': reactHooks,
-      next,
+      '@typescript-eslint': tseslint,
     },
     rules: {
-      'react/react-in-jsx-scope': 'off',
-      'react/jsx-uses-react': 'off',
-    },
-  },
-  {
-    languageOptions: {
-      globals: {
-        document: 'readonly',
-        window: 'readonly',
-      },
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'error',
+      'no-empty': 'off',
+      'no-self-assign': 'off',
+      'no-redeclare': 'off',
+      'no-undef': 'off',
+      'no-async-promise-executor': 'off',
     },
   },
 ];

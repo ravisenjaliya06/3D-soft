@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
+import { PART_TYPES } from '../sceneCreator/interface';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { Object3D } from '../store/interface';
@@ -62,7 +63,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   /**
    Generates invisible boxes for empty compartments in a given box mesh object.
   */
-
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
@@ -103,7 +103,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   boxMesh.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
-    if (child.userData.type !== 'Plank') return;
+    if (child.userData.type !== PART_TYPES.PLANK) return;
 
     const geom = child.geometry as THREE.BoxGeometry;
     const { width, height, depth } = geom.parameters;
@@ -244,7 +244,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.position.copy(c.position);
-    mesh.name = `INVISIBLE_COMPARTMENT_${idx}_for_${boxMesh.name}`;
+    mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
     mesh.userData.objectId = uuidv4();
     mesh.userData.isInvisibleBox = true;
     boxMesh.add(mesh);

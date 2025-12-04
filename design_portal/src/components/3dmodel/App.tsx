@@ -38,8 +38,8 @@ const App: React.FC<AppProps> = ({ router }) => {
 
   return (
     <div className="h-screen w-screen overflow-hidden">
-      <Header router={router} design3D={design3D} />
       {viewMode === '3d' ? <Design setDesign3D={setDesign3D} /> : <PlannerGrid />}
+      <Header router={router} design3D={design3D} />
       <Toolbar threeDView={design3D as ThreeDView} onViewModeChange={handleViewModeChange} />
       <Sidebar />
       <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />

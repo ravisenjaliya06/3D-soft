@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
-import { findXY } from './utils';
+import { findXY } from '../utils';
 
 /**
  * Handles drag-to-zoom functionality.

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
 import { generateCompartmentsFromMesh } from '../handler/items';
-import { MeshObjectData, userData } from './interface';
+import { MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
 
 export class DesignBuilder {
@@ -15,17 +14,8 @@ export class DesignBuilder {
     this.meshMap = new Map<string, THREE.Mesh>();
   }
 
-  private _createRootContainer(): THREE.Mesh {
-    return new THREE.Mesh();
-  }
-
-  private _findParent(parentId?: string): THREE.Mesh | null {
-    if (!parentId) return null;
-    return this.meshMap.get(parentId) || null;
-  }
-
-  private _setUserData(mesh: THREE.Mesh, userData: userData) {
-    mesh.userData = userData;
+  private _createInitialCompartments(mesh: THREE.Mesh) {
+    generateCompartmentsFromMesh(mesh);
   }
 
   /**
@@ -33,38 +23,36 @@ export class DesignBuilder {
    * and returns one blank mesh containing them.
    */
   public createDesign(): THREE.Mesh {
-    const initialMesh = this._createRootContainer();
-
     const meshList: THREE.Mesh[] = [];
 
     this.data.forEach((meshData) => {
       const builder = new MeshBuilder(meshData);
       const mesh = builder.createMesh();
-
-      this._setUserData(mesh, { objectId: meshData.id });
       meshList.push(mesh);
       this.meshMap.set(meshData.id, mesh);
     });
 
+    let rootMesh: THREE.Mesh | null = null;
+
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
-      const parent = this._findParent(meshData.parent);
 
-      if (parent) {
-        parent.add(mesh);
+      if (meshData.parent) {
+        const parentMesh = this.meshMap.get(meshData.parent);
+
+        if (parentMesh) {
+          parentMesh.add(mesh);
+        }
       } else {
-        initialMesh.add(mesh);
+        rootMesh = mesh;
       }
     });
 
-    this._createInitialCompartments(initialMesh);
-    this._setUserData(initialMesh, { objectId: uuidv4() });
+    if (!rootMesh) {
+      throw new Error('Root mesh not found. Your data must contain one item with no parent.');
+    }
 
-    return initialMesh;
-  }
-
-  private _createInitialCompartments(mesh: THREE.Mesh) {
-    const compartments = generateCompartmentsFromMesh(mesh);
-    compartments.forEach((box) => mesh.add(box));
+    this._createInitialCompartments(rootMesh);
+    return rootMesh;
   }
 }

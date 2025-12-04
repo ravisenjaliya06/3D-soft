@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../handler/items';
 import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 
 export class MeshBuilder {
@@ -87,15 +86,24 @@ export class MeshBuilder {
   }
 
   private _setUserData(mesh: THREE.Mesh) {
+    mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
+    console.log(this.meshData, 'meshData');
+    mesh.userData.isMain = this.meshData.isMain;
   }
 
-  private _createInvisibleBox(mesh: THREE.Mesh) {
-    const invisibleBoxes = generateCompartmentsFromMesh(mesh);
-    invisibleBoxes.forEach((box) => {
-      mesh.add(box);
-    });
+  private _setName(mesh: THREE.Mesh) {
+    mesh.name = this.meshData.name;
   }
+
+  /**
+   * NOTE: It will be use to add objects to the design later.
+   * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
+   */
+
+  // private _setDataInObjectsState() {
+  //   store.dispatch(addObjects([this.meshData]));
+  // }
 
   public createMesh(): THREE.Mesh {
     const geometry = this._getGeometry();
@@ -106,8 +114,13 @@ export class MeshBuilder {
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
 
+    this._setName(mesh);
     this._setPosition(mesh);
     this._setUserData(mesh);
+
+    // NOTE: It will be use to add objects to the design later.
+    // TODO: SMIT you need to uncomment it for the sidebar code refactoring.
+    // this._setDataInObjectsState();
     return mesh;
   }
 }

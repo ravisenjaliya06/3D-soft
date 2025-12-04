@@ -1,7 +1,7 @@
 import { Wall, WallPoint } from '@/components/3dmodel/2dmodel/interface';
 import * as THREE from 'three';
 import { CatalogRule } from '../handler/interface';
-import { ShapeData } from '../interface';
+import { Dimensions, ShapeData } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix';
 
 export interface Position {
@@ -60,6 +60,7 @@ export interface Object3D {
   additional_data?: { texture: string; color?: string };
   catalog_rules?: CatalogRule[];
   children?: Object3D[];
+  dimensions?: Dimensions;
 }
 
 // New interfaces for API requests
