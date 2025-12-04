@@ -44,6 +44,20 @@ export class SelectObjectController {
     window.removeEventListener('dblclick', this._onDoubleClick);
   }
 
+  private _nullAllValues() {
+    this._clearAllOutlines();
+    this.hoveredObject = null;
+    this.hoverOutline = null;
+    this.selectedMainObject = null;
+    this.selectedPart = null;
+    this.selectedOutline = null;
+    this.objectSelectOutline = null;
+    this.partSelectOutline = null;
+
+    store.dispatch(setobjectSelected(null));
+    store.dispatch(setSelectedChildObject(null));
+  }
+
   private _onMouseMove(event: MouseEvent) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -53,11 +67,12 @@ export class SelectObjectController {
     const object = this.hoveredObject;
     if (!object) return;
 
-    this.clearAllOutlines();
+    this._clearAllOutlines();
     this.selectedMainObject = object;
     this.selectedPart = null;
 
     store.dispatch(setobjectSelected(object.userData.objectId));
+    store.dispatch(setSelectedChildObject(null));
 
     this._applySmallCupboardSelectOutline(object);
     return;
@@ -68,7 +83,7 @@ export class SelectObjectController {
     if (!object) return;
 
     if (!this.selectedMainObject) return;
-    this.clearAllOutlines();
+    this._clearAllOutlines();
     this.selectedPart = object;
 
     if (this.onSelect) this.onSelect(object);
@@ -81,10 +96,7 @@ export class SelectObjectController {
 
   private _onDoubleClick() {
     if (!this.hoveredObject) {
-      this.clearAllOutlines();
-      this.hoveredObject = null;
-      this.selectedMainObject = null;
-      this.selectedPart = null;
+      this._nullAllValues();
       return;
     }
 
@@ -94,15 +106,14 @@ export class SelectObjectController {
       Object.values(OBJECT_TYPES).includes(object.userData.type)
     ) {
       this._selectMainObject();
-    }
-
-    // select the child object if this parent main object is selected
-    if (
+    } else if (
       (Object.values(PART_TYPES).includes(object.userData.type) ||
         object.userData.isInvisibleBox === true) &&
       object.parent?.userData.objectId === this.selectedMainObject?.userData.objectId
     ) {
       this._selectChildObject();
+    } else {
+      this._nullAllValues();
     }
   }
 
@@ -206,7 +217,7 @@ export class SelectObjectController {
     }
   }
 
-  private clearAllOutlines() {
+  private _clearAllOutlines() {
     if (this.objectSelectOutline) {
       this._removeOutline(this.objectSelectOutline);
       this.objectSelectOutline = null;
