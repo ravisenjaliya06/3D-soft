@@ -335,21 +335,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       return;
     }
 
-    const designId = window.location.pathname.split('/')[2];
-    const catalogId = selectedCabinetItem.catalog_id || selectedCabinetItem.id;
-
-    const itemData = {
-      catalogId: catalogId,
-      type: itemType,
-      name: `${itemName}`,
-      description: selectedCabinetItem.description || `${itemName} description`,
-      design_id: designId,
-    };
-
     if (['Door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem, itemData);
+      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'Drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num, itemData);
+      await addDrawersOnInvisibleBox(scene, targetBox, num);
     } else if (itemType === 'Plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {

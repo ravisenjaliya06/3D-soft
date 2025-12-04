@@ -1,3 +1,4 @@
+import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { loadDesignObjects } from '../handler/items';
@@ -11,7 +12,6 @@ import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { enablePlankDimensionEditing } from './scene';
-import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -284,18 +284,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
     const objectRemover = new ObjectsRemoverFromScene();
     objectRemover.findSingleObjectToRemove();
-  };
-
-  const removeObjectAndChildrenFromScene = (parentObject: THREE.Object3D) => {
-    /** Removes a 3D object and all its children from the scene hierarchy. */
-
-    if (!design3D || !parentObject) return;
-
-    parentObject.children.forEach((child) => {
-      child.parent?.remove(child);
-    });
-
-    parentObject.parent?.remove(parentObject);
   };
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {

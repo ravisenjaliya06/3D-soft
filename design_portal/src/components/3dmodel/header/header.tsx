@@ -1,3 +1,4 @@
+import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import Loading_style from '@/components/loading.module.css';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
@@ -18,12 +19,10 @@ import { getMinifixStandards } from '../minifix/calculator';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
-import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();
   const history = useSelector((state: RootState) => state.history);
-  const data = useSelector((state: RootState) => state.data);
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
