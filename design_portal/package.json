@@ -76,7 +76,6 @@
     "@types/react-svg-pan-zoom": "^3.3.9",
     "@types/shortid": "^2.2.0",
     "@types/three": "^0.181.0",
-    "@types/uuid": "^11.0.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^10.0.0",
