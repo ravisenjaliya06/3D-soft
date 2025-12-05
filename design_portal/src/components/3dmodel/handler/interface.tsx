@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { Object3D, Position } from '../store/interface';
+import { MaterialForUpdate } from '../sidebar/interface';
+import { Object3D, Position, Rotation } from '../store/interface';
 
 export const ITEM = {
   DRAWER: 'DRAWER',
@@ -319,4 +321,11 @@ export interface CatalogWithChildren {
       data: CatalogData;
     }>;
   }>;
+}
+
+export interface UpdatePayload {
+  dimensions?: Partial<Dimensions>;
+  position?: Partial<Position>;
+  rotation?: Partial<Rotation>;
+  material?: MaterialForUpdate;
 }

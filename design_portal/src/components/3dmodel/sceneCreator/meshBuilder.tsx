@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+// import { store } from '../store';
+// import { addObjects } from '../store/dataSlice';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
