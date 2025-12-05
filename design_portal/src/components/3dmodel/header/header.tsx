@@ -1,3 +1,4 @@
+import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import Loading_style from '@/components/loading.module.css';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
@@ -11,12 +12,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { clearAllPlankDimensions } from '../design/scene';
 import { toggleDoor, toggleDrawer } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
-import { removeAllObjects } from '../store/dataSlice';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
@@ -24,7 +23,6 @@ import styles from './header.module.css';
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();
   const history = useSelector((state: RootState) => state.history);
-  const data = useSelector((state: RootState) => state.data);
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -60,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     if (!designId) {
       return;
     }
-    setShowClearConfirm(true); // Show custom confirm popup
+    setShowClearConfirm(true);
   };
 
   const confirmClear = async () => {
@@ -69,25 +67,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     setShowClearConfirm(false);
     setIsLoading(true);
 
-    try {
-      const response: { status: number } = await commonService.delete(
-        API_ENDPOINT.DELETE_ALL_OBJECTS(designId)
-      );
+    const objectRemover = new ObjectsRemoverFromScene();
+    objectRemover.clearScene();
 
-      if (response.status === 200 || response.status === 204) {
-        if (design3D) {
-          dispatch(removeAllObjects() as unknown as UnknownAction);
-          clearAllPlankDimensions(design3D.scene);
-        }
-        fetchDesigns();
-        setSuccessMessage('Design cleared successfully!');
-        setTimeout(() => setSuccessMessage(null), 3000);
-      }
-    } catch (e) {
-      console.error('Error clearing design:', e);
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -338,7 +321,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       option: 'clear',
       name: 'Clear',
       icon: assets.newclear,
-      disabled: data?.objects?.length === 0,
+      disabled: false,
       onClick: handleClear,
     },
     {

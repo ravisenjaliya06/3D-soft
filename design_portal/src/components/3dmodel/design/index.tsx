@@ -1,15 +1,13 @@
-import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import commonService from '@/services/CommonService';
+import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
-import { ResponseStatus } from '../interface';
 import { SceneBuilder } from '../sceneCreator/sceneBuilder';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { store } from '../store';
-import { addObjects, removeObjectWithHistory, setHoverdMesh } from '../store/dataSlice';
+import { addObjects, setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
@@ -284,55 +282,13 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const deleteObject = async () => {
     /** Deletes the currently selected 3D object from both the scene and backend database. */
 
-    removeExistingLines();
-    return new Promise<void>(async (reject) => {
-      if (!selectedObject || !selectedObject.userData.objectId) {
-        reject(console.error('No selected object or missing object ID'));
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('catalog_ids[]', selectedObject.userData.objectId);
-
-      const response = (await commonService.delete(
-        API_ENDPOINT.DELETE_ALL_OBJECTS(gettingDesignID()),
-        formData
-      )) as ResponseStatus;
-
-      if (response && response.status === 200) {
-        removeExistingLines();
-        removeObjectAndChildrenFromScene(selectedObject);
-        dispatch(removeObjectWithHistory(selectedObject.userData.objectId, selectedObject));
-      } else {
-        console.error('Failed to delete object from backend');
-      }
-    });
-  };
-
-  const removeObjectAndChildrenFromScene = (parentObject: THREE.Object3D) => {
-    /** Removes a 3D object and all its children from the scene hierarchy. */
-
-    if (!design3D || !parentObject) return;
-
-    parentObject.children.forEach((child) => {
-      child.parent?.remove(child);
-    });
-
-    parentObject.parent?.remove(parentObject);
+    const objectRemover = new ObjectsRemoverFromScene();
+    objectRemover.findSingleObjectToRemove();
   };
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
-      if (selectedObject?.userData.objectId) {
-        deleteObject()
-          .then(() => {
-            removeObjectAndChildrenFromScene(selectedObject);
-            setSelectedObject(null);
-          })
-          .catch((error) => {
-            console.error('Error during object deletion:', error);
-          });
-      }
+      deleteObject();
     }
   };
 
