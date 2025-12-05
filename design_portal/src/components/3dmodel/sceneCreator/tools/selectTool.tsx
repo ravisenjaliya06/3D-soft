@@ -94,6 +94,20 @@ export class SelectObjectController {
     return;
   }
 
+  private _getTopParent(object: THREE.Mesh): THREE.Mesh {
+    let current = object;
+
+    while (
+      current.parent &&
+      current.parent instanceof THREE.Mesh && 
+      !(current.parent instanceof THREE.Scene)
+    ) {
+      current = current.parent;
+    }
+
+    return current;
+  }
+
   private _onDoubleClick() {
     if (!this.hoveredObject) {
       this._nullAllValues();
@@ -109,7 +123,7 @@ export class SelectObjectController {
     } else if (
       (Object.values(PART_TYPES).includes(object.userData.type) ||
         object.userData.isInvisibleBox === true) &&
-      object.parent?.userData.objectId === this.selectedMainObject?.userData.objectId
+          this._getTopParent(object).userData.objectId === this.selectedMainObject?.userData.objectId
     ) {
       this._selectChildObject();
     } else {
