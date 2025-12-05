@@ -2,7 +2,6 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
 import { TEXTURES_URLS } from '../constants';
 import { createRealisticMaterial } from '../design/loadRealisticScene';
 import { mmToMeters } from '../handler/unitConversion';
@@ -245,7 +244,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.position.copy(c.position);
     mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
-    mesh.userData.objectId = uuidv4();
+    mesh.userData.objectId = crypto.randomUUID();;
     mesh.userData.isInvisibleBox = true;
     boxMesh.add(mesh);
     meshes.push(mesh);

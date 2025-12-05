@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
 import { Wall, WallPoint } from '../2dmodel/interface';
 import { removeExistingLines } from '../design';
 import { AppThunk } from '../store';
@@ -179,7 +178,7 @@ export const removeObjectWithHistory =
       if (isMainObject(objectToRemove)) {
         dispatch(
           addToHistory({
-            id: uuidv4(),
+            id: crypto.randomUUID(),
             type: 'REMOVE',
             data: {
               object: objectToRemove,
@@ -236,7 +235,7 @@ export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
   if (historyData.objects.length > 0) {
     dispatch(
       addToHistory({
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         type: 'REMOVE',
         data: {
           objects: historyData.objects,
