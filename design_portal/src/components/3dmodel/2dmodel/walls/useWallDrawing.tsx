@@ -5,6 +5,7 @@ import { RootState } from '../../store';
 import { addPoint, setWalls } from '../../store/dataSlice';
 import { Wall, WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
+import { WallSyncManager } from '../../sceneCreator/syncState';
 
 export function useWallDrawing() {
   const dispatch = useDispatch();
@@ -119,6 +120,9 @@ export function useWallDrawing() {
 
     const updatedWalls = updateWallConnections([...walls, newWall]);
     dispatch(setWalls(updatedWalls));
+
+    const dataManager = new WallSyncManager();
+    dataManager.syncWall(newWall);
 
     // Set next start point for continuous drawing
     setStartPointId(clickedPoint.id);

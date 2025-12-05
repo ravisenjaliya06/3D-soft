@@ -12,6 +12,7 @@ import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { enablePlankDimensionEditing } from './scene';
+import { getOrCreateThreeDView } from './sceneSingleton';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -87,66 +88,108 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
 
+  // useEffect(() => {
+  //   if (mountRef.current && !design3D) {
+  //     const initializeScene = async () => {
+  //       if (!mountRef.current) return;
+
+  //       const builder = new SceneBuilder({
+  //         mount: mountRef.current,
+  //       });
+  //       const threeDView = builder.build();
+  //       setLocalDesign3D(threeDView);
+  //       setDesign3D(threeDView);
+  //       dispatch(setScene(threeDView.scene));
+  //       enablePlankDimensionEditing(threeDView);
+  //       const handler = new MoveHandler({
+  //         scene: threeDView.scene,
+  //         camera: threeDView.camera as THREE.PerspectiveCamera,
+  //         renderer: threeDView.renderer,
+  //         movableObjects: [],
+  //       });
+  //       setMoveHandler(handler);
+
+  //       const designId = gettingDesignID();
+  //       if (designId) {
+  //         try {
+  //           const loadedObjects = await loadDesignObjects(designId, threeDView.scene);
+  //           if (loadedObjects) {
+  //             dispatch(addObjects(loadedObjects));
+  //           }
+  //         } catch (error) {
+  //           console.error('Failed to load design objects:', error);
+  //         }
+  //       } else {
+  //         console.warn('No designId found in URL');
+  //       }
+
+  //       threeDView.scene.traverse((object) => {
+  //         if (
+  //           object.name === 'grid' ||
+  //           object instanceof THREE.GridHelper ||
+  //           object.name === 'floor' ||
+  //           object.name === 'Sky'
+  //         ) {
+  //           object.raycast = () => [];
+  //         }
+  //       });
+  //     };
+
+  //     initializeScene();
+
+  //     return () => {
+  //       if (design3D) {
+  //         setDesign3D(null);
+  //         setLocalDesign3D(null);
+  //         if (moveHandler) {
+  //           moveHandler.disableDragging();
+  //         }
+  //       }
+  //     };
+  //   }
+  // }, [design3D, setDesign3D, dispatch, moveHandler]);
+
   useEffect(() => {
-    if (mountRef.current && !design3D) {
-      const initializeScene = async () => {
-        if (!mountRef.current) return;
+    if (!mountRef.current) return;
 
-        const builder = new SceneBuilder({
-          mount: mountRef.current,
-        });
-        const threeDView = builder.build();
-        setLocalDesign3D(threeDView);
-        setDesign3D(threeDView);
-        dispatch(setScene(threeDView.scene));
-        enablePlankDimensionEditing(threeDView);
-        const handler = new MoveHandler({
-          scene: threeDView.scene,
-          camera: threeDView.camera as THREE.PerspectiveCamera,
-          renderer: threeDView.renderer,
-          movableObjects: [],
-        });
-        setMoveHandler(handler);
+    // get existing scene or first-time build
+    const threeDView = getOrCreateThreeDView(mountRef.current);
 
-        const designId = gettingDesignID();
-        if (designId) {
-          try {
-            const loadedObjects = await loadDesignObjects(designId, threeDView.scene);
-            if (loadedObjects) {
-              dispatch(addObjects(loadedObjects));
-            }
-          } catch (error) {
-            console.error('Failed to load design objects:', error);
-          }
-        } else {
-          console.warn('No designId found in URL');
+    if (!design3D) {
+      setLocalDesign3D(threeDView);
+      setDesign3D(threeDView);
+      dispatch(setScene(threeDView.scene));
+      enablePlankDimensionEditing(threeDView);
+
+      // MoveHandler only once
+      const handler = new MoveHandler({
+        scene: threeDView.scene,
+        camera: threeDView.camera as THREE.PerspectiveCamera,
+        renderer: threeDView.renderer,
+        movableObjects: [],
+      });
+      setMoveHandler(handler);
+
+      threeDView.scene.traverse((object) => {
+        if (
+          object.name === "grid" ||
+          object instanceof THREE.GridHelper ||
+          object.name === "floor" ||
+          object.name === "Sky"
+        ) {
+          object.raycast = () => [];
         }
-
-        threeDView.scene.traverse((object) => {
-          if (
-            object.name === 'grid' ||
-            object instanceof THREE.GridHelper ||
-            object.name === 'floor' ||
-            object.name === 'Sky'
-          ) {
-            object.raycast = () => [];
-          }
-        });
-      };
-
-      initializeScene();
-
-      return () => {
-        if (design3D) {
-          setDesign3D(null);
-          setLocalDesign3D(null);
-          if (moveHandler) {
-            moveHandler.disableDragging();
-          }
-        }
-      };
+      });
     }
-  }, [design3D, setDesign3D, dispatch, moveHandler]);
+
+    return () => {
+      if (mountRef.current && threeDView.renderer?.domElement) {
+        try {
+          mountRef.current.removeChild(threeDView.renderer.domElement);
+        } catch { }
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!design3D) return;
@@ -307,7 +350,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => {}}
+          onComplete={() => { }}
         />
       )}
     </div>
