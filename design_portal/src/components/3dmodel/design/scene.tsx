@@ -864,7 +864,7 @@ export const addHorizontalPlanksInsideBox = async (
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
-  selectedCabinetItem: SelectedCabinetItem | null = null,
+  selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
 
@@ -985,7 +985,7 @@ export const addDoorOnInvisibleBox = async (
 export const addDrawersOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
-  drawers: number,
+  drawers: number
 ) => {
   if (drawers <= 0) return;
 
