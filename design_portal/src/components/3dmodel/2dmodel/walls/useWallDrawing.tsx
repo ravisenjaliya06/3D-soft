@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
-import { v4 as uuid } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { RootState } from '../../store';
 import { addPoint, setWalls } from '../../store/dataSlice';
 import { Wall, WallPoint } from '../interface';
@@ -30,7 +30,7 @@ export function useWallDrawing() {
     if (existing) {
       return existing;
     }
-    const newPoint: WallPoint = { id: uuid(), x, y };
+    const newPoint: WallPoint = { id: uuidv4(), x, y };
     dispatch(addPoint(newPoint));
     return newPoint;
   };
@@ -107,7 +107,7 @@ export function useWallDrawing() {
     const wallLength = Math.hypot(clickedPoint.x - startPoint.x, clickedPoint.y - startPoint.y);
 
     const newWall: Wall = {
-      id: uuid(),
+      id: uuidv4(),
       startPoint,
       endPoint: clickedPoint,
       width: 0,
