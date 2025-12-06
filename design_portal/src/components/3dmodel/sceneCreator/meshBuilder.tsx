@@ -21,7 +21,7 @@ export class MeshBuilder {
   private _createColorMaterial(): THREE.MeshBasicMaterial {
     return new THREE.MeshBasicMaterial({
       color: this.meshData.material?.value,
-      wireframe: true,
+      wireframe: false,
     });
   }
 
@@ -84,13 +84,35 @@ export class MeshBuilder {
   }
 
   private _setPosition(mesh: THREE.Mesh) {
-    mesh.position.set(this.meshData.position.x, this.meshData.position.y, this.meshData.position.z);
+    if (!this.meshData.position) return;
+    mesh.position.set(
+      this.meshData.position.x,
+      this.meshData.position.y,
+      this.meshData.position.z
+    );
+  }
+
+  private _setRotation(mesh: THREE.Mesh) {
+    if (!this.meshData.rotation) return;
+    mesh.rotation.set(
+      this.meshData.rotation.x,
+      this.meshData.rotation.y,
+      this.meshData.rotation.z
+    );
+  }
+
+  private _setScale(mesh: THREE.Mesh) {
+    if (!this.meshData.scale) return;
+    mesh.scale.set(
+      this.meshData.scale.x,
+      this.meshData.scale.y,
+      this.meshData.scale.z
+    );
   }
 
   private _setUserData(mesh: THREE.Mesh) {
     mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
-    console.log(this.meshData, 'meshData');
     mesh.userData.isMain = this.meshData.isMain;
   }
 
@@ -118,6 +140,8 @@ export class MeshBuilder {
 
     this._setName(mesh);
     this._setPosition(mesh);
+    this._setRotation(mesh);
+    this._setScale(mesh);
     this._setUserData(mesh);
 
     // NOTE: It will be use to add objects to the design later.

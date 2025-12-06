@@ -1,0 +1,1 @@
+export const WALL_DEFAULT_HEIGHT = 2800;

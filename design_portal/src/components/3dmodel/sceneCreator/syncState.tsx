@@ -3,9 +3,13 @@
 import * as THREE from "three";
 import { store } from "../store";
 import { convertFromMM, convertToMM } from "../handler/unitConversion";
+import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from "./interface";
+import { MeshBuilder } from "./meshBuilder";
+import { WALL_DEFAULT_HEIGHT } from "./constants";
 
 export class WallSyncManager {
   private scene: THREE.Scene;
+  private data: any;
 
   constructor() {
     this.scene = store.getState().scene?.scene;
@@ -14,49 +18,67 @@ export class WallSyncManager {
   /**
    * Main function: sync wall from 2D → Redux + 3D
    */
-  public syncWall(wallData: any) {
-    const wallMesh = this._createWallMesh(wallData);
+  public syncWall(data: any): THREE.Mesh {
+    this.data = data;
+
+    const wallMesh = this._createWallMesh();
     this.scene.add(wallMesh);
 
     return wallMesh;
   }
 
+  private _convertPosition2DTo3D(): THREE.Vector3 {
+    const sumX = this.data.startPoint.x + this.data.endPoint.x;
+    const sumY = this.data.startPoint.y + this.data.endPoint.y;
+
+    const x = (sumX / 2) / 100;
+    const y = 1.4;
+    const z = (sumY / 2) / 100;
+
+    return new THREE.Vector3(x, y, z);
+  }
+
+  private _findRotation(): THREE.Vector3 {
+    const angle = Math.atan2(
+      this.data.endPoint.y - this.data.startPoint.y,
+      this.data.endPoint.x - this.data.startPoint.x
+    );
+    return new THREE.Vector3(0, -angle, 0);
+  }
+
+  private _convertDataToMeshData(): MeshObjectData {
+    const id = crypto.randomUUID();
+
+    const meshData: MeshObjectData = {
+      id: id,
+      name: this.data.name || `wall_${id}`,
+      type: FLOOR_PLAN_TYPES.WALL,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: this.data.length,
+        height: this.data.height || WALL_DEFAULT_HEIGHT,
+        depth: this.data.thickness,
+      },
+      position: this._convertPosition2DTo3D(),
+      rotation: this._findRotation(),
+      scale: { x: 0.01, y: 0.001, z: 0.01 },
+      material: {
+        type: MATERIAL_TYPE.COLOR,
+        value: '0xffffff',
+      },
+      isMain: true,
+    };
+
+    return meshData;
+  }
+
   /**
    * Create 3D wall from your 2D data structure
    */
-  private _createWallMesh(wall: any) {
-    const { startPoint, endPoint, thickness, length } = wall;
-    console.log(startPoint, endPoint, thickness, "startPoint, endPoint, thickness");
-    const height = wall.height || 2000;
-
-    console.log(length, height, thickness, "length, height, thickness");
-
-    const geometry = new THREE.BoxGeometry(length, height, thickness);
-    const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-
-    const mesh = new THREE.Mesh(geometry, material);
-
-    mesh.name = `wall_${wall.id}`;
-    mesh.userData.wallId = wall.id;
-
-    console.log(startPoint.x + endPoint.x);
-    console.log(startPoint.y + endPoint.y);
-
-    mesh.position.set(
-      (((startPoint.x + endPoint.x) / 2) / 100),
-      1,
-      (((startPoint.y + endPoint.y) / 2) / 100)
-    );
-
-    const angle = Math.atan2(
-      endPoint.y - startPoint.y,
-      endPoint.x - startPoint.x
-    );
-    mesh.rotation.y = -angle;
-
-    mesh.scale.set(
-        0.01, 0.01, 0.01
-    );
+  private _createWallMesh() {
+    const mesh = new MeshBuilder(
+      this._convertDataToMeshData()
+    ).createMesh();
 
     return mesh;
   }

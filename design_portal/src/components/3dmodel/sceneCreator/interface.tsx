@@ -3,6 +3,10 @@ import { Dimensions } from '../interface';
 import { Position, Rotation } from '../store/interface';
 
 // type const
+export const FLOOR_PLAN_TYPES = {
+  WALL: 'wall',  
+}
+
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
 };
@@ -43,6 +47,7 @@ export interface MeshObjectData {
   dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
+  scale?: Position;
   material?: Material;
   isMain?: boolean;
 }
