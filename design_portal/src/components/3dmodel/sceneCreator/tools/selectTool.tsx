@@ -94,6 +94,9 @@ export class SelectObjectController {
     return;
   }
 
+  /**
+   * Retrieve the top parent of the object other than scene (E.g.: Cupboard)
+   */
   private _getTopParent(object: THREE.Mesh): THREE.Mesh {
     let current = object;
 
