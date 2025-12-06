@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { SelectObjectController } from '../sceneCreator/tools/selectTool';
+import { MoveHandler } from '../handler/moveHandlerInterface';
 
 export interface ThreeDView {
   toggleZoomMode: (enable: boolean) => void;
@@ -18,6 +19,7 @@ export interface ThreeDView {
   addSimpleCabinet1?: () => void;
   loadSinkModel: (url: string) => Promise<void>;
   selector: SelectObjectController | null;
+  moveHandler?: MoveHandler;
 }
 
 export const itemType = {

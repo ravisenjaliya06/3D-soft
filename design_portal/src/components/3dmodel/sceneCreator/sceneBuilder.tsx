@@ -10,6 +10,7 @@ import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
 import { SelectObjectController } from './tools/selectTool';
 import { ZoomSelectionController } from './tools/zoomTools';
+import { MoveHandler } from '../handler/moveHandler';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -59,6 +60,7 @@ export class SceneBuilder {
 
   private cupboards: THREE.Mesh[] = [];
   private selector: SelectObjectController | null = null;
+  private moveHandler: MoveHandler | null = null;
 
   constructor(config: SceneBuilderConfig) {
     this.config = config;
@@ -98,6 +100,7 @@ export class SceneBuilder {
 
     this.setupScene();
     this.initSelector();
+    this.initMoveHandler();
 
     // Setup event listeners
     this.setupEventListeners();
@@ -282,6 +285,15 @@ export class SceneBuilder {
     this.selector = new SelectObjectController(this.camera, this.scene);
   }
 
+  private initMoveHandler() {
+    const options = {
+      scene: this.scene, 
+      camera: this.camera as THREE.PerspectiveCamera, 
+      renderer: this.renderer
+    }
+    this.moveHandler = new MoveHandler(options);
+  }
+
   public toggleZoomMode(enable: boolean) {
     this.zoomController.toggleZoomMode(enable);
   }
@@ -331,12 +343,13 @@ export class SceneBuilder {
       toggleZoomMode: (enable: boolean) => this.toggleZoomMode(enable),
       isZoomMode: this.isZoomMode,
       addSimpleCabinet: () => {
-        addSimpleCabinet(this.scene);
+        addSimpleCabinet(this.scene, this.moveHandler ? this.moveHandler : undefined);
       },
       loadSinkModel: async (url: string) => {
         loadSinkModel(this.scene, url);
       },
       selector: this.selector,
+      moveHandler: this.moveHandler ? this.moveHandler : undefined,
     };
   }
 

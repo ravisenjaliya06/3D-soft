@@ -22,6 +22,7 @@ import {
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
+import { MoveHandler } from '../handler/moveHandlerInterface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -175,7 +176,7 @@ export function createMeshObject(
   return mesh;
 }
 
-export const addSimpleCabinet = (scene: THREE.Scene) => {
+export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHandler) => {
   const width = 1.5;
   const height = 2;
   const depth = 0.4;
@@ -326,6 +327,13 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const designsBuilder = new DesignBuilder(planks);
   const design = designsBuilder.createDesign();
   scene.add(design);
+
+  // NOTE: Currently, this code here because in future this code getting from backend then, i will move this code dynamically.
+  await moveHandler?.setWalls();
+  const finelPosition = await moveHandler?.enableDragging(design);
+  if (finelPosition) {
+    design.position.set(finelPosition.x, finelPosition.y, finelPosition.z);
+  }
 };
 
 export const addSimpleCabinet1 = (scene: THREE.Scene) => {

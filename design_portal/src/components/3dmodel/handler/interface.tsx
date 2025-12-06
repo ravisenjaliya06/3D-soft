@@ -97,7 +97,7 @@ export interface MoveHandlerOptions {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
-  movableObjects: THREE.Object3D[];
+  movableObjects?: THREE.Object3D[];
   gridBounds?: {
     minX: number;
     maxX: number;
