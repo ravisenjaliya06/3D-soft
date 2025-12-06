@@ -47,7 +47,7 @@ const dataSlice = createSlice({
     setSelectedChildObject: (state, action: PayloadAction<string | null>) => {
       state.selectedChildObject = action.payload;
     },
-    updateObject: (state, action: PayloadAction<Object3D>) => {
+    updateObject: (state, action: PayloadAction<Partial<Object3D> & { id: string }>) => {
       const updatedObject = action.payload;
       const index = state.objects.findIndex((obj) => obj.id === updatedObject.id);
       if (index !== -1) {

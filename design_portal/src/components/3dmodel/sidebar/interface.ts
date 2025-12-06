@@ -25,3 +25,20 @@ export interface MaterialChangePopupProps {
   onSave: (selectedMaterials: string[]) => void;
   rules?: CatalogRule[];
 }
+
+export type Field = 'width' | 'height' | 'depth';
+
+export type Axis = 'x' | 'y' | 'z';
+
+export const MATERIAL_TYPES = {
+  COLOR: 'COLOR',
+  TEXTURE: 'TEXTURE',
+} as const;
+
+// Create a type from the constant values
+export type MaterialType = keyof typeof MATERIAL_TYPES;
+
+export interface MaterialForUpdate {
+  type: MaterialType;
+  value: string;
+}
