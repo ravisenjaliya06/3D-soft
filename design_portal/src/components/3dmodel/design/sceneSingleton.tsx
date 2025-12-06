@@ -1,5 +1,5 @@
-import { SceneBuilder } from "../sceneCreator/sceneBuilder";
-import { ThreeDView } from "./interface";
+import { SceneBuilder } from '../sceneCreator/sceneBuilder';
+import { ThreeDView } from './interface';
 
 let globalThreeDView: ThreeDView | null = null;
 

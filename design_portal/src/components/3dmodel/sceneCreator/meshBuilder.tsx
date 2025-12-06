@@ -85,29 +85,17 @@ export class MeshBuilder {
 
   private _setPosition(mesh: THREE.Mesh) {
     if (!this.meshData.position) return;
-    mesh.position.set(
-      this.meshData.position.x,
-      this.meshData.position.y,
-      this.meshData.position.z
-    );
+    mesh.position.set(this.meshData.position.x, this.meshData.position.y, this.meshData.position.z);
   }
 
   private _setRotation(mesh: THREE.Mesh) {
     if (!this.meshData.rotation) return;
-    mesh.rotation.set(
-      this.meshData.rotation.x,
-      this.meshData.rotation.y,
-      this.meshData.rotation.z
-    );
+    mesh.rotation.set(this.meshData.rotation.x, this.meshData.rotation.y, this.meshData.rotation.z);
   }
 
   private _setScale(mesh: THREE.Mesh) {
     if (!this.meshData.scale) return;
-    mesh.scale.set(
-      this.meshData.scale.x,
-      this.meshData.scale.y,
-      this.meshData.scale.z
-    );
+    mesh.scale.set(this.meshData.scale.x, this.meshData.scale.y, this.meshData.scale.z);
   }
 
   private _setUserData(mesh: THREE.Mesh) {

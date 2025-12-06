@@ -1,24 +1,25 @@
 // WallSyncManager.ts
 
-import * as THREE from "three";
-import { store } from "../store";
-import { convertFromMM, convertToMM } from "../handler/unitConversion";
-import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from "./interface";
-import { MeshBuilder } from "./meshBuilder";
-import { WALL_DEFAULT_HEIGHT } from "./constants";
+import * as THREE from 'three';
+import { store } from '../store';
+import { WALL_DEFAULT_HEIGHT } from './constants';
+import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { MeshBuilder } from './meshBuilder';
+import { Wall } from '../2dmodel/interface';
 
 export class WallSyncManager {
   private scene: THREE.Scene;
-  private data: any;
+  private data: Wall;
 
   constructor() {
     this.scene = store.getState().scene?.scene;
+    this.data = {} as Wall;
   }
 
   /**
    * Main function: sync wall from 2D → Redux + 3D
    */
-  public syncWall(data: any): THREE.Mesh {
+  public syncWall(data: Wall): THREE.Mesh {
     this.data = data;
 
     const wallMesh = this._createWallMesh();
@@ -31,9 +32,9 @@ export class WallSyncManager {
     const sumX = this.data.startPoint.x + this.data.endPoint.x;
     const sumY = this.data.startPoint.y + this.data.endPoint.y;
 
-    const x = (sumX / 2) / 100;
+    const x = sumX / 2 / 100;
     const y = 1.4;
-    const z = (sumY / 2) / 100;
+    const z = sumY / 2 / 100;
 
     return new THREE.Vector3(x, y, z);
   }
@@ -51,7 +52,7 @@ export class WallSyncManager {
 
     const meshData: MeshObjectData = {
       id: id,
-      name: this.data.name || `wall_${id}`,
+      name: `wall_${id}`,
       type: FLOOR_PLAN_TYPES.WALL,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
@@ -76,9 +77,7 @@ export class WallSyncManager {
    * Create 3D wall from your 2D data structure
    */
   private _createWallMesh() {
-    const mesh = new MeshBuilder(
-      this._convertDataToMeshData()
-    ).createMesh();
+    const mesh = new MeshBuilder(this._convertDataToMeshData()).createMesh();
 
     return mesh;
   }

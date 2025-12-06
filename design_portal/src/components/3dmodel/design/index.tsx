@@ -1,13 +1,11 @@
 import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { loadDesignObjects } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
-import { SceneBuilder } from '../sceneCreator/sceneBuilder';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { store } from '../store';
-import { addObjects, setHoverdMesh } from '../store/dataSlice';
+import { setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
@@ -172,10 +170,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
 
       threeDView.scene.traverse((object) => {
         if (
-          object.name === "grid" ||
+          object.name === 'grid' ||
           object instanceof THREE.GridHelper ||
-          object.name === "floor" ||
-          object.name === "Sky"
+          object.name === 'floor' ||
+          object.name === 'Sky'
         ) {
           object.raycast = () => [];
         }
@@ -186,7 +184,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       if (mountRef.current && threeDView.renderer?.domElement) {
         try {
           mountRef.current.removeChild(threeDView.renderer.domElement);
-        } catch { }
+        } catch {}
       }
     };
   }, []);
@@ -350,7 +348,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
           design3D={design3D}
           isActive={isMeasurementActive}
           unitType={currentUnitType}
-          onComplete={() => { }}
+          onComplete={() => {}}
         />
       )}
     </div>

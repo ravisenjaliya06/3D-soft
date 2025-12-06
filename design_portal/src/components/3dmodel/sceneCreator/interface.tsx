@@ -4,8 +4,8 @@ import { Position, Rotation } from '../store/interface';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
-  WALL: 'wall',  
-}
+  WALL: 'wall',
+};
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',

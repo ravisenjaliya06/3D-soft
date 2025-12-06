@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
+import { WallSyncManager } from '../../sceneCreator/syncState';
 import { RootState } from '../../store';
 import { addPoint, setWalls } from '../../store/dataSlice';
 import { Wall, WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
-import { WallSyncManager } from '../../sceneCreator/syncState';
 
 export function useWallDrawing() {
   const dispatch = useDispatch();
