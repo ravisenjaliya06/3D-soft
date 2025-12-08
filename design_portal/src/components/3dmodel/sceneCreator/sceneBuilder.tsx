@@ -7,7 +7,7 @@ import { ThreeDView } from '../design/interface';
 import { addSimpleCabinet, loadSinkModel } from '../design/scene';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
-import { SceneBuilderConfig } from './interface';
+import { FLOOR_PLAN_TYPES, SceneBuilderConfig } from './interface';
 import { SelectObjectController } from './tools/selectTool';
 import { ZoomSelectionController } from './tools/zoomTools';
 import { MoveHandler } from '../handler/moveHandler';
@@ -61,6 +61,11 @@ export class SceneBuilder {
   private cupboards: THREE.Mesh[] = [];
   private selector: SelectObjectController | null = null;
   private moveHandler: MoveHandler | null = null;
+
+  private wallRaycaster = new THREE.Raycaster();
+  private wallDirection = new THREE.Vector3();
+  private hiddenWalls = new Set<THREE.Mesh>();
+  private wallMeshes: THREE.Mesh[] = [];
 
   constructor(config: SceneBuilderConfig) {
     this.config = config;
@@ -287,8 +292,8 @@ export class SceneBuilder {
 
   private initMoveHandler() {
     const options = {
-      scene: this.scene, 
-      camera: this.camera as THREE.PerspectiveCamera, 
+      scene: this.scene,
+      camera: this.camera as THREE.PerspectiveCamera,
       renderer: this.renderer
     }
     this.moveHandler = new MoveHandler(options);

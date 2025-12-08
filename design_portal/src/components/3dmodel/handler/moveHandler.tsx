@@ -80,41 +80,28 @@ export class MoveHandler implements IMoveHandler {
   private applyWallSnapping(object: THREE.Mesh) {
     if (!this.walls.length) return;
 
-    let closestWall: THREE.Mesh | null = null;
-    let closestDistance = Infinity;
-    let snapPosition = new THREE.Vector3();
-    let wallNormal = new THREE.Vector3();
+    const intersects = this.raycaster.intersectObjects(this.walls, true);
 
-    const objectPos = object.position.clone();
+    if (!intersects.length) return;
 
-    for (const wall of this.walls) {
-      wall.geometry.computeBoundingBox();
+    const hit = intersects[0];
+    const wall = hit.object as THREE.Mesh;
 
-      const localPoint = wall.worldToLocal(objectPos.clone());
-      const bb = wall.geometry.boundingBox!;
-      const clamped = localPoint.clone().clamp(bb.min, bb.max);
-      const worldClosestPoint = wall.localToWorld(clamped.clone());
+    const wallNormal = hit.face?.normal.clone() || new THREE.Vector3(0, 0, 1);
+    wallNormal.transformDirection(wall.matrixWorld);
 
-      const dist = worldClosestPoint.distanceTo(objectPos);
+    object.geometry.computeBoundingBox();
+    const objBB = object.geometry.boundingBox!;
+    const objectDepth = objBB.max.z - objBB.min.z;
 
-      if (dist < closestDistance) {
-        closestDistance = dist;
-        snapPosition.copy(worldClosestPoint);
-        closestWall = wall;
+    const attachPosition = hit.point.clone().add(
+      wallNormal.multiplyScalar(objectDepth / 2)
+    );
 
-        wall.getWorldDirection(wallNormal);
-      }
-    }
+    object.position.copy(attachPosition);
 
-    if (!closestWall) return;
-
-    if (closestDistance < this.snapDistance) {
-      object.position.copy(snapPosition);
-
-      object.rotation.y = closestWall.rotation.y;
-    }
+    object.rotation.y = wall.rotation.y;
   }
-
 
   private onMouseMove = (event: MouseEvent) => {
     if (!this.isDragging || !this.draggedObject) return;
@@ -134,10 +121,10 @@ export class MoveHandler implements IMoveHandler {
     this.renderer.render(this.scene, this.camera);
   };
 
-  public setWalls() {
+  private setWalls() {
     this.scene.children.forEach((object) => {
       if (
-        object instanceof THREE.Mesh && 
+        object instanceof THREE.Mesh &&
         object.userData.type === FLOOR_PLAN_TYPES.WALL
       ) {
         this.walls.push(object);
@@ -211,6 +198,7 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public enableDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
+    this.setWalls();
     this.cleanupEventListeners();
     this.isDragging = false;
     this.draggedObject = null;

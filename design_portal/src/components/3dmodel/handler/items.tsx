@@ -60,8 +60,9 @@ export function hideFullScreenLoader() {
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   /**
-   Generates invisible boxes for empty compartments in a given box mesh object.
-  */
+   * Generates invisible boxes for empty compartments in a given box mesh object.
+   * Works in local space only (no special wall handling).
+   */
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
@@ -72,22 +73,23 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   });
   toRemove.forEach((c) => boxMesh.remove(c));
 
-  // --- Determine orientation and grid axes ---
-  let widthAxis: 'x' | 'z' = 'x';
-  let heightAxis: 'y' | 'z' = 'y';
-  let depthAxis: 'x' | 'y' | 'z' = 'z';
+  // --- Get LOCAL bounding box of the container geometry ---
+  const containerGeom = boxMesh.geometry as THREE.BufferGeometry;
+  containerGeom.computeBoundingBox();
 
-  if (boxMesh.name.includes('leftwall') || boxMesh.name.includes('rightwall')) {
-    widthAxis = 'z';
-    heightAxis = 'y';
-    depthAxis = 'x';
-  } else {
-    widthAxis = 'x';
-    heightAxis = 'y';
-    depthAxis = 'z';
-  }
+  const bb = containerGeom.boundingBox;
+  if (!bb) return [];
 
-  // --- Collect planks ---
+  const size = new THREE.Vector3();
+  bb.getSize(size);
+
+  const width = size.x;   // local X = width
+  const height = size.y;  // local Y = height
+  const depth = size.z;   // local Z = depth
+
+  const boxCenterLocal = bb.getCenter(new THREE.Vector3());
+
+  // --- Collect planks in LOCAL space ---
   const planks: {
     name: string;
     width: number;
@@ -105,36 +107,30 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     if (child.userData.type !== PART_TYPES.PLANK) return;
 
     const geom = child.geometry as THREE.BoxGeometry;
-    const { width, height, depth } = geom.parameters;
+    const { width: pWidth, height: pHeight, depth: pDepth } = geom.parameters;
+
+    // world → local (relative to boxMesh)
     const worldPos = new THREE.Vector3();
     child.getWorldPosition(worldPos);
     const localPos = boxMesh.worldToLocal(worldPos.clone());
 
+    const wMin = localPos.x - pWidth / 2;
+    const wMax = localPos.x + pWidth / 2;
+    const hMin = localPos.y - pHeight / 2;
+    const hMax = localPos.y + pHeight / 2;
+
     planks.push({
       name: child.name,
-      width,
-      height,
-      depth,
+      width: pWidth,
+      height: pHeight,
+      depth: pDepth,
       position: localPos,
-      wMin: localPos[widthAxis] - width / 2,
-      wMax: localPos[widthAxis] + width / 2,
-      hMin: localPos[heightAxis] - height / 2,
-      hMax: localPos[heightAxis] + height / 2,
+      wMin,
+      wMax,
+      hMin,
+      hMax,
     });
   });
-
-  // --- Get total bounding box of container ---
-  const bbox = new THREE.Box3().setFromObject(boxMesh);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  bbox.getSize(size);
-  bbox.getCenter(center);
-
-  const width = size[widthAxis];
-  const height = size[heightAxis];
-  const depth = size[depthAxis];
-
-  const boxCenterLocal = boxMesh.worldToLocal(center.clone());
 
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
@@ -143,23 +139,24 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     opacity: 0,
   });
 
-  // --- CASE 1: No planks found → single invisible box ---
+  // --- CASE 1: No planks → single invisible box ---
   if (planks.length === 0) {
     const geo = new THREE.BoxGeometry(width, height, depth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
     mesh.userData.isInvisibleBox = true;
-    mesh.position.copy(boxCenterLocal);
+    mesh.position.copy(boxCenterLocal); // center in local space
     boxMesh.add(mesh);
     return [mesh];
   }
 
-  // --- CASE 2: Planks exist → build grid ---
+  // --- CASE 2: Planks exist → build grid in local X/Y ---
   const step = 0.01;
-  const minW = -width / 2;
-  const maxW = width / 2;
-  const minH = -height / 2;
-  const maxH = height / 2;
+
+  const minW = bb.min.x;
+  const maxW = bb.max.x;
+  const minH = bb.min.y;
+  const maxH = bb.max.y;
 
   const gridWidth = Math.ceil((maxW - minW) / step);
   const gridHeight = Math.ceil((maxH - minH) / step);
@@ -171,6 +168,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   // --- Mark plank areas on grid ---
   planks.forEach((p) => {
     const { wMin, wMax, hMin, hMax } = p;
+
     const startX = Math.max(0, Math.floor((wMin - minW) / step));
     const endX = Math.min(gridWidth - 1, Math.ceil((wMax - minW) / step));
     const startY = Math.max(0, Math.floor((hMin - minH) / step));
@@ -198,8 +196,10 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       let xEnd = x;
       let yEnd = y;
 
+      // grow horizontally
       while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === 'empty') xEnd++;
 
+      // grow vertically
       let valid = true;
       while (yEnd + 1 < gridHeight && valid) {
         for (let xCheck = x; xCheck <= xEnd; xCheck++) {
@@ -213,14 +213,16 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
       const compWidth = (xEnd - x + 1) * step;
       const compHeight = (yEnd - y + 1) * step;
+
       const centerW = minW + (x + (xEnd - x) / 2) * step;
       const centerH = minH + (y + (yEnd - y) / 2) * step;
 
       if (compWidth > 0 && compHeight > 0) {
-        const pos = new THREE.Vector3();
-        pos[widthAxis] = centerW;
-        pos[heightAxis] = centerH;
-        pos[depthAxis] = boxCenterLocal[depthAxis];
+        const pos = new THREE.Vector3(
+          centerW,
+          centerH,
+          boxCenterLocal.z // center in depth
+        );
 
         compartments.push({
           width: compWidth,
@@ -230,6 +232,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
         });
       }
 
+      // mark as filled
       for (let fy = y; fy <= yEnd; fy++) {
         for (let fx = x; fx <= xEnd; fx++) {
           grid[fy][fx] = 'filled';
@@ -238,6 +241,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     }
   }
 
+  // --- Create invisible meshes for compartments ---
   const meshes: THREE.Mesh[] = [];
   compartments.forEach((c, idx) => {
     const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
