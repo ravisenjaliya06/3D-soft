@@ -33,6 +33,7 @@ export const Grids: React.FC<GridsProps> = ({ width, height }) => {
       {Array.from(grids.entries()).map(([gridID, grid]) => {
         const isHorizontal = grid.type === 'horizontal-streak';
         const loopLimit = isHorizontal ? height : width;
+
         return (
           <GridStreak
             key={gridID}
@@ -41,10 +42,10 @@ export const Grids: React.FC<GridsProps> = ({ width, height }) => {
             renderLine={(position, color) => (
               <line
                 key={position}
-                x1={isHorizontal ? 0 : position}
-                y1={isHorizontal ? position : 0}
-                x2={isHorizontal ? width : position}
-                y2={isHorizontal ? position : height}
+                x1={isHorizontal ? -width / 2 : position}
+                y1={isHorizontal ? position : -height / 2}
+                x2={isHorizontal ? width / 2 : position}
+                y2={isHorizontal ? position : height / 2}
                 strokeWidth={1}
                 stroke={color}
               />

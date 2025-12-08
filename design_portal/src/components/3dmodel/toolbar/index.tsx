@@ -365,6 +365,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         if (activeOption !== 'Furniture') {
           setActiveOption('Furniture');
           setActiveOptionName('Furniture');
+          if (onViewModeChange) {
+            onViewModeChange('3d');
+          }
           fetchCabinetItem();
         }
       },

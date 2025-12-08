@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
+import { WallSyncManager } from '../../sceneCreator/syncState';
 import { RootState } from '../../store';
 import { addPoint, setWalls } from '../../store/dataSlice';
 import { Wall, WallPoint } from '../interface';
@@ -119,6 +120,9 @@ export function useWallDrawing() {
 
     const updatedWalls = updateWallConnections([...walls, newWall]);
     dispatch(setWalls(updatedWalls));
+
+    const dataManager = new WallSyncManager();
+    dataManager.syncWall(newWall);
 
     // Set next start point for continuous drawing
     setStartPointId(clickedPoint.id);

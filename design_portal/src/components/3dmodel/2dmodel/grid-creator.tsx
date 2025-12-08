@@ -6,13 +6,10 @@ export default function GridStreak({ loopLimit, grid, renderLine }: GridStreakPr
   const rendered = [];
   let i = 0;
 
-  /**
-    Renders a set of grid lines based on a loop limit and step value.
-    This component generates grid lines by iterating from position 0 up to `loopLimit`,
-    incrementing by the grid's `step` value. For each position, it selects a color
-    from the grid's color list.
-   */
-  for (let pos = 0; pos <= loopLimit; pos += step) {
+  // shift grid origin to (0,0)
+  const half = loopLimit / 2;
+
+  for (let pos = -half; pos <= half; pos += step) {
     const colorValue = colors[i % colors.length] ?? '#cccccc';
     i++;
     rendered.push(renderLine(pos, colorValue));

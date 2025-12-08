@@ -1,10 +1,10 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
+import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
 import { UpdatePayload } from './interface';
-import { MATERIAL_TYPES } from '../sidebar/interface';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -32,7 +32,6 @@ export class UpdateObjectInScene {
       this.updateRedux(objectId, updates, currentObject);
     }
   }
-
 
   /** Finds a mesh in the scene by its userData.objectId */
   private findMeshById(objectId: string): THREE.Mesh | null {
