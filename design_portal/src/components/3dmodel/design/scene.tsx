@@ -898,28 +898,28 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const face = createMeshObject(facePart, true, { openDirection: 'right' });
+  const face = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
 
   // Create door group
-  const doorGroup = new THREE.Group();
+  const doorGroup = new THREE.Mesh();
   doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
   doorGroup.userData = {
-    type: 'DOOR',
+    type: PART_TYPES.DOOR,
     upward: false,
     cabinetItem: selectedCabinetItem,
     dimensions: convertDimensionsToMM(facePart.dimensions),
+    openDirection: 'right'
   };
 
   parent.add(doorGroup);
 
   // Place face on the **front Z** of the box
   const worldFacePos = worldCenter.clone();
-  worldFacePos.z += d / 2; // always front
+  worldFacePos.z += d / 2;
 
   parent.add(face);
   face.position.copy(parent.worldToLocal(worldFacePos));
 
-  doorGroup.userData.openDirection = 'right';
   doorGroup.attach(face);
 
   // Store update
@@ -1005,6 +1005,10 @@ export const addDrawersOnInvisibleBox = async (
 
   await ensureHandleLoaded();
 
+  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+    ? boxMesh
+    : (boxMesh.parent as THREE.Mesh);
+
   // Materials
   const texLoader = new THREE.TextureLoader();
   const drawerTexture = texLoader.load('/Texture0004.jpg');
@@ -1025,13 +1029,13 @@ export const addDrawersOnInvisibleBox = async (
       depth: 0.02,
     };
 
-    const drawerGroup = new THREE.Group();
+    const drawerGroup = new THREE.Mesh();
     drawerGroup.name = `Drawer_${i}_for_${boxMesh.name}`;
     drawerGroup.userData = {
-      type: 'DRAWER',
+      type: PART_TYPES.DRAWER,
       dimensions: convertDimensionsToMM(drawerDimensions),
     };
-    scene.add(drawerGroup);
+    parent.add(drawerGroup);
 
     // Face (always front-facing)
     const facePart = {
@@ -1046,7 +1050,7 @@ export const addDrawersOnInvisibleBox = async (
     };
 
     const face = createMeshObject(facePart);
-    scene.add(face);
+    parent.add(face);
     drawerGroup.attach(face);
 
     if (cachedHandleModel) {
