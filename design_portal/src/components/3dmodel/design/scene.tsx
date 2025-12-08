@@ -877,10 +877,9 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const face = createMeshObject(facePart, true, {
-    openDirection: 'right',
-  });
+  const face = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
 
+  // Create door group
   const doorGroup = new THREE.Mesh();
   doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
   doorGroup.userData = {
@@ -888,6 +887,7 @@ export const addDoorOnInvisibleBox = async (
     upward: false,
     cabinetItem: selectedCabinetItem,
     dimensions: convertDimensionsToMM(facePart.dimensions),
+    openDirection: 'right'
   };
 
   parent.add(doorGroup);
@@ -904,7 +904,6 @@ export const addDoorOnInvisibleBox = async (
 
   face.position.copy(parentLocalDoorPos);
 
-  doorGroup.userData.openDirection = 'right';
   doorGroup.attach(face);
 
   await ensureHandleLoaded();
@@ -976,6 +975,11 @@ export const addDrawersOnInvisibleBox = async (
 
   await ensureHandleLoaded();
 
+  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+    ? boxMesh
+    : (boxMesh.parent as THREE.Mesh);
+
+  // Materials
   const texLoader = new THREE.TextureLoader();
   const drawerTexture = texLoader.load('/Texture0004.jpg');
   drawerTexture.wrapS = drawerTexture.wrapT = THREE.RepeatWrapping;
@@ -1000,7 +1004,6 @@ export const addDrawersOnInvisibleBox = async (
       type: PART_TYPES.DRAWER,
       dimensions: convertDimensionsToMM(drawerDimensions),
     };
-
     parent.add(drawerGroup);
 
     const localFacePos = new THREE.Vector3(

@@ -14,8 +14,8 @@ export const OBJECT_TYPES = {
 export const PART_TYPES = {
   PLANK: 'plank',
   BACK_PLANK: 'backPlank',
-  DOOR: 'door',
   DRAWER: 'drawer',
+  DOOR: 'door',
 };
 
 export const GEOMETRY = {
