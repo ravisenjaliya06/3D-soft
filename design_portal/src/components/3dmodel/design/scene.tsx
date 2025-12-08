@@ -965,17 +965,13 @@ export const addDrawersOnInvisibleBox = async (
 
   const boxCenterLocal = bb.getCenter(new THREE.Vector3());
 
-  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
-    ? boxMesh
-    : (boxMesh.parent as THREE.Mesh);
-
   const eachH = h / drawers;
   const thickness = 0.018;
   const drawerType = 'fivePlank';
 
   await ensureHandleLoaded();
 
-  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
