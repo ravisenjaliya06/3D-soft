@@ -1,28 +1,28 @@
 import * as THREE from 'three';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
-import { RulePart } from '../handler/interface';
 import {
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
   showFullScreenLoader,
 } from '../handler/items';
+import { MoveHandler } from '../handler/moveHandlerInterface';
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import {
+  DIRECTION_TYPES,
+  GEOMETRY,
+  MATERIAL_TYPE,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
-import {
-  setHoverdMesh,
-  setobjectSelected,
-  setSelectedChildObject,
-  updateObject,
-} from '../store/dataSlice';
+import { setHoverdMesh, setobjectSelected, setSelectedChildObject } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
-import { MoveHandler } from '../handler/moveHandlerInterface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -76,20 +76,11 @@ const getActiveUnit = (): Unit => {
 };
 const unitSuffix = (unit: Unit): string => unit;
 
-const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
-
 // Helper function to convert dimensions to mm
 const convertDimensionsToMM = (dimensions: { width: number; height: number; depth: number }) => ({
   width: Math.round(dimensions.width * 1000),
   height: Math.round(dimensions.height * 1000),
   depth: Math.round(dimensions.depth * 1000),
-});
-
-// Helper function to convert position to mm
-const convertPositionToMM = (position: { x: number; y: number; z: number }) => ({
-  x: Math.round(position.x * 1000),
-  y: Math.round(position.y * 1000),
-  z: Math.round(position.z * 1000),
 });
 
 // Helper function to create invisible material
@@ -798,11 +789,7 @@ export const addHorizontalPlanksInsideBox = async (
       depth: depth,
     };
 
-    const localPosInBox = new THREE.Vector3(
-      boxCenterLocal.x,
-      yLocal,
-      boxCenterLocal.z
-    );
+    const localPosInBox = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z);
 
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const parentLocalPos = parent.worldToLocal(worldPos.clone());
@@ -834,7 +821,6 @@ export const addHorizontalPlanksInsideBox = async (
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
-  selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
 
@@ -877,7 +863,10 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const doorGroup = createMeshObject(facePart, true, { openDirection: DIRECTION_TYPES.RIGHT, type: PART_TYPES.DOOR });
+  const doorGroup = createMeshObject(facePart, true, {
+    openDirection: DIRECTION_TYPES.RIGHT,
+    type: PART_TYPES.DOOR,
+  });
 
   parent.add(doorGroup);
 
@@ -1018,11 +1007,7 @@ export const addDrawersOnInvisibleBox = async (
 
       const frontZ = face.position.z + thickness / 2;
 
-      handle.position.set(
-        face.position.x,
-        face.position.y,
-        frontZ - baseOffset + EPSILON_OFFSET
-      );
+      handle.position.set(face.position.x, face.position.y, frontZ - baseOffset + EPSILON_OFFSET);
 
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
       parent.add(handle);
@@ -1071,21 +1056,13 @@ export const addDrawersOnInvisibleBox = async (
       createInnerPart(
         'FRONT_DRAWER_PLANK',
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          baseY,
-          boxCenterLocal.z + innerD / 2 - thickness / 2
-        )
+        new THREE.Vector3(boxCenterLocal.x, baseY, boxCenterLocal.z + innerD / 2 - thickness / 2)
       );
 
       createInnerPart(
         'BOTTOM_DRAWER_PLANK',
         { width: innerW, height: thickness, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          baseY - innerH / 2 + thickness / 2,
-          boxCenterLocal.z
-        )
+        new THREE.Vector3(boxCenterLocal.x, baseY - innerH / 2 + thickness / 2, boxCenterLocal.z)
       );
     }
 
@@ -1094,11 +1071,7 @@ export const addDrawersOnInvisibleBox = async (
     const railLen = Math.max(d - 0.06, 0.2);
 
     const createRail = (name: string, xOffset: number) => {
-      const localPos = new THREE.Vector3(
-        xOffset,
-        yLocal,
-        boxCenterLocal.z
-      );
+      const localPos = new THREE.Vector3(xOffset, yLocal, boxCenterLocal.z);
 
       const worldPos = boxMesh.localToWorld(localPos.clone());
       const parentLocal = parent.worldToLocal(worldPos.clone());

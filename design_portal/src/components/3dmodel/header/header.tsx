@@ -12,15 +12,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { toggleDoor, toggleDrawer } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
+import { PART_TYPES } from '../sceneCreator/interface';
+import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
-import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
-import { PART_TYPES } from '../sceneCreator/interface';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();
@@ -292,10 +291,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const controller = new CabinetMotionController();
 
     design3D?.scene.traverse((child) => {
-      if (
-        child.userData.type === PART_TYPES.DOOR &&
-        child instanceof THREE.Mesh
-      ) {
+      if (child.userData.type === PART_TYPES.DOOR && child instanceof THREE.Mesh) {
         const direction = child.userData.openDirection;
         if (direction) {
           controller.toggleDoor(child);

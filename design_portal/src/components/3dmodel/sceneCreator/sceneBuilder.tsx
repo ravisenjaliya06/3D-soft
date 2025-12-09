@@ -5,12 +5,12 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
 import { addSimpleCabinet, loadSinkModel } from '../design/scene';
+import { MoveHandler } from '../handler/moveHandler';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
-import { FLOOR_PLAN_TYPES, SceneBuilderConfig } from './interface';
+import { SceneBuilderConfig } from './interface';
 import { SelectObjectController } from './tools/selectTool';
 import { ZoomSelectionController } from './tools/zoomTools';
-import { MoveHandler } from '../handler/moveHandler';
 
 /**
  * SceneBuilder class for creating and managing Three.js scenes
@@ -294,8 +294,8 @@ export class SceneBuilder {
     const options = {
       scene: this.scene,
       camera: this.camera as THREE.PerspectiveCamera,
-      renderer: this.renderer
-    }
+      renderer: this.renderer,
+    };
     this.moveHandler = new MoveHandler(options);
   }
 

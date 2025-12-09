@@ -32,8 +32,8 @@ export const DIRECTION_TYPES = {
   LEFT: 'left',
   RIGHT: 'right',
   TOP: 'top',
-  BOTTOM: 'bottom'
-}
+  BOTTOM: 'bottom',
+};
 
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];

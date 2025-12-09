@@ -83,9 +83,9 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   const size = new THREE.Vector3();
   bb.getSize(size);
 
-  const width = size.x;   // local X = width
-  const height = size.y;  // local Y = height
-  const depth = size.z;   // local Z = depth
+  const width = size.x; // local X = width
+  const height = size.y; // local Y = height
+  const depth = size.z; // local Z = depth
 
   const boxCenterLocal = bb.getCenter(new THREE.Vector3());
 

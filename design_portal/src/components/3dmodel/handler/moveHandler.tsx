@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
 import { MoveHandlerOptions } from './interface';
 import { MoveHandler as IMoveHandler } from './moveHandlerInterface';
-import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
 
 export class MoveHandler implements IMoveHandler {
   private raycaster: THREE.Raycaster;
@@ -94,9 +94,7 @@ export class MoveHandler implements IMoveHandler {
     const objBB = object.geometry.boundingBox!;
     const objectDepth = objBB.max.z - objBB.min.z;
 
-    const attachPosition = hit.point.clone().add(
-      wallNormal.multiplyScalar(objectDepth / 2)
-    );
+    const attachPosition = hit.point.clone().add(wallNormal.multiplyScalar(objectDepth / 2));
 
     object.position.copy(attachPosition);
 
@@ -123,13 +121,10 @@ export class MoveHandler implements IMoveHandler {
 
   private setWalls() {
     this.scene.children.forEach((object) => {
-      if (
-        object instanceof THREE.Mesh &&
-        object.userData.type === FLOOR_PLAN_TYPES.WALL
-      ) {
+      if (object instanceof THREE.Mesh && object.userData.type === FLOOR_PLAN_TYPES.WALL) {
         this.walls.push(object);
       }
-    })
+    });
   }
 
   private onMouseDown = () => {

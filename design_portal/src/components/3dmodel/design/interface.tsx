@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { SelectObjectController } from '../sceneCreator/tools/selectTool';
 import { MoveHandler } from '../handler/moveHandlerInterface';
+import { SelectObjectController } from '../sceneCreator/tools/selectTool';
 
 export interface ThreeDView {
   toggleZoomMode: (enable: boolean) => void;
