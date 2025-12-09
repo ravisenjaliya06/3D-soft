@@ -190,7 +190,7 @@ export class SelectObjectController {
     // find the closest object to the mouse using raycasting
     const newHover = this._findHoverObject(targets);
 
-    if (newHover !== this.hoveredObject) {
+    if (newHover !== this.selectedMainObject) {
       this._removeHoverEffect();
       this.hoveredObject = newHover;
       if (newHover) this._applyHoverEffect();

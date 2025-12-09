@@ -12,10 +12,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { toggleDoor, toggleDrawer } from '../handler/items';
 import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
+import { PART_TYPES } from '../sceneCreator/interface';
+import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
@@ -287,17 +288,18 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const handleOpenCloseClick = () => {
     /** Toggles open/close animations for doors and drawers in the 3D scene. */
+    const controller = new CabinetMotionController();
 
     design3D?.scene.traverse((child) => {
-      if (child.name.includes('Door') && child instanceof THREE.Mesh) {
+      if (child.userData.type === PART_TYPES.DOOR && child instanceof THREE.Mesh) {
         const direction = child.userData.openDirection;
         if (direction) {
-          toggleDoor(child);
+          controller.toggleDoor(child);
         }
       }
 
-      if (child.name.includes('Drawer')) {
-        toggleDrawer(child as THREE.Mesh);
+      if (child.userData.type === PART_TYPES.DRAWER && child instanceof THREE.Mesh) {
+        controller.toggleDrawer(child);
       }
     });
   };

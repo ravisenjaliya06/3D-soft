@@ -28,6 +28,13 @@ export const MATERIAL_TYPE = {
   TEXTURE: 'TEXTURE',
 };
 
+export const DIRECTION_TYPES = {
+  LEFT: 'left',
+  RIGHT: 'right',
+  TOP: 'top',
+  BOTTOM: 'bottom',
+};
+
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];

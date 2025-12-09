@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { store } from '../store';
-import { objectName } from './constant';
+import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
 import { MoveHandlerOptions } from './interface';
 import { MoveHandler as IMoveHandler } from './moveHandlerInterface';
 
@@ -19,6 +18,8 @@ export class MoveHandler implements IMoveHandler {
   private planePoint: THREE.Vector3;
   private dragOffset: THREE.Vector3;
   private initialClickPosition: THREE.Vector3;
+  private walls: THREE.Mesh[] = [];
+  private snapDistance = 5;
 
   constructor(options: MoveHandlerOptions) {
     this.raycaster = new THREE.Raycaster();
@@ -26,7 +27,7 @@ export class MoveHandler implements IMoveHandler {
     this.scene = options.scene;
     this.camera = options.camera;
     this.renderer = options.renderer;
-    this.movableObjects = options.movableObjects;
+    this.movableObjects = options.movableObjects ? options.movableObjects : [];
     this.gridBounds = options.gridBounds || {
       minX: -1000,
       maxX: 1000,
@@ -76,6 +77,30 @@ export class MoveHandler implements IMoveHandler {
     );
   };
 
+  private applyWallSnapping(object: THREE.Mesh) {
+    if (!this.walls.length) return;
+
+    const intersects = this.raycaster.intersectObjects(this.walls, true);
+
+    if (!intersects.length) return;
+
+    const hit = intersects[0];
+    const wall = hit.object as THREE.Mesh;
+
+    const wallNormal = hit.face?.normal.clone() || new THREE.Vector3(0, 0, 1);
+    wallNormal.transformDirection(wall.matrixWorld);
+
+    object.geometry.computeBoundingBox();
+    const objBB = object.geometry.boundingBox!;
+    const objectDepth = objBB.max.z - objBB.min.z;
+
+    const attachPosition = hit.point.clone().add(wallNormal.multiplyScalar(objectDepth / 2));
+
+    object.position.copy(attachPosition);
+
+    object.rotation.y = wall.rotation.y;
+  }
+
   private onMouseMove = (event: MouseEvent) => {
     if (!this.isDragging || !this.draggedObject) return;
     let clampedPosition;
@@ -84,121 +109,24 @@ export class MoveHandler implements IMoveHandler {
     if (position) {
       clampedPosition = this.clampToGrid(position);
       this.draggedObject.position.copy(clampedPosition);
+      this.applyWallSnapping(this.draggedObject as THREE.Mesh);
     }
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    if (
-      this.draggedObject.name === objectName.HORIZONTAL_PLANK ||
-      this.draggedObject.name === objectName.VERTICAL_PLANK ||
-      this.draggedObject.name.includes('DOOR') ||
-      this.draggedObject.name.includes('DRAWER') ||
-      this.draggedObject.name.includes('DOOR')
-    ) {
-      const targetObject = store.getState().data.hoverdMesh;
-
-      if (targetObject) {
-        const worldPoint = targetObject.getWorldPosition(new THREE.Vector3());
-
-        const boundingBox = new THREE.Box3().setFromObject(targetObject);
-        const center = new THREE.Vector3();
-        boundingBox.getCenter(center);
-
-        const plankWidth = (targetObject.geometry as THREE.BoxGeometry).parameters.width;
-        const plankHeight = (targetObject.geometry as THREE.BoxGeometry).parameters.height;
-        const plankDepth = (targetObject.geometry as THREE.BoxGeometry).parameters.depth;
-        (this.draggedObject as THREE.Mesh).geometry.dispose();
-        if (this.draggedObject.name === objectName.HORIZONTAL_PLANK) {
-          (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
-            plankWidth + 1,
-            2,
-            plankDepth - 1.5
-          );
-        } else if (this.draggedObject.name.includes('DRAWER')) {
-          this.draggedObject.children.forEach((child) => {
-            if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry) {
-              if (child.name.includes('LEFT') || child.name.includes('RIGHT')) {
-                child.geometry = new THREE.BoxGeometry(
-                  2,
-                  child.geometry.parameters.height,
-                  plankDepth - 2
-                );
-                child.position.x = child.name.includes('LEFT') ? -plankWidth / 2 : plankWidth / 2;
-                child.position.y = child.position.z - 0.5;
-              } else if (child.name.includes('BACK') || child.name.includes('FRONT')) {
-                child.geometry = new THREE.BoxGeometry(
-                  plankWidth + 2,
-                  child.geometry.parameters.height,
-                  2
-                );
-                child.position.y = child.name.includes('BACK')
-                  ? child.position.x - 0.5
-                  : child.position.y;
-                child.position.z = child.name.includes('BACK')
-                  ? -plankDepth / 2 + 0.5
-                  : plankDepth / 2;
-              } else if (child.name.includes('BOTTOM')) {
-                child.geometry = new THREE.BoxGeometry(
-                  plankWidth - 2,
-                  child.geometry.parameters.height,
-                  plankDepth - 2
-                );
-              }
-            }
-          });
-        } else if (this.draggedObject.name.includes('DOOR')) {
-          const doorWidth = plankWidth / 2;
-          const doorHeight = plankHeight;
-          const doorDepth = 2;
-
-          const leftDoor =
-            this.draggedObject.children[0] instanceof THREE.Mesh
-              ? this.draggedObject.children[0]
-              : new THREE.Mesh();
-          leftDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
-          leftDoor.position.set(-doorWidth / 2, 0, plankDepth / 2 - 1.5);
-
-          const rightDoor =
-            this.draggedObject.children[1] instanceof THREE.Mesh
-              ? this.draggedObject.children[1]
-              : new THREE.Mesh();
-          rightDoor.geometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
-          rightDoor.position.set(doorWidth / 2, 0, plankDepth / 2 - 1.5);
-        } else {
-          (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
-            2,
-            plankHeight + 1,
-            plankDepth - 1.5
-          );
-        }
-
-        this.draggedObject.scale.set(1, 1, 1);
-        if (this.draggedObject.parent !== targetObject) {
-          targetObject.add(this.draggedObject);
-        }
-
-        if (this.draggedObject.name === objectName.HORIZONTAL_PLANK) {
-          this.draggedObject.position.copy(worldPoint);
-        } else if (this.draggedObject.name === objectName.VERTICAL_PLANK) {
-          this.draggedObject.position.copy(worldPoint);
-        } else if (this.draggedObject.name.includes('DOOR')) {
-          (this.draggedObject as THREE.Mesh).geometry = new THREE.BoxGeometry(
-            plankWidth,
-            plankHeight,
-            2
-          );
-          this.draggedObject.position.z =
-            (targetObject.geometry as THREE.BoxGeometry).parameters.depth / 2;
-          if (this.draggedObject.parent !== targetObject) {
-            targetObject.add(this.draggedObject);
-          }
-        }
-      }
-    }
     this.renderer.render(this.scene, this.camera);
   };
+
+  private setWalls() {
+    this.scene.children.forEach((object) => {
+      if (object instanceof THREE.Mesh && object.userData.type === FLOOR_PLAN_TYPES.WALL) {
+        this.walls.push(object);
+      }
+    });
+  }
+
   private onMouseDown = () => {
     if (this.draggedObject) {
       this.isDragging = true;
@@ -265,16 +193,17 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public enableDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
-    this.cleanupEventListeners(); // Clean up any previous listeners
-    this.isDragging = false; // Reset dragging state
-    this.draggedObject = null; // Clear dragged object
+    this.setWalls();
+    this.cleanupEventListeners();
+    this.isDragging = false;
+    this.draggedObject = null;
 
     if (!this.movableObjects.includes(object)) {
-      this.movableObjects.push(object); // Add object to movable list
+      this.movableObjects.push(object);
     }
 
-    this.draggedObject = object; // Set the current object to drag
-    this.isDragging = true; // Indicate dragging is active
+    this.draggedObject = object;
+    this.isDragging = true;
 
     return new Promise((resolve) => {
       // Define event handlers
@@ -282,11 +211,11 @@ export class MoveHandler implements IMoveHandler {
       const onMouseDownHandler = () => this.onMouseDown();
       const onDoubleClickHandler = (event: MouseEvent) => this.onDoubleClick(event);
       const onMouseUpHandler = () => {
-        const finalPosition = this.onMouseUp(); // Get final position
-        this.isDragging = false; // Reset state
-        this.draggedObject = null; // Clear dragged object
-        cleanup(); // Remove listeners
-        resolve(finalPosition); // Resolve with final position
+        const finalPosition = this.onMouseUp();
+        this.isDragging = false;
+        this.draggedObject = null;
+        cleanup();
+        resolve(finalPosition);
       };
 
       const onKeyDownHandler = (event: KeyboardEvent) => {
