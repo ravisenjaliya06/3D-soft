@@ -908,7 +908,7 @@ export const addDoorOnInvisibleBox = async (
     upward: false,
     cabinetItem: selectedCabinetItem,
     dimensions: convertDimensionsToMM(facePart.dimensions),
-    openDirection: 'right'
+    openDirection: 'right',
   };
 
   parent.add(doorGroup);

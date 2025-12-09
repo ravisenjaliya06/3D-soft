@@ -8,7 +8,7 @@ export function Wall2D({ wall }: { wall: Wall }) {
 
   const length = Math.hypot(x2 - x1, y2 - y1);
   const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
-  const thickness = wall.thickness ?? 20;
+  const thickness = wall.thickness ?? 30;
 
   return (
     <g transform={`translate(${x1}, ${y1}) rotate(${angle})`}>
