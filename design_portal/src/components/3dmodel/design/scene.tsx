@@ -711,28 +711,6 @@ export const addVerticalPlanksToBox = async (
     plank.userData.dimensions = convertDimensionsToMM(dims);
 
     parent.add(plank);
-
-    const plankDimsMM = plank.userData.dimensions;
-    const plankPosMM = convertPositionToMM(plank.position);
-
-    if (plank.userData.objectId) {
-      const objInStore = store
-        .getState()
-        .data.objects.find((o) => o.id === plank.userData.objectId);
-
-      if (objInStore) {
-        store.dispatch(
-          updateObject({
-            ...objInStore,
-            apiData: plank.userData.apiData,
-            width: plankDimsMM.width,
-            height: plankDimsMM.height,
-            depth: plankDimsMM.depth,
-            position: plankPosMM,
-          })
-        );
-      }
-    }
   }
 
   generateCompartmentsFromMesh(parent);
