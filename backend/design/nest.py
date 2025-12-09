@@ -38,7 +38,7 @@ def generate_gcode(
 
     for rect in rectangles:
         _, x, y, w, h, rid = rect
-        if "circle" in rid:
+        if files[rid]["type"] == "circle":
             radius = files[rid]["radius"]
             gcode.append(f"G0 X{x + radius} Y{y + radius} ; Move to circle center")
             gcode.append(f"G1 Z-{cut_height} F{plunge_rate} ; Plunge")

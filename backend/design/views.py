@@ -1,10 +1,14 @@
 # Python imports
+import json
+import os
+import uuid
 from typing import Any, Dict
 
 # Django imports
 from django.db.models import QuerySet
 
 # External imports
+import pandas as pd
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -22,6 +26,7 @@ from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from design.models import Design, DesignSetting, Organization
+from design.nest import nest
 from design.serializers import DesignSerializer, DesignSettingSerializer
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
@@ -170,3 +175,83 @@ class DesignSettingViewset(ModelViewSet):
         if not obj:
             raise NotFound("Design Setting not found")
         return obj
+
+
+class NestAPIViewset(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def nesting(self: "NestAPIViewset", request: Request) -> Response:
+        data = request.data
+        nesting_data = {}
+        for i in data:
+            nesting_data[i["id"]] = i
+
+        # Generate output files
+        output_folder = os.path.join("umaboy", "media", "output", f"{uuid.uuid4()}")
+        os.makedirs(output_folder, exist_ok=True)
+        output_file = os.path.join(output_folder, "nesting.svg")
+
+        main_sheet_width = 1240  # NESTING_SHEET_WIDTH
+        main_sheet_height = 2480  # NESTING_SHEET_HEIGHT
+
+        normalized = {}
+        for rid, item in nesting_data.items():
+            dims = item["dimensions"]
+
+            normalized[rid] = {
+                "type": "rectangle",  # or circle if needed
+                "width": float(dims["width"]),
+                "height": float(dims["height"]),
+                "grooves": [],
+                "minifix_holes": [],
+            }
+
+        nest(
+            output_file,
+            normalized,
+            main_sheet_width,
+            main_sheet_height,
+            enclosing_rectangle=True,
+        )
+
+        # Generate Excel file
+        excel_file_path = os.path.join(output_folder, "nesting.xlsx")
+        df = pd.DataFrame.from_dict(
+            {
+                item_id: [
+                    json.dumps(item),  # or item
+                    item["name"],
+                    item["type"],
+                    item["dimensions"]["width"],
+                    item["dimensions"]["height"],
+                    item["dimensions"]["depth"],
+                ]
+                for item_id, item in nesting_data.items()
+            },
+            orient="index",
+            columns=["Object", "Name", "Type", "Width", "Height", "Depth"],
+        )
+        df.to_excel(excel_file_path, index_label="ID")
+
+        return Response(
+            {
+                "message": "Nesting completed.",
+                "svg_file": output_file,
+                "excel_file": excel_file_path,
+                "other_files": f"visit {output_folder}",
+            },
+            status=HTTP_200_OK,
+        )
+
+    def download_nesting_file(
+        self: "NestAPIViewset", request: Request, design_id: str
+    ) -> Response:
+        """
+        Download nesting output files.
+        """
+        data = request.data
+        if data["format"] == "pdf":
+            file_path = f"media/output/{design_id}/nesting.pdf"
+        if data["format"] == "xlsx":
+            file_path = f"media/output/{design_id}/nesting.xlsx"
+        return Response({"file": file_path}, status=HTTP_200_OK)

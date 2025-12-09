@@ -5,6 +5,7 @@ from django.urls import path
 from design.views import (
     DesignSettingViewset,
     DesignViewset,
+    NestAPIViewset,
     OrganizationDesignSettingViewSet,
 )
 
@@ -15,6 +16,17 @@ urlpatterns = [
             {"post": "create", "get": "get", "put": "update"}
         ),
         name="organization_design_settings",
+    ),
+    # Nesting endpoints
+    path(
+        "nesting/",
+        NestAPIViewset.as_view({"get": "nesting"}),
+        name="nesting",
+    ),
+    path(
+        "<str:design_id>/nesting/download/",
+        NestAPIViewset.as_view({"put": "download_nesting_file"}),
+        name="download_nesting_file",
     ),
     # Design endpoints
     path(
