@@ -6,27 +6,13 @@ import { gettingDesignID } from '../design';
 import { ResponseStatus } from '../interface';
 import { AppThunk } from '../store';
 import { convertObjectData } from '../utils/convertData';
-import { updateObjectGeometry } from '../utils/geometryUtils'; // Import the utility
-import { addObjects, removeObject, removeObjectWithHistory, updateObject } from './dataSlice';
-import { HistoryAction, HistoryState, Object3D, Position } from './interface';
+import { removeObject } from './dataSlice';
+import { HistoryAction, HistoryState, Object3D } from './interface';
 import { addElement, removeElement } from './sceneSlice';
 
 // Helper functions (unchanged)
 const isMainObject = (object: Object3D): boolean => {
   return !object.parent || object.parent === null;
-};
-
-const getAllChildObjects = (object: Object3D, allObjects: Object3D[]): Object3D[] => {
-  const childObjects = allObjects.filter((obj) => {
-    return obj.parent === object.id && obj.parent !== null && obj.parent !== undefined;
-  });
-
-  let result = [...childObjects];
-  childObjects.forEach((child) => {
-    result = [...result, ...getAllChildObjects(child, allObjects)];
-  });
-
-  return result;
 };
 
 const initialState: HistoryState = {
@@ -118,53 +104,7 @@ export const undoAction = (): AppThunk => (dispatch, getState) => {
         }
         break;
 
-      case 'REMOVE':
-        // Handle bulk removal (removeAllObjects case)
-        if (lastAction.data.objects && lastAction.data.meshes) {
-          // Restore all main objects and meshes
-          lastAction.data.objects.forEach((obj, index) => {
-            const mesh = lastAction.data.meshes![index];
-            dispatch(createObject(obj, mesh, lastAction.data.childObjects));
-            dispatch(addElement(mesh));
-          });
-          dispatch(addObjects(lastAction.data.objects));
-
-          // Restore all child objects
-          if (lastAction.data.childObjects) {
-            dispatch(addObjects(lastAction.data.childObjects));
-          }
-        } else {
-          // Handle single object removal
-          if (lastAction.data.mesh && lastAction.data.object) {
-            dispatch(createObject(lastAction.data.object, lastAction.data.mesh));
-            dispatch(addElement(lastAction.data.mesh));
-          }
-          if (lastAction.data.object) {
-            dispatch(addObjects([lastAction.data.object]));
-          }
-          if (lastAction.data.childObjects) {
-            dispatch(addObjects(lastAction.data.childObjects));
-          }
-        }
-        break;
-
       case 'PROPERTY_CHANGE':
-        if (lastAction.data.propertyChanges && lastAction.data.mesh && lastAction.data.object) {
-          const change = lastAction.data.propertyChanges[0];
-          const updatedData = { [change.property]: change.oldValue };
-          const allObjects = getState().data.objects;
-          if (isMainObject(lastAction.data.object)) {
-            dispatch(
-              updateMainObjectInDatabase(
-                lastAction.data.object.id,
-                updatedData,
-                lastAction.data.object,
-                lastAction.data.mesh,
-                allObjects
-              )
-            );
-          }
-        }
         break;
     }
     dispatch(undo());
@@ -185,14 +125,8 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
             createObject(nextAction.data.object, nextAction.data.mesh, nextAction.data.childObjects)
           );
         }
-        if (nextAction.data.object) {
-          dispatch(addObjects([nextAction.data.object]));
-        }
         if (nextAction.data.mesh) {
           dispatch(addElement(nextAction.data.mesh));
-        }
-        if (nextAction.data.childObjects) {
-          dispatch(addObjects(nextAction.data.childObjects));
         }
         break;
 
@@ -231,22 +165,6 @@ export const redoAction = (): AppThunk => (dispatch, getState) => {
         break;
 
       case 'PROPERTY_CHANGE':
-        if (nextAction.data.propertyChanges && nextAction.data.mesh && nextAction.data.object) {
-          const change = nextAction.data.propertyChanges[0];
-          const updatedData = { [change.property]: change.newValue };
-          const allObjects = getState().data.objects;
-          if (isMainObject(nextAction.data.object)) {
-            dispatch(
-              updateMainObjectInDatabase(
-                nextAction.data.object.id,
-                updatedData,
-                nextAction.data.object,
-                nextAction.data.mesh,
-                allObjects
-              )
-            );
-          }
-        }
         break;
     }
 
@@ -311,86 +229,9 @@ export const createObject =
     }
   };
 
-export const updateMainObjectInDatabase =
-  (
-    objectId: string,
-    updatedData: Partial<Object3D>,
-    selectedObject: Object3D,
-    mesh: THREE.Mesh,
-    allObjects: Object3D[]
-  ): AppThunk =>
-  async (dispatch) => {
-    const designId = gettingDesignID();
-    if (!designId) {
-      console.error('No design ID found');
-      return;
-    }
-
-    const dataObject: {
-      width: number;
-      height: number;
-      depth: number;
-      position: Position;
-      rotateX: number;
-      rotateY: number;
-      rotateZ: number;
-    } = {
-      width: selectedObject.width || 1,
-      height: selectedObject.height || 1,
-      depth: selectedObject.depth || 1,
-      position: selectedObject.position || { x: 0, y: 0, z: 0 },
-      rotateX: selectedObject.rotationX || 0,
-      rotateY: selectedObject.rotationY || 0,
-      rotateZ: selectedObject.rotationZ || 0,
-    };
-
-    if (updatedData.width !== undefined) dataObject.width = updatedData.width;
-    if (updatedData.height !== undefined) dataObject.height = updatedData.height;
-    if (updatedData.depth !== undefined) dataObject.depth = updatedData.depth;
-    if (updatedData.position)
-      dataObject.position = { ...dataObject.position, ...updatedData.position };
-    if (updatedData.rotationX !== undefined) dataObject.rotateX = updatedData.rotationX;
-    if (updatedData.rotationY !== undefined) dataObject.rotateY = updatedData.rotationY;
-    if (updatedData.rotationZ !== undefined) dataObject.rotateZ = updatedData.rotationZ;
-
-    const items = [];
-    const updatedObject = { ...selectedObject, ...updatedData };
-    dispatch(updateObject(updatedObject));
-
-    const childUpdates = updateObjectGeometry(mesh, updatedObject, updatedData, allObjects);
-
-    for (const [childId, childData] of Object.entries(childUpdates)) {
-      const childObject = allObjects.find((obj) => obj.id === childId);
-      if (childObject) {
-        dispatch(updateObject({ ...childObject, ...childData }));
-        items.push({
-          id: childId,
-          name: childObject.name,
-          data: { ...childObject, ...childData },
-        });
-      }
-    }
-
-    const payload = {
-      data: {
-        catalog: { id: objectId, name: selectedObject.name, data: dataObject },
-        items: items,
-      },
-    };
-    const response: { status: number } = await commonService.put(
-      API_ENDPOINT.UPDATE_OBJECT_DATA(designId),
-      payload
-    );
-
-    if (response && response.status === 200) {
-    } else {
-      throw new Error(`Failed to update main object ${objectId}`);
-    }
-  };
-
 export const deleteObject =
   (threeDObject: THREE.Mesh, objectId: string): AppThunk =>
-  async (dispatch) => {
+  async () => {
     const formData = new FormData();
     formData.append('ids', objectId);
 
@@ -400,43 +241,12 @@ export const deleteObject =
     )) as ResponseStatus;
 
     if (response && response.status === 200) {
-      dispatch(removeObjectWithHistory(objectId, threeDObject));
     } else {
       throw new Error('Failed to delete object');
     }
   };
 
 export const quickHideAction = (): AppThunk => () => {};
-
-export const addObjectWithChildrenToHistory =
-  (object: Object3D, mesh: THREE.Mesh): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState();
-    const allObjects = state.data.objects;
-    const childObjects = getAllChildObjects(object, allObjects);
-
-    const action: HistoryAction = {
-      id: object.id,
-      type: 'ADD',
-      data: { object, mesh, childObjects },
-    };
-    dispatch(addToHistory(action));
-  };
-
-export const removeObjectWithChildrenFromHistory =
-  (object: Object3D, mesh: THREE.Mesh): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState();
-    const allObjects = state.data.objects;
-    const childObjects = getAllChildObjects(object, allObjects);
-
-    const action: HistoryAction = {
-      id: object.id,
-      type: 'REMOVE',
-      data: { object, mesh, childObjects },
-    };
-    dispatch(addToHistory(action));
-  };
 
 export const { addToHistory, undo, redo, clearHistory, updateHistory } = historySlice.actions;
 export default historySlice.reducer;

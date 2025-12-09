@@ -11,6 +11,7 @@ import { Object3D, Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
+import { MeshObjectData } from '../sceneCreator/interface';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -47,7 +48,7 @@ const Sidebar: React.FC = () => {
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
   const isDisabled = isQuickHideActive;
 
-  let selectedObject: Object3D | null | undefined;
+  let selectedObject: MeshObjectData | null | undefined;
 
   if (selectedChildObjectId) {
     selectedObject = objects.find((obj) => obj.id === selectedChildObjectId);
@@ -618,7 +619,7 @@ const Sidebar: React.FC = () => {
             }
             setShowMaterialPopup(false);
           }}
-          rules={selectedObject?.catalog_rules || []}
+          // rules={selectedObject?.catalog_rules || []}
         />
       )}
     </div>

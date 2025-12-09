@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CatalogRule } from '../handler/interface';
 import { Dimensions, ShapeData } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix';
+import { MeshObjectData } from '../sceneCreator/interface';
 
 export interface Position {
   x: number;
@@ -166,7 +167,7 @@ export interface CustomDesignState {
   };
 }
 export interface DataState {
-  objects: Object3D[];
+  objects: MeshObjectData[];
   selectedObject: string | null;
   selectedChildObject: string | null;
   selectedInvisibleBox: string | null;

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { store } from '../store';
+import { addObjects } from '../store/dataSlice';
 import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
@@ -113,9 +115,9 @@ export class MeshBuilder {
    * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
    */
 
-  // private _setDataInObjectsState() {
-  //   store.dispatch(addObjects([this.meshData]));
-  // }
+  private _setDataInObjectsState() {
+    store.dispatch(addObjects([this.meshData]));
+  }
 
   public createMesh(): THREE.Mesh {
     const geometry = this._getGeometry();
@@ -134,7 +136,7 @@ export class MeshBuilder {
 
     // NOTE: It will be use to add objects to the design later.
     // TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-    // this._setDataInObjectsState();
+    this._setDataInObjectsState();
     return mesh;
   }
 }

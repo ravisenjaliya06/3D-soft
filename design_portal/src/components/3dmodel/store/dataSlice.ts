@@ -1,15 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Floor, Wall, WallPoint } from '../2dmodel/interface';
-import { removeExistingLines } from '../design';
-import { AppThunk } from '../store';
-import { addToHistory } from './historySlice';
-import { DataState, Object3D, Position } from './interface';
-import { removeElement } from './sceneSlice';
-
-const isMainObject = (object: Object3D): boolean => {
-  return !object.parent || object.parent === null;
-};
+import { MeshObjectData } from '../sceneCreator/interface';
+import { DataState, Position } from './interface';
 
 const initialState: DataState = {
   objects: [],
@@ -33,10 +26,10 @@ const dataSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
-    addObjects: (state, action: PayloadAction<Object3D[]>) => {
+    addObjects: (state, action: PayloadAction<MeshObjectData[]>) => {
       state.objects = [...state.objects, ...action.payload];
     },
-    setObjects: (state, action: PayloadAction<Object3D[]>) => {
+    setObjects: (state, action: PayloadAction<MeshObjectData[]>) => {
       state.objects = action.payload;
     },
     setMainCupboardId: (state, action: PayloadAction<string>) => {
@@ -48,7 +41,7 @@ const dataSlice = createSlice({
     setSelectedChildObject: (state, action: PayloadAction<string | null>) => {
       state.selectedChildObject = action.payload;
     },
-    updateObject: (state, action: PayloadAction<Partial<Object3D> & { id: string }>) => {
+    updateObject: (state, action: PayloadAction<Partial<MeshObjectData> & { id: string }>) => {
       const updatedObject = action.payload;
       const index = state.objects.findIndex((obj) => obj.id === updatedObject.id);
       if (index !== -1) {
@@ -154,113 +147,6 @@ const dataSlice = createSlice({
     },
   },
 });
-
-const findAllChildrenIds = (parentId: string, allObjects: Object3D[]): string[] => {
-  const directChildren = allObjects.filter((obj) => obj.parent === parentId);
-  let childrenIds = directChildren.map((child) => child.id);
-  directChildren.forEach((child) => {
-    const grandChildrenIds = findAllChildrenIds(child.id, allObjects);
-    childrenIds = [...childrenIds, ...grandChildrenIds];
-  });
-
-  return childrenIds;
-};
-
-export const removeObjectWithHistory =
-  (id: string, mesh: THREE.Mesh): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState().data;
-    const objectToRemove = state.objects.find((obj) => obj.id === id);
-
-    if (objectToRemove) {
-      const childrenIds = findAllChildrenIds(id, state.objects);
-      dispatch(removeObject(id));
-      childrenIds.forEach((childId) => {
-        dispatch(removeObject(childId));
-      });
-
-      if (isMainObject(objectToRemove)) {
-        dispatch(
-          addToHistory({
-            id: crypto.randomUUID(),
-            type: 'REMOVE',
-            data: {
-              object: objectToRemove,
-              mesh,
-              childObjects: state.objects.filter((obj) => childrenIds.includes(obj.id)),
-            },
-          })
-        );
-      }
-    } else {
-      console.warn(`Cannot find object with ID: ${id} to remove`);
-    }
-  };
-
-export const removeAllObjects = (): AppThunk => (dispatch, getState) => {
-  removeExistingLines();
-  const data = getState().data;
-  const scene = getState().scene.scene;
-  const allObjects = data.objects;
-
-  // Identify main objects
-  const mainObjects = allObjects.filter((obj) => isMainObject(obj));
-
-  // Collect data for history
-  const historyData: {
-    objects: Object3D[];
-    meshes: THREE.Mesh[];
-    childObjects: Object3D[];
-  } = {
-    objects: [],
-    meshes: [],
-    childObjects: [],
-  };
-
-  mainObjects.forEach((object) => {
-    const mesh = scene.children.find(
-      (child) => child.userData.objectId === object.id && (child as unknown as Object3D)
-    ) as THREE.Mesh | undefined;
-
-    if (mesh) {
-      historyData.objects.push(object);
-      historyData.meshes.push(mesh);
-
-      const childObjects = findAllChildrenIds(object.id, allObjects)
-        .map((childId) => allObjects.find((obj) => obj.id === childId))
-        .filter((obj): obj is Object3D => obj !== undefined);
-
-      historyData.childObjects.push(...childObjects);
-    } else {
-      console.warn(`No mesh found for object with ID: ${object.id}`);
-    }
-  });
-
-  if (historyData.objects.length > 0) {
-    dispatch(
-      addToHistory({
-        id: crypto.randomUUID(),
-        type: 'REMOVE',
-        data: {
-          objects: historyData.objects,
-          meshes: historyData.meshes,
-          childObjects: historyData.childObjects,
-        },
-      })
-    );
-
-    historyData.meshes.forEach((mesh) => {
-      dispatch(removeElement(mesh));
-    });
-
-    historyData.objects.forEach((object) => {
-      dispatch(removeObject(object.id));
-    });
-    historyData.childObjects.forEach((child) => {
-      dispatch(removeObject(child.id));
-    });
-  }
-};
 
 export const {
   toggleQuickHide,
