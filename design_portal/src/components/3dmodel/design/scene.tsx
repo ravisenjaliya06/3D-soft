@@ -10,7 +10,7 @@ import {
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import {
@@ -877,7 +877,7 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const doorGroup = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
+  const doorGroup = createMeshObject(facePart, true, { openDirection: DIRECTION_TYPES.RIGHT, type: PART_TYPES.DOOR });
 
   parent.add(doorGroup);
 
