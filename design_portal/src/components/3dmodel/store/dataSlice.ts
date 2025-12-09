@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
-import { Wall, WallPoint } from '../2dmodel/interface';
+import { Floor, Wall, WallPoint } from '../2dmodel/interface';
 import { removeExistingLines } from '../design';
 import { AppThunk } from '../store';
 import { addToHistory } from './historySlice';
@@ -26,6 +26,7 @@ const initialState: DataState = {
   hoverdMesh: null,
   points: [],
   walls: [],
+  floor: [],
 };
 
 const dataSlice = createSlice({
@@ -147,6 +148,9 @@ const dataSlice = createSlice({
     clearWalls: (state) => {
       state.walls = [];
       state.points = [];
+    },
+    setFloor: (state, action: PayloadAction<Floor[]>) => {
+      state.floor = action.payload;
     },
   },
 });
@@ -283,6 +287,7 @@ export const {
   setPoints,
   addWall,
   setWalls,
+  setFloor,
   updateWall,
   removeWall,
   clearWalls,

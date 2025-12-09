@@ -4,7 +4,7 @@ import { GridData } from './interface';
 
 export const GRID_SIZE = {
   WIDTH: 2100,
-  HEIGHT: 2100,
+  HEIGHT: 1000,
 };
 
 // step of grid which is snapping point

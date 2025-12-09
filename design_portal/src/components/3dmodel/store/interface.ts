@@ -1,4 +1,4 @@
-import { Wall, WallPoint } from '@/components/3dmodel/2dmodel/interface';
+import { Floor, Wall, WallPoint } from '@/components/3dmodel/2dmodel/interface';
 import * as THREE from 'three';
 import { CatalogRule } from '../handler/interface';
 import { Dimensions, ShapeData } from '../interface';
@@ -180,6 +180,7 @@ export interface DataState {
   isWallDrawingActive: boolean;
   points: WallPoint[];
   walls: Wall[];
+  floor: Floor[];
 }
 export interface HistoryAction {
   id: string;

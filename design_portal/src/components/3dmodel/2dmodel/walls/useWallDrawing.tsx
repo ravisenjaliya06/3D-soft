@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
 import { WallSyncManager } from '../../sceneCreator/syncState';
 import { RootState } from '../../store';
-import { addPoint, setWalls } from '../../store/dataSlice';
+import { addPoint, setFloor, setWalls } from '../../store/dataSlice';
 import { Wall, WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
+import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
 
-export function useWallDrawing() {
+export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const dispatch = useDispatch();
 
   const storeSelector = useSelector((state: RootState) => state.data);
@@ -17,6 +18,18 @@ export function useWallDrawing() {
 
   const [startPointId, setStartPointId] = useState<string | null>(null);
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
+
+  // Dynamic center offset
+  const offsetX = svgWidth / 2;
+  const offsetY = svgHeight / 2;
+
+  // Convert screen coordinates → logical centered coordinates
+  function getLogicalCoords<T>(event: ViewerMouseEvent<T>, offsetX: number, offsetY: number) {
+    return {
+      x: event.point.x - offsetX,
+      y: event.point.y - offsetY,
+    };
+  }
 
   // Reset wall drawing
   const resetDrawing = () => {
@@ -67,7 +80,8 @@ export function useWallDrawing() {
   const handleViewerClick = <T,>(event: ViewerMouseEvent<T>) => {
     if (!isWallDrawingActive) return;
 
-    const snappedPoint = snapToGrid(event.point.x, event.point.y);
+    const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
+    const snappedPoint = snapToGrid(localCoordinates.x, localCoordinates.y);
     const clickedPoint = findOrCreatePoint(snappedPoint.x, snappedPoint.y);
 
     // If first point is not selected
@@ -124,6 +138,18 @@ export function useWallDrawing() {
     const dataManager = new WallSyncManager();
     dataManager.syncWall(newWall);
 
+    // Find rooms from walls
+    const rooms = findRoomsFromWalls(updatedWalls);
+
+    // store floor in redux
+    const floorPolygons = rooms.map((room) => ({
+      id: crypto.randomUUID(),
+      points: getFloorPolygon(room),
+      walls: room.map((wall) => wall.id),
+    }));
+
+    dispatch(setFloor(floorPolygons));
+
     // Set next start point for continuous drawing
     setStartPointId(clickedPoint.id);
     setPreviewEnd(null);
@@ -138,7 +164,8 @@ export function useWallDrawing() {
       return;
     }
 
-    const snapped = snapToGrid(event.point.x, event.point.y);
+    const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
+    const snapped = snapToGrid(localCoordinates.x, localCoordinates.y);
     setPreviewEnd(snapped);
   };
 

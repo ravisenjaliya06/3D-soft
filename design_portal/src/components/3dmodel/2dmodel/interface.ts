@@ -53,3 +53,9 @@ export interface Wall {
   connectedTo: string[];
   selected?: boolean;
 }
+
+export interface Floor {
+  id: string;
+  points: WallPoint[];
+  walls: string[];
+}
