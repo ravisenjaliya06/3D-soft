@@ -7,7 +7,7 @@ import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import { RootState } from '../store';
-import { Object3D, Position, Rotation } from '../store/interface';
+import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';

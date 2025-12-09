@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
-import { Object3D, Position } from '../store/interface';
+import {  Position } from '../store/interface';
 import { createDashedLineObject, createLineObjects, getBoxCenter } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
 import { MeshObjectData } from '../sceneCreator/interface';
