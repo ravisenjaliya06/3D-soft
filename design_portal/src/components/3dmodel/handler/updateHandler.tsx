@@ -4,7 +4,8 @@ import { Dimensions } from '../interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
 import { Object3D, Position } from '../store/interface';
-import { UpdatePayload } from './interface';
+import { createDashedLineObject, createLineObjects, getBoxCenter } from '../utils/outlineHelpers';
+import { UpdateDimensionsParams, UpdatePayload } from './interface';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -51,15 +52,136 @@ export class UpdateObjectInScene {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
+    if (mesh.userData.isMain && mesh.children.length > 6) {
+      alert(
+        'Cannot update dimensions of a modified cupboard. if once you add plank then it cannot be updated.'
+      );
+      return;
+    }
+
     const { width, height, depth } = updates.dimensions;
     const params = mesh.geometry.parameters;
+    const updateParams: UpdateDimensionsParams = {
+      newWidth: width ?? params.width,
+      newHeight: height ?? params.height,
+      newDepth: depth ?? params.depth,
+      oldWidth: params.width,
+      oldHeight: params.height,
+      oldDepth: params.depth,
+    };
 
     mesh.geometry.dispose();
     mesh.geometry = new THREE.BoxGeometry(
-      width ?? params.width,
-      height ?? params.height,
-      depth ?? params.depth
+      updateParams.newWidth,
+      updateParams.newHeight,
+      updateParams.newDepth
     );
+
+    if (mesh.userData.isMain) {
+      this.updateChildrenDynamic(mesh, updateParams);
+    }
+
+    this.updateOrRefreshOutline(mesh);
+  }
+
+  //update main object with children(planks)
+  private updateChildrenDynamic(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
+    const { newWidth, newHeight, newDepth, oldWidth, oldHeight, oldDepth } = params;
+
+    /**
+     * Calculate how much the parent mesh has scaled.
+     * Example:
+     *  oldWidth = 100, newWidth = 200 → scaleX = 2
+     *  That means children should also double in width.
+     */
+    const scaleX = newWidth / oldWidth;
+    const scaleY = newHeight / oldHeight;
+    const scaleZ = newDepth / oldDepth;
+
+    mesh.children.forEach((child) => {
+      if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
+      const childParams = child.geometry.parameters;
+
+      /**
+       * New child dimensions after scaling.
+       * If the parent grows or shrinks, each child grows/shrinks proportionally.
+       */
+      const nextWidth = childParams.width * scaleX;
+      const nextHeight = childParams.height * scaleY;
+      const nextDepth = childParams.depth * scaleZ;
+
+      /**
+       * Update child position as well.
+       * If the parent gets bigger, children move farther away proportionally.
+       * If the parent gets smaller, children move closer proportionally.
+       */
+      const nextX = child.position.x * scaleX;
+      const nextY = child.position.y * scaleY;
+      const nextZ = child.position.z * scaleZ;
+
+      child.geometry.dispose();
+      child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
+
+      child.position.set(nextX, nextY, nextZ);
+
+      this.updateOrRefreshOutline(child);
+
+      /**
+       * If this child also exists in your Redux store,
+       * update its dimensions + position there as well.
+       */
+      if (child.userData.objectId) {
+        this.dispatch(
+          updateObject({
+            id: child.userData.objectId,
+            dimensions: {
+              width: nextWidth,
+              height: nextHeight,
+              depth: nextDepth,
+            },
+            position: {
+              x: nextX,
+              y: nextY,
+              z: nextZ,
+            },
+          })
+        );
+      }
+    });
+  }
+
+  private updateOrRefreshOutline(mesh: THREE.Mesh): void {
+    mesh.updateWorldMatrix(true, false);
+
+    //  Main Object Dashed Outline
+    if (mesh.userData.isMain) {
+      const dashedName = 'cupboard_big_dotted_outline';
+      const dashed = this.scene.getObjectByName(dashedName) as THREE.LineSegments;
+
+      // if dashed exists → recreate it fully
+      if (dashed) {
+        this.scene.remove(dashed);
+        dashed.geometry.dispose();
+        (dashed.material as THREE.Material).dispose();
+
+        const center = getBoxCenter(mesh);
+        const newDashed = createDashedLineObject(mesh, 0x000000, center);
+        this.scene.add(newDashed);
+      }
+    }
+
+    // Solid Selection Outline
+    const solidName = `outline-${mesh.userData.objectId}`;
+    const solid = this.scene.getObjectByName(solidName) as THREE.LineSegments;
+
+    if (solid) {
+      this.scene.remove(solid);
+      solid.geometry.dispose();
+      (solid.material as THREE.Material).dispose();
+
+      const newSolid = createLineObjects(mesh, 0xffff00);
+      this.scene.add(newSolid);
+    }
   }
 
   /** Updates position (x, y, z) */
@@ -70,6 +192,8 @@ export class UpdateObjectInScene {
     if (x !== undefined) mesh.position.x = x;
     if (y !== undefined) mesh.position.y = y;
     if (z !== undefined) mesh.position.z = z;
+
+    this.updateOrRefreshOutline(mesh);
   }
 
   /** Updates rotation (in degrees → converted to radians) */
@@ -80,6 +204,8 @@ export class UpdateObjectInScene {
     if (x !== undefined) mesh.rotation.x = THREE.MathUtils.degToRad(x);
     if (y !== undefined) mesh.rotation.y = THREE.MathUtils.degToRad(y);
     if (z !== undefined) mesh.rotation.z = THREE.MathUtils.degToRad(z);
+
+    this.updateOrRefreshOutline(mesh);
   }
 
   /** Updates material (color or texture) */
@@ -88,13 +214,31 @@ export class UpdateObjectInScene {
 
     const { type, value } = updates.material;
 
-    if (type === MATERIAL_TYPES.COLOR) {
-      const color = new THREE.Color(value);
-      this.applyColorMaterial(mesh, color);
-    }
+    const updateTarget = (targetMesh: THREE.Mesh) => {
+      if (type === MATERIAL_TYPES.COLOR) {
+        const color = new THREE.Color(value);
+        this.applyColorMaterial(targetMesh, color);
+      } else if (type === MATERIAL_TYPES.TEXTURE) {
+        this.applyTextureMaterial(targetMesh, value);
+      }
+    };
 
-    if (type === MATERIAL_TYPES.TEXTURE) {
-      this.applyTextureMaterial(mesh, value);
+    updateTarget(mesh);
+
+    if (mesh.userData.isMain) {
+      mesh.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+          updateTarget(child);
+          if (child.userData.objectId && updates.material) {
+            this.dispatch(
+              updateObject({
+                id: child.userData.objectId,
+                material: updates.material,
+              })
+            );
+          }
+        }
+      });
     }
   }
 

@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
+import {
+  createDashedLineObject,
+  createLineObjects,
+  getBoxCenter,
+} from '../../utils/outlineHelpers';
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
@@ -199,22 +204,6 @@ export class SelectObjectController {
     (outline.material as THREE.LineBasicMaterial).dispose?.();
   }
 
-  private _createLineObjects(obj: THREE.Mesh, color: number): THREE.LineSegments {
-    const edges = new THREE.EdgesGeometry(obj.geometry);
-    const mat = new THREE.LineBasicMaterial({
-      color: color,
-      linewidth: 2,
-      depthTest: false,
-    });
-    const outline = new THREE.LineSegments(edges, mat);
-
-    outline.name = `outline-${obj.userData.objectId}`;
-    obj.updateWorldMatrix(true, false);
-    obj.getWorldPosition(outline.position);
-    outline.quaternion.copy(obj.getWorldQuaternion(new THREE.Quaternion()));
-    return outline;
-  }
-
   private _applyHoverEffect() {
     if (this.hoverOutline) {
       this._removeOutline(this.hoverOutline);
@@ -222,7 +211,7 @@ export class SelectObjectController {
     }
 
     if (!this.hoveredObject) return;
-    const outline = this._createLineObjects(this.hoveredObject, 0x0088ff);
+    const outline = createLineObjects(this.hoveredObject, 0x0088ff);
     this.scene.add(outline);
     this.hoverOutline = outline;
   }
@@ -257,50 +246,15 @@ export class SelectObjectController {
   }
 
   private _applyPartSelectOutline(obj: THREE.Mesh) {
-    const outline = this._createLineObjects(obj, 0xffff00);
+    const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.partSelectOutline = outline;
   }
 
   private _applySmallCupboardSelectOutline(obj: THREE.Mesh) {
-    const outline = this._createLineObjects(obj, 0xffff00);
+    const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.objectSelectOutline = outline;
-  }
-
-  private _getBoxCenter(obj: THREE.Mesh): THREE.Vector3 {
-    const box = new THREE.Box3().setFromObject(obj);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    return center;
-  }
-
-  private _createDashedLineObject(
-    object: THREE.Mesh,
-    color: number,
-    center: THREE.Vector3
-  ): THREE.LineSegments {
-    const geometry = object.geometry as THREE.BoxGeometry;
-    const geo = new THREE.BoxGeometry(
-      geometry.parameters.width * 1.05,
-      geometry.parameters.height * 1.05,
-      geometry.parameters.depth * 1.05
-    );
-    const edges = new THREE.EdgesGeometry(geo);
-
-    const dashedMat = new THREE.LineDashedMaterial({
-      color: color,
-      dashSize: 0.04,
-      gapSize: 0.02,
-      linewidth: 2,
-    });
-
-    const outline = new THREE.LineSegments(edges, dashedMat);
-    outline.position.copy(center);
-    outline.rotation.copy(object.rotation);
-    outline.computeLineDistances();
-    outline.name = 'cupboard_big_dotted_outline';
-    return outline;
   }
 
   private _applyObjectBigOutline(object: THREE.Mesh) {
@@ -314,8 +268,8 @@ export class SelectObjectController {
       this.objectSelectOutline = null;
     }
 
-    const center = this._getBoxCenter(object);
-    const outline = this._createDashedLineObject(object, 0x000000, center);
+    const center = getBoxCenter(object);
+    const outline = createDashedLineObject(object, 0x000000, center);
     this.scene.add(outline);
     this.selectedOutline = outline;
   }

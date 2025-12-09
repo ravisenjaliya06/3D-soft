@@ -57,3 +57,41 @@ class DesignSettingSerializer(serializers.ModelSerializer):
             "groove_dig",
             "sheet_data",
         ]
+
+
+class DimensionsSerializer(serializers.Serializer):
+    width = serializers.FloatField()
+    height = serializers.FloatField()
+    depth = serializers.FloatField()
+
+
+class PositionSerializer(serializers.Serializer):
+    x = serializers.FloatField()
+    y = serializers.FloatField()
+    z = serializers.FloatField()
+
+
+class RotationSerializer(serializers.Serializer):
+    x = serializers.FloatField()
+    y = serializers.FloatField()
+    z = serializers.FloatField()
+
+
+class MaterialSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    value = serializers.CharField()
+    repeatX = serializers.FloatField()  # noqa: N815
+    repeatY = serializers.FloatField()  # noqa: N815
+
+
+class NestingItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    type = serializers.CharField()
+    geometryType = serializers.CharField()  # noqa: N815
+    isMain = serializers.BooleanField(default=False)  # noqa: N815
+    parent = serializers.CharField(required=False)
+    dimensions = DimensionsSerializer()
+    position = PositionSerializer()
+    rotation = RotationSerializer()
+    material = MaterialSerializer(required=False)
