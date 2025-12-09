@@ -336,7 +336,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
 
     if (['Door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
+      await addDoorOnInvisibleBox(scene, targetBox);
     } else if (itemType === 'Drawer') {
       await addDrawersOnInvisibleBox(scene, targetBox, num);
     } else if (itemType === 'Plank') {

@@ -1,24 +1,25 @@
 import * as THREE from 'three';
 import { removeExistingLines } from '.';
 import { TEXTURES_URLS } from '../constants';
-import { RulePart } from '../handler/interface';
 import {
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
   showFullScreenLoader,
 } from '../handler/items';
+import { MoveHandler } from '../handler/moveHandlerInterface';
 import { metersToMM } from '../handler/unitConversion';
 import { GLBLoader } from '../helper/glbLoader';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { GEOMETRY, MATERIAL_TYPE, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import {
+  DIRECTION_TYPES,
+  GEOMETRY,
+  MATERIAL_TYPE,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
-import {
-  setHoverdMesh,
-  setobjectSelected,
-  setSelectedChildObject,
-  updateObject,
-} from '../store/dataSlice';
+import { setHoverdMesh, setobjectSelected, setSelectedChildObject } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
 import { createRealisticMaterial } from './loadRealisticScene';
@@ -75,20 +76,11 @@ const getActiveUnit = (): Unit => {
 };
 const unitSuffix = (unit: Unit): string => unit;
 
-const toAvoidOverlap = 0.01; // 1mm offset to avoid overlap z-fighting // so floor sits just up y=0.01 to avoid overlap grid
-
 // Helper function to convert dimensions to mm
 const convertDimensionsToMM = (dimensions: { width: number; height: number; depth: number }) => ({
   width: Math.round(dimensions.width * 1000),
   height: Math.round(dimensions.height * 1000),
   depth: Math.round(dimensions.depth * 1000),
-});
-
-// Helper function to convert position to mm
-const convertPositionToMM = (position: { x: number; y: number; z: number }) => ({
-  x: Math.round(position.x * 1000),
-  y: Math.round(position.y * 1000),
-  z: Math.round(position.z * 1000),
 });
 
 // Helper function to create invisible material
@@ -175,7 +167,7 @@ export function createMeshObject(
   return mesh;
 }
 
-export const addSimpleCabinet = (scene: THREE.Scene) => {
+export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHandler) => {
   const width = 1.5;
   const height = 2;
   const depth = 0.4;
@@ -326,6 +318,12 @@ export const addSimpleCabinet = (scene: THREE.Scene) => {
   const designsBuilder = new DesignBuilder(planks);
   const design = designsBuilder.createDesign();
   scene.add(design);
+
+  // NOTE: Currently, this code here because in future this code getting from backend then, i will move this code dynamically.
+  const finelPosition = await moveHandler?.enableDragging(design);
+  if (finelPosition) {
+    design.position.set(finelPosition.x, finelPosition.y, finelPosition.z);
+  }
 };
 
 export const addSimpleCabinet1 = (scene: THREE.Scene) => {
@@ -642,11 +640,22 @@ export const addVerticalPlanksToBox = async (
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Adding vertical planks.');
-  if (!boxMesh || count <= 0) return;
+  if (!boxMesh || count <= 0) {
+    hideFullScreenLoader();
+    return;
+  }
 
-  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+
+  if (!geometry.boundingBox) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const geometryBoundingBox = geometry.boundingBox;
   const size = new THREE.Vector3();
-  bbox.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -658,24 +667,27 @@ export const addVerticalPlanksToBox = async (
   const span = width;
   const innerSpan = span - 2 * edgeClearance;
 
-  if (innerSpan <= thickness) return;
+  if (innerSpan <= thickness) {
+    hideFullScreenLoader();
+    return;
+  }
 
-  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
   const interval = innerSpan / (count + 1);
 
-  // No platform logic → full height used
   const effectiveHeight = height;
 
-  // Common material
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
     value: '/textures/light_wood.jpg',
     repeatX: 2,
     repeatY: 1,
   };
+
+  const leftInnerX = geometryBoundingBox.min.x + edgeClearance;
 
   for (let i = 1; i <= count; i++) {
     const dims = {
@@ -684,13 +696,13 @@ export const addVerticalPlanksToBox = async (
       depth,
     };
 
-    // simpler position (removed platform/wall offsets)
-    const worldPos = new THREE.Vector3(-width / 2 + edgeClearance + interval * i, 0, 0);
+    const localX = leftInnerX + interval * i;
 
-    const parentWorldPos = boxMesh.localToWorld(worldPos.clone());
-    const localPos = parent.worldToLocal(parentWorldPos);
+    const localPosInBox = new THREE.Vector3(localX, 0, 0);
 
-    // Create plank
+    const worldPos = boxMesh.localToWorld(localPosInBox.clone());
+    const localPosInParent = parent.worldToLocal(worldPos.clone());
+
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
       name: `VERTICAL_PLANK_${i}`,
@@ -698,7 +710,7 @@ export const addVerticalPlanksToBox = async (
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: parent.userData.objectId,
       dimensions: dims,
-      position: localPos,
+      position: localPosInParent,
       rotation: { x: 0, y: 0, z: 0 },
       material: commonMaterial,
       isMain: false,
@@ -711,28 +723,6 @@ export const addVerticalPlanksToBox = async (
     plank.userData.dimensions = convertDimensionsToMM(dims);
 
     parent.add(plank);
-
-    const plankDimsMM = plank.userData.dimensions;
-    const plankPosMM = convertPositionToMM(plank.position);
-
-    if (plank.userData.objectId) {
-      const objInStore = store
-        .getState()
-        .data.objects.find((o) => o.id === plank.userData.objectId);
-
-      if (objInStore) {
-        store.dispatch(
-          updateObject({
-            ...objInStore,
-            apiData: plank.userData.apiData,
-            width: plankDimsMM.width,
-            height: plankDimsMM.height,
-            depth: plankDimsMM.depth,
-            position: plankPosMM,
-          })
-        );
-      }
-    }
   }
 
   generateCompartmentsFromMesh(parent);
@@ -746,11 +736,22 @@ export const addHorizontalPlanksInsideBox = async (
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
-  if (!boxMesh || count <= 0) return;
+  if (!boxMesh || count <= 0) {
+    hideFullScreenLoader();
+    return;
+  }
 
-  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+
+  const geometryBoundingBox = geometry.boundingBox;
+  if (!geometryBoundingBox) {
+    hideFullScreenLoader();
+    return;
+  }
+
   const size = new THREE.Vector3();
-  bbox.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -759,20 +760,19 @@ export const addHorizontalPlanksInsideBox = async (
   const thickness = 0.018;
   const innerHeight = height;
 
-  if (innerHeight <= thickness) return;
+  if (innerHeight <= thickness) {
+    hideFullScreenLoader();
+    return;
+  }
 
   const interval = innerHeight / (count + 1);
 
-  // Parent (same logic as before)
-  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
-  const localCenter = parent.worldToLocal(center.clone());
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  // Common texture
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
     value: '/textures/light_wood.jpg',
@@ -780,27 +780,8 @@ export const addHorizontalPlanksInsideBox = async (
     repeatY: 1,
   };
 
-  // Store compartment config (but now without platform/wall logic)
-  parent.userData.compartmentConfig = {
-    isHorizontal: true,
-    boundsMin: -innerHeight / 2,
-    boundsMax: innerHeight / 2,
-    perpSizeX: width,
-    perpSizeZ: depth,
-    centerX: localCenter.x,
-    centerZ: localCenter.z,
-    thickness: thickness,
-    groupName: boxMesh.name,
-    divisionAxis: 'y',
-    localCenter: { x: localCenter.x, y: localCenter.y, z: localCenter.z },
-    span: height,
-    perpDims: { x: width, z: depth },
-    suffix: boxMesh.name,
-  };
-
-  // Create shelves
   for (let i = 1; i <= count; i++) {
-    const yLocal = -innerHeight / 2 + interval * i;
+    const yLocal = geometryBoundingBox.min.y + interval * i;
 
     const dims = {
       width: width,
@@ -808,8 +789,10 @@ export const addHorizontalPlanksInsideBox = async (
       depth: depth,
     };
 
-    const worldPos = center.clone();
-    worldPos.y += yLocal;
+    const localPosInBox = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z);
+
+    const worldPos = boxMesh.localToWorld(localPosInBox.clone());
+    const parentLocalPos = parent.worldToLocal(worldPos.clone());
 
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
@@ -817,7 +800,7 @@ export const addHorizontalPlanksInsideBox = async (
       type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: dims,
-      position: parent.worldToLocal(worldPos),
+      position: parentLocalPos,
       rotation: { x: 0, y: 0, z: 0 },
       material: commonMaterial,
       isMain: false,
@@ -829,32 +812,6 @@ export const addHorizontalPlanksInsideBox = async (
     shelf.userData.dimensions = convertDimensionsToMM(dims);
 
     parent.add(shelf);
-
-    // Sync store object
-    if (shelf.userData.objectId) {
-      const objInStore = store
-        .getState()
-        .data.objects.find((o) => o.id === shelf.userData.objectId);
-
-      if (objInStore) {
-        const dimsMM = shelf.userData.dimensions;
-        const rules = shelf.userData?.apiData?.rules;
-
-        store.dispatch(
-          updateObject({
-            ...objInStore,
-            apiData: shelf.userData.apiData,
-            rules,
-            ...(dimsMM && {
-              width: dimsMM.width,
-              height: dimsMM.height,
-              depth: dimsMM.depth,
-            }),
-            position: convertPositionToMM(shelf.position),
-          })
-        );
-      }
-    }
   }
 
   generateCompartmentsFromMesh(parent);
@@ -864,33 +821,41 @@ export const addHorizontalPlanksInsideBox = async (
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
-  selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
   showFullScreenLoader('Loading design objects.');
 
-  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  if (!boxMesh) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  const geometryBoundingBox = geometry.boundingBox;
+
+  if (!geometryBoundingBox) {
+    hideFullScreenLoader();
+    return;
+  }
+
   const size = new THREE.Vector3();
-  bbox.getSize(size);
-  const worldCenter = new THREE.Vector3();
-  bbox.getCenter(worldCenter);
+  geometryBoundingBox.getSize(size);
 
   const w = size.x;
   const h = size.y;
-  const d = size.z;
 
-  // Parent detection
-  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  // Load door texture
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
+
   const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
   doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
   doorTexture.repeat.set(2, 1);
 
   const doorMatProps = { map: doorTexture, side: THREE.DoubleSide };
 
-  // ALWAYS front-facing door (no side logic)
   const facePart = {
     name: `Door_for_${boxMesh.name}`,
     dimensions: { width: w, height: h, depth: 0.02 },
@@ -898,85 +863,55 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const face = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
-
-  // Create door group
-  const doorGroup = new THREE.Mesh();
-  doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
-  doorGroup.userData = {
+  const doorGroup = createMeshObject(facePart, true, {
+    openDirection: DIRECTION_TYPES.RIGHT,
     type: PART_TYPES.DOOR,
-    upward: false,
-    cabinetItem: selectedCabinetItem,
-    dimensions: convertDimensionsToMM(facePart.dimensions),
-    openDirection: 'right',
-  };
+  });
 
   parent.add(doorGroup);
 
-  // Place face on the **front Z** of the box
-  const worldFacePos = worldCenter.clone();
-  worldFacePos.z += d / 2;
+  const localDoorPos = new THREE.Vector3(
+    boxCenterLocal.x,
+    boxCenterLocal.y,
+    geometryBoundingBox.max.z + facePart.dimensions.depth / 2
+  );
 
-  parent.add(face);
-  face.position.copy(parent.worldToLocal(worldFacePos));
+  const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
+  const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
 
-  doorGroup.attach(face);
+  doorGroup.position.copy(parentLocalDoorPos);
 
-  // Store update
-  if (doorGroup.userData.objectId) {
-    const objInStore = store
-      .getState()
-      .data.objects.find((o) => o.id === doorGroup.userData.objectId);
-
-    if (objInStore) {
-      const dims = doorGroup.userData?.dimensions;
-      const rules = doorGroup.userData?.apiData?.rules;
-
-      store.dispatch(
-        updateObject({
-          ...objInStore,
-          apiData: doorGroup.userData.apiData,
-          rules,
-          ...(dims && {
-            width: dims.width,
-            height: dims.height,
-            depth: dims.depth,
-          }),
-          position: convertPositionToMM(doorGroup.position),
-        })
-      );
-    }
-  }
-
-  // Load handle model
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
 
-    // Compute handle position
-    const doorBox = new THREE.Box3().setFromObject(face);
-    const doorSize = new THREE.Vector3();
-    doorBox.getSize(doorSize);
-    const doorCenter = new THREE.Vector3();
-    doorBox.getCenter(doorCenter);
+    const doorGeo = doorGroup.geometry as THREE.BufferGeometry;
+    doorGeo.computeBoundingBox();
+    const doorBoundingBox = doorGeo.boundingBox;
 
-    const marginX = 0.04;
-    const offsetZ = doorSize.z / 2 + toAvoidOverlap;
+    if (doorBoundingBox) {
+      const doorSize = new THREE.Vector3();
+      doorBoundingBox.getSize(doorSize);
 
-    // Always handle on right side front
-    const worldHandlePos = new THREE.Vector3(
-      doorCenter.x - doorSize.x / 2 + marginX,
-      doorCenter.y,
-      doorCenter.z + offsetZ
-    );
+      const marginX = 0.04;
 
-    handle.rotation.set(0, Math.PI / 2, 0); // always front-facing handle
+      const localHandlePos = new THREE.Vector3(
+        doorBoundingBox.min.x + marginX,
+        0,
+        doorBoundingBox.max.z
+      );
 
-    handle.name = `DoorHandle_for_${boxMesh.name}`;
-    parent.add(handle);
-    handle.position.copy(parent.worldToLocal(worldHandlePos));
+      const worldHandlePos = doorGroup.localToWorld(localHandlePos.clone());
+      const parentLocalHandlePos = parent.worldToLocal(worldHandlePos.clone());
 
-    doorGroup.attach(handle);
+      handle.rotation.set(0, Math.PI / 2, 0);
+      handle.name = `DoorHandle_for_${boxMesh.name}`;
+
+      parent.add(handle);
+      handle.position.copy(parentLocalHandlePos);
+
+      doorGroup.attach(handle);
+    }
   }
 
   hideFullScreenLoader();
@@ -987,17 +922,22 @@ export const addDrawersOnInvisibleBox = async (
   boxMesh: THREE.Mesh,
   drawers: number
 ) => {
-  if (drawers <= 0) return;
+  if (!boxMesh || drawers <= 0) return;
 
-  const bbox = new THREE.Box3().setFromObject(boxMesh);
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  const geometryBoundingBox = geometry.boundingBox;
+
+  if (!geometryBoundingBox) return;
+
   const size = new THREE.Vector3();
-  bbox.getSize(size);
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
+  geometryBoundingBox.getSize(size);
 
   const w = size.x;
   const h = size.y;
   const d = size.z;
+
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const eachH = h / drawers;
   const thickness = 0.018;
@@ -1005,7 +945,7 @@ export const addDrawersOnInvisibleBox = async (
 
   await ensureHandleLoaded();
 
-  let parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
@@ -1020,9 +960,8 @@ export const addDrawersOnInvisibleBox = async (
   const railMatProps = { color: 0x999999, metalness: 0.6, roughness: 0.3 };
 
   for (let i = 0; i < drawers; i++) {
-    const yCenter = center.y - h / 2 + eachH * (i + 0.5);
+    const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
 
-    // Drawer group
     const drawerDimensions = {
       width: w - 0.01,
       height: eachH - 0.005,
@@ -1037,15 +976,19 @@ export const addDrawersOnInvisibleBox = async (
     };
     parent.add(drawerGroup);
 
-    // Face (always front-facing)
+    const localFacePos = new THREE.Vector3(
+      boxCenterLocal.x,
+      yLocal,
+      geometryBoundingBox.max.z - thickness
+    );
+
+    const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
+    const parentFacePos = parent.worldToLocal(worldFacePos.clone());
+
     const facePart = {
       name: 'DRAWER_FACE',
       dimensions: drawerDimensions,
-      position: {
-        x: center.x,
-        y: yCenter,
-        z: center.z + d / 2 + 0.01,
-      },
+      position: parentFacePos,
       material: drawerMatProps,
     };
 
@@ -1056,33 +999,18 @@ export const addDrawersOnInvisibleBox = async (
     if (cachedHandleModel) {
       const handle = cachedHandleModel.clone(true);
 
-      handle.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-
-      handle.rotation.set(0, 0, 0);
-      handle.rotation.z = Math.PI / 2;
-      handle.rotation.x = -Math.PI / 2;
+      handle.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
 
       handle.updateMatrixWorld(true);
       const hbox = new THREE.Box3().setFromObject(handle);
-
       const baseOffset = hbox.min.z;
 
-      const frontZ = face.position.z;
-      const doorFrontZ = frontZ + thickness / 2;
+      const frontZ = face.position.z + thickness / 2;
 
-      handle.position.set(
-        face.position.x,
-        face.position.y,
-        doorFrontZ - baseOffset + EPSILON_OFFSET
-      );
+      handle.position.set(face.position.x, face.position.y, frontZ - baseOffset + EPSILON_OFFSET);
 
       handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
-      scene.add(handle);
+      parent.add(handle);
       drawerGroup.attach(handle);
     }
 
@@ -1090,164 +1018,84 @@ export const addDrawersOnInvisibleBox = async (
       const innerW = Math.max(w - 2 * thickness - 0.02, 0.1);
       const innerD = Math.max(d - 0.06, 0.2);
       const innerH = Math.max(eachH - 0.06, 0.12);
-      const baseY = yCenter;
+      const baseY = yLocal;
 
-      const leftPart = {
-        name: 'LEFT_DRAWER_PLANK',
-        dimensions: { width: thickness, height: innerH, depth: innerD },
-        position: { x: center.x - innerW / 2, y: baseY, z: center.z },
-        material: sideMatProps,
-      };
-      const leftSide = createMeshObject(leftPart);
-      scene.add(leftSide);
-      drawerGroup.attach(leftSide);
+      const createInnerPart = (name: string, dims: any, pos: THREE.Vector3) => {
+        const worldPos = boxMesh.localToWorld(pos.clone());
+        const parentLocal = parent.worldToLocal(worldPos.clone());
 
-      const rightPart = {
-        name: 'RIGHT_DRAWER_PLANK',
-        dimensions: { width: thickness, height: innerH, depth: innerD },
-        position: { x: center.x + innerW / 2, y: baseY, z: center.z },
-        material: sideMatProps,
-      };
-      const rightSide = createMeshObject(rightPart);
-      scene.add(rightSide);
-      drawerGroup.attach(rightSide);
+        const part = createMeshObject({
+          name,
+          dimensions: dims,
+          position: parentLocal,
+          material: sideMatProps,
+        });
 
-      const backPart = {
-        name: 'BACK_DRAWER_PLANK',
-        dimensions: { width: innerW, height: innerH, depth: thickness },
-        position: { x: center.x, y: baseY, z: center.z - innerD / 2 },
-        material: sideMatProps,
+        parent.add(part);
+        drawerGroup.attach(part);
       };
-      const back = createMeshObject(backPart);
-      scene.add(back);
-      drawerGroup.attach(back);
 
-      const frontInnerPart = {
-        name: 'FRONT_DRAWER_PLANK',
-        dimensions: { width: innerW, height: innerH, depth: thickness },
-        position: {
-          x: center.x,
-          y: baseY,
-          z: center.z + innerD / 2 - thickness,
-        },
-        material: sideMatProps,
-      };
-      const frontInner = createMeshObject(frontInnerPart);
-      scene.add(frontInner);
-      drawerGroup.attach(frontInner);
+      createInnerPart(
+        'LEFT_DRAWER_PLANK',
+        { width: thickness, height: innerH, depth: innerD },
+        new THREE.Vector3(boxCenterLocal.x - innerW / 2, baseY, boxCenterLocal.z)
+      );
 
-      const bottomPart = {
-        name: 'BOTTOM_DRAWER_PLANK',
-        dimensions: { width: innerW, height: thickness, depth: innerD },
-        position: {
-          x: center.x,
-          y: baseY - innerH / 2 + thickness / 2,
-          z: center.z,
-        },
-        material: sideMatProps,
-      };
-      const bottom = createMeshObject(bottomPart);
-      scene.add(bottom);
-      drawerGroup.attach(bottom);
+      createInnerPart(
+        'RIGHT_DRAWER_PLANK',
+        { width: thickness, height: innerH, depth: innerD },
+        new THREE.Vector3(boxCenterLocal.x + innerW / 2, baseY, boxCenterLocal.z)
+      );
+
+      createInnerPart(
+        'BACK_DRAWER_PLANK',
+        { width: innerW, height: innerH, depth: thickness },
+        new THREE.Vector3(boxCenterLocal.x, baseY, boxCenterLocal.z - innerD / 2)
+      );
+
+      createInnerPart(
+        'FRONT_DRAWER_PLANK',
+        { width: innerW, height: innerH, depth: thickness },
+        new THREE.Vector3(boxCenterLocal.x, baseY, boxCenterLocal.z + innerD / 2 - thickness / 2)
+      );
+
+      createInnerPart(
+        'BOTTOM_DRAWER_PLANK',
+        { width: innerW, height: thickness, depth: innerD },
+        new THREE.Vector3(boxCenterLocal.x, baseY - innerH / 2 + thickness / 2, boxCenterLocal.z)
+      );
     }
 
     const railH = 0.02;
     const railT = 0.005;
     const railLen = Math.max(d - 0.06, 0.2);
 
-    const leftRailPart = {
-      name: `DrawerRail_L_${i}_for_${boxMesh.name}`,
-      dimensions: { width: railT, height: railH, depth: railLen },
-      position: {
-        x: center.x - w / 2 + railT / 2 + 0.01,
-        y: yCenter,
-        z: center.z,
-      },
-      material: railMatProps,
+    const createRail = (name: string, xOffset: number) => {
+      const localPos = new THREE.Vector3(xOffset, yLocal, boxCenterLocal.z);
+
+      const worldPos = boxMesh.localToWorld(localPos.clone());
+      const parentLocal = parent.worldToLocal(worldPos.clone());
+
+      const rail = createMeshObject({
+        name,
+        dimensions: { width: railT, height: railH, depth: railLen },
+        position: parentLocal,
+        material: railMatProps,
+      });
+
+      parent.add(rail);
+      drawerGroup.attach(rail);
     };
-    const leftRail = createMeshObject(leftRailPart);
-    scene.add(leftRail);
-    drawerGroup.attach(leftRail);
 
-    const rightRailPart = {
-      name: `DrawerRail_R_${i}_for_${boxMesh.name}`,
-      dimensions: { width: railT, height: railH, depth: railLen },
-      position: {
-        x: center.x + w / 2 - railT / 2 - 0.01,
-        y: yCenter,
-        z: center.z,
-      },
-      material: railMatProps,
-    };
-    const rightRail = createMeshObject(rightRailPart);
-    scene.add(rightRail);
-    drawerGroup.attach(rightRail);
+    createRail(
+      `DrawerRail_L_${i}_for_${boxMesh.name}`,
+      geometryBoundingBox.min.x + railT / 2 + 0.01
+    );
 
-    const ruleParts: RulePart[] = [];
-
-    drawerGroup.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        if (!child.geometry?.parameters) return;
-
-        const formattedName = child.name
-          .replace(/_/g, ' ')
-          .trim()
-          .toLowerCase()
-          .replace(/plank/g, 'panel')
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-
-        const geom = child.geometry.parameters;
-
-        ruleParts.push({
-          id: '',
-          name: formattedName,
-          width: metersToMM(geom.width || 0),
-          height: metersToMM(geom.height || 0),
-          depth: metersToMM(geom.depth || 0),
-          thickness: null,
-          position: {
-            x: metersToMM(child.position.x),
-            y: metersToMM(child.position.y),
-            z: metersToMM(child.position.z),
-          },
-          handle_position: child.name.toLowerCase().includes('handle')
-            ? {
-                x: metersToMM(child.position.x),
-                y: metersToMM(child.position.y),
-                z: metersToMM(child.position.z),
-              }
-            : null,
-          additional_data: {
-            texture: formattedName.includes('Face')
-              ? '/Texture0004.jpg'
-              : '/textures/light_wood.jpg',
-          },
-        });
-      }
-    });
-
-    if (drawerGroup.userData.objectId) {
-      const obj = store.getState().data.objects.find((o) => o.id === drawerGroup.userData.objectId);
-
-      if (obj) {
-        const dims = drawerGroup.userData?.dimensions;
-        const rules = drawerGroup.userData?.apiData?.rules;
-
-        store.dispatch(
-          updateObject({
-            ...obj,
-            apiData: drawerGroup.userData.apiData,
-            rules,
-            ...(dims && {
-              width: dims.width,
-              height: dims.height,
-              depth: dims.depth,
-            }),
-            position: convertPositionToMM(drawerGroup.position),
-          })
-        );
-      }
-    }
+    createRail(
+      `DrawerRail_R_${i}_for_${boxMesh.name}`,
+      geometryBoundingBox.max.x - railT / 2 - 0.01
+    );
   }
 };
 
