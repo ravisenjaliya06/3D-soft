@@ -662,9 +662,9 @@ export const addVerticalPlanksToBox = async (
     return;
   }
 
-  const geomBB = geometry.boundingBox;
+  const geometryBoundingBox = geometry.boundingBox;
   const size = new THREE.Vector3();
-  geomBB.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -696,7 +696,7 @@ export const addVerticalPlanksToBox = async (
     repeatY: 1,
   };
 
-  const leftInnerX = geomBB.min.x + edgeClearance;
+  const leftInnerX = geometryBoundingBox.min.x + edgeClearance;
 
   for (let i = 1; i <= count; i++) {
     const dims = {
@@ -753,14 +753,14 @@ export const addHorizontalPlanksInsideBox = async (
   const geometry = boxMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
 
-  const bb = geometry.boundingBox;
-  if (!bb) {
+  const geometryBoundingBox = geometry.boundingBox;
+  if (!geometryBoundingBox) {
     hideFullScreenLoader();
     return;
   }
 
   const size = new THREE.Vector3();
-  bb.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -780,7 +780,7 @@ export const addHorizontalPlanksInsideBox = async (
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  const boxCenterLocal = bb.getCenter(new THREE.Vector3());
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
@@ -790,7 +790,7 @@ export const addHorizontalPlanksInsideBox = async (
   };
 
   for (let i = 1; i <= count; i++) {
-    const yLocal = bb.min.y + interval * i;
+    const yLocal = geometryBoundingBox.min.y + interval * i;
 
     const dims = {
       width: width,
@@ -845,15 +845,15 @@ export const addDoorOnInvisibleBox = async (
 
   const geometry = boxMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
-  const bb = geometry.boundingBox;
+  const geometryBoundingBox = geometry.boundingBox;
 
-  if (!bb) {
+  if (!geometryBoundingBox) {
     hideFullScreenLoader();
     return;
   }
 
   const size = new THREE.Vector3();
-  bb.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const w = size.x;
   const h = size.y;
@@ -862,7 +862,7 @@ export const addDoorOnInvisibleBox = async (
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  const boxCenterLocal = bb.getCenter(new THREE.Vector3());
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
   doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
@@ -877,57 +877,42 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const face = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
-
-  // Create door group
-  const doorGroup = new THREE.Mesh();
-  doorGroup.name = `DoorGroup_for_${boxMesh.name}`;
-  doorGroup.userData = {
-    type: PART_TYPES.DOOR,
-    upward: false,
-    cabinetItem: selectedCabinetItem,
-    dimensions: convertDimensionsToMM(facePart.dimensions),
-    openDirection: 'right'
-  };
+  const doorGroup = createMeshObject(facePart, true, { openDirection: 'right', type: PART_TYPES.DOOR });
 
   parent.add(doorGroup);
-  parent.add(face);
 
   const localDoorPos = new THREE.Vector3(
     boxCenterLocal.x,
     boxCenterLocal.y,
-    bb.max.z + facePart.dimensions.depth / 2
+    geometryBoundingBox.max.z + facePart.dimensions.depth / 2
   );
 
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
   const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
 
-  face.position.copy(parentLocalDoorPos);
-
-  doorGroup.attach(face);
+  doorGroup.position.copy(parentLocalDoorPos);
 
   await ensureHandleLoaded();
   if (cachedHandleModel) {
     const handle = cachedHandleModel.clone(true);
 
-    const doorGeo = face.geometry as THREE.BufferGeometry;
+    const doorGeo = doorGroup.geometry as THREE.BufferGeometry;
     doorGeo.computeBoundingBox();
-    const doorBB = doorGeo.boundingBox;
+    const doorBoundingBox = doorGeo.boundingBox;
 
-    if (doorBB) {
+    if (doorBoundingBox) {
       const doorSize = new THREE.Vector3();
-      doorBB.getSize(doorSize);
+      doorBoundingBox.getSize(doorSize);
 
       const marginX = 0.04;
-      const offsetZ = doorSize.z / 2 + toAvoidOverlap;
 
       const localHandlePos = new THREE.Vector3(
-        doorBB.max.x - marginX,
+        doorBoundingBox.min.x + marginX,
         0,
-        doorBB.max.z + offsetZ
+        doorBoundingBox.max.z
       );
 
-      const worldHandlePos = face.localToWorld(localHandlePos.clone());
+      const worldHandlePos = doorGroup.localToWorld(localHandlePos.clone());
       const parentLocalHandlePos = parent.worldToLocal(worldHandlePos.clone());
 
       handle.rotation.set(0, Math.PI / 2, 0);
@@ -952,18 +937,18 @@ export const addDrawersOnInvisibleBox = async (
 
   const geometry = boxMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
-  const bb = geometry.boundingBox;
+  const geometryBoundingBox = geometry.boundingBox;
 
-  if (!bb) return;
+  if (!geometryBoundingBox) return;
 
   const size = new THREE.Vector3();
-  bb.getSize(size);
+  geometryBoundingBox.getSize(size);
 
   const w = size.x;
   const h = size.y;
   const d = size.z;
 
-  const boxCenterLocal = bb.getCenter(new THREE.Vector3());
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const eachH = h / drawers;
   const thickness = 0.018;
@@ -986,7 +971,7 @@ export const addDrawersOnInvisibleBox = async (
   const railMatProps = { color: 0x999999, metalness: 0.6, roughness: 0.3 };
 
   for (let i = 0; i < drawers; i++) {
-    const yLocal = bb.min.y + eachH * (i + 0.5);
+    const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
 
     const drawerDimensions = {
       width: w - 0.01,
@@ -1005,7 +990,7 @@ export const addDrawersOnInvisibleBox = async (
     const localFacePos = new THREE.Vector3(
       boxCenterLocal.x,
       yLocal,
-      bb.max.z + 0.01
+      geometryBoundingBox.max.z - thickness
     );
 
     const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
@@ -1089,7 +1074,7 @@ export const addDrawersOnInvisibleBox = async (
         new THREE.Vector3(
           boxCenterLocal.x,
           baseY,
-          boxCenterLocal.z + innerD / 2 - thickness
+          boxCenterLocal.z + innerD / 2 - thickness / 2
         )
       );
 
@@ -1131,12 +1116,12 @@ export const addDrawersOnInvisibleBox = async (
 
     createRail(
       `DrawerRail_L_${i}_for_${boxMesh.name}`,
-      bb.min.x + railT / 2 + 0.01
+      geometryBoundingBox.min.x + railT / 2 + 0.01
     );
 
     createRail(
       `DrawerRail_R_${i}_for_${boxMesh.name}`,
-      bb.max.x - railT / 2 - 0.01
+      geometryBoundingBox.max.x - railT / 2 - 0.01
     );
   }
 };

@@ -292,7 +292,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const controller = new CabinetMotionController();
 
     design3D?.scene.traverse((child) => {
-      if (child.userData.type === PART_TYPES.DOOR && child instanceof THREE.Mesh) {
+      if (
+        child.userData.type === PART_TYPES.DOOR &&
+        child instanceof THREE.Mesh
+      ) {
         const direction = child.userData.openDirection;
         if (direction) {
           controller.toggleDoor(child);

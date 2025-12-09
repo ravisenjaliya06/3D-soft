@@ -41,10 +41,9 @@ export class CabinetMotionController {
                 break;
         }
 
-        // child.geometry.translate(-pivotOffsetX, -pivotOffsetY, 0);
-        console.log(pivotOffsetX, pivotOffsetY, 'pivotOffset');
-        // child.position.x += pivotOffsetX;
-        // child.position.y += pivotOffsetY;
+        child.geometry.translate(-pivotOffsetX, -pivotOffsetY, 0);
+        child.position.x += pivotOffsetX;
+        child.position.y += pivotOffsetY;
 
         const targetRotation = { x: 0, y: 0, z: 0 };
 
