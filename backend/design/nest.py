@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
 from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
-from rest_framework.status import HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from svglib.svglib import svg2rlg
 from svgwrite import Drawing
 from svgwrite.shapes import Circle, Rect
@@ -38,7 +38,7 @@ def generate_gcode(
 
     for rect in rectangles:
         _, x, y, w, h, rid = rect
-        if "circle" in rid:
+        if files[rid]["type"] == "circle":
             radius = files[rid]["radius"]
             gcode.append(f"G0 X{x + radius} Y{y + radius} ; Move to circle center")
             gcode.append(f"G1 Z-{cut_height} F{plunge_rate} ; Plunge")
@@ -569,10 +569,4 @@ def nest(
             design_setting.sheet_data = sheet_mapping
             design_setting.save(update_fields=["sheet_data"])
 
-    return JsonResponse(
-        {
-            "output_file": pdf_output.replace(f"umaboy{os.path.sep}", "").replace(
-                "umaboy/", ""
-            )
-        }
-    )
+    return JsonResponse({"output_file": pdf_output}, status=HTTP_200_OK)
