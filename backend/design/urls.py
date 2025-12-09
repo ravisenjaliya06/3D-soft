@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     # Nesting endpoints
     path(
-        "nesting/",
+        "<str:design_id>/nesting/",
         NestAPIViewset.as_view({"get": "nesting"}),
         name="nesting",
     ),

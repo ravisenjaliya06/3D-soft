@@ -1,7 +1,6 @@
 # Python imports
 import json
 import os
-import uuid
 from typing import Any, Dict
 
 # Django imports
@@ -25,9 +24,14 @@ from rest_framework.status import (
 from rest_framework.viewsets import ModelViewSet
 
 # App imports
+from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import Design, DesignSetting, Organization
 from design.nest import nest
-from design.serializers import DesignSerializer, DesignSettingSerializer
+from design.serializers import (
+    DesignSerializer,
+    DesignSettingSerializer,
+    NestingItemSerializer,
+)
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -177,36 +181,62 @@ class DesignSettingViewset(ModelViewSet):
         return obj
 
 
+def create_excel_for_nesting(nesting_data: dict, excel_file_path: str) -> str:
+    df = pd.DataFrame.from_dict(
+        {
+            item_id: [
+                json.dumps(item),
+                item["name"],
+                item["type"],
+                item["dimensions"]["width"],
+                item["dimensions"]["height"],
+                item["dimensions"]["depth"],
+            ]
+            for item_id, item in nesting_data.items()
+        },
+        orient="index",
+        columns=["Object", "Name", "Type", "Width", "Height", "Depth"],
+    )
+    df.to_excel(excel_file_path, index_label="ID")
+    return excel_file_path
+
+
 class NestAPIViewset(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
-    def nesting(self: "NestAPIViewset", request: Request) -> Response:
-        data = request.data
+    def nesting(self: "NestAPIViewset", request: Request, design_id: str) -> Response:
+        serializer = NestingItemSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        data = validated_data
         nesting_data = {}
-        for i in data:
-            nesting_data[i["id"]] = i
+
+        for nesting_parts in data:
+            if nesting_parts.get("isMain"):
+                continue
+            nesting_data[nesting_parts["id"]] = nesting_parts
 
         # Generate output files
-        output_folder = os.path.join("umaboy", "media", "output", f"{uuid.uuid4()}")
+        output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, "nesting.svg")
 
-        main_sheet_width = 1240  # NESTING_SHEET_WIDTH
-        main_sheet_height = 2480  # NESTING_SHEET_HEIGHT
+        main_sheet_width = NESTING_SHEET_WIDTH
+        main_sheet_height = NESTING_SHEET_HEIGHT
 
         normalized = {}
         for rid, item in nesting_data.items():
             dims = item["dimensions"]
 
             normalized[rid] = {
-                "type": "rectangle",  # or circle if needed
+                "type": item["type"],
                 "width": float(dims["width"]),
                 "height": float(dims["height"]),
                 "grooves": [],
                 "minifix_holes": [],
             }
 
-        nest(
+        result = nest(
             output_file,
             normalized,
             main_sheet_width,
@@ -216,32 +246,9 @@ class NestAPIViewset(ModelViewSet):
 
         # Generate Excel file
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")
-        df = pd.DataFrame.from_dict(
-            {
-                item_id: [
-                    json.dumps(item),  # or item
-                    item["name"],
-                    item["type"],
-                    item["dimensions"]["width"],
-                    item["dimensions"]["height"],
-                    item["dimensions"]["depth"],
-                ]
-                for item_id, item in nesting_data.items()
-            },
-            orient="index",
-            columns=["Object", "Name", "Type", "Width", "Height", "Depth"],
-        )
-        df.to_excel(excel_file_path, index_label="ID")
+        create_excel_for_nesting(nesting_data, excel_file_path)
 
-        return Response(
-            {
-                "message": "Nesting completed.",
-                "svg_file": output_file,
-                "excel_file": excel_file_path,
-                "other_files": f"visit {output_folder}",
-            },
-            status=HTTP_200_OK,
-        )
+        return result
 
     def download_nesting_file(
         self: "NestAPIViewset", request: Request, design_id: str
@@ -254,4 +261,8 @@ class NestAPIViewset(ModelViewSet):
             file_path = f"media/output/{design_id}/nesting.pdf"
         if data["format"] == "xlsx":
             file_path = f"media/output/{design_id}/nesting.xlsx"
+        else:
+            return Response(
+                {"Error": "Enter Valid Format"}, status=HTTP_400_BAD_REQUEST
+            )
         return Response({"file": file_path}, status=HTTP_200_OK)
