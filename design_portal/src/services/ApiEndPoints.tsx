@@ -9,7 +9,6 @@ export const API_ENDPOINT = {
   GET_CATALOG_ITEMS: 'material/catalog/',
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
   GET_MATERIAL_COMPANIES: 'material/company/',
-  GET_DESIGN_NESTING: (designID: string) => `design/${designID}/nesting/`,
   GET_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   GET_DESIGN_NESTING_SHEET: (designID: string, sheetID: string) =>
     `design/${designID}/catalog/item/${sheetID}/`,
@@ -34,6 +33,7 @@ export const API_ENDPOINT = {
   CREATE_COMPANY_MATERIAL: (companyID: string) => `material/company/${companyID}/material/`,
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
+  CREATE_DESIGN_NESTING: (designID: string) => `design/${designID}/nesting/`,
 
   //PUT
   UPDATE_USER_DETAILS: 'user/',

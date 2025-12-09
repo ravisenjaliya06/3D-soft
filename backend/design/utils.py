@@ -26,82 +26,81 @@ def create_design_settings(design: Design, organization: Organization) -> None:
 
 def parse_design_data(data: List[Dict]) -> Dict:
     """
-    Parse DesignCatalogItem data into a format suitable for nesting.
-    Args:
-        data: List of serialized DesignCatalogItem objects.
-    Returns:
-        Dictionary mapping unique IDs to plank details.
+    Convert design parts (PLANK, DOOR, DRAWER) into nesting-ready data.
+    Skips main cabinet.
+    Converts meters → millimeters.
+    Fixes orientation based on object type.
     """
+
     result = {}
 
     for item in data:
-        item_data = item["data"]
-        plank_name = item_data.get("name")
-        if not plank_name:
+        if item.get("isMain"):
             continue
-        plank_id = item["id"]
 
-        object_type = "CABINET"
-        if "DOOR" in plank_name:
+        part_id = str(item["id"])
+        name = item.get("name", "")
+        raw_type = item.get("type", "").lower()
+
+        dims = item.get("dimensions", {})
+        width = float(dims.get("width", 0)) * 1000
+        height = float(dims.get("height", 0)) * 1000
+        depth = float(dims.get("depth", 0)) * 1000
+
+        if "door" in name.lower():
             object_type = "DOOR"
-        elif "PLANK" in plank_name:
-            object_type = "PLANK"
-        elif "DRAWER" in plank_name:
+        elif "drawer" in name.lower():
             object_type = "DRAWER"
+        elif "plank" in name.lower():
+            object_type = "PLANK"
+        else:
+            object_type = raw_type.upper() or "PART"
 
-        # Base plank data
         plank_data = {
             "type": "rectangle",
             "object": object_type,
-            "name": plank_name,
+            "name": name,
             "unit": "mm",
-            "width": item_data.get("width", 0) * 10,  # Convert to mm if needed
-            "height": item_data.get("height", 0) * 10,
-            "depth": item_data.get("depth", 0) * 10,
-            "grooves": item_data.get("grooves", []),
-            "minifix_holes": item_data.get("minifixHoles", []),
+            "width": width,
+            "height": height,
+            "depth": depth,
         }
 
-        if (
-            "DRAWER_LEFT" in plank_name
-            or "DRAWER_RIGHT" in plank_name
-            or plank_name in ["LEFT_PLANK", "RIGHT_PLANK"]
-        ) or "VERTICAL" in plank_name:
-            plank_data.update(
-                {
-                    "width": item_data.get("depth", 0) * 10,
-                    "height": item_data.get("height", 0) * 10,
-                    "depth": item_data.get("width", 0) * 10,
-                }
-            )
-        elif "HORIZONTAL" in plank_name or (
-            "DRAWER_BOTTOM" in plank_name
-            or plank_name
-            in [
-                "TOP_PLANK",
-                "BOTTOM_PLANK",
-            ]
-        ):
-            plank_data.update(
-                {
-                    "width": item_data.get("width", 0) * 10,
-                    "height": item_data.get("depth", 0) * 10,
-                    "depth": item_data.get("height", 0) * 10,
-                }
-            )
-        elif (
-            "DRAWER_BACK" in plank_name
-            or "DRAWER_FRONT" in plank_name
-            or plank_name == "BACK_PLANK"
-        ):
-            plank_data.update(
-                {
-                    "width": item_data.get("width", 0) * 10,
-                    "height": item_data.get("height", 0) * 10,
-                    "depth": item_data.get("depth", 0) * 10,
-                }
-            )
+        if name in ["LEFT_PLANK", "RIGHT_PLANK", "VERTICAL_PLANK"]:
+            plank_data.update({
+                "width": depth, 
+                "height": height,
+                "depth": width
+            })
 
-        result[plank_id] = plank_data
+        elif name in ["TOP_PLANK", "BOTTOM_PLANK", "HORIZONTAL_PLANK"]:
+            plank_data.update({
+                "width": width,
+                "height": depth,
+                "depth": height
+            })
+
+        elif name == "BACK_PLANK":
+            plank_data.update({
+                "width": width - 250,
+                "height": height,
+                "depth": depth
+            })
+
+        elif object_type == "DOOR":
+            plank_data.update({
+                "width": width,
+                "height": height,
+                "depth": depth
+            })
+
+        elif object_type == "DRAWER":
+            plank_data.update({
+                "width": width,
+                "height": height,
+                "depth": depth
+            })
+
+        result[part_id] = plank_data
 
     return result

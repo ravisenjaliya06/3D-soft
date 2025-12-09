@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
-import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
 
@@ -134,9 +134,9 @@ export class MeshBuilder {
     this._setScale(mesh);
     this._setUserData(mesh);
 
-    // NOTE: It will be use to add objects to the design later.
-    // TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-    this._setDataInObjectsState();
+    if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
+      this._setDataInObjectsState();
+    }
     return mesh;
   }
 }
