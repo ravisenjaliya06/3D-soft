@@ -104,6 +104,7 @@ export class MeshBuilder {
     mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
     mesh.userData.isMain = this.meshData.isMain;
+    mesh.userData.openDirection = this.meshData.openDirection;
   }
 
   private _setName(mesh: THREE.Mesh) {

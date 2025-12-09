@@ -38,6 +38,7 @@ export const DIRECTION_TYPES = {
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
+type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
 // interface
 interface Material {
@@ -59,6 +60,7 @@ export interface MeshObjectData {
   scale?: Position;
   material?: Material;
   isMain?: boolean;
+  openDirection?: DirectionType,
 }
 
 export interface userData {

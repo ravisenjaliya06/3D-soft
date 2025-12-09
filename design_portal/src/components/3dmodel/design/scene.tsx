@@ -705,7 +705,7 @@ export const addVerticalPlanksToBox = async (
 
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
-      name: `VERTICAL_PLANK_${i}`,
+      name: `VERTICAL_PLANK`,
       type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: parent.userData.objectId,
@@ -796,7 +796,7 @@ export const addHorizontalPlanksInsideBox = async (
 
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
-      name: `HORIZONTAL_PLANK_${i}`,
+      name: `HORIZONTAL_PLANK`,
       type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: dims,
@@ -863,10 +863,27 @@ export const addDoorOnInvisibleBox = async (
     material: doorMatProps,
   };
 
-  const doorGroup = createMeshObject(facePart, true, {
-    openDirection: DIRECTION_TYPES.RIGHT,
+  const commonMaterial = {
+    type: MATERIAL_TYPE.TEXTURE,
+    value: '/Texture0004.jpg',
+    repeatX: 2,
+    repeatY: 1,
+  };
+
+  const meshBuilder = new MeshBuilder({
+    id: crypto.randomUUID(),
+    name: `Door_for_${boxMesh.name}`,
     type: PART_TYPES.DOOR,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    dimensions: { width: w, height: h, depth: 0.02 },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    material: commonMaterial,
+    isMain: false,
+    openDirection: DIRECTION_TYPES.RIGHT,
   });
+
+  const doorGroup = meshBuilder.createMesh();
 
   parent.add(doorGroup);
 
