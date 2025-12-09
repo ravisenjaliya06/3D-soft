@@ -1,12 +1,12 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
+import { MeshObjectData } from '../sceneCreator/interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
-import {  Position } from '../store/interface';
+import { Position } from '../store/interface';
 import { createDashedLineObject, createLineObjects, getBoxCenter } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
-import { MeshObjectData } from '../sceneCreator/interface';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;

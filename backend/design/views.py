@@ -24,7 +24,6 @@ from rest_framework.status import (
 from rest_framework.viewsets import ModelViewSet
 
 # App imports
-from design.utils import parse_design_data
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import Design, DesignSetting, Organization
 from design.nest import nest
@@ -33,6 +32,7 @@ from design.serializers import (
     DesignSettingSerializer,
     NestingItemSerializer,
 )
+from design.utils import parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -183,7 +183,6 @@ class DesignSettingViewset(ModelViewSet):
 
 
 def create_excel_for_nesting(nesting_data: dict, excel_file_path: str) -> str:
-    print(nesting_data)
     df = pd.DataFrame.from_dict(
         {
             item_id: [
@@ -214,9 +213,7 @@ class NestAPIViewset(ModelViewSet):
         parsed_data = parse_design_data(validated_data)
 
         nesting_data = {
-            rid: item
-            for rid, item in parsed_data.items()
-            if not item.get("isMain")
+            rid: item for rid, item in parsed_data.items() if not item.get("isMain")
         }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")

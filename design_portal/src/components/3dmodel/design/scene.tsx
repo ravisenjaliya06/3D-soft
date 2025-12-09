@@ -818,10 +818,7 @@ export const addHorizontalPlanksInsideBox = async (
   hideFullScreenLoader();
 };
 
-export const addDoorOnInvisibleBox = async (
-  scene: THREE.Scene,
-  boxMesh: THREE.Mesh,
-) => {
+export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.Mesh) => {
   showFullScreenLoader('Loading design objects.');
 
   if (!boxMesh) {

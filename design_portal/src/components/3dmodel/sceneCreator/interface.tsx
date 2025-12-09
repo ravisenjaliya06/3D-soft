@@ -60,7 +60,7 @@ export interface MeshObjectData {
   scale?: Position;
   material?: Material;
   isMain?: boolean;
-  openDirection?: DirectionType,
+  openDirection?: DirectionType;
 }
 
 export interface userData {

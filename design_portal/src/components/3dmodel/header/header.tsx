@@ -17,10 +17,10 @@ import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
 import { PART_TYPES } from '../sceneCreator/interface';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { store } from '../store';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
-import { store } from '../store';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();
@@ -258,7 +258,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const data = store.getState().data.objects;
     try {
       const response: { status: number; data: Design[] } = await commonService.post(
-        API_ENDPOINT.CREATE_DESIGN_NESTING(designId), data
+        API_ENDPOINT.CREATE_DESIGN_NESTING(designId),
+        data
       );
       if (response.status === 200) {
         router.push(`/mes/${designId}`);

@@ -67,39 +67,16 @@ def parse_design_data(data: List[Dict]) -> Dict:
         }
 
         if name in ["LEFT_PLANK", "RIGHT_PLANK", "VERTICAL_PLANK"]:
-            plank_data.update({
-                "width": depth, 
-                "height": height,
-                "depth": width
-            })
+            plank_data.update({"width": depth, "height": height, "depth": width})
 
         elif name in ["TOP_PLANK", "BOTTOM_PLANK", "HORIZONTAL_PLANK"]:
-            plank_data.update({
-                "width": width,
-                "height": depth,
-                "depth": height
-            })
+            plank_data.update({"width": width, "height": depth, "depth": height})
 
         elif name == "BACK_PLANK":
-            plank_data.update({
-                "width": width - 250,
-                "height": height,
-                "depth": depth
-            })
+            plank_data.update({"width": width - 250, "height": height, "depth": depth})
 
-        elif object_type == "DOOR":
-            plank_data.update({
-                "width": width,
-                "height": height,
-                "depth": depth
-            })
-
-        elif object_type == "DRAWER":
-            plank_data.update({
-                "width": width,
-                "height": height,
-                "depth": depth
-            })
+        elif object_type == "DOOR" or object_type == "DRAWER":
+            plank_data.update({"width": width, "height": height, "depth": depth})
 
         result[part_id] = plank_data
 
