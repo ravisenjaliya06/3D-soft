@@ -329,3 +329,12 @@ export interface UpdatePayload {
   rotation?: Partial<Rotation>;
   material?: MaterialForUpdate;
 }
+
+export interface UpdateDimensionsParams {
+  newWidth: number;
+  newHeight: number;
+  newDepth: number;
+  oldWidth: number;
+  oldHeight: number;
+  oldDepth: number;
+}

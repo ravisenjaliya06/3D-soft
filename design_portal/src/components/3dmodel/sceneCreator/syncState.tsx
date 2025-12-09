@@ -1,11 +1,11 @@
 // WallSyncManager.ts
 
 import * as THREE from 'three';
+import { Wall } from '../2dmodel/interface';
 import { store } from '../store';
 import { WALL_DEFAULT_HEIGHT } from './constants';
 import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { Wall } from '../2dmodel/interface';
 
 export class WallSyncManager {
   private scene: THREE.Scene;
