@@ -9,7 +9,7 @@ const Nesting = () => {
   const design_id = window.location.pathname.split('/')[2];
 
   const [visibleDesigns, setVisibleDesigns] = useState(7);
-  const [selectedOption, setSelectedOption] = useState("pdf");
+  const [selectedOption, setSelectedOption] = useState('pdf');
   const [localData, setLocalData] = useState<any[]>([]);
 
   const { objects } = useSelector((state: RootState) => state.data);
@@ -39,7 +39,7 @@ const Nesting = () => {
   };
 
   // ✅ Direct Download URLs
-  const fileUrls = {
+  const fileUrls: Record<string, string> = {
     pdf: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.pdf`,
     xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
   };
@@ -49,9 +49,9 @@ const Nesting = () => {
 
     if (!fileUrl) return;
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = fileUrl;
-    a.download = fileUrl.split("/").pop() || "file";
+    a.download = fileUrl.split('/').pop() || 'file';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -79,7 +79,7 @@ const Nesting = () => {
                       type="radio"
                       name="option"
                       value="pdf"
-                      checked={selectedOption === "pdf"}
+                      checked={selectedOption === 'pdf'}
                       className={styles.option}
                       onChange={(e) => setSelectedOption(e.target.value)}
                     />
@@ -91,7 +91,7 @@ const Nesting = () => {
                       type="radio"
                       name="option"
                       value="xlsx"
-                      checked={selectedOption === "xlsx"}
+                      checked={selectedOption === 'xlsx'}
                       className={styles.option}
                       onChange={(e) => setSelectedOption(e.target.value)}
                     />
@@ -104,7 +104,7 @@ const Nesting = () => {
                   alt="download"
                   className={styles.download}
                   onClick={handleDownload}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: 'pointer' }}
                 />
               </div>
 
