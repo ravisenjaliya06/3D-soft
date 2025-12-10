@@ -10,8 +10,6 @@ from rest_framework import status
 
 # App imports
 from design.models import DesignSetting
-from design.tests.test_paylaod_data import design_serialized_data
-from design.utils import parse_design_data
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
