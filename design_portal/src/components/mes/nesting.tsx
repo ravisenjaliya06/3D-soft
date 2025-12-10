@@ -1,61 +1,114 @@
 import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import styles from '../mes/nesting.module.css';
 
 const Nesting = () => {
-  // const [loading, setLoading] = useState(false);
-  const [visibleDesigns, setVisibleDesigns] = useState(7);
+  const design_id = window.location.pathname.split('/')[2];
 
-  // Access objects from Redux store
+  const [visibleDesigns, setVisibleDesigns] = useState(7);
+  const [selectedOption, setSelectedOption] = useState("pdf");
+  const [localData, setLocalData] = useState<any[]>([]);
+
   const { objects } = useSelector((state: RootState) => state.data);
 
-  // Use objects from store instead of static data
-  const data = objects;
-  console.log(data, 'data');
+  useEffect(() => {
+    if (!design_id || !objects || objects.length === 0) return;
+
+    const key = `nesting_data_${design_id}`;
+    localStorage.setItem(key, JSON.stringify(objects));
+  }, [objects, design_id]);
+
+  useEffect(() => {
+    if (!design_id) return;
+
+    const key = `nesting_data_${design_id}`;
+    const cached = localStorage.getItem(key);
+
+    if (cached) {
+      setLocalData(JSON.parse(cached));
+    }
+  }, [design_id]);
+
+  const data = objects?.length ? objects : localData;
 
   const handleLoadMore = () => {
-    console.log('Load More Clicked');
     setVisibleDesigns((prev) => prev + 5);
+  };
+
+  // ✅ Direct Download URLs
+  const fileUrls = {
+    pdf: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.pdf`,
+    xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
+  };
+
+  const handleDownload = () => {
+    const fileUrl = fileUrls[selectedOption];
+
+    if (!fileUrl) return;
+
+    const a = document.createElement("a");
+    a.href = fileUrl;
+    a.download = fileUrl.split("/").pop() || "file";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   return (
     <div className={styles.container}>
       <Sidebar />
+
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="MES" />
+
         <div className={styles.maincontent}>
           <div className={styles.designs}>
             <div className={styles.mesdesigncontent}>
               <h2>Design Data</h2>
 
               <div className={styles.toolbarmenu}>
-                <div className={styles.toolbaricon}>
-                  {/* <img src={center.src} alt="center" /> */}
-                </div>
+                <div className={styles.toolbaricon}></div>
 
+                {/* ✅ Radio Group */}
                 <div className={styles.rediogroup}>
                   <label className={styles.label}>
-                    <input type="radio" name="option" value="1" className={styles.option} />
+                    <input
+                      type="radio"
+                      name="option"
+                      value="pdf"
+                      checked={selectedOption === "pdf"}
+                      className={styles.option}
+                      onChange={(e) => setSelectedOption(e.target.value)}
+                    />
                     PDF
                   </label>
+
                   <label className={styles.label}>
-                    <input type="radio" name="option" value="2" className={styles.option} />
-                    Xls
+                    <input
+                      type="radio"
+                      name="option"
+                      value="xlsx"
+                      checked={selectedOption === "xlsx"}
+                      className={styles.option}
+                      onChange={(e) => setSelectedOption(e.target.value)}
+                    />
+                    XLSX
                   </label>
                 </div>
-                <a href="" download>
-                  {' '}
-                  <img
-                    // src={download.src}
-                    // alt="download"
-                    className={styles.download}
-                  />
-                </a>
+
+                {/* ✅ Download Button */}
+                <img
+                  alt="download"
+                  className={styles.download}
+                  onClick={handleDownload}
+                  style={{ cursor: "pointer" }}
+                />
               </div>
 
+              {/* ✅ Table */}
               <div className={styles.tablecontainer}>
                 <table>
                   <thead>
@@ -67,6 +120,7 @@ const Nesting = () => {
                       <th>Depth</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {data.slice(0, visibleDesigns).map((item, index) => (
                       <tr key={item.id}>
@@ -80,6 +134,7 @@ const Nesting = () => {
                   </tbody>
                 </table>
 
+                {/* ✅ Load More */}
                 {visibleDesigns < data.length && (
                   <div className={styles.designsLoadMore}>
                     <div className={styles.loadmore} onClick={handleLoadMore}>
@@ -88,6 +143,7 @@ const Nesting = () => {
                   </div>
                 )}
               </div>
+              {/* ✅ End Table */}
             </div>
           </div>
         </div>
