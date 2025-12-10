@@ -82,6 +82,7 @@ export class CabinetMotionController {
     if (!child) return;
     this.child = child;
     this.type = this.child.userData.openDirection;
+    const isClosed = this.child.userData.isClosed ?? true;
 
     const { pivotOffsetX, pivotOffsetY } = this._getPivotOffset() || {
       pivotOffsetX: 0,
@@ -94,7 +95,7 @@ export class CabinetMotionController {
     const targetRotation = this._getRotation();
     this._createGSAP(this.child.rotation, targetRotation);
 
-    this.child.userData.isClosed = !this.child.userData.isClosed;
+    this.child.userData.isClosed = !isClosed;
   }
 
   public toggleDrawer(mesh: THREE.Mesh, openDistance = 0.25) {
