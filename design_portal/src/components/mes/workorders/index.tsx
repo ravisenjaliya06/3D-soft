@@ -58,16 +58,6 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(workOrder, 'workOrder');
     }
-    setIsLoading(true);
-    const response: { status: number } = await commonService.get(
-      API_ENDPOINT.GET_DESIGN_NESTING(workOrder.design)
-    );
-    if (response.status === 200) {
-      setSelectedWorkOrder(workOrder);
-      setIsLoading(false);
-    } else {
-      console.error('Failed to fetch create nesting');
-    }
   };
 
   if (selectedWorkOrder) {
