@@ -94,4 +94,3 @@ class NestingItemSerializer(serializers.Serializer):
     dimensions = DimensionsSerializer()
     position = PositionSerializer()
     rotation = RotationSerializer()
-    material = MaterialSerializer(required=False)
