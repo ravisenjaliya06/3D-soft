@@ -4,6 +4,7 @@ import Sidebar from '@/components/sidebar/sidebar';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import styles from '../mes/nesting.module.css';
+import { assets } from '@/svgPaths';
 
 const Nesting = () => {
   const design_id = window.location.pathname.split('/')[2];
@@ -102,6 +103,7 @@ const Nesting = () => {
                 {/* ✅ Download Button */}
                 <img
                   alt="download"
+                  src={assets.download}
                   className={styles.download}
                   onClick={handleDownload}
                   style={{ cursor: 'pointer' }}
