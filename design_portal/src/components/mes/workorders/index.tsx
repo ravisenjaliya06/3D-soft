@@ -1,11 +1,7 @@
-import Loading_style from '@/components/loading.module.css';
 import styles from '@/components/mes/workorders/workorder.module.css';
-import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useEffect, useRef, useState } from 'react';
 import { WorkOrderData } from '../interface';
-import WorkOrderDetails from './workorder';
 
 interface WorkOrderProps {
   searchQuery: string;
@@ -17,8 +13,6 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [showdropDown, setShowDropDown] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
 
@@ -60,22 +54,8 @@ const WorkOrder = ({ searchQuery, workorders }: WorkOrderProps) => {
     }
   };
 
-  if (selectedWorkOrder) {
-    return (
-      <div className={styles.tablecontainer}>
-        <WorkOrderDetails {...selectedWorkOrder} />
-      </div>
-    );
-  }
-
   return (
     <div className={styles.tablecontainer} ref={dropdownButtonRef}>
-      {isLoading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner}></div>
-          <p>Loading...</p>
-        </div>
-      )}
       <div className={styles.tableTitle}>
         <div className={styles.data}>Work Order</div>
         <div className={styles.data}>Design</div>
