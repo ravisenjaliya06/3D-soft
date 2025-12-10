@@ -71,6 +71,7 @@ const dataSlice = createSlice({
     removeObject: (state, action: PayloadAction<string>) => {
       const id = action.payload;
       state.objects = state.objects.filter((obj) => obj.id !== id);
+      state.objects = state.objects.filter((obj) => obj.parent !== id);
     },
     toggleQuickHide: (state, action: PayloadAction<boolean>) => {
       state.isQuickHideActive = action.payload;

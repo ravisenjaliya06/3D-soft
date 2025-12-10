@@ -424,7 +424,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
   ];
   const furnitureTools = [
-    { option: 'Kitchen', icon: assets.kitchen_svg },
+    // { option: 'Kitchen', icon: assets.kitchen_svg },
     { option: 'Cabinet', icon: assets.cabinet_svg },
   ];
 
