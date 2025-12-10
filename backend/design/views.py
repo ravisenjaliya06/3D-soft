@@ -255,7 +255,7 @@ class NestAPIViewset(ModelViewSet):
         data = request.data
         if data["format"] == "pdf":
             file_path = f"media/output/{design_id}/nesting.pdf"
-        if data["format"] == "xlsx":
+        elif data["format"] == "xlsx":
             file_path = f"media/output/{design_id}/nesting.xlsx"
         else:
             return Response(
