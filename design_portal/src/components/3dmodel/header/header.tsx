@@ -354,13 +354,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   return (
     <>
+      {isLoading && (
+        <div className={Loading_style.loadingOverlay}>
+          <div className={Loading_style.loadingSpinner}></div>
+          <p>Loading...</p>
+        </div>
+      )}
       <div className={styles.header}>
-        {isLoading && (
-          <div className={Loading_style.loadingOverlay}>
-            <div className={Loading_style.loadingSpinner}></div>
-            <p>Loading...</p>
-          </div>
-        )}
         <div className={styles.headerTitle}>
           <p>{designName.length > 0 ? designName[0].design_name : 'Furniture Design'}</p>
         </div>

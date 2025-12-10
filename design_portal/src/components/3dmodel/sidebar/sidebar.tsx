@@ -302,6 +302,7 @@ const Sidebar: React.FC = () => {
           label: 'Width',
           name: 'width',
           type: 'number',
+          min: 1,
           value: dimensionsUI.width,
           disabled: isHorizontalPlank || isDisabled,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -311,6 +312,7 @@ const Sidebar: React.FC = () => {
           label: 'Height',
           name: 'height',
           type: 'number',
+          min: 1,
           value: dimensionsUI.height,
           disabled: isVerticalPlank || isDisabled,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -320,6 +322,7 @@ const Sidebar: React.FC = () => {
           label: 'Depth',
           name: 'depth',
           type: 'number',
+          min: 1,
           value: dimensionsUI.depth,
           disabled: isQuickHideActive,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -619,7 +622,7 @@ const Sidebar: React.FC = () => {
             }
             setShowMaterialPopup(false);
           }}
-          // rules={selectedObject?.catalog_rules || []}
+        // rules={selectedObject?.catalog_rules || []}
         />
       )}
     </div>
