@@ -262,7 +262,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         data
       );
       if (response.status === 200) {
-        router.push(`/mes/${designId}`);
+        router.push(`/design/${designId}/nesting`);
       }
     } catch (e) {
       console.error('Error fetching designs:', e);
