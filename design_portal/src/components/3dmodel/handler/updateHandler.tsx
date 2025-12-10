@@ -88,16 +88,17 @@ export class UpdateObjectInScene {
   //update main object with children(planks)
   private updateChildrenDynamic(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
     const { newWidth, newHeight, newDepth, oldWidth, oldHeight, oldDepth } = params;
-
+    //Temporary fix for zero dimension
+    const MIN_DIM = 0.01;
     /**
      * Calculate how much the parent mesh has scaled.
      * Example:
      *  oldWidth = 100, newWidth = 200 → scaleX = 2
      *  That means children should also double in width.
      */
-    const scaleX = newWidth / oldWidth;
-    const scaleY = newHeight / oldHeight;
-    const scaleZ = newDepth / oldDepth;
+    const scaleX = newWidth / (oldWidth + MIN_DIM);
+    const scaleY = newHeight / (oldHeight + MIN_DIM);
+    const scaleZ = newDepth / (oldDepth + MIN_DIM);
 
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
@@ -107,9 +108,9 @@ export class UpdateObjectInScene {
        * New child dimensions after scaling.
        * If the parent grows or shrinks, each child grows/shrinks proportionally.
        */
-      const nextWidth = childParams.width * scaleX;
-      const nextHeight = childParams.height * scaleY;
-      const nextDepth = childParams.depth * scaleZ;
+      const nextWidth = Math.max(childParams.width * scaleX, MIN_DIM);
+      const nextHeight = Math.max(childParams.height * scaleY, MIN_DIM);
+      const nextDepth = Math.max(childParams.depth * scaleZ, MIN_DIM);
 
       /**
        * Update child position as well.
