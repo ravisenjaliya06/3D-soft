@@ -20,7 +20,7 @@ urlpatterns = [
     # Nesting endpoints
     path(
         "<str:design_id>/nesting/",
-        NestAPIViewset.as_view({"get": "nesting"}),
+        NestAPIViewset.as_view({"post": "nesting"}),
         name="nesting",
     ),
     path(

@@ -6,8 +6,9 @@ import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
+import { MeshObjectData } from '../sceneCreator/interface';
 import { RootState } from '../store';
-import { Object3D, Position, Rotation } from '../store/interface';
+import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import style from './sidebar.module.css';
@@ -47,7 +48,7 @@ const Sidebar: React.FC = () => {
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
   const isDisabled = isQuickHideActive;
 
-  let selectedObject: Object3D | null | undefined;
+  let selectedObject: MeshObjectData | null | undefined;
 
   if (selectedChildObjectId) {
     selectedObject = objects.find((obj) => obj.id === selectedChildObjectId);
@@ -618,7 +619,7 @@ const Sidebar: React.FC = () => {
             }
             setShowMaterialPopup(false);
           }}
-          rules={selectedObject?.catalog_rules || []}
+          // rules={selectedObject?.catalog_rules || []}
         />
       )}
     </div>

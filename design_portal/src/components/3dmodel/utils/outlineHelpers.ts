@@ -54,6 +54,7 @@ export const createDashedLineObject = (
 
   const outline = new THREE.LineSegments(edges, dashedMat);
   outline.position.copy(center);
+  outline.rotation.copy(object.rotation);
   outline.computeLineDistances();
   outline.name = 'cupboard_big_dotted_outline';
   return outline;

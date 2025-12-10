@@ -32,6 +32,7 @@ from design.serializers import (
     DesignSettingSerializer,
     NestingItemSerializer,
 )
+from design.utils import parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -185,12 +186,12 @@ def create_excel_for_nesting(nesting_data: dict, excel_file_path: str) -> str:
     df = pd.DataFrame.from_dict(
         {
             item_id: [
-                json.dumps(item),
+                json.dumps(item, default=str),
                 item["name"],
                 item["type"],
-                item["dimensions"]["width"],
-                item["dimensions"]["height"],
-                item["dimensions"]["depth"],
+                item["width"],
+                item["height"],
+                item["depth"],
             ]
             for item_id, item in nesting_data.items()
         },
@@ -208,15 +209,13 @@ class NestAPIViewset(ModelViewSet):
         serializer = NestingItemSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-        data = validated_data
-        nesting_data = {}
 
-        for nesting_parts in data:
-            if nesting_parts.get("isMain"):
-                continue
-            nesting_data[nesting_parts["id"]] = nesting_parts
+        parsed_data = parse_design_data(validated_data)
 
-        # Generate output files
+        nesting_data = {
+            rid: item for rid, item in parsed_data.items() if not item.get("isMain")
+        }
+
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, "nesting.svg")
@@ -226,12 +225,10 @@ class NestAPIViewset(ModelViewSet):
 
         normalized = {}
         for rid, item in nesting_data.items():
-            dims = item["dimensions"]
-
             normalized[rid] = {
                 "type": item["type"],
-                "width": float(dims["width"]),
-                "height": float(dims["height"]),
+                "width": float(item["width"]),
+                "height": float(item["height"]),
                 "grooves": [],
                 "minifix_holes": [],
             }
@@ -244,7 +241,6 @@ class NestAPIViewset(ModelViewSet):
             enclosing_rectangle=True,
         )
 
-        # Generate Excel file
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")
         create_excel_for_nesting(nesting_data, excel_file_path)
 

@@ -17,6 +17,7 @@ import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
 import { PART_TYPES } from '../sceneCreator/interface';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { store } from '../store';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
@@ -253,10 +254,12 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const handleNesting = async () => {
     /** Fetches nesting data for the current design and navigates to the MES screen. */
 
-    setIsLoading(true); // 🔄 Show loading spinner
+    setIsLoading(true);
+    const data = store.getState().data.objects;
     try {
-      const response: { status: number; data: Design[] } = await commonService.get(
-        API_ENDPOINT.GET_DESIGN_NESTING(designId)
+      const response: { status: number; data: Design[] } = await commonService.post(
+        API_ENDPOINT.CREATE_DESIGN_NESTING(designId),
+        data
       );
       if (response.status === 200) {
         router.push(`/mes/${designId}`);

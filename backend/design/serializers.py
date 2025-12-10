@@ -85,7 +85,7 @@ class MaterialSerializer(serializers.Serializer):
 
 
 class NestingItemSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     type = serializers.CharField()
     geometryType = serializers.CharField()  # noqa: N815

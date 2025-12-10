@@ -1,9 +1,10 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
+import { MeshObjectData } from '../sceneCreator/interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
-import { Object3D, Position } from '../store/interface';
+import { Position } from '../store/interface';
 import { createDashedLineObject, createLineObjects, getBoxCenter } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
 
@@ -17,7 +18,7 @@ export class UpdateObjectInScene {
   }
 
   /** Updates a 3D object in both the Three.js scene and the Redux store. */
-  public update(objectId: string, updates: UpdatePayload, currentObject?: Object3D): void {
+  public update(objectId: string, updates: UpdatePayload, currentObject?: MeshObjectData): void {
     const mesh = this.findMeshById(objectId);
     if (!mesh) {
       console.warn(`[ObjectUpdater] Mesh with ID "${objectId}" not found in scene.`);
@@ -302,7 +303,7 @@ export class UpdateObjectInScene {
   }
 
   /** updated object data to Redux store */
-  private updateRedux(objectId: string, updates: UpdatePayload, currentObject?: Object3D) {
+  private updateRedux(objectId: string, updates: UpdatePayload, currentObject?: MeshObjectData) {
     if (!currentObject) return;
 
     this.dispatch(

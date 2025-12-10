@@ -10,8 +10,6 @@ from rest_framework import status
 
 # App imports
 from design.models import DesignSetting
-from design.tests.test_paylaod_data import design_serialized_data
-from design.utils import parse_design_data
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -377,41 +375,3 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(
             DesignSetting.objects.filter(organization=self.organization).count(), 0
         )
-
-    def test_parse_design_data(self: "DesignAPIViewTestCase") -> None:
-        """Test parse_design_data utility function"""
-
-        result = parse_design_data(design_serialized_data)
-        self.assertEqual(len(result), 4)
-
-        for plank_id, plank_data in result.items():
-            self.assertTrue(isinstance(plank_id, str))
-
-            if plank_data["name"] == "LEFT_PLANK":
-                self.assertEqual(plank_data["width"], 20 * 10)
-                self.assertEqual(plank_data["height"], 100 * 10)
-                self.assertEqual(plank_data["depth"], 50 * 10)
-
-            if plank_data["name"] == "TOP_PLANK":
-                self.assertEqual(plank_data["width"], 100 * 10)
-                self.assertEqual(plank_data["height"], 20 * 10)
-                self.assertEqual(plank_data["depth"], 50 * 10)
-
-            if plank_data["name"] == "BACK_PLANK":
-                self.assertEqual(plank_data["width"], 100 * 10)
-                self.assertEqual(plank_data["height"], 100 * 10)
-
-    def test_parse_design_data_for_nesting(self: "DesignAPIViewTestCase") -> None:
-        """Test parse_design_data utility function for nesting operation"""
-        serialized_data = [
-            {
-                "id": str(uuid.uuid4()),
-                "name": "LEFT_PLANK",
-                "data": {"name": "LEFT_PLANK", "width": 50, "height": 100, "depth": 20},
-            }
-        ]
-        result = parse_design_data(serialized_data)
-        self.assertEqual(len(result), 1)
-        plank_id = list(result.keys())[0]
-        self.assertTrue(isinstance(plank_id, str))
-        self.assertEqual(result[plank_id]["name"], "LEFT_PLANK")

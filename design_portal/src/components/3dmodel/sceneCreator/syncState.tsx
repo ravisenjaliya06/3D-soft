@@ -65,7 +65,7 @@ export class WallSyncManager {
       scale: { x: 0.01, y: 0.001, z: 0.01 },
       material: {
         type: MATERIAL_TYPE.COLOR,
-        value: '0xffffff',
+        value: '#c4c3c3',
       },
       isMain: true,
     };

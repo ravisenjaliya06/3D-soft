@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { store } from '../store';
+import { addObjects } from '../store/dataSlice';
+import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
 
@@ -102,6 +104,7 @@ export class MeshBuilder {
     mesh.userData.type = this.meshData.type;
     mesh.userData.objectId = this.meshData.id;
     mesh.userData.isMain = this.meshData.isMain;
+    mesh.userData.openDirection = this.meshData.openDirection;
   }
 
   private _setName(mesh: THREE.Mesh) {
@@ -113,9 +116,9 @@ export class MeshBuilder {
    * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
    */
 
-  // private _setDataInObjectsState() {
-  //   store.dispatch(addObjects([this.meshData]));
-  // }
+  private _setDataInObjectsState() {
+    store.dispatch(addObjects([this.meshData]));
+  }
 
   public createMesh(): THREE.Mesh {
     const geometry = this._getGeometry();
@@ -132,9 +135,9 @@ export class MeshBuilder {
     this._setScale(mesh);
     this._setUserData(mesh);
 
-    // NOTE: It will be use to add objects to the design later.
-    // TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-    // this._setDataInObjectsState();
+    if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
+      this._setDataInObjectsState();
+    }
     return mesh;
   }
 }
