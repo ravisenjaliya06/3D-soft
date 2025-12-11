@@ -19,7 +19,6 @@ export class MoveHandler implements IMoveHandler {
   private dragOffset: THREE.Vector3;
   private initialClickPosition: THREE.Vector3;
   private walls: THREE.Mesh[] = [];
-  private snapDistance = 5;
 
   constructor(options: MoveHandlerOptions) {
     this.raycaster = new THREE.Raycaster();

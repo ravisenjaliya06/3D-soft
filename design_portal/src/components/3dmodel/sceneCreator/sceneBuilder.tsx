@@ -281,7 +281,12 @@ export class SceneBuilder {
   }
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene, this.renderer, this.controls);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.renderer,
+      this.controls
+    );
   }
 
   private initMoveHandler() {

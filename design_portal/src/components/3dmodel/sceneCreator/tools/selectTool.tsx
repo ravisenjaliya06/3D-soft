@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { MoveHandler } from '../../handler/moveHandler';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import {
@@ -7,8 +9,6 @@ import {
   getBoxCenter,
 } from '../../utils/outlineHelpers';
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
-import { MoveHandler } from '../../handler/moveHandler';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -33,16 +33,20 @@ export class SelectObjectController {
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
 
   constructor(
-    camera: THREE.PerspectiveCamera, 
-    scene: THREE.Scene, 
-    renderer: THREE.WebGLRenderer, 
+    camera: THREE.PerspectiveCamera,
+    scene: THREE.Scene,
+    renderer: THREE.WebGLRenderer,
     controls: OrbitControls
   ) {
     this.camera = camera;
     this.scene = scene;
     this.renderer = renderer;
     this.orbitControls = controls;
-    this.moveHandler = new MoveHandler({ scene: this.scene, camera: this.camera, renderer: this.renderer });
+    this.moveHandler = new MoveHandler({
+      scene: this.scene,
+      camera: this.camera,
+      renderer: this.renderer,
+    });
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -161,7 +165,7 @@ export class SelectObjectController {
 
   private async _onMouseDown() {
     if (!this.selectedMainObject || !this.orbitControls) return;
-    
+
     this._clearAllOutlines();
 
     this.orbitControls.enabled = false;
