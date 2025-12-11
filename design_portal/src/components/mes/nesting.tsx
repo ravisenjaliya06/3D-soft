@@ -39,10 +39,10 @@ const Nesting = () => {
         setVisibleDesigns((prev) => prev + 5);
     };
 
-    // ✅ Direct Download URLs
     const fileUrls: Record<string, string> = {
         pdf: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.pdf`,
         xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
+        gcode: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting_gcodes.zip`,
     };
 
     const handleDownload = () => {
@@ -97,6 +97,17 @@ const Nesting = () => {
                                             onChange={(e) => setSelectedOption(e.target.value)}
                                         />
                                         XLSX
+                                    </label>
+                                    <label className={styles.label}>
+                                        <input
+                                            type="radio"
+                                            name="option"
+                                            value="gcode"
+                                            checked={selectedOption === 'gcode'}
+                                            className={styles.option}
+                                            onChange={(e) => setSelectedOption(e.target.value)}
+                                        />
+                                        G-Codes
                                     </label>
                                 </div>
 

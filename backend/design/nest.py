@@ -1,6 +1,7 @@
 # Python imports
 import os
 import secrets
+import zipfile
 from typing import Dict, List, Tuple
 
 # Django imports
@@ -520,6 +521,7 @@ def nest(
     remaining_files = dict(files)
     sheet_number = 1
     svg_files = []
+    gcode_files = []
     sheet_mapping = []
 
     while remaining_files:
@@ -555,7 +557,9 @@ def nest(
             enclosing_rectangle,
             best_efficiency=best_eff,
         )
-        generate_gcode(best_rectangles, f"{os.path.splitext(svg_name)[0]}.gcode", files)
+        gcode_path = f"{os.path.splitext(svg_name)[0]}.gcode"
+        generate_gcode(best_rectangles, gcode_path, files)
+        gcode_files.append(gcode_path)
 
         svg_files.append(svg_name)
         remaining_files = unplaced
@@ -563,6 +567,12 @@ def nest(
 
     pdf_output = f"{os.path.splitext(output)[0]}.pdf"
     convert_svgs_to_pdf(svg_files, pdf_output)
+
+    # Create ZIP of GCODE files
+    zip_output = f"{os.path.splitext(output)[0]}_gcodes.zip"
+    with zipfile.ZipFile(zip_output, "w") as zipf:
+        for gcode_file in gcode_files:
+            zipf.write(gcode_file, arcname=os.path.basename(gcode_file))
 
     if design_setting:
         with transaction.atomic():
