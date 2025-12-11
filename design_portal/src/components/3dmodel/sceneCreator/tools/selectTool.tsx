@@ -7,12 +7,17 @@ import {
   getBoxCenter,
 } from '../../utils/outlineHelpers';
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
+import { MoveHandler } from '../../handler/moveHandler';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class SelectObjectController {
-  private camera: THREE.Camera;
+  private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
+  private renderer: THREE.WebGLRenderer;
+  private orbitControls: OrbitControls;
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
+  private moveHandler: MoveHandler;
 
   private hoveredObject: THREE.Mesh | null = null;
   private hoverOutline: THREE.LineSegments | null = null;
@@ -21,21 +26,34 @@ export class SelectObjectController {
   private selectedOutline: THREE.LineSegments | null = null;
   private objectSelectOutline: THREE.LineSegments | null = null;
   private partSelectOutline: THREE.LineSegments | null = null;
+  private isObjectReadyForDrag = false;
 
   // optional callbacks for React
   public onHover: ((obj: THREE.Mesh | null) => void) | null = null;
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(camera: THREE.Camera, scene: THREE.Scene) {
+  constructor(
+    camera: THREE.PerspectiveCamera, 
+    scene: THREE.Scene, 
+    renderer: THREE.WebGLRenderer, 
+    controls: OrbitControls
+  ) {
     this.camera = camera;
     this.scene = scene;
+    this.renderer = renderer;
+    this.orbitControls = controls;
+    this.moveHandler = new MoveHandler({ scene: this.scene, camera: this.camera, renderer: this.renderer });
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onDoubleClick = this._onDoubleClick.bind(this);
+    this._onMouseDown = this._onMouseDown.bind(this);
+    this._onMouseUp = this._onMouseUp.bind(this);
 
+    window.addEventListener('mousedown', this._onMouseDown);
+    window.addEventListener('mouseup', this._onMouseUp);
     window.addEventListener('mousemove', this._onMouseMove);
     window.addEventListener('dblclick', this._onDoubleClick);
   }
@@ -45,6 +63,8 @@ export class SelectObjectController {
   }
 
   public dispose() {
+    window.removeEventListener('mousedown', this._onMouseDown);
+    window.removeEventListener('mouseup', this._onMouseUp);
     window.removeEventListener('mousemove', this._onMouseMove);
     window.removeEventListener('dblclick', this._onDoubleClick);
   }
@@ -137,6 +157,25 @@ export class SelectObjectController {
     } else {
       this._nullAllValues();
     }
+  }
+
+  private async _onMouseDown() {
+    if (!this.selectedMainObject || !this.orbitControls) return;
+    
+    this._clearAllOutlines();
+
+    this.orbitControls.enabled = false;
+
+    const finalPos = await this.moveHandler.enableDragging(this.selectedMainObject);
+    if (finalPos) {
+      this.selectedMainObject.position.copy(finalPos);
+      this._nullAllValues();
+    }
+  }
+
+  private _onMouseUp() {
+    if (!this.orbitControls) return;
+    this.orbitControls.enabled = true;
   }
 
   private _findTargetToHover(): THREE.Mesh[] {
