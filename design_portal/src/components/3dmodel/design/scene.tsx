@@ -495,8 +495,8 @@ export const addPlatformOnWall = async (
   const defaultProtrusion = 0.74;
 
   const params = (wallMesh?.geometry as THREE.BoxGeometry).parameters;
-  const wallW = params.width as number;
-  const wallD = params.depth as number;
+  const wallW = params.width;
+  const wallD = params.depth;
 
   const platformGroup = new THREE.Group();
   platformGroup.name = `Platform_${wallMesh?.name}`;
@@ -1179,7 +1179,7 @@ function isWallObject(obj: THREE.Object3D): boolean {
   const name = (obj.name || '').toLowerCase();
   return name.includes('wall') || name.includes('cwall');
 }
-function isPlankObject(obj: THREE.Object3D): boolean {
+export function isPlankObject(obj: THREE.Object3D): boolean {
   const name = (obj.name || '').toLowerCase();
   return (
     name.includes('plank') || name.includes('vertical_plank') || name.includes('horizontal_plank')
@@ -1541,6 +1541,30 @@ function applyPositionDelta(target: THREE.Object3D, axis: string, delta: number)
   else target.position.z += delta;
 }
 
+function removeOutlinesForObject(scene: THREE.Scene, target: THREE.Object3D) {
+  const objectId = target.userData.objectId;
+  const toRemove: THREE.Object3D[] = [];
+
+  scene.traverse((obj) => {
+    if (!obj.name) return;
+
+    const name = obj.name.toLowerCase();
+    if (
+      name === `outline-${objectId}`.toLowerCase() ||
+      name.includes('outline') ||
+      obj.userData?.outlineFor === objectId
+    ) {
+      toRemove.push(obj);
+    }
+  });
+
+  toRemove.forEach((o) => {
+    if (o.parent) o.parent.remove(o);
+    if ((o as any).geometry) (o as any).geometry.dispose?.();
+    if ((o as any).material) (o as any).material.dispose?.();
+  });
+}
+
 export function enablePlankDimensionEditing(view: ThreeDView) {
   const onClick = (event: MouseEvent) => {
     const rect = view.renderer.domElement.getBoundingClientRect();
@@ -1585,8 +1609,17 @@ export function enablePlankDimensionEditing(view: ThreeDView) {
     const delta = desiredFace - currentFace;
 
     applyPositionDelta(target, meta.axis, delta);
-    showPlankDimensions(view.scene, target);
     generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+
+    // Clear selection (which removes outlines and dimensions)
+    if (view.selector) {
+      view.selector.deselect();
+    } else {
+      // Fallback if selector not available (should not happen in proper setup)
+      clearAllPlankDimensions(view.scene);
+      removeOutlinesForObject(view.scene, target);
+    }
+
     view.renderer.render(view.scene, view.camera);
   };
 

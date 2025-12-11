@@ -2,7 +2,8 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import gsap from 'gsap';
 import * as THREE from 'three';
-import { PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
+import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { AddItemDatabasePayload, RulePart } from './interface';
 
 export function showFullScreenLoader(message = 'Loading...') {
@@ -238,12 +239,35 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   // --- Create invisible meshes for compartments ---
   const meshes: THREE.Mesh[] = [];
   compartments.forEach((c, idx) => {
-    const geo = new THREE.BoxGeometry(c.width, c.height, c.depth);
-    const mesh = new THREE.Mesh(geo, invisibleMat);
-    mesh.position.copy(c.position);
-    mesh.name = `invisibleBox_${idx}_for_${boxMesh.name}`;
-    mesh.userData.objectId = crypto.randomUUID();
+    const meshBuilder = new MeshBuilder({
+      id: crypto.randomUUID(),
+      name: `invisibleBox_${idx}_for_${boxMesh.name}`,
+      type: 'INVISIBLEBOX', // custom type or reuse known type
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: c.width,
+        height: c.height,
+        depth: c.depth,
+      },
+      position: { x: c.position.x, y: c.position.y, z: c.position.z },
+      rotation: { x: 0, y: 0, z: 0 },
+      material: {
+        type: MATERIAL_TYPE.COLOR,
+        value: '#00ff00', // Debug color, will be effectively invisible due to opacity
+      },
+    });
+    const mesh = meshBuilder.createMesh();
+    // Ensure it has the critical userData needed for interaction
     mesh.userData.isInvisibleBox = true;
+    // Set material transparency manually as MeshBuilder might default to opaque if not configured
+    if (
+      mesh.material instanceof THREE.MeshBasicMaterial ||
+      mesh.material instanceof THREE.MeshStandardMaterial
+    ) {
+      mesh.material.transparent = true;
+      mesh.material.opacity = 0;
+      mesh.material.depthWrite = false;
+    }
     boxMesh.add(mesh);
     meshes.push(mesh);
   });
