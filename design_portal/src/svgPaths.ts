@@ -296,6 +296,10 @@ export const SIMPLE_LINE_SVG = {
   simple_line: '/assets/simple_line.svg',
 };
 
+export const LOAD_MORE = {
+  loadMore: '/assets/LoadMore.svg',
+};
+
 export const TEMPLATE = {
   blank: '/assets/template/blank.svg',
   createtemplatehome: '/assets/template/createtemplatehome.svg',
@@ -378,4 +382,5 @@ export const assets = {
   ...TEMPLATE,
   ...TITLELOGO_SVG,
   ...TOOLBAR,
+  ...LOAD_MORE,
 };
