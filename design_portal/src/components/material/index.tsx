@@ -155,9 +155,9 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-row h-dvh overflow-hidden">
+    <div className="custom-scrollbar flex h-dvh flex-row overflow-x-hidden overflow-y-auto">
       <Sidebar />
-      <div className="flex-[3] max-w-[85rem] min-w-0">
+      <div className="max-w-[85rem] min-w-0 flex-[3]">
         <Header isBorderRadius={true} />
 
         <div className="mt-[1.5rem] mb-1 flex flex-row gap-[0.5rem] pt-[2rem] pr-[5rem] pb-[2rem] pl-[5rem]">
@@ -171,12 +171,12 @@ const Material: React.FC = () => {
             onMaterialContextMenu={handleMaterialContextMenu}
           />
 
-          <div className="flex-1 flex flex-col overflow-hidden border border-[#e9ecef] shadow-sm">
+          <div className="flex flex-1 flex-col overflow-hidden border border-[#e9ecef] shadow-sm">
             <MaterialToolbar
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               actionButton={
-                <button className="rounded-[7px] bg-[#392579] py-2 font-['Poppins'] text-xs font-bold text-[#fff]">
+                <button className="ml-[1rem] rounded-[7px] bg-[#392579] py-2 font-['Poppins'] text-xs font-bold text-[#fff]">
                   + Add New
                 </button>
               }

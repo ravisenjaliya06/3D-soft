@@ -36,7 +36,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         }}
       >
         <div
-          className={`flex items-center justify-between py-[0.75rem] pl-[0.6rem] pr-[1.2rem] cursor-pointer transition-all duration-[0.2s] ease-in-out rounded-[0.375rem] mx-[0.5rem] my-[0.08rem] text-[0.875rem] hover:bg-[var(--primary-hover)] ${isExpanded ? `bg-[var(--primary-hover)] text-[var(--primary-white)] font-semibold` : ''}`}
+          className={`mx-[0.5rem] my-[0.08rem] flex cursor-pointer items-center justify-between rounded-[0.375rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
           onClick={() => {
             if (!isSubItem) {
               onToggleCategory(item.id);
@@ -46,23 +46,37 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
             }
           }}
         >
-          <div className="flex items-center gap-[0.75rem] flex-1 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-[0.75rem]">
             {!isSubItem && item.icon && (
-              <span className="text-[0.875rem] text-center">
-                <img src={item.icon || '/placeholder.svg'} alt="" className={`w-4 h-4 ${isExpanded ? 'invert brightness-[#392579] bg-[var(--primary-hover)]' : ''}`} />
+              <span className="text-center text-[0.875rem]">
+                <img
+                  src={item.icon || '/placeholder.svg'}
+                  alt=""
+                  className={`h-4 w-4 ${isExpanded ? 'bg-[var(--primary-hover)] brightness-[#392579] invert' : ''}`}
+                />
               </span>
             )}
-            <span className={`text-[0.7rem] overflow-hidden font-[var(--font-family)] ${isExpanded ? 'text-[#392579]' : 'text-[var(--primary-color)]'}`}>{item.name}</span>
+            <span
+              className={`overflow-hidden text-[0.7rem] font-[var(--font-family)] ${isExpanded ? 'text-[#392579]' : 'text-[var(--primary-color)]'}`}
+            >
+              {item.name}
+            </span>
           </div>
           {!isSubItem && hasSubItems && (
-            <span className={`text-[0.625rem] transition-transform duration-200 ease-in-out text-[#392579] shrink-0 ${isExpanded ? 'rotate-0' : ''}`}>
-              <img src={isExpanded ? assets.up_arrow : assets.down_arrow} alt="" className={isExpanded ? 'invert' : ''} />
+            <span
+              className={`shrink-0 text-[0.625rem] text-[#392579] transition-transform duration-200 ease-in-out ${isExpanded ? 'rotate-0' : ''}`}
+            >
+              <img
+                src={isExpanded ? assets.up_arrow : assets.down_arrow}
+                alt=""
+                className={isExpanded ? 'invert' : ''}
+              />
             </span>
           )}
         </div>
 
         {hasSubItems && isExpanded && !isSubItem && (
-          <div className="relative ml-6 mb-1 pl-0 animate-slide-down">
+          <div className="animate-slide-down relative mb-1 ml-6 pl-0">
             {item.subItems!.map((subItem) => (
               <div
                 key={subItem.id}
@@ -82,8 +96,8 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   };
 
   return (
-    <div className="w-[14rem] h-[42rem] custom-scrollbar bg-[var(--primary-white)] rounded-[0.3rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] overflow-y-auto overflow-x-hidden ">
-      <div className='py-[0.7rem] rounded-[10px]'>
+    <div className="custom-scrollbar h-[42rem] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.3rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)]">
+      <div className="rounded-[10px] py-[0.7rem]">
         {materialCategories.map((category) => renderMenuItem(category))}
       </div>
     </div>
