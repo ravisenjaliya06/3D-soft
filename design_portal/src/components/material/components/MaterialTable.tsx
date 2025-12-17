@@ -55,36 +55,35 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
-    <div className="custom-scrollbar flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0">
-      <div className="sticky z-20 mt-[0.4rem] mb-6 ml-[0.2rem] bg-[var(--primary-white)]">
+    <div className="custom-scrollbar min-h-[60vh] flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]">
+      <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer px-[1rem] py-[0.5rem] text-[0.75rem] font-[var(--font-family)] whitespace-nowrap transition-all duration-200 ease-in-out ${
+              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-base font-[var(--font-family)] font-semibold whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
-                  ? `rounded-[0.199rem] border-t border-r border-b-0 border-l border-[var(--primary-color)] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
-                  : `text-[var(--primary-color)] hover:rounded-[0.199rem] hover:border hover:border-b-0 hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
+                  ? `relative z-30 -mb-px rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
+                  : `text-[var(--primary-color-grey-2)] hover:rounded-[0.199rem] hover:border hover:border-b hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
               } `}
               onClick={() => onTabChange(tab.id)}
             >
-              {tab.label}
+              <p className="mb-[0px] pb-[5px]">{tab.label}</p>
             </div>
           ))}
         </div>
       </div>
-      <hr className="mt-14 h-[0.02rem] border-0 bg-[var(--secondry-background-color)]" />
       <table className="w-full table-auto border-collapse overflow-auto bg-white text-left align-middle text-[0.85rem]">
         <thead>
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`sticky top-0 z-10 border-r border-l border-[#39257933] bg-white p-[0.75rem] text-xs font-[var(--font-family)] font-semibold whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
+                className={`sticky top-0 z-10 border-t border-r border-l border-[#39257933] bg-white p-[0.75rem] py-[0px] pb-[5px] text-xs font-[600] font-[var(--font-family)] whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
-                  {column.label}
+                  <p className="font-[600]">{column.label}</p>
                   {column.sortable && (
                     <div className="flex flex-col items-center">
                       <img
@@ -105,21 +104,32 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {visibleMaterials.map((row) => (
-            <tr
-              key={row.id}
-              className="cursor-pointer border-[#39257933] text-sm font-[var(--font-family)] transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
-            >
-              {columns.map((column) => (
-                <td
-                  key={column.key}
-                  className="h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] whitespace-nowrap text-gray-700"
-                >
-                  {getCellValue(row, column.key)}
-                </td>
-              ))}
+          {visibleMaterials.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="font-family-['Poppins'] py-[10rem] text-center text-sm font-medium text-gray-500"
+              >
+                No items available
+              </td>
             </tr>
-          ))}
+          ) : (
+            visibleMaterials.map((row, rowIndex) => (
+              <tr
+                key={row.id}
+                className="cursor-pointer border-[#39257933] text-sm transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key}
+                    className={`font-family-['Poppins'] h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                  >
+                    {getCellValue(row, column.key)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
       {visibleCount < materials.length && (

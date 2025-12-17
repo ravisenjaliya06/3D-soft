@@ -61,7 +61,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
               </span>
             )}
             <span
-              className={`overflow-hidden text-[0.7rem] font-[var(--font-family)] ${isExpanded ? 'text-[#392579]' : 'text-[var(--primary-color)]'}`}
+              className={`font-family-['Poppins'] overflow-hidden text-[0.7rem] ${isExpanded ? 'text-[#392579]' : 'text-[var(--primary-color)]'}`}
             >
               {item.name}
             </span>
@@ -84,6 +84,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
             {item.subItems!.map((subItem) => (
               <div
                 key={subItem.id}
+                className="font-family-['Poppins']"
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
