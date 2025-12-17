@@ -5,8 +5,8 @@ from django.urls import path
 from design.views import (
     DesignCatalogViewSet,
     DesignSettingViewset,
-    DesignViewset,
     DesignVersionViewSet,
+    DesignViewset,
     NestAPIViewset,
     OrganizationDesignSettingViewSet,
 )

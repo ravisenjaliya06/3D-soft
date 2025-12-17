@@ -16,13 +16,7 @@ from design.models import (
     DesignSetting,
     DesignVersion,
 )
-from tests.model_factory import (
-    new_catalog_rule,
-    new_catalog_rule_part,
-    new_design,
-    new_design_catalog,
-    new_design_version,
-)
+from tests.model_factory import new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -392,12 +386,8 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     # Design Version API Test Cases
     def test_get_design_versions_list(self: "DesignAPIViewTestCase") -> None:
         """Test GET /versions/ returns list of versions for user's organization"""
-        version1 = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-        version2 = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+        version2 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
         response = self.client.get(
             reverse("design_versions"),
@@ -416,9 +406,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test GET /versions/ returns empty list when no versions exist"""
-        DesignVersion.objects.filter(
-            design__organization=self.organization
-        ).delete()
+        DesignVersion.objects.filter(design__organization=self.organization).delete()
 
         response = self.client.get(
             reverse("design_versions"),
@@ -435,20 +423,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     ) -> None:
         """Test GET /versions/ only returns versions for user's organization"""
         # Create version for user's organization
-        version1 = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-
-        # Create version for different organization (using invalid_user)
-        other_design = new_design(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            user=self.invalid_user,
-            design_name="other design",
-        )
-        other_version = new_design_version(
-            database=DEFAULT_DATABASE, design=other_design
-        )
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
         response = self.client.get(
             reverse("design_versions"),
@@ -459,36 +434,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         version_ids = [v["id"] for v in response.data]
         self.assertIn(str(version1.id), version_ids)
-        # Should not include versions from other organizations
-        # Note: Since both designs are in same org, both will appear
-        # This test verifies filtering works correctly
 
-    # Design Catalog API Test Cases - GET
     def test_get_design_catalogs_with_design_id(
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test GET /catalogs/ with design_id returns latest version's catalogs"""
-        version = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-        catalog1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type="Cabinet",
-            name="Main Cabinet",
-            data={"id": "catalog1", "name": "Main Cabinet", "type": "Cabinet"},
-        )
-        rule1 = new_catalog_rule(
-            database=DEFAULT_DATABASE, catalog=catalog1, name="DEFAULT"
-        )
-        part1 = new_catalog_rule_part(
-            database=DEFAULT_DATABASE,
-            catalog_rule=rule1,
-            name="Part 1",
-            data={"id": "part1", "name": "Part 1", "parent": str(catalog1.id)},
-        )
-
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
         response = self.client.get(
             reverse("design_catalogs"),
             {"design_id": str(self.design.id)},
@@ -507,29 +458,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test GET /catalogs/ with design_id and version_id returns specific version"""
-        version1 = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-        version2 = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-
-        catalog1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Cabinet",
-            name="Version 1 Cabinet",
-            data={"id": "catalog1", "name": "Version 1 Cabinet"},
-        )
-        catalog2 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version2,
-            type="Cabinet",
-            name="Version 2 Cabinet",
-            data={"id": "catalog2", "name": "Version 2 Cabinet"},
-        )
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
         response = self.client.get(
             reverse("design_catalogs"),
@@ -596,36 +525,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test GET /catalogs/ returns catalogs with their rules and parts"""
-        version = new_design_version(
-            database=DEFAULT_DATABASE, design=self.design
-        )
-        catalog = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type="Cabinet",
-            name="Test Cabinet",
-            data={"id": "catalog1", "name": "Test Cabinet", "type": "Cabinet"},
-        )
-        rule1 = new_catalog_rule(
-            database=DEFAULT_DATABASE, catalog=catalog, name="RULE1"
-        )
-        rule2 = new_catalog_rule(
-            database=DEFAULT_DATABASE, catalog=catalog, name="RULE2"
-        )
-        part1 = new_catalog_rule_part(
-            database=DEFAULT_DATABASE,
-            catalog_rule=rule1,
-            name="Part 1",
-            data={"id": "part1", "name": "Part 1"},
-        )
-        part2 = new_catalog_rule_part(
-            database=DEFAULT_DATABASE,
-            catalog_rule=rule2,
-            name="Part 2",
-            data={"id": "part2", "name": "Part 2"},
-        )
-
         response = self.client.get(
             reverse("design_catalogs"),
             {"design_id": str(self.design.id)},
@@ -635,16 +534,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         items = response.data["items"]
-        # Should have 1 catalog + 2 parts = 3 items
         self.assertEqual(len(items), 3)
-        # The serializer returns items with IDs from data field (which overrides DB ID)
         item_ids = [item.get("id") for item in items]
-        self.assertIn("catalog1", item_ids)  # Frontend ID from catalog.data
-        # Parts use IDs from part.data, not the database UUID
-        self.assertIn("part1", item_ids)  # From part1.data["id"]
-        self.assertIn("part2", item_ids)  # From part2.data["id"]
+        self.assertIn("catalog1", item_ids)
+        self.assertIn("part1", item_ids)
+        self.assertIn("part2", item_ids)
 
-    # Design Catalog API Test Cases - POST
     def test_create_design_catalog_success(
         self: "DesignAPIViewTestCase",
     ) -> None:
@@ -679,30 +574,21 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertIn("message", response.data)
         self.assertIn("version_id", response.data)
         self.assertIn("catalog_ids", response.data)
-        self.assertEqual(
-            response.data["message"], "Design saved successfully"
-        )
+        self.assertEqual(response.data["message"], "Design saved successfully")
         self.assertIsInstance(response.data["catalog_ids"], list)
         self.assertEqual(len(response.data["catalog_ids"]), 1)
 
-        # Verify version was created
-        version = DesignVersion.objects.filter(
-            id=response.data["version_id"]
-        ).first()
+        version = DesignVersion.objects.filter(id=response.data["version_id"]).first()
         self.assertIsNotNone(version)
         self.assertEqual(version.design.id, self.design.id)
 
-        # Verify catalog was created
         catalog = DesignCatalog.objects.filter(
             id=response.data["catalog_ids"][0]
         ).first()
         self.assertIsNotNone(catalog)
         self.assertEqual(catalog.name, "Main Cabinet")
 
-        # Verify rule part was created
-        rule_parts = CatalogRuleParts.objects.filter(
-            catalog_rule__catalog=catalog
-        )
+        rule_parts = CatalogRuleParts.objects.filter(catalog_rule__catalog=catalog)
         self.assertEqual(rule_parts.count(), 1)
         self.assertEqual(rule_parts.first().name, "Child Part")
 
@@ -746,10 +632,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["catalog_ids"]), 2)
 
-        # Verify parent-child relationship
-        catalogs = DesignCatalog.objects.filter(
-            id__in=response.data["catalog_ids"]
-        )
+        catalogs = DesignCatalog.objects.filter(id__in=response.data["catalog_ids"])
         parent_catalog = catalogs.get(name="Parent Cabinet")
         child_catalog = catalogs.get(name="Child Cabinet")
         self.assertEqual(child_catalog.parent.id, parent_catalog.id)
@@ -802,8 +685,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # The error message is "At least one item with isMain=true is required"
-        # (The utility function uses IS_MAIN = "isMain" constant)
         self.assertIn("isMain", str(response.data))
 
     def test_create_design_catalog_child_without_parent(
@@ -824,8 +705,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
                     "name": "Child Part",
                     "type": "Plank",
                     "is_main": False,
-                    # Missing parent
-                }
+                },
             ],
         }
 
@@ -837,7 +717,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # The error message is "Child item {id} missing parent"
         self.assertIn("parent", str(response.data))
 
     def test_create_design_catalog_parent_not_found(
@@ -859,7 +738,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
                     "type": "Plank",
                     "is_main": False,
                     "parent": "nonexistent",
-                }
+                },
             ],
         }
 
@@ -871,7 +750,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # The error message is "Parent 'nonexistent' not found for child 'child1'"
         self.assertIn("Parent", str(response.data))
         self.assertIn("nonexistent", str(response.data))
 
@@ -921,14 +799,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Verify rules were created
         catalog = DesignCatalog.objects.filter(
             id=response.data["catalog_ids"][0]
         ).first()
         rules = CatalogRules.objects.filter(catalog=catalog)
-        self.assertEqual(rules.count(), 2)  # RULE1 and RULE2
+        self.assertEqual(rules.count(), 2)
 
-        # Verify parts were assigned to correct rules
         rule1 = rules.get(name="RULE1")
         rule2 = rules.get(name="RULE2")
         self.assertEqual(rule1.catalog_rule_parts.count(), 2)
@@ -943,7 +819,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             "items": [
                 {
                     "id": "main1",
-                    # Missing required fields: name, type
                     "is_main": True,
                 }
             ],
@@ -1002,7 +877,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["catalog_ids"]), 1)
 
-        # Verify all parts were created
         catalog = DesignCatalog.objects.filter(
             id=response.data["catalog_ids"][0]
         ).first()

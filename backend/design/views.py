@@ -278,6 +278,7 @@ class DesignVersionViewSet(ModelViewSet):
             design__organization=self.request.user.selected_organization
         )
 
+
 class DesignCatalogViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     http_method_names = [GET, POST]
