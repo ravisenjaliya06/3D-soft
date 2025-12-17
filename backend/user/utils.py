@@ -11,11 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
-from material.models import (
-    Company,
-    Material,
-    Properties,
-)
+from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData

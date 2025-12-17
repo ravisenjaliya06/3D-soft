@@ -1,12 +1,13 @@
 # Python imports
+from collections import defaultdict
 from typing import Dict, List
 
-from collections import defaultdict
+# External imports
 from rest_framework.exceptions import ValidationError
 
 # App imports
-from design.models import Design, DesignSetting
 from design.constant import IS_MAIN
+from design.models import Design, DesignSetting
 from umaboy.models import Organization
 
 
@@ -86,7 +87,8 @@ def parse_design_data(data: List[Dict]) -> Dict:
 
     return result
 
-def split_parents_and_children(items):
+
+def split_parents_and_children(items: List[Dict]) -> tuple:
     """
     Splits flat scene items into parents and children.
 
@@ -105,9 +107,7 @@ def split_parents_and_children(items):
             parents[item.get("id")] = item
 
     if not parents:
-        raise ValidationError(
-            "At least one item with isMain=true is required"
-        )
+        raise ValidationError("At least one item with isMain=true is required")
 
     for item in items:
         if item.get(IS_MAIN):
@@ -115,9 +115,7 @@ def split_parents_and_children(items):
 
         parent_id = item.get("parent")
         if not parent_id:
-            raise ValidationError(
-                f"Child item {item.get('id')} missing parent"
-            )
+            raise ValidationError(f"Child item {item.get('id')} missing parent")
 
         if parent_id not in parents:
             raise ValidationError(

@@ -1,14 +1,25 @@
 # Python imports
 from typing import Any, Dict
 
-# External imports
-from rest_framework import serializers
+# Django imports
 from django.db import transaction
 
+# External imports
+from rest_framework import serializers
+
 # App imports
-from design.models import CatalogRuleParts, CatalogRules, Design, DesignSetting, DesignCatalog, DesignVersion
+from design.models import (
+    CatalogRuleParts,
+    CatalogRules,
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+)
 from design.utils import create_design_settings, split_parents_and_children
+from umaboy.models import Organization
 from user.constant import PUT
+
 
 class DesignSerializer(serializers.ModelSerializer):
 
@@ -58,6 +69,7 @@ class DesignSettingSerializer(serializers.ModelSerializer):
             "sheet_data",
         ]
 
+
 class NestingItemSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
@@ -71,29 +83,29 @@ class SceneGetSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField()
 
-    def to_representation(self, version: DesignVersion):
-        catalogs = (
-            DesignCatalog.objects
-            .filter(version=version)
-            .prefetch_related(
-                "catalog_rule__catalog_rule_parts",
-            )
+    def to_representation(self: "SceneGetSerializer", version: DesignVersion) -> dict:
+        catalogs = DesignCatalog.objects.filter(version=version).prefetch_related(
+            "catalog_rule__catalog_rule_parts",
         )
 
         items = []
 
         for catalog in catalogs:
-            items.append({
-                "id": str(catalog.id),
-                **(catalog.data or {}),
-            })
+            items.append(
+                {
+                    "id": str(catalog.id),
+                    **(catalog.data or {}),
+                }
+            )
 
             for rule in catalog.catalog_rule.all():
                 for part in rule.catalog_rule_parts.all():
-                    items.append({
-                        "id": part.id,
-                        **part.data,
-                    })
+                    items.append(
+                        {
+                            "id": part.id,
+                            **part.data,
+                        }
+                    )
 
         return {
             "version_id": str(version.id),
@@ -106,8 +118,8 @@ class SceneItemSerializer(serializers.Serializer):
     name = serializers.CharField()
     type = serializers.CharField()
     parent = serializers.CharField(required=False, allow_null=True)
-    isMain = serializers.BooleanField(required=False)
-    geometryType = serializers.CharField(required=False)
+    is_main = serializers.BooleanField(required=False, source="isMain")
+    geometry_type = serializers.CharField(required=False, source="geometryType")
     dimensions = serializers.JSONField(required=False)
     position = serializers.JSONField(required=False)
     rotation = serializers.JSONField(required=False)
@@ -119,18 +131,20 @@ class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = SceneItemSerializer(many=True)
 
-
-class ScenePayloadSerializer(serializers.Serializer):
-    design_id = serializers.UUIDField()
-    items = SceneItemSerializer(many=True)
-
-    def _get_design(self, design_id, org):
+    def _get_design(
+        self: "ScenePayloadSerializer", design_id: str, organization: Organization
+    ) -> Design:
         return Design.objects.get(
             id=design_id,
-            organization=org,
+            organization=organization,
         )
 
-    def _create_catalogs(self, parents, org, version):
+    def _create_catalogs(
+        self: "ScenePayloadSerializer",
+        parents: dict,
+        organization: Organization,
+        version: DesignVersion,
+    ) -> dict:
         """
         Create all catalogs first.
         Do NOT set parent FK yet.
@@ -139,7 +153,7 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         for frontend_id, data in parents.items():
             catalog = DesignCatalog.objects.create(
-                organization=org,
+                organization=organization,
                 version=version,
                 type=data.get("type"),
                 name=data.get("name"),
@@ -153,8 +167,10 @@ class ScenePayloadSerializer(serializers.Serializer):
             catalog_map[frontend_id] = catalog
 
         return catalog_map
-    
-    def _link_parent_catalogs(self, parents, catalog_map):
+
+    def _link_parent_catalogs(
+        self: "ScenePayloadSerializer", parents: dict, catalog_map: dict
+    ) -> None:
         """
         Update parent FK for catalogs that have a parent
         """
@@ -176,8 +192,9 @@ class ScenePayloadSerializer(serializers.Serializer):
             child_catalog.data["parent"] = str(parent_catalog.id)
             child_catalog.save(update_fields=["parent", "data"])
 
-
-    def _create_child_rules_and_parts(self, catalog_map, children_map):
+    def _create_child_rules_and_parts(
+        self: "ScenePayloadSerializer", catalog_map: dict, children_map: dict
+    ) -> None:
         for parent_id, children in children_map.items():
             catalog = catalog_map[parent_id]
             rule_cache = {}
@@ -200,7 +217,12 @@ class ScenePayloadSerializer(serializers.Serializer):
                     data=child_data,
                 )
 
-    def _get_or_create_rule(self, catalog, rule_cache, rule_name):
+    def _get_or_create_rule(
+        self: "ScenePayloadSerializer",
+        catalog: DesignCatalog,
+        rule_cache: dict,
+        rule_name: str,
+    ) -> CatalogRules:
         if rule_name not in rule_cache:
             rule_cache[rule_name], _ = CatalogRules.objects.get_or_create(
                 catalog=catalog,
@@ -208,13 +230,11 @@ class ScenePayloadSerializer(serializers.Serializer):
             )
         return rule_cache[rule_name]
 
-    def create(self, validated_data):
+    def create(self: "ScenePayloadSerializer", validated_data: dict) -> dict:
         request = self.context["request"]
         org = request.user.selected_organization
 
-        parents, children_map = split_parents_and_children(
-            validated_data["items"]
-        )
+        parents, children_map = split_parents_and_children(validated_data["items"])
 
         with transaction.atomic():
             design = self._get_design(validated_data["design_id"], org)

@@ -7,7 +7,6 @@ from typing import Any, Dict
 from django.db.models import QuerySet
 
 # External imports
-from django.shortcuts import get_object_or_404
 import pandas as pd
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import NotFound
@@ -26,7 +25,7 @@ from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
-from design.models import Design, DesignCatalog, DesignSetting, DesignVersion, Organization
+from design.models import Design, DesignSetting, DesignVersion, Organization
 from design.nest import nest
 from design.serializers import (
     DesignSerializer,
@@ -272,17 +271,18 @@ class DesignCatalogViewSet(ModelViewSet):
     http_method_names = [GET, POST]
 
     def get_queryset(self: "DesignCatalogViewSet") -> QuerySet[Design]:
-        return Design.objects.filter(organization=self.request.user.selected_organization)
-
-    def get_latest_version(self, design):
-        return (
-            DesignVersion.objects
-            .filter(design=design)
-            .order_by("-created_at")
-            .first()
+        return Design.objects.filter(
+            organization=self.request.user.selected_organization
         )
 
-    def list(self, request):
+    def get_latest_version(
+        self: "DesignCatalogViewSet", design: Design
+    ) -> DesignVersion:
+        return (
+            DesignVersion.objects.filter(design=design).order_by("-created_at").first()
+        )
+
+    def list(self: "DesignCatalogViewSet", request: Request) -> Response:
         design_id = request.query_params.get("design_id")
         version_id = request.query_params.get("version_id")
 
@@ -293,8 +293,7 @@ class DesignCatalogViewSet(ModelViewSet):
             )
 
         version = (
-            DesignVersion.objects
-            .filter(design_id=design_id)
+            DesignVersion.objects.filter(design_id=design_id)
             .order_by("-created_at")
             .first()
         )
@@ -314,7 +313,9 @@ class DesignCatalogViewSet(ModelViewSet):
         )
         return Response(serializer.data)
 
-    def create(self, request, *args, **kwargs):
+    def create(
+        self: "DesignCatalogViewSet", request: Request, *args, **kwargs
+    ) -> Response:
         serializer = ScenePayloadSerializer(
             data=request.data,
             context={"request": request},

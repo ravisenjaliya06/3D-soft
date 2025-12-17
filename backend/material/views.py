@@ -4,9 +4,8 @@
 from django.db.models.query import QuerySet
 
 # External imports
-from rest_framework import generics, serializers, status, viewsets
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
 # App imports
 from umaboy.constant import DELETE, GET, POST, PUT

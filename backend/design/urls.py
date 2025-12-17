@@ -29,14 +29,12 @@ urlpatterns = [
         NestAPIViewset.as_view({"put": "download_nesting_file"}),
         name="download_nesting_file",
     ),
-
     # Catalogs
     path(
-        "catalogs/", 
-        DesignCatalogViewSet.as_view({"get": "list", "post": "create"}), 
-        name="design_catalogs"
+        "catalogs/",
+        DesignCatalogViewSet.as_view({"get": "list", "post": "create"}),
+        name="design_catalogs",
     ),
-
     # Design endpoints
     path(
         "",

@@ -22,7 +22,6 @@ from .models import (
     MountPlateHoles,
     Properties,
 )
-from .utils import duplicate_material
 
 
 class CompanySerializer(serializers.ModelSerializer):

@@ -9,10 +9,7 @@ from django.utils import timezone
 
 # App imports
 from design.models import Design, DesignSetting
-from material.models import (
-    Company,
-    Material,
-)
+from material.models import Company, Material
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 

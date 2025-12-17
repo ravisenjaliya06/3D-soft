@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 
 # App imports
-from design.models import Design
 from umaboy.models import Organization
 
 

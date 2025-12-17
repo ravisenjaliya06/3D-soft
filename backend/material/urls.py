@@ -2,11 +2,7 @@
 from django.urls import path
 
 # Local imports
-from .views import (
-    CompanyViewSet,
-    FinishesLibraryListAPIView,
-    MaterialViewSet,
-)
+from .views import CompanyViewSet, FinishesLibraryListAPIView, MaterialViewSet
 
 urlpatterns = [
     path(

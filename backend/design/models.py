@@ -78,7 +78,7 @@ class Design(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self: "Design") -> str:
         return self.design_name
 
 
@@ -159,9 +159,7 @@ class DesignCatalog(models.Model):
     )
     type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
     name = models.CharField(max_length=100)
-    parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True
-    )
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -184,9 +182,9 @@ class CatalogRuleParts(models.Model):
     catalog_rule = models.ForeignKey(
         CatalogRules,
         null=True,
-        blank=True, 
-        on_delete=models.CASCADE, 
-        related_name="catalog_rule_parts"
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="catalog_rule_parts",
     )
     material = models.ForeignKey(
         "material.Material",
