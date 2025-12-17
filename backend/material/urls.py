@@ -3,9 +3,6 @@ from django.urls import path
 
 # Local imports
 from .views import (
-    CatalogRulePartsListView,
-    CatalogRulePartsViewSet,
-    CatalogViewSet,
     CompanyViewSet,
     FinishesLibraryListAPIView,
     MaterialViewSet,
@@ -65,40 +62,5 @@ urlpatterns = [
             }
         ),
         name="material-details",
-    ),
-    path(
-        "catalog/",
-        CatalogViewSet.as_view({"get": "list"}),
-        name="catalog-list",
-    ),
-    path(
-        "catalog/<uuid:id>/",
-        CatalogViewSet.as_view({"put": "update"}),
-        name="catalog-list",
-    ),
-    path(
-        "catalog/part/<uuid:id>/",
-        CatalogRulePartsViewSet.as_view({"put": "update"}),
-        name="catalog-parts",
-    ),
-    path(
-        "catalog_rules/<uuid:rule_id>/parts/",
-        CatalogRulePartsListView.as_view(),
-        name="catalog-rule-parts",
-    ),
-    path(
-        "catalog/<uuid:catalog_id>/design/",
-        CatalogViewSet.as_view({"post": "create"}),
-        name="create-design-catalog",
-    ),
-    path(
-        "catalog/design/",
-        CatalogViewSet.as_view({"post": "create"}),
-        name="create-default-catalog",
-    ),
-    path(
-        "catalog/design/<uuid:id>/",
-        CatalogViewSet.as_view({"delete": "destroy"}),
-        name="catalog-design-delete",
     ),
 ]

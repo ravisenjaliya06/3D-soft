@@ -29,6 +29,21 @@ class DesignStatus(models.TextChoices):
     COMPLETED = "Completed"
 
 
+class CatalogTypeChoices(models.TextChoices):
+    """
+    Catalog Type
+    """
+
+    CARCASS = " Carcass"
+    PLANK = "Plank"
+    DOOR = "Door"
+    DRAWER = "Drawer"
+    SLIDING_DOOR = "Sliding Door"
+    CABINET = "Cabinet"
+    PLATFORM = "Platform"
+    INVISIBLE_COMPARTMENT = "Invisible Compartment"
+
+
 class Design(models.Model):
     """
     Design Model
@@ -62,6 +77,9 @@ class Design(models.Model):
     is_custom = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.design_name
 
 
 class DesignUnits(models.TextChoices):
@@ -118,3 +136,66 @@ class DesignScreenshot(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class DesignVersion(models.Model):
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    design = models.ForeignKey(Design, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class DesignCatalog(models.Model):
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
+    version = models.ForeignKey(
+        DesignVersion, on_delete=models.CASCADE, null=True, blank=True
+    )
+    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
+    name = models.CharField(max_length=100)
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True
+    )
+    data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class CatalogRules(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    catalog = models.ForeignKey(
+        DesignCatalog, on_delete=models.CASCADE, related_name="catalog_rule"
+    )
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ("catalog", "name")
+
+
+class CatalogRuleParts(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    catalog_rule = models.ForeignKey(
+        CatalogRules,
+        null=True,
+        blank=True, 
+        on_delete=models.CASCADE, 
+        related_name="catalog_rule_parts"
+    )
+    material = models.ForeignKey(
+        "material.Material",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="catalog_rule_part_material",
+    )
+    data = models.JSONField(null=True, blank=True)
+    model_file = models.FileField(
+        upload_to="project/catalog_rules", null=True, blank=True
+    )

@@ -10,9 +10,6 @@ from django.utils import timezone
 # App imports
 from design.models import Design, DesignSetting
 from material.models import (
-    Catalog as MaterialCatalog,
-    CatalogRuleParts,
-    CatalogRules,
     Company,
     Material,
 )
@@ -144,46 +141,4 @@ def new_material_for_material(
         company=company,
         type=type,
         is_deleted=False,
-    )
-
-
-def new_catalog_for_material(
-    database: str,
-    name: str,
-    organization: Organization,
-    type: str,
-    width: int = 101,
-    height: int = 200,
-    design: Optional[Design] = None,
-) -> MaterialCatalog:
-    return MaterialCatalog.objects.using(database).create(
-        type=type,
-        name=name,
-        organization=organization,
-        width=width,
-        height=height,
-        design=design,
-    )
-
-
-def new_catalog_rules(
-    database: str, name: str, catalog: MaterialCatalog
-) -> CatalogRules:
-    return CatalogRules.objects.using(database).create(name=name, catalog=catalog)
-
-
-def new_catalog_rule_parts(
-    database: str,
-    name: str,
-    catalog_rule: CatalogRules,
-    width: int = 100,
-    height: int = 200,
-    material: Optional[Material] = None,
-) -> CatalogRuleParts:
-    return CatalogRuleParts.objects.using(database).create(
-        name=name,
-        catalog_rule=catalog_rule,
-        width=width,
-        height=height,
-        material=material,
     )

@@ -7,6 +7,7 @@ from typing import Any, Dict
 from django.db.models import QuerySet
 
 # External imports
+from django.shortcuts import get_object_or_404
 import pandas as pd
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import NotFound
@@ -25,12 +26,14 @@ from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
-from design.models import Design, DesignSetting, Organization
+from design.models import Design, DesignCatalog, DesignSetting, DesignVersion, Organization
 from design.nest import nest
 from design.serializers import (
     DesignSerializer,
     DesignSettingSerializer,
     NestingItemSerializer,
+    SceneGetSerializer,
+    ScenePayloadSerializer,
 )
 from design.utils import parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
@@ -262,3 +265,61 @@ class NestAPIViewset(ModelViewSet):
                 {"Error": "Enter Valid Format"}, status=HTTP_400_BAD_REQUEST
             )
         return Response({"file": file_path}, status=HTTP_200_OK)
+
+
+class DesignCatalogViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    http_method_names = [GET, POST]
+
+    def get_queryset(self: "DesignCatalogViewSet") -> QuerySet[Design]:
+        return Design.objects.filter(organization=self.request.user.selected_organization)
+
+    def get_latest_version(self, design):
+        return (
+            DesignVersion.objects
+            .filter(design=design)
+            .order_by("-created_at")
+            .first()
+        )
+
+    def list(self, request):
+        design_id = request.query_params.get("design_id")
+        version_id = request.query_params.get("version_id")
+
+        if not design_id:
+            return Response(
+                {"detail": "design_id is required"},
+                status=400,
+            )
+
+        version = (
+            DesignVersion.objects
+            .filter(design_id=design_id)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if version_id:
+            version = DesignVersion.objects.filter(id=version_id).first()
+
+        if not version:
+            return Response(
+                {"detail": "Design not found"},
+                status=404,
+            )
+
+        serializer = SceneGetSerializer(
+            version,
+            context={"request": request},
+        )
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = ScenePayloadSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+
+        return Response(result, status=HTTP_201_CREATED)

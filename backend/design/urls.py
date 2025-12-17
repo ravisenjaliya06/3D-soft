@@ -3,6 +3,7 @@ from django.urls import path
 
 # App imports
 from design.views import (
+    DesignCatalogViewSet,
     DesignSettingViewset,
     DesignViewset,
     NestAPIViewset,
@@ -28,6 +29,14 @@ urlpatterns = [
         NestAPIViewset.as_view({"put": "download_nesting_file"}),
         name="download_nesting_file",
     ),
+
+    # Catalogs
+    path(
+        "catalogs/", 
+        DesignCatalogViewSet.as_view({"get": "list", "post": "create"}), 
+        name="design_catalogs"
+    ),
+
     # Design endpoints
     path(
         "",
