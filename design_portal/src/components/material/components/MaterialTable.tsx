@@ -55,7 +55,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
-    <div className="custom-scrollbar min-h-[60vh] flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]">
+    <div className="h-full flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]">
       <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[7px]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
@@ -63,7 +63,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
               key={tab.id}
               className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-base font-semibold whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
-                  ? `relative z-30 -mb-px rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
+                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-semibold text-[var(--primary-color)]`
                   : `text-[var(--primary-color-grey-2)] hover:rounded-[0.199rem] hover:border hover:border-b hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
               } `}
               onClick={() => onTabChange(tab.id)}
@@ -83,7 +83,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
-                  <p className="font-[600]">{column.label}</p>
+                  <p className="text-[0.9rem] font-[600]">{column.label}</p>
                   {column.sortable && (
                     <div className="flex flex-col items-center">
                       <img
@@ -108,7 +108,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             <tr>
               <td
                 colSpan={columns.length}
-                className="py-[10rem] text-center text-sm font-medium text-gray-500"
+                className="py-[10rem] text-center text-[0.8rem] font-medium text-gray-500"
               >
                 No items available
               </td>
@@ -117,12 +117,12 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             visibleMaterials.map((row, rowIndex) => (
               <tr
                 key={row.id}
-                className="cursor-pointer border-[#39257933] text-sm transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
+                className="border-[#39257933] text-sm transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.8rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
                   >
                     {getCellValue(row, column.key)}
                   </td>
