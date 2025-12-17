@@ -1,7 +1,7 @@
 import { assets } from '@/svgPaths';
 import type React from 'react';
-import type { MaterialItem } from '../types';
 import styles from '../material.module.css';
+import type { MaterialItem } from '../types';
 
 interface MaterialSidebarProps {
   materialCategories: MaterialItem[];

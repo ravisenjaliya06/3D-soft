@@ -1,4 +1,4 @@
-import { assets, MENU_UP_SVG, MENU_DOWN_SVG } from '@/svgPaths';
+import { assets, MENU_DOWN_SVG, MENU_UP_SVG } from '@/svgPaths';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { CATEGORY_TABS } from '../constants';
@@ -61,10 +61,11 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer px-[1rem] py-[0.5rem] text-[0.75rem] font-[var(--font-family)] whitespace-nowrap transition-all duration-200 ease-in-out ${activeTab === tab.id
-                ? `rounded-[0.199rem] border-t border-r border-b-0 border-l border-[var(--primary-color)] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
-                : `text-[var(--primary-color)] hover:rounded-[0.199rem] hover:border hover:border-b-0 hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
-                } `}
+              className={`mb-[-2px] cursor-pointer px-[1rem] py-[0.5rem] text-[0.75rem] font-[var(--font-family)] whitespace-nowrap transition-all duration-200 ease-in-out ${
+                activeTab === tab.id
+                  ? `rounded-[0.199rem] border-t border-r border-b-0 border-l border-[var(--primary-color)] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
+                  : `text-[var(--primary-color)] hover:rounded-[0.199rem] hover:border hover:border-b-0 hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
+              } `}
               onClick={() => onTabChange(tab.id)}
             >
               {tab.label}
@@ -73,7 +74,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
         </div>
       </div>
       <hr className="mt-14 h-[0.02rem] border-0 bg-[var(--secondry-background-color)]" />
-      <table className="w-full table-auto border-collapse overflow-auto bg-white text-center align-middle text-[0.85rem]">
+      <table className="w-full table-auto border-collapse overflow-auto bg-white text-left align-middle text-[0.85rem]">
         <thead>
           <tr>
             {columns.map((column) => (
@@ -82,12 +83,20 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 className={`sticky top-0 z-10 border-r border-l border-[#39257933] bg-white p-[0.75rem] text-xs font-[var(--font-family)] font-semibold whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
                 onClick={() => column.sortable && onSort(column.key)}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-start">
                   {column.label}
                   {column.sortable && (
                     <div className="flex flex-col items-center">
-                      <img src={MENU_UP_SVG.menu_up} alt="Sort icon" className="w-[1rem] mb-[-10.5px] ml-[3px]" />
-                      <img src={MENU_DOWN_SVG.menu_down} alt="Sort icon" className="w-[1rem] mt-[-2.5px] ml-[7px]" />
+                      <img
+                        src={MENU_UP_SVG.menu_up}
+                        alt="Sort icon"
+                        className="mb-[-10.5px] ml-[3px] w-[1rem]"
+                      />
+                      <img
+                        src={MENU_DOWN_SVG.menu_down}
+                        alt="Sort icon"
+                        className="mt-[-2.5px] ml-[7px] w-[1rem]"
+                      />
                     </div>
                   )}
                 </div>
@@ -99,7 +108,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {visibleMaterials.map((row) => (
             <tr
               key={row.id}
-              className="cursor-pointer border-[#39257933] text-[0.65rem] font-[var(--font-family)] transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
+              className="cursor-pointer border-[#39257933] text-sm font-[var(--font-family)] transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
             >
               {columns.map((column) => (
                 <td
