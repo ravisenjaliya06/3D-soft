@@ -79,6 +79,12 @@ class NestingItemSerializer(serializers.Serializer):
     parent = serializers.CharField(required=False)
 
 
+class DesignVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DesignVersion
+        fields = ["id", "design"]
+
+
 class SceneGetSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField()
@@ -232,17 +238,17 @@ class ScenePayloadSerializer(serializers.Serializer):
 
     def create(self: "ScenePayloadSerializer", validated_data: dict) -> dict:
         request = self.context["request"]
-        org = request.user.selected_organization
+        organization = request.user.selected_organization
 
         parents, children_map = split_parents_and_children(validated_data["items"])
 
         with transaction.atomic():
-            design = self._get_design(validated_data["design_id"], org)
+            design = self._get_design(validated_data["design_id"], organization)
             version = DesignVersion.objects.create(design=design)
 
             catalog_map = self._create_catalogs(
                 parents=parents,
-                org=org,
+                organization=organization,
                 version=version,
             )
 

@@ -6,6 +6,7 @@ from design.views import (
     DesignCatalogViewSet,
     DesignSettingViewset,
     DesignViewset,
+    DesignVersionViewSet,
     NestAPIViewset,
     OrganizationDesignSettingViewSet,
 )
@@ -28,6 +29,12 @@ urlpatterns = [
         "<str:design_id>/nesting/download/",
         NestAPIViewset.as_view({"put": "download_nesting_file"}),
         name="download_nesting_file",
+    ),
+    # Design Version
+    path(
+        "versions/",
+        DesignVersionViewSet.as_view({"get": "list"}),
+        name="design_versions",
     ),
     # Catalogs
     path(

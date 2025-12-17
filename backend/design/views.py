@@ -30,6 +30,7 @@ from design.nest import nest
 from design.serializers import (
     DesignSerializer,
     DesignSettingSerializer,
+    DesignVersionSerializer,
     NestingItemSerializer,
     SceneGetSerializer,
     ScenePayloadSerializer,
@@ -265,6 +266,17 @@ class NestAPIViewset(ModelViewSet):
             )
         return Response({"file": file_path}, status=HTTP_200_OK)
 
+
+class DesignVersionViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = DesignVersionSerializer
+    http_method_names = [GET]
+    lookup_field = "design_id"
+
+    def get_queryset(self: "DesignVersionViewSet") -> QuerySet[DesignVersion]:
+        return DesignVersion.objects.filter(
+            design__organization=self.request.user.selected_organization
+        )
 
 class DesignCatalogViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
