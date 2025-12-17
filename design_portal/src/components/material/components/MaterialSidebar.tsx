@@ -1,10 +1,12 @@
 import { assets } from '@/svgPaths';
 import type React from 'react';
 import type { MaterialItem } from '../types';
+import styles from '../material.module.css';
 
 interface MaterialSidebarProps {
   materialCategories: MaterialItem[];
   expandedCategory: string;
+  selectedSubItem: string | null;
   onCategoryClick: (categoryId: string, name: string) => void;
   onToggleCategory: (categoryId: string) => void;
   onSubItemClick: (itemId: string) => void;
@@ -15,6 +17,7 @@ interface MaterialSidebarProps {
 export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   materialCategories,
   expandedCategory,
+  selectedSubItem,
   onCategoryClick,
   onToggleCategory,
   onSubItemClick,
@@ -25,6 +28,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
     const isExpanded = expandedCategory === item.id;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isSubItem = !!parentType;
+    const isSubItemActive = isSubItem && selectedSubItem === item.id;
 
     return (
       <div
@@ -36,7 +40,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         }}
       >
         <div
-          className={`mx-[0.5rem] my-[0.08rem] flex cursor-pointer items-center justify-between rounded-[0.375rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
+          className={`mx-[0.5rem] my-[0.08rem] flex cursor-pointer items-center justify-between rounded-[0.375rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isSubItemActive ? 'bg-[var(--primary-hover)] font-semibold text-[#392579]' : ''} ${!isSubItem && isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
           onClick={() => {
             if (!isSubItem) {
               onToggleCategory(item.id);
@@ -76,7 +80,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         </div>
 
         {hasSubItems && isExpanded && !isSubItem && (
-          <div className="animate-slide-down relative mb-1 ml-6 pl-0">
+          <div className={`${styles.subItemsContainer}`}>
             {item.subItems!.map((subItem) => (
               <div
                 key={subItem.id}

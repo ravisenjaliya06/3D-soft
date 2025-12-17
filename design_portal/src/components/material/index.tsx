@@ -169,6 +169,7 @@ const Material: React.FC = () => {
             onSubItemClick={handleSubItemClick}
             onContextMenu={handleContextMenu}
             onMaterialContextMenu={handleMaterialContextMenu}
+            selectedSubItem={selectedSubItem}
           />
 
           <div className="flex flex-1 flex-col overflow-hidden border border-[#e9ecef] shadow-sm">

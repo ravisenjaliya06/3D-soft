@@ -1,4 +1,4 @@
-import { assets, MENU_UP_SVG } from '@/svgPaths';
+import { assets, MENU_UP_SVG, MENU_DOWN_SVG } from '@/svgPaths';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { CATEGORY_TABS } from '../constants';
@@ -61,11 +61,10 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer px-[1rem] py-[0.5rem] text-[0.75rem] font-[var(--font-family)] whitespace-nowrap transition-all duration-200 ease-in-out ${
-                activeTab === tab.id
-                  ? `rounded-[0.199rem] border-t border-r border-b-0 border-l border-[var(--primary-color)] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
-                  : `text-[var(--primary-color)] hover:rounded-[0.199rem] hover:border hover:border-b-0 hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
-              } `}
+              className={`mb-[-2px] cursor-pointer px-[1rem] py-[0.5rem] text-[0.75rem] font-[var(--font-family)] whitespace-nowrap transition-all duration-200 ease-in-out ${activeTab === tab.id
+                ? `rounded-[0.199rem] border-t border-r border-b-0 border-l border-[var(--primary-color)] bg-[var(--primary-white)] font-semibold text-[var(--primary-color)]`
+                : `text-[var(--primary-color)] hover:rounded-[0.199rem] hover:border hover:border-b-0 hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
+                } `}
               onClick={() => onTabChange(tab.id)}
             >
               {tab.label}
@@ -86,8 +85,9 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 <div className="flex items-center justify-center">
                   {column.label}
                   {column.sortable && (
-                    <div className="ml-2 flex flex-col">
-                      <img src={MENU_UP_SVG.menu_up} alt="Sort icon" className="w-[1rem]" />
+                    <div className="flex flex-col items-center">
+                      <img src={MENU_UP_SVG.menu_up} alt="Sort icon" className="w-[1rem] mb-[-10.5px] ml-[3px]" />
+                      <img src={MENU_DOWN_SVG.menu_down} alt="Sort icon" className="w-[1rem] mt-[-2.5px] ml-[7px]" />
                     </div>
                   )}
                 </div>
