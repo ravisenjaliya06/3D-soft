@@ -8,7 +8,14 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 
 # App imports
-from design.models import Design, DesignSetting
+from design.models import (
+    CatalogRuleParts,
+    CatalogRules,
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+)
 from material.models import Company, Material
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
@@ -138,4 +145,55 @@ def new_material_for_material(
         company=company,
         type=type,
         is_deleted=False,
+    )
+
+
+def new_design_version(
+    database: str,
+    design: Design,
+) -> DesignVersion:
+    return DesignVersion.objects.using(database).create(design=design)
+
+
+def new_design_catalog(
+    database: str,
+    organization: Organization,
+    version: DesignVersion,
+    type: str,
+    name: str,
+    parent: Optional[DesignCatalog] = None,
+    data: Optional[dict] = None,
+) -> DesignCatalog:
+    return DesignCatalog.objects.using(database).create(
+        organization=organization,
+        version=version,
+        type=type,
+        name=name,
+        parent=parent,
+        data=data or {},
+    )
+
+
+def new_catalog_rule(
+    database: str,
+    catalog: DesignCatalog,
+    name: str,
+) -> CatalogRules:
+    rule, _ = CatalogRules.objects.using(database).get_or_create(
+        catalog=catalog,
+        name=name,
+    )
+    return rule
+
+
+def new_catalog_rule_part(
+    database: str,
+    catalog_rule: CatalogRules,
+    name: str,
+    data: Optional[dict] = None,
+) -> CatalogRuleParts:
+    return CatalogRuleParts.objects.using(database).create(
+        catalog_rule=catalog_rule,
+        name=name,
+        data=data or {},
     )
