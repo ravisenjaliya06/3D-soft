@@ -12,6 +12,7 @@ import { MaterialToolbar } from './components/MaterialToolbar';
 import { CATEGORY_TABS } from './constants';
 import { useMaterialData } from './hooks/useMaterialData';
 import { useMaterialState } from './hooks/useMaterialState';
+import styles from './material.module.css';
 const Material: React.FC = () => {
   const {
     companyMaterials,
@@ -156,7 +157,9 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div className="custom-scrollbar flex h-dvh flex-row overflow-hidden max-2xl:overflow-auto">
+    <div
+      className={`${styles.custom_scrollbar} flex h-dvh flex-row overflow-hidden max-2xl:overflow-auto`}
+    >
       <Sidebar />
       <div className="max-w-[85rem] min-w-0 flex-[3]">
         <Header isBorderRadius={true} />
@@ -173,7 +176,9 @@ const Material: React.FC = () => {
             selectedSubItem={selectedSubItem}
           />
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto border border-[#e9ecef] shadow-sm">
+          <div
+            className={`${styles.custom_scrollbar} flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto border border-[#e9ecef] shadow-sm`}
+          >
             <MaterialToolbar
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}

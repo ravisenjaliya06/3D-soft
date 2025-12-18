@@ -100,7 +100,9 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   };
 
   return (
-    <div className="custom-scrollbar h-[42rem] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.3rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)]">
+    <div
+      className={`${styles.custom_scrollbar} h-[42rem] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.3rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)]`}
+    >
       <div className="rounded-[10px] py-[0.7rem]">
         {materialCategories.map((category) => renderMenuItem(category))}
       </div>
