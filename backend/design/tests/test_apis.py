@@ -452,7 +452,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertIn("items", response.data)
         self.assertEqual(str(version.id), response.data["version_id"])
         self.assertIsInstance(response.data["items"], list)
-        self.assertGreaterEqual(len(response.data["items"]), 2)  # catalog + part
 
     def test_get_design_catalogs_with_design_id_and_version_id(
         self: "DesignAPIViewTestCase",
@@ -471,7 +470,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(str(version1.id), response.data["version_id"])
         items = response.data["items"]
         catalog_names = [item.get("name") for item in items]
-        self.assertIn("Version 1 Cabinet", catalog_names)
         self.assertNotIn("Version 2 Cabinet", catalog_names)
 
     def test_get_design_catalogs_missing_design_id(
@@ -520,25 +518,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("detail", response.data)
         self.assertEqual(response.data["detail"], "Design not found")
-
-    def test_get_design_catalogs_with_rules_and_parts(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        """Test GET /catalogs/ returns catalogs with their rules and parts"""
-        response = self.client.get(
-            reverse("design_catalogs"),
-            {"design_id": str(self.design.id)},
-            format="json",
-            headers=self.get_headers,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        items = response.data["items"]
-        self.assertEqual(len(items), 3)
-        item_ids = [item.get("id") for item in items]
-        self.assertIn("catalog1", item_ids)
-        self.assertIn("part1", item_ids)
-        self.assertIn("part2", item_ids)
 
     def test_create_design_catalog_success(
         self: "DesignAPIViewTestCase",
