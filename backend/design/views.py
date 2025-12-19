@@ -25,7 +25,13 @@ from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
-from design.models import Design, DesignCatalog, DesignSetting, DesignVersion, Organization
+from design.models import (
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+    Organization,
+)
 from design.nest import nest
 from design.serializers import (
     DesignSerializer,
@@ -295,10 +301,14 @@ class DesignCatalogViewSet(ModelViewSet):
 
     def list(self: "DesignCatalogViewSet", request: Request) -> Response:
         design_id = request.query_params.get("design_id")
-        version_id = request.query_params.get("version_id") 
+        version_id = request.query_params.get("version_id")
 
         if not design_id and not version_id:
-            catalogs = self.get_queryset().filter(organization__isnull=True).prefetch_related("catalog_rule__catalog_rule_parts")
+            catalogs = (
+                self.get_queryset()
+                .filter(organization__isnull=True)
+                .prefetch_related("catalog_rule__catalog_rule_parts")
+            )
 
             serializer = SceneGetSerializer(catalogs, many=True)
             return Response(serializer.data)
@@ -317,18 +327,20 @@ class DesignCatalogViewSet(ModelViewSet):
                 {"detail": "Design not found"},
                 status=404,
             )
-        
-        catalogs = self.get_queryset().filter(
+
+        catalogs = (
+            self.get_queryset()
+            .filter(
                 version=version,
                 organization=request.user.selected_organization,
-            ).prefetch_related("catalog_rule__catalog_rule_parts")
+            )
+            .prefetch_related("catalog_rule__catalog_rule_parts")
+        )
 
         serializer = SceneGetSerializer(catalogs, many=True)
         return Response(
-            {
-                "version": version.id,
-                "catalogs": serializer.data
-            }, status=HTTP_200_OK)
+            {"version": version.id, "catalogs": serializer.data}, status=HTTP_200_OK
+        )
 
     def create(
         self: "DesignCatalogViewSet", request: Request, *args, **kwargs

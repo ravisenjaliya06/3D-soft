@@ -89,7 +89,7 @@ class SceneGetSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     data = serializers.DictField(required=False)
 
-    def to_representation(self, catalog: DesignCatalog) -> dict:
+    def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
         This serializer now handles ONE DesignCatalog.
         DRF handles iteration when many=True
@@ -118,6 +118,7 @@ class SceneGetSerializer(serializers.Serializer):
                 )
 
         return items
+
 
 class SceneItemSerializer(serializers.Serializer):
     id = serializers.CharField()
