@@ -60,6 +60,10 @@ export class SelectObjectController {
     window.removeEventListener('dblclick', this._onDoubleClick);
   }
 
+  public deselect() {
+    this._nullAllValues();
+  }
+
   private _nullAllValues() {
     this._clearAllOutlines();
     this.hoveredObject = null;
@@ -72,6 +76,8 @@ export class SelectObjectController {
 
     store.dispatch(setobjectSelected(null));
     store.dispatch(setSelectedChildObject(null));
+
+    if (this.onSelect) this.onSelect(null);
 
     // Hide HelperTool when deselecting
     if (this.onShowHelperTool) {

@@ -10,7 +10,12 @@ import { setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
-import { enablePlankDimensionEditing } from './scene';
+import {
+  clearAllPlankDimensions,
+  enablePlankDimensionEditing,
+  isPlankObject,
+  showPlankDimensions,
+} from './scene';
 import { getOrCreateThreeDView } from './sceneSingleton';
 
 export const gettingDesignID = () => {
@@ -154,29 +159,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     outlineRef.current?.toggle();
   }, [isQuickHideActive]);
 
-  const createSelectionOutline = (mesh: THREE.Mesh) => {
-    /** Creates a yellow outline around a selected 3D mesh for visual selection indication. */
-
-    if (!mesh.geometry) return null;
-
-    const edges = new THREE.EdgesGeometry(mesh.geometry);
-    const outlineMaterial = new THREE.LineBasicMaterial({
-      color: 0xffff00,
-      linewidth: 2,
-      depthTest: false,
-    });
-    const outlineLines = new THREE.LineSegments(edges, outlineMaterial);
-
-    outlineLines.position.copy(mesh.position);
-    outlineLines.rotation.copy(mesh.rotation);
-    outlineLines.scale.copy(mesh.scale);
-    outlineLines.name = 'selected_outline';
-    outlineLines.userData.isOutline = true;
-    outlineLines.userData.outlineFor = mesh.userData.objectId;
-
-    return outlineLines;
-  };
-
   useEffect(() => {
     if (!design3D) return;
 
@@ -194,28 +176,22 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
 
     if (selectedObject instanceof THREE.Mesh) {
-      const selectedObjectId = store.getState().data.selectedObject;
       const scene = store.getState().scene.scene;
-      const newOutline = createSelectionOutline(selectedObject);
-      if (newOutline) {
-        scene.children.forEach((child) => {
-          if (child.children.length > 0) {
-            child.children.forEach((grandChild) => {
-              if (grandChild.name === 'selected_outline') {
-                child.remove(grandChild);
-              }
-            });
-          }
-        });
-        if (selectedObject.parent?.userData.objectId === selectedObjectId) {
-          selectedObject.parent?.add(newOutline);
-        } else {
-          design3D.scene.add(newOutline);
-        }
-        setOutline(newOutline);
+      // 1. Clear old dimensions globally
+      clearAllPlankDimensions(scene);
+      // 2. If it's a plank, show dimensions
+      if (isPlankObject(selectedObject)) {
+        showPlankDimensions(scene, selectedObject);
+      }
+      // NOTE: Outline creation is now handled by the SelectTool logic that triggered this selection.
+      setOutline(null); // Clear any local outline reference we might have had
+    } else {
+      // If nothing selected or selection cleared
+      if (design3D && design3D.scene) {
+        clearAllPlankDimensions(design3D.scene);
       }
     }
-  }, [design3D]);
+  }, [design3D, selectedObject]);
 
   const SELECTABLE_KEYS = [
     'PLANK',
