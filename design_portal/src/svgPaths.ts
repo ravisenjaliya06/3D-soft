@@ -55,7 +55,7 @@ export const CATALOG = {
 };
 
 export const CATALOGMANAGER = {
-  add: '/assets/catalogmanager/add.svg',
+  addimg: '/assets/catalogmanager/add.svg',
   addMaterialIcon: '/assets/catalogmanager/addMaterial.svg',
   arrow: '/assets/catalogmanager/arrow.svg',
   delete: '/assets/catalogmanager/delete.svg',
@@ -211,7 +211,7 @@ export const MENU_UP_SVG = {
 };
 
 export const MES = {
-  add: '/assets/mes/add.svg',
+  add: '/assets/catalogmanager/add.svg',
   download: '/assets/mes/download.svg',
   archiveicon: '/assets/mes/work-order/archiveicon.svg',
   compartmentline: '/assets/mes/work-order/compartmentline.svg',
