@@ -96,8 +96,6 @@ class SceneGetSerializer(serializers.Serializer):
         """
 
         items = []
-
-        # catalog itself
         items.append(
             {
                 "id": str(catalog.id),
@@ -106,7 +104,6 @@ class SceneGetSerializer(serializers.Serializer):
             }
         )
 
-        # related rules & parts
         for rule in catalog.catalog_rule.all():
             for part in rule.catalog_rule_parts.all():
                 items.append(
