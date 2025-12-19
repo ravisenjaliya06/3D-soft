@@ -21,6 +21,7 @@ import { store } from '../store';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
+import { deleteObject } from '../sceneCreator/utils';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();
@@ -69,9 +70,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     setShowClearConfirm(false);
     setIsLoading(true);
 
-    const objectRemover = new ObjectsRemoverFromScene();
-    objectRemover.clearScene();
-
+    deleteObject(true);
     setIsLoading(false);
   };
 

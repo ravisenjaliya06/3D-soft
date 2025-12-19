@@ -8,9 +8,11 @@ import { store } from '../store';
 import { setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
+import HelperTool from '../sceneCreator/tools/HelperTool';
 import MeasurementTool from './MeasurementTool';
 import { enablePlankDimensionEditing } from './scene';
 import { getOrCreateThreeDView } from './sceneSingleton';
+import { deleteObject } from '../sceneCreator/utils';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -79,6 +81,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
+  const [helperToolObject, setHelperToolObject] = useState<THREE.Mesh | null>(null);
 
   const [outline, setOutline] = useState<THREE.Object3D | null>(null);
   const [moveHandler, setMoveHandler] = useState<MoveHandler | null>(null);
@@ -257,14 +260,11 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     selector.onSelect = (mesh) => {
       setSelectedObject(mesh);
     };
+
+    selector.onShowHelperTool = (mesh) => {
+      setHelperToolObject(mesh);
+    };
   }, [design3D]);
-
-  const deleteObject = async () => {
-    /** Deletes the currently selected 3D object from both the scene and backend database. */
-
-    const objectRemover = new ObjectsRemoverFromScene();
-    objectRemover.findSingleObjectToRemove();
-  };
 
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
@@ -283,12 +283,19 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
       <div ref={mountRef} style={{ width: '100%', height: '100%' }}></div>
       {design3D && (
-        <MeasurementTool
-          design3D={design3D}
-          isActive={isMeasurementActive}
-          unitType={currentUnitType}
-          onComplete={() => {}}
-        />
+        <>
+          <MeasurementTool
+            design3D={design3D}
+            isActive={isMeasurementActive}
+            unitType={currentUnitType}
+            onComplete={() => {}}
+          />
+          <HelperTool
+            design3D={design3D}
+            selectedObject={helperToolObject}
+            moveHandler={moveHandler}
+          />
+        </>
       )}
     </div>
   );

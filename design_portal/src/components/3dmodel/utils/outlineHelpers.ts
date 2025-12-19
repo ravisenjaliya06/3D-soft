@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { store } from '../store';
 
 export const getBoxCenter = (obj: THREE.Mesh): THREE.Vector3 => {
   const box = new THREE.Box3().setFromObject(obj);
@@ -58,4 +59,20 @@ export const createDashedLineObject = (
   outline.computeLineDistances();
   outline.name = 'cupboard_big_dotted_outline';
   return outline;
+};
+
+export const removeAllOutlines = (scene: THREE.Scene) => {
+  const outlinesToRemove: THREE.Object3D[] = [];
+
+  scene.traverse((object) => {
+    if (object instanceof THREE.LineSegments && object.name.includes('outline')) {
+      outlinesToRemove.push(object);
+    }
+  });
+
+  outlinesToRemove.forEach((object) => {
+    if (object.parent) {
+      object.parent.remove(object);
+    }
+  });
 };

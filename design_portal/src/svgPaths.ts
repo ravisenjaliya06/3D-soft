@@ -36,6 +36,7 @@ export const _3DMODEL = {
 
 export const ARROW_SVG = {
   arrow: '/assets/arrow.svg',
+  moveObject: '/assets/move.svg',
 };
 
 export const BACK_LOGIN_ICON_SVG = {

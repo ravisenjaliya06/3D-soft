@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
 import { MoveHandlerOptions } from './interface';
 import { MoveHandler as IMoveHandler } from './moveHandlerInterface';
+import { removeAllOutlines } from '../utils/outlineHelpers';
 
 export class MoveHandler implements IMoveHandler {
   private raycaster: THREE.Raycaster;
@@ -101,6 +102,7 @@ export class MoveHandler implements IMoveHandler {
   }
 
   private onMouseMove = (event: MouseEvent) => {
+    removeAllOutlines(this.scene);
     if (!this.isDragging || !this.draggedObject) return;
     let clampedPosition;
     const position = this.getMousePositionOnPlane(event);

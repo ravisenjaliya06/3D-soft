@@ -1,0 +1,57 @@
+/* CSS2D renderer layer */
+.helperToolLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Toolbar container */
+.helperTool {
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  padding-right: 4px;
+  background: var(--primary-color);
+  border-radius: 4px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+/* Toolbar button */
+.helperToolBtn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+/* Icon image */
+.helperToolBtn img {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1); /* white icons */
+  pointer-events: none;
+}
+
+/* Hover */
+.helperToolBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Active click */
+.helperToolBtn:active {
+  transform: translateY(0);
+}
+
+/* Optional divider (for future tools) */
+.helperToolDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 4px;
+}
