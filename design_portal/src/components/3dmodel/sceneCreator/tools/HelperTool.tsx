@@ -1,11 +1,11 @@
+import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { MoveHandler } from '../../handler/moveHandler';
 import { ThreeDView } from '../../design/interface';
-import styles from './helpertool.module.css';
-import { assets } from '@/svgPaths';
+import { MoveHandler } from '../../handler/moveHandler';
 import { deleteObject } from '../utils';
+import styles from './helpertool.module.css';
 
 interface HelperToolProps {
   design3D: ThreeDView;
@@ -13,11 +13,7 @@ interface HelperToolProps {
   moveHandler: MoveHandler | null;
 }
 
-const HelperTool: React.FC<HelperToolProps> = ({
-  design3D,
-  selectedObject,
-  moveHandler,
-}) => {
+const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveHandler }) => {
   const helperToolRef = useRef<CSS2DObject | null>(null);
   const rendererRef = useRef<CSS2DRenderer | null>(null);
   const isMovingRef = useRef(false);
@@ -99,13 +95,13 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const container = document.createElement('div');
       container.className = styles.helperTool;
 
-      actions().forEach(action => {
+      actions().forEach((action) => {
         const btn = document.createElement('button');
         btn.className = styles.helperToolBtn;
         btn.innerHTML = `<img src="${action.icon}" alt="${action.title}" />`;
         btn.title = action.title;
 
-        btn.onclick = e => {
+        btn.onclick = (e) => {
           e.stopPropagation();
           action.onClick(object);
         };
@@ -153,11 +149,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
 
-      helperToolRef.current.position.set(
-        center.x,
-        center.y + size.y / 2 + 0.12,
-        center.z
-      );
+      helperToolRef.current.position.set(center.x, center.y + size.y / 2 + 0.12, center.z);
 
       rendererRef.current?.render(design3D.scene, design3D.camera);
       requestAnimationFrame(update);

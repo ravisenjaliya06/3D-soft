@@ -2,8 +2,8 @@ import { generateCompartmentsFromMesh } from '@/components/3dmodel/handler/items
 import { store } from '@/components/3dmodel/store';
 import * as THREE from 'three';
 import { removeObject } from '../../store/dataSlice';
-import { OBJECT_TYPES, PART_TYPES } from '../interface';
 import { removeAllOutlines } from '../../utils/outlineHelpers';
+import { OBJECT_TYPES, PART_TYPES } from '../interface';
 
 /**
  * Removes all objects from scene

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
+import { removeAllOutlines } from '../utils/outlineHelpers';
 import { MoveHandlerOptions } from './interface';
 import { MoveHandler as IMoveHandler } from './moveHandlerInterface';
-import { removeAllOutlines } from '../utils/outlineHelpers';
 
 export class MoveHandler implements IMoveHandler {
   private raycaster: THREE.Raycaster;

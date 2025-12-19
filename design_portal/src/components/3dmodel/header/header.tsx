@@ -1,4 +1,3 @@
-import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import Loading_style from '@/components/loading.module.css';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
@@ -17,11 +16,11 @@ import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
 import { PART_TYPES } from '../sceneCreator/interface';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
 import { redoAction, undoAction } from '../store/historySlice';
 import type { RootState } from '../store/types';
 import styles from './header.module.css';
-import { deleteObject } from '../sceneCreator/utils';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useAppDispatch();

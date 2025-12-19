@@ -1,18 +1,17 @@
-import { ObjectsRemoverFromScene } from '@/components/3dmodel/sceneCreator/tools/deleteOrClearTool';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
+import HelperTool from '../sceneCreator/tools/HelperTool';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
+import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
 import { setHoverdMesh } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { DesignProps, ThreeDView } from './interface';
-import HelperTool from '../sceneCreator/tools/HelperTool';
 import MeasurementTool from './MeasurementTool';
 import { enablePlankDimensionEditing } from './scene';
 import { getOrCreateThreeDView } from './sceneSingleton';
-import { deleteObject } from '../sceneCreator/utils';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */

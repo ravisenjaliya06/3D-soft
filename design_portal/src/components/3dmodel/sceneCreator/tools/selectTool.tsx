@@ -72,13 +72,13 @@ export class SelectObjectController {
 
     store.dispatch(setobjectSelected(null));
     store.dispatch(setSelectedChildObject(null));
-    
+
     // Hide HelperTool when deselecting
     if (this.onShowHelperTool) {
       this.onShowHelperTool(null);
     }
   }
-  
+
   public getSelectedMainObject(): THREE.Mesh | null {
     return this.selectedMainObject;
   }
@@ -100,12 +100,12 @@ export class SelectObjectController {
     store.dispatch(setSelectedChildObject(null));
 
     this._applySmallCupboardSelectOutline(object);
-    
+
     // Trigger HelperTool display
     if (this.onShowHelperTool) {
       this.onShowHelperTool(object);
     }
-    
+
     return;
   }
 

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { store } from '../store';
 
 export const getBoxCenter = (obj: THREE.Mesh): THREE.Vector3 => {
   const box = new THREE.Box3().setFromObject(obj);
