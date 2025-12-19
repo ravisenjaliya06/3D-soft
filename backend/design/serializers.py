@@ -86,38 +86,38 @@ class DesignVersionSerializer(serializers.ModelSerializer):
 
 
 class SceneGetSerializer(serializers.Serializer):
-    design_id = serializers.UUIDField()
-    items = serializers.ListField()
+    id = serializers.UUIDField()
+    data = serializers.DictField(required=False)
 
-    def to_representation(self: "SceneGetSerializer", version: DesignVersion) -> dict:
-        catalogs = DesignCatalog.objects.filter(version=version).prefetch_related(
-            "catalog_rule__catalog_rule_parts",
-        )
+    def to_representation(self, catalog: DesignCatalog) -> dict:
+        """
+        This serializer now handles ONE DesignCatalog.
+        DRF handles iteration when many=True
+        """
 
         items = []
 
-        for catalog in catalogs:
-            items.append(
-                {
-                    "id": str(catalog.id),
-                    **(catalog.data or {}),
-                }
-            )
+        # catalog itself
+        items.append(
+            {
+                "id": str(catalog.id),
+                **(catalog.data or {}),
+                "parent": str(catalog.parent.id) if catalog.parent else None,
+            }
+        )
 
-            for rule in catalog.catalog_rule.all():
-                for part in rule.catalog_rule_parts.all():
-                    items.append(
-                        {
-                            "id": part.id,
-                            **part.data,
-                        }
-                    )
+        # related rules & parts
+        for rule in catalog.catalog_rule.all():
+            for part in rule.catalog_rule_parts.all():
+                items.append(
+                    {
+                        "id": str(part.id),
+                        "parent": str(catalog.id),
+                        **part.data,
+                    }
+                )
 
-        return {
-            "version_id": str(version.id),
-            "items": items,
-        }
-
+        return items
 
 class SceneItemSerializer(serializers.Serializer):
     id = serializers.CharField()
