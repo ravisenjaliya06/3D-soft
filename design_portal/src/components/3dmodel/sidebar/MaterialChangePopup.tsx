@@ -3,7 +3,7 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CatalogRule, RulePart } from '../handler/interface';
+import { RulePart } from '../handler/interface';
 import styles from './MaterialChangePopup.module.css';
 import { MaterialChangePopupProps, MaterialResponse } from './interface';
 
@@ -14,7 +14,6 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
 }) => {
   const initialTab = rules.length > 0 ? rules[0].name : 'Banding';
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedCategory, setSelectedCategory] = useState(initialTab);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [materialData, setMaterialData] = useState<MaterialResponse[]>([]);
@@ -158,35 +157,13 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
               ))}
             </div>
           </div>
-
-          <div className={styles.rightDropdown}>
-            <select
-              className={styles.dropdown}
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              {(rules.length
-                ? rules
-                : [
-                    {
-                      name: 'Banding',
-                      id: 'banding',
-                      rule_parts: [],
-                    } as CatalogRule,
-                  ]
-              ).map((r) => (
-                <option key={r.id} value={r.name}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Main Content (Two Tables Side by Side) */}
         <div className={styles.mainContent}>
           {/* Left Table (Parts) */}
           <div className={styles.tableWrapper}>
+            <div className={styles.lefttopbar}>Material Properties</div>
             <table className={styles.partsTable}>
               <thead>
                 <tr>
@@ -214,14 +191,6 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                     </td>
 
                     <td>{part.material?.name || '-'}</td>
-                  </tr>
-                ))}
-
-                {/* Empty rows for consistent height */}
-                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map((_, idx) => (
-                  <tr key={`empty-${idx}`}>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
                   </tr>
                 ))}
               </tbody>
@@ -270,17 +239,21 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                   >
                     <td>
                       <div className={styles.materialItem}>
-                        <img src={assets.tabledata} alt="" />
-                        {item.name}
+                        {/* Radio Button */}
+                        <input
+                          type="radio"
+                          name="material"
+                          checked={selectedMaterialId === item.id}
+                          onChange={() => setSelectedMaterialId(item.id)}
+                          className={styles.radio}
+                        />
+
+                        {/* Material Name */}
+                        <span>{item.name}</span>
                       </div>
                     </td>
+
                     <td>{item.description || ''}</td>
-                  </tr>
-                ))}
-                {Array.from({ length: Math.max(0, 50 - partsData.length) }).map((_, idx) => (
-                  <tr key={`empty-${idx}`}>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
                   </tr>
                 ))}
               </tbody>
@@ -290,6 +263,7 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
 
         {/* Footer Buttons */}
         <div className={styles.buttonGroup}>
+          <button className={styles.addMaterialButton}>Add to Material</button>
           <button className={styles.cancelButton} onClick={onClose}>
             Cancel
           </button>
