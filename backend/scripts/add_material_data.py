@@ -12,14 +12,12 @@ django.setup()
 
 # App imports
 from material.models import (
-    Catalog,
-    CatalogRuleParts,
-    CatalogRules,
     Company,
     FinishesLibrary,
     Material,
     Properties,
 )
+from design.models import DesignCatalog, CatalogRules, CatalogRuleParts
 from umaboy.models import Organization
 
 FINISH = [
@@ -1252,155 +1250,126 @@ MATERIAL = [
 
 CATALOG = [
     {
-        "type": "Platform",
-        "name": "Kitchen Platform",
-        "description": "Kitchen Platform",
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "name": "CUPBOARD",
+        "type": "cupboard",
+        "geometry_type": "BOX_GEOMETRY",
+        "is_main": True,
+        "dimensions": {"width": 10, "height": 10, "depth": 10},
+        "position": {"x": 0, "y": 1, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
     },
     {
-        "type": "Door",
-        "name": "Default Door",
-        "description": "Default Door",
-        "catalog_rules": [
-            {
-                "name": "Molding",
-                "rules_parts": [{"name": "Door Molding", "material": "Molding"}],
-            },
-            {
-                "name": "Banding",
-                "rules_parts": [{"name": "Door Banding", "material": "Alder Ven EB"}],
-            },
-            {
-                "name": "Handles",
-                "rules_parts": [{"name": "Door Handle", "material": "4in Bar Pull"}],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Door Panel", "material": "3/4 1s Poplar Ply"}
-                ],
-            },
-            {
-                "name": "Connections",
-                "rules_parts": [{"name": "Door and Handle Connections"}],
-            },
-        ],
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111111",
+        "name": "LEFT_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "dimensions": {"width": 20, "height": 10, "depth": 10},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
     },
     {
-        "type": "Drawer",
-        "name": "Default Drawer",
-        "description": "Default Drawer",
-        "catalog_rules": [
-            {
-                "name": "Drawer Guide",
-                "rules_parts": [
-                    {"name": "Left Drawer Guide", "material": "430E6500V"},
-                    {"name": "Right Drawer Guide", "material": "430E6500V"},
-                ],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Left Drawer Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Right Drawer Panel", "material": "5/8 1s Poplar Ply"},
-                    {"name": "Front Drawer Panel", "material": "1/2 1s Poplar Ply"},
-                    {"name": "Back Drawer Panel", "material": "1/4 1s Poplar Ply"},
-                    {"name": "Bottom Drawer Panel", "material": "1/8 1s Poplar Ply"},
-                    {"name": "Drawer Face Panel", "material": "1/8 1s Poplar Ply"},
-                ],
-            },
-            {
-                "name": "Handles",
-                "rules_parts": [{"name": "Drawer Handle", "material": "Wooden Knob"}],
-            },
-            {
-                "name": "Connections",
-                "rules_parts": [
-                    {"name": "Front and Left Panel Connections"},
-                    {"name": "Front and Right Panel Connections"},
-                    {"name": "Back and Right Panel Connections"},
-                    {"name": "Back and Left Panel Connections"},
-                    {"name": "Bottom and Front Panel Connections"},
-                    {"name": "Bottom and Back Panel Connections"},
-                    {"name": "Bottom and Left Panel Connections"},
-                    {"name": "Bottom and Right Panel Connections"},
-                    {"name": "Front Panel and Handle Connections"},
-                    {"name": "Right Panel and Right Drawer Guide Connections"},
-                    {"name": "Left Panel and Left Drawer Guide Connections"},
-                ],
-            },
-        ],
+        "id": "c2d2a8b4-9b3e-4a2e-8f55-222222222222",
+        "name": "RIGHT_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "dimensions": {"width": 10, "height": 10, "depth": 10},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
     },
     {
-        "type": "Plank",
-        "name": "Vertical Plank",
-        "description": "Vertical Plank",
-        "catalog_rules": [
-            {
-                "name": "Molding",
-                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
-            },
-            {
-                "name": "Banding",
-                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
-                ],
-            },
-        ],
+        "id": "c2d2a8b4-9b3e-4a2e-8f55-333333333333",
+        "name": "TOP_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "dimensions": {"width": 1.464, "height": 0.018, "depth": 0.4},
+        "position": {"x": 0, "y": 0.991, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
     },
     {
-        "type": "Plank",
-        "name": "Horizontal Plank",
-        "description": "Horizontal Plank",
-        "catalog_rules": [
-            {
-                "name": "Molding",
-                "rules_parts": [{"name": "Plank Molding", "material": "Molding"}],
-            },
-            {
-                "name": "Banding",
-                "rules_parts": [{"name": "Plank Banding", "material": "Alder Ven EB"}],
-            },
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Plank Panel", "material": "3/4 1s Poplar Ply"}
-                ],
-            },
-        ],
+        "id": "c2d2a8b4-9b3e-4a2e-8f55-444444444444",
+        "name": "BOTTOM_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "dimensions": {"width": 1.464, "height": 0.018, "depth": 0.4},
+        "position": {"x": 0, "y": -0.991, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
     },
     {
-        "type": "Cabinet",
-        "name": "Simple Cabinet",
-        "description": "Simple Cabinet",
-        "catalog_rules": [
-            {
-                "name": "Panel",
-                "rules_parts": [
-                    {"name": "Right Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Left Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Top Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Bottom Panel", "material": "3/4 1s Poplar Ply"},
-                    {"name": "Back Panel", "material": "3/4 1s Poplar Ply"},
-                ],
-            },
-            {
-                "name": "Connections",
-                "rules_parts": [
-                    {"name": "Right and Top Panel", "material": ""},
-                    {"name": "Left and Top Panel", "material": ""},
-                    {"name": "Right and Bottom Panel", "material": ""},
-                    {"name": "Left and Bottom Panel", "material": ""},
-                    {"name": "Back and Top Panel", "material": ""},
-                    {"name": "Back and Left Panel", "material": ""},
-                    {"name": "Back and Right Panel", "material": ""},
-                    {"name": "Back and Bottom Panel", "material": ""},
-                ],
-            },
-        ],
+        "id": "c2d2a8b4-9b3e-4a2e-8f55-555555555555",
+        "name": "BACK_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
+        "dimensions": {"width": 1.464, "height": 1.964, "depth": 0.018},
+        "position": {"x": 0, "y": 0, "z": -0.191},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
+    },
+    {
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111202",
+        "name": "CUPBOARD1",
+        "type": "cupboard",
+        "geometry_type": "BOX_GEOMETRY",
+        "is_main": True,
+        "dimensions": {"width": 10, "height": 10, "depth": 10},
+        "position": {"x": 0, "y": 1, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-8f55-555555555696",
+        "name": "BACK_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111202",
+        "dimensions": {"width": 1.464, "height": 1.964, "depth": 0.018},
+        "position": {"x": 0, "y": 0, "z": -0.191},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "material": {
+            "type": "TEXTURE",
+            "value": "woodTexturePath",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+        "catalog_rule": "Panel",
     },
 ]
 
@@ -1608,55 +1577,101 @@ def create_materials(
             )
 
 
-def create_catalog_data() -> None:
-    organizations = list(Organization.objects.all()) + [None]
+def create_catalog(catalog_list: list[dict]) -> None:
+    """
+    - All `is_main=True` → DesignCatalog
+    - Main catalogs may have parent (DesignCatalog → self FK)
+    - All others → CatalogRules + CatalogRuleParts
+    """
 
-    for org in organizations:
-        for catalog_data in CATALOG:
-            catalog, _ = Catalog.objects.update_or_create(
-                organization=org,
-                type=catalog_data["type"],
-                name=catalog_data["name"],
-                design=None,
-                defaults={
-                    "width": catalog_data.get("width"),
-                    "height": catalog_data.get("height"),
-                    "length": catalog_data.get("length"),
-                    "depth": catalog_data.get("depth"),
-                    "position": catalog_data.get("position"),
-                    "thickness": catalog_data.get("thickness"),
-                    "additional_data": catalog_data.get("additional_data"),
-                    "description": catalog_data.get("description", ""),
-                },
+    main_catalog_map: dict[str, DesignCatalog] = {}
+
+    for item in catalog_list:
+        if not item.get("is_main"):
+            continue
+
+        catalog, created = DesignCatalog.objects.update_or_create(
+            name=item["name"],
+            type=item["type"],
+            defaults={
+                "organization": None,
+                "version": None,
+                "data": item,
+            },
+        )
+
+        if created:
+            catalog.data["id"] = str(catalog.id)
+            catalog.save(update_fields=["data"])
+
+        main_catalog_map[item["id"]] = catalog
+
+    if not main_catalog_map:
+        raise ValueError("No main catalog found (is_main=True)")
+
+    for item in catalog_list:
+        if not item.get("is_main"):
+            continue
+
+        parent_id = item.get("parent")
+        if not parent_id:
+            continue
+
+        child_catalog = main_catalog_map[item["id"]]
+        parent_catalog = main_catalog_map.get(parent_id)
+
+        if not parent_catalog:
+            raise ValueError(f"Parent catalog not found: {parent_id}")
+
+        if child_catalog.parent_id != parent_catalog.id:
+            child_catalog.parent = parent_catalog
+            child_catalog.save(update_fields=["parent"])
+
+    rule_cache: dict[tuple[str, str], CatalogRules] = {}
+
+    for item in catalog_list:
+        if item.get("is_main"):
+            continue
+
+        parent_id = item.get("parent")
+        if parent_id not in main_catalog_map:
+            raise ValueError(f"Invalid parent for part: {parent_id}")
+
+        main_catalog = main_catalog_map[parent_id]
+        rule_name = item.get("catalog_rule", "DEFAULT")
+
+        rule_key = (main_catalog.id, rule_name)
+
+        if rule_key not in rule_cache:
+            rule_cache[rule_key], _ = CatalogRules.objects.get_or_create(
+                catalog=main_catalog,
+                name=rule_name,
             )
 
-            for rule_data in catalog_data.get("catalog_rules", []):
-                catalog_rule, _ = CatalogRules.objects.update_or_create(
-                    catalog=catalog, name=rule_data["name"], defaults={}
-                )
+        catalog_rule = rule_cache[rule_key]
 
-                for part_data in rule_data.get("rules_parts", []):
-                    material_obj = None
-                    if "material" in part_data and part_data["material"]:
-                        material_obj = Material.objects.filter(
-                            name=part_data["material"], organization=org
-                        ).first()
+        material_obj = None
+        material_data = item.get("material")
+        if material_data:
+            material_obj = Material.objects.filter(
+                name=material_data.get("value"),
+                organization__isnull=True,
+            ).first()
 
-                    CatalogRuleParts.objects.update_or_create(
-                        catalog_rule=catalog_rule,
-                        name=part_data["name"],
-                        defaults={
-                            "width": part_data.get("width"),
-                            "height": part_data.get("height"),
-                            "length": part_data.get("length"),
-                            "depth": part_data.get("depth"),
-                            "position": part_data.get("position"),
-                            "handle_position": part_data.get("handle_position"),
-                            "thickness": part_data.get("thickness"),
-                            "material": material_obj,
-                        },
-                    )
+        part, created = CatalogRuleParts.objects.update_or_create(
+            catalog_rule=catalog_rule,
+            name=item["name"],
+            type=item["type"],
+            defaults={
+                "material": material_obj,
+                "data": item,
+            },
+        )
 
+        if created:
+            part.data["id"] = str(part.id)
+            part.data["parent"] = str(main_catalog.id)
+            part.save(update_fields=["data"])
 
 if __name__ == "__main__":
     create_finish()
@@ -1664,4 +1679,4 @@ if __name__ == "__main__":
     create_textures()
     company_objects = create_company()
     create_materials(company_objects)
-    create_catalog_data()
+    create_catalog(CATALOG)

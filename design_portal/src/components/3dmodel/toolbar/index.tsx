@@ -39,6 +39,7 @@ import {
   platformData,
 } from './interface';
 import styles from './toolbar.module.css';
+import { OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -181,7 +182,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
 
     // For Cabinet items: no quantity popup, no target selection; create via API and add directly
-    if (item?.type === 'Cabinet') {
+    if (item?.type === OBJECT_TYPES.CUPBOARD) {
       try {
         const scene = threeDView!.scene;
         const designId = window.location.pathname.split('/')[2];
@@ -432,68 +433,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const getFilteredCabinetItems = (category: string) => {
     // Define what types should appear for each category
     const categoryFilters: Record<string, string[]> = {
-      Kitchen: ['Platform', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
-      Cabinet: ['Simple Cabinet', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
+      PARTS: Object.values(PART_TYPES),
+      Cabinet: Object.values(OBJECT_TYPES),
     };
 
     const allowedTypes = categoryFilters[category] || [];
     let result: ResultType[] = [];
-    // For Kitchen, add alwaysFields items first
-    if (category === 'Kitchen') {
-      result = alwaysFields.map((field) => ({
-        id: `always-${field.option}`,
-        name: field.option,
-        type: 'Special',
-        icon: field.icon,
-        onClick: field.onClick,
-        isAlwaysField: true,
-      }));
-    }
 
     // Then add filtered API items
     if (cabinetItems && cabinetItems.length > 0) {
-      const filtered = cabinetItems.filter((item) => {
-        // Check if item type or name matches allowed types
-        return allowedTypes.some((type) => {
-          const itemNameLower = (item.name || '').toLowerCase();
-          const itemTypeLower = (item.type || '').toLowerCase();
-          const typeLower = type.toLowerCase();
-
-          return (
-            item.type === type ||
-            item.name === type ||
-            itemNameLower === typeLower ||
-            itemTypeLower === typeLower ||
-            // Match planks
-            (type.includes('Plank') &&
-              item.type === 'Plank' &&
-              item.name.includes(type.split(' ')[0])) ||
-            // Match Simple Cabinet
-            (type === 'Simple Cabinet' &&
-              itemNameLower.includes('simple') &&
-              itemNameLower.includes('cabinet'))
-          );
-        });
+      const filtered = cabinetItems.filter((item: any) => {
+        const type = item[0].type;
+        return allowedTypes.includes(type);
       });
 
-      // Remove duplicates from filtered results
-      const uniqueFiltered = filtered.reduce((acc: CabinetItem[], item) => {
-        const key = `${item.type}-${item.name}`;
-        const exists = acc.find((i) => `${i.type}-${i.name}` === key);
-        if (!exists) {
-          acc.push(item);
-        }
-        return acc;
-      }, []);
-
-      result = [...result, ...uniqueFiltered];
+      result = [...result, ...filtered];
     }
 
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(`Filtered items for ${category}:`, result);
     }
-
-    return result;
+    console.log(result, 'result');
+    return result[0];
   };
 
   /** Open the Second Popup for selected furniture category */
@@ -503,27 +464,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
-
-  const alwaysFields = [
-    {
-      option: 'Load Sink GLB',
-      icon: assets.sink,
-      onClick: () => {
-        if (threeDView && typeof threeDView.loadSinkModel === 'function') {
-          threeDView.loadSinkModel('/glb/sink.glb');
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'cu',
-      icon: assets.sink,
-      onClick: () => {
-        addSimpleCabinet1(threeDView?.scene!);
-      },
-      isActive: false,
-    },
-  ];
 
   /** Reset toolbar to Home option and clear selected states */
   const handleback = () => {
@@ -545,6 +485,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     'Vertical Plank': assets.vertical,
     Plank: assets.vertical,
     Cabinet: assets.cabinet,
+    cupboard: assets.cabinet,
     Platform: assets.platform,
   };
 
@@ -727,7 +668,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                     src={
                       item.isAlwaysField
                         ? item.icon
-                        : iconMap[item.name] || iconMap[item.type] || assets.drawer
+                        : iconMap[item.type]
                     }
                     alt={item.name}
                   />

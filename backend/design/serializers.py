@@ -98,8 +98,10 @@ class SceneGetSerializer(serializers.Serializer):
         items = []
         items.append(
             {
-                "id": str(catalog.id),
                 **(catalog.data or {}),
+                "id": str(catalog.id),
+                "name": catalog.name,
+                "type": catalog.type,
                 "parent": str(catalog.parent.id) if catalog.parent else None,
             }
         )
@@ -108,9 +110,11 @@ class SceneGetSerializer(serializers.Serializer):
             for part in rule.catalog_rule_parts.all():
                 items.append(
                     {
+                        **part.data,
                         "id": str(part.id),
                         "parent": str(catalog.id),
-                        **part.data,
+                        "name": part.name,
+                        "type": part.type,
                     }
                 )
 

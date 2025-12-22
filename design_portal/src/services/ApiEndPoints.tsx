@@ -6,7 +6,7 @@ export const API_ENDPOINT = {
   GET_ORGANIZATION_USERS: 'user/organization/users/',
   GET_ORGANIZATION_DETAILS: 'user/organization/details/',
   GET_DESIGN_SETTING: 'design/setting/',
-  GET_CATALOG_ITEMS: 'material/catalog/',
+  GET_CATALOG_ITEMS: 'design/catalogs/',
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
   GET_MATERIAL_COMPANIES: 'material/company/',
   GET_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,

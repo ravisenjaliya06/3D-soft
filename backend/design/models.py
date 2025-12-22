@@ -34,14 +34,14 @@ class CatalogTypeChoices(models.TextChoices):
     Catalog Type
     """
 
-    CARCASS = " Carcass"
-    PLANK = "Plank"
-    DOOR = "Door"
-    DRAWER = "Drawer"
-    SLIDING_DOOR = "Sliding Door"
-    CABINET = "Cabinet"
-    PLATFORM = "Platform"
-    INVISIBLE_COMPARTMENT = "Invisible Compartment"
+    CARCASS = "carcass"
+    PLANK = "plank"
+    DOOR = "door"
+    DRAWER = "drawer"
+    CABINET = "cabinet"
+    CUPBOARD = "cupboard"
+    PLATFORM = "platform"
+    INVISIBLE_COMPARTMENT = "invisiblecompartment"
 
 
 class Design(models.Model):
@@ -179,6 +179,7 @@ class CatalogRules(models.Model):
 class CatalogRuleParts(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
+    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices, default="")
     catalog_rule = models.ForeignKey(
         CatalogRules,
         null=True,
