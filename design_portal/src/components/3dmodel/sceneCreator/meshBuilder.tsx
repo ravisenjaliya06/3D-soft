@@ -31,6 +31,7 @@ export class MeshBuilder {
     const texture = this._createTexture();
     return new THREE.MeshStandardMaterial({
       map: texture,
+      wireframe: true,
     });
   }
 
@@ -110,11 +111,6 @@ export class MeshBuilder {
   private _setName(mesh: THREE.Mesh) {
     mesh.name = this.meshData.name;
   }
-
-  /**
-   * NOTE: It will be use to add objects to the design later.
-   * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-   */
 
   private _setDataInObjectsState() {
     store.dispatch(addObjects([this.meshData]));

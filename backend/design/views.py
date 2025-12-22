@@ -25,12 +25,21 @@ from rest_framework.viewsets import ModelViewSet
 
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
-from design.models import Design, DesignSetting, Organization
+from design.models import (
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+    Organization,
+)
 from design.nest import nest
 from design.serializers import (
     DesignSerializer,
     DesignSettingSerializer,
+    DesignVersionSerializer,
     NestingItemSerializer,
+    SceneGetSerializer,
+    ScenePayloadSerializer,
 )
 from design.utils import parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
@@ -262,3 +271,85 @@ class NestAPIViewset(ModelViewSet):
                 {"Error": "Enter Valid Format"}, status=HTTP_400_BAD_REQUEST
             )
         return Response({"file": file_path}, status=HTTP_200_OK)
+
+
+class DesignVersionViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = DesignVersionSerializer
+    http_method_names = [GET]
+    lookup_field = "design_id"
+
+    def get_queryset(self: "DesignVersionViewSet") -> QuerySet[DesignVersion]:
+        return DesignVersion.objects.filter(
+            design__organization=self.request.user.selected_organization
+        )
+
+
+class DesignCatalogViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    http_method_names = [GET, POST]
+
+    def get_queryset(self: "DesignCatalogViewSet") -> QuerySet[Design]:
+        return DesignCatalog.objects.all()
+
+    def get_latest_version(
+        self: "DesignCatalogViewSet", design: Design
+    ) -> DesignVersion:
+        return (
+            DesignVersion.objects.filter(design=design).order_by("-created_at").first()
+        )
+
+    def list(self: "DesignCatalogViewSet", request: Request) -> Response:
+        design_id = request.query_params.get("design_id")
+        version_id = request.query_params.get("version_id")
+
+        if not design_id and not version_id:
+            catalogs = (
+                self.get_queryset()
+                .filter(organization__isnull=True)
+                .prefetch_related("catalog_rule__catalog_rule_parts")
+            )
+
+            serializer = SceneGetSerializer(catalogs, many=True)
+            return Response(serializer.data)
+
+        version = (
+            DesignVersion.objects.filter(design_id=design_id)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if version_id:
+            version = DesignVersion.objects.filter(id=version_id).first()
+
+        if not version:
+            return Response(
+                {"detail": "Design not found"},
+                status=404,
+            )
+
+        catalogs = (
+            self.get_queryset()
+            .filter(
+                version=version,
+                organization=request.user.selected_organization,
+            )
+            .prefetch_related("catalog_rule__catalog_rule_parts")
+        )
+
+        serializer = SceneGetSerializer(catalogs, many=True)
+        return Response(
+            {"version": version.id, "catalogs": serializer.data}, status=HTTP_200_OK
+        )
+
+    def create(
+        self: "DesignCatalogViewSet", request: Request, *args, **kwargs
+    ) -> Response:
+        serializer = ScenePayloadSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+
+        return Response(result, status=HTTP_201_CREATED)

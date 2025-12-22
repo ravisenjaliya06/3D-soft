@@ -216,6 +216,7 @@ export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHan
         repeatX: 2,
         repeatY: 1,
       },
+      catalog_rule: 'Panel'
     },
     {
       id: crypto.randomUUID(),
@@ -240,6 +241,7 @@ export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHan
         repeatX: 2,
         repeatY: 1,
       },
+      catalog_rule: 'Panel'
     },
     {
       id: crypto.randomUUID(),
@@ -264,6 +266,7 @@ export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHan
         repeatX: 2,
         repeatY: 1,
       },
+      catalog_rule: 'Panel'
     },
     {
       id: crypto.randomUUID(),
@@ -288,6 +291,7 @@ export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHan
         repeatX: 2,
         repeatY: 1,
       },
+      catalog_rule: 'Panel'
     },
     {
       id: crypto.randomUUID(),
@@ -312,6 +316,7 @@ export const addSimpleCabinet = async (scene: THREE.Scene, moveHandler?: MoveHan
         repeatX: 2,
         repeatY: 1,
       },
+      catalog_rule: 'Panel'
     },
   ];
 

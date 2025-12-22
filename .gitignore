@@ -163,3 +163,4 @@ cython_debug/
 
 #vscode
 .vscode/
+backend/output_gcodes.zip
