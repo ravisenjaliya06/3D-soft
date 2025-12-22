@@ -2,23 +2,15 @@ import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { ThreeDView } from '../../design/interface';
-import { MoveHandler } from '../../handler/moveHandler';
 import { deleteObject } from '../utils';
 import styles from './helpertool.module.css';
-
-interface HelperToolProps {
-  design3D: ThreeDView;
-  selectedObject: THREE.Mesh | null;
-  moveHandler: MoveHandler | null;
-}
+import { HelperToolProps } from '../interface';
 
 const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveHandler }) => {
   const helperToolRef = useRef<CSS2DObject | null>(null);
   const rendererRef = useRef<CSS2DRenderer | null>(null);
   const isMovingRef = useRef(false);
 
-  /* ---------- INIT CSS2D ---------- */
   const initRenderer = useCallback(() => {
     if (rendererRef.current) return;
 
@@ -32,7 +24,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     rendererRef.current = renderer;
   }, [design3D]);
 
-  /* ---------- REMOVE TOOL ---------- */
   const removeTool = useCallback(() => {
     if (!helperToolRef.current) return;
 
@@ -87,7 +78,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     ];
   }, [moveHandler, design3D]);
 
-  /* ---------- CREATE TOOL ---------- */
   const createTool = useCallback(
     (object: THREE.Mesh) => {
       removeTool();
@@ -125,7 +115,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     [actions, removeTool, design3D.scene]
   );
 
-  /* ---------- EFFECTS ---------- */
   useEffect(() => {
     initRenderer();
     return removeTool;
@@ -138,7 +127,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     else removeTool();
   }, [selectedObject, createTool, removeTool]);
 
-  /* ---------- SYNC POSITION ---------- */
   useEffect(() => {
     if (!selectedObject) return;
 
