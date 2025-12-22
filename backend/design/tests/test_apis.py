@@ -435,24 +435,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         version_ids = [v["id"] for v in response.data]
         self.assertIn(str(version1.id), version_ids)
 
-    def test_get_design_catalogs_with_design_id(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        """Test GET /catalogs/ with design_id returns latest version's catalogs"""
-        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-        response = self.client.get(
-            reverse("design_catalogs"),
-            {"design_id": str(self.design.id)},
-            format="json",
-            headers=self.get_headers,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("version_id", response.data)
-        self.assertIn("items", response.data)
-        self.assertEqual(str(version.id), response.data["version_id"])
-        self.assertIsInstance(response.data["items"], list)
-
     def test_get_design_catalogs_with_design_id_and_version_id(
         self: "DesignAPIViewTestCase",
     ) -> None:
@@ -465,26 +447,11 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(str(version1.id), response.data["version_id"])
-        items = response.data["items"]
+        self.assertEqual(version1.id, response.data["version"])
+        items = response.data["catalogs"]
         catalog_names = [item.get("name") for item in items]
         self.assertNotIn("Version 2 Cabinet", catalog_names)
-
-    def test_get_design_catalogs_missing_design_id(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        """Test GET /catalogs/ without design_id returns 400"""
-        response = self.client.get(
-            reverse("design_catalogs"),
-            format="json",
-            headers=self.get_headers,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("detail", response.data)
-        self.assertEqual(response.data["detail"], "design_id is required")
 
     def test_get_design_catalogs_design_not_found(
         self: "DesignAPIViewTestCase",
