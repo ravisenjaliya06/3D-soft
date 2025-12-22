@@ -439,7 +439,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const allowedTypes = categoryFilters[category] || [];
     let result: ResultType[] = [];
     // For Kitchen, add alwaysFields items first
-    if (category === 'Kitchen') {
+    if (category === 'Cabinet') {
       result = alwaysFields.map((field) => ({
         id: `always-${field.option}`,
         name: field.option,
