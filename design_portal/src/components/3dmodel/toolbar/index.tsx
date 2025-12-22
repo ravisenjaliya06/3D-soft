@@ -249,7 +249,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setQuantityValue(1);
   };
 
-  /* Map item types/names to their respective icons */
   const iconMap: IconMap = {
     Drawer: assets.drawer,
     'Sliding Door': assets.door,

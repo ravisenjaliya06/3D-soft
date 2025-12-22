@@ -127,7 +127,7 @@ class SceneItemSerializer(serializers.Serializer):
     type = serializers.CharField()
     parent = serializers.CharField(required=False, allow_null=True)
     is_main = serializers.BooleanField(required=False, source="isMain")
-    geometry_type = serializers.CharField(required=False, source="geometry_type")
+    geometry_type = serializers.CharField(required=False, source="geometryType")
     dimensions = serializers.JSONField(required=False)
     position = serializers.JSONField(required=False)
     rotation = serializers.JSONField(required=False)
