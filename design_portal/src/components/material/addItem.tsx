@@ -111,7 +111,7 @@ const AddMaterialPopup: React.FC<Props> = ({
     const sequences: { [key: string]: PopupStep[] } = {
       Banding: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -159,6 +159,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness',
+              // image: {assets.groov}
             },
             {
               key: 'lengthTrim',
@@ -196,7 +197,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Board Stock': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -347,7 +348,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Caster: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -480,7 +481,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Connector: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -566,7 +567,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Drawer Guide': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -968,7 +969,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Hinge: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1093,7 +1094,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Hinge Plate': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1201,7 +1202,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Laminate: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1358,7 +1359,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Leg: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1449,7 +1450,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Leg Leveler': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1528,7 +1529,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Miscellaneous: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1560,7 +1561,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Molding: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1651,7 +1652,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Panel Stock': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1802,7 +1803,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Pull: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -1922,7 +1923,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       Rod: [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -2061,7 +2062,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Sliding Door Rail': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -2175,7 +2176,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Sliding Door Roller': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -2440,7 +2441,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       ],
       'Wire Basket': [
         {
-          title: 'New Material',
+          title: 'Add New Material',
           fields: [
             {
               key: 'type',
@@ -2610,7 +2611,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
     const sequence = sequences[materialType] || [
       {
-        title: 'New Material',
+        title: 'Add New Material',
         fields: [
           {
             key: 'type',
@@ -3092,53 +3093,60 @@ const AddMaterialPopup: React.FC<Props> = ({
   };
 
   return (
-    <div className={styles.popupOverlay}>
-      <div className={styles.popup}>
-        <div className={styles.popupRight}>
-          <div className={styles.popupHeader}>
-            <div>
-              <h2>{currentPopup?.title || 'New Material'}</h2>
-              <p>
-                Step {currentStep + 1} of {currentSequence.length}
-              </p>
+    <div className="fixed inset-0 flex items-center justify-center">
+      <div className="bg-[#fff] border border-[#6F6C8F]/50 rounded-[0.8rem] flex w-[70vw] h-[70vh] m-[5rem] ml-[21rem] mr-[13rem] mt-[10rem] pt-[1rem] pl-[2.5rem] max-w-[90%] max-h-[90vh] overflow-hidden">
+        <div className="flex-1 p-8 flex flex-col relative">
+          <div className="relative mb-8 min-h-0 overflow-y-auto">
+            <div className="font-[var(--font-family)]">
+              <h2 className="text-[1.5rem] font-semibold text-[#170F49] mb-[0px]">
+                {currentPopup?.title || 'Add New Material'}
+              </h2>
+              <p className="text-[#6F6C8F] font-normal text-sm mt-[0px]">Fill in the details and choose the materials that perfectly match your needs.</p>
             </div>
-            <button className={styles.closeButton} onClick={() => setCreateWorkOrderPopup(false)}>
-              <img src={assets.close || '/placeholder.svg'} alt="Close" />
-            </button>
           </div>
 
-          <div className={styles.formContainer}>
-            <div className={styles.formTable}>
+          <div className="flex-1 mb-8 w-[40%]">
+            <div className="grid grid-cols-2 gap-6">
               {currentPopup?.fields.map((field) => (
-                <div key={field.key} className={styles.formRow}>
-                  <div className={styles.formInput}>{renderField(field)}</div>
+                // <div className="grid grid-cols-[1fr_2fr] gap-4 items-center py-3 border-b border-[#f0f0f0] last:border-b-0">
+                <div  className={`relative rounded-md border border-[#E6E8F0] px-4 pt-5 pb-3 ${ field.type === 'text' ? 'col-span-2' : '' } ${ field.type === 'select' ? 'col-span-2' : '' }`}>
+                  <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-[#9AA3B2]">
+                    {field.label}
+                  </label>
+                    {renderField(field)}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className={styles.buttonGroup}>
-            <button className={styles.cancelButton} onClick={() => setCreateWorkOrderPopup(false)}>
+          <div className="flex items-center justify-between pt-4 pb-[1rem] border-[#f0f0f0]">
+            <p className="text-[#666] text-[0.9rem]">
+                Step {currentStep + 1} of {currentSequence.length}
+            </p>
+
+            <div className="flex gap-[1rem] mr-[3rem]">
+            <button className="px-6 py-3 rounded-[5px] text-[0.9rem] h-[2rem] w-[9rem] cursor-pointer transition-all duration-200 border-[#A0AEC0] border font-[var(--font-family)] h-[2.9rem] w-[7rem] bg-[#fff] text-[#392579] hover:bg-[#e5e5e5]" onClick={() => setCreateWorkOrderPopup(false)}>
               Cancel
             </button>
 
-            <button className={styles.backButton} onClick={handleBack} disabled={isFirstStep}>
+            {/* <button className="px-6 py-3 rounded-lg text-[0.9rem] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] bg-white text-[#667eea] border border-[#667eea] hover:bg-[#f8f9ff]" onClick={handleBack} disabled={isFirstStep}>
               Back
-            </button>
+            </button> */}
 
             {!isLastStep ? (
               <button
-                className={styles.nextButton}
+                className="px-6 py-3 rounded-[5px] text-[0.9rem] h-[2rem] w-[9rem] bg-[#392579] text-[#fff] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] border-0 text-white hover:bg-[var(--primary-color)] disabled:bg-[#ccc] disabled:cursor-not-allowed"
                 onClick={handleNext}
                 disabled={!formData.name && currentStep === 0}
               >
                 Next
               </button>
             ) : (
-              <button className={styles.finishButton} onClick={handleFinish}>
+              <button className="px-6 py-3 rounded-lg text-[0.9rem] w-[9rem] bg-[#392579] cursor-pointer h-[2rem] transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] border-0 text-white hover:bg-[var(--primary-color)]" onClick={handleFinish}>
                 Finish
               </button>
             )}
+            </div>
           </div>
         </div>
       </div>

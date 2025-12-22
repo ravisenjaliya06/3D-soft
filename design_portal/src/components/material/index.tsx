@@ -161,7 +161,8 @@ const Material: React.FC = () => {
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Material Manager" />
 
-        <div className={styles.maincontainer}>
+        {!addMaterialPopup && (
+          <div className={styles.maincontainer}>
           <MaterialSidebar
             materialCategories={materialCategories}
             expandedCategory={expandedCategory}
@@ -184,6 +185,7 @@ const Material: React.FC = () => {
             />
           </div>
         </div>
+        )}
       </div>
 
       <ContextMenus
@@ -204,11 +206,11 @@ const Material: React.FC = () => {
       )}
 
       {addMaterialPopup && (
-        <AddMaterialPopup
-          setCreateWorkOrderPopup={setAddMaterialPopup}
-          companyId={companyID}
-          handleGetCompanyMaterials={fetchCompanyMaterials}
-        />
+          <AddMaterialPopup
+            setCreateWorkOrderPopup={setAddMaterialPopup}
+            companyId={companyID}
+            handleGetCompanyMaterials={fetchCompanyMaterials}
+          />
       )}
     </div>
   );

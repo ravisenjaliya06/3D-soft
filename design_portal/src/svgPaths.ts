@@ -339,6 +339,11 @@ export const TOOLBAR = {
   zoom: '/assets/toolbar/zoom.svg',
 };
 
+export const ADDMATERIAL_IMG = {
+  groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
+  groov_gap: '/assets/addmaterial/Guide_Position_5.png',
+};
+
 export const assets = {
   ..._3DMODEL,
   ...ARROW_SVG,
@@ -378,4 +383,5 @@ export const assets = {
   ...TEMPLATE,
   ...TITLELOGO_SVG,
   ...TOOLBAR,
+  ...ADDMATERIAL_IMG,
 };
