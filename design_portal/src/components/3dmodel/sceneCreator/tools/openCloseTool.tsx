@@ -7,7 +7,7 @@ export class CabinetMotionController {
   private child: THREE.Mesh | null = null;
   private type: string = '';
 
-  constructor() { }
+  constructor() {}
 
   private _getBoundingBox() {
     this.child?.geometry.computeBoundingBox();
@@ -109,7 +109,10 @@ export class CabinetMotionController {
 
     const closedWorldPos = mesh.userData.closedPos.clone();
     const localOpenDir = new THREE.Vector3(0, 0, 1);
-    const worldOpenDir = localOpenDir.clone().applyQuaternion(mesh.getWorldQuaternion(new THREE.Quaternion())).normalize();
+    const worldOpenDir = localOpenDir
+      .clone()
+      .applyQuaternion(mesh.getWorldQuaternion(new THREE.Quaternion()))
+      .normalize();
     const openWorldPos = closedWorldPos.clone().add(worldOpenDir.multiplyScalar(openDistance));
     const targetWorld = isClosed ? openWorldPos : closedWorldPos;
 

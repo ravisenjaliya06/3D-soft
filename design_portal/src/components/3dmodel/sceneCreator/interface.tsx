@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { Position, Rotation } from '../store/interface';
+import { ThreeDView } from '../design/interface';
+import { MoveHandler } from '../handler/moveHandler';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
@@ -95,4 +97,10 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+}
+
+export interface HelperToolProps {
+  design3D: ThreeDView;
+  selectedObject: THREE.Mesh | null;
+  moveHandler: MoveHandler | null;
 }

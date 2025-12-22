@@ -2,6 +2,7 @@ import { generateCompartmentsFromMesh } from '@/components/3dmodel/handler/items
 import { store } from '@/components/3dmodel/store';
 import * as THREE from 'three';
 import { removeObject } from '../../store/dataSlice';
+import { removeAllOutlines } from '../../utils/outlineHelpers';
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
 
 /**
@@ -75,11 +76,7 @@ export class ObjectsRemoverFromScene {
   }
 
   private _clearOutline() {
-    this.scene.children.forEach((object) => {
-      if (object instanceof THREE.LineSegments && object.name.includes('outline')) {
-        this.scene.remove(object);
-      }
-    });
+    removeAllOutlines(this.scene);
   }
 
   public findSingleObjectToRemove() {

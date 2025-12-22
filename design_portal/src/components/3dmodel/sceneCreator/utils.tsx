@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 
 /**
  * Get the X and Y positions whenever a mouse event is called.
@@ -35,4 +36,14 @@ export const textureLoader = (
       }
     );
   });
+};
+
+export const deleteObject = async (clearScene?: boolean) => {
+  /** Deletes the currently selected 3D object from both the scene and backend database. */
+
+  const objectRemover = new ObjectsRemoverFromScene();
+  if (clearScene) {
+    objectRemover.clearScene();
+  }
+  objectRemover.findSingleObjectToRemove();
 };

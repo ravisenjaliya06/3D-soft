@@ -62,11 +62,6 @@ export class SceneBuilder {
   private selector: SelectObjectController | null = null;
   private moveHandler: MoveHandler | null = null;
 
-  private wallRaycaster = new THREE.Raycaster();
-  private wallDirection = new THREE.Vector3();
-  private hiddenWalls = new Set<THREE.Mesh>();
-  private wallMeshes: THREE.Mesh[] = [];
-
   constructor(config: SceneBuilderConfig) {
     this.config = config;
     this.mount = config.mount;
@@ -244,7 +239,6 @@ export class SceneBuilder {
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
 
-    // Add day sky by default
     this.scene.add(this.daySky);
   }
 
@@ -287,7 +281,12 @@ export class SceneBuilder {
   }
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera, this.scene);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.renderer,
+      this.controls
+    );
   }
 
   private initMoveHandler() {
