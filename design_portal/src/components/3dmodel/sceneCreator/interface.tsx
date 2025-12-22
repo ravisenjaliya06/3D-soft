@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Dimensions } from '../interface';
-import { Position, Rotation } from '../store/interface';
 import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
+import { Dimensions } from '../interface';
+import { Position, Rotation } from '../store/interface';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
@@ -21,7 +21,7 @@ export const PART_TYPES = {
 };
 
 export const GEOMETRY = {
-  BOX_GEOMETRY: 'BoxGeometry',
+  BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
 };
 
@@ -38,7 +38,7 @@ export const DIRECTION_TYPES = {
 };
 
 // type
-type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
+type geometry_type = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
@@ -54,7 +54,7 @@ export interface MeshObjectData {
   id: string;
   name: string;
   type: string;
-  geometryType: GeometryType;
+  geometry_type: geometry_type;
   parent?: string;
   dimensions: Dimensions;
   position: Position;

@@ -31,7 +31,7 @@ export class MeshBuilder {
     const texture = this._createTexture();
     return new THREE.MeshStandardMaterial({
       map: texture,
-      wireframe: true,
+      wireframe: false,
     });
   }
 
@@ -78,7 +78,7 @@ export class MeshBuilder {
   }
 
   private _getGeometry() {
-    switch (this.meshData.geometryType) {
+    switch (this.meshData.geometry_type) {
       case GEOMETRY.BOX_GEOMETRY:
         return this._createBoxGeometry();
       case GEOMETRY.EXTRUDE_GEOMETRY:

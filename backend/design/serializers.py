@@ -74,7 +74,7 @@ class NestingItemSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     type = serializers.CharField()
-    geometryType = serializers.CharField()  # noqa: N815
+    geometry_type = serializers.CharField()  # noqa: N815
     isMain = serializers.BooleanField(default=False)  # noqa: N815
     parent = serializers.CharField(required=False)
 
@@ -127,7 +127,7 @@ class SceneItemSerializer(serializers.Serializer):
     type = serializers.CharField()
     parent = serializers.CharField(required=False, allow_null=True)
     is_main = serializers.BooleanField(required=False, source="isMain")
-    geometry_type = serializers.CharField(required=False, source="geometryType")
+    geometry_type = serializers.CharField(required=False, source="geometry_type")
     dimensions = serializers.JSONField(required=False)
     position = serializers.JSONField(required=False)
     rotation = serializers.JSONField(required=False)

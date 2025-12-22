@@ -15,6 +15,7 @@ export class DesignBuilder {
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
+    console.log(mesh, 'mesh');
     generateCompartmentsFromMesh(mesh);
   }
 
@@ -51,6 +52,7 @@ export class DesignBuilder {
     if (!rootMesh) {
       throw new Error('Root mesh not found. Your data must contain one item with no parent.');
     }
+    console.log(rootMesh, 'rootMesh');
 
     this._createInitialCompartments(rootMesh);
     return rootMesh;

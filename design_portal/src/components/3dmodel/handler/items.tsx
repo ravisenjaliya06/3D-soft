@@ -54,6 +54,7 @@ export function hideFullScreenLoader() {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
+  console.log(boxMesh, 'boxMesh');
   /**
    * Generates invisible boxes for empty compartments in a given box mesh object.
    * Works in local space only (no special wall handling).
@@ -104,7 +105,19 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const geom = child.geometry as THREE.BoxGeometry;
     const { width: pWidth, height: pHeight, depth: pDepth } = geom.parameters;
 
-    // world → local (relative to boxMesh)
+    // --- Determine plank orientation dynamically ---
+    const dims = [
+      { axis: 'x', value: pWidth },
+      { axis: 'y', value: pHeight },
+      { axis: 'z', value: pDepth },
+    ];
+
+    dims.sort((a, b) => a.value - b.value);
+    const thicknessAxis = dims[0].axis;
+
+    if (thicknessAxis === 'z') return;
+
+    // --- World → local position ---
     const worldPos = new THREE.Vector3();
     child.getWorldPosition(worldPos);
     const localPos = boxMesh.worldToLocal(worldPos.clone());
@@ -126,6 +139,8 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       hMax,
     });
   });
+
+  console.log(planks, 'planks');
 
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
@@ -238,12 +253,13 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   // --- Create invisible meshes for compartments ---
   const meshes: THREE.Mesh[] = [];
+  console.log(compartments, 'compartments');
   compartments.forEach((c, idx) => {
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
       name: `invisibleBox_${idx}_for_${boxMesh.name}`,
       type: 'INVISIBLEBOX', // custom type or reuse known type
-      geometryType: GEOMETRY.BOX_GEOMETRY,
+      geometry_type: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: c.width,
         height: c.height,

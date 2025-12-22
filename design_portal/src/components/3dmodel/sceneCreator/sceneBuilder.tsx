@@ -4,7 +4,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
-import { addSimpleCabinet, loadSinkModel } from '../design/scene';
+import { loadSinkModel } from '../design/scene';
 import { MoveHandler } from '../handler/moveHandler';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
@@ -346,9 +346,6 @@ export class SceneBuilder {
       isDay: this.isDay,
       toggleZoomMode: (enable: boolean) => this.toggleZoomMode(enable),
       isZoomMode: this.isZoomMode,
-      addSimpleCabinet: () => {
-        addSimpleCabinet(this.scene, this.moveHandler ? this.moveHandler : undefined);
-      },
       loadSinkModel: async (url: string) => {
         loadSinkModel(this.scene, url);
       },
