@@ -4,14 +4,11 @@ import {
   hideFullScreenLoader,
   showFullScreenLoader,
 } from '../handler/items';
-import { MoveHandler } from '../handler/moveHandlerInterface';
 import { GLBLoader } from '../helper/glbLoader';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
 import {
   DIRECTION_TYPES,
   GEOMETRY,
   MATERIAL_TYPE,
-  OBJECT_TYPES,
   PART_TYPES,
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
