@@ -4,6 +4,7 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
+import styles from './material.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
 
 type Props = {
@@ -3126,7 +3127,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="m-[5rem] mt-[8rem] mr-[13rem] ml-[30rem] flex h-[70vh] max-h-[90vh] w-[55vw] max-w-[90%] overflow-hidden rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]">
+      <div
+        className={`${styles.custom_scrollbar} m-[5rem] mt-[8rem] mr-[13rem] ml-[30rem] flex h-[70vh] max-h-[90vh] w-[55vw] max-w-[90%] overflow-y-scroll rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]`}
+      >
         <div className="relative flex h-full flex-2 flex-col p-8">
           <div className="relative mb-8 min-h-0">
             <div className="font-[var(--font-family)]">
@@ -3172,7 +3175,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   )}
                 </div>
 
-                {!isPricingOrCNC && (
+                {!isPricingOrCNC && fieldWithImage && (
                   <div className="m-[2rem] flex w-1/2 flex-col rounded-lg bg-gray-50 p-4 pt-2 pl-[5rem]">
                     <img
                       src={fieldWithImage.img}
