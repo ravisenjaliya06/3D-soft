@@ -35,6 +35,10 @@ interface Field {
   img?: string;
 }
 
+interface FieldWithImage extends Field {
+  img: string;
+}
+
 const AddMaterialPopup: React.FC<Props> = ({
   setCreateWorkOrderPopup,
   companyId,
@@ -2656,7 +2660,10 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
-  const fieldWithImage = currentPopup?.fields.find((f) => f.img);
+  const isFieldWithImage = (field: Field): field is FieldWithImage => {
+    return typeof field.img === 'string' && field.img.length > 0;
+  };
+  const fieldWithImage = currentPopup?.fields.find(isFieldWithImage);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
