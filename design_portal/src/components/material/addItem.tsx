@@ -252,7 +252,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Rough Thickness',
               type: 'number',
               placeholder: 'Enter rough thickness (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             {
               key: 'cncOptimize',
@@ -398,7 +398,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -539,7 +539,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'text',
               placeholder: 'Enter slot type',
               disabled: true,
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -625,7 +625,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
-              img: assets.groov
+              img: assets.groov,
             },
             {
               key: 'height',
@@ -711,7 +711,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Screw Center To Reference',
               type: 'number',
               placeholder: 'Enter screw center to reference (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             {
               key: 'mountHolesPosition1',
@@ -771,7 +771,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             {
               key: 'frontSpacing',
@@ -801,7 +801,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
-              img: assets.groov
+              img: assets.groov,
             },
             {
               key: 'backDepth',
@@ -843,7 +843,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
-              img: assets.groov
+              img: assets.groov,
             },
             {
               key: 'bottomSpacing',
@@ -879,7 +879,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             {
               key: 'bottomMountGroovesDepth',
@@ -903,7 +903,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
-              img: assets.groov_gap
+              img: assets.groov_gap,
             },
             {
               key: 'backNotchOffset',
@@ -2656,7 +2656,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
-  const fieldWithImage = currentPopup?.fields.find(f => f.img);
+  const fieldWithImage = currentPopup?.fields.find((f) => f.img);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
@@ -3047,6 +3047,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             type="select"
             value={value}
             placeholder={field.placeholder}
+            className="text-[#392579]"
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               handleInputChange(field.key, e.target.value)
             }
@@ -3059,26 +3060,26 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       case 'toggle':
         return (
-          <label className="flex cursor-pointer select-none items-center gap-3">
+          <label className="flex cursor-pointer content-around items-center gap-2 select-none">
             <div className="relative">
               <input
                 type="checkbox"
                 className="sr-only"
                 checked={value as boolean}
-                onChange={(e) =>
-                  handleInputChange(field.key, e.target.checked)
-                }
+                onChange={(e) => handleInputChange(field.key, e.target.checked)}
                 disabled={field.disabled}
               />
 
-              <div className={`h-6 w-11 rounded-full border border-[#D5D5D5] transition-colors duration-300 ${ value ? 'bg-[#392579]' : 'bg-[#fff]'}`}>
-              <div className={`absolute top-1 left-1 h-[18px] w-[18px] rounded-full border border-[#D5D5D5] transition-all
-                transition-transform duration-300 ease-in-out ring-2 ${ value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}></div></div>
+              <div
+                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
+              >
+                <div
+                  className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
+                ></div>
+              </div>
             </div>
 
-            <span className="pl-[2.3rem] text-sm font-medium text-[#392579]">
-              {field.label}
-            </span>
+            <span className="pl-[1rem] text-sm font-medium text-[#392579]">{field.label}</span>
           </label>
         );
 
@@ -3118,9 +3119,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="m-[5rem] mt-[10rem] mr-[13rem] ml-[21rem] flex h-[70vh] max-h-[90vh] w-[70vw] max-w-[90%] overflow-hidden rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]">
-        <div className="relative flex flex-2 flex-col p-8">
-          <div className="relative mb-8 min-h-0 overflow-y-auto">
+      <div className="m-[5rem] mt-[8rem] mr-[13rem] ml-[30rem] flex h-[70vh] max-h-[90vh] w-[55vw] max-w-[90%] overflow-hidden rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]">
+        <div className="relative flex h-full flex-2 flex-col p-8">
+          <div className="relative mb-8 min-h-0">
             <div className="font-[var(--font-family)]">
               <h2 className="mb-[0px] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
@@ -3133,27 +3134,30 @@ const AddMaterialPopup: React.FC<Props> = ({
 
           {(() => {
             const title = currentPopup?.title || '';
-            const isPricingOrCNC = title === 'Pricing Details' || title.includes('CNC') || title.includes('Add New Material');
+            const isPricingOrCNC =
+              title === 'Pricing Details' ||
+              title.includes('CNC') ||
+              title.includes('Add New Material');
             return (
-              <div className="mb-8 w-[95%] flex flex-row lg:flex-col gap-6"> 
-                <div className={isPricingOrCNC ? 'w-full' : 'w-1/2'}> 
+              <div className="mb-8 flex w-[95%] flex-row gap-6 lg:flex-col">
+                <div className={isPricingOrCNC ? 'w-full' : 'w-1/2'}>
                   {isPricingOrCNC ? (
-                    <div className="grid grid-cols-2">
+                    <div className="grid grid-cols-2 gap-x-4">
                       {currentPopup?.fields.map((field, index) => (
                         <div
                           key={field.key || index}
-                          className={`pt-5 pb-0 mt-[2rem] ${
+                          className={`m-[1rem] pt-3 pb-2 ${
                             field.label === 'Material Description' ? 'col-span-2' : ''
-                          } ${field.type === 'toggle' ? 'flex flex-row col-span-1 flex items-center ' : ''}`}
+                          } ${field.type === 'toggle' ? 'col-span-1 flex flex-row items-center' : ''}`}
                         >
                           {renderField(field)}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-2">
                       {currentPopup?.fields.map((field, index) => (
-                        <div key={field.key || index} className="pt-5 pb-0 mt-[2rem] w-full">
+                        <div key={field.key || index} className="m-[1rem] w-full pt-3 pb-2">
                           {renderField(field)}
                         </div>
                       ))}
@@ -3162,18 +3166,15 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </div>
 
                 {!isPricingOrCNC && (
-                  <div className="w-1/2 flex flex-col items-center justify-center p-4 mb-0 pb-0 pt-2 bg-gray-50 rounded-lg">
+                  <div className="m-[2rem] flex w-1/2 flex-col rounded-lg bg-gray-50 p-4 pt-2 pl-[5rem]">
                     <img
                       src={fieldWithImage.img}
                       alt={`${selectedMaterialType} Preview`}
-                      className="w-full max-w-[400px] h-2/4 object-cover rounded-[5px] shadow-md border border-[#6F6C8F]/50"
+                      className="h-2/4 w-full max-w-[400px] rounded-[5px] border border-[#6F6C8F]/50 object-fill shadow-md"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/default-material-icon.svg';
                       }}
                     />
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      {selectedMaterialType || 'Preview'} Diagram
-                    </p>
                   </div>
                 )}
               </div>
@@ -3187,8 +3188,12 @@ const AddMaterialPopup: React.FC<Props> = ({
 
             <div className="mr-[3rem] flex gap-[1rem]">
               {!isFirstStep ? (
-                <button className="px-6 py-3 rounded-lg border border-[#A0AEC0] rounded-[5px] text-[0.9rem] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2rem] w-[7rem] bg-[#fff] text-[#392579] hover:bg-[#f8f9ff]" onClick={handleBack} disabled={isFirstStep}>
-                Back
+                <button
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
+                  onClick={handleBack}
+                  disabled={isFirstStep}
+                >
+                  Back
                 </button>
               ) : (
                 <button

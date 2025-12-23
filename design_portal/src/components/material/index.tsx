@@ -163,28 +163,28 @@ const Material: React.FC = () => {
 
         {!addMaterialPopup && (
           <div className={styles.maincontainer}>
-          <MaterialSidebar
-            materialCategories={materialCategories}
-            expandedCategory={expandedCategory}
-            onCategoryClick={handleCategoryClick}
-            onToggleCategory={handleToggleCategory}
-            onSubItemClick={handleSubItemClick}
-            onContextMenu={handleContextMenu}
-            onMaterialContextMenu={handleMaterialContextMenu}
-          />
-
-          <div className={styles.materialrightside}>
-            <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-
-            <MaterialTable
-              materials={getFilteredMaterials()}
-              activeCategory={activeCategory}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              onSort={setSortColumn}
+            <MaterialSidebar
+              materialCategories={materialCategories}
+              expandedCategory={expandedCategory}
+              onCategoryClick={handleCategoryClick}
+              onToggleCategory={handleToggleCategory}
+              onSubItemClick={handleSubItemClick}
+              onContextMenu={handleContextMenu}
+              onMaterialContextMenu={handleMaterialContextMenu}
             />
+
+            <div className={styles.materialrightside}>
+              <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
+              <MaterialTable
+                materials={getFilteredMaterials()}
+                activeCategory={activeCategory}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onSort={setSortColumn}
+              />
+            </div>
           </div>
-        </div>
         )}
       </div>
 
@@ -206,11 +206,11 @@ const Material: React.FC = () => {
       )}
 
       {addMaterialPopup && (
-          <AddMaterialPopup
-            setCreateWorkOrderPopup={setAddMaterialPopup}
-            companyId={companyID}
-            handleGetCompanyMaterials={fetchCompanyMaterials}
-          />
+        <AddMaterialPopup
+          setCreateWorkOrderPopup={setAddMaterialPopup}
+          companyId={companyID}
+          handleGetCompanyMaterials={fetchCompanyMaterials}
+        />
       )}
     </div>
   );
