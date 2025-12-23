@@ -161,29 +161,31 @@ const Material: React.FC = () => {
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Material Manager" />
 
-        <div className={styles.maincontainer}>
-          <MaterialSidebar
-            materialCategories={materialCategories}
-            expandedCategory={expandedCategory}
-            onCategoryClick={handleCategoryClick}
-            onToggleCategory={handleToggleCategory}
-            onSubItemClick={handleSubItemClick}
-            onContextMenu={handleContextMenu}
-            onMaterialContextMenu={handleMaterialContextMenu}
-          />
-
-          <div className={styles.materialrightside}>
-            <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-
-            <MaterialTable
-              materials={getFilteredMaterials()}
-              activeCategory={activeCategory}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              onSort={setSortColumn}
+        {!addMaterialPopup && (
+          <div className={styles.maincontainer}>
+            <MaterialSidebar
+              materialCategories={materialCategories}
+              expandedCategory={expandedCategory}
+              onCategoryClick={handleCategoryClick}
+              onToggleCategory={handleToggleCategory}
+              onSubItemClick={handleSubItemClick}
+              onContextMenu={handleContextMenu}
+              onMaterialContextMenu={handleMaterialContextMenu}
             />
+
+            <div className={styles.materialrightside}>
+              <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
+              <MaterialTable
+                materials={getFilteredMaterials()}
+                activeCategory={activeCategory}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onSort={setSortColumn}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <ContextMenus
