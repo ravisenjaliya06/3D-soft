@@ -4,7 +4,6 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
-import styles from './materialWizard.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
 
 type Props = {
@@ -22,6 +21,7 @@ interface PopupStep {
     placeholder?: string;
     options?: string[];
     disabled?: boolean;
+    img?: string;
   }>;
 }
 
@@ -32,6 +32,7 @@ interface Field {
   disabled?: boolean;
   placeholder?: string;
   label: string;
+  img?: string;
 }
 
 const AddMaterialPopup: React.FC<Props> = ({
@@ -121,13 +122,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -159,7 +160,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness',
-              // image: {assets.groov}
+              img: assets.groov,
             },
             {
               key: 'lengthTrim',
@@ -207,13 +208,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -251,6 +252,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Rough Thickness',
               type: 'number',
               placeholder: 'Enter rough thickness (mm)',
+              img: assets.groov_gap
             },
             {
               key: 'cncOptimize',
@@ -358,13 +360,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -396,6 +398,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov_gap
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -491,13 +494,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -536,6 +539,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'text',
               placeholder: 'Enter slot type',
               disabled: true,
+              img: assets.groov_gap
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -577,13 +581,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -621,6 +625,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov
             },
             {
               key: 'height',
@@ -706,6 +711,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Screw Center To Reference',
               type: 'number',
               placeholder: 'Enter screw center to reference (mm)',
+              img: assets.groov_gap
             },
             {
               key: 'mountHolesPosition1',
@@ -765,6 +771,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap
             },
             {
               key: 'frontSpacing',
@@ -794,6 +801,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov
             },
             {
               key: 'backDepth',
@@ -835,6 +843,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov
             },
             {
               key: 'bottomSpacing',
@@ -870,6 +879,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap
             },
             {
               key: 'bottomMountGroovesDepth',
@@ -893,6 +903,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov_gap
             },
             {
               key: 'backNotchOffset',
@@ -979,13 +990,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1104,13 +1115,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1212,13 +1223,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1369,13 +1380,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1460,13 +1471,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1539,13 +1550,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1571,13 +1582,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1662,13 +1673,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1813,13 +1824,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -1933,13 +1944,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -2072,13 +2083,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -2186,13 +2197,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -2451,13 +2462,13 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
             {
               key: 'name',
-              label: 'Name*',
+              label: 'Material Name',
               type: 'text',
               placeholder: 'Enter Name',
             },
             {
               key: 'description',
-              label: 'Description',
+              label: 'Material Description',
               type: 'text',
               placeholder: 'Enter Description',
             },
@@ -2621,13 +2632,13 @@ const AddMaterialPopup: React.FC<Props> = ({
           },
           {
             key: 'name',
-            label: 'Name*',
+            label: 'Material Name',
             type: 'text',
             placeholder: 'Enter Name',
           },
           {
             key: 'description',
-            label: 'Description',
+            label: 'Material Description',
             type: 'text',
             placeholder: 'Enter Description',
           },
@@ -2645,6 +2656,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
+  const fieldWithImage = currentPopup?.fields.find(f => f.img);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
@@ -3034,6 +3046,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             label={field.label}
             type="select"
             value={value}
+            placeholder={field.placeholder}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               handleInputChange(field.key, e.target.value)
             }
@@ -3046,15 +3059,26 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       case 'toggle':
         return (
-          <label className={styles.toggleContainer}>
-            {field.label}
-            <input
-              type="checkbox"
-              checked={value as boolean}
-              onChange={(e) => handleInputChange(field.key, e.target.checked)}
-              disabled={field.disabled}
-            />
-            <span className={styles.toggleSlider}></span>
+          <label className="flex cursor-pointer select-none items-center gap-3">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={value as boolean}
+                onChange={(e) =>
+                  handleInputChange(field.key, e.target.checked)
+                }
+                disabled={field.disabled}
+              />
+
+              <div className={`h-6 w-11 rounded-full border border-[#D5D5D5] transition-colors duration-300 ${ value ? 'bg-[#392579]' : 'bg-[#fff]'}`}>
+              <div className={`absolute top-1 left-1 h-[18px] w-[18px] rounded-full border border-[#D5D5D5] transition-all
+                transition-transform duration-300 ease-in-out ring-2 ${ value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}></div></div>
+            </div>
+
+            <span className="pl-[2.3rem] text-sm font-medium text-[#392579]">
+              {field.label}
+            </span>
           </label>
         );
 
@@ -3094,58 +3118,103 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="bg-[#fff] border border-[#6F6C8F]/50 rounded-[0.8rem] flex w-[70vw] h-[70vh] m-[5rem] ml-[21rem] mr-[13rem] mt-[10rem] pt-[1rem] pl-[2.5rem] max-w-[90%] max-h-[90vh] overflow-hidden">
-        <div className="flex-1 p-8 flex flex-col relative">
+      <div className="m-[5rem] mt-[10rem] mr-[13rem] ml-[21rem] flex h-[70vh] max-h-[90vh] w-[70vw] max-w-[90%] overflow-hidden rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]">
+        <div className="relative flex flex-2 flex-col p-8">
           <div className="relative mb-8 min-h-0 overflow-y-auto">
             <div className="font-[var(--font-family)]">
-              <h2 className="text-[1.5rem] font-semibold text-[#170F49] mb-[0px]">
+              <h2 className="mb-[0px] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
               </h2>
-              <p className="text-[#6F6C8F] font-normal text-sm mt-[0px]">Fill in the details and choose the materials that perfectly match your needs.</p>
+              <p className="mt-[0px] text-sm font-normal text-[#6F6C8F]">
+                Fill in the details and choose the materials that perfectly match your needs.
+              </p>
             </div>
           </div>
 
-          <div className="flex-1 mb-8 w-[40%]">
-            <div className="grid grid-cols-2 gap-6">
-              {currentPopup?.fields.map((field) => (
-                // <div className="grid grid-cols-[1fr_2fr] gap-4 items-center py-3 border-b border-[#f0f0f0] last:border-b-0">
-                <div  className={`relative rounded-md border border-[#E6E8F0] px-4 pt-5 pb-3 ${ field.type === 'text' ? 'col-span-2' : '' } ${ field.type === 'select' ? 'col-span-2' : '' }`}>
-                  <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-[#9AA3B2]">
-                    {field.label}
-                  </label>
-                    {renderField(field)}
+          {(() => {
+            const title = currentPopup?.title || '';
+            const isPricingOrCNC = title === 'Pricing Details' || title.includes('CNC') || title.includes('Add New Material');
+            return (
+              <div className="mb-8 w-[95%] flex flex-row lg:flex-col gap-6"> 
+                <div className={isPricingOrCNC ? 'w-full' : 'w-1/2'}> 
+                  {isPricingOrCNC ? (
+                    <div className="grid grid-cols-2">
+                      {currentPopup?.fields.map((field, index) => (
+                        <div
+                          key={field.key || index}
+                          className={`pt-5 pb-0 mt-[2rem] ${
+                            field.label === 'Material Description' ? 'col-span-2' : ''
+                          } ${field.type === 'toggle' ? 'flex flex-row col-span-1 flex items-center ' : ''}`}
+                        >
+                          {renderField(field)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {currentPopup?.fields.map((field, index) => (
+                        <div key={field.key || index} className="pt-5 pb-0 mt-[2rem] w-full">
+                          {renderField(field)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-4 pb-[1rem] border-[#f0f0f0]">
-            <p className="text-[#666] text-[0.9rem]">
-                Step {currentStep + 1} of {currentSequence.length}
+                {!isPricingOrCNC && (
+                  <div className="w-1/2 flex flex-col items-center justify-center p-4 mb-0 pb-0 pt-2 bg-gray-50 rounded-lg">
+                    <img
+                      src={fieldWithImage.img}
+                      alt={`${selectedMaterialType} Preview`}
+                      className="w-full max-w-[400px] h-2/4 object-cover rounded-[5px] shadow-md border border-[#6F6C8F]/50"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/default-material-icon.svg';
+                      }}
+                    />
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      {selectedMaterialType || 'Preview'} Diagram
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div className="mt-auto flex items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
+            <p className="text-[0.9rem] text-[#666]">
+              Step {currentStep + 1} of {currentSequence.length}
             </p>
 
-            <div className="flex gap-[1rem] mr-[3rem]">
-            <button className="px-6 py-3 rounded-[5px] text-[0.9rem] h-[2rem] w-[9rem] cursor-pointer transition-all duration-200 border-[#A0AEC0] border font-[var(--font-family)] h-[2.9rem] w-[7rem] bg-[#fff] text-[#392579] hover:bg-[#e5e5e5]" onClick={() => setCreateWorkOrderPopup(false)}>
-              Cancel
-            </button>
+            <div className="mr-[3rem] flex gap-[1rem]">
+              {!isFirstStep ? (
+                <button className="px-6 py-3 rounded-lg border border-[#A0AEC0] rounded-[5px] text-[0.9rem] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2rem] w-[7rem] bg-[#fff] text-[#392579] hover:bg-[#f8f9ff]" onClick={handleBack} disabled={isFirstStep}>
+                Back
+                </button>
+              ) : (
+                <button
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
+                  onClick={() => setCreateWorkOrderPopup(false)}
+                >
+                  Cancel
+                </button>
+              )}
 
-            {/* <button className="px-6 py-3 rounded-lg text-[0.9rem] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] bg-white text-[#667eea] border border-[#667eea] hover:bg-[#f8f9ff]" onClick={handleBack} disabled={isFirstStep}>
-              Back
-            </button> */}
-
-            {!isLastStep ? (
-              <button
-                className="px-6 py-3 rounded-[5px] text-[0.9rem] h-[2rem] w-[9rem] bg-[#392579] text-[#fff] cursor-pointer transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] border-0 text-white hover:bg-[var(--primary-color)] disabled:bg-[#ccc] disabled:cursor-not-allowed"
-                onClick={handleNext}
-                disabled={!formData.name && currentStep === 0}
-              >
-                Next
-              </button>
-            ) : (
-              <button className="px-6 py-3 rounded-lg text-[0.9rem] w-[9rem] bg-[#392579] cursor-pointer h-[2rem] transition-all duration-200 font-[var(--font-family)] h-[2.9rem] w-[7rem] border-0 text-white hover:bg-[var(--primary-color)]" onClick={handleFinish}>
-                Finish
-              </button>
-            )}
+              {!isLastStep ? (
+                <button
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
+                  onClick={handleNext}
+                  disabled={!formData.name && currentStep === 0}
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
+                  onClick={handleFinish}
+                >
+                  Finish
+                </button>
+              )}
             </div>
           </div>
         </div>
