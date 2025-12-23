@@ -3,6 +3,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { CATEGORY_TABS } from '../constants';
 import type { TableRow } from '../types';
+import styles from '../material.module.css';
 
 interface MaterialTableProps {
   materials: TableRow[];
@@ -55,7 +56,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
-    <div className="h-full flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]">
+    <div className={`${styles.custom_scrollbar} h-full flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]`}>
       <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[7px]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
