@@ -3125,10 +3125,81 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   };
 
+  const steps = ['Material', 'Specifications', 'Pricing', 'Finish'];
+  const getUIStepIndex = (popup?: PopupStep): number => {
+    if (!popup) return 0;
+
+    const title = popup.title.toLowerCase();
+
+    if (title.includes('new material')) return 0; // Step 1
+    if (title.includes('pricing')) return 2; // Step 3
+    if (title.includes('finish')) return 3; // Step 4
+
+    return 1; // Step 2 (Specifications)
+  };
+
+  const uiStep = getUIStepIndex(currentPopup);
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center">
+    <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
+      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[#d8cffc] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
+        <div className="flex items-center justify-center gap-[0.5rem]">
+          {steps.map((label, index) => {
+            const isCurrent = index === uiStep;
+            const isCompleted = index < uiStep;
+
+            return (
+              <div key={label} className="flex items-center gap-[0.5rem]">
+                {/* STEP BOX */}
+                <div
+                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
+                    isCurrent || isCompleted
+                      ? 'border-[#4b2aad] bg-[#4b2aad]'
+                      : 'border-[#b8aef3] bg-white'
+                  }`}
+                >
+                  {isCurrent ? (
+                    <img
+                      src="/assets/material/Checkcircle.svg"
+                      alt="Current Step"
+                      className="h-[1.3rem] w-[1.3rem]"
+                    />
+                  ) : (
+                    <span
+                      className={`text-sm font-semibold ${
+                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* LABEL */}
+                <span
+                  className={`text-sm font-medium ${
+                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
+                  }`}
+                >
+                  {label}
+                </span>
+
+                {/* CONNECTOR */}
+                {index < steps.length - 1 && (
+                  <div
+                    className={`h-[0.25rem] w-[9rem] rounded ${
+                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div
-        className={`${styles.custom_scrollbar} m-[5rem] mt-[8rem] mr-[13rem] ml-[30rem] flex h-[70vh] max-h-[90vh] w-[55vw] max-w-[90%] overflow-y-scroll rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] pt-[1rem] pl-[2.5rem]`}
+        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] overflow-auto rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
       >
         <div className="relative flex h-full flex-2 flex-col p-8">
           <div className="relative mb-8 min-h-0">
