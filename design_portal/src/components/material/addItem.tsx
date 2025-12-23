@@ -3167,7 +3167,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <span
                       className={`text-sm font-semibold ${
-                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
+                        isCompleted ? 'text-[white]' : 'text-[#4b2aad]'
                       }`}
                     >
                       {index + 1}
