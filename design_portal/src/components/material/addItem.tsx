@@ -249,7 +249,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness (mm)',
-              img: assets.groov
+              img: assets.groov,
             },
             {
               key: 'roughThickness',
@@ -3152,10 +3152,11 @@ const AddMaterialPopup: React.FC<Props> = ({
               <div key={label} className="flex items-center gap-[0.5rem]">
                 {/* STEP BOX */}
                 <div
-                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${isCurrent || isCompleted
+                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
+                    isCurrent || isCompleted
                       ? 'border-[#4b2aad] bg-[#4b2aad]'
                       : 'border-[#b8aef3] bg-white'
-                    }`}
+                  }`}
                 >
                   {isCurrent ? (
                     <img
@@ -3165,8 +3166,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                     />
                   ) : (
                     <span
-                      className={`text-sm font-semibold ${isCompleted ? 'text-white' : 'text-[#4b2aad]'
-                        }`}
+                      className={`text-sm font-semibold ${
+                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
+                      }`}
                     >
                       {index + 1}
                     </span>
@@ -3175,8 +3177,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
                 {/* LABEL */}
                 <span
-                  className={`text-sm font-medium ${isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
-                    }`}
+                  className={`text-sm font-medium ${
+                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
+                  }`}
                 >
                   {label}
                 </span>
@@ -3184,8 +3187,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* CONNECTOR */}
                 {index < steps.length - 1 && (
                   <div
-                    className={`h-[0.25rem] w-[9rem] rounded ${index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
-                      }`}
+                    className={`h-[0.25rem] w-[9rem] rounded ${
+                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
+                    }`}
                   />
                 )}
               </div>
@@ -3210,27 +3214,13 @@ const AddMaterialPopup: React.FC<Props> = ({
           </div>
 
           {(() => {
-            const title = currentPopup?.title || '';
-            const isPricingOrCNC =
-              title === 'Pricing Details' ||
-              title.includes('CNC') ||
-              title.includes('Add New Material');
+            // Check if any field in the current popup has an image
+            const hasImageFields = currentPopup?.fields.some((field) => field.img);
+
             return (
               <div className="mb-8 flex w-[95%] flex-row gap-6 lg:flex-col">
-                <div className={isPricingOrCNC ? 'w-full' : 'w-1/2'}>
-                  {isPricingOrCNC ? (
-                    <div className="grid grid-cols-2 gap-x-4">
-                      {currentPopup?.fields.map((field, index) => (
-                        <div
-                          key={field.key || index}
-                          className={`m-[1rem] pt-3 pb-2 ${field.label === 'Material Description' ? 'col-span-2' : ''
-                            } ${field.type === 'toggle' ? 'col-span-1 flex flex-row items-center' : ''}`}
-                        >
-                          {renderField(field)}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
+                <div className={hasImageFields ? 'w-1/2' : 'w-full'}>
+                  {hasImageFields ? (
                     <div className="grid grid-cols-1 gap-2">
                       {currentPopup?.fields.map((field, index) => (
                         <div key={field.key || index} className="m-[1rem] w-full pt-3 pb-2">
@@ -3238,21 +3228,36 @@ const AddMaterialPopup: React.FC<Props> = ({
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-x-4">
+                      {currentPopup?.fields.map((field, index) => (
+                        <div
+                          key={field.key || index}
+                          className={`m-[1rem] pt-3 pb-2 ${
+                            field.label === 'Material Description' ? 'col-span-2' : ''
+                          } ${field.type === 'toggle' ? 'col-span-1 flex flex-row items-center' : ''}`}
+                        >
+                          {renderField(field)}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                {!isPricingOrCNC && activeFieldKey && (() => {
-                  const activeField = currentPopup?.fields.find(f => f.key === activeFieldKey);
-                  return activeField?.img ? (
-                    <div className="flex w-1/2 items-center justify-center">
-                      <img
-                        src={activeField.img}
-                        className="h-auto w-full max-w-[400px] rounded-lg border-2 border-[#d8cffc] object-contain shadow-md"
-                        alt="Field Preview"
-                      />
-                    </div>
-                  ) : null;
-                })()}
+                {hasImageFields &&
+                  activeFieldKey &&
+                  (() => {
+                    const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
+                    return activeField?.img ? (
+                      <div className="flex w-1/2 items-center justify-center">
+                        <img
+                          src={activeField.img}
+                          className="h-auto w-full max-w-[400px] rounded-lg border-2 border-[#d8cffc] object-contain shadow-md"
+                          alt="Field Preview"
+                        />
+                      </div>
+                    ) : null;
+                  })()}
               </div>
             );
           })()}
