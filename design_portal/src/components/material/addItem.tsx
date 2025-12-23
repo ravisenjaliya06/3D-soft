@@ -36,10 +36,6 @@ interface Field {
   img?: string;
 }
 
-interface FieldWithImage extends Field {
-  img: string;
-}
-
 const AddMaterialPopup: React.FC<Props> = ({
   setCreateWorkOrderPopup,
   companyId,
@@ -172,6 +168,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length Trim',
               type: 'number',
               placeholder: 'Enter length trim',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -245,12 +242,14 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'SQ M',
                 'sheet',
               ],
+              img: assets.groov,
             },
             {
               key: 'thickness',
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness (mm)',
+              img: assets.groov
             },
             {
               key: 'roughThickness',
@@ -2661,10 +2660,6 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
-  const isFieldWithImage = (field: Field): field is FieldWithImage => {
-    return typeof field.img === 'string' && field.img.length > 0;
-  };
-  const fieldWithImage = currentPopup?.fields.find(isFieldWithImage);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
@@ -3044,7 +3039,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   };
 
   /** Show the correct input field based on field type (text, number, select, toggle) */
-  const renderField = (field: Field) => {
+  const renderField = (field: Field, onActivate?: () => void) => {
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 
     switch (field.type) {
@@ -3054,6 +3049,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             label={field.label}
             type="select"
             value={value}
+            onFocus={onActivate}
             placeholder={field.placeholder}
             className="text-[#392579]"
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -3097,6 +3093,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             label={field.label}
             type="number"
             value={value}
+            onFocus={onActivate}
             placeholder={field.placeholder}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
@@ -3113,6 +3110,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             label={field.label}
             type="text"
             value={value}
+            onFocus={onActivate}
             placeholder={field.placeholder}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleInputChange(field.key, e.target.value)
@@ -3139,6 +3137,8 @@ const AddMaterialPopup: React.FC<Props> = ({
   };
 
   const uiStep = getUIStepIndex(currentPopup);
+
+  const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
 
   return (
     <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
@@ -3238,26 +3238,23 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <div className="grid grid-cols-1 gap-2">
                       {currentPopup?.fields.map((field, index) => (
-                        <div key={field.key || index} className="m-[1rem] w-full pt-3 pb-2">
-                          {renderField(field)}
+                        <div key={field.key || index} className="m-[1rem] w-full flex items-start gap-4 pt-3 pb-2">
+                          <div className="flex-1">
+                            {renderField(field, () => setActiveFieldKey(field.key))}
+                          </div>
+
+                         {activeFieldKey && (
+                            <img
+                              src={field.img}
+                              className="h-[120px] w-[120px] rounded border object-cover"
+                              alt="Preview"
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {!isPricingOrCNC && fieldWithImage && (
-                  <div className="m-[2rem] flex w-1/2 flex-col rounded-lg bg-gray-50 p-4 pt-2 pl-[5rem]">
-                    <img
-                      src={fieldWithImage.img}
-                      alt={`${selectedMaterialType} Preview`}
-                      className="h-2/4 w-full max-w-[400px] rounded-[5px] border border-[#6F6C8F]/50 object-fill shadow-md"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/default-material-icon.svg';
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             );
           })()}
