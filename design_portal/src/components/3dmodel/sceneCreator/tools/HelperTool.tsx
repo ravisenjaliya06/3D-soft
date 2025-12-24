@@ -2,9 +2,9 @@ import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { HelperToolProps } from '../interface';
 import { deleteObject } from '../utils';
 import styles from './helpertool.module.css';
-import { HelperToolProps } from '../interface';
 
 const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveHandler }) => {
   const helperToolRef = useRef<CSS2DObject | null>(null);

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Dimensions } from '../interface';
-import { Position, Rotation } from '../store/interface';
 import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
+import { Dimensions } from '../interface';
+import { Position, Rotation } from '../store/interface';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
@@ -21,7 +21,7 @@ export const PART_TYPES = {
 };
 
 export const GEOMETRY = {
-  BOX_GEOMETRY: 'BoxGeometry',
+  BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
   NONE: 'none',
 };

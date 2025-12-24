@@ -90,6 +90,16 @@ class DesignViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
+        latest_version = (
+            DesignVersion.objects.filter(design=instance)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if latest_version:
+            latest_version.name = instance.design_name
+            latest_version.save(update_fields=["name"])
+
         return Response(serializer.data)
 
     def destroy(self: "DesignViewset", request: Request, *args, **kwargs) -> Response:

@@ -10,18 +10,15 @@ import {
   addDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
-  addPlatformOnWall,
-  addSimpleCabinet1,
   addVerticalPlanksToBox,
 } from '../design/scene';
-import { RulePart } from '../handler/interface';
-import { addCabinetItemToDesign } from '../handler/items';
-import { metersToMM } from '../handler/unitConversion';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
+import { DesignBuilder } from '../sceneCreator/designBuilder';
+import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
-  addObjects,
   setHoverdMesh,
   setSelectedChildObject,
   setobjectSelected,
@@ -29,15 +26,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
-import {
-  CabinetItem,
-  Datastate,
-  IconMap,
-  PlatformReturn,
-  ResultType,
-  SelectedCabinetItem,
-  platformData,
-} from './interface';
+import { Datastate, IconMap, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
@@ -51,7 +40,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [activeOptionName, setActiveOptionName] = useState('Home');
   const [catalogMenu, setcatalogMenu] = useState(false);
   const [isExlightActive, setIsExlightActive] = useState(false);
-  const [cabinetItems, setCabinetItems] = useState<CabinetItem[]>([]);
+  const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
   const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
@@ -78,83 +67,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setQuantityValue(1);
   };
 
-  /** Add platform on the selected wall and create API entry */
-  const handleToAddPlatform = async (catalogId: string) => {
-    const textureLoader = new THREE.TextureLoader();
-    const counterTexture = textureLoader.load('/img14_64.jpg');
-    counterTexture.wrapS = counterTexture.wrapT = THREE.RepeatWrapping;
-    counterTexture.repeat.set(10, 1);
-
-    const scene = threeDView!.scene;
-    let wallFromSelection: THREE.Mesh | null = null;
-
-    const outline = scene.children.find((o) => o.name.startsWith('outline-')) as
-      | THREE.Object3D
-      | undefined;
-    if (outline) {
-      const outlineCenter = outline.position.clone();
-      const walls: THREE.Mesh[] = [];
-      scene.traverse((o) => {
-        if (o instanceof THREE.Mesh && ['Center Wall', 'Left Wall', 'Right Wall'].includes(o.name))
-          walls.push(o);
-      });
-      for (const w of walls) {
-        const box = new THREE.Box3().setFromObject(w);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-        if (center.distanceTo(outlineCenter) < 1e-3) {
-          wallFromSelection = w;
-          break;
-        }
-      }
-    }
-
-    const hovered = store.getState().data.hoverdMesh as THREE.Mesh | null;
-    const targetWall =
-      wallFromSelection ||
-      (hovered && ['Center Wall', 'Left Wall', 'Right Wall'].includes(hovered.name)
-        ? hovered
-        : null);
-
-    let platformData: platformData[] = [];
-    let platFormGroup;
-    if (targetWall) {
-      const platform = (await addPlatformOnWall(
-        scene,
-        targetWall,
-        counterTexture
-      )) as PlatformReturn;
-      platformData = platform.addedMeshes;
-      platFormGroup = platform.platformGroup;
-    }
-    // Add platform data to API payload
-    for (const pdata of platformData) {
-      try {
-        const designId = window.location.pathname.split('/')[2];
-        const apiResponse = await addCabinetItemToDesign(catalogId, {
-          type: 'Platform',
-          name: pdata.name,
-          width: pdata.width,
-          height: pdata.height,
-          depth: pdata.depth,
-          position: pdata.position,
-          additional_data: pdata.data,
-          design_id: designId,
-          description: '',
-        });
-        if (apiResponse) {
-          dispatch(addObjects([apiResponse]));
-          if (apiResponse.id) dispatch(setobjectSelected(apiResponse.id));
-          if (platFormGroup) {
-            platFormGroup.userData.objectId = apiResponse.id;
-          }
-        }
-      } catch (e) {
-        console.error('Platform API failed', e);
-      }
-    }
-  };
-
   const options = [
     { option: 'Home', name: 'Home', icon: assets.img1 },
     { option: 'View', name: 'View', icon: assets.img2 },
@@ -162,7 +74,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
 
   /** Fetch cabinet items from API and update setCabinetItems state */
   const fetchCabinetItem = async () => {
-    const cabinetResponse: { status: number; data: CabinetItem[] } = await commonService.get(
+    const cabinetResponse: { status: number; data: MeshObjectData[][] } = await commonService.get(
       API_ENDPOINT.GET_CATALOG_ITEMS
     );
     if (cabinetResponse.status === 200 && Array.isArray(cabinetResponse.data)) {
@@ -174,135 +86,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   };
 
   /** Handle selection of a cabinet item from toolbar submenu */
-  const handleCabinetItemSelect = async (item: ResultType) => {
-    if (item.type === 'Platform') {
-      handleToAddPlatform(item.id);
-      return;
+  const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
+    if (Object.values(OBJECT_TYPES).includes(item.type)) {
+      const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
+
+      const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
+      const mesh = designBuilder.createDesign();
+      threeDView!.scene.add(mesh);
+    } else {
+      setSelectedCabinetItem(item);
+      setQuantityValue(1);
+      setAddPartPopup(true);
+      handleSubmenuClick(event);
     }
-
-    // For Cabinet items: no quantity popup, no target selection; create via API and add directly
-    if (item?.type === 'Cabinet') {
-      try {
-        const scene = threeDView!.scene;
-        const designId = window.location.pathname.split('/')[2];
-        const catalogId = item.id;
-
-        // Get actual dimensions from the created object instead of static values
-        let createdObject: THREE.Object3D | null = null;
-
-        // Add to scene first to get actual dimensions
-        if (typeof threeDView!.addSimpleCabinet === 'function') {
-          threeDView!.addSimpleCabinet();
-          // Find the created cabinet (get the last one added)
-          const cabinets: THREE.Object3D[] = [];
-          scene.traverse((obj) => {
-            if (obj.name === 'SimpleCabinet') {
-              cabinets.push(obj);
-            }
-          });
-          createdObject = cabinets[cabinets.length - 1] || null;
-        }
-
-        if (!createdObject) {
-          console.error('Failed to create or find the cabinet object');
-          return;
-        }
-
-        // Convert to mm for storage (meters * 1000 = mm)
-        const mesh = createdObject as THREE.Mesh<THREE.BoxGeometry>;
-        const width = metersToMM(mesh.geometry.parameters.width);
-        const height = metersToMM(mesh.geometry.parameters.height);
-        const depth = metersToMM(mesh.geometry.parameters.depth);
-
-        const position = {
-          x: metersToMM(createdObject.position.x),
-          y: metersToMM(createdObject.position.y),
-          z: metersToMM(createdObject.position.z),
-        };
-
-        const ruleParts: RulePart[] = [];
-
-        createdObject.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.name.includes('PLANK')) {
-            const formattedName = child.name
-              .replace(/PLANK/gi, 'Panel')
-              .replace(/_/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim()
-              .toLowerCase()
-              .replace(/\b\w/g, (char) => char.toUpperCase());
-
-            ruleParts.push({
-              id: '',
-              name: formattedName,
-              width: metersToMM(child.geometry.parameters.width),
-              height: metersToMM(child.geometry.parameters.height),
-              depth: metersToMM(child.geometry.parameters.depth),
-              thickness: null,
-              position: {
-                x: metersToMM(child.position.x),
-                y: metersToMM(child.position.y),
-                z: metersToMM(child.position.z),
-              },
-              handle_position: null,
-              additional_data: {
-                texture: '/textures/light_wood.jpg',
-              },
-            });
-          }
-        });
-
-        const parts = [
-          {
-            name: 'Panel',
-            rule_parts: ruleParts,
-          },
-        ];
-
-        let apiResponse = null;
-        try {
-          apiResponse = await addCabinetItemToDesign(catalogId, {
-            type: item.type,
-            name: item.name,
-            description: item.description || `${item.name} description`,
-            design_id: designId,
-            width,
-            height,
-            depth,
-            position,
-            additional_data: {
-              texture: '/textures/light_wood.jpg',
-            },
-            parts,
-          });
-          if (apiResponse) {
-            dispatch(addObjects([apiResponse]));
-            if (apiResponse.id) {
-              dispatch(setobjectSelected(apiResponse.id));
-            }
-          }
-        } catch (apiErr) {
-          console.error('Cabinet create API failed', apiErr);
-        }
-
-        // Annotate the newly created container with API metadata
-        if (createdObject && apiResponse) {
-          createdObject.userData = {
-            ...(createdObject.userData || {}),
-            objectId: apiResponse.id,
-            apiData: apiResponse,
-          };
-        }
-      } catch (e) {
-        console.error('Failed to add cabinet directly to scene', e);
-      }
-      return;
-    }
-
-    // Default flow (non-cabinet): add directly with quantity 1 (no popup)
-    setSelectedCabinetItem(item);
-    setQuantityValue(1);
-    setAddPartPopup(true);
   };
 
   /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
@@ -335,11 +131,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       return;
     }
 
-    if (['Door', 'Sliding Door'].includes(itemType)) {
+    if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox);
-    } else if (itemType === 'Drawer') {
+    } else if (itemType === 'drawer') {
       await addDrawersOnInvisibleBox(scene, targetBox, num);
-    } else if (itemType === 'Plank') {
+    } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
         await addVerticalPlanksToBox(scene, targetBox, num, selectedCabinetItem);
@@ -424,76 +220,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
   ];
   const furnitureTools = [
-    // { option: 'Kitchen', icon: assets.kitchen_svg },
     { option: 'Cabinet', icon: assets.cabinet_svg },
+    { option: 'Parts', icon: assets.cabinet_svg },
   ];
 
-  /** Return filtered cabinet items based on selected category */
   const getFilteredCabinetItems = (category: string) => {
-    // Define what types should appear for each category
     const categoryFilters: Record<string, string[]> = {
-      Kitchen: ['Platform', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
-      Cabinet: ['Simple Cabinet', 'Vertical Plank', 'Horizontal Plank', 'Drawer', 'Door'],
+      Parts: Object.values(PART_TYPES),
+      Cabinet: Object.values(OBJECT_TYPES),
     };
 
     const allowedTypes = categoryFilters[category] || [];
-    let result: ResultType[] = [];
-    // For Kitchen, add alwaysFields items first
-    if (category === 'Cabinet') {
-      result = alwaysFields.map((field) => ({
-        id: `always-${field.option}`,
-        name: field.option,
-        type: 'Special',
-        icon: field.icon,
-        onClick: field.onClick,
-        isAlwaysField: true,
-      }));
-    }
-
-    // Then add filtered API items
-    if (cabinetItems && cabinetItems.length > 0) {
-      const filtered = cabinetItems.filter((item) => {
-        // Check if item type or name matches allowed types
-        return allowedTypes.some((type) => {
-          const itemNameLower = (item.name || '').toLowerCase();
-          const itemTypeLower = (item.type || '').toLowerCase();
-          const typeLower = type.toLowerCase();
-
-          return (
-            item.type === type ||
-            item.name === type ||
-            itemNameLower === typeLower ||
-            itemTypeLower === typeLower ||
-            // Match planks
-            (type.includes('Plank') &&
-              item.type === 'Plank' &&
-              item.name.includes(type.split(' ')[0])) ||
-            // Match Simple Cabinet
-            (type === 'Simple Cabinet' &&
-              itemNameLower.includes('simple') &&
-              itemNameLower.includes('cabinet'))
-          );
-        });
-      });
-
-      // Remove duplicates from filtered results
-      const uniqueFiltered = filtered.reduce((acc: CabinetItem[], item) => {
-        const key = `${item.type}-${item.name}`;
-        const exists = acc.find((i) => `${i.type}-${i.name}` === key);
-        if (!exists) {
-          acc.push(item);
-        }
-        return acc;
-      }, []);
-
-      result = [...result, ...uniqueFiltered];
-    }
-
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(`Filtered items for ${category}:`, result);
-    }
-
-    return result;
+    return cabinetItems
+      .map((item: any) => item[0])
+      .filter((item: any) => allowedTypes.includes(item.type));
   };
 
   /** Open the Second Popup for selected furniture category */
@@ -503,27 +243,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setSelectedCabinetItem(null);
     setQuantityValue(1);
   };
-
-  const alwaysFields = [
-    {
-      option: 'Load Sink GLB',
-      icon: assets.sink,
-      onClick: () => {
-        if (threeDView && typeof threeDView.loadSinkModel === 'function') {
-          threeDView.loadSinkModel('/glb/sink.glb');
-        }
-      },
-      isActive: false,
-    },
-    {
-      option: 'cu',
-      icon: assets.sink,
-      onClick: () => {
-        addSimpleCabinet1(threeDView?.scene!);
-      },
-      isActive: false,
-    },
-  ];
 
   /** Reset toolbar to Home option and clear selected states */
   const handleback = () => {
@@ -536,15 +255,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setQuantityValue(1);
   };
 
-  /* Map item types/names to their respective icons */
   const iconMap: IconMap = {
-    Drawer: assets.drawer,
+    drawer: assets.drawer,
     'Sliding Door': assets.door,
-    Door: assets.door_icon,
+    door: assets.door_icon,
     'Horizontal Plank': assets.horizontal,
     'Vertical Plank': assets.vertical,
-    Plank: assets.vertical,
+    plank: assets.vertical,
     Cabinet: assets.cabinet,
+    cupboard: assets.cabinet,
     Platform: assets.platform,
   };
 
@@ -712,26 +431,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   className={styles.submenuItem}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSubmenuClick(e);
-                    if (item.isAlwaysField) {
-                      // For alwaysFields items, call their onClick directly
-                      item?.onClick?.();
-                    } else {
-                      // For API items, use handleCabinetItemSelect
-                      handleCabinetItemSelect(item);
-                    }
+                    handleCabinetItemSelect(e, item);
                   }}
                   title={item.description || item.name}
                 >
-                  <img
-                    src={
-                      item.isAlwaysField
-                        ? item.icon
-                        : iconMap[item.name] || iconMap[item.type] || assets.drawer
-                    }
-                    alt={item.name}
-                  />
-                  <span>{item.name}</span>
+                  <img src={iconMap[item.type]} alt={item.name} />
+                  <span>{formatEnumLabel(item.name)}</span>
                 </div>
               ))}
               {getFilteredCabinetItems(selectedFurnitureCategory).length === 0 && (
@@ -755,7 +460,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               className={styles.createicon}
               alt="createicon"
             />
-            <h2>Add {selectedCabinetItem.name}</h2>
+            <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
             <img
               src={assets.close || '/placeholder.svg'}
               className={styles.createclose}
@@ -763,7 +468,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               onClick={closePopup}
             />
             <div className={styles.create_right_side}>
-              <p>Enter the number of {selectedCabinetItem.name} to add.</p>
+              <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
               <form
                 className={styles.form}
                 onSubmit={(e) => {
@@ -781,7 +486,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       setQuantityValue(Number(e.target.value))
                     }
                     placeholder="Enter quantity"
-                    label={`Quantity for ${selectedCabinetItem.name}`}
+                    label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
                     error={undefined}
                   />
                 </div>

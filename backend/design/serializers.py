@@ -74,7 +74,7 @@ class NestingItemSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     type = serializers.CharField()
-    geometryType = serializers.CharField()  # noqa: N815
+    geometry_type = serializers.CharField()  # noqa: N815
     isMain = serializers.BooleanField(default=False)  # noqa: N815
     parent = serializers.CharField(required=False)
 
@@ -82,7 +82,7 @@ class NestingItemSerializer(serializers.Serializer):
 class DesignVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DesignVersion
-        fields = ["id", "design"]
+        fields = ["id", "design", "name"]
 
 
 class SceneGetSerializer(serializers.Serializer):
@@ -98,8 +98,10 @@ class SceneGetSerializer(serializers.Serializer):
         items = []
         items.append(
             {
-                "id": str(catalog.id),
                 **(catalog.data or {}),
+                "id": str(catalog.id),
+                "name": catalog.name,
+                "type": catalog.type,
                 "parent": str(catalog.parent.id) if catalog.parent else None,
             }
         )
@@ -108,9 +110,11 @@ class SceneGetSerializer(serializers.Serializer):
             for part in rule.catalog_rule_parts.all():
                 items.append(
                     {
+                        **part.data,
                         "id": str(part.id),
                         "parent": str(catalog.id),
-                        **part.data,
+                        "name": part.name,
+                        "type": part.type,
                     }
                 )
 
