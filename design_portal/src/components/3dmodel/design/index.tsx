@@ -6,16 +6,12 @@ import HelperTool from '../sceneCreator/tools/HelperTool';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
-import { setHoverdMesh } from '../store/dataSlice';
+import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
+import { isPlankObjectFindByName } from '../utils/objectTypes';
+import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
-import {
-  clearAllPlankDimensions,
-  enablePlankDimensionEditing,
-  isPlankObject,
-  showPlankDimensions,
-} from './scene';
 import { getOrCreateThreeDView } from './sceneSingleton';
 
 export const gettingDesignID = () => {
@@ -92,6 +88,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const hoverOutlineRef = useRef<THREE.LineSegments | null>(null);
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
+  const dimToolRef = useRef<DistanceTool | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -103,7 +100,25 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       setLocalDesign3D(threeDView);
       setDesign3D(threeDView);
       dispatch(setScene(threeDView.scene));
-      enablePlankDimensionEditing(threeDView);
+
+      const dimTool = new DistanceTool(threeDView.scene);
+      dimTool.enableEditing(threeDView, (mesh, newPos) => {
+        const objectId = mesh.userData?.objectId;
+        if (!objectId) return;
+
+        dispatch(
+          updateObject({
+            id: objectId,
+            position: {
+              x: newPos.x,
+              y: newPos.y,
+              z: newPos.z,
+            },
+          })
+        );
+      });
+
+      dimToolRef.current = dimTool;
 
       // MoveHandler only once
       const handler = new MoveHandler({
@@ -176,19 +191,18 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     }
 
     if (selectedObject instanceof THREE.Mesh) {
-      const scene = store.getState().scene.scene;
       // 1. Clear old dimensions globally
-      clearAllPlankDimensions(scene);
+      dimToolRef.current?.clearAllDistances();
       // 2. If it's a plank, show dimensions
-      if (isPlankObject(selectedObject)) {
-        showPlankDimensions(scene, selectedObject);
+      if (isPlankObjectFindByName(selectedObject)) {
+        dimToolRef.current?.showDistances(selectedObject);
       }
       // NOTE: Outline creation is now handled by the SelectTool logic that triggered this selection.
       setOutline(null); // Clear any local outline reference we might have had
     } else {
       // If nothing selected or selection cleared
       if (design3D && design3D.scene) {
-        clearAllPlankDimensions(design3D.scene);
+        dimToolRef.current?.clearAllDistances();
       }
     }
   }, [design3D, selectedObject]);
