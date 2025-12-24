@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
+import { MeshObjectData } from './interface';
 
 /**
  * Get the X and Y positions whenever a mouse event is called.
@@ -47,3 +48,32 @@ export const deleteObject = async (clearScene?: boolean) => {
   }
   objectRemover.findSingleObjectToRemove();
 };
+
+export function formatEnumLabel(value: string): string {
+  if (!value) return '';
+
+  return value
+    .toLowerCase()
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function snakeToCamel(str: string) {
+  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+export function convertKeysToCamel<T>(obj: Object): T {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToCamel) as any;
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [
+        snakeToCamel(k),
+        convertKeysToCamel(v),
+      ])
+    ) as T;
+  }
+  return obj;
+}

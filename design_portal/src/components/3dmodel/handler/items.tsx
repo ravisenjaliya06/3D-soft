@@ -1,10 +1,6 @@
-import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import commonService from '@/services/CommonService';
-import gsap from 'gsap';
 import * as THREE from 'three';
 import { GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
-import { AddItemDatabasePayload, RulePart } from './interface';
 
 export function showFullScreenLoader(message = 'Loading...') {
   /**
@@ -54,7 +50,6 @@ export function hideFullScreenLoader() {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
-  console.log(boxMesh, 'boxMesh');
   /**
    * Generates invisible boxes for empty compartments in a given box mesh object.
    * Works in local space only (no special wall handling).
@@ -140,7 +135,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     });
   });
 
-  console.log(planks, 'planks');
 
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
@@ -159,14 +153,17 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     boxMesh.add(mesh);
     return [mesh];
   }
-
-  // --- CASE 2: Planks exist → build grid in local X/Y ---
-  const step = 0.01;
-
+  
   const minW = bb.min.x;
   const maxW = bb.max.x;
   const minH = bb.min.y;
   const maxH = bb.max.y;
+
+  // --- CASE 2: Planks exist → build grid in local X/Y ---
+  const TARGET_GRID_CELLS = 300; // safe for performance
+  const stepW = (maxW - minW) / TARGET_GRID_CELLS;
+  const stepH = (maxH - minH) / TARGET_GRID_CELLS;
+  const step = Math.max(stepW, stepH);
 
   const gridWidth = Math.ceil((maxW - minW) / step);
   const gridHeight = Math.ceil((maxH - minH) / step);
@@ -253,13 +250,12 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   // --- Create invisible meshes for compartments ---
   const meshes: THREE.Mesh[] = [];
-  console.log(compartments, 'compartments');
   compartments.forEach((c, idx) => {
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
       name: `invisibleBox_${idx}_for_${boxMesh.name}`,
       type: 'INVISIBLEBOX', // custom type or reuse known type
-      geometry_type: GEOMETRY.BOX_GEOMETRY,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: c.width,
         height: c.height,
@@ -290,234 +286,3 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   return meshes;
 }
-
-export function toggleDoor(child: THREE.Mesh) {
-  /** Toggles a 3D door’s open/close animation based on its open direction type. */
-  if (!child) return;
-
-  const isClosed = child.userData.isClosed ?? true;
-
-  // Traverse parents to detect wall placement
-  let obj: THREE.Object3D | null = child;
-  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
-
-  while (obj && !wallType) {
-    if (obj.name.toLowerCase().includes('center')) wallType = 'center';
-    else if (obj.name.toLowerCase().includes('leftwall')) wallType = 'leftwall';
-    else if (obj.name.toLowerCase().includes('rightwall')) wallType = 'rightwall';
-    obj = obj.parent;
-  }
-
-  child.geometry.computeBoundingBox();
-  const bbox = child.geometry.boundingBox;
-  if (!bbox) {
-    console.error('Bounding Box is Null');
-    return;
-  }
-
-  let pivotOffsetX = 0;
-  let pivotOffsetY = 0;
-
-  // Default openDirection comes from userData (left, right, top, bottom)
-  let type: 'left' | 'right' | 'top' | 'bottom' = child.userData.openDirection;
-
-  // Adjust open direction based on wall type
-  if (wallType === 'leftwall') {
-    // Left wall doors usually swing along +X axis
-    if (type === 'left') type = 'right';
-    else if (type === 'right') type = 'left';
-  } else if (wallType === 'rightwall') {
-    // Right wall doors usually swing along -X axis
-    if (type === 'left') type = 'right';
-    else if (type === 'right') type = 'left';
-  } else if (wallType === 'center') {
-    // Center wall → default directions (front open/close)
-    type = type;
-  }
-
-  switch (type) {
-    case 'left':
-      pivotOffsetX = bbox.min.x;
-      pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
-      break;
-    case 'right':
-      pivotOffsetX = bbox.max.x;
-      pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
-      break;
-    case 'top':
-      pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
-      pivotOffsetY = bbox.max.y;
-      break;
-    case 'bottom':
-      pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
-      pivotOffsetY = bbox.min.y;
-      break;
-  }
-
-  // Move geometry pivot to hinge side
-  child.geometry.translate(-pivotOffsetX, -pivotOffsetY, 0);
-  child.position.x += pivotOffsetX;
-  child.position.y += pivotOffsetY;
-
-  const targetRotation = { x: 0, y: 0, z: 0 };
-
-  switch (type) {
-    case 'left':
-      targetRotation.y = isClosed ? -Math.PI / 2.5 : 0;
-      break;
-    case 'right':
-      targetRotation.y = isClosed ? Math.PI / 2.5 : 0;
-      break;
-    case 'top':
-      targetRotation.x = isClosed ? -Math.PI / 3 : 0;
-      break;
-    case 'bottom':
-      targetRotation.x = isClosed ? Math.PI / 3 : 0;
-      break;
-  }
-
-  gsap.to(child.rotation, {
-    x: targetRotation.x,
-    y: targetRotation.y,
-    z: targetRotation.z,
-    duration: 1,
-    ease: 'power2.inOut',
-  });
-
-  child.userData.isClosed = !isClosed;
-}
-
-export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
-  /** Toggles a drawer open or closed by sliding it along its inferred direction. */
-  if (!child) return;
-
-  const isClosed = child.userData.isClosed ?? true;
-  const closedPos = child.userData.closedPos ?? child.position.clone();
-
-  // Traverse parents to detect wall placement
-  let obj: THREE.Object3D | null = child;
-  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
-
-  while (obj && !wallType) {
-    // const n = obj.name.toLowerCase();
-    if (obj.name.includes('center')) wallType = 'center';
-    else if (obj.name.includes('leftwall')) wallType = 'leftwall';
-    else if (obj.name.includes('rightwall')) wallType = 'rightwall';
-    obj = obj.parent;
-  }
-
-  // Decide direction based on wall type
-  const direction = new THREE.Vector3();
-  switch (wallType) {
-    case 'center':
-      direction.set(0, 0, 1);
-      break;
-    case 'leftwall':
-      direction.set(1, 0, 0); // push outward along X+
-      break;
-    case 'rightwall':
-      direction.set(-1, 0, 0); // push outward along X-
-      break;
-    default:
-      direction.set(0, 0, 1); // fallback → front
-  }
-
-  // Apply parent orientation
-  const parent = child.parent as THREE.Object3D;
-  if (parent) direction.applyQuaternion(parent.quaternion).normalize();
-
-  // Compute open pos
-  const openPos = closedPos.clone().add(direction.multiplyScalar(openDistance));
-  const targetPos = isClosed ? openPos : closedPos;
-
-  gsap.to(child.position, {
-    x: targetPos.x,
-    y: targetPos.y,
-    z: targetPos.z,
-    duration: 1,
-    ease: 'power2.inOut',
-  });
-
-  child.userData.isClosed = !isClosed;
-  child.userData.closedPos = closedPos;
-}
-
-export const addCabinetItemToDesign = async (
-  catalogId: string,
-  itemData: {
-    type: string;
-    name: string;
-    description: string;
-    design_id: string;
-    parent?: string;
-    width?: number;
-    height?: number;
-    depth?: number;
-    position?: { x: number; y: number; z: number };
-    additional_data?: unknown;
-    parts?: {
-      name: string;
-      rule_parts: RulePart[];
-    }[];
-  }
-) => {
-  /** Adds a cabinet item to the current design using its catalog and metadata via API. */
-
-  const payload = {
-    type: itemData.type,
-    name: itemData.name,
-    description: itemData.description,
-    design: itemData.design_id,
-    // Optional spatial metadata for backend consumption
-    width: itemData.width,
-    height: itemData.height,
-    depth: itemData.depth,
-    position: itemData.position,
-    additional_data: itemData.additional_data,
-    catalog_rule: itemData.parts,
-    parent: itemData.parent,
-  };
-  try {
-    const response = await commonService.post(
-      API_ENDPOINT.CREATE_MATERIAL_DESIGN_CATALOG(catalogId),
-      payload
-    );
-    if (response.status === 200 || response.status === 201) {
-      return response.data;
-    }
-  } catch (error) {
-    console.error('Error adding cabinet item to design:', error);
-    throw error;
-  }
-};
-
-export const addItemtoDatabase = async (data: AddItemDatabasePayload) => {
-  /** Adds an item to the database using catalog-based API. */
-  try {
-    const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(apiResponse, 'apiResponse');
-    }
-    return apiResponse;
-  } catch (error) {
-    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
-  }
-  return null;
-};
-
-export const addItemToDataBaseWithoutCatalog = async (data: AddItemDatabasePayload) => {
-  /** Adds an item directly to the database without linking it to a catalog. */
-  try {
-    const apiResponse = await commonService.post(
-      API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,
-      data
-    );
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(apiResponse, 'apiResponse');
-    }
-    return apiResponse;
-  } catch (error) {
-    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
-  }
-  return null;
-};

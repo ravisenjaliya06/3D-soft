@@ -1255,9 +1255,10 @@ CATALOG = [
         "type": "cupboard",
         "geometry_type": "BOX_GEOMETRY",
         "is_main": True,
-        "dimensions": {"width": 1.5, "height": 2, "depth": 0.4},
+        "dimensions": {"width": 1500, "height": 2000, "depth": 400},
         "position": {"x": 0, "y": 1, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 0.001, "y": 0.001, "z": 0.001},
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111111",
@@ -1265,9 +1266,10 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": {"width": 0.018, "height": 2, "depth": 0.4},
-        "position": {"x": -0.741, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 2000, "depth": 400},
+        "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
@@ -1282,9 +1284,10 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": {"width": 0.018, "height": 2, "depth": 0.4},
-        "position": {"x": 0.741, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 2000, "depth": 400},
+        "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
@@ -1299,9 +1302,10 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": {"width": 1.464, "height": 0.018, "depth": 0.4},
-        "position": {"x": 0, "y": 0.991, "z": 0},
+        "dimensions": {"width": 1464, "height": 18, "depth": 400},
+        "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
@@ -1316,9 +1320,10 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": {"width": 1.464, "height": 0.018, "depth": 0.4},
-        "position": {"x": 0, "y": -0.991, "z": 0},
+        "dimensions": {"width": 1464, "height": 18, "depth": 400},
+        "position": {"x": 0, "y": -991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
@@ -1333,9 +1338,10 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": {"width": 1.464, "height": 1.964, "depth": 0.018},
-        "position": {"x": 0, "y": 0, "z": -0.191},
+        "dimensions": {"width": 1464, "height": 1964, "depth": 18},
+        "position": {"x": 0, "y": 0, "z": -191},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
@@ -1345,31 +1351,72 @@ CATALOG = [
         "catalog_rule": "Panel",
     },
     {
-        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111202",
-        "name": "CUPBOARD1",
-        "type": "cupboard",
-        "geometry_type": "BOX_GEOMETRY",
-        "is_main": True,
-        "dimensions": {"width": 10, "height": 10, "depth": 10},
-        "position": {"x": 0, "y": 1, "z": 0},
-        "rotation": {"x": 0, "y": 0, "z": 0},
-    },
-    {
-        "id": "c2d2a8b4-9b3e-4a2e-8f55-555555555696",
-        "name": "BACK_PLANK",
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111303",
+        "name": "HORIZONTAL_PLANK",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
-        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111202",
-        "dimensions": {"width": 1.464, "height": 1.964, "depth": 0.018},
-        "position": {"x": 0, "y": 0, "z": -0.191},
+        "is_main": True,
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
             "repeatX": 2,
             "repeatY": 1,
         },
-        "catalog_rule": "Panel",
+    },
+    {
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111404",
+        "name": "VERTICAL_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "is_main": True,
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": {
+            "type": "TEXTURE",
+            "value": "/textures/light_wood.jpg",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+    },
+    {
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111505",
+        "name": "DOOR",
+        "type": "door",
+        "geometry_type": "BOX_GEOMETRY",
+        "is_main": True,
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": {
+            "type": "TEXTURE",
+            "value": "/Texture0004.jpg",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
+    },
+    {
+        "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "name": "DRAWER",
+        "type": "drawer",
+        "geometry_type": "BOX_GEOMETRY",
+        "is_main": True,
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": {
+            "type": "TEXTURE",
+            "value": "/Texture0004.jpg",
+            "repeatX": 2,
+            "repeatY": 1,
+        },
     },
 ]
 
@@ -1579,18 +1626,18 @@ def create_materials(
 
 def create_catalog(catalog_list: list[dict]) -> None:
     """
-    - All `is_main=True` → DesignCatalog
-    - Main catalogs may have parent (DesignCatalog → self FK)
-    - All others → CatalogRules + CatalogRuleParts
+    - is_main=True → DesignCatalog
+    - is_main=True + parent → self FK
+    - others → CatalogRules + CatalogRuleParts
     """
 
     main_catalog_map: dict[str, DesignCatalog] = {}
-
     for item in catalog_list:
         if not item.get("is_main"):
             continue
 
         catalog, created = DesignCatalog.objects.update_or_create(
+            id=item["id"],
             name=item["name"],
             type=item["type"],
             defaults={
@@ -1617,15 +1664,15 @@ def create_catalog(catalog_list: list[dict]) -> None:
         if not parent_id:
             continue
 
-        child_catalog = main_catalog_map[item["id"]]
-        parent_catalog = main_catalog_map.get(parent_id)
+        child = main_catalog_map[item["id"]]
+        parent = main_catalog_map.get(parent_id)
 
-        if not parent_catalog:
-            raise ValueError(f"Parent catalog not found: {parent_id}")
+        if not parent:
+            continue
 
-        if child_catalog.parent_id != parent_catalog.id:
-            child_catalog.parent = parent_catalog
-            child_catalog.save(update_fields=["parent"])
+        if child.parent_id != parent.id:
+            child.parent = parent
+            child.save(update_fields=["parent"])
 
     rule_cache: dict[tuple[str, str], CatalogRules] = {}
 
@@ -1634,21 +1681,19 @@ def create_catalog(catalog_list: list[dict]) -> None:
             continue
 
         parent_id = item.get("parent")
-        if parent_id not in main_catalog_map:
-            raise ValueError(f"Invalid parent for part: {parent_id}")
 
-        main_catalog = main_catalog_map[parent_id]
+        main_catalog = main_catalog_map.get(parent_id)
+        if not main_catalog:
+            continue
+
         rule_name = item.get("catalog_rule", "DEFAULT")
-
-        rule_key = (main_catalog.id, rule_name)
+        rule_key = (str(main_catalog.id), rule_name)
 
         if rule_key not in rule_cache:
             rule_cache[rule_key], _ = CatalogRules.objects.get_or_create(
                 catalog=main_catalog,
                 name=rule_name,
             )
-
-        catalog_rule = rule_cache[rule_key]
 
         material_obj = None
         material_data = item.get("material")
@@ -1659,7 +1704,8 @@ def create_catalog(catalog_list: list[dict]) -> None:
             ).first()
 
         part, created = CatalogRuleParts.objects.update_or_create(
-            catalog_rule=catalog_rule,
+            catalog_rule=rule_cache[rule_key],
+            id=item["id"],
             name=item["name"],
             type=item["type"],
             defaults={

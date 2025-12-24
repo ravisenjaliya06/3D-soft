@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { convertKeysToCamel } from './utils';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
 
@@ -9,7 +10,7 @@ export class MeshBuilder {
   private meshData: MeshObjectData;
 
   constructor(data: MeshObjectData) {
-    this.meshData = data;
+    this.meshData = convertKeysToCamel(data);
   }
 
   private _createTexture(): THREE.Texture {
@@ -78,7 +79,7 @@ export class MeshBuilder {
   }
 
   private _getGeometry() {
-    switch (this.meshData.geometry_type) {
+    switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
         return this._createBoxGeometry();
       case GEOMETRY.EXTRUDE_GEOMETRY:
@@ -98,7 +99,11 @@ export class MeshBuilder {
 
   private _setScale(mesh: THREE.Mesh) {
     if (!this.meshData.scale) return;
-    mesh.scale.set(this.meshData.scale.x, this.meshData.scale.y, this.meshData.scale.z);
+    mesh.scale.set(
+      this.meshData.scale.x || 0.01, 
+      this.meshData.scale.y || 0.01,
+      this.meshData.scale.z || 0.01
+    );
   }
 
   private _setUserData(mesh: THREE.Mesh) {
@@ -130,7 +135,6 @@ export class MeshBuilder {
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-
     if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
       this._setDataInObjectsState();
     }

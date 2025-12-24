@@ -206,7 +206,7 @@ export interface ResponseStatus {
 
 export type PositionKey = 'x' | 'y' | 'z';
 
-export type geometry_type =
+export type geometryType =
   | 'box'
   | 'sphere'
   | 'cylinder'
@@ -228,7 +228,7 @@ export type geometry_type =
   | `${string}`;
 
 export interface GeometryData {
-  type: geometry_type;
+  type: geometryType;
   dimensions?: {
     width?: number;
     height?: number;

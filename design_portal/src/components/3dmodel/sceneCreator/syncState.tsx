@@ -54,7 +54,7 @@ export class WallSyncManager {
       id: id,
       name: `wall_${id}`,
       type: FLOOR_PLAN_TYPES.WALL,
-      geometry_type: GEOMETRY.BOX_GEOMETRY,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: this.data.length,
         height: this.data.height || WALL_DEFAULT_HEIGHT,

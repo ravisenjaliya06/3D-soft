@@ -27,6 +27,8 @@ import {
 } from '../store/dataSlice';
 import { Datastate, IconMap, ResultType, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
+import { formatEnumLabel } from '../sceneCreator/utils';
+import { MoveHandler } from '../handler/moveHandler';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -85,19 +87,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   };
 
   /** Handle selection of a cabinet item from toolbar submenu */
-  const handleCabinetItemSelect = async (item: ResultType) => {
-    const fullGroup = cabinetItems.find((group) =>
-      group.some((g) => g.id === item.id || g.parent === item.id)
-    );
-
-    const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
-    const mesh = designBuilder.createDesign();
-    threeDView!.scene.add(mesh);
-    setSelectedCabinetItem(item);
-    setQuantityValue(1);
-    setAddPartPopup(true);
+  const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
+    if (Object.values(OBJECT_TYPES).includes(item.type)) {
+      const fullGroup = cabinetItems.find((group) =>
+        group.some((g) => g.id === item.id)
+      );
+  
+      const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
+      const mesh = designBuilder.createDesign();
+      threeDView!.scene.add(mesh);
+    } else {
+      setSelectedCabinetItem(item);
+      setQuantityValue(1);
+      setAddPartPopup(true);
+      handleSubmenuClick(event);
+    }
   };
-
+  
   /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
   const onAddItems = async () => {
     if (!selectedCabinetItem) {
@@ -128,11 +134,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       return;
     }
 
-    if (['Door', 'Sliding Door'].includes(itemType)) {
+    if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox);
-    } else if (itemType === 'Drawer') {
+    } else if (itemType === 'drawer') {
       await addDrawersOnInvisibleBox(scene, targetBox, num);
-    } else if (itemType === 'Plank') {
+    } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
         await addVerticalPlanksToBox(scene, targetBox, num, selectedCabinetItem);
@@ -216,11 +222,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       isActive: isExlightActive,
     },
   ];
-  const furnitureTools = [{ option: 'Cabinet', icon: assets.cabinet_svg }];
+  const furnitureTools = [
+    { option: 'Cabinet', icon: assets.cabinet_svg },
+    { option: 'Parts', icon: assets.cabinet_svg }
+  ];
 
   const getFilteredCabinetItems = (category: string) => {
     const categoryFilters: Record<string, string[]> = {
-      PARTS: Object.values(PART_TYPES),
+      Parts: Object.values(PART_TYPES),
       Cabinet: Object.values(OBJECT_TYPES),
     };
 
@@ -250,12 +259,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   };
 
   const iconMap: IconMap = {
-    Drawer: assets.drawer,
+    drawer: assets.drawer,
     'Sliding Door': assets.door,
-    Door: assets.door_icon,
+    door: assets.door_icon,
     'Horizontal Plank': assets.horizontal,
     'Vertical Plank': assets.vertical,
-    Plank: assets.vertical,
+    plank: assets.vertical,
     Cabinet: assets.cabinet,
     cupboard: assets.cabinet,
     Platform: assets.platform,
@@ -425,13 +434,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   className={styles.submenuItem}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSubmenuClick(e);
-                    handleCabinetItemSelect(item);
+                    handleCabinetItemSelect(e, item);
                   }}
                   title={item.description || item.name}
                 >
                   <img src={iconMap[item.type]} alt={item.name} />
-                  <span>{item.name}</span>
+                  <span>{formatEnumLabel(item.name)}</span>
                 </div>
               ))}
               {getFilteredCabinetItems(selectedFurnitureCategory).length === 0 && (
@@ -455,7 +463,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               className={styles.createicon}
               alt="createicon"
             />
-            <h2>Add {selectedCabinetItem.name}</h2>
+            <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
             <img
               src={assets.close || '/placeholder.svg'}
               className={styles.createclose}
@@ -463,7 +471,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               onClick={closePopup}
             />
             <div className={styles.create_right_side}>
-              <p>Enter the number of {selectedCabinetItem.name} to add.</p>
+              <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
               <form
                 className={styles.form}
                 onSubmit={(e) => {
@@ -481,7 +489,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       setQuantityValue(Number(e.target.value))
                     }
                     placeholder="Enter quantity"
-                    label={`Quantity for ${selectedCabinetItem.name}`}
+                    label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
                     error={undefined}
                   />
                 </div>

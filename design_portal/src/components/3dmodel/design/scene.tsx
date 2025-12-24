@@ -9,12 +9,14 @@ import {
   DIRECTION_TYPES,
   GEOMETRY,
   MATERIAL_TYPE,
+  MeshObjectData,
   PART_TYPES,
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
+import { convertKeysToCamel } from '../sceneCreator/utils';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -187,7 +189,7 @@ export const addVerticalPlanksToBox = async (
   const height = size.y;
   const depth = size.z;
 
-  const thickness = 0.018;
+  const thickness = 18;
   const edgeClearance = Math.max(0.01, thickness);
 
   const span = width;
@@ -233,7 +235,7 @@ export const addVerticalPlanksToBox = async (
       id: crypto.randomUUID(),
       name: `VERTICAL_PLANK`,
       type: PART_TYPES.PLANK,
-      geometry_type: GEOMETRY.BOX_GEOMETRY,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       parent: parent.userData.objectId,
       dimensions: dims,
       position: localPosInParent,
@@ -283,7 +285,7 @@ export const addHorizontalPlanksInsideBox = async (
   const height = size.y;
   const depth = size.z;
 
-  const thickness = 0.018;
+  const thickness = 18;
   const innerHeight = height;
 
   if (innerHeight <= thickness) {
@@ -324,7 +326,7 @@ export const addHorizontalPlanksInsideBox = async (
       id: crypto.randomUUID(),
       name: `HORIZONTAL_PLANK`,
       type: PART_TYPES.PLANK,
-      geometry_type: GEOMETRY.BOX_GEOMETRY,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: dims,
       position: parentLocalPos,
       rotation: { x: 0, y: 0, z: 0 },
@@ -397,7 +399,7 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
     id: crypto.randomUUID(),
     name: `Door_for_${boxMesh.name}`,
     type: PART_TYPES.DOOR,
-    geometry_type: GEOMETRY.BOX_GEOMETRY,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
     dimensions: { width: w, height: h, depth: 0.02 },
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
@@ -480,7 +482,7 @@ export const addDrawersOnInvisibleBox = async (
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const eachH = h / drawers;
-  const thickness = 0.018;
+  const thickness = 18;
   const drawerType = 'fivePlank';
 
   await ensureHandleLoaded();
@@ -503,9 +505,9 @@ export const addDrawersOnInvisibleBox = async (
     const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
 
     const drawerDimensions = {
-      width: w - 0.01,
-      height: eachH - 0.005,
-      depth: 0.02,
+      width: w - 10,
+      height: eachH - 5,
+      depth: 20,
     };
 
     const drawerGroup = new THREE.Mesh();
@@ -519,7 +521,7 @@ export const addDrawersOnInvisibleBox = async (
     const localFacePos = new THREE.Vector3(
       boxCenterLocal.x,
       yLocal,
-      geometryBoundingBox.max.z - thickness
+      geometryBoundingBox.max.z + 0.002
     );
 
     const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
@@ -596,7 +598,7 @@ export const addDrawersOnInvisibleBox = async (
       createInnerPart(
         'FRONT_DRAWER_PLANK',
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(boxCenterLocal.x, baseY, boxCenterLocal.z + innerD / 2 - thickness / 2)
+        new THREE.Vector3(boxCenterLocal.x, baseY, geometryBoundingBox.max.z - thickness - 0.004)
       );
 
       createInnerPart(
@@ -642,9 +644,9 @@ export const addDrawersOnInvisibleBox = async (
 export const ensureHandleLoaded = async () => {
   if (cachedHandleModel) return;
   cachedHandleModel = await GLBLoader('/glb/door_handle.glb', 'DoorHandleGLB', {
-    width: 0.02,
-    height: 0.03,
-    depth: 0.1,
+    width: 20,
+    height: 30,
+    depth: 100,
   });
 };
 
