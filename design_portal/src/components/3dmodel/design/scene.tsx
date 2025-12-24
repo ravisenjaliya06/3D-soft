@@ -161,6 +161,8 @@ export const addVerticalPlanksToBox = async (
   count: number,
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
+  console.log("boxMEsh", boxMesh);
+  console.log('selectedCabinetItem', selectedCabinetItem);
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) {
     hideFullScreenLoader();
@@ -197,6 +199,7 @@ export const addVerticalPlanksToBox = async (
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
+  console.log('parent', parent);
 
   const interval = innerSpan / (count + 1);
 
