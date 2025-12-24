@@ -28,6 +28,7 @@ import {
 } from '../store/dataSlice';
 import { Datastate, IconMap, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
+import { MoveHandler } from '../handler/moveHandler';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -46,6 +47,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const moveHandlerRef = React.useRef<MoveHandler | null>(null);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
@@ -85,6 +87,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
   };
 
+  React.useEffect(() => {
+    if (!threeDView) return;
+
+    moveHandlerRef.current = new MoveHandler({
+      scene: threeDView.scene,
+      camera: threeDView.camera as THREE.PerspectiveCamera,
+      renderer: threeDView.renderer,
+      movableObjects: [],
+    });
+  }, [threeDView]);
+
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
@@ -93,6 +106,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
       const mesh = designBuilder.createDesign();
       threeDView!.scene.add(mesh);
+      const finalPosition = await moveHandlerRef.current!.startDragging(mesh);
+      if (finalPosition) {
+        mesh.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
+      }
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);
@@ -300,9 +317,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${
-                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                  }`}
+                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                    }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -329,9 +345,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       title={disabled ? 'Coming Soon' : option}
                     >
                       <div
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                       >
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
@@ -435,7 +450,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   }}
                   title={item.description || item.name}
                 >
-                  <img src={iconMap[item.type]} alt={item.name} />
+                  <img src={
+                    iconMap[item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type]} alt={item.name} />
                   <span>{formatEnumLabel(item.name)}</span>
                 </div>
               ))}
