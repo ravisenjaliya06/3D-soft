@@ -6,7 +6,8 @@ import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
-import { MeshObjectData } from '../sceneCreator/interface';
+import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
+import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
@@ -18,11 +19,11 @@ const Sidebar: React.FC = () => {
   const [isNavOpen, setNavOpen] = useState(true);
   const [isSettingOpen, setSettingOpen] = useState(false);
   const [doorPosition, setDoorPosition] = useState('None');
-  const [selectedHandle, setSelectedHandle] = useState<string | null>(null);
-  const [isHandleDropdownOpen, setIsHandleDropdownOpen] = useState(false);
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
+  const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
+  const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
 
   const materialModal = [
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
@@ -36,8 +37,6 @@ const Sidebar: React.FC = () => {
   ];
 
   const colorInputRef = useRef<HTMLInputElement>(null);
-  let doorMesh: THREE.Mesh | null = null;
-  let handleMesh: THREE.Mesh | null = null;
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
 
   const dispatch = useDispatch();
@@ -49,6 +48,7 @@ const Sidebar: React.FC = () => {
   const isDisabled = isQuickHideActive;
 
   let selectedObject: MeshObjectData | null | undefined;
+  const targetId = selectedChildObjectId || selectedObjectId;
 
   if (selectedChildObjectId) {
     selectedObject = objects.find((obj) => obj.id === selectedChildObjectId);
@@ -89,6 +89,47 @@ const Sidebar: React.FC = () => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
   }, [scene, dispatch]);
 
+  const handleObject = objects.find((obj) => obj.parent === targetId && obj.type === 'handle');
+  useEffect(() => {
+    if (!handleObject) return;
+
+    setHandlePos({
+      x: handleObject.position.x,
+      y: handleObject.position.y,
+      z: handleObject.position.z,
+    });
+
+    setHandleRot({
+      x: handleObject.rotation.x,
+      y: handleObject.rotation.y,
+      z: handleObject.rotation.z,
+    });
+  }, [handleObject]);
+
+  const updateHandlePosState = (axis: Axis, value: number) => {
+    setHandlePos((prev) => ({ ...prev, [axis]: value }));
+
+    if (handleObject) {
+      updateObjectRef.current?.update(
+        handleObject.id,
+        { position: { [axis]: value } },
+        handleObject
+      );
+    }
+  };
+
+  const updateHandleRotState = (axis: Axis, value: number) => {
+    setHandleRot((prev) => ({ ...prev, [axis]: value }));
+
+    if (handleObject) {
+      updateObjectRef.current?.update(
+        handleObject.id,
+        { rotation: { [axis]: value } },
+        handleObject
+      );
+    }
+  };
+
   const handleSetting = () => {
     /** Opens the object settings sidebar, closing navigation if active. */
 
@@ -119,83 +160,6 @@ const Sidebar: React.FC = () => {
         child.userData.openDirection = position.toLowerCase();
       }
     });
-  };
-
-  // (Harsh): Temporary placement — will move to updateHandler once door selection is ready.
-  const handleHandlePositionChange = (position: string) => {
-    /** Repositions the handle on a door mesh according to the selected position label. */
-
-    if (!scene) return;
-    const targetId = selectedChildObjectId || selectedObjectId;
-
-    if (!targetId) return;
-
-    scene.traverse((node) => {
-      if (node instanceof THREE.Mesh && !doorMesh && node.userData?.objectId === targetId) {
-        if (node.parent instanceof THREE.Mesh && node.parent.name.includes('DoorGroup')) {
-          doorMesh = node.parent;
-        } else {
-          doorMesh = node;
-        }
-      }
-    });
-
-    if (!doorMesh) {
-      console.warn('No door mesh found for target ID:', targetId);
-      return;
-    }
-
-    (doorMesh as THREE.Mesh).traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const name = (child?.name || '').toLowerCase();
-        if (!handleMesh && (name.includes('handle') || name.includes('knob'))) {
-          handleMesh = child;
-        }
-      }
-    });
-
-    if (!handleMesh) return;
-    const currentZ = handleMesh.position.z;
-    const doorPosition = doorMesh.position.clone();
-
-    const box = new THREE.Box3().setFromObject(doorMesh);
-    const min = box.min.clone();
-    const max = box.max.clone();
-    const mid = new THREE.Vector3((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
-    doorMesh.position.copy(doorPosition);
-
-    const padding = 0.12;
-
-    const pickX = (label: string) => {
-      if (label.endsWith('Left')) return min.x + padding;
-      if (label.endsWith('Right')) return max.x - padding;
-      return mid.x;
-    };
-    const pickY = (label: string) => {
-      if (label.startsWith('Top')) return max.y - padding;
-      if (label.startsWith('Bottom')) return min.y + padding;
-      return mid.y;
-    };
-    const label = position as string;
-    const targetWorld = new THREE.Vector3(pickX(label), pickY(label), mid.z);
-    const targetLocal = doorMesh.worldToLocal(targetWorld.clone());
-
-    // Only update X and Y original Z position
-    handleMesh.position.x = targetLocal.x;
-    handleMesh.position.y = targetLocal.y;
-    handleMesh.position.z = currentZ;
-
-    if (label.startsWith('Top') || label.startsWith('Bottom')) {
-      handleMesh.rotation.x = -(Math.PI / 2);
-      handleMesh.rotation.y = 0;
-      handleMesh.rotation.z = Math.PI / 2;
-    } else if (label.endsWith('Left') || label.endsWith('Right')) {
-      handleMesh.rotation.x = 0;
-      handleMesh.rotation.y = Math.PI / 2;
-      handleMesh.rotation.z = 0;
-    }
-
-    if (handleMesh.updateMatrixWorld) handleMesh.updateMatrixWorld(true);
   };
 
   const handleMaterialChange = () => {
@@ -274,6 +238,32 @@ const Sidebar: React.FC = () => {
 
     setIsTextureListOpen(false);
   };
+
+  const handleOpenCloseChange = () => {
+    if (!scene) return;
+
+    const targetId = selectedChildObjectId ?? selectedObjectId;
+    if (!targetId) return;
+
+    const controller = new CabinetMotionController();
+
+    scene.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+
+      const { objectId, type } = node.userData;
+      if (objectId !== targetId) return;
+
+      if (type === PART_TYPES.DOOR) {
+        controller.toggleDoor(node);
+        return;
+      }
+
+      if (type === PART_TYPES.DRAWER) {
+        controller.toggleDrawer(node);
+      }
+    });
+  };
+
 
   const dimensionsUI: Dimensions = {
     width: selectedObject?.dimensions?.width ?? 0,
@@ -395,6 +385,57 @@ const Sidebar: React.FC = () => {
             handlePositionChange('z', Number(e.target.value)),
         },
       ],
+    },
+  ];
+
+  const handlePositionInputFlid = [
+    {
+      label: 'Position X',
+      name: 'positionX',
+      type: 'number',
+      value: handlePos.x,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandlePosState('x', Number(e.target.value)),
+    },
+    {
+      label: 'Position Y',
+      name: 'positionY',
+      type: 'number',
+      value: handlePos.y,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandlePosState('y', Number(e.target.value)),
+    },
+  ];
+
+  const handleRotationInputFlid = [
+    {
+      label: 'Rotation X',
+      name: 'rotationX',
+      type: 'number',
+      value: handleRot.x,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandleRotState('x', Number(e.target.value)),
+    },
+    {
+      label: 'Rotation Y',
+      name: 'rotationY',
+      type: 'number',
+      value: handleRot.y,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandleRotState('y', Number(e.target.value)),
+    },
+    {
+      label: 'Rotation Z',
+      name: 'rotationZ',
+      type: 'number',
+      value: handleRot.z,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandleRotState('z', Number(e.target.value)),
     },
   ];
 
@@ -540,6 +581,16 @@ const Sidebar: React.FC = () => {
                 {!isQuickHideActive && isSettingOpen && itemType.DOOR && (
                   <div className={style.field_group_div_door}>
                     <div className={style.field_group_div_material_change}>
+                      <p>Open/Close</p>
+                      <button
+                        className={style.btn_material_change}
+                        disabled={isQuickHideActive}
+                        onClick={handleOpenCloseChange}
+                      >
+                        Open/Close
+                      </button>
+                    </div>
+                    <div className={style.field_group_div_material_change}>
                       <p>Door Position</p>
                       <select
                         value={doorPosition}
@@ -557,53 +608,54 @@ const Sidebar: React.FC = () => {
                         <option value="Bottom">Bottom</option>
                       </select>
                     </div>
-                    <div className={style.field_group_div_material_change}>
-                      <p>Handle</p>
-                      <div
-                        className={style.dropdown_like_select}
-                        onClick={() => setIsHandleDropdownOpen((prev) => !prev)}
-                      >
-                        {selectedHandle ? selectedHandle : 'Select Position'}
-                        <img
-                          src={isHandleDropdownOpen ? assets.menu_up : assets.menu_down}
-                          alt="dropdown arrow"
-                        />
+
+                    <div className="flex flex-col items-start">
+                      <p className="m-0 text-[0.7rem] font-[var(--font-family)] font-bold text-[var(--primary-color)]">
+                        Handle Position
+                      </p>
+                      <div className="flex w-auto justify-center gap-[0.5rem]">
+                        {handlePositionInputFlid.map((field) => (
+                          <div key={field.name} className="mt-[0.3rem]">
+                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
+                              {field.label}
+                            </p>
+                            <div>
+                              <input
+                                id={field.name}
+                                name={field.name}
+                                type={field.type}
+                                value={field.value ?? ''}
+                                disabled={field.disabled}
+                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                onChange={field.onChange}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {isHandleDropdownOpen && (
-                        <div className={style.dropdown_grid}>
-                          {[
-                            'Top-Left',
-                            'Top-Center',
-                            'Top-Right',
-                            'Middle-Left',
-                            'Center',
-                            'Middle-Right',
-                            'Bottom-Left',
-                            'Bottom-Center',
-                            'Bottom-Right',
-                          ].map((label, index) => (
-                            <div
-                              key={index}
-                              className={`${style.grid_square} ${selectedHandle === label ? style.active_square : ''}`}
-                              onClick={() => {
-                                setSelectedHandle(label);
-                                setIsHandleDropdownOpen(false);
-                                handleHandlePositionChange(label);
-                                if (selectedObject && !isQuickHideActive) {
-                                  // TODO (harsh): This line is commented out temporarily. Remove when no longer needed.
-                                  // updateObjectInScene(
-                                  //   selectedObject.id,
-                                  //   { handlePosition: label },
-                                  //   scene,
-                                  //   dispatch,
-                                  //   selectedObject
-                                  // );
-                                }
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <p>Handle Rotation</p>
+                      <div className="flex w-auto justify-center gap-[0.5rem]">
+                        {handleRotationInputFlid.map((field) => (
+                          <div key={field.name} className="mt-[0.3rem]">
+                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
+                              {field.label}
+                            </p>
+                            <div>
+                              <input
+                                id={field.name}
+                                name={field.name}
+                                type={field.type}
+                                value={field.value ?? ''}
+                                disabled={field.disabled}
+                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                onChange={field.onChange}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

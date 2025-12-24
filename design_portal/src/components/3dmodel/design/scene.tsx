@@ -395,8 +395,10 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
     repeatY: 1,
   };
 
+  const doorId = crypto.randomUUID();
+
   const meshBuilder = new MeshBuilder({
-    id: crypto.randomUUID(),
+    id: doorId,
     name: `Door_for_${boxMesh.name}`,
     type: PART_TYPES.DOOR,
     geometryType: GEOMETRY.BOX_GEOMETRY,
@@ -425,7 +427,22 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   await ensureHandleLoaded();
   if (cachedHandleModel) {
-    const handle = cachedHandleModel.clone(true);
+    const handleGroup = cachedHandleModel.clone(true);
+    let handle = handleGroup;
+
+    // Extract the first mesh found in the group to use as the handle object
+    // This ensures compatibility with UpdateHandler which strictly expects THREE.Mesh
+    let meshFound = false;
+    handleGroup.traverse((child) => {
+      if (child instanceof THREE.Mesh && !meshFound) {
+        handle = child;
+        // Apply the group's scale to the mesh, as GLBLoader applies scale to the root group
+        handle.scale.multiply(handleGroup.scale);
+        meshFound = true;
+      }
+    });
+
+    const handleId = crypto.randomUUID();
 
     const doorGeo = doorGroup.geometry as THREE.BufferGeometry;
     doorGeo.computeBoundingBox();
@@ -446,13 +463,35 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
       const worldHandlePos = doorGroup.localToWorld(localHandlePos.clone());
       const parentLocalHandlePos = parent.worldToLocal(worldHandlePos.clone());
 
-      handle.rotation.set(0, Math.PI / 2, 0);
+      handle.rotation.set(0, 0, Math.PI / 2);
       handle.name = `DoorHandle_for_${boxMesh.name}`;
+      handle.userData.objectId = handleId;
 
       parent.add(handle);
       handle.position.copy(parentLocalHandlePos);
 
       doorGroup.attach(handle);
+
+      const handleData = {
+        id: handleId,
+        name: handle.name,
+        type: 'handle',
+        parent: doorId,
+        geometryType: GEOMETRY.NONE,
+        dimensions: { width: 0, height: 0, depth: 0 },
+        position: {
+          x: handle.position.x,
+          y: handle.position.y,
+          z: handle.position.z,
+        },
+        rotation: {
+          x: THREE.MathUtils.radToDeg(handle.rotation.x),
+          y: THREE.MathUtils.radToDeg(handle.rotation.y),
+          z: THREE.MathUtils.radToDeg(handle.rotation.z),
+        },
+      };
+
+      store.dispatch(addObjects([handleData]));
     }
   }
 

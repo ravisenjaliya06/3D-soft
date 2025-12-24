@@ -50,9 +50,9 @@ export class MeshBuilder {
 
   private _createBoxGeometry(): THREE.BoxGeometry {
     return new THREE.BoxGeometry(
-      this.meshData.dimensions.width,
-      this.meshData.dimensions.height,
-      this.meshData.dimensions.depth
+      this.meshData.dimensions?.width || 0,
+      this.meshData.dimensions?.height || 0,
+      this.meshData.dimensions?.depth || 0
     );
   }
 
@@ -72,7 +72,7 @@ export class MeshBuilder {
 
     // NOTE: Right now, it only has two external properties (depth and bevelEnabled). Later on, we’ll add more properties when we need to support custom shapes.
     const extrudeSettings: THREE.ExtrudeGeometryOptions = {
-      depth: this.meshData.dimensions.depth,
+      depth: this.meshData.dimensions?.depth || 0,
       bevelEnabled: false,
     };
     return new THREE.ExtrudeGeometry(shape, extrudeSettings);

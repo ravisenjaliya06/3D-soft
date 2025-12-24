@@ -23,6 +23,7 @@ export const PART_TYPES = {
 export const GEOMETRY = {
   BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
+  NONE: 'none',
 };
 
 export const MATERIAL_TYPE = {
@@ -56,7 +57,7 @@ export interface MeshObjectData {
   type: string;
   geometryType: GeometryType;
   parent?: string;
-  dimensions: Dimensions;
+  dimensions?: Dimensions;
   position: Position;
   rotation: Rotation;
   scale?: Position;
