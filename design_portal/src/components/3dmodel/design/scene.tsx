@@ -8,9 +8,9 @@ import { GLBLoader } from '../helper/glbLoader';
 import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
+import { addObjects } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
-import { addObjects } from '../store/dataSlice';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -162,7 +162,6 @@ export const addVerticalPlanksToBox = async (
   count: number,
   selectedCabinetItem: SelectedCabinetItem | null = null
 ) => {
-  console.log("boxMEsh", boxMesh);
   console.log('selectedCabinetItem', selectedCabinetItem);
   showFullScreenLoader('Adding vertical planks.');
   if (!boxMesh || count <= 0) {

@@ -183,9 +183,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   const gridWidth = Math.ceil((maxW - minW) / step);
   const gridHeight = Math.ceil((maxH - minH) / step);
 
-  const grid: string[][] = Array.from({ length: gridHeight }, () =>
-    Array(gridWidth).fill('empty')
-  );
+  const grid: string[][] = Array.from({ length: gridHeight }, () => Array(gridWidth).fill('empty'));
 
   planks.forEach((p) => {
     const startX = Math.max(0, Math.floor((p.wMin - minW) / step));
@@ -282,4 +280,3 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   return meshes;
 }
-
