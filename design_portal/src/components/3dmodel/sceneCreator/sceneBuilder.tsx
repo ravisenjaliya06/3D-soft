@@ -4,7 +4,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
-import { addSimpleCabinet, loadSinkModel } from '../design/scene';
+import { loadSinkModel } from '../design/scene';
 import { MoveHandler } from '../handler/moveHandler';
 import { createSky } from '../helper/sky';
 import { SKY_SETS } from '../helper/sky/constants';
@@ -61,11 +61,6 @@ export class SceneBuilder {
   private cupboards: THREE.Mesh[] = [];
   private selector: SelectObjectController | null = null;
   private moveHandler: MoveHandler | null = null;
-
-  private wallRaycaster = new THREE.Raycaster();
-  private wallDirection = new THREE.Vector3();
-  private hiddenWalls = new Set<THREE.Mesh>();
-  private wallMeshes: THREE.Mesh[] = [];
 
   constructor(config: SceneBuilderConfig) {
     this.config = config;
@@ -244,7 +239,6 @@ export class SceneBuilder {
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
 
-    // Add day sky by default
     this.scene.add(this.daySky);
   }
 
@@ -287,7 +281,12 @@ export class SceneBuilder {
   }
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera, this.scene);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.renderer,
+      this.controls
+    );
   }
 
   private initMoveHandler() {
@@ -347,9 +346,6 @@ export class SceneBuilder {
       isDay: this.isDay,
       toggleZoomMode: (enable: boolean) => this.toggleZoomMode(enable),
       isZoomMode: this.isZoomMode,
-      addSimpleCabinet: () => {
-        addSimpleCabinet(this.scene, this.moveHandler ? this.moveHandler : undefined);
-      },
       loadSinkModel: async (url: string) => {
         loadSinkModel(this.scene, url);
       },

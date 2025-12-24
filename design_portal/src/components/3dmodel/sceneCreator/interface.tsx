@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { ThreeDView } from '../design/interface';
+import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
 import { Position, Rotation } from '../store/interface';
 
@@ -19,8 +21,9 @@ export const PART_TYPES = {
 };
 
 export const GEOMETRY = {
-  BOX_GEOMETRY: 'BoxGeometry',
+  BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
+  NONE: 'none',
 };
 
 export const MATERIAL_TYPE = {
@@ -54,7 +57,7 @@ export interface MeshObjectData {
   type: string;
   geometryType: GeometryType;
   parent?: string;
-  dimensions: Dimensions;
+  dimensions?: Dimensions;
   position: Position;
   rotation: Rotation;
   scale?: Position;
@@ -95,4 +98,10 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+}
+
+export interface HelperToolProps {
+  design3D: ThreeDView;
+  selectedObject: THREE.Mesh | null;
+  moveHandler: MoveHandler | null;
 }

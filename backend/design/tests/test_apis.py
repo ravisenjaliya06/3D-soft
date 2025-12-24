@@ -9,7 +9,14 @@ import pytest
 from rest_framework import status
 
 # App imports
-from design.models import DesignSetting
+from design.models import (
+    CatalogRuleParts,
+    CatalogRules,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+)
+from tests.model_factory import new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -375,3 +382,450 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(
             DesignSetting.objects.filter(organization=self.organization).count(), 0
         )
+
+    # Design Version API Test Cases
+    def test_get_design_versions_list(self: "DesignAPIViewTestCase") -> None:
+        """Test GET /versions/ returns list of versions for user's organization"""
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+        version2 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        response = self.client.get(
+            reverse("design_versions"),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertGreaterEqual(len(response.data), 2)
+        version_ids = [v["id"] for v in response.data]
+        self.assertIn(str(version1.id), version_ids)
+        self.assertIn(str(version2.id), version_ids)
+
+    def test_get_design_versions_empty_list(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test GET /versions/ returns empty list when no versions exist"""
+        DesignVersion.objects.filter(design__organization=self.organization).delete()
+
+        response = self.client.get(
+            reverse("design_versions"),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(len(response.data), 0)
+
+    def test_get_design_versions_filtered_by_organization(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test GET /versions/ only returns versions for user's organization"""
+        # Create version for user's organization
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        response = self.client.get(
+            reverse("design_versions"),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        version_ids = [v["id"] for v in response.data]
+        self.assertIn(str(version1.id), version_ids)
+
+    def test_get_design_catalogs_with_design_id_and_version_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test GET /catalogs/ with design_id and version_id returns specific version"""
+        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        response = self.client.get(
+            reverse("design_catalogs"),
+            {"design_id": str(self.design.id), "version_id": str(version1.id)},
+            format="json",
+            headers=self.get_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(version1.id, response.data["version"])
+        items = response.data["catalogs"]
+        catalog_names = [item.get("name") for item in items]
+        self.assertNotIn("Version 2 Cabinet", catalog_names)
+
+    def test_get_design_catalogs_design_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test GET /catalogs/ with non-existent design_id returns 404"""
+        response = self.client.get(
+            reverse("design_catalogs"),
+            {"design_id": str(uuid.uuid4())},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["detail"], "Design not found")
+
+    def test_get_design_catalogs_version_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test GET /catalogs/ with non-existent version_id returns 404"""
+        response = self.client.get(
+            reverse("design_catalogs"),
+            {
+                "design_id": str(self.design.id),
+                "version_id": str(uuid.uuid4()),
+            },
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["detail"], "Design not found")
+
+    def test_create_design_catalog_success(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ creates version with catalogs and rules"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "main1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                },
+                {
+                    "id": "child1",
+                    "name": "Child Part",
+                    "type": "Plank",
+                    "parent": "main1",
+                    "catalog_rule": "DEFAULT",
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("message", response.data)
+        self.assertIn("version_id", response.data)
+        self.assertIn("catalog_ids", response.data)
+        self.assertEqual(response.data["message"], "Design saved successfully")
+        self.assertIsInstance(response.data["catalog_ids"], list)
+        self.assertEqual(len(response.data["catalog_ids"]), 1)
+
+        version = DesignVersion.objects.filter(id=response.data["version_id"]).first()
+        self.assertIsNotNone(version)
+        self.assertEqual(version.design.id, self.design.id)
+
+        catalog = DesignCatalog.objects.filter(
+            id=response.data["catalog_ids"][0]
+        ).first()
+        self.assertIsNotNone(catalog)
+        self.assertEqual(catalog.name, "Main Cabinet")
+
+        rule_parts = CatalogRuleParts.objects.filter(catalog_rule__catalog=catalog)
+        self.assertEqual(rule_parts.count(), 1)
+        self.assertEqual(rule_parts.first().name, "Child Part")
+
+    def test_create_design_catalog_with_nested_parents(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ creates catalogs with parent relationships"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "parent1",
+                    "name": "Parent Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                },
+                {
+                    "id": "child1",
+                    "name": "Child Cabinet",
+                    "type": "Cabinet",
+                    "parent": "parent1",
+                    "is_main": True,
+                },
+                {
+                    "id": "grandchild1",
+                    "name": "Grandchild Part",
+                    "type": "Plank",
+                    "parent": "child1",
+                    "catalog_rule": "RULE1",
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["catalog_ids"]), 2)
+
+        catalogs = DesignCatalog.objects.filter(id__in=response.data["catalog_ids"])
+        parent_catalog = catalogs.get(name="Parent Cabinet")
+        child_catalog = catalogs.get(name="Child Cabinet")
+        self.assertEqual(child_catalog.parent.id, parent_catalog.id)
+
+    def test_create_design_catalog_missing_design_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ without design_id returns 400"""
+        payload = {
+            "items": [
+                {
+                    "id": "main1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                }
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_design_catalog_missing_is_main(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ without is_main items returns 400"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "child1",
+                    "name": "Child Part",
+                    "type": "Plank",
+                    "parent": "main1",
+                }
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("isMain", str(response.data))
+
+    def test_create_design_catalog_child_without_parent(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ with child missing parent returns 400"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "main1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                },
+                {
+                    "id": "child1",
+                    "name": "Child Part",
+                    "type": "Plank",
+                    "is_main": False,
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("parent", str(response.data))
+
+    def test_create_design_catalog_parent_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ with non-existent parent returns 400"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "main1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                },
+                {
+                    "id": "child1",
+                    "name": "Child Part",
+                    "type": "Plank",
+                    "is_main": False,
+                    "parent": "nonexistent",
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Parent", str(response.data))
+        self.assertIn("nonexistent", str(response.data))
+
+    def test_create_design_catalog_with_multiple_rules(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ creates multiple rules for same catalog"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "main1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                },
+                {
+                    "id": "child1",
+                    "name": "Child Part 1",
+                    "type": "Plank",
+                    "parent": "main1",
+                    "catalog_rule": "RULE1",
+                },
+                {
+                    "id": "child2",
+                    "name": "Child Part 2",
+                    "type": "Plank",
+                    "parent": "main1",
+                    "catalog_rule": "RULE2",
+                },
+                {
+                    "id": "child3",
+                    "name": "Child Part 3",
+                    "type": "Plank",
+                    "parent": "main1",
+                    "catalog_rule": "RULE1",
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        catalog = DesignCatalog.objects.filter(
+            id=response.data["catalog_ids"][0]
+        ).first()
+        rules = CatalogRules.objects.filter(catalog=catalog)
+        self.assertEqual(rules.count(), 2)
+
+        rule1 = rules.get(name="RULE1")
+        rule2 = rules.get(name="RULE2")
+        self.assertEqual(rule1.catalog_rule_parts.count(), 2)
+        self.assertEqual(rule2.catalog_rule_parts.count(), 1)
+
+    def test_create_design_catalog_invalid_data(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ with invalid data returns 400"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "main1",
+                    "is_main": True,
+                }
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_design_catalog_with_complex_structure(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test POST /catalogs/ with complex nested structure"""
+        payload = {
+            "design_id": str(self.design.id),
+            "items": [
+                {
+                    "id": "cabinet1",
+                    "name": "Main Cabinet",
+                    "type": "Cabinet",
+                    "is_main": True,
+                    "dimensions": {"width": 100, "height": 200, "depth": 50},
+                    "position": {"x": 0, "y": 0, "z": 0},
+                },
+                {
+                    "id": "door1",
+                    "name": "Door",
+                    "type": "Door",
+                    "parent": "cabinet1",
+                    "catalog_rule": "DEFAULT",
+                    "dimensions": {"width": 50, "height": 200},
+                },
+                {
+                    "id": "drawer1",
+                    "name": "Drawer",
+                    "type": "Drawer",
+                    "parent": "cabinet1",
+                    "catalog_rule": "DEFAULT",
+                    "dimensions": {"width": 50, "height": 100, "depth": 40},
+                },
+            ],
+        }
+
+        response = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["catalog_ids"]), 1)
+
+        catalog = DesignCatalog.objects.filter(
+            id=response.data["catalog_ids"][0]
+        ).first()
+        rule = CatalogRules.objects.filter(catalog=catalog).first()
+        parts = CatalogRuleParts.objects.filter(catalog_rule=rule)
+        self.assertEqual(parts.count(), 2)

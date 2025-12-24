@@ -554,7 +554,6 @@ const Settings = () => {
       const url = URL.createObjectURL(file);
 
       setorganizationUrl(url);
-      console.log('file', file);
       setOrganizationImage(file);
     }
   };

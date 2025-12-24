@@ -9,18 +9,16 @@ export class CabinetMotionController {
 
   constructor() {}
 
+  // Get bounding box of door mesh
   private _getBoundingBox() {
     this.child?.geometry.computeBoundingBox();
-    const bbox = this.child?.geometry.boundingBox;
-    return bbox;
+    return this.child?.geometry.boundingBox;
   }
 
+  // Calculate hinge position based on opening direction
   private _getPivotOffset() {
     const bbox = this._getBoundingBox();
-    if (!bbox) {
-      console.error('Bounding Box is Null');
-      return;
-    }
+    if (!bbox) return;
 
     let pivotOffsetX = 0;
     let pivotOffsetY = 0;
@@ -30,44 +28,53 @@ export class CabinetMotionController {
         pivotOffsetX = bbox.min.x;
         pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
         break;
+
       case DIRECTION_TYPES.RIGHT:
         pivotOffsetX = bbox.max.x;
         pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
         break;
+
       case DIRECTION_TYPES.TOP:
         pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
         pivotOffsetY = bbox.max.y;
         break;
+
       case DIRECTION_TYPES.BOTTOM:
         pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
         pivotOffsetY = bbox.min.y;
         break;
     }
+
     return { pivotOffsetX, pivotOffsetY };
   }
 
+  // Get door rotation for open / close state
   private _getRotation(): THREE.Vector3 {
     const isClosed = this.child?.userData.isClosed ?? true;
-    const targetRotation = { x: 0, y: 0, z: 0 };
+    const rotation = { x: 0, y: 0, z: 0 };
 
     switch (this.type) {
       case DIRECTION_TYPES.LEFT:
-        targetRotation.y = isClosed ? -Math.PI / 2.5 : 0;
+        rotation.y = isClosed ? -Math.PI / 2.5 : 0;
         break;
+
       case DIRECTION_TYPES.RIGHT:
-        targetRotation.y = isClosed ? Math.PI / 2.5 : 0;
+        rotation.y = isClosed ? Math.PI / 2.5 : 0;
         break;
+
       case DIRECTION_TYPES.TOP:
-        targetRotation.x = isClosed ? -Math.PI / 3 : 0;
+        rotation.x = isClosed ? -Math.PI / 3 : 0;
         break;
+
       case DIRECTION_TYPES.BOTTOM:
-        targetRotation.x = isClosed ? Math.PI / 3 : 0;
+        rotation.x = isClosed ? Math.PI / 3 : 0;
         break;
     }
 
-    return new THREE.Vector3(targetRotation.x, targetRotation.y, targetRotation.z);
+    return new THREE.Vector3(rotation.x, rotation.y, rotation.z);
   }
 
+  // Animate vector or rotation using GSAP
   private _createGSAP(targetToChange: THREE.Vector3 | THREE.Euler, target: THREE.Vector3) {
     gsap.to(targetToChange, {
       x: target.x,
@@ -78,53 +85,108 @@ export class CabinetMotionController {
     });
   }
 
+  // Toggle door open or close
   public toggleDoor(child: THREE.Mesh) {
     if (!child) return;
-    this.child = child;
-    this.type = this.child.userData.openDirection;
-    const isClosed = this.child.userData.isClosed ?? true;
 
-    const { pivotOffsetX, pivotOffsetY } = this._getPivotOffset() || {
+    this.child = child;
+    this.type = child.userData.openDirection;
+
+    const isClosed = child.userData.isClosed ?? true;
+
+    // Make sure pivot group exists
+    this._ensurePivotWrapper();
+
+    // Rotate pivot group instead of mesh
+    const pivotGroup = child.parent;
+    if (pivotGroup?.userData.isPivotGroup) {
+      this._createGSAP(pivotGroup.rotation, this._getRotation());
+    }
+
+    child.userData.isClosed = !isClosed;
+  }
+
+  // Ensure door is wrapped in correct pivot group
+  private _ensurePivotWrapper() {
+    if (!this.child) return;
+
+    const parent = this.child.parent;
+
+    if (parent?.userData.isPivotGroup) {
+      if (parent.userData.pivotDirection === this.type) return;
+      this._unwrapPivot();
+    }
+
+    this._wrapInPivot();
+  }
+
+  // Remove existing pivot group
+  private _unwrapPivot() {
+    if (!this.child) return;
+
+    const pivotGroup = this.child.parent;
+    if (pivotGroup?.userData.isPivotGroup && pivotGroup.parent) {
+      pivotGroup.parent.attach(this.child);
+      pivotGroup.parent.remove(pivotGroup);
+    }
+  }
+
+  // Create pivot group at hinge position
+  private _wrapInPivot() {
+    if (!this.child) return;
+
+    const { pivotOffsetX, pivotOffsetY } = this._getPivotOffset() ?? {
       pivotOffsetX: 0,
       pivotOffsetY: 0,
     };
-    this.child.geometry.translate(-pivotOffsetX, -pivotOffsetY, 0);
-    this.child.position.x += pivotOffsetX;
-    this.child.position.y += pivotOffsetY;
 
-    const targetRotation = this._getRotation();
-    this._createGSAP(this.child.rotation, targetRotation);
+    const pivotGroup = new THREE.Group();
+    pivotGroup.name = 'DoorPivotGroup';
+    pivotGroup.userData.isPivotGroup = true;
+    pivotGroup.userData.pivotDirection = this.type;
 
-    this.child.userData.isClosed = !isClosed;
+    // Convert hinge position to world space
+    const worldHinge = new THREE.Vector3(pivotOffsetX, pivotOffsetY, 0).applyMatrix4(
+      this.child.matrixWorld
+    );
+
+    const originalParent = this.child.parent;
+    if (!originalParent) return;
+
+    // Position pivot at hinge
+    pivotGroup.position.copy(worldHinge);
+    pivotGroup.quaternion.copy(this.child.getWorldQuaternion(new THREE.Quaternion()));
+
+    // Attach pivot and then door
+    originalParent.attach(pivotGroup);
+    pivotGroup.attach(this.child);
   }
 
+  // Toggle drawer slide animation
   public toggleDrawer(mesh: THREE.Mesh, openDistance = 0.25) {
     if (!mesh) return;
 
     const isClosed = mesh.userData.isClosed ?? true;
 
+    // Store closed position once
     if (!mesh.userData.closedPos) {
       mesh.userData.closedPos = mesh.getWorldPosition(new THREE.Vector3());
     }
 
-    const closedWorldPos = mesh.userData.closedPos.clone();
-    const localOpenDir = new THREE.Vector3(0, 0, 1);
-    const worldOpenDir = localOpenDir
-      .clone()
+    const closedPos = mesh.userData.closedPos.clone();
+
+    // Calculate drawer open direction
+    const openDir = new THREE.Vector3(0, 0, 1)
       .applyQuaternion(mesh.getWorldQuaternion(new THREE.Quaternion()))
       .normalize();
-    const openWorldPos = closedWorldPos.clone().add(worldOpenDir.multiplyScalar(openDistance));
-    const targetWorld = isClosed ? openWorldPos : closedWorldPos;
 
-    const parent = mesh.parent;
-    let targetLocal = targetWorld.clone();
+    const openPos = closedPos.clone().add(openDir.multiplyScalar(openDistance));
+    const targetWorld = isClosed ? openPos : closedPos;
 
-    if (parent) {
-      parent.worldToLocal(targetLocal);
-    }
+    // Convert world position to local
+    const targetLocal = mesh.parent ? mesh.parent.worldToLocal(targetWorld.clone()) : targetWorld;
 
     this._createGSAP(mesh.position, targetLocal);
-
     mesh.userData.isClosed = !isClosed;
   }
 }

@@ -15,7 +15,6 @@ export interface ThreeDView {
   toggleSky: () => void;
   isDay: boolean;
   isZoomMode: boolean;
-  addSimpleCabinet: () => void;
   addSimpleCabinet1?: () => void;
   loadSinkModel: (url: string) => Promise<void>;
   selector: SelectObjectController | null;
