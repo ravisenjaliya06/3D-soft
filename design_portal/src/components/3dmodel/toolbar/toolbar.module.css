@@ -1057,7 +1057,7 @@
   margin-right: 1rem;
 }
 
-.noItems{
+.noItems {
   font-family: var(--font-family);
   font-size: 0.8rem;
   color: var(--primary-black);

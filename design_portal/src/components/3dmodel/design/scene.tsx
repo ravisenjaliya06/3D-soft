@@ -5,18 +5,12 @@ import {
   showFullScreenLoader,
 } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
-import {
-  DIRECTION_TYPES,
-  GEOMETRY,
-  MATERIAL_TYPE,
-  MeshObjectData,
-  PART_TYPES,
-} from '../sceneCreator/interface';
+import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import { SelectedCabinetItem } from '../toolbar/interface';
 import { DimensionMeta, Part, ThreeDView } from './interface';
-import { convertKeysToCamel } from '../sceneCreator/utils';
+import { addObjects } from '../store/dataSlice';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 

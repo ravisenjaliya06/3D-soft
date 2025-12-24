@@ -135,7 +135,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     });
   });
 
-
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
     color: 0x00ff00,
@@ -153,7 +152,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     boxMesh.add(mesh);
     return [mesh];
   }
-  
+
   const minW = bb.min.x;
   const maxW = bb.max.x;
   const minH = bb.min.y;

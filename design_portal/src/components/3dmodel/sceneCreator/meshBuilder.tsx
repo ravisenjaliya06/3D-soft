@@ -100,7 +100,7 @@ export class MeshBuilder {
   private _setScale(mesh: THREE.Mesh) {
     if (!this.meshData.scale) return;
     mesh.scale.set(
-      this.meshData.scale.x || 0.01, 
+      this.meshData.scale.x || 0.01,
       this.meshData.scale.y || 0.01,
       this.meshData.scale.z || 0.01
     );

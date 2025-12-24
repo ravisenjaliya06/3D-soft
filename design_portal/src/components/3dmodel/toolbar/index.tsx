@@ -16,6 +16,7 @@ import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { DesignBuilder } from '../sceneCreator/designBuilder';
 import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
   setHoverdMesh,
@@ -25,10 +26,8 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
-import { Datastate, IconMap, ResultType, SelectedCabinetItem } from './interface';
+import { Datastate, IconMap, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
-import { formatEnumLabel } from '../sceneCreator/utils';
-import { MoveHandler } from '../handler/moveHandler';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -89,10 +88,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
-      const fullGroup = cabinetItems.find((group) =>
-        group.some((g) => g.id === item.id)
-      );
-  
+      const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
+
       const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
       const mesh = designBuilder.createDesign();
       threeDView!.scene.add(mesh);
@@ -103,7 +100,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       handleSubmenuClick(event);
     }
   };
-  
+
   /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
   const onAddItems = async () => {
     if (!selectedCabinetItem) {
@@ -224,7 +221,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   ];
   const furnitureTools = [
     { option: 'Cabinet', icon: assets.cabinet_svg },
-    { option: 'Parts', icon: assets.cabinet_svg }
+    { option: 'Parts', icon: assets.cabinet_svg },
   ];
 
   const getFilteredCabinetItems = (category: string) => {
