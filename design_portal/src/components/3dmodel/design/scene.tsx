@@ -10,7 +10,6 @@ import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
-import { Part } from './interface';
 import { Dimensions } from '../interface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
