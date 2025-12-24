@@ -152,6 +152,7 @@ export function createMeshObject(
   }
 
   mesh.userData = { ...mesh.userData, ...userData };
+  mesh.userData.type = 'drawer';
   return mesh;
 }
 

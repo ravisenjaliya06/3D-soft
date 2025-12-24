@@ -146,7 +146,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   let depthOffset = 0;
 
   if (backPlank) {
-    const blockedDepth = backPlank.zMax - bb.min.z;
+    const blockedDepth = (backPlank as { zMin: number; zMax: number }).zMax - bb.min.z;
     usableDepth = depth - blockedDepth;
     depthOffset = blockedDepth / 2;
   }
@@ -218,8 +218,8 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
       let valid = true;
       while (yEnd + 1 < gridHeight && valid) {
-        for (let xx = x; xx <= xEnd; xx++) {
-          if (grid[yEnd + 1][xx] !== 'empty') {
+        for (let secondx = x; secondx <= xEnd; secondx++) {
+          if (grid[yEnd + 1][secondx] !== 'empty') {
             valid = false;
             break;
           }

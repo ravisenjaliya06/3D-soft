@@ -82,7 +82,7 @@ class NestingItemSerializer(serializers.Serializer):
 class DesignVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DesignVersion
-        fields = ["id", "design"]
+        fields = ["id", "design", "name"]
 
 
 class SceneGetSerializer(serializers.Serializer):

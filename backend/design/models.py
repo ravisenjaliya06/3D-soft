@@ -42,6 +42,8 @@ class CatalogTypeChoices(models.TextChoices):
     CUPBOARD = "cupboard"
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
+    
+    UNKONWN = "unknown"
 
 
 class Design(models.Model):
@@ -142,9 +144,15 @@ class DesignVersion(models.Model):
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, primary_key=True, unique=True
     )
+    name = models.CharField(max_length=100, null=True, blank=True)
     design = models.ForeignKey(Design, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.name and self.design:
+            self.name = self.design.design_name
+        super().save(*args, **kwargs)
 
 
 class DesignCatalog(models.Model):
@@ -179,7 +187,7 @@ class CatalogRules(models.Model):
 class CatalogRuleParts(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices, default="")
+    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices, default=CatalogTypeChoices.UNKONWN)
     catalog_rule = models.ForeignKey(
         CatalogRules,
         null=True,
