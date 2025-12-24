@@ -5,12 +5,18 @@ import {
   showFullScreenLoader,
 } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
-import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
+import { Dimensions } from '../interface';
+import {
+  DIRECTION_TYPES,
+  GEOMETRY,
+  MATERIAL_TYPE,
+  MeshObjectData,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
-import { Dimensions } from '../interface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -22,16 +28,6 @@ const convertDimensionsToMM = (dimensions: { width: number; height: number; dept
   height: Math.round(dimensions.height * 1000),
   depth: Math.round(dimensions.depth * 1000),
 });
-
-// Helper function to create invisible material
-function createInvisibleMaterial(): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.0,
-    depthWrite: false,
-  });
-}
 
 export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
@@ -59,7 +55,7 @@ export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
 const meshBuilder = (data: MeshObjectData) => {
   const builder = new MeshBuilder(data);
   return builder.createMesh();
-}
+};
 
 export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
@@ -132,7 +128,6 @@ export const addVerticalPlanksToBox = async (
 
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const localPosInParent = parent.worldToLocal(worldPos.clone());
-
 
     const plank = meshBuilder({
       id: crypto.randomUUID(),
@@ -468,7 +463,7 @@ export const addDrawersOnInvisibleBox = async (
         type: MATERIAL_TYPE.TEXTURE,
         value: '/Texture0004.jpg',
         repeatX: 1,
-        repeatY: 1
+        repeatY: 1,
       },
     });
 
@@ -513,10 +508,10 @@ export const addDrawersOnInvisibleBox = async (
           rotation: { x: 0, y: 0, z: 0 },
           scale: { x: 1, y: 1, z: 1 },
           material: {
-            type: MATERIAL_TYPE.TEXTURE, 
+            type: MATERIAL_TYPE.TEXTURE,
             value: '/textures/light_wood.jpg',
           },
-        })
+        });
 
         parent.add(part);
         drawerGroup.attach(part);
@@ -573,10 +568,10 @@ export const addDrawersOnInvisibleBox = async (
         rotation: { x: 0, y: 0, z: 0 },
         scale: { x: 1, y: 1, z: 1 },
         material: {
-          type: MATERIAL_TYPE.COLOR, 
+          type: MATERIAL_TYPE.COLOR,
           value: '#000000',
         },
-      })
+      });
 
       parent.add(rail);
       drawerGroup.attach(rail);
