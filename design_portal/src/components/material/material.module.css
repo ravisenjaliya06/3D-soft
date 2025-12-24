@@ -129,7 +129,7 @@
   bottom: 0.5rem;
   /* ends just above bottom */
   width: 0.17rem;
-  background-color: var(--primary-color);
+  background-color: var(--primary-hover);
   /* purple line */
   border-radius: 1px;
 }
@@ -276,6 +276,7 @@
 }
 
 /* Table Container */
+
 .tableContainer {
   flex: 1;
   overflow: auto;
@@ -606,28 +607,32 @@
 
 .materialleftside::-webkit-scrollbar,
 .tableContainer::-webkit-scrollbar,
-.modalBody::-webkit-scrollbar {
+.modalBody::-webkit-scrollbar,
+.custom_scrollbar::-webkit-scrollbar {
   width: 0.4rem;
   height: 0.4rem;
 }
 
 .materialleftside::-webkit-scrollbar-track,
 .tableContainer::-webkit-scrollbar-track,
-.modalBody::-webkit-scrollbar-track {
+.modalBody::-webkit-scrollbar-track,
+.custom_scrollbar::-webkit-scrollbar-track {
   background: var(--primary-white);
   border-radius: 0.7rem;
 }
 
 .materialleftside::-webkit-scrollbar-thumb,
 .tableContainer::-webkit-scrollbar-thumb,
-.modalBody::-webkit-scrollbar-thumb {
+.modalBody::-webkit-scrollbar-thumb,
+.custom_scrollbar::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 0.7rem;
 }
 
 .materialleftside::-webkit-scrollbar-thumb:hover,
 .tableContainer::-webkit-scrollbar-thumb:hover,
-.modalBody::-webkit-scrollbar-thumb:hover {
+.modalBody::-webkit-scrollbar-thumb:hover,
+.custom_scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--border-color);
 }
 

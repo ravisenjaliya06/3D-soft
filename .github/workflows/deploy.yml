@@ -1,185 +1,185 @@
-name: Deploy to Server
+# name: Deploy to Server
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
-jobs:
-  deploy-backend:
-    name: Deploy Backend
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+# jobs:
+#   deploy-backend:
+#     name: Deploy Backend
+#     runs-on: ubuntu-latest
+#     if: github.event_name == 'push'
+#     defaults:
+#       run:
+#         shell: bash
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      # Install and setup WireGuard
-      - name: Install WireGuard
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wireguard
+#       # Install and setup WireGuard
+#       - name: Install WireGuard
+#         run: |
+#           sudo apt-get update
+#           sudo apt-get install -y wireguard
 
-      - name: Create WireGuard config
-        run: |
-          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
-          sudo chmod 600 wg0.conf
+#       - name: Create WireGuard config
+#         run: |
+#           echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+#           sudo chmod 600 wg0.conf
 
-      - name: Start WireGuard VPN
-        run: sudo wg-quick up ./wg0.conf
+#       - name: Start WireGuard VPN
+#         run: sudo wg-quick up ./wg0.conf
 
-      # # Only run if backend/ folder has changes
-      # - name: Check backend folder changes
-      #   id: backend_changes
-      #   run: |
-      #     git fetch origin main --depth=1
-      #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)"
+#       # # Only run if backend/ folder has changes
+#       # - name: Check backend folder changes
+#       #   id: backend_changes
+#       #   run: |
+#       #     git fetch origin main --depth=1
+#       #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)"
 
-      # - name: Skip backend deploy if no changes
-      #   if: steps.backend_changes.outputs.changed == ''
-      #   run: |
-      #     echo "No backend changes, skipping deploy."
-      #     exit 0
+#       # - name: Skip backend deploy if no changes
+#       #   if: steps.backend_changes.outputs.changed == ''
+#       #   run: |
+#       #     echo "No backend changes, skipping deploy."
+#       #     exit 0
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+#       - name: Add server to known_hosts
+#         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Backend via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -euo pipefail
-            export DEBIAN_FRONTEND=noninteractive
+#       - name: Deploy Backend via SSH
+#         run: |
+#           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             set -euo pipefail
+#             export DEBIAN_FRONTEND=noninteractive
 
-            cd /root/bravento
-            git fetch origin main --depth=1
-            git reset --hard origin/main
+#             cd /root/bravento
+#             git fetch origin main --depth=1
+#             git reset --hard origin/main
 
-            cd backend/
-            pipenv install --deploy --ignore-pipfile --python 3.11
-            pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
-            pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
-            pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
+#             cd backend/
+#             pipenv install --deploy --ignore-pipfile --python 3.11
+#             pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
+#             pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
+#             pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
 
-            systemctl restart gunicorn
-          EOF
+#             systemctl restart gunicorn
+#           EOF
 
-      - name: Verify Gunicorn
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            if ! systemctl is-active --quiet gunicorn; then
-              echo "❌ Gunicorn failed to start"
-              sudo journalctl -u gunicorn --no-pager -n 50
-              exit 1
-            else
-              echo "✅ Gunicorn running"
-            fi
-          EOF
+#       - name: Verify Gunicorn
+#         run: |
+#           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             if ! systemctl is-active --quiet gunicorn; then
+#               echo "❌ Gunicorn failed to start"
+#               sudo journalctl -u gunicorn --no-pager -n 50
+#               exit 1
+#             else
+#               echo "✅ Gunicorn running"
+#             fi
+#           EOF
 
-      # - name: Notify Google Chat
-      #   if: always()  # run even if previous steps failed
-      #   run: |
-      #     STATUS="SUCCESS"
-      #     if [ "${{ job.status }}" != "success" ]; then
-      #       STATUS="FAILED"
-      #     fi
+#       # - name: Notify Google Chat
+#       #   if: always()  # run even if previous steps failed
+#       #   run: |
+#       #     STATUS="SUCCESS"
+#       #     if [ "${{ job.status }}" != "success" ]; then
+#       #       STATUS="FAILED"
+#       #     fi
       
-      #     curl -X POST -H "Content-Type: application/json" \
-      #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
-      #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+#       #     curl -X POST -H "Content-Type: application/json" \
+#       #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
+#       #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
 
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    defaults:
-      run:
-        shell: bash
-    needs: deploy-backend
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#   deploy-frontend:
+#     name: Deploy Frontend
+#     runs-on: ubuntu-latest
+#     if: github.event_name == 'push'
+#     defaults:
+#       run:
+#         shell: bash
+#     needs: deploy-backend
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Install WireGuard
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wireguard
+#       - name: Install WireGuard
+#         run: |
+#           sudo apt-get update
+#           sudo apt-get install -y wireguard
 
-      - name: Create WireGuard config
-        run: |
-          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
-          sudo chmod 600 wg0.conf
+#       - name: Create WireGuard config
+#         run: |
+#           echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+#           sudo chmod 600 wg0.conf
 
-      - name: Start WireGuard VPN
-        run: sudo wg-quick up ./wg0.conf
+#       - name: Start WireGuard VPN
+#         run: sudo wg-quick up ./wg0.conf
 
-      # # Only run if design_portal/ folder has changes
-      # - name: Check frontend folder changes
-      #   id: frontend_changes
-      #   run: |
-      #     git fetch origin main --depth=1
-      #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)"
+#       # # Only run if design_portal/ folder has changes
+#       # - name: Check frontend folder changes
+#       #   id: frontend_changes
+#       #   run: |
+#       #     git fetch origin main --depth=1
+#       #     echo "::set-output name=changed::$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)"
 
-      # - name: Skip frontend deploy if no changes
-      #   if: steps.frontend_changes.outputs.changed == ''
-      #   run: |
-      #     echo "No frontend changes, skipping deploy."
-      #     exit 0
+#       # - name: Skip frontend deploy if no changes
+#       #   if: steps.frontend_changes.outputs.changed == ''
+#       #   run: |
+#       #     echo "No frontend changes, skipping deploy."
+#       #     exit 0
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+#       - name: Add server to known_hosts
+#         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Frontend via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -euo pipefail
+#       - name: Deploy Frontend via SSH
+#         run: |
+#           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             set -euo pipefail
 
-            cd /root/bravento/design_portal/
-            npm install --legacy-peer-deps
-            cp .env.production .env
-            npm run build
+#             cd /root/bravento/design_portal/
+#             npm install --legacy-peer-deps
+#             cp .env.production .env
+#             npm run build
 
-            cd ..
-            pm2 restart ecosystem.config.js --update-env
-            pm2 save
-          EOF
+#             cd ..
+#             pm2 restart ecosystem.config.js --update-env
+#             pm2 save
+#           EOF
 
-      - name: Verify Frontend
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            sleep 5
-            if curl -fs http://localhost:3000 >/dev/null; then
-              echo "✅ Frontend running"
-            else
-              echo "❌ Frontend not running"
-              pm2 logs design-portal --lines 50 --nostream || true
-              exit 1
-            fi
-          EOF
+#       - name: Verify Frontend
+#         run: |
+#           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             sleep 5
+#             if curl -fs http://localhost:3000 >/dev/null; then
+#               echo "✅ Frontend running"
+#             else
+#               echo "❌ Frontend not running"
+#               pm2 logs design-portal --lines 50 --nostream || true
+#               exit 1
+#             fi
+#           EOF
 
-      # - name: Notify Google Chat
-      #   if: always()  # run even if previous steps failed
-      #   run: |
-      #     STATUS="SUCCESS"
-      #     if [ "${{ job.status }}" != "success" ]; then
-      #       STATUS="FAILED"
-      #     fi
+#       # - name: Notify Google Chat
+#       #   if: always()  # run even if previous steps failed
+#       #   run: |
+#       #     STATUS="SUCCESS"
+#       #     if [ "${{ job.status }}" != "success" ]; then
+#       #       STATUS="FAILED"
+#       #     fi
       
-      #     curl -X POST -H "Content-Type: application/json" \
-      #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
-      #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+#       #     curl -X POST -H "Content-Type: application/json" \
+#       #          -d "{\"text\":\"Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
+#       #          ${{ secrets.GOOGLE_CHAT_WEBHOOK }}

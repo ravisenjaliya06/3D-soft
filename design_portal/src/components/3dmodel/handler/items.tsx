@@ -261,7 +261,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.COLOR,
-        value: '#00ff00',
+        value: 'transparent',
       },
     });
     const mesh = meshBuilder.createMesh();

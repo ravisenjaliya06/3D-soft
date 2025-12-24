@@ -7,6 +7,7 @@ import { Position, Rotation } from '../store/interface';
 // type const
 export const FLOOR_PLAN_TYPES = {
   WALL: 'wall',
+  CWALL: 'cwall',
 };
 
 export const OBJECT_TYPES = {
@@ -18,6 +19,8 @@ export const PART_TYPES = {
   BACK_PLANK: 'backPlank',
   DRAWER: 'drawer',
   DOOR: 'door',
+  VERTICAL_PLANK: 'verticalPlank',
+  HORIZONTAL_PLANK: 'horizontalPlank',
 };
 
 export const GEOMETRY = {
