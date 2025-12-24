@@ -91,8 +91,7 @@ class DesignViewset(ModelViewSet):
         self.perform_update(serializer)
 
         latest_version = (
-            DesignVersion.objects
-            .filter(design=instance)
+            DesignVersion.objects.filter(design=instance)
             .order_by("-created_at")
             .first()
         )

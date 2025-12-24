@@ -11,13 +11,8 @@ sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from material.models import (
-    Company,
-    FinishesLibrary,
-    Material,
-    Properties,
-)
-from design.models import DesignCatalog, CatalogRules, CatalogRuleParts
+from design.models import CatalogRuleParts, CatalogRules, DesignCatalog
+from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization
 
 FINISH = [
@@ -1266,8 +1261,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 18, "height": 2000, "depth": 600 },
-        "position": { "x": -741, "y": 0, "z": 0 },
+        "dimensions": {"width": 18, "height": 2000, "depth": 600},
+        "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
@@ -1284,8 +1279,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 18, "height": 2000, "depth": 600 },
-        "position": { "x": 741, "y": 0, "z": 0 },
+        "dimensions": {"width": 18, "height": 2000, "depth": 600},
+        "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
@@ -1302,8 +1297,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 1464, "height": 18, "depth": 600 },
-        "position": { "x": 0, "y": 991, "z": 0 },
+        "dimensions": {"width": 1464, "height": 18, "depth": 600},
+        "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
@@ -1320,8 +1315,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 1464, "height": 18, "depth": 600 },
-        "position": { "x": 0, "y": -909, "z": 0 },
+        "dimensions": {"width": 1464, "height": 18, "depth": 600},
+        "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
@@ -1338,8 +1333,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 1464, "height": 1882, "depth": 18 },
-        "position": { "x": 0, "y": 41, "z": -266 },
+        "dimensions": {"width": 1464, "height": 1882, "depth": 18},
+        "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
@@ -1356,17 +1351,17 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-        "dimensions": { "width": 1464, "height": 82, "depth": 18 },
-        "position": { "x": 0, "y": -955, "z": -266 },
-        "rotation": { "x": 0, "y": 0, "z": 0 },
-        "scale": { "x": 1, "y": 1, "z": 1 },
+        "dimensions": {"width": 1464, "height": 82, "depth": 18},
+        "position": {"x": 0, "y": -955, "z": -266},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
         "material": {
             "type": "TEXTURE",
             "value": "/textures/light_wood.jpg",
             "repeatX": 2,
-            "repeatY": 1
+            "repeatY": 1,
         },
-        "catalog_rule": "Panel"
+        "catalog_rule": "Panel",
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111303",
@@ -1736,6 +1731,7 @@ def create_catalog(catalog_list: list[dict]) -> None:
             part.data["id"] = str(part.id)
             part.data["parent"] = str(main_catalog.id)
             part.save(update_fields=["data"])
+
 
 if __name__ == "__main__":
     create_finish()
