@@ -5,12 +5,19 @@ import {
   showFullScreenLoader,
 } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
-import { DIRECTION_TYPES, GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
+import { Dimensions } from '../interface';
+import {
+  DIRECTION_TYPES,
+  GEOMETRY,
+  MATERIAL_TYPE,
+  MeshObjectData,
+  PART_TYPES,
+  TEXTURES,
+} from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { SelectedCabinetItem } from '../toolbar/interface';
-import { Part } from './interface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -22,16 +29,6 @@ const convertDimensionsToMM = (dimensions: { width: number; height: number; dept
   height: Math.round(dimensions.height * 1000),
   depth: Math.round(dimensions.depth * 1000),
 });
-
-// Helper function to create invisible material
-function createInvisibleMaterial(): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.0,
-    depthWrite: false,
-  });
-}
 
 export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
@@ -56,57 +53,10 @@ export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   scene.add(sinkModel);
 };
 
-// Helper function to create invisible box mesh
-export function createInvisibleBox(
-  dimensions: { width: number; height: number; depth: number },
-  position: { x: number; y: number; z: number },
-  name: string,
-  userData = {}
-): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(dimensions.width, dimensions.height, dimensions.depth);
-  const material = createInvisibleMaterial();
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = name;
-  mesh.position.set(position.x, position.y, position.z);
-  mesh.userData = { ...userData, isInvisibleBox: true };
-  return mesh;
-}
-export function createMeshObject(
-  part: Part,
-  setShadows: boolean = true,
-  userData = {}
-): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(
-    part.dimensions.width,
-    part.dimensions.height,
-    part.dimensions.depth
-  );
-  const material =
-    part.material instanceof THREE.Material
-      ? part.material
-      : new THREE.MeshStandardMaterial(part.material);
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = part.name || 'unnamed_plank';
-
-  if (part.position) {
-    mesh.position.set(part.position.x || 0, part.position.y || 0, part.position.z || 0);
-  }
-  if (part.rotation) {
-    mesh.rotation.set(
-      THREE.MathUtils.degToRad(part.rotation.x || 0),
-      THREE.MathUtils.degToRad(part.rotation.y || 0),
-      THREE.MathUtils.degToRad(part.rotation.z || 0)
-    );
-  }
-  if (setShadows) {
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-  }
-
-  mesh.userData = { ...mesh.userData, ...userData };
-  mesh.userData.type = 'drawer';
-  return mesh;
-}
+const meshBuilder = (data: MeshObjectData) => {
+  const builder = new MeshBuilder(data);
+  return builder.createMesh();
+};
 
 export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
@@ -151,7 +101,6 @@ export const addVerticalPlanksToBox = async (
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
-  console.log('parent', parent);
 
   const interval = innerSpan / (count + 1);
 
@@ -159,7 +108,7 @@ export const addVerticalPlanksToBox = async (
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/textures/light_wood.jpg',
+    value: TEXTURES.LIGHT_WOOD,
     repeatX: 2,
     repeatY: 1,
   };
@@ -180,7 +129,7 @@ export const addVerticalPlanksToBox = async (
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const localPosInParent = parent.worldToLocal(worldPos.clone());
 
-    const meshBuilder = new MeshBuilder({
+    const plank = meshBuilder({
       id: crypto.randomUUID(),
       name: `VERTICAL_PLANK`,
       type: PART_TYPES.PLANK,
@@ -192,8 +141,6 @@ export const addVerticalPlanksToBox = async (
       material: commonMaterial,
       isMain: false,
     });
-
-    const plank = meshBuilder.createMesh();
 
     plank.userData.isVerticalPlank = true;
     plank.userData.cabinetItem = selectedCabinetItem;
@@ -252,7 +199,7 @@ export const addHorizontalPlanksInsideBox = async (
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/textures/light_wood.jpg',
+    value: TEXTURES.LIGHT_WOOD,
     repeatX: 2,
     repeatY: 1,
   };
@@ -271,7 +218,7 @@ export const addHorizontalPlanksInsideBox = async (
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const parentLocalPos = parent.worldToLocal(worldPos.clone());
 
-    const meshBuilder = new MeshBuilder({
+    const shelf = meshBuilder({
       id: crypto.randomUUID(),
       name: `HORIZONTAL_PLANK`,
       type: PART_TYPES.PLANK,
@@ -279,11 +226,10 @@ export const addHorizontalPlanksInsideBox = async (
       dimensions: dims,
       position: parentLocalPos,
       rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
       material: commonMaterial,
       isMain: false,
     });
-
-    const shelf = meshBuilder.createMesh();
     shelf.userData.isHorizontalPlank = true;
     shelf.userData.cabinetItem = selectedCabinetItem;
     shelf.userData.dimensions = convertDimensionsToMM(dims);
@@ -324,7 +270,7 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
+  const doorTexture = new THREE.TextureLoader().load(TEXTURES.WHITE_TEXTURE);
   doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
   doorTexture.repeat.set(2, 1);
 
@@ -332,34 +278,33 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   const facePart = {
     name: `Door_for_${boxMesh.name}`,
-    dimensions: { width: w, height: h, depth: 0.02 },
+    dimensions: { width: w, height: h, depth: 18 },
     position: { x: 0, y: 0, z: 0 },
     material: doorMatProps,
   };
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/Texture0004.jpg',
+    value: TEXTURES.WHITE_TEXTURE,
     repeatX: 2,
     repeatY: 1,
   };
 
   const doorId = crypto.randomUUID();
 
-  const meshBuilder = new MeshBuilder({
+  const doorGroup = meshBuilder({
     id: doorId,
     name: `Door_for_${boxMesh.name}`,
     type: PART_TYPES.DOOR,
     geometryType: GEOMETRY.BOX_GEOMETRY,
-    dimensions: { width: w, height: h, depth: 0.02 },
+    dimensions: { width: w, height: h, depth: 18 },
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
     material: commonMaterial,
     isMain: false,
     openDirection: DIRECTION_TYPES.RIGHT,
   });
-
-  const doorGroup = meshBuilder.createMesh();
 
   parent.add(doorGroup);
 
@@ -479,16 +424,6 @@ export const addDrawersOnInvisibleBox = async (
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  // Materials
-  const texLoader = new THREE.TextureLoader();
-  const drawerTexture = texLoader.load('/Texture0004.jpg');
-  drawerTexture.wrapS = drawerTexture.wrapT = THREE.RepeatWrapping;
-  drawerTexture.repeat.set(2, 1);
-
-  const drawerMatProps = { map: drawerTexture, side: THREE.DoubleSide };
-  const sideMatProps = { color: 0xd9c7b8, roughness: 0.7 };
-  const railMatProps = { color: 0x999999, metalness: 0.6, roughness: 0.3 };
-
   for (let i = 0; i < drawers; i++) {
     const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
 
@@ -515,14 +450,23 @@ export const addDrawersOnInvisibleBox = async (
     const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
     const parentFacePos = parent.worldToLocal(worldFacePos.clone());
 
-    const facePart = {
+    const face = meshBuilder({
+      id: crypto.randomUUID(),
       name: 'DRAWER_FACE',
+      type: PART_TYPES.DRAWER,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: drawerDimensions,
-      position: parentFacePos,
-      material: drawerMatProps,
-    };
+      position: { x: parentFacePos.x, y: parentFacePos.y, z: parentFacePos.z },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      material: {
+        type: MATERIAL_TYPE.TEXTURE,
+        value: TEXTURES.WHITE_TEXTURE,
+        repeatX: 1,
+        repeatY: 1,
+      },
+    });
 
-    const face = createMeshObject(facePart);
     parent.add(face);
     drawerGroup.attach(face);
 
@@ -550,15 +494,23 @@ export const addDrawersOnInvisibleBox = async (
       const innerH = Math.max(eachH - 0.06, 0.12);
       const baseY = yLocal;
 
-      const createInnerPart = (name: string, dims: any, pos: THREE.Vector3) => {
+      const createInnerPart = (name: string, dims: Dimensions, pos: THREE.Vector3) => {
         const worldPos = boxMesh.localToWorld(pos.clone());
         const parentLocal = parent.worldToLocal(worldPos.clone());
 
-        const part = createMeshObject({
+        const part = meshBuilder({
+          id: crypto.randomUUID(),
           name,
+          type: PART_TYPES.DRAWER,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
           dimensions: dims,
           position: parentLocal,
-          material: sideMatProps,
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          material: {
+            type: MATERIAL_TYPE.TEXTURE,
+            value: TEXTURES.LIGHT_WOOD,
+          },
         });
 
         parent.add(part);
@@ -596,9 +548,9 @@ export const addDrawersOnInvisibleBox = async (
       );
     }
 
-    const railH = 0.02;
-    const railT = 0.005;
-    const railLen = Math.max(d - 0.06, 0.2);
+    const railH = 20;
+    const railT = 5;
+    const railLen = Math.max(d - 60, 200);
 
     const createRail = (name: string, xOffset: number) => {
       const localPos = new THREE.Vector3(xOffset, yLocal, boxCenterLocal.z);
@@ -606,11 +558,19 @@ export const addDrawersOnInvisibleBox = async (
       const worldPos = boxMesh.localToWorld(localPos.clone());
       const parentLocal = parent.worldToLocal(worldPos.clone());
 
-      const rail = createMeshObject({
+      const rail = meshBuilder({
+        id: crypto.randomUUID(),
         name,
+        type: PART_TYPES.DRAWER,
+        geometryType: GEOMETRY.BOX_GEOMETRY,
         dimensions: { width: railT, height: railH, depth: railLen },
         position: parentLocal,
-        material: railMatProps,
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        material: {
+          type: MATERIAL_TYPE.COLOR,
+          value: '#000000',
+        },
       });
 
       parent.add(rail);

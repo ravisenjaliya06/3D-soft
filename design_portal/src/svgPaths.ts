@@ -56,13 +56,14 @@ export const CATALOG = {
 };
 
 export const CATALOGMANAGER = {
-  add: '/assets/catalogmanager/add.svg',
+  addd: '/assets/catalogmanager/addd.svg',
   addMaterialIcon: '/assets/catalogmanager/addMaterial.svg',
   arrow: '/assets/catalogmanager/arrow.svg',
   delete: '/assets/catalogmanager/delete.svg',
   deleteIconOne: '/assets/catalogmanager/deleteIcon.svg',
-  edit: '/assets/catalogmanager/edit.svg',
+  edit: '/assets/catalogmanager/noteEditOutline.svg',
   matariel: '/assets/catalogmanager/matireal.svg',
+  trash: '/assets/catalogmanager/trash.svg',
 };
 
 export const CREATEICON_SVG = {
@@ -212,7 +213,6 @@ export const MENU_UP_SVG = {
 };
 
 export const MES = {
-  add: '/assets/mes/add.svg',
   download: '/assets/mes/download.svg',
   archiveicon: '/assets/mes/work-order/archiveicon.svg',
   compartmentline: '/assets/mes/work-order/compartmentline.svg',
@@ -346,6 +346,10 @@ export const TOOLBAR = {
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };
+export const ADDMATERIAL_IMG = {
+  groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
+  groov_gap: '/assets/addmaterial/Guide_Position_5.png',
+};
 
 export const ADDMATERIAL_IMG = {
   groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
@@ -353,6 +357,7 @@ export const ADDMATERIAL_IMG = {
 };
 
 export const assets = {
+  ...ADDMATERIAL_IMG,
   ..._3DMODEL,
   ...ARROW_SVG,
   ...BACK_LOGIN_ICON_SVG,

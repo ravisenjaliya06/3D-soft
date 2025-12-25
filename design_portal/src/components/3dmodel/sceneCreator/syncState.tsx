@@ -1,84 +1,162 @@
-// WallSyncManager.ts
-
 import * as THREE from 'three';
-import { Wall } from '../2dmodel/interface';
 import { store } from '../store';
-import { WALL_DEFAULT_HEIGHT } from './constants';
-import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { addObjects, updateObject } from '../store/dataSlice';
+import { FLOOR_PLAN_TYPES, MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
+import { create2DWallFromMeshData } from './utils';
 
-export class WallSyncManager {
+export class SyncManager {
   private scene: THREE.Scene;
-  private data: Wall;
+  private data: MeshObjectData;
+  private oldData: MeshObjectData | null = null;
+  private meshBuilder: MeshBuilder;
 
-  constructor() {
+  constructor(data: MeshObjectData) {
     this.scene = store.getState().scene?.scene;
-    this.data = {} as Wall;
-  }
-
-  /**
-   * Main function: sync wall from 2D → Redux + 3D
-   */
-  public syncWall(data: Wall): THREE.Mesh {
     this.data = data;
-
-    const wallMesh = this._createWallMesh();
-    this.scene.add(wallMesh);
-
-    return wallMesh;
+    this.meshBuilder = new MeshBuilder(data);
   }
 
-  private _convertPosition2DTo3D(): THREE.Vector3 {
-    const sumX = this.data.startPoint.x + this.data.endPoint.x;
-    const sumY = this.data.startPoint.y + this.data.endPoint.y;
-
-    const x = sumX / 2 / 100;
-    const y = 1.4;
-    const z = sumY / 2 / 100;
-
-    return new THREE.Vector3(x, y, z);
+  // Syncs the data with the scene
+  public syncData(): void {
+    this._handleState();
+    this._handle2d();
+    this._handle3d();
   }
 
-  private _findRotation(): THREE.Vector3 {
-    const angle = Math.atan2(
-      this.data.endPoint.y - this.data.startPoint.y,
-      this.data.endPoint.x - this.data.startPoint.x
-    );
-    return new THREE.Vector3(0, -angle, 0);
+  // Updates the data in the redux store
+  private _handleState() {
+    const existingObjects = store.getState().data.objects;
+
+    const existing = existingObjects.find((obj) => obj.id === this.data.id);
+
+    if (existing) {
+      // SAVE OLD DATA FIRST
+      this.oldData = structuredClone(existing);
+
+      // THEN UPDATE REDUX
+      store.dispatch(updateObject({ ...this.data, id: this.data.id }));
+    } else {
+      store.dispatch(addObjects([this.data]));
+    }
   }
 
-  private _convertDataToMeshData(): MeshObjectData {
-    const id = crypto.randomUUID();
+  // Updates the 2D in the canvas
+  private _handle2d() {
+    if (!(this.data.type === FLOOR_PLAN_TYPES.WALL)) return;
 
-    const meshData: MeshObjectData = {
-      id: id,
-      name: `wall_${id}`,
-      type: FLOOR_PLAN_TYPES.WALL,
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: {
-        width: this.data.length,
-        height: this.data.height || WALL_DEFAULT_HEIGHT,
-        depth: this.data.thickness,
-      },
-      position: this._convertPosition2DTo3D(),
-      rotation: this._findRotation(),
-      scale: { x: 0.01, y: 0.001, z: 0.01 },
-      material: {
-        type: MATERIAL_TYPE.COLOR,
-        value: '#c4c3c3',
-      },
-      isMain: true,
-    };
-
-    return meshData;
+    const existing2DWall = store.getState().data.objects.find((obj) => obj.id === this.data.id);
+    if (existing2DWall) {
+      return;
+    }
+    create2DWallFromMeshData(this.data);
   }
 
   /**
-   * Create 3D wall from your 2D data structure
+   * Compares two objects of the same shape using shallow equality.
+   * T = Generic object type
+   * We use T so this method can work with any object
+   * (position, rotation, dimensions, etc.) instead of a fixed type.
    */
-  private _createWallMesh() {
-    const mesh = new MeshBuilder(this._convertDataToMeshData()).createMesh();
+  private _isEqualObject<T extends object>(oldData?: T, newData?: T): boolean {
+    if (!oldData || !newData) return false;
 
+    return (Object.keys(oldData) as (keyof T)[]).every((key) => oldData[key] === newData[key]);
+  }
+
+  /**
+   * Sets a value in the patch object in a type-safe way.
+   * K = Key of MeshObjectData
+   * Using K ensures:
+   * - only valid keys of MeshObjectData are allowed
+   * - value type always matches the given key
+   */
+  private _setPatchValue<K extends keyof MeshObjectData>(
+    patch: Partial<MeshObjectData>,
+    key: K,
+    value: MeshObjectData[K]
+  ): void {
+    patch[key] = value;
+  }
+
+  // Gets the patch(changes key value pairs) for the mesh object
+  private _getMeshObjectPatch(
+    oldData: MeshObjectData,
+    newData: MeshObjectData
+  ): Partial<MeshObjectData> {
+    const patch: Partial<MeshObjectData> = {};
+    const keys = Object.keys(newData) as (keyof MeshObjectData)[];
+    for (const key of keys) {
+      const oldValue = oldData[key];
+      const newValue = newData[key];
+
+      if (Array.isArray(newValue)) {
+        if (
+          !Array.isArray(oldValue) ||
+          oldValue.length !== newValue.length ||
+          oldValue.some((value, index) => value !== newValue[index])
+        ) {
+          this._setPatchValue(patch, key, newValue);
+        }
+        continue;
+      }
+
+      if (
+        typeof newValue === 'object' &&
+        newValue !== null &&
+        typeof oldValue === 'object' &&
+        oldValue !== null
+      ) {
+        if (!this._isEqualObject(oldValue, newValue)) {
+          this._setPatchValue(patch, key, newValue);
+        }
+        continue;
+      }
+
+      if (oldValue !== newValue) {
+        this._setPatchValue(patch, key, newValue);
+      }
+    }
+
+    return patch;
+  }
+
+  // Creates a new mesh
+  private _createNewMesh() {
+    const mesh = this.meshBuilder.createMesh();
     return mesh;
+  }
+
+  // Updates the mesh
+  private _updateMesh(mesh: THREE.Mesh) {
+    if (!this.oldData) return;
+    const changes = this._getMeshObjectPatch(this.oldData, this.data);
+    this.meshBuilder.updateMesh(mesh, changes);
+  }
+
+  private _findMeshById(): THREE.Mesh | null {
+    let foundMesh: THREE.Mesh | null = null;
+
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.objectId === this.data.id) {
+        foundMesh = object;
+      }
+    });
+
+    return foundMesh;
+  }
+
+  // Handles the 3D mesh
+  private _handle3d() {
+    if (!this.scene) return;
+
+    const existingMesh = this._findMeshById();
+
+    if (existingMesh !== null) {
+      this._updateMesh(existingMesh);
+    } else {
+      const mesh = this._createNewMesh();
+      this.scene.add(mesh);
+    }
   }
 }

@@ -701,7 +701,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Mount Holes',
           fields: [
@@ -982,6 +981,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -1078,7 +1078,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Hinge Cup (Concealed/Double Door)',
           fields: [
@@ -1131,6 +1130,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -1209,7 +1209,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Mounting Holes',
           fields: [
@@ -1243,6 +1242,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -1980,7 +1980,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Mounting Holes',
           fields: [
@@ -1993,6 +1992,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -2092,7 +2092,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Boring',
           fields: [
@@ -2139,6 +2138,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -2224,7 +2224,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Boring',
           fields: [
@@ -2258,6 +2257,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -2384,7 +2384,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Mount Plate Hole 1',
           fields: [
@@ -2550,6 +2549,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -2656,7 +2656,6 @@ const AddMaterialPopup: React.FC<Props> = ({
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
-        pricingStep,
         {
           title: 'Mount Holes',
           fields: [
@@ -2690,6 +2689,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             },
           ],
         },
+        pricingStep,
         {
           title: 'Finish Details',
           fields: [
@@ -2788,6 +2788,10 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
+  // const isFieldWithImage = (field: Field): field is FieldWithImage => {
+    // return typeof field.img === 'string' && field.img.length > 0;
+  // };
+  // const fieldWithImage = currentPopup?.fields.find(isFieldWithImage);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {

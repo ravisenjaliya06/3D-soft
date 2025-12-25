@@ -105,7 +105,7 @@
   flex-direction: row;
   gap: 1rem;
   padding: 0rem 1rem 1rem 2rem;
-  height: calc(100vh - 11.5rem);
+  height: 41rem;
 }
 
 .leftBox {
@@ -115,8 +115,8 @@
   border-radius: 1rem;
   background-color: var(--primary-white);
   padding: 0.5rem;
-  width: 55rem;
-  height: 37rem;
+  width: 12.19rem;
+  height: 40rem;
 }
 
 .rightBox {
@@ -376,18 +376,6 @@
 .deleteButtonRule img {
   height: 0.7rem;
   width: 0.7rem;
-}
-
-.content {
-  display: flex;
-  gap: 1rem;
-}
-
-.topBoxLeft {
-  height: 20rem;
-  width: 9.5rem;
-  background-color: var(--primary-white);
-  border-right: 1px solid rgba(57, 37, 121, 0.3);
 }
 
 .matirealmanu {
@@ -731,7 +719,7 @@
   border: 0.063rem solid var(--primary-color);
   border-radius: 0.5rem;
   cursor: pointer;
-
+  
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
