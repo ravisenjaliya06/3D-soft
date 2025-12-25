@@ -3079,7 +3079,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               />
 
               <div
-                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
+                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[var(--common-text-color)]' : 'bg-[#fff]'}`}
               >
                 <div
                   className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
@@ -3142,7 +3142,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
-      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[#d8cffc] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
+      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[var(--wizard-border-color)] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
         <div className="flex items-center justify-center gap-[0.5rem]">
           {steps.map((label, index) => {
             const isCurrent = index === uiStep;
@@ -3154,8 +3154,8 @@ const AddMaterialPopup: React.FC<Props> = ({
                 <div
                   className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
                     isCurrent || isCompleted
-                      ? 'border-[#4b2aad] bg-[#4b2aad]'
-                      : 'border-[#b8aef3] bg-white'
+                      ? 'border-[var(--wizardstepbox-border-color)] bg-[var(--wizardstepbox-bg-color)]'
+                      : 'border-[var(--wizardstepbox-incomplete-border-color)] bg-[white]'
                   }`}
                 >
                   {isCurrent ? (
@@ -3167,7 +3167,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <span
                       className={`text-sm font-semibold ${
-                        isCompleted ? 'text-[white]' : 'text-[#4b2aad]'
+                        isCompleted ? 'text-[white]' : 'text-[var(--wizardstepbox-text-color)]'
                       }`}
                     >
                       {index + 1}
@@ -3178,7 +3178,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* LABEL */}
                 <span
                   className={`text-sm font-medium ${
-                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
+                    isCurrent || isCompleted ? 'text-[var(--wizardstepbox-complete-text-color)]' : 'text-[var(--wizardstepbox-incomplete-text-color)]'
                   }`}
                 >
                   {label}
@@ -3188,7 +3188,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {index < steps.length - 1 && (
                   <div
                     className={`h-[0.25rem] w-[9rem] rounded ${
-                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
+                      index < uiStep ? 'bg-[var(--wizardstepbox-bg-color)]' : 'bg-[var(--wizard-border-color)]'
                     }`}
                   />
                 )}

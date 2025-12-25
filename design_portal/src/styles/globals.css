@@ -40,6 +40,7 @@
   --completed-color: #bbeeeb;
   --menu-background: #f3e8fb;
   --soft-dark-grey: #8e9cb3;
+  --wizardstepbox-bg-color: #4b2aad;
 
   /* box shadow colors */
   --box-shadow: 0px 0.188rem 4rem 0px #c5bfda;
@@ -61,6 +62,9 @@
   --table-buttom-border-color: #3925791a;
   --toggle-button-border-color: rgba(57, 37, 121, 0.3);
   --table-title-border-color: rgba(57, 37, 121, 0.1);
+  --wizard-border-color: #d8cffc;
+  --wizardstepbox-border-color: #4b2aad;
+  --wizardstepbox-incomplete-border-color: #b8aef3;
 
   /* text colors */
   --common-text-color: #392579;
@@ -82,6 +86,9 @@
   --completed-text-color: #3e7c79;
   --disabled-button-color: #5555;
   --disabled-button-text-color: #a0aec0;
+  --wizardstepbox-text-color: #4b2aad;
+  --wizardstepbox-completed-text-color: #4b2aad;
+  --wizardstepbox-incompleted-text-color: #7b70c9;
 
   /* Button colors */
   --header-button-color: #666;
@@ -94,6 +101,7 @@
   --project-border-color: #e2e8f0;
   --table-border-color: #ddd;
   --dropdown-background-open-color: #868282;
+
 
   /* hover color */
   --primary-hover: #e5ddff;
