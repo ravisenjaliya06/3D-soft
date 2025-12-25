@@ -20,7 +20,6 @@ export interface CreateSideDistanceParams {
   mainAxis: Axis;
   offsetDir: THREE.Vector3;
   group: THREE.Group;
-  unit: string;
   fixed: { x: number | null; y: number | null; z: number | null };
 }
 

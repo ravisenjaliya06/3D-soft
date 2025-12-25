@@ -719,7 +719,7 @@
   border: 0.063rem solid var(--primary-color);
   border-radius: 0.5rem;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
