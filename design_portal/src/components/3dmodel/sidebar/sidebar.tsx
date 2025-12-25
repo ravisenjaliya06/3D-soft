@@ -2,12 +2,12 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as THREE from 'three';
+
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
-import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
-import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { MeshObjectData } from '../sceneCreator/interface';
+
 import { RootState } from '../store';
 import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
@@ -23,7 +23,7 @@ const Sidebar: React.FC = () => {
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
-  const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
+
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
 
   const materialModal = [
@@ -107,18 +107,7 @@ const Sidebar: React.FC = () => {
     });
   }, [handleObject]);
 
-  const updateHandlePosState = (axis: Axis, value: number) => {
-    setHandlePos((prev) => ({ ...prev, [axis]: value }));
-
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.id,
-        { position: { [axis]: value } },
-        handleObject
-      );
-    }
-  };
-
+  
   const updateHandleRotState = (axis: Axis, value: number) => {
     setHandleRot((prev) => ({ ...prev, [axis]: value }));
 
@@ -241,30 +230,6 @@ const Sidebar: React.FC = () => {
     setIsTextureListOpen(false);
   };
 
-  const handleOpenCloseChange = () => {
-    if (!scene) return;
-
-    const targetId = selectedChildObjectId ?? selectedObjectId;
-    if (!targetId) return;
-
-    const controller = new CabinetMotionController();
-
-    scene.traverse((node) => {
-      if (!(node instanceof THREE.Mesh)) return;
-
-      const { objectId, type } = node.userData;
-      if (objectId !== targetId) return;
-
-      if (type === PART_TYPES.DOOR) {
-        controller.toggleDoor(node);
-        return;
-      }
-
-      if (type === PART_TYPES.DRAWER) {
-        controller.toggleDrawer(node);
-      }
-    });
-  };
 
   const dimensionsUI: Dimensions = {
     width: selectedObject?.dimensions?.width ?? 11,
@@ -389,26 +354,6 @@ const Sidebar: React.FC = () => {
     },
   ];
 
-  const handlePositionInputFlid = [
-    {
-      label: 'Position X',
-      name: 'positionX',
-      type: 'number',
-      value: handlePos.x,
-      disabled: isQuickHideActive,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('x', Number(e.target.value)),
-    },
-    {
-      label: 'Position Y',
-      name: 'positionY',
-      type: 'number',
-      value: handlePos.y,
-      disabled: isQuickHideActive,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value)),
-    },
-  ];
 
   const handleRotationInputFlid = [
     {
