@@ -12,6 +12,7 @@ import {
   MATERIAL_TYPE,
   MeshObjectData,
   PART_TYPES,
+  TEXTURES,
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
@@ -100,7 +101,6 @@ export const addVerticalPlanksToBox = async (
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
-  console.log('parent', parent);
 
   const interval = innerSpan / (count + 1);
 
@@ -108,7 +108,7 @@ export const addVerticalPlanksToBox = async (
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/textures/light_wood.jpg',
+    value: TEXTURES.LIGHT_WOOD,
     repeatX: 2,
     repeatY: 1,
   };
@@ -199,7 +199,7 @@ export const addHorizontalPlanksInsideBox = async (
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/textures/light_wood.jpg',
+    value: TEXTURES.LIGHT_WOOD,
     repeatX: 2,
     repeatY: 1,
   };
@@ -270,7 +270,7 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const doorTexture = new THREE.TextureLoader().load('/Texture0004.jpg');
+  const doorTexture = new THREE.TextureLoader().load(TEXTURES.WHITE_TEXTURE);
   doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
   doorTexture.repeat.set(2, 1);
 
@@ -285,7 +285,7 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   const commonMaterial = {
     type: MATERIAL_TYPE.TEXTURE,
-    value: '/Texture0004.jpg',
+    value: TEXTURES.WHITE_TEXTURE,
     repeatX: 2,
     repeatY: 1,
   };
@@ -461,7 +461,7 @@ export const addDrawersOnInvisibleBox = async (
       scale: { x: 1, y: 1, z: 1 },
       material: {
         type: MATERIAL_TYPE.TEXTURE,
-        value: '/Texture0004.jpg',
+        value: TEXTURES.WHITE_TEXTURE,
         repeatX: 1,
         repeatY: 1,
       },
@@ -509,7 +509,7 @@ export const addDrawersOnInvisibleBox = async (
           scale: { x: 1, y: 1, z: 1 },
           material: {
             type: MATERIAL_TYPE.TEXTURE,
-            value: '/textures/light_wood.jpg',
+            value: TEXTURES.LIGHT_WOOD,
           },
         });
 
