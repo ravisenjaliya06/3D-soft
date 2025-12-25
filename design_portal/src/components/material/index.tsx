@@ -173,6 +173,7 @@ const Material: React.FC = () => {
               onSubItemClick={handleSubItemClick}
               onContextMenu={handleContextMenu}
               onMaterialContextMenu={handleMaterialContextMenu}
+              selectedSubItem={selectedSubItem}
             />
 
             <div className={styles.materialrightside}>

@@ -222,7 +222,7 @@ const Sidebar: React.FC = () => {
 
     setIsTextureListOpen(false);
   };
-  
+
   const dimensionsUI: Dimensions = {
     width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
