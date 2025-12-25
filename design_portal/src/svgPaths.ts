@@ -61,7 +61,7 @@ export const CATALOGMANAGER = {
   arrow: '/assets/catalogmanager/arrow.svg',
   delete: '/assets/catalogmanager/delete.svg',
   deleteIconOne: '/assets/catalogmanager/deleteIcon.svg',
-  edit: '/assets/catalogmanager/note-edit-outline.svg',
+  edit: '/assets/catalogmanager/noteEditOutline.svg',
   matariel: '/assets/catalogmanager/matireal.svg',
   trash: '/assets/catalogmanager/trash.svg',
 };
