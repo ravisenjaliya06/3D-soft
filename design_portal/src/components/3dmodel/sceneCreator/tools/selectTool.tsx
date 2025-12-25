@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import {
@@ -9,8 +10,10 @@ import {
 import { OBJECT_TYPES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
-  private camera: THREE.Camera;
+  private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
+  private renderer: THREE.WebGLRenderer;
+  private orbitControls: OrbitControls;
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
 
@@ -25,10 +28,18 @@ export class SelectObjectController {
   // optional callbacks for React
   public onHover: ((obj: THREE.Mesh | null) => void) | null = null;
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
+  public onShowHelperTool: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(camera: THREE.Camera, scene: THREE.Scene) {
+  constructor(
+    camera: THREE.PerspectiveCamera,
+    scene: THREE.Scene,
+    renderer: THREE.WebGLRenderer,
+    controls: OrbitControls
+  ) {
     this.camera = camera;
     this.scene = scene;
+    this.renderer = renderer;
+    this.orbitControls = controls;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -67,6 +78,15 @@ export class SelectObjectController {
     store.dispatch(setSelectedChildObject(null));
 
     if (this.onSelect) this.onSelect(null);
+
+    // Hide HelperTool when deselecting
+    if (this.onShowHelperTool) {
+      this.onShowHelperTool(null);
+    }
+  }
+
+  public getSelectedMainObject(): THREE.Mesh | null {
+    return this.selectedMainObject;
   }
 
   private _onMouseMove(event: MouseEvent) {
@@ -86,6 +106,12 @@ export class SelectObjectController {
     store.dispatch(setSelectedChildObject(null));
 
     this._applySmallCupboardSelectOutline(object);
+
+    // Trigger HelperTool display
+    if (this.onShowHelperTool) {
+      this.onShowHelperTool(object);
+    }
+
     return;
   }
 

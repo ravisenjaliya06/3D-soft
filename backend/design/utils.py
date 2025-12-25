@@ -1,7 +1,12 @@
 # Python imports
+from collections import defaultdict
 from typing import Dict, List
 
+# External imports
+from rest_framework.exceptions import ValidationError
+
 # App imports
+from design.constant import IS_MAIN
 from design.models import Design, DesignSetting
 from umaboy.models import Organization
 
@@ -81,3 +86,42 @@ def parse_design_data(data: List[Dict]) -> Dict:
         result[part_id] = plank_data
 
     return result
+
+
+def split_parents_and_children(items: List[Dict]) -> tuple:
+    """
+    Splits flat scene items into parents and children.
+
+    Returns:
+        parents: dict[str, dict]
+            frontend_id -> parent item
+
+        children_map: dict[str, list[dict]]
+            parent_frontend_id -> list of child items
+    """
+    parents = {}
+    children_map = defaultdict(list)
+
+    for item in items:
+        if item.get(IS_MAIN):
+            parents[item.get("id")] = item
+
+    if not parents:
+        raise ValidationError("At least one item with isMain=true is required")
+
+    for item in items:
+        if item.get(IS_MAIN):
+            continue
+
+        parent_id = item.get("parent")
+        if not parent_id:
+            raise ValidationError(f"Child item {item.get('id')} missing parent")
+
+        if parent_id not in parents:
+            raise ValidationError(
+                f"Parent '{parent_id}' not found for child '{item.get('id')}'"
+            )
+
+        children_map[parent_id].append(item)
+
+    return parents, children_map

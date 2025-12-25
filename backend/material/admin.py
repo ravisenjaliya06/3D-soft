@@ -3,9 +3,6 @@ import django.contrib.admin as admin
 
 # Local imports
 from .models import (
-    Catalog,
-    CatalogRuleParts,
-    CatalogRules,
     Company,
     FinishesLibrary,
     Material,
@@ -43,6 +40,3 @@ admin.site.register(MaterialFinishType)
 admin.site.register(MaterialTexture)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(FinishesLibrary, FinishesLibraryAdmin)
-admin.site.register(Catalog, CatalogAdmin)
-admin.site.register(CatalogRules, CatalogRulesAdmin)
-admin.site.register(CatalogRuleParts, CatalogRulesPartsAdmin)

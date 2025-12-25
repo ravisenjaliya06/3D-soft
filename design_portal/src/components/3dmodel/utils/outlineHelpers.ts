@@ -26,6 +26,7 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   obj.updateWorldMatrix(true, false);
   obj.getWorldPosition(outline.position);
   outline.quaternion.copy(obj.getWorldQuaternion(new THREE.Quaternion()));
+  outline.scale.copy(obj.getWorldScale(new THREE.Vector3()));
   return outline;
 };
 
@@ -55,7 +56,24 @@ export const createDashedLineObject = (
   const outline = new THREE.LineSegments(edges, dashedMat);
   outline.position.copy(center);
   outline.rotation.copy(object.rotation);
+  outline.scale.copy(object.scale);
   outline.computeLineDistances();
   outline.name = 'cupboard_big_dotted_outline';
   return outline;
+};
+
+export const removeAllOutlines = (scene: THREE.Scene) => {
+  const outlinesToRemove: THREE.Object3D[] = [];
+
+  scene.traverse((object) => {
+    if (object instanceof THREE.LineSegments && object.name.includes('outline')) {
+      outlinesToRemove.push(object);
+    }
+  });
+
+  outlinesToRemove.forEach((object) => {
+    if (object.parent) {
+      object.parent.remove(object);
+    }
+  });
 };

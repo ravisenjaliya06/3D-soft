@@ -156,10 +156,12 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div className={styles.container}>
+    <div
+      className={`${styles.custom_scrollbar} flex h-dvh flex-row overflow-hidden max-2xl:overflow-auto`}
+    >
       <Sidebar />
-      <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Material Manager" />
+      <div className="max-w-[85rem] min-w-0 flex-[3]">
+        <Header isBorderRadius={true} />
 
         {!addMaterialPopup && (
           <div className={styles.maincontainer}>
