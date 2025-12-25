@@ -40,6 +40,7 @@
   --completed-color: #bbeeeb;
   --menu-background: #f3e8fb;
   --soft-dark-grey: #8e9cb3;
+  --wizardstepbox-bg-color: #4b2aad;
   --thbackground-color:rgba(250, 250, 250, 1);
   --selectedrow-color: rgba(243, 248, 255, 1);
   --scrollbar-color:#d0cbff;
@@ -66,6 +67,9 @@
   --table-title-border-color: rgba(57, 37, 121, 0.1);
   --dropdown-border-color: #cfc7ff;
   --bottom-border-color:  #cfc7ff;
+  --wizard-border-color: #d8cffc;
+  --wizardstepbox-border-color: #4b2aad;
+  --wizardstepbox-incomplete-border-color: #b8aef3;
 
   /* text colors */
   --common-text-color: #392579;
@@ -87,6 +91,9 @@
   --completed-text-color: #3e7c79;
   --disabled-button-color: #5555;
   --disabled-button-text-color: #a0aec0;
+  --wizardstepbox-text-color: #4b2aad;
+  --wizardstepbox-completed-text-color: #4b2aad;
+  --wizardstepbox-incompleted-text-color: #7b70c9;
 
   /* Button colors */
   --header-button-color: #666;

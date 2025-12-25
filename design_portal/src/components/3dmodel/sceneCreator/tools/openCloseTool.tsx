@@ -7,7 +7,7 @@ export class CabinetMotionController {
   private child: THREE.Mesh | null = null;
   private type: string = '';
 
-  constructor() { }
+  constructor() {}
 
   // Get bounding box of door mesh
   private _getBoundingBox() {

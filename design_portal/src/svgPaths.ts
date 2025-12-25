@@ -213,7 +213,6 @@ export const MENU_UP_SVG = {
 };
 
 export const MES = {
-  add: '/assets/catalogmanager/add.svg',
   download: '/assets/mes/download.svg',
   archiveicon: '/assets/mes/work-order/archiveicon.svg',
   compartmentline: '/assets/mes/work-order/compartmentline.svg',
@@ -347,8 +346,13 @@ export const TOOLBAR = {
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };
+export const ADDMATERIAL_IMG = {
+  groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
+  groov_gap: '/assets/addmaterial/Guide_Position_5.png',
+};
 
 export const assets = {
+  ...ADDMATERIAL_IMG,
   ..._3DMODEL,
   ...ARROW_SVG,
   ...BACK_LOGIN_ICON_SVG,
