@@ -1,10 +1,14 @@
-import { Wall } from '../interface';
+import { MeshObjectData } from '../../sceneCreator/interface';
+import { getWall2DPoints } from '../../sceneCreator/utils';
 
-export function Wall2D({ wall }: { wall: Wall }) {
-  const x1 = wall.startPoint.x;
-  const y1 = wall.startPoint.y;
-  const x2 = wall.endPoint.x;
-  const y2 = wall.endPoint.y;
+export function Wall2D({ wall }: { wall: MeshObjectData }) {
+  //convert 3d position to 2d
+  const { startPoint, endPoint } = getWall2DPoints(wall);
+
+  const x1 = startPoint.x;
+  const y1 = startPoint.y;
+  const x2 = endPoint.x;
+  const y2 = endPoint.y;
 
   const length = Math.hypot(x2 - x1, y2 - y1);
   const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;

@@ -36,7 +36,7 @@ export interface GridComponentProps {
 }
 
 export interface WallPoint {
-  id: string;
+  id?: string;
   x: number;
   y: number;
 }

@@ -21,8 +21,8 @@ export class MeshBuilder {
     return texture;
   }
 
-  private _createColorMaterial(): THREE.MeshBasicMaterial {
-    return new THREE.MeshBasicMaterial({
+  private _createColorMaterial(): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({
       color: this.meshData.material?.value,
       wireframe: false,
     });
@@ -36,16 +36,18 @@ export class MeshBuilder {
     });
   }
 
-  private _getMaterial(): THREE.Material | null {
+  private _getMaterial(): THREE.Material | THREE.MeshStandardMaterial {
     const material = this.meshData.material;
-    if (!material) return null;
+    if (!material) {
+      return new THREE.MeshStandardMaterial({ visible: false });
+    }
     if (material.type === MATERIAL_TYPE.COLOR && material.value) {
       return this._createColorMaterial();
     }
     if (material.type === MATERIAL_TYPE.TEXTURE && material.value) {
       return this._createTextureMaterial();
     }
-    return null;
+    return new THREE.MeshStandardMaterial({ visible: false });
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
@@ -84,6 +86,8 @@ export class MeshBuilder {
         return this._createBoxGeometry();
       case GEOMETRY.EXTRUDE_GEOMETRY:
         return this._createExtrudeGeometry();
+      default:
+        return this._createBoxGeometry();
     }
   }
 
@@ -139,5 +143,27 @@ export class MeshBuilder {
       this._setDataInObjectsState();
     }
     return mesh;
+  }
+
+  public updateMesh(mesh: THREE.Mesh, changes: Partial<MeshObjectData>) {
+    this._setUserData(mesh);
+    if (changes.position) {
+      this._setPosition(mesh);
+    }
+    if (changes.rotation) {
+      this._setRotation(mesh);
+    }
+    if (changes.scale) {
+      this._setScale(mesh);
+    }
+    if (changes.material) {
+      if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+      mesh.material.dispose();
+      mesh.material = this._getMaterial();
+    }
+    if (changes.dimensions) {
+      mesh.geometry.dispose();
+      mesh.geometry = this._getGeometry();
+    }
   }
 }

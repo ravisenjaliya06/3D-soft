@@ -81,7 +81,6 @@ export class MoveHandler implements IMoveHandler {
     if (!this.walls.length) return;
 
     const intersects = this.raycaster.intersectObjects(this.walls, true);
-
     if (!intersects.length) return;
 
     const hit = intersects[0];
@@ -90,9 +89,10 @@ export class MoveHandler implements IMoveHandler {
     const wallNormal = hit.face?.normal.clone() || new THREE.Vector3(0, 0, 1);
     wallNormal.transformDirection(wall.matrixWorld);
 
-    object.geometry.computeBoundingBox();
-    const objBB = object.geometry.boundingBox!;
-    const objectDepth = objBB.max.z - objBB.min.z;
+    const box = new THREE.Box3().setFromObject(object);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const objectDepth = size.z;
 
     const attachPosition = hit.point.clone().add(wallNormal.multiplyScalar(objectDepth / 2));
 

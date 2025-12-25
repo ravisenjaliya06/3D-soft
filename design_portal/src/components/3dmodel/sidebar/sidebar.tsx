@@ -2,16 +2,19 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
-import { MeshObjectData } from '../sceneCreator/interface';
-
+import { MeshObjectData, MeshObjectPatch, PART_TYPES } from '../sceneCreator/interface';
+import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { SyncManager } from '../sceneCreator/syncState';
 import { RootState } from '../store';
 import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import * as THREE from 'three';
+
+//import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -22,6 +25,7 @@ const Sidebar: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
 
+  const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
 
   const materialModal = [
@@ -111,6 +115,60 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handleOpenCloseChange = () => {
+    if (!scene) return;
+
+    const targetId = selectedChildObjectId ?? selectedObjectId;
+    if (!targetId) return;
+
+    const controller = new CabinetMotionController();
+
+    scene.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+
+      const { objectId, type } = node.userData;
+      if (objectId !== targetId) return;
+
+      if (type === PART_TYPES.DOOR) {
+        controller.toggleDoor(node);
+        return;
+      }
+
+      if (type === PART_TYPES.DRAWER) {
+        controller.toggleDrawer(node);
+      }
+    });
+  };
+
+
+
+  function applyObjectUpdate(
+    selectedObject: MeshObjectData | null | undefined,
+    patch: MeshObjectPatch
+  ): void {
+    if (!selectedObject) return;
+
+    const updatedObject: MeshObjectData = {
+      ...selectedObject,
+
+      dimensions: patch.dimensions
+        ? { ...selectedObject.dimensions, ...patch.dimensions }
+        : selectedObject.dimensions,
+
+      position: patch.position
+        ? { ...selectedObject.position, ...patch.position }
+        : selectedObject.position,
+
+      rotation: patch.rotation
+        ? { ...selectedObject.rotation, ...patch.rotation }
+        : selectedObject.rotation,
+
+      material: patch.material ?? selectedObject.material,
+    };
+    const syncManager = new SyncManager(updatedObject);
+    syncManager.syncData();
+  }
+
   const handleSetting = () => {
     /** Opens the object settings sidebar, closing navigation if active. */
 
@@ -162,60 +220,49 @@ const Sidebar: React.FC = () => {
     const name = obj.name?.toLowerCase() ?? '';
     if (name.includes('door') || name.includes('drawer')) return;
 
-    updateObjectRef.current?.update(obj.id, { material: { type: 'COLOR', value } }, obj);
+    applyObjectUpdate(obj, { material: { type: 'COLOR', value } });
   };
 
   const toggleTextureList = () => {
     /** Toggles the visibility of the texture selection list. */
-
     setIsTextureListOpen((prev) => !prev);
   };
 
   const handleDimensionChange = (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
-
-    const updates = {
+    applyObjectUpdate(selectedObject, {
       dimensions: {
         [field]: value,
       },
-    };
-    updateObjectRef.current?.update(selectedObject.id, updates, selectedObject);
+    });
   };
 
   const handlePositionChange = (axis: Axis, value: number) => {
     if (!selectedObject || isDisabled) return;
-
-    updateObjectRef.current?.update(
-      selectedObject.id,
-      {
-        position: { [axis]: value },
+    applyObjectUpdate(selectedObject, {
+      position: {
+        [axis]: value,
       },
-      selectedObject
-    );
+    });
   };
 
   const handleRotationChange = (axis: Axis, value: number) => {
     if (!selectedObject || isDisabled) return;
-
-    updateObjectRef.current?.update(
-      selectedObject.id,
-      {
-        rotation: { [axis]: value },
+    applyObjectUpdate(selectedObject, {
+      rotation: {
+        [axis]: value,
       },
-      selectedObject
-    );
+    });
   };
 
   const handleTextureSelect = (texturePath: string) => {
     if (!selectedObject) return;
-
-    updateObjectRef.current?.update(
-      selectedObject.id,
-      {
-        material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
+    applyObjectUpdate(selectedObject, {
+      material: {
+        type: MATERIAL_TYPES.TEXTURE,
+        value: texturePath,
       },
-      selectedObject
-    );
+    });
 
     setIsTextureListOpen(false);
   };
@@ -404,22 +451,20 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[1rem]">
             <button
               onClick={handleSetting}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isSettingOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
+                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
+                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
             >
               Navigation
             </button>
@@ -576,6 +621,42 @@ const Sidebar: React.FC = () => {
                       </select>
                     </div>
 
+                    <div className="relative flex items-center justify-between">
+                      <p>Open/Close</p>
+                      <button
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        disabled={isQuickHideActive}
+                        onClick={handleOpenCloseChange}
+                      >
+                        Open/Close
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col items-start">
+                      <p className="m-0 text-[0.7rem] font-[var(--font-family)] font-bold text-[var(--primary-color)]">
+                        Handle Position
+                      </p>
+                      <div className="flex w-auto justify-center gap-[0.5rem]">
+                        {handlePositionInputFlid.map((field) => (
+                          <div key={field.name} className="mt-[0.3rem]">
+                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
+                              {field.label}
+                            </p>
+                            <div>
+                              <input
+                                id={field.name}
+                                name={field.name}
+                                type={field.type}
+                                value={field.value ?? ''}
+                                disabled={field.disabled}
+                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                onChange={field.onChange}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="flex flex-col items-start">
                       <p>Handle Rotation</p>
                       <div className="flex w-auto justify-center gap-[0.5rem]">
