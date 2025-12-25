@@ -13,7 +13,7 @@ import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
-//import style from './sidebar.module.css';
+
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -147,7 +147,7 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
-    console.log('function called');
+  
 
     setShowMaterialPopup(true);
   };
@@ -224,7 +224,7 @@ const Sidebar: React.FC = () => {
   };
 
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? 11,
+    width: selectedObject?.dimensions?.width ?? ,
     height: selectedObject?.dimensions?.height ?? 0,
     depth: selectedObject?.dimensions?.depth ?? 0,
   };

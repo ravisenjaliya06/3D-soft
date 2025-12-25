@@ -212,7 +212,7 @@ export const MENU_UP_SVG = {
 };
 
 export const MES = {
-  add: '/assets/catalogmanager/add.svg',
+  
   download: '/assets/mes/download.svg',
   archiveicon: '/assets/mes/work-order/archiveicon.svg',
   compartmentline: '/assets/mes/work-order/compartmentline.svg',
