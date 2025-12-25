@@ -44,7 +44,7 @@ export const DIRECTION_TYPES = {
 export const TEXTURES = {
   LIGHT_WOOD: '/textures/light_wood.jpg',
   WHITE_TEXTURE: '/Texture0004.jpg',
-}
+};
 
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];

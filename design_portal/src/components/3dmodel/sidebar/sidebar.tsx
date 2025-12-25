@@ -2,17 +2,17 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import { MeshObjectData, MeshObjectPatch, PART_TYPES } from '../sceneCreator/interface';
-import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { SyncManager } from '../sceneCreator/syncState';
+import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import * as THREE from 'three';
 
 //import style from './sidebar.module.css';
 
@@ -96,12 +96,30 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     if (!handleObject) return;
 
+    setHandlePos({
+      x: handleObject.position.x,
+      y: handleObject.position.y,
+      z: handleObject.position.z,
+    });
+
     setHandleRot({
       x: handleObject.rotation.x,
       y: handleObject.rotation.y,
       z: handleObject.rotation.z,
     });
   }, [handleObject]);
+
+  const updateHandlePosState = (axis: Axis, value: number) => {
+    setHandlePos((prev) => ({ ...prev, [axis]: value }));
+
+    if (handleObject) {
+      updateObjectRef.current?.update(
+        handleObject.id,
+        { position: { [axis]: value } },
+        handleObject
+      );
+    }
+  };
 
   const updateHandleRotState = (axis: Axis, value: number) => {
     setHandleRot((prev) => ({ ...prev, [axis]: value }));
@@ -139,8 +157,6 @@ const Sidebar: React.FC = () => {
       }
     });
   };
-
-
 
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
@@ -203,6 +219,7 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
+    console.log('function called');
 
     setShowMaterialPopup(true);
   };
@@ -268,7 +285,7 @@ const Sidebar: React.FC = () => {
   };
 
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? 0,
+    width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
     depth: selectedObject?.dimensions?.depth ?? 0,
   };
@@ -390,6 +407,27 @@ const Sidebar: React.FC = () => {
     },
   ];
 
+  const handlePositionInputFlid = [
+    {
+      label: 'Position X',
+      name: 'positionX',
+      type: 'number',
+      value: handlePos.x,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandlePosState('x', Number(e.target.value)),
+    },
+    {
+      label: 'Position Y',
+      name: 'positionY',
+      type: 'number',
+      value: handlePos.y,
+      disabled: isQuickHideActive,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        updateHandlePosState('y', Number(e.target.value)),
+    },
+  ];
+
   const handleRotationInputFlid = [
     {
       label: 'Rotation X',
@@ -424,14 +462,14 @@ const Sidebar: React.FC = () => {
     <div
       className={
         isSidebarOpen
-          ? 'absolute top-[4rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[14rem] overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)]'
-          : 'absolute top-[4rem] right-[0] bottom-[0] z-[10] block h-auto w-[14rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent'
+          ? 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)]'
+          : 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent'
       }
     >
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[14rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--secondry-background-color)] ${isSidebarOpen ? 'top-[4rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--secondry-background-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
         <p className="ml-[8] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-color)]">
           Viewport Navigation
@@ -451,20 +489,22 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[1rem]">
             <button
               onClick={handleSetting}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isSettingOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isNavOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Navigation
             </button>
@@ -516,13 +556,13 @@ const Sidebar: React.FC = () => {
               ))}
 
               {/* ================= MATERIAL ================= */}
-              <div className="px-3 py-2">
+              <div className="mr-[1rem] px-3 py-2">
                 <p className="mb-2 ml-[1rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
                   Material
                 </p>
 
                 {/* Color */}
-                <div className="mb-2 ml-[1rem] flex items-center justify-between pr-[0.5rem]">
+                <div className="mb-2 ml-[1rem] flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]">
                   <p className="text-[0.6rem] text-[var(--primary-color)]">Color</p>
                   <div className="flex w-[9.5rem] items-center gap-[0.3rem] rounded-[0.4rem] border border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] px-[0.3rem] py-[0.2rem]">
                     <input
@@ -543,7 +583,7 @@ const Sidebar: React.FC = () => {
                 {/* Change Material */}
                 <div
                   onClick={handleMaterialChange}
-                  className="mb-2 flex items-center justify-between pr-[0.5rem]"
+                  className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
                 >
                   <p className="ml-[1rem] text-[0.6rem] text-[var(--primary-color)]">
                     Change Material
@@ -557,8 +597,8 @@ const Sidebar: React.FC = () => {
                 </div>
 
                 {/* Texture */}
-                <div className="relative flex items-center justify-between pr-[0.5rem]">
-                  <p className="ml-[1rem] text-[0.6rem] text-[0.7rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                <div className="relative flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]">
+                  <p className="ml-[1rem] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
                     Change Texture
                   </p>
                   <button
@@ -594,13 +634,9 @@ const Sidebar: React.FC = () => {
 
                 {/* Door Position */}
                 {!isQuickHideActive && isSettingOpen && itemType.DOOR && (
-                  <div
-                    className={
-                      'ml-[0rem] flex flex-col gap-[0.7rem] py-[0.5rem] pr-[0.5rem] pl-[1rem]'
-                    }
-                  >
+                  <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
                     <div className={'relative flex items-center justify-between'}>
-                      <p className="m-0 font-[poppins] text-[0.7rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                      <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
                         Door Position
                       </p>
                       <select
@@ -621,8 +657,10 @@ const Sidebar: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="relative flex items-center justify-between">
-                      <p>Open/Close</p>
+                    <div className="relative flex items-center justify-between pl-[1rem]">
+                      <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                        Open/Close
+                      </p>
                       <button
                         className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         disabled={isQuickHideActive}
@@ -631,55 +669,62 @@ const Sidebar: React.FC = () => {
                         Open/Close
                       </button>
                     </div>
+                    <>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                    <div className="flex flex-col items-start">
-                      <p className="m-0 text-[0.7rem] font-[var(--font-family)] font-bold text-[var(--primary-color)]">
-                        Handle Position
-                      </p>
-                      <div className="flex w-auto justify-center gap-[0.5rem]">
-                        {handlePositionInputFlid.map((field) => (
-                          <div key={field.name} className="mt-[0.3rem]">
-                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
-                              {field.label}
-                            </p>
-                            <div>
-                              <input
-                                id={field.name}
-                                name={field.name}
-                                type={field.type}
-                                value={field.value ?? ''}
-                                disabled={field.disabled}
-                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                onChange={field.onChange}
-                              />
+                      <div className="mt-[0rem] ml-[1rem] flex flex-col items-start">
+                        <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                          Handle Position
+                        </p>
+                        <div className="mb-[0rem] flex w-auto justify-center gap-[0.5rem]">
+                          {handlePositionInputFlid.map((field) => (
+                            <div key={field.name} className="mt-[0rem]">
+                              <p className="m-[0] w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
+                                {field.label}
+                              </p>
+                              <div className="mt-[0] mb-[0.5rem] flex flex-col">
+                                <input
+                                  id={field.name}
+                                  name={field.name}
+                                  type={field.type}
+                                  value={field.value ?? ''}
+                                  disabled={field.disabled}
+                                  className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  onChange={field.onChange}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <p>Handle Rotation</p>
-                      <div className="flex w-auto justify-center gap-[0.5rem]">
-                        {handleRotationInputFlid.map((field) => (
-                          <div key={field.name} className="mt-[0.3rem]">
-                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
-                              {field.label}
-                            </p>
-                            <div>
-                              <input
-                                id={field.name}
-                                name={field.name}
-                                type={field.type}
-                                value={field.value ?? ''}
-                                disabled={field.disabled}
-                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                onChange={field.onChange}
-                              />
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                      <div className="ml-[1rem] flex flex-col items-start">
+                        <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                          Handle Rotation
+                        </p>
+                        <div className="flex w-auto justify-center gap-[0.5rem]">
+                          {handleRotationInputFlid.map((field) => (
+                            <div key={field.name} className="mt-[0rem]">
+                              <p className="m-[0] w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
+                                {field.label}
+                              </p>
+                              <div>
+                                <input
+                                  id={field.name}
+                                  name={field.name}
+                                  type={field.type}
+                                  value={field.value ?? ''}
+                                  disabled={field.disabled}
+                                  className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  onChange={field.onChange}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   </div>
                 )}
               </div>

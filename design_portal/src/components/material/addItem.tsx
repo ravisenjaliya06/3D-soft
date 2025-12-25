@@ -3178,7 +3178,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* LABEL */}
                 <span
                   className={`text-sm font-medium ${
-                    isCurrent || isCompleted ? 'text-[var(--wizardstepbox-complete-text-color)]' : 'text-[var(--wizardstepbox-incomplete-text-color)]'
+                    isCurrent || isCompleted
+                      ? 'text-[var(--wizardstepbox-complete-text-color)]'
+                      : 'text-[var(--wizardstepbox-incomplete-text-color)]'
                   }`}
                 >
                   {label}
@@ -3188,7 +3190,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {index < steps.length - 1 && (
                   <div
                     className={`h-[0.25rem] w-[9rem] rounded ${
-                      index < uiStep ? 'bg-[var(--wizardstepbox-bg-color)]' : 'bg-[var(--wizard-border-color)]'
+                      index < uiStep
+                        ? 'bg-[var(--wizardstepbox-bg-color)]'
+                        : 'bg-[var(--wizard-border-color)]'
                     }`}
                   />
                 )}

@@ -108,7 +108,6 @@ const CatalogManager = () => {
 
   /** Open the popup to create a new catalog */
 
-
   /** Fetch catalog list based on the selected catalog type */
   const getCatalog = useCallback(async () => {
     const response: { status: number; data: Catalog[] } = await commonService.get(
@@ -326,9 +325,7 @@ const CatalogManager = () => {
                     </option>
                   ))}
                 </select>
-                <div className={styles.iconContainer}>
-                
-                </div>
+                <div className={styles.iconContainer}></div>
               </div>
             </div>
           </div>
