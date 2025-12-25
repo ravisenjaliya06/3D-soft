@@ -195,7 +195,7 @@ const CatalogManager = () => {
 
   useEffect(() => {
     getMaterial();
-  });
+  }, []);
 
   /** Assign a selected material to a selected part */
   const handleAssignMaterial = async (partId: string, materialId: string | null) => {
