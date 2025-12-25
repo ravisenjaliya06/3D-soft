@@ -252,7 +252,6 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                         <span>{item.name}</span>
                       </div>
                     </td>
-
                     <td>{item.description || ''}</td>
                   </tr>
                 ))}

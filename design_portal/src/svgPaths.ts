@@ -56,13 +56,14 @@ export const CATALOG = {
 };
 
 export const CATALOGMANAGER = {
-  addimg: '/assets/catalogmanager/add.svg',
+  addd: '/assets/catalogmanager/addd.svg',
   addMaterialIcon: '/assets/catalogmanager/addMaterial.svg',
   arrow: '/assets/catalogmanager/arrow.svg',
   delete: '/assets/catalogmanager/delete.svg',
   deleteIconOne: '/assets/catalogmanager/deleteIcon.svg',
-  edit: '/assets/catalogmanager/edit.svg',
+  edit: '/assets/catalogmanager/noteEditOutline.svg',
   matariel: '/assets/catalogmanager/matireal.svg',
+  trash: '/assets/catalogmanager/trash.svg',
 };
 
 export const CREATEICON_SVG = {
