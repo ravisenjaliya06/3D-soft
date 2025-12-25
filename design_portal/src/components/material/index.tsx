@@ -1,6 +1,5 @@
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
-import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useEffect } from 'react';
 import AddMaterialPopup from './addItem';
@@ -164,30 +163,20 @@ const Material: React.FC = () => {
       <div className="max-w-[85rem] min-w-0 flex-[3]">
         <Header isBorderRadius={true} />
 
-        <div className="mt-[1.5rem] mb-1 flex flex-row gap-[0.5rem] pt-[2rem] pr-[5rem] pb-[2rem] pl-[5rem]">
-          <MaterialSidebar
-            materialCategories={materialCategories}
-            expandedCategory={expandedCategory}
-            onCategoryClick={handleCategoryClick}
-            onToggleCategory={handleToggleCategory}
-            onSubItemClick={handleSubItemClick}
-            onContextMenu={handleContextMenu}
-            onMaterialContextMenu={handleMaterialContextMenu}
-            selectedSubItem={selectedSubItem}
-          />
-
-          <div
-            className={`${styles.custom_scrollbar} flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto border border-[#e9ecef] shadow-sm`}
-          >
-            <MaterialToolbar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              actionButton={
-                <button className="ml-[1rem] h-[1.5rem] rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 text-xs font-bold text-[#fff]">
-                  <img src={assets.plus} alt="Plus icon" /> Add New
-                </button>
-              }
+        {!addMaterialPopup && (
+          <div className={styles.maincontainer}>
+            <MaterialSidebar
+              materialCategories={materialCategories}
+              expandedCategory={expandedCategory}
+              onCategoryClick={handleCategoryClick}
+              onToggleCategory={handleToggleCategory}
+              onSubItemClick={handleSubItemClick}
+              onContextMenu={handleContextMenu}
+              onMaterialContextMenu={handleMaterialContextMenu}
             />
+
+            <div className={styles.materialrightside}>
+              <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
               <MaterialTable
                 materials={getFilteredMaterials()}
@@ -198,7 +187,7 @@ const Material: React.FC = () => {
               />
             </div>
           </div>
-        
+        )}
       </div>
 
       <ContextMenus

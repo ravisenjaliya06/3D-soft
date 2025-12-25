@@ -94,12 +94,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     if (!handleObject) return;
 
-    setHandlePos({
-      x: handleObject.position.x,
-      y: handleObject.position.y,
-      z: handleObject.position.z,
-    });
-
     setHandleRot({
       x: handleObject.rotation.x,
       y: handleObject.rotation.y,
@@ -107,7 +101,6 @@ const Sidebar: React.FC = () => {
     });
   }, [handleObject]);
 
-  
   const updateHandleRotState = (axis: Axis, value: number) => {
     setHandleRot((prev) => ({ ...prev, [axis]: value }));
 
@@ -229,8 +222,7 @@ const Sidebar: React.FC = () => {
 
     setIsTextureListOpen(false);
   };
-
-
+  
   const dimensionsUI: Dimensions = {
     width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
@@ -353,7 +345,6 @@ const Sidebar: React.FC = () => {
       ],
     },
   ];
-
 
   const handleRotationInputFlid = [
     {
@@ -587,7 +578,7 @@ const Sidebar: React.FC = () => {
                         <option value="Bottom">Bottom</option>
                       </select>
                     </div>
-                
+
                     <div className="flex flex-col items-start">
                       <p>Handle Rotation</p>
                       <div className="flex w-auto justify-center gap-[0.5rem]">
