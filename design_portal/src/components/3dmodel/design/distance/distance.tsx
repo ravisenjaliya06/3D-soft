@@ -6,6 +6,7 @@ import {
   unitSuffix,
   unitToMeters,
 } from '../../handler/unitConversion';
+import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
 import { isPlankObjectFindByName, isWallObject } from '../../utils/objectTypes';
 import {
@@ -18,7 +19,6 @@ import {
   ReferenceParam,
   ThreeDView,
 } from '../interface';
-import { findXY } from '../../sceneCreator/utils';
 
 export class DistanceTool {
   private scene: THREE.Scene;
@@ -219,11 +219,7 @@ export class DistanceTool {
     return { width, height, depth, isHorizontal, isThinX, isThinZ };
   }
 
-  private createLine(
-    group: THREE.Group,
-    start: THREE.Vector3,
-    end: THREE.Vector3
-  ): THREE.Line {
+  private createLine(group: THREE.Group, start: THREE.Vector3, end: THREE.Vector3): THREE.Line {
     const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
     const material = new THREE.LineBasicMaterial({
       color: 0x111111,
@@ -486,7 +482,6 @@ export class DistanceTool {
       fixed,
     });
   }
-
 
   private createDistanceByAxis(group: THREE.Group, mainAxis: Axis) {
     const axisConfig: Record<Axis, AxisConfig> = {
