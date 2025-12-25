@@ -642,23 +642,7 @@ const Sidebar: React.FC = () => {
                         <option value="Bottom">Bottom</option>
                       </select>
                     </div>
-                    <div className={'relative flex items-center justify-between'}>
-                      <p className="m-0 flex text-[0.7rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                        Handle
-                      </p>
-                      <div
-                        className={
-                          'flex h-[1.2rem] w-[5.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left text-[0.53rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out'
-                        }
-                        onClick={() => setIsHandleDropdownOpen((prev) => !prev)}
-                      >
-                        {selectedHandle ? selectedHandle : 'Select Position'}
-                        <img
-                          src={isHandleDropdownOpen ? assets.menu_up : assets.menu_down}
-                          alt="dropdown arrow"
-                        />
-                      </div>
-                    </div>
+                  
                     <div className="flex flex-col items-start">
                       <p>Handle Rotation</p>
                       <div className="flex w-auto justify-center gap-[0.5rem]">
