@@ -53,7 +53,7 @@ export class UpdateObjectInScene {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
-    if (mesh.userData.isMain && mesh.children.length > 6) {
+    if (mesh.userData.isMain && mesh.children.length > 8) {
       alert(
         'Cannot update dimensions of a modified cupboard. if once you add plank then it cannot be updated.'
       );

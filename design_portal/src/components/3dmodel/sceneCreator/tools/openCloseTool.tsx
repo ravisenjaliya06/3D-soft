@@ -7,7 +7,7 @@ export class CabinetMotionController {
   private child: THREE.Mesh | null = null;
   private type: string = '';
 
-  constructor() {}
+  constructor() { }
 
   // Get bounding box of door mesh
   private _getBoundingBox() {
@@ -163,29 +163,29 @@ export class CabinetMotionController {
   }
 
   // Toggle drawer slide animation
-  public toggleDrawer(mesh: THREE.Mesh, openDistance = 0.25) {
+  public toggleDrawer(mesh: THREE.Mesh, openDistanceMM = 250) {
     if (!mesh) return;
 
     const isClosed = mesh.userData.isClosed ?? true;
 
-    // Store closed position once
-    if (!mesh.userData.closedPos) {
-      mesh.userData.closedPos = mesh.getWorldPosition(new THREE.Vector3());
+    // store CLOSED LOCAL Z once
+    if (mesh.userData.closedZ === undefined) {
+      mesh.userData.closedZ = mesh.position.z;
     }
 
-    const closedWorldPos = mesh.userData.closedPos.clone();
-    const localOpenDir = new THREE.Vector3(0, 0, 1);
-    const worldOpenDir = localOpenDir
-      .clone()
-      .applyQuaternion(mesh.getWorldQuaternion(new THREE.Quaternion()))
-      .normalize();
-    const openWorldPos = closedWorldPos.clone().add(worldOpenDir.multiplyScalar(openDistance));
-    const targetWorld = isClosed ? openWorldPos : closedWorldPos;
+    // convert mm → meters → parent scale
+    const parentScaleZ = mesh.parent?.scale.z ?? 1;
+    const openDistance = openDistanceMM / 1000 / parentScaleZ;
 
-    // Convert world position to local
-    const targetLocal = mesh.parent ? mesh.parent.worldToLocal(targetWorld.clone()) : targetWorld;
+    const closedZ = mesh.userData.closedZ;
+    const openZ = closedZ + openDistance;
 
-    this._createGSAP(mesh.position, targetLocal);
+    gsap.to(mesh.position, {
+      z: isClosed ? openZ : closedZ,
+      duration: this.ANIM_DURATION,
+      ease: 'power2.inOut',
+    });
+
     mesh.userData.isClosed = !isClosed;
   }
 }

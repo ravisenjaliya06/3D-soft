@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
-import { WallSyncManager } from '../../sceneCreator/syncState';
+import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
+import {
+  FLOOR_PLAN_TYPES,
+  GEOMETRY,
+  MATERIAL_TYPE,
+  MeshObjectData,
+} from '../../sceneCreator/interface';
+import { SyncManager } from '../../sceneCreator/syncState';
+import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
 import { addPoint, setFloor, setWalls } from '../../store/dataSlice';
-import { Wall, WallPoint } from '../interface';
+import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
 
@@ -49,26 +57,26 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   };
 
   // Update wall connections which wall connected to each wall
-  const updateWallConnections = (allWalls: Wall[]) => {
+  const updateWallConnections = (allWalls: MeshObjectData[]) => {
     return allWalls.map((currentWall) => {
+      const { startPoint: currentStart, endPoint: currentEnd } = getWall2DPoints(currentWall);
+
       const connectedWallIds = allWalls
         .filter((otherWall) => otherWall.id !== currentWall.id)
-        .filter(
-          (otherWall) =>
-            // Shared start → start
-            (otherWall.startPoint.x === currentWall.startPoint.x &&
-              otherWall.startPoint.y === currentWall.startPoint.y) ||
-            // Shared end → start
-            (otherWall.endPoint.x === currentWall.startPoint.x &&
-              otherWall.endPoint.y === currentWall.startPoint.y) ||
-            // Shared start → end
-            (otherWall.startPoint.x === currentWall.endPoint.x &&
-              otherWall.startPoint.y === currentWall.endPoint.y) ||
-            // Shared end → end
-            (otherWall.endPoint.x === currentWall.endPoint.x &&
-              otherWall.endPoint.y === currentWall.endPoint.y)
-        )
-        .map((connectedWall) => connectedWall.id);
+        .filter((otherWall) => {
+          const { startPoint, endPoint } = getWall2DPoints(otherWall);
+
+          const isSamePoint = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
+            Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
+
+          return (
+            isSamePoint(startPoint, currentStart) ||
+            isSamePoint(endPoint, currentEnd) ||
+            isSamePoint(startPoint, currentEnd) ||
+            isSamePoint(endPoint, currentStart)
+          );
+        })
+        .map((w) => w.id);
 
       return { ...currentWall, connectedTo: connectedWallIds };
     });
@@ -86,7 +94,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     // If first point is not selected
     if (!startPointId) {
-      setStartPointId(clickedPoint.id);
+      setStartPointId(clickedPoint.id || null);
       setPreviewEnd(null);
       return;
     }
@@ -100,43 +108,59 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     if (isSamePoint) return;
 
     // Prevent duplicate wall in either direction
-    const isDuplicateWall = walls.some(
-      (existingWall) =>
-        (existingWall.startPoint.x === startPoint.x &&
-          existingWall.startPoint.y === startPoint.y &&
-          existingWall.endPoint.x === clickedPoint.x &&
-          existingWall.endPoint.y === clickedPoint.y) ||
-        (existingWall.startPoint.x === clickedPoint.x &&
-          existingWall.startPoint.y === clickedPoint.y &&
-          existingWall.endPoint.x === startPoint.x &&
-          existingWall.endPoint.y === startPoint.y)
-    );
+    const isDuplicateWall = walls.some((existingWall) => {
+      const wallCoords = getWall2DPoints(existingWall);
+      const start = wallCoords.startPoint;
+      const end = wallCoords.endPoint;
+
+      return (
+        //math.round is used to avoid floating point precision issues
+        (Math.round(start.x) === Math.round(startPoint.x) &&
+          Math.round(start.y) === Math.round(startPoint.y) &&
+          Math.round(end.x) === Math.round(clickedPoint.x) &&
+          Math.round(end.y) === Math.round(clickedPoint.y)) ||
+        (Math.round(start.x) === Math.round(clickedPoint.x) &&
+          Math.round(start.y) === Math.round(clickedPoint.y) &&
+          Math.round(end.x) === Math.round(startPoint.x) &&
+          Math.round(end.y) === Math.round(startPoint.y))
+      );
+    });
 
     if (isDuplicateWall) {
-      setStartPointId(clickedPoint.id);
+      setStartPointId(clickedPoint.id || null);
       return;
     }
 
     // Calculate wall length (distance between points)
     const wallLength = Math.hypot(clickedPoint.x - startPoint.x, clickedPoint.y - startPoint.y);
 
-    const newWall: Wall = {
+    const wallMeshData = {
       id: crypto.randomUUID(),
-      startPoint,
-      endPoint: clickedPoint,
-      width: 0,
-      height: 0,
-      depth: 0,
-      thickness: 30,
-      length: wallLength,
+      name: `Wall`,
+      type: FLOOR_PLAN_TYPES.WALL,
+      isMain: true,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: {
+        width: wallLength,
+        height: WALL_DEFAULT_HEIGHT,
+        depth: 30,
+      },
+      position: convertPosition2DTo3D({ startPoint, endPoint: clickedPoint }),
+      rotation: findRotation({ startPoint, endPoint: clickedPoint }),
+      scale: { x: 0.01, y: 0.001, z: 0.01 },
+      material: {
+        type: MATERIAL_TYPE.COLOR,
+        value: '#c4c3c3',
+      },
       connectedTo: [],
     };
 
-    const updatedWalls = updateWallConnections([...walls, newWall]);
-    dispatch(setWalls(updatedWalls));
+    const updatedWalls = updateWallConnections([...walls, wallMeshData]);
 
-    const dataManager = new WallSyncManager();
-    dataManager.syncWall(newWall);
+    const dataManager = new SyncManager(wallMeshData);
+    dataManager.syncData();
+
+    dispatch(setWalls(updatedWalls));
 
     // Find rooms from walls
     const rooms = findRoomsFromWalls(updatedWalls);
@@ -151,7 +175,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     dispatch(setFloor(floorPolygons));
 
     // Set next start point for continuous drawing
-    setStartPointId(clickedPoint.id);
+    setStartPointId(clickedPoint.id || null);
     setPreviewEnd(null);
   };
 

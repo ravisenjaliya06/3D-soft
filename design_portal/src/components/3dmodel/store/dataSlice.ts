@@ -121,16 +121,13 @@ const dataSlice = createSlice({
     addPoint: (state, action: PayloadAction<WallPoint>) => {
       state.points.push(action.payload);
     },
-    setPoints: (state, action: PayloadAction<WallPoint[]>) => {
-      state.points = action.payload;
-    },
-    addWall: (state, action: PayloadAction<Wall>) => {
+    addWall: (state, action: PayloadAction<MeshObjectData>) => {
       state.walls.push(action.payload);
     },
-    setWalls: (state, action: PayloadAction<Wall[]>) => {
+    setWalls: (state, action: PayloadAction<MeshObjectData[]>) => {
       state.walls = action.payload;
     },
-    updateWall: (state, action: PayloadAction<Wall>) => {
+    updateWall: (state, action: PayloadAction<MeshObjectData>) => {
       const index = state.walls.findIndex((wall) => wall.id === action.payload.id);
       if (index !== -1) {
         state.walls[index] = action.payload;
@@ -171,7 +168,6 @@ export const {
   setHoverdMesh,
   setInvisibleBox,
   addPoint,
-  setPoints,
   addWall,
   setWalls,
   setFloor,

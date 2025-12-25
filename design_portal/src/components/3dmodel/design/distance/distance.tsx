@@ -418,6 +418,7 @@ export class DistanceTool {
     const distanceM = Math.abs(refPos - meshPos);
     const dist = metersToUnit(distanceM, unit);
 
+    // Create points for the distance line
     const makePoint = (axisValue: number) =>
       new THREE.Vector3(fixed.x ?? axisValue, fixed.y ?? axisValue, fixed.z ?? axisValue);
 
