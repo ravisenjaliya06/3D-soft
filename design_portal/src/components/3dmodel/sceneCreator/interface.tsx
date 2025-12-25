@@ -41,6 +41,11 @@ export const DIRECTION_TYPES = {
   BOTTOM: 'bottom',
 };
 
+export const TEXTURES = {
+  LIGHT_WOOD: '/textures/light_wood.jpg',
+  WHITE_TEXTURE: '/Texture0004.jpg',
+}
+
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
