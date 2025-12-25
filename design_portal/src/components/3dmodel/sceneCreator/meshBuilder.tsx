@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import { convertKeysToCamel } from './utils';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
 
@@ -9,7 +10,7 @@ export class MeshBuilder {
   private meshData: MeshObjectData;
 
   constructor(data: MeshObjectData) {
-    this.meshData = data;
+    this.meshData = convertKeysToCamel(data);
   }
 
   private _createTexture(): THREE.Texture {
@@ -31,6 +32,7 @@ export class MeshBuilder {
     const texture = this._createTexture();
     return new THREE.MeshStandardMaterial({
       map: texture,
+      wireframe: false,
     });
   }
 
@@ -48,9 +50,9 @@ export class MeshBuilder {
 
   private _createBoxGeometry(): THREE.BoxGeometry {
     return new THREE.BoxGeometry(
-      this.meshData.dimensions.width,
-      this.meshData.dimensions.height,
-      this.meshData.dimensions.depth
+      this.meshData.dimensions?.width || 0,
+      this.meshData.dimensions?.height || 0,
+      this.meshData.dimensions?.depth || 0
     );
   }
 
@@ -70,7 +72,7 @@ export class MeshBuilder {
 
     // NOTE: Right now, it only has two external properties (depth and bevelEnabled). Later on, we’ll add more properties when we need to support custom shapes.
     const extrudeSettings: THREE.ExtrudeGeometryOptions = {
-      depth: this.meshData.dimensions.depth,
+      depth: this.meshData.dimensions?.depth || 0,
       bevelEnabled: false,
     };
     return new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -97,7 +99,11 @@ export class MeshBuilder {
 
   private _setScale(mesh: THREE.Mesh) {
     if (!this.meshData.scale) return;
-    mesh.scale.set(this.meshData.scale.x, this.meshData.scale.y, this.meshData.scale.z);
+    mesh.scale.set(
+      this.meshData.scale.x || 0.01,
+      this.meshData.scale.y || 0.01,
+      this.meshData.scale.z || 0.01
+    );
   }
 
   private _setUserData(mesh: THREE.Mesh) {
@@ -110,11 +116,6 @@ export class MeshBuilder {
   private _setName(mesh: THREE.Mesh) {
     mesh.name = this.meshData.name;
   }
-
-  /**
-   * NOTE: It will be use to add objects to the design later.
-   * TODO: SMIT you need to uncomment it for the sidebar code refactoring.
-   */
 
   private _setDataInObjectsState() {
     store.dispatch(addObjects([this.meshData]));
@@ -134,7 +135,6 @@ export class MeshBuilder {
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-
     if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
       this._setDataInObjectsState();
     }
