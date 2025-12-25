@@ -8,14 +8,15 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 
 # App imports
-from design.models import Design, DesignSetting
-from material.models import (
-    Catalog as MaterialCatalog,
+from design.models import (
     CatalogRuleParts,
     CatalogRules,
-    Company,
-    Material,
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
 )
+from material.models import Company, Material
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR
 
@@ -147,43 +148,52 @@ def new_material_for_material(
     )
 
 
-def new_catalog_for_material(
+def new_design_version(
     database: str,
-    name: str,
+    design: Design,
+) -> DesignVersion:
+    return DesignVersion.objects.using(database).create(design=design)
+
+
+def new_design_catalog(
+    database: str,
     organization: Organization,
+    version: DesignVersion,
     type: str,
-    width: int = 101,
-    height: int = 200,
-    design: Optional[Design] = None,
-) -> MaterialCatalog:
-    return MaterialCatalog.objects.using(database).create(
+    name: str,
+    parent: Optional[DesignCatalog] = None,
+    data: Optional[dict] = None,
+) -> DesignCatalog:
+    return DesignCatalog.objects.using(database).create(
+        organization=organization,
+        version=version,
         type=type,
         name=name,
-        organization=organization,
-        width=width,
-        height=height,
-        design=design,
+        parent=parent,
+        data=data or {},
     )
 
 
-def new_catalog_rules(
-    database: str, name: str, catalog: MaterialCatalog
-) -> CatalogRules:
-    return CatalogRules.objects.using(database).create(name=name, catalog=catalog)
-
-
-def new_catalog_rule_parts(
+def new_catalog_rule(
     database: str,
+    catalog: DesignCatalog,
     name: str,
+) -> CatalogRules:
+    rule, _ = CatalogRules.objects.using(database).get_or_create(
+        catalog=catalog,
+        name=name,
+    )
+    return rule
+
+
+def new_catalog_rule_part(
+    database: str,
     catalog_rule: CatalogRules,
-    width: int = 100,
-    height: int = 200,
-    material: Optional[Material] = None,
+    name: str,
+    data: Optional[dict] = None,
 ) -> CatalogRuleParts:
     return CatalogRuleParts.objects.using(database).create(
-        name=name,
         catalog_rule=catalog_rule,
-        width=width,
-        height=height,
-        material=material,
+        name=name,
+        data=data or {},
     )

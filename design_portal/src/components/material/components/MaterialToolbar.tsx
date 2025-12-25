@@ -1,37 +1,44 @@
 import { assets } from '@/svgPaths';
 import type React from 'react';
-import styles from '../material.module.css';
 
 interface MaterialToolbarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  actionButton?: React.ReactNode;
 }
 
 export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
   searchQuery,
   onSearchChange,
+  actionButton,
 }) => {
   return (
-    <div className={styles.topToolbar}>
-      <div className={styles.toolbarLeft}>{/* Dropdown can be added here if needed */}</div>
+    <div className="mb-[1rem] flex h-[7vh] items-center justify-between rounded-[10px] border border-[rgba(57,37,121,0.3)] bg-gradient-to-r from-white to-[#f5e5ff] px-[1.5rem] py-[0rem]">
+      <div className="flex items-center">{/* Dropdown can be added here if needed */}</div>
 
-      <div className={styles.toolbarRight}>
-        <button className={styles.filterButton}>
+      <div className="flex items-center space-x-3">
+        <button className="flex items-center border-0 bg-transparent pr-[17px]">
           <img src={assets.filter || '/placeholder.svg'} alt="" />
         </button>
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search..."
-            className={styles.searchInput}
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-          <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <div className="relative flex items-center">
+          <svg
+            className="pointer-events-none absolute right-3 h-[17px] pl-[9px] text-gray-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
+          <input
+            type="text"
+            // placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-[24px] w-[170px] rounded-[7px] border border-gray-300 bg-transparent pr-9 pl-4 text-sm text-gray-700 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300"
+          />
         </div>
+        {actionButton}
       </div>
     </div>
   );
