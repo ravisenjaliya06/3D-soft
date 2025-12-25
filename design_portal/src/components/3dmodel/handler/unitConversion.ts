@@ -1,3 +1,5 @@
+import { store } from '../store';
+
 /** Supported unit types for measurement conversion. */
 export const UNIT_OPTIONS = ['mm', 'cm', 'm', 'inch', 'feet'] as const;
 
@@ -31,4 +33,52 @@ export const metersToMM = (valueM: number): number => valueM * 1000;
 export const convertUnit = (value: number, fromUnit: Unit, toUnit: Unit): number => {
   const mmValue = convertToMM(value, fromUnit);
   return convertFromMM(mmValue, toUnit);
+};
+
+// Unit conversion helpers now it is work with MM but this will be helpful in future
+export const metersToUnit = (m: number, unit: string): number => {
+  switch (unit) {
+    case 'mm':
+      return m * 1000;
+    case 'cm':
+      return m * 100;
+    case 'm':
+      return m;
+    case 'in':
+      return m * 39.37007874015748;
+    case 'ft':
+      return m * 3.280839895013123;
+    default:
+      return m * 1000;
+  }
+};
+
+export const unitToMeters = (v: number, unit: string): number => {
+  switch (unit) {
+    case 'mm':
+      return v / 1000;
+    case 'cm':
+      return v / 100;
+    case 'm':
+      return v;
+    case 'in':
+      return v / 39.37007874015748;
+    case 'ft':
+      return v / 3.280839895013123;
+    default:
+      return v / 1000;
+  }
+};
+
+export const getActiveUnit = (): string => {
+  try {
+    const unit = store.getState()?.measurement?.unitType as string | undefined;
+    return unit || 'mm';
+  } catch {
+    return 'mm';
+  }
+};
+
+export const unitSuffix = (unit: string): string => {
+  return unit;
 };

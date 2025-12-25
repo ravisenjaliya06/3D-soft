@@ -1,10 +1,6 @@
-import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import commonService from '@/services/CommonService';
-import gsap from 'gsap';
 import * as THREE from 'three';
 import { GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
-import { AddItemDatabasePayload, RulePart } from './interface';
 
 export function showFullScreenLoader(message = 'Loading...') {
   /**
@@ -54,10 +50,6 @@ export function hideFullScreenLoader() {
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
-  /**
-   * Generates invisible boxes for empty compartments in a given box mesh object.
-   * Works in local space only (no special wall handling).
-   */
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
 
@@ -68,23 +60,21 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   });
   toRemove.forEach((c) => boxMesh.remove(c));
 
-  // --- Get LOCAL bounding box of the container geometry ---
+  // --- Compute local bounding box ---
   const containerGeom = boxMesh.geometry as THREE.BufferGeometry;
   containerGeom.computeBoundingBox();
-
   const bb = containerGeom.boundingBox;
   if (!bb) return [];
 
   const size = new THREE.Vector3();
   bb.getSize(size);
 
-  const width = size.x; // local X = width
-  const height = size.y; // local Y = height
-  const depth = size.z; // local Z = depth
-
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
   const boxCenterLocal = bb.getCenter(new THREE.Vector3());
 
-  // --- Collect planks in LOCAL space ---
+  // --- Collect planks ---
   const planks: {
     name: string;
     width: number;
@@ -97,6 +87,12 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     hMax: number;
   }[] = [];
 
+  let backPlank: {
+    zMin: number;
+    zMax: number;
+    thickness: number;
+  } | null = null;
+
   boxMesh.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     if (child.userData.type !== PART_TYPES.PLANK) return;
@@ -104,7 +100,14 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const geom = child.geometry as THREE.BoxGeometry;
     const { width: pWidth, height: pHeight, depth: pDepth } = geom.parameters;
 
-    // world → local (relative to boxMesh)
+    const dims = [
+      { axis: 'x', value: pWidth },
+      { axis: 'y', value: pHeight },
+      { axis: 'z', value: pDepth },
+    ].sort((a, b) => a.value - b.value);
+
+    const thicknessAxis = dims[0].axis;
+
     const worldPos = new THREE.Vector3();
     child.getWorldPosition(worldPos);
     const localPos = boxMesh.worldToLocal(worldPos.clone());
@@ -113,6 +116,17 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const wMax = localPos.x + pWidth / 2;
     const hMin = localPos.y - pHeight / 2;
     const hMax = localPos.y + pHeight / 2;
+    const zMin = localPos.z - pDepth / 2;
+    const zMax = localPos.z + pDepth / 2;
+
+    // Back plank detection
+    if (thicknessAxis === 'z') {
+      backPlank = { zMin, zMax, thickness: pDepth };
+      return;
+    }
+
+    // Skip front/back dividers
+    if (thicknessAxis === 'z') return;
 
     planks.push({
       name: child.name,
@@ -127,47 +141,55 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     });
   });
 
+  // --- Compute usable depth ---
+  let usableDepth = depth;
+  let depthOffset = 0;
+
+  if (backPlank) {
+    const blockedDepth = (backPlank as { zMin: number; zMax: number }).zMax - bb.min.z;
+    usableDepth = depth - blockedDepth;
+    depthOffset = blockedDepth / 2;
+  }
+
   // --- Material for invisible boxes ---
   const invisibleMat = new THREE.MeshBasicMaterial({
     color: 0x00ff00,
     transparent: true,
     opacity: 0,
+    depthWrite: false,
   });
 
-  // --- CASE 1: No planks → single invisible box ---
+  // --- No planks → single compartment ---
   if (planks.length === 0) {
-    const geo = new THREE.BoxGeometry(width, height, depth);
+    const geo = new THREE.BoxGeometry(width, height, usableDepth);
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
     mesh.userData.isInvisibleBox = true;
-    mesh.position.copy(boxCenterLocal); // center in local space
+    mesh.position.set(boxCenterLocal.x, boxCenterLocal.y, boxCenterLocal.z + depthOffset);
     boxMesh.add(mesh);
     return [mesh];
   }
-
-  // --- CASE 2: Planks exist → build grid in local X/Y ---
-  const step = 0.01;
 
   const minW = bb.min.x;
   const maxW = bb.max.x;
   const minH = bb.min.y;
   const maxH = bb.max.y;
 
+  const TARGET_GRID_CELLS = 300;
+  const stepW = (maxW - minW) / TARGET_GRID_CELLS;
+  const stepH = (maxH - minH) / TARGET_GRID_CELLS;
+  const step = Math.max(stepW, stepH);
+
   const gridWidth = Math.ceil((maxW - minW) / step);
   const gridHeight = Math.ceil((maxH - minH) / step);
 
-  const grid: string[][] = Array(gridHeight)
-    .fill(null)
-    .map(() => Array(gridWidth).fill('empty'));
+  const grid: string[][] = Array.from({ length: gridHeight }, () => Array(gridWidth).fill('empty'));
 
-  // --- Mark plank areas on grid ---
   planks.forEach((p) => {
-    const { wMin, wMax, hMin, hMax } = p;
-
-    const startX = Math.max(0, Math.floor((wMin - minW) / step));
-    const endX = Math.min(gridWidth - 1, Math.ceil((wMax - minW) / step));
-    const startY = Math.max(0, Math.floor((hMin - minH) / step));
-    const endY = Math.min(gridHeight - 1, Math.ceil((hMax - minH) / step));
+    const startX = Math.max(0, Math.floor((p.wMin - minW) / step));
+    const endX = Math.min(gridWidth - 1, Math.ceil((p.wMax - minW) / step));
+    const startY = Math.max(0, Math.floor((p.hMin - minH) / step));
+    const endY = Math.min(gridHeight - 1, Math.ceil((p.hMax - minH) / step));
 
     for (let y = startY; y <= endY; y++) {
       for (let x = startX; x <= endX; x++) {
@@ -176,7 +198,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     }
   });
 
-  // --- Detect empty compartments ---
   const compartments: {
     width: number;
     height: number;
@@ -191,14 +212,12 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       let xEnd = x;
       let yEnd = y;
 
-      // grow horizontally
       while (xEnd + 1 < gridWidth && grid[y][xEnd + 1] === 'empty') xEnd++;
 
-      // grow vertically
       let valid = true;
       while (yEnd + 1 < gridHeight && valid) {
-        for (let xCheck = x; xCheck <= xEnd; xCheck++) {
-          if (grid[yEnd + 1][xCheck] !== 'empty') {
+        for (let secondx = x; secondx <= xEnd; secondx++) {
+          if (grid[yEnd + 1][secondx] !== 'empty') {
             valid = false;
             break;
           }
@@ -208,26 +227,16 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
       const compWidth = (xEnd - x + 1) * step;
       const compHeight = (yEnd - y + 1) * step;
-
       const centerW = minW + (x + (xEnd - x) / 2) * step;
       const centerH = minH + (y + (yEnd - y) / 2) * step;
 
-      if (compWidth > 0 && compHeight > 0) {
-        const pos = new THREE.Vector3(
-          centerW,
-          centerH,
-          boxCenterLocal.z // center in depth
-        );
+      compartments.push({
+        width: compWidth,
+        height: compHeight,
+        depth: usableDepth,
+        position: new THREE.Vector3(centerW, centerH, boxCenterLocal.z + depthOffset),
+      });
 
-        compartments.push({
-          width: compWidth,
-          height: compHeight,
-          depth,
-          position: pos,
-        });
-      }
-
-      // mark as filled
       for (let fy = y; fy <= yEnd; fy++) {
         for (let fx = x; fx <= xEnd; fx++) {
           grid[fy][fx] = 'filled';
@@ -236,7 +245,6 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     }
   }
 
-  // --- Create invisible meshes for compartments ---
   const meshes: THREE.Mesh[] = [];
   compartments.forEach((c, idx) => {
     const meshBuilder = new MeshBuilder({
@@ -253,13 +261,11 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       rotation: { x: 0, y: 0, z: 0 },
       material: {
         type: MATERIAL_TYPE.COLOR,
-        value: '#00ff00', // Debug color, will be effectively invisible due to opacity
+        value: 'transparent',
       },
     });
     const mesh = meshBuilder.createMesh();
-    // Ensure it has the critical userData needed for interaction
     mesh.userData.isInvisibleBox = true;
-    // Set material transparency manually as MeshBuilder might default to opaque if not configured
     if (
       mesh.material instanceof THREE.MeshBasicMaterial ||
       mesh.material instanceof THREE.MeshStandardMaterial
@@ -274,234 +280,3 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
   return meshes;
 }
-
-export function toggleDoor(child: THREE.Mesh) {
-  /** Toggles a 3D door’s open/close animation based on its open direction type. */
-  if (!child) return;
-
-  const isClosed = child.userData.isClosed ?? true;
-
-  // Traverse parents to detect wall placement
-  let obj: THREE.Object3D | null = child;
-  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
-
-  while (obj && !wallType) {
-    if (obj.name.toLowerCase().includes('center')) wallType = 'center';
-    else if (obj.name.toLowerCase().includes('leftwall')) wallType = 'leftwall';
-    else if (obj.name.toLowerCase().includes('rightwall')) wallType = 'rightwall';
-    obj = obj.parent;
-  }
-
-  child.geometry.computeBoundingBox();
-  const bbox = child.geometry.boundingBox;
-  if (!bbox) {
-    console.error('Bounding Box is Null');
-    return;
-  }
-
-  let pivotOffsetX = 0;
-  let pivotOffsetY = 0;
-
-  // Default openDirection comes from userData (left, right, top, bottom)
-  let type: 'left' | 'right' | 'top' | 'bottom' = child.userData.openDirection;
-
-  // Adjust open direction based on wall type
-  if (wallType === 'leftwall') {
-    // Left wall doors usually swing along +X axis
-    if (type === 'left') type = 'right';
-    else if (type === 'right') type = 'left';
-  } else if (wallType === 'rightwall') {
-    // Right wall doors usually swing along -X axis
-    if (type === 'left') type = 'right';
-    else if (type === 'right') type = 'left';
-  } else if (wallType === 'center') {
-    // Center wall → default directions (front open/close)
-    type = type;
-  }
-
-  switch (type) {
-    case 'left':
-      pivotOffsetX = bbox.min.x;
-      pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
-      break;
-    case 'right':
-      pivotOffsetX = bbox.max.x;
-      pivotOffsetY = (bbox.max.y + bbox.min.y) / 2;
-      break;
-    case 'top':
-      pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
-      pivotOffsetY = bbox.max.y;
-      break;
-    case 'bottom':
-      pivotOffsetX = (bbox.max.x + bbox.min.x) / 2;
-      pivotOffsetY = bbox.min.y;
-      break;
-  }
-
-  // Move geometry pivot to hinge side
-  child.geometry.translate(-pivotOffsetX, -pivotOffsetY, 0);
-  child.position.x += pivotOffsetX;
-  child.position.y += pivotOffsetY;
-
-  const targetRotation = { x: 0, y: 0, z: 0 };
-
-  switch (type) {
-    case 'left':
-      targetRotation.y = isClosed ? -Math.PI / 2.5 : 0;
-      break;
-    case 'right':
-      targetRotation.y = isClosed ? Math.PI / 2.5 : 0;
-      break;
-    case 'top':
-      targetRotation.x = isClosed ? -Math.PI / 3 : 0;
-      break;
-    case 'bottom':
-      targetRotation.x = isClosed ? Math.PI / 3 : 0;
-      break;
-  }
-
-  gsap.to(child.rotation, {
-    x: targetRotation.x,
-    y: targetRotation.y,
-    z: targetRotation.z,
-    duration: 1,
-    ease: 'power2.inOut',
-  });
-
-  child.userData.isClosed = !isClosed;
-}
-
-export function toggleDrawer(child: THREE.Mesh, openDistance = 0.2) {
-  /** Toggles a drawer open or closed by sliding it along its inferred direction. */
-  if (!child) return;
-
-  const isClosed = child.userData.isClosed ?? true;
-  const closedPos = child.userData.closedPos ?? child.position.clone();
-
-  // Traverse parents to detect wall placement
-  let obj: THREE.Object3D | null = child;
-  let wallType: 'center' | 'leftwall' | 'rightwall' | null = null;
-
-  while (obj && !wallType) {
-    // const n = obj.name.toLowerCase();
-    if (obj.name.includes('center')) wallType = 'center';
-    else if (obj.name.includes('leftwall')) wallType = 'leftwall';
-    else if (obj.name.includes('rightwall')) wallType = 'rightwall';
-    obj = obj.parent;
-  }
-
-  // Decide direction based on wall type
-  const direction = new THREE.Vector3();
-  switch (wallType) {
-    case 'center':
-      direction.set(0, 0, 1);
-      break;
-    case 'leftwall':
-      direction.set(1, 0, 0); // push outward along X+
-      break;
-    case 'rightwall':
-      direction.set(-1, 0, 0); // push outward along X-
-      break;
-    default:
-      direction.set(0, 0, 1); // fallback → front
-  }
-
-  // Apply parent orientation
-  const parent = child.parent as THREE.Object3D;
-  if (parent) direction.applyQuaternion(parent.quaternion).normalize();
-
-  // Compute open pos
-  const openPos = closedPos.clone().add(direction.multiplyScalar(openDistance));
-  const targetPos = isClosed ? openPos : closedPos;
-
-  gsap.to(child.position, {
-    x: targetPos.x,
-    y: targetPos.y,
-    z: targetPos.z,
-    duration: 1,
-    ease: 'power2.inOut',
-  });
-
-  child.userData.isClosed = !isClosed;
-  child.userData.closedPos = closedPos;
-}
-
-export const addCabinetItemToDesign = async (
-  catalogId: string,
-  itemData: {
-    type: string;
-    name: string;
-    description: string;
-    design_id: string;
-    parent?: string;
-    width?: number;
-    height?: number;
-    depth?: number;
-    position?: { x: number; y: number; z: number };
-    additional_data?: unknown;
-    parts?: {
-      name: string;
-      rule_parts: RulePart[];
-    }[];
-  }
-) => {
-  /** Adds a cabinet item to the current design using its catalog and metadata via API. */
-
-  const payload = {
-    type: itemData.type,
-    name: itemData.name,
-    description: itemData.description,
-    design: itemData.design_id,
-    // Optional spatial metadata for backend consumption
-    width: itemData.width,
-    height: itemData.height,
-    depth: itemData.depth,
-    position: itemData.position,
-    additional_data: itemData.additional_data,
-    catalog_rule: itemData.parts,
-    parent: itemData.parent,
-  };
-  try {
-    const response = await commonService.post(
-      API_ENDPOINT.CREATE_MATERIAL_DESIGN_CATALOG(catalogId),
-      payload
-    );
-    if (response.status === 200 || response.status === 201) {
-      return response.data;
-    }
-  } catch (error) {
-    console.error('Error adding cabinet item to design:', error);
-    throw error;
-  }
-};
-
-export const addItemtoDatabase = async (data: AddItemDatabasePayload) => {
-  /** Adds an item to the database using catalog-based API. */
-  try {
-    const apiResponse = await addCabinetItemToDesign(data.catalogId, data);
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(apiResponse, 'apiResponse');
-    }
-    return apiResponse;
-  } catch (error) {
-    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
-  }
-  return null;
-};
-
-export const addItemToDataBaseWithoutCatalog = async (data: AddItemDatabasePayload) => {
-  /** Adds an item directly to the database without linking it to a catalog. */
-  try {
-    const apiResponse = await commonService.post(
-      API_ENDPOINT.CREATE_MATERIAL_WITHOUT_CATALOG,
-      data
-    );
-    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log(apiResponse, 'apiResponse');
-    }
-    return apiResponse;
-  } catch (error) {
-    console.error(`Failed to add ${data.type.toLowerCase()} to design:`, error);
-  }
-  return null;
-};
