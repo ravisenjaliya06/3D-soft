@@ -173,15 +173,14 @@ export class CabinetMotionController {
       mesh.userData.closedPos = mesh.getWorldPosition(new THREE.Vector3());
     }
 
-    const closedPos = mesh.userData.closedPos.clone();
-
-    // Calculate drawer open direction
-    const openDir = new THREE.Vector3(0, 0, 1)
+    const closedWorldPos = mesh.userData.closedPos.clone();
+    const localOpenDir = new THREE.Vector3(0, 0, 1);
+    const worldOpenDir = localOpenDir
+      .clone()
       .applyQuaternion(mesh.getWorldQuaternion(new THREE.Quaternion()))
       .normalize();
-
-    const openPos = closedPos.clone().add(openDir.multiplyScalar(openDistance));
-    const targetWorld = isClosed ? openPos : closedPos;
+    const openWorldPos = closedWorldPos.clone().add(worldOpenDir.multiplyScalar(openDistance));
+    const targetWorld = isClosed ? openWorldPos : closedWorldPos;
 
     // Convert world position to local
     const targetLocal = mesh.parent ? mesh.parent.worldToLocal(targetWorld.clone()) : targetWorld;

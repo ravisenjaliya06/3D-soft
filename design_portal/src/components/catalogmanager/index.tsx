@@ -107,7 +107,7 @@ const CatalogManager = () => {
   };
 
   /** Open the popup to create a new catalog */
-  const handleAddCatalog = () => setShowPopup(true);
+
 
   /** Fetch catalog list based on the selected catalog type */
   const getCatalog = useCallback(async () => {
@@ -327,12 +327,7 @@ const CatalogManager = () => {
                   ))}
                 </select>
                 <div className={styles.iconContainer}>
-                  <img
-                    src={assets.add}
-                    alt="Add"
-                    className={styles.addIcon}
-                    onClick={handleAddCatalog}
-                  />
+                
                 </div>
               </div>
             </div>

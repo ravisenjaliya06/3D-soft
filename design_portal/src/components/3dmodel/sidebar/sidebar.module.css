@@ -7,7 +7,7 @@
   position: absolute;
   right: 0;
   z-index: 10;
-  border-radius: 1rem 1rem 0rem 0rem;
+  border-radius: 0.6rem 0.6rem 0rem 0rem;
   overflow-y: auto;
   bottom: 0;
   top: 4rem;
@@ -28,18 +28,21 @@
 
 .sidebar_title,
 .sidebar_close_title {
+  position: fixed;
   display: flex;
   justify-content: space-around;
   align-items: center;
   width: 14rem;
   height: 1.8rem;
   background-color: var(--secondry-background-color);
-  border-radius: 1rem 1rem 0rem 0rem;
+  border-radius: 0.6rem 0.6rem 0rem 0rem;
+  right: 0;
 }
 
 .sidebar_close_title {
   position: fixed;
   bottom: 0;
+  right: 0;
 }
 
 .field_group_unitdiv {
@@ -200,7 +203,7 @@
   font-family: var(--font-family);
   font-size: 0.6rem;
   font-weight: normal;
-  color: var(--common-text-color);
+  color: rgba(160, 174, 192, 1);
   color: var(--primary-color);
   letter-spacing: 0.04rem;
 }
@@ -287,6 +290,7 @@
   font-family: var(--font-family);
   font-size: 0.7rem;
   padding: 0rem;
+  color: rgba(160, 174, 192, 1);
 }
 
 .btnactive {
@@ -662,7 +666,7 @@ input:checked + .slider:before {
 .field_group_color_row {
   display: flex;
   align-items: center;
-  gap: 4.1rem;
+  gap: 3.1rem;
 }
 
 .field_group_color_row p {

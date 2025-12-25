@@ -2,17 +2,16 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
-import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
-import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
+import { MeshObjectData } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { Position, Rotation } from '../store/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import style from './sidebar.module.css';
+
+//import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -22,7 +21,7 @@ const Sidebar: React.FC = () => {
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
-  const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
+
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
 
   const materialModal = [
@@ -93,11 +92,7 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     if (!handleObject) return;
 
-    setHandlePos({
-      x: handleObject.position.x,
-      y: handleObject.position.y,
-      z: handleObject.position.z,
-    });
+
 
     setHandleRot({
       x: handleObject.rotation.x,
@@ -105,18 +100,6 @@ const Sidebar: React.FC = () => {
       z: handleObject.rotation.z,
     });
   }, [handleObject]);
-
-  const updateHandlePosState = (axis: Axis, value: number) => {
-    setHandlePos((prev) => ({ ...prev, [axis]: value }));
-
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.id,
-        { position: { [axis]: value } },
-        handleObject
-      );
-    }
-  };
 
   const updateHandleRotState = (axis: Axis, value: number) => {
     setHandleRot((prev) => ({ ...prev, [axis]: value }));
@@ -164,6 +147,7 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
+    console.log('function called');
 
     setShowMaterialPopup(true);
   };
@@ -239,33 +223,8 @@ const Sidebar: React.FC = () => {
     setIsTextureListOpen(false);
   };
 
-  const handleOpenCloseChange = () => {
-    if (!scene) return;
-
-    const targetId = selectedChildObjectId ?? selectedObjectId;
-    if (!targetId) return;
-
-    const controller = new CabinetMotionController();
-
-    scene.traverse((node) => {
-      if (!(node instanceof THREE.Mesh)) return;
-
-      const { objectId, type } = node.userData;
-      if (objectId !== targetId) return;
-
-      if (type === PART_TYPES.DOOR) {
-        controller.toggleDoor(node);
-        return;
-      }
-
-      if (type === PART_TYPES.DRAWER) {
-        controller.toggleDrawer(node);
-      }
-    });
-  };
-
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? 0,
+    width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
     depth: selectedObject?.dimensions?.depth ?? 0,
   };
@@ -387,27 +346,6 @@ const Sidebar: React.FC = () => {
     },
   ];
 
-  const handlePositionInputFlid = [
-    {
-      label: 'Position X',
-      name: 'positionX',
-      type: 'number',
-      value: handlePos.x,
-      disabled: isQuickHideActive,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('x', Number(e.target.value)),
-    },
-    {
-      label: 'Position Y',
-      name: 'positionY',
-      type: 'number',
-      value: handlePos.y,
-      disabled: isQuickHideActive,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value)),
-    },
-  ];
-
   const handleRotationInputFlid = [
     {
       label: 'Rotation X',
@@ -439,159 +377,192 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div className={isSidebarOpen ? style.sidebar : style.sidebar_open}>
+    <div
+      className={
+        isSidebarOpen
+          ? 'absolute top-[4rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[14rem] overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)]'
+          : 'absolute top-[4rem] right-[0] bottom-[0] z-[10] block h-auto w-[14rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent'
+      }
+    >
+      {/* ================= TITLE ================= */}
       <div
-        className={isSidebarOpen ? style.sidebar_title : style.sidebar_close_title}
         onClick={toggleSidebar}
+        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[14rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--secondry-background-color)] ${isSidebarOpen ? 'top-[4rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
-        <p>Viewport Navigation</p>
+        <p className="ml-[8] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-color)]">
+          Viewport Navigation
+        </p>
+
         <img
           src={isSidebarOpen ? assets.down_arrow : assets.up_arrow}
-          alt="toggle_arrow"
-          style={{ cursor: 'pointer' }}
+          className="relative right-2 h-[1.2rem] w-[1.2rem]"
         />
       </div>
+
+      {!isSidebarOpen && null}
+
       {isSidebarOpen && (
         <>
-          <div className={style.switch_div}>
+          {/* ================= SWITCH ================= */}
+          <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[1rem]">
             <button
               onClick={handleSetting}
-              className={isSettingOpen ? style.btnactive : style.btn}
-              disabled={isQuickHideActive}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isSettingOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Setting
             </button>
-            <button onClick={handleNavigation} className={isNavOpen ? style.btnactive : style.btn}>
+
+            <button
+              onClick={handleNavigation}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isNavOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
+            >
               Navigation
             </button>
           </div>
-          <hr></hr>
+
+          <hr className="my-[0.2rem] opacity-20" />
+
+          {/* ================= NAV IMAGE ================= */}
           {isNavOpen && (
-            <div>
-              <div className={style.nav_div}>
-                <img src={assets.navigationdetail} alt="" className={style.zoomoption_img} />
-              </div>
+            <div className="mx-auto mt-4 w-[12rem]">
+              <img src={assets.navigationdetail} className="w-full" />
             </div>
           )}
+
+          {/* ================= NO SELECTION ================= */}
           {isSettingOpen && !selectedObject && (
-            <p
-              style={{
-                margin: '1rem',
-                textAlign: 'center',
-                color: '#392579',
-                marginTop: '2rem',
-                fontSize: '0.8rem',
-              }}
-            >
-              No Item Selected
-            </p>
+            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
           )}
+
+          {/* ================= SETTINGS ================= */}
           {isSettingOpen && selectedObject && (
             <>
-              <div className={style.field_main_div}>
-                {sideBarMenuConfig.map((menu) => (
-                  <div key={menu.subMenu}>
-                    <div className={style.field_group_title_div}>
-                      <p className={style.field_group_title}>{menu.title}</p>
-                      <div className={style.field_group_div}>
-                        {menu.fields.map((field, index) => (
-                          <div key={index} className={style.field_group1}>
-                            <p>{field.label}</p>
-                            <div className={style.input_with_unit}>
-                              <input
-                                id={field.name}
-                                name={field.name}
-                                type={field.type}
-                                value={field.value ?? ''}
-                                disabled={field.disabled}
-                                className={style.number_input}
-                                onChange={field.onChange}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <hr></hr>
-                  </div>
-                ))}
-                <div className={style.field_group_title_div}>
-                  <p className={style.field_group_title}>Material</p>
-                </div>
-                <div className={style.field_group_div_material}>
-                  <div className={style.field_group_color_row}>
-                    <p>Color</p>
+              {sideBarMenuConfig.map((menu) => (
+                <div key={menu.subMenu}>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                    <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      {menu.title}
+                    </p>
 
-                    <div className={style.color_preview_wrapper}>
-                      <input
-                        type="color"
-                        value={selectedColor}
-                        onChange={(e) => applyColorToSelected(e.target.value)}
-                        className={style.color_input_box}
-                      />
-                      <input
-                        type="text"
-                        value={selectedColor.toUpperCase()}
-                        onChange={(e) => applyColorToSelected(e.target.value)}
-                        className={style.color_hex_input}
-                      />
+                    <div className="mt-[1] flex gap-[0.5rem]">
+                      {menu.fields.map((field, i) => (
+                        <div key={i} className="flex flex-col">
+                          <p className="mt-[0px] mb-[0px] text-[0.5rem] text-[var(--primary-color)]">
+                            {field.label}
+                          </p>
+
+                          <input
+                            type={field.type}
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            className="h-[1.2rem] w-[3.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border border-[var(--border-color)] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div
-                    className={style.field_group_div_material_change}
-                    onClick={handleMaterialChange}
-                  >
-                    <p>Change Material</p>
-                    <button className={style.btn_material_change} disabled={isQuickHideActive}>
-                      Press to Change
-                    </button>
-                  </div>
-                  <div className={style.field_group_div_material_change}>
-                    <p>Texture</p>
-                    <button
-                      className={style.btn_material_change}
-                      onClick={toggleTextureList}
-                      disabled={isQuickHideActive}
-                    >
-                      Select Texture
-                    </button>
-                  </div>
-                  <div>
-                    {isTextureListOpen && (
-                      <div className={style.texture_list}>
-                        {materialModal.map((material) => (
-                          <div
-                            key={material.option}
-                            className={style.texture_item}
-                            onClick={() => handleTextureSelect(material.image)}
-                            title={material.name}
-                          >
-                            <img
-                              src={material.image}
-                              alt={material.name}
-                              className={style.texture_thumbnail}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <hr className="my-[2] opacity-20" />
+                </div>
+              ))}
+
+              {/* ================= MATERIAL ================= */}
+              <div className="px-3 py-2">
+                <p className="mb-2 ml-[1rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                  Material
+                </p>
+
+                {/* Color */}
+                <div className="mb-2 ml-[1rem] flex items-center justify-between pr-[0.5rem]">
+                  <p className="text-[0.6rem] text-[var(--primary-color)]">Color</p>
+                  <div className="flex w-[9.5rem] items-center gap-[0.3rem] rounded-[0.4rem] border border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] px-[0.3rem] py-[0.2rem]">
+                    <input
+                      type="color"
+                      value={selectedColor}
+                      onChange={(e) => applyColorToSelected(e.target.value)}
+                      className="h-[1.3rem] w-[1.3rem] cursor-pointer appearance-none rounded-[0.25rem] border-0 p-0"
+                    />
+                    <input
+                      type="text"
+                      value={selectedColor.toUpperCase()}
+                      onChange={(e) => applyColorToSelected(e.target.value)}
+                      className="w-[4rem] border-0 bg-transparent text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
+                    />
                   </div>
                 </div>
-                {!isQuickHideActive && isSettingOpen && itemType.DOOR && (
-                  <div className={style.field_group_div_door}>
-                    <div className={style.field_group_div_material_change}>
-                      <p>Open/Close</p>
-                      <button
-                        className={style.btn_material_change}
-                        disabled={isQuickHideActive}
-                        onClick={handleOpenCloseChange}
+
+                {/* Change Material */}
+                <div
+                  onClick={handleMaterialChange}
+                  className="mb-2 flex items-center justify-between pr-[0.5rem]"
+                >
+                  <p className="ml-[1rem] text-[0.6rem] text-[var(--primary-color)]">
+                    Change Material
+                  </p>
+                  <button
+                    className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                    disabled={isQuickHideActive}
+                  >
+                    Press to Change
+                  </button>
+                </div>
+
+                {/* Texture */}
+                <div className="relative flex items-center justify-between pr-[0.5rem]">
+                  <p className="ml-[1rem] text-[0.6rem] text-[0.7rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                    Change Texture
+                  </p>
+                  <button
+                    onClick={toggleTextureList}
+                    className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                  >
+                    Select Texture
+                  </button>
+                </div>
+
+                {/* Texture List */}
+                {isTextureListOpen && (
+                  <div className="absolute left-[14%] z-[100] mt-[0.25rem] flex max-h-[6rem] max-w-[10.4rem] flex-wrap gap-[0.1rem] overflow-y-auto rounded-[0.375rem] border border-[var(--border-color)] bg-[var(--primary-white)] p-[0.3rem] shadow-[0_0.25rem_0.5rem_rgba(0,0,0,0.1)]">
+                    {materialModal.map((m) => (
+                      <div
+                        key={m.option}
+                        className={
+                          'flex cursor-pointer flex-col items-center rounded border border-transparent transition-all duration-200 ease-in-out hover:border-[var(--primary-color)] hover:shadow-[0_0_6px_rgba(0,0,0,0.25)]'
+                        }
+                        onClick={() => handleTextureSelect(m.image)}
+                        title={m.name}
                       >
-                        Open/Close
-                      </button>
-                    </div>
-                    <div className={style.field_group_div_material_change}>
-                      <p>Door Position</p>
+                        <img
+                          key={m.option}
+                          src={m.image}
+                          onClick={() => handleTextureSelect(m.image)}
+                          className="h-[2.5rem] w-[2.5rem] rounded-[0.125rem] object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Door Position */}
+                {!isQuickHideActive && isSettingOpen && itemType.DOOR && (
+                  <div
+                    className={
+                      'ml-[0rem] flex flex-col gap-[0.7rem] py-[0.5rem] pr-[0.5rem] pl-[1rem]'
+                    }
+                  >
+                    <div className={'relative flex items-center justify-between'}>
+                      <p className="m-0 font-[poppins] text-[0.7rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                        Door Position
+                      </p>
                       <select
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--button-soft-grey)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         value={doorPosition}
                         onChange={(e) => {
                           const value = e.target.value;
@@ -608,31 +579,6 @@ const Sidebar: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex flex-col items-start">
-                      <p className="m-0 text-[0.7rem] font-[var(--font-family)] font-bold text-[var(--primary-color)]">
-                        Handle Position
-                      </p>
-                      <div className="flex w-auto justify-center gap-[0.5rem]">
-                        {handlePositionInputFlid.map((field) => (
-                          <div key={field.name} className="mt-[0.3rem]">
-                            <p className="m-0 w-[3.9rem] text-[0.54rem] font-[var(--font-family)] font-normal tracking-[0.04rem] text-[var(--primary-color)]">
-                              {field.label}
-                            </p>
-                            <div>
-                              <input
-                                id={field.name}
-                                name={field.name}
-                                type={field.type}
-                                value={field.value ?? ''}
-                                disabled={field.disabled}
-                                className="h-[1.2rem] w-[3.2rem] [appearance:textfield] rounded-[0.2rem] border-[0.02rem] border-[var(--border-color)] pl-[0.3rem] text-[0.58rem] font-[var(--font-family)] focus:border-[0.063rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                onChange={field.onChange}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                     <div className="flex flex-col items-start">
                       <p>Handle Rotation</p>
                       <div className="flex w-auto justify-center gap-[0.5rem]">
@@ -659,7 +605,6 @@ const Sidebar: React.FC = () => {
                   </div>
                 )}
               </div>
-              <hr></hr>
             </>
           )}
         </>
