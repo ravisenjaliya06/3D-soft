@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { generateCompartmentsFromMesh } from '../handler/items';
+import { store } from '../store';
 import { MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
 
@@ -10,7 +11,7 @@ export class DesignBuilder {
 
   constructor(data: MeshObjectData[], scene?: THREE.Scene) {
     this.data = data;
-    this.scene = scene || null;
+    this.scene = scene || store.getState().scene?.scene;
     this.meshMap = new Map<string, THREE.Mesh>();
   }
 

@@ -60,18 +60,24 @@ interface Material {
 }
 
 export interface MeshObjectData {
+  // main properties
   id: string;
   name: string;
   type: string;
   geometryType: GeometryType;
-  parent?: string;
-  dimensions?: Dimensions;
+  dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
+
+  //optional properties
+  parent?: string;
   scale?: Position;
   material?: Material;
   isMain?: boolean;
   openDirection?: DirectionType;
+  connectedTo?: string[];
+  thickness?: number;
+  selected?: boolean;
 }
 
 export interface userData {
@@ -113,3 +119,13 @@ export interface HelperToolProps {
   selectedObject: THREE.Mesh | null;
   moveHandler: MoveHandler | null;
 }
+
+// TODO (HARSH): Created for temporary patching. Will update later when using SyncManager for lists.
+export type MeshObjectPatch = Omit<
+  Partial<MeshObjectData>,
+  'dimensions' | 'position' | 'rotation'
+> & {
+  dimensions?: Partial<Dimensions>;
+  position?: Partial<Position>;
+  rotation?: Partial<Rotation>;
+};
