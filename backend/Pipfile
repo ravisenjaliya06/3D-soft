@@ -25,6 +25,7 @@ pandas = "==2.2.3"
 djangorestframework-simplejwt = "==5.5.0"
 psycopg2-binary = "==2.9.9"
 gunicorn = "*"
+pydantic = "==2.12.5"
 
 [dev-packages]
 isort = "==5.13.2"

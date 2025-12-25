@@ -127,7 +127,7 @@ html {
 body {
   background: var(--background-color);
   margin: 0;
-  font-family: var(--font-family);
+  font-family: Poppins, sans-serif;
   overflow: hidden;
 }
 

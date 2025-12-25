@@ -11,14 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
-from material.models import (
-    Catalog,
-    CatalogRuleParts,
-    CatalogRules,
-    Company,
-    Material,
-    Properties,
-)
+from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
@@ -181,31 +174,3 @@ def default_material_data(organization: Organization) -> bool:
             Properties.objects.create(**prop_data, material=new_material)
 
     return True
-
-
-def default_material_scheduler(organization: Organization) -> None:
-    """Clone default catalogs, rules, and parts into the given organization."""
-    default_catalogs = Catalog.objects.filter(organization__isnull=True)
-
-    for default_catalog in default_catalogs:
-        # Upsert catalog for this organization
-        org_catalog, _ = Catalog.objects.update_or_create(
-            organization=organization,
-            type=default_catalog.type,
-            name=default_catalog.name,
-            defaults={
-                "description": default_catalog.description,
-            },
-        )
-
-        for default_rule in default_catalog.catalog_rule.all():
-            org_rule, _ = CatalogRules.objects.update_or_create(
-                catalog=org_catalog, name=default_rule.name, defaults={}
-            )
-
-            for default_part in default_rule.catalog_rule_parts.all():
-                CatalogRuleParts.objects.update_or_create(
-                    catalog_rule=org_rule,
-                    name=default_part.name,
-                    defaults={"material": default_part.material},
-                )

@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 
 # App imports
-from design.models import Design
 from umaboy.models import Organization
 
 
@@ -728,70 +727,3 @@ class MaterialTexture(models.Model):
         Material, on_delete=models.CASCADE, related_name="textures"
     )
     texture = models.ForeignKey(FinishesLibrary, on_delete=models.CASCADE)
-
-
-class Catalog(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="catalogs_organization",
-    )
-    type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    design = models.ForeignKey(
-        Design,
-        on_delete=models.CASCADE,
-        related_name="catalogs_design",
-        null=True,
-        blank=True,
-    )
-    height = models.FloatField(blank=True, null=True)
-    width = models.FloatField(blank=True, null=True)
-    length = models.FloatField(blank=True, null=True)
-    depth = models.FloatField(blank=True, null=True)
-    thickness = models.FloatField(blank=True, null=True)
-    position = models.JSONField(blank=True, null=True)
-    additional_data = models.JSONField(blank=True, null=True)
-    parent = models.ForeignKey(
-        "self",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="parent_catalog_data",
-    )
-
-
-class CatalogRules(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    catalog = models.ForeignKey(
-        Catalog, on_delete=models.CASCADE, related_name="catalog_rule"
-    )
-    name = models.CharField(max_length=100)
-
-
-class CatalogRuleParts(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    catalog_rule = models.ForeignKey(
-        CatalogRules, on_delete=models.CASCADE, related_name="catalog_rule_parts"
-    )
-    material = models.ForeignKey(
-        Material,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="catalog_part_material",
-    )
-    # ----- Data Storing Common Fields for Door, Drawer and Plank-----
-    height = models.FloatField(blank=True, null=True)
-    width = models.FloatField(blank=True, null=True)
-    length = models.FloatField(blank=True, null=True)
-    depth = models.FloatField(blank=True, null=True)
-    thickness = models.FloatField(blank=True, null=True)
-    position = models.JSONField(blank=True, null=True)
-    handle_position = models.JSONField(blank=True, null=True)
-    additional_data = models.JSONField(blank=True, null=True)

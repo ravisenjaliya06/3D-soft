@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import { ThreeDView } from '../design/interface';
+import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
 import { Position, Rotation } from '../store/interface';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
   WALL: 'wall',
+  CWALL: 'cwall',
 };
 
 export const OBJECT_TYPES = {
@@ -16,11 +19,14 @@ export const PART_TYPES = {
   BACK_PLANK: 'backPlank',
   DRAWER: 'drawer',
   DOOR: 'door',
+  VERTICAL_PLANK: 'verticalPlank',
+  HORIZONTAL_PLANK: 'horizontalPlank',
 };
 
 export const GEOMETRY = {
-  BOX_GEOMETRY: 'BoxGeometry',
+  BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
+  NONE: 'none',
 };
 
 export const MATERIAL_TYPE = {
@@ -54,7 +60,7 @@ export interface MeshObjectData {
   type: string;
   geometryType: GeometryType;
   parent?: string;
-  dimensions: Dimensions;
+  dimensions?: Dimensions;
   position: Position;
   rotation: Rotation;
   scale?: Position;
@@ -95,4 +101,10 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+}
+
+export interface HelperToolProps {
+  design3D: ThreeDView;
+  selectedObject: THREE.Mesh | null;
+  moveHandler: MoveHandler | null;
 }

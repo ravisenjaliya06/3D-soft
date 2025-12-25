@@ -13,6 +13,7 @@ Make sure you have [Node.js](https://nodejs.org/en) installed on your System.
 
 ```bash
 cd design_portal
+cp env.local.example .env.local
 ```
 
 2. **Install Dependencies**:
