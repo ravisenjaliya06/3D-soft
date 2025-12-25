@@ -224,7 +224,7 @@ const Sidebar: React.FC = () => {
   };
 
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? ,
+    width: selectedObject?.dimensions?.width ?? 0,
     height: selectedObject?.dimensions?.height ?? 0,
     depth: selectedObject?.dimensions?.depth ?? 0,
   };
