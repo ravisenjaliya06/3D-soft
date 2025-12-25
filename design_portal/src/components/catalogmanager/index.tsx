@@ -108,6 +108,7 @@ const CatalogManager = () => {
 
   /** Open the popup to create a new catalog */
 
+  const handleAddCatalog = () => setShowPopup(true);
 
   /** Fetch catalog list based on the selected catalog type */
   const getCatalog = useCallback(async () => {
@@ -195,7 +196,7 @@ const CatalogManager = () => {
 
   useEffect(() => {
     getMaterial();
-  });
+  }, []);
 
   /** Assign a selected material to a selected part */
   const handleAssignMaterial = async (partId: string, materialId: string | null) => {
@@ -284,19 +285,21 @@ const CatalogManager = () => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
-      <div className={styles.rightside}>
+      <div className="max-w-[85rem] flex-[3]">
         <Header isBorderRadius={true} dashboardName="Catalog Manager" />
 
         {/* TOP TOOLBAR */}
-        <div className={styles.maincontainer}>
-          <div className={styles.topToolbar}>
-            <div className={styles.toolbarRight}>
-              <div className={styles.toolbarRightContent}>
-                <span>Catalog Type</span>
+        <div className="mt-[1rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[2rem]">
+          <div className="mb-[1rem] flex w-[78.6rem] items-center gap-[0.8rem] rounded-2xl rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] px-[1rem] py-[1.5rem]">
+            <div className="flex items-center">
+              <div className="flex items-center gap-[0.75rem]">
+                <span className="ml-[1rem] text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[var(--primary-color)]">
+                  Catalog Type
+                </span>
                 <select
-                  className={styles.dropdown}
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#f4f3ff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[var(--primary-black)] outline-none"
                   value={catalogType}
                   onChange={(e) => setCatalogType(e.target.value)}
                 >
@@ -308,12 +311,14 @@ const CatalogManager = () => {
                 </select>
               </div>
             </div>
-            <div className={styles.dividerLine} />
-            <div className={styles.toolbarLeft}>
-              <div className={styles.toolbarLeftContent}>
-                <span>Part</span>
+            <div className="h-full w-px self-stretch bg-[#ccc]" />
+            <div className="flex items-center">
+              <div className="flex items-center gap-[0.75rem]">
+                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[var(--primary-color)]">
+                  Part
+                </span>
                 <select
-                  className={styles.dropdown}
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#f4f3ff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[var(--primary-black)] outline-none"
                   value={selectedCatalog?.id || ''}
                   onChange={(e) => {
                     const catalog = catalogData.find((c) => c.id === e.target.value);
@@ -326,8 +331,13 @@ const CatalogManager = () => {
                     </option>
                   ))}
                 </select>
-                <div className={styles.iconContainer}>
-                
+                <div className="ml-[0.5rem] flex">
+                  <img
+                    src={assets.addd}
+                    alt="Add"
+                    className="ml-[40rem] h-[5rem] w-[5rem] cursor-pointer"
+                    onClick={handleAddCatalog}
+                  />
                 </div>
               </div>
             </div>
@@ -335,185 +345,234 @@ const CatalogManager = () => {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className={styles.mainContent}>
-          {/* LEFT BOX */}
-          <div className={styles.leftBox}>
-            {/* RULES */}
-            <div className={styles.topBox}>
-              <div className={styles.topBoxContent}>
-                <h3>Rules</h3>
-                <div className={styles.buttonContainer}>
-                  <button
-                    className={styles.deleteButtonRule}
-                    onClick={() => handleShowDeletePopup()}
+        <div className="flex h-[41rem] flex-row gap-[2rem] px-0 pr-[1rem] pb-[1rem] pl-[2rem]">
+          {/* LEFT SIDEBAR */}
+          <div className="flex h-full max-h-[70vh] w-[14rem] flex-col justify-between rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[white] p-2">
+            {/* ================= RULE LIST ================= */}
+            <div className="flex flex-[1] flex-col">
+              <div className="mt-[1] flex-[1] space-y-[1] overflow-y-auto pr-[1]">
+                {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
+                  <div
+                    key={rule.id}
+                    onClick={() => fetchRuleParts(rule.id)}
+                    className={`relative mt-[5px] ml-[1rem] flex h-[32px] w-[11rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.5rem] px-[3] py-[2] transition-colors duration-150 ${
+                      activeRuleId === rule.id
+                        ? 'bg-[#E6DEFF]'
+                        : 'hover:bg-[rgba(229, 221, 255, 1)]'
+                    } `}
                   >
-                    <img src={assets.deleteIconOne} alt="" className={styles.deleteIconButton} />{' '}
-                    Delete
-                  </button>
-                </div>
-              </div>
-              <hr className={styles.divider} />
-              <div className={styles.content}>
-                {/* MENU */}
-                <div className={styles.topBoxLeft}>
-                  <div className={styles.matirealmanu}>
-                    {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
-                      <div
-                        key={rule.id}
-                        className={`${styles.rulematireal} ${activeRuleId === rule.id ? styles.activeRule : ''}`}
-                        onClick={() => fetchRuleParts(rule.id)}
-                      >
-                        <img src={assets.matariel} alt="" />
-                        <span>{rule.name}</span>
-                      </div>
-                    )) || <p>No rules available</p>}
+                    <img
+                      src={assets.matariel}
+                      alt=""
+                      className="h-[1.2rem] w-[1.2rem] bg-[#F3F4F6]"
+                    />
+
+                    <span
+                      className={`text-[0.7rem] ${
+                        activeRuleId === rule.id
+                          ? 'font-medium text-[var(--primary-color)]'
+                          : 'text-[rgba(229, 221, 255, 1)]'
+                      } `}
+                    >
+                      {rule.name}
+                    </span>
                   </div>
-                </div>
-
-                {/* PARTS TABLE */}
-                <div className={styles.tableWrapper}>
-                  <table className={styles.partsTable}>
-                    <thead>
-                      <tr>
-                        <th>Part Name</th>
-                        <th>Material Name</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ruleParts.length > 0
-                        ? ruleParts.map((part) => (
-                            <tr
-                              key={part.id}
-                              className={selectedPartId === part.id ? styles.selectedRow : ''}
-                              onDragOver={(e) => e.preventDefault()}
-                              onDrop={(e) => {
-                                const materialId = e.dataTransfer.getData('materialId');
-                                handleAssignMaterial(part.id, materialId);
-                              }}
-                              onClick={() => {
-                                setSelectedPartId(part.id);
-                              }}
-                            >
-                              <td>{part.name}</td>
-                              <td>{part.material?.name || 'NO MATERIAL ASSIGNED'}</td>
-                            </tr>
-                          ))
-                        : null}
-
-                      {/* Fill remaining rows up to 8 */}
-                      {Array.from({
-                        length: Math.max(0, 8 - ruleParts.length),
-                      }).map((_, idx) => (
-                        <tr key={`empty-${idx}`}>
-                          <td>&nbsp;</td>
-                          <td>&nbsp;</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* DETAILS TABLE */}
-            <div className={styles.bottomBox}>
-              <div className={styles.table_container}>
-                <table className={styles.custom_table}>
-                  <thead>
-                    <tr>
-                      <th colSpan={2}>Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Name</td>
-                      <td>
-                        {isEditingName ? (
-                          <input
-                            type="text"
-                            value={selectedCatalog?.name}
-                            onChange={(e) => setName(e.target.value)}
-                            onBlur={handleBlur(setIsEditingName)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                          />
-                        ) : (
-                          <p onClick={() => setIsEditingName(true)}>{selectedCatalog?.name}</p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Description</td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            value={selectedCatalog?.description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p onClick={() => setIsEditingDescription(true)}>
-                            {selectedCatalog?.description}
-                          </p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td>
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            onChange={(e) => setDescription(e.target.value)}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                          />
-                        ) : (
-                          <p>{}</p>
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* ================= DETAILS (BOTTOM) ================= */}
+            <div className="border-t border-[rgba(57,37,121,0.15)] pt-[2]">
+              <div className="rounded-xl bg-white p-3">
+                {/* HEADER */}
+                <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
+                  Door ID 45
+                </p>
+
+                {/* INPUTS */}
+                <div className="mr-[1rem] ml-[1rem] flex flex-col justify-center gap-[1]">
+                  {/* NAME */}
+                  <div className="relative mb-[0.5rem]">
+                    {isEditingName ? (
+                      <input
+                        type="text"
+                        value={selectedCatalog?.name}
+                        onChange={(e) => setName(e.target.value)}
+                        onBlur={handleBlur(setIsEditingName)}
+                        onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
+                        className="h-[15px] w-[11rem] rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
+                      />
+                    ) : (
+                      <div
+                        onClick={() => setIsEditingName(true)}
+                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
+                      >
+                        {selectedCatalog?.name}
+                      </div>
+                    )}
+
+                    {/* FLOATING LABEL */}
+                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
+                      name
+                    </span>
+                  </div>
+
+                  {/* DESCRIPTION */}
+                  <div className="relative mb-[0.5rem]">
+                    {isEditingDescription ? (
+                      <input
+                        type="text"
+                        value={selectedCatalog?.description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        onBlur={handleBlur(setIsEditingDescription)}
+                        onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
+                        className="h-[15px] w-[11rem] rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
+                      />
+                    ) : (
+                      <div
+                        onClick={() => setIsEditingDescription(true)}
+                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
+                      >
+                        {selectedCatalog?.description}
+                      </div>
+                    )}
+
+                    {/* FLOATING LABEL */}
+                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
+                      Description
+                    </span>
+                  </div>
+
+                  {/* UP CHARGE */}
+                  <div className="relative mb-[0.5rem]">
+                    <div className="flex h-[15px] w-[11rem] items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]">
+                      10%
+                    </div>
+
+                    {/* FLOATING LABEL */}
+                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
+                      up charge
+                    </span>
+                  </div>
+
+                  {/* BUYOUT */}
+                  <div className="relative mb-[0.5rem]">
+                    <div className="flex h-[15px] w-[11rem] items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]">
+                      NO
+                    </div>
+
+                    {/* FLOATING LABEL */}
+                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
+                      buyout
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Middle Table */}
+          <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] rounded-xl border border-[rgba(57,37,121,0.2)] bg-white">
+            {/* TABLE SCROLL CONTAINER */}
+            <div className="overflow-y-auto">
+              <table className="w-full border-collapse">
+                {/* TABLE HEADER */}
+                <thead className="sticky top-0 z-10 bg-[rgba(255,255,255,1)]">
+                  <tr>
+                    <th
+                      colSpan={3}
+                      className="h-[30px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] py-[3] text-left font-[400] text-[rgba(57,37,121,1)]"
+                    >
+                      Material Properties
+                    </th>
+                  </tr>
+                  <tr>
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                      Part ↑↓
+                    </th>
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                      Material ↑↓
+                    </th>
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-center text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+
+                {/* TABLE BODY */}
+                <tbody>
+                  {ruleParts.length > 0 &&
+                    ruleParts.map((part) => (
+                      <tr
+                        key={part.id}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          const materialId = e.dataTransfer.getData('materialId');
+                          handleAssignMaterial(part.id, materialId);
+                        }}
+                        onClick={() => setSelectedPartId(part.id)}
+                        className={`cursor-pointer border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)] hover:bg-[rgba(250,250,250,1)] ${
+                          selectedPartId === part.id ? 'bg-[rgba(245,242,255,1)]' : ''
+                        } `}
+                      >
+                        <td className="h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                          {part.name}
+                        </td>
+
+                        <td className="h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                          {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                        </td>
+
+                        <td className="h-[28px] px-[5] py-[2.5]">
+                          <div className="flex items-center justify-center gap-[3] text-[rgba(57,37,121,1)]">
+                            {/* DELETE */}
+                            <button
+                              className="flex items-center gap-1 rounded-md border-none bg-transparent px-2 py-[0.1rem] text-[0.6rem] text-[var(--delete-text-color)] outline-none hover:bg-[rgba(255,0,0,0.05)]"
+                              onClick={() => handleShowDeletePopup()}
+                            >
+                              <img src={assets.trash} alt="" className="h-[0.8rem] w-[0.8rem]" />
+                            </button>
+
+                            {/* EDIT */}
+                            <button className="border-none bg-transparent transition outline-none hover:text-[rgba(57,37,121,0.8)]">
+                              <img
+                                src={assets.edit}
+                                alt=""
+                                className="mt-[0.2rem] h-[0.9rem] w-[0.9rem]"
+                              />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+
+                  {/* EMPTY ROWS (KEEP HEIGHT LIKE IMAGE) */}
+                  {Array.from({
+                    length: Math.max(0, 16 - ruleParts.length),
+                  }).map((_, idx) => (
+                    <tr
+                      key={`empty-${idx}`}
+                      className="border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)]"
+                    >
+                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
+                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
+                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* RIGHT BOX */}
-          <div className={styles.rightBox}>
-            <div className={styles.righttopbar}>
+          <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] border border-[rgba(57,37,121,0.2)] bg-[rgba(255,255,255,1)]">
+            {/* ================= TOP BAR ================= */}
+            <div className="flex h-[40px] items-center gap-[15px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[16px]">
+              {/* DROPDOWN */}
               <select
-                className={styles.rightBoxdropdown}
                 value={selectedMaterialType}
                 onChange={(e) => setSelectedMaterialType(e.target.value)}
+                className="h-[26px] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white px-[12px] text-[0.65rem] text-[rgba(57,37,121,1)] focus:outline-none"
               >
                 {materialTypes.map((type) => (
                   <option key={type} value={type}>
@@ -521,60 +580,87 @@ const CatalogManager = () => {
                   </option>
                 ))}
               </select>
-              <div className={styles.searchContainer}>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className={styles.searchInput}
-                  value={materialSearch}
-                  onChange={(e) => setMaterialSearch(e.target.value)}
-                />
-              </div>
-            </div>
-            <hr className={styles.divider} />
 
-            <div className={styles.bottomBox}>
-              <div className={styles.doorTableWrapper}>
-                <table className={styles.doorTable}>
-                  <thead>
-                    <tr>
-                      <th>Material Name</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMaterials.length > 0 ? (
-                      filteredMaterials.map((row) => (
-                        <tr
-                          key={row.id}
-                          draggable
-                          className={selectedMaterialId === row.id ? styles.selectedRow : ''}
-                          onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
-                          onClick={() => {
-                            setSelectedMaterialId(row.id);
-                          }}
-                        >
-                          <td>{row.name}</td>
-                          <td>{row.description}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={2}>No materials found</td>
+              {/* SEARCH */}
+              <input
+                type="text"
+                placeholder="Search"
+                value={materialSearch}
+                onChange={(e) => setMaterialSearch(e.target.value)}
+                className="h-[26px] flex-1 rounded-[0.3rem] border border-[rgba(57,37,121,0.25)] bg-white px-[12px] text-[0.65rem] focus:outline-none"
+              />
+            </div>
+
+            {/* ================= TABLE ================= */}
+            <div className="/* Webkit (Chrome, Edge, Safari) */ h-full w-full overflow-y-auto [scrollbar-color:rgba(57,37,121,0.4)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.35)] [&::-webkit-scrollbar-thumb:hover]:bg-[rgba(57,37,121,0.6)] [&::-webkit-scrollbar-track]:bg-transparent">
+              <table className="w-full border-collapse bg-[rgba(255,255,255,1)]">
+                {/* TABLE HEADER */}
+                <thead className="sticky top-[0rem] z-10 bg-[rgba(255,255,255,1)]">
+                  <tr>
+                    <th className="h-[28px] w-[40px] border-b-[0.5px] border-[rgba(57,37,121,0.2)]"></th>
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                      Material Name
+                    </th>
+
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                      Description
+                    </th>
+                  </tr>
+                </thead>
+
+                {/* TABLE BODY */}
+                <tbody>
+                  {filteredMaterials.length > 0 ? (
+                    filteredMaterials.map((row) => (
+                      <tr
+                        key={row.id}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
+                        onClick={() => setSelectedMaterialId(row.id)}
+                        className={`cursor-pointer bg-white hover:bg-[rgba(250,250,250,1)] ${
+                          selectedMaterialId === row.id ? 'bg-[rgba(245,242,255,1)]' : ''
+                        } `}
+                      >
+                        {/* RADIO */}
+                        <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px] last:pr-[6]">
+                          <input
+                            type="radio"
+                            checked={selectedMaterialId === row.id}
+                            onChange={() => setSelectedMaterialId(row.id)}
+                            className="cursor-pointer"
+                          />
+                        </td>
+
+                        {/* NAME */}
+                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] px-[16px] text-[0.65rem] text-[#3F3F46] last:pr-[6]">
+                          {row.name}
+                        </td>
+
+                        {/* DESCRIPTION */}
+                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] px-[16px] text-[0.65rem] text-[#3F3F46] last:pr-[6]">
+                          {row.description}
+                        </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div
-                className={styles.addMaterialDesign}
-                onClick={() => handleAssignMaterialButton()}
-              >
-                <img src={assets.addMaterialIcon} alt="Add Material"></img>
-                Assign Material to Part
-              </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="h-[28px] text-center text-[0.65rem] text-gray-400">
+                        No materials found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
+        {/* ================= BOTTOM ACTION BAR ================= */}
+        <div
+          onClick={handleAssignMaterialButton}
+          className="absolute right-[21.50rem] bottom-[1rem] flex h-[30px] w-[10rem] cursor-pointer items-center gap-[8px] rounded-[0.8rem] border-t border-l border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[14px] text-[0.80rem] text-[rgba(57,37,121,1)] hover:bg-[rgba(245,245,245,1)]"
+        >
+          <img src={assets.addMaterialIcon} alt="Add Material" className="h-4 w-4" />
+          Add to Material
         </div>
       </div>
       {/* add catalog popup  */}
