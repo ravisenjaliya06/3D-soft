@@ -21,7 +21,12 @@ from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import DesignSetting
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import MOBILE_NUMBER_LENGTH
-from user.utils import add_user_to_organization, default_material_data, duplicate_default_catalogs_for_organization, verify_otp
+from user.utils import (
+    add_user_to_organization,
+    default_material_data,
+    duplicate_default_catalogs_for_organization,
+    verify_otp,
+)
 
 
 class PhoneValidationSerializer(serializers.Serializer):
@@ -170,7 +175,11 @@ class LoginSerializer(serializers.Serializer):
             request = self.context.get("request")
             view = request.parser_context.get("view") if request else None
 
-            if view and hasattr(view, "_generate_otp") and hasattr(view, "_set_user_otp"):
+            if (
+                view
+                and hasattr(view, "_generate_otp")
+                and hasattr(view, "_set_user_otp")
+            ):
                 otp, expiration_time = view._generate_otp()
                 view._set_user_otp(user, otp, expiration_time)
                 view._send_otp_email(user, otp)

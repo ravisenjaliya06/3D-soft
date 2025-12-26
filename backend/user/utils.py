@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
-from design.models import CatalogRuleParts, CatalogRules, DesignCatalog, DesignVersion
+from design.models import CatalogRuleParts, CatalogRules, DesignCatalog
 from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
@@ -175,6 +175,7 @@ def default_material_data(organization: Organization) -> bool:
             Properties.objects.create(**prop_data, material=new_material)
 
     return True
+
 
 def duplicate_default_catalogs_for_organization(
     organization: Organization,
