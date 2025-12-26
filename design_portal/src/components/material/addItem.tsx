@@ -3223,6 +3223,7 @@ const AddMaterialPopup: React.FC<Props> = ({
         return (
           <InputField
             label={field.label}
+            minField={true}
             type="number"
             value={value}
             onFocus={onActivate}
@@ -3240,6 +3241,7 @@ const AddMaterialPopup: React.FC<Props> = ({
         return (
           <InputField
             label={field.label}
+            minField={true}
             type="text"
             value={value}
             onFocus={onActivate}
@@ -3331,10 +3333,10 @@ const AddMaterialPopup: React.FC<Props> = ({
       </div>
 
       <div
-        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] overflow-auto rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
+        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
       >
         <div className="relative flex h-full flex-2 flex-col p-8">
-          <div className="relative mb-8 min-h-0">
+          <div className="relative mb-8 shrink-0">
             <div className="font-[var(--font-family)]">
               <h2 className="mb-[0px] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
@@ -3350,8 +3352,8 @@ const AddMaterialPopup: React.FC<Props> = ({
             const hasImageFields = currentPopup?.fields.some((field) => field.img);
 
             return (
-              <div className="mb-8 flex w-[95%] flex-row gap-6 lg:flex-col">
-                <div className={hasImageFields ? 'w-1/2' : 'w-full'}>
+              <div className="mb-8 flex flex-1 w-[95%] flex-row gap-6 overflow-hidden lg:flex-col">
+                <div className={`${hasImageFields ? 'w-1/2' : 'w-full'} overflow-y-auto overflow-x-hidden pr-2 ${styles.custom_scrollbar}`}>
                   {hasImageFields ? (
                     <div className="grid grid-cols-1 gap-2">
                       {currentPopup?.fields.map((field, index) => (
@@ -3364,11 +3366,13 @@ const AddMaterialPopup: React.FC<Props> = ({
                     <div className="grid grid-cols-2 gap-x-4">
                       {currentPopup?.fields.map((field, index) => (
                         <div
-                          key={field.key || index}
-                          className={`m-[1rem] pt-3 pb-2 ${
-                            field.label === 'Material Description' ? 'col-span-2' : ''
-                          } ${field.type === 'toggle' ? 'col-span-1 flex flex-row items-center' : ''}`}
-                        >
+                           key={field.key || index}
+                           className={`m-[1rem] pt-3 pb-2 ${
+                           field.type === 'toggle' || field.type === 'text' || field.type === 'number'
+                            ? 'flex flex-wrap gap-3 h-[2.5rem] w-auto'
+                            : ''
+                           }`}
+                          >
                           {renderField(field)}
                         </div>
                       ))}
@@ -3381,10 +3385,10 @@ const AddMaterialPopup: React.FC<Props> = ({
                   (() => {
                     const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
                     return activeField?.img ? (
-                      <div className="flex w-1/2 items-center justify-center">
+                      <div className="flex w-1/2 items-center justify-center overflow-hidden shrink-0">
                         <img
                           src={activeField.img}
-                          className="h-auto w-full max-w-[400px] rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
+                          className="max-h-full max-w-full w-[21rem] ml-[3rem] rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
                           alt="Field Preview"
                         />
                       </div>
@@ -3394,7 +3398,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             );
           })()}
 
-          <div className="mt-auto flex items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
+          <div className="mt-auto shrink-0 flex items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
             <p className="text-[0.9rem] text-[#666]">
               Step {currentStep + 1} of {currentSequence.length}
             </p>

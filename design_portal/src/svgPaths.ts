@@ -346,10 +346,6 @@ export const TOOLBAR = {
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };
-export const ADDMATERIAL_IMG = {
-  groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
-  groov_gap: '/assets/addmaterial/Guide_Position_5.png',
-};
 
 export const ADDMATERIAL_IMG = {
   groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
