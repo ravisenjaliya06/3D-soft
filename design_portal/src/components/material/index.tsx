@@ -1,5 +1,6 @@
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
+import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useEffect } from 'react';
 import AddMaterialPopup from './addItem';
@@ -12,7 +13,6 @@ import { CATEGORY_TABS } from './constants';
 import { useMaterialData } from './hooks/useMaterialData';
 import { useMaterialState } from './hooks/useMaterialState';
 import styles from './material.module.css';
-import { assets } from '@/svgPaths';
 const Material: React.FC = () => {
   const {
     companyMaterials,
@@ -179,10 +179,13 @@ const Material: React.FC = () => {
 
             <div className={styles.materialrightside}>
               <MaterialToolbar
-                searchQuery={searchQuery} 
-                onSearchChange={setSearchQuery} 
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 actionButton={
-                  <button className="ml-[1rem] h-[1.5rem] rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 text-xs font-bold text-[#fff] font-[comfortaa]" onClick={() => setAddMaterialPopup(true)}>
+                  <button
+                    className="ml-[1rem] h-[1.5rem] rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 font-[comfortaa] text-xs font-bold text-[#fff]"
+                    onClick={() => setAddMaterialPopup(true)}
+                  >
                     <img src={assets.plus} alt="Plus icon" /> Add New
                   </button>
                 }

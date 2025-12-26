@@ -22,7 +22,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
         </button>
         <div className="relative flex items-center">
           <svg
-            className="pointer-events-none absolute right-3 h-[17px] pl-[7px] pb-[2px] text-[#392579]/50"
+            className="pointer-events-none absolute right-3 h-[17px] pb-[2px] pl-[7px] text-[#392579]/50"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
