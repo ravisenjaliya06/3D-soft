@@ -2789,7 +2789,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
   // const isFieldWithImage = (field: Field): field is FieldWithImage => {
-    // return typeof field.img === 'string' && field.img.length > 0;
+  // return typeof field.img === 'string' && field.img.length > 0;
   // };
   // const fieldWithImage = currentPopup?.fields.find(isFieldWithImage);
 
@@ -3352,8 +3352,10 @@ const AddMaterialPopup: React.FC<Props> = ({
             const hasImageFields = currentPopup?.fields.some((field) => field.img);
 
             return (
-              <div className="mb-8 flex flex-1 w-[95%] flex-row gap-6 overflow-hidden lg:flex-col">
-                <div className={`${hasImageFields ? 'w-1/2' : 'w-full'} overflow-y-auto overflow-x-hidden pr-2 ${styles.custom_scrollbar}`}>
+              <div className="mb-8 flex w-[95%] flex-1 flex-row gap-6 overflow-hidden lg:flex-col">
+                <div
+                  className={`${hasImageFields ? 'w-1/2' : 'w-full'} overflow-x-hidden overflow-y-auto pr-2 ${styles.custom_scrollbar}`}
+                >
                   {hasImageFields ? (
                     <div className="grid grid-cols-1 gap-2">
                       {currentPopup?.fields.map((field, index) => (
@@ -3366,13 +3368,15 @@ const AddMaterialPopup: React.FC<Props> = ({
                     <div className="grid grid-cols-2 gap-x-4">
                       {currentPopup?.fields.map((field, index) => (
                         <div
-                           key={field.key || index}
-                           className={`m-[1rem] pt-3 pb-2 ${
-                           field.type === 'toggle' || field.type === 'text' || field.type === 'number'
-                            ? 'flex flex-wrap gap-3 h-[2.5rem] w-auto'
-                            : ''
-                           }`}
-                          >
+                          key={field.key || index}
+                          className={`m-[1rem] pt-3 pb-2 ${
+                            field.type === 'toggle' ||
+                            field.type === 'text' ||
+                            field.type === 'number'
+                              ? 'flex h-[2.5rem] w-auto flex-wrap gap-3'
+                              : ''
+                          }`}
+                        >
                           {renderField(field)}
                         </div>
                       ))}
@@ -3385,10 +3389,10 @@ const AddMaterialPopup: React.FC<Props> = ({
                   (() => {
                     const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
                     return activeField?.img ? (
-                      <div className="flex w-1/2 items-center justify-center overflow-hidden shrink-0">
+                      <div className="flex w-1/2 shrink-0 items-center justify-center overflow-hidden">
                         <img
                           src={activeField.img}
-                          className="max-h-full max-w-full w-[21rem] ml-[3rem] rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
+                          className="ml-[3rem] max-h-full w-[21rem] max-w-full rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
                           alt="Field Preview"
                         />
                       </div>
@@ -3398,7 +3402,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             );
           })()}
 
-          <div className="mt-auto shrink-0 flex items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
+          <div className="mt-auto flex shrink-0 items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
             <p className="text-[0.9rem] text-[#666]">
               Step {currentStep + 1} of {currentSequence.length}
             </p>
