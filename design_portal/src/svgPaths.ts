@@ -300,6 +300,7 @@ export const SIMPLE_LINE_SVG = {
 export const PLUS = {
   plus: '/assets/plus.svg',
 };
+
 export const LOAD_MORE = {
   loadMore: '/assets/LoadMore.svg',
 };
@@ -394,5 +395,4 @@ export const assets = {
   ...TITLELOGO_SVG,
   ...TOOLBAR,
   ...LOAD_MORE,
-  ...ADDMATERIAL_IMG,
 };

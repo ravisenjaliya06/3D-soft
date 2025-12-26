@@ -22,20 +22,20 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
         </button>
         <div className="relative flex items-center">
           <svg
-            className="pointer-events-none absolute right-3 h-[17px] pl-[9px] text-gray-500"
+            className="pointer-events-none absolute right-3 h-[17px] pl-[7px] pb-[2px] text-[#392579]/50"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
+            strokeWidth={3}
           >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
+            <circle cx="11" cy="11" r="5" />
+            <path d="m20 20-4.35-4.35" />
           </svg>
           <input
             type="text"
-            // placeholder="Search..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-[24px] w-[170px] rounded-[7px] border border-gray-300 bg-transparent pr-9 pl-4 text-sm text-gray-700 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300"
+            className="h-[24px] w-[170px] rounded-[7px] border border-[#392579]/50 bg-transparent pr-9 pl-4 text-sm text-gray-700 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300"
           />
         </div>
         {actionButton}
