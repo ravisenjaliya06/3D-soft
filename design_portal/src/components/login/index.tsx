@@ -64,6 +64,12 @@ const Login = () => {
         response.data?.non_field_errors?.[0] ||
         response.data?.message ||
         'Login failed. Please try again.';
+      if (errorMessage === 'Account is not verified. Please verify account with the OTP.') {
+        router.push({
+          pathname: REDIRECT.OTP,
+          query: { email: email, message: errorMessage },
+        });
+      }
       setLoginError(errorMessage);
       setIsLoading(false);
     }

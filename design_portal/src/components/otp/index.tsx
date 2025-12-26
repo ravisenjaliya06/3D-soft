@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 const Otp = () => {
   const otpLength = 5;
   const router = useRouter();
-  const { email } = router.query || {};
+  const { email, message } = router.query || {};
   const [otp, setOtp] = useState(new Array(otpLength).fill(''));
   const [timer, setTimer] = useState(120);
   const [setResend, setSetResend] = useState(true);
@@ -39,6 +39,12 @@ const Otp = () => {
       setSetResend(false);
     }
   }, [timer]);
+
+  React.useEffect(() => {
+    if (message) {
+      setError(message as string);
+    }
+  }, []);
 
   const handleOTPVerify = async () => {
     if (otp.includes('')) {

@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
+from design.models import CatalogRuleParts, CatalogRules, DesignCatalog, DesignVersion
 from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
@@ -174,3 +175,49 @@ def default_material_data(organization: Organization) -> bool:
             Properties.objects.create(**prop_data, material=new_material)
 
     return True
+
+def duplicate_default_catalogs_for_organization(
+    organization: Organization,
+) -> None:
+    """
+    Clone all default catalogs (organization IS NULL) into the given organization.
+    """
+
+    default_catalogs = (
+        DesignCatalog.objects.filter(organization__isnull=True)
+        .prefetch_related("catalog_rule__catalog_rule_parts")
+        .order_by("created_at")
+    )
+
+    old_to_new = {}
+
+    for catalog in default_catalogs:
+        clone = DesignCatalog.objects.create(
+            organization=organization,
+            type=catalog.type,
+            name=catalog.name,
+            parent=None,
+            data={**catalog.data},
+        )
+        old_to_new[catalog.id] = clone
+
+    for catalog in default_catalogs:
+        if catalog.parent_id:
+            old_to_new[catalog.id].parent = old_to_new[catalog.parent_id]
+            old_to_new[catalog.id].save(update_fields=["parent"])
+
+    for catalog in default_catalogs:
+        new_catalog = old_to_new[catalog.id]
+
+        for rule in catalog.catalog_rule.all():
+            new_rule = CatalogRules.objects.create(
+                catalog=new_catalog,
+                name=rule.name,
+            )
+
+            for part in rule.catalog_rule_parts.all():
+                CatalogRuleParts.objects.create(
+                    catalog_rule=new_rule,
+                    name=part.name,
+                    data={**part.data},
+                )
