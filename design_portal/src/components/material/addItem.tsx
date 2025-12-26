@@ -3287,10 +3287,11 @@ const AddMaterialPopup: React.FC<Props> = ({
               <div key={label} className="flex items-center gap-[0.5rem]">
                 {/* STEP BOX */}
                 <div
-                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${isCurrent || isCompleted
+                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
+                    isCurrent || isCompleted
                       ? 'border-[#4b2aad] bg-[#4b2aad]'
                       : 'border-[#b8aef3] bg-white'
-                    }`}
+                  }`}
                 >
                   {isCurrent ? (
                     <img
@@ -3300,8 +3301,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                     />
                   ) : (
                     <span
-                      className={`text-sm font-semibold ${isCompleted ? 'text-white' : 'text-[#4b2aad]'
-                        }`}
+                      className={`text-sm font-semibold ${
+                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
+                      }`}
                     >
                       {index + 1}
                     </span>
@@ -3310,8 +3312,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
                 {/* LABEL */}
                 <span
-                  className={`text-sm font-medium ${isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
-                    }`}
+                  className={`text-sm font-medium ${
+                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
+                  }`}
                 >
                   {label}
                 </span>
@@ -3319,8 +3322,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* CONNECTOR */}
                 {index < steps.length - 1 && (
                   <div
-                    className={`h-[0.25rem] w-[9rem] rounded ${index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
-                      }`}
+                    className={`h-[0.25rem] w-[9rem] rounded ${
+                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
+                    }`}
                   />
                 )}
               </div>
@@ -3363,8 +3367,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                         return (
                           <div
                             key={field.key || index}
-                            className={`m-[1rem] pt-3 pb-2 ${isSmall ? 'flex-1 min-w-[200px] max-w-[100%]' : 'w-full'
-                              }`}
+                            className={`m-[1rem] pt-3 pb-2 ${
+                              isSmall ? 'max-w-[100%] min-w-[200px] flex-1' : 'w-full'
+                            }`}
                           >
                             {renderField(field, () => setActiveFieldKey(field.key))}
                           </div>
@@ -3381,9 +3386,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                         return (
                           <div
                             key={field.key || index}
-                            className={`m-[1rem] pt-3 pb-2 ${isSmall ? 'flex-1 min-w-[200px] max-w-[48%]' : 'w-[48%]'
-                              } ${isSmall ? 'flex h-[2.5rem] flex-wrap gap-3' : ''
-                              }`}
+                            className={`m-[1rem] pt-3 pb-2 ${
+                              isSmall ? 'max-w-[48%] min-w-[200px] flex-1' : 'w-[48%]'
+                            } ${isSmall ? 'flex h-[2.5rem] flex-wrap gap-3' : ''}`}
                           >
                             {renderField(field)}
                           </div>
