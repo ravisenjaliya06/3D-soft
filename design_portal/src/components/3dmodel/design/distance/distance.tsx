@@ -1,11 +1,6 @@
 import * as THREE from 'three';
 import { generateCompartmentsFromMesh } from '../../handler/items';
-import {
-  getActiveUnit,
-  metersToUnit,
-  unitSuffix,
-  unitToMeters,
-} from '../../handler/unitConversion';
+import { getActiveUnit, metersToUnit, unitToMeters } from '../../handler/unitConversion';
 import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
 import { isPlankObjectFindByName, isWallObject } from '../../utils/objectTypes';
@@ -151,17 +146,20 @@ export class DistanceTool {
     // Calculates the current distance
     const box = this.computeBoundingBox(target);
     const currentDistanceM = this.calculateDistance(box, meta);
-    const unit = getActiveUnit();
-    const currentInUnit = Math.max(0, metersToUnit(currentDistanceM, unit));
+    const currentInUnit = currentDistanceM;
 
     // Prompts the user to enter a new distance
-    const input = prompt(`Enter new distance (${unitSuffix(unit)}):`, currentInUnit.toFixed(1));
+    const unit = getActiveUnit();
+    const input = prompt(
+      `Enter new distance (${unit}):`,
+      metersToUnit(currentInUnit, unit).toFixed(0)
+    );
     if (!input) return;
-    const newVal = parseFloat(input);
-    if (!Number.isFinite(newVal) || newVal < 0) return;
+    const newValUnit = parseFloat(input);
+    if (!Number.isFinite(newValUnit) || newValUnit < 0) return;
 
     // Calculates the movement delta for the target mesh based on the new distance
-    const newM = unitToMeters(newVal, unit);
+    const newM = unitToMeters(newValUnit, unit);
     const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
     const currentFace = this.getCurrentFacePosition(box, meta);
     const delta = desiredFace - currentFace;
@@ -405,7 +403,6 @@ export class DistanceTool {
     mainAxis,
     offsetDir,
     group,
-    unit,
     fixed,
   }: CreateSideDistanceParams): void {
     if (refPos === null || !this.selectedMesh || !this.selectedBox) return;
@@ -416,7 +413,7 @@ export class DistanceTool {
 
     // Calculate the distance between the reference position and the mesh position
     const distanceM = Math.abs(refPos - meshPos);
-    const dist = metersToUnit(distanceM, unit);
+    const dist = distanceM;
 
     // Create points for the distance line
     const makePoint = (axisValue: number) =>
@@ -431,7 +428,7 @@ export class DistanceTool {
       start: p1,
       end: p2,
       viewOffsetDir: offsetDir,
-      label: `${dist.toFixed(1)} ${unitSuffix(unit)}`,
+      label: `${metersToUnit(dist, getActiveUnit()).toFixed(0)}`,
       meta: {
         axis: mainAxis,
         side,
@@ -461,15 +458,12 @@ export class DistanceTool {
       z: mainAxis === 'z' ? null : (this.selectedBox.min.z + this.selectedBox.max.z) / 2,
     };
 
-    const unit = getActiveUnit();
-
     this.createSideDistance({
       side: 'min',
       refPos: minPos,
       mainAxis,
       offsetDir,
       group,
-      unit,
       fixed,
     });
 
@@ -479,7 +473,6 @@ export class DistanceTool {
       mainAxis,
       offsetDir,
       group,
-      unit,
       fixed,
     });
   }
@@ -555,8 +548,15 @@ export class DistanceTool {
   }
 
   private applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
-    if (axis === 'x') target.position.x += delta;
-    else if (axis === 'y') target.position.y += delta;
-    else target.position.z += delta;
+    const worldPos = new THREE.Vector3();
+    target.getWorldPosition(worldPos);
+    if (axis === 'x') worldPos.x += delta;
+    else if (axis === 'y') worldPos.y += delta;
+    else worldPos.z += delta;
+
+    if (target.parent) {
+      target.parent.worldToLocal(worldPos);
+    }
+    target.position.copy(worldPos);
   }
 }

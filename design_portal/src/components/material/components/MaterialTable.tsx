@@ -64,9 +64,9 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-base font-semibold whitespace-nowrap transition-all duration-200 ease-in-out ${
+              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.9rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
-                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-semibold text-[var(--primary-color)]`
+                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
                   : `text-[var(--primary-color-grey-2)] hover:rounded-[0.199rem] hover:border hover:border-b hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
               } `}
               onClick={() => onTabChange(tab.id)}
@@ -86,7 +86,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
-                  <p className="text-[0.9rem] font-[600]">{column.label}</p>
+                  <p className="text-[0.8rem] font-[700]">{column.label}</p>
                   {column.sortable && (
                     <div className="flex flex-col items-center">
                       <img
@@ -125,7 +125,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.8rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.7rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
                   >
                     {getCellValue(row, column.key)}
                   </td>
