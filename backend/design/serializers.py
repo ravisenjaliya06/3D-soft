@@ -90,12 +90,14 @@ class SceneGetSerializer(serializers.Serializer):
         DRF will iterate when many=True.
         """
 
+
         return {
             **(catalog.data or {}),
             "id": str(catalog.id),
             "name": catalog.name,
             "type": catalog.type,
             "parent": str(catalog.parent.id) if catalog.parent else None,
+            "material": [{"id": material.id, "name": material.name, "type": material.type} for material in catalog.materials.all()],
         }
 
 
