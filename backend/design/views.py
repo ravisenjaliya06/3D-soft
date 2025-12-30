@@ -314,9 +314,8 @@ class DesignCatalogViewSet(ModelViewSet):
         version_id = request.query_params.get("version_id")
 
         if not design_id and not version_id:
-            catalogs = (
-                self.get_queryset()
-                .filter(organization=request.user.selected_organization)
+            catalogs = self.get_queryset().filter(
+                organization=request.user.selected_organization
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)
@@ -337,12 +336,9 @@ class DesignCatalogViewSet(ModelViewSet):
                 status=404,
             )
 
-        catalogs = (
-            self.get_queryset()
-            .filter(
-                version=version,
-                organization=request.user.selected_organization,
-            )
+        catalogs = self.get_queryset().filter(
+            version=version,
+            organization=request.user.selected_organization,
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)

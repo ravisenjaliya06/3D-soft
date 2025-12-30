@@ -1,12 +1,12 @@
 # Python imports
 from typing import Any, Dict
+from uuid import uuid4
 
 # Django imports
 from django.db import transaction
 
 # External imports
 from rest_framework import serializers
-from uuid import uuid4
 
 # App imports
 from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
@@ -14,6 +14,7 @@ from design.utils import create_design_settings
 from material.models import Material
 from umaboy.models import Organization
 from user.constant import PUT
+
 
 class DesignSerializer(serializers.ModelSerializer):
 
@@ -159,7 +160,9 @@ class ScenePayloadSerializer(serializers.Serializer):
 
                 frontend_id = item.get("id")
                 if frontend_id:
-                    frontend_id_to_temp_keys.setdefault(frontend_id, []).append(temp_key)
+                    frontend_id_to_temp_keys.setdefault(frontend_id, []).append(
+                        temp_key
+                    )
 
                 item["_temp_key"] = temp_key
 

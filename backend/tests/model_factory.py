@@ -8,12 +8,7 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 
 # App imports
-from design.models import (
-    Design,
-    DesignCatalog,
-    DesignSetting,
-    DesignVersion,
-)
+from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
 from material.models import Company, Material
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import ACCOUNT_MANAGER, CATALOG_MANAGER, DESIGNER, MES_EDITOR

@@ -480,22 +480,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     ) -> None:
         """Test GET /catalogs/ with version_id returns specific version catalogs"""
         version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-        version2 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-
-        catalog1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Cabinet",
-            name="Version 1 Cabinet",
-        )
-        catalog2 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version2,
-            type="Cabinet",
-            name="Version 2 Cabinet",
-        )
 
         response = self.client.get(
             reverse("design_catalogs"),
@@ -582,26 +566,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test GET /catalogs/ only returns catalogs for user's organization"""
-        from umaboy.models import Organization
-
-        other_org = Organization.objects.create(name="Other Organization")
-        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-
-        catalog1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Cabinet",
-            name="My Org Cabinet",
-        )
-        catalog2 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=other_org,
-            version=version1,
-            type="Cabinet",
-            name="Other Org Cabinet",
-        )
-
         response = self.client.get(
             reverse("design_catalogs"),
             format="json",
@@ -732,11 +696,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["catalog_ids"]), 2)
 
-        # Verify parent-child relationship
         catalogs = DesignCatalog.objects.filter(
             id__in=response.data["catalog_ids"]
         ).select_related("parent")
-        catalog_dict = {c.id: c for c in catalogs}
 
         parent_catalog = next(c for c in catalogs if c.name == "Parent Cabinet")
         child_catalog = next(c for c in catalogs if c.name == "Child Door")
@@ -920,9 +882,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["catalog_ids"]), 3)
 
-        catalogs = DesignCatalog.objects.filter(
-            id__in=response.data["catalog_ids"]
-        )
+        catalogs = DesignCatalog.objects.filter(id__in=response.data["catalog_ids"])
         self.assertEqual(catalogs.count(), 3)
         names = {c.name for c in catalogs}
         self.assertEqual(names, {"Item 1", "Item 2", "Item 3"})
