@@ -11,7 +11,7 @@ sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from design.models import CatalogRuleParts, CatalogRules, DesignCatalog
+from design.models import DesignCatalog
 from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization
 
@@ -1254,6 +1254,9 @@ CATALOG = [
         "position": {"x": 0, "y": 1, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 0.001, "y": 0.001, "z": 0.001},
+        "material": [
+            "Alder Ven EB"
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111111",
@@ -1265,12 +1268,9 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1283,12 +1283,9 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1301,12 +1298,9 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1319,12 +1313,9 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1337,12 +1328,9 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1355,12 +1343,9 @@ CATALOG = [
         "position": {"x": 0, "y": -955, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
         "catalog_rule": "Panel",
     },
     {
@@ -1373,12 +1358,9 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111404",
@@ -1390,12 +1372,9 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111505",
@@ -1407,12 +1386,9 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/Texture0004.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
@@ -1424,17 +1400,14 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/Texture0004.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB"
+        ],
     },
 ]
 
 
-def get_registred_organization() -> QuerySet[Organization]:
+def get_registered_organization() -> QuerySet[Organization]:
     return Organization.objects.all()
 
 
@@ -1456,7 +1429,7 @@ def create_finish() -> None:
         )
 
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
                 FinishesLibrary.objects.create(
                     type=finish_data["type"],
@@ -1490,7 +1463,7 @@ def create_finish_type() -> None:
         )
 
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
                 FinishesLibrary.objects.create(
                     type=finish_type_data["type"],
@@ -1523,7 +1496,7 @@ def create_textures() -> None:
             defaults=defaults,
         )
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
                 FinishesLibrary.objects.create(
                     type=texture_data["type"],
@@ -1541,7 +1514,7 @@ def create_company() -> dict[tuple[str, str, str | None], Company]:
     Returns a dictionary mapping (name, material_type, org_name_or_None) -> company object
     """
     company_objects = {}
-    organizations = get_registred_organization()
+    organizations = get_registered_organization()
 
     for company_data in COMPANY:
         defaults = {
@@ -1586,7 +1559,7 @@ def create_materials(
     for each registered organization. Properties are applied if present.
     If company is missing/blank, material will be stored with company=None.
     """
-    organizations = get_registred_organization()
+    organizations = get_registered_organization()
 
     for material_data in MATERIAL:
         company_name = material_data.get("company") or None
@@ -1639,98 +1612,128 @@ def create_materials(
 
 def create_catalog(catalog_list: list[dict]) -> None:
     """
-    - is_main=True → DesignCatalog
-    - is_main=True + parent → self FK
-    - others → CatalogRules + CatalogRuleParts
+    Creates default catalogs and duplicates them for all organizations.
     """
 
-    main_catalog_map: dict[str, DesignCatalog] = {}
+    default_map: dict[str, DesignCatalog] = {}
     for item in catalog_list:
         if not item.get("is_main"):
             continue
 
-        catalog, created = DesignCatalog.objects.update_or_create(
+        catalog, _ = DesignCatalog.objects.update_or_create(
             id=item["id"],
-            name=item["name"],
-            type=item["type"],
             defaults={
+                "name": item["name"],
+                "type": item["type"],
                 "organization": None,
                 "version": None,
+                "parent": None,
                 "data": item,
             },
         )
 
-        if created:
-            catalog.data["id"] = str(catalog.id)
-            catalog.save(update_fields=["data"])
-
-        main_catalog_map[item["id"]] = catalog
-
-    if not main_catalog_map:
-        raise ValueError("No main catalog found (is_main=True)")
-
-    for item in catalog_list:
-        if not item.get("is_main"):
-            continue
-
-        parent_id = item.get("parent")
-        if not parent_id:
-            continue
-
-        child = main_catalog_map[item["id"]]
-        parent = main_catalog_map.get(parent_id)
-
-        if not parent:
-            continue
-
-        if child.parent_id != parent.id:
-            child.parent = parent
-            child.save(update_fields=["parent"])
-
-    rule_cache: dict[tuple[str, str], CatalogRules] = {}
+        default_map[item["id"]] = catalog
+        _attach_material_by_name(catalog, item)
 
     for item in catalog_list:
         if item.get("is_main"):
             continue
 
         parent_id = item.get("parent")
-
-        main_catalog = main_catalog_map.get(parent_id)
-        if not main_catalog:
+        if not parent_id:
             continue
 
-        rule_name = item.get("catalog_rule", "DEFAULT")
-        rule_key = (str(main_catalog.id), rule_name)
+        parent = default_map.get(parent_id)
+        if not parent:
+            raise ValueError(f"Parent not found: {parent_id}")
 
-        if rule_key not in rule_cache:
-            rule_cache[rule_key], _ = CatalogRules.objects.get_or_create(
-                catalog=main_catalog,
-                name=rule_name,
-            )
-
-        material_obj = None
-        material_data = item.get("material")
-        if material_data:
-            material_obj = Material.objects.filter(
-                name=material_data.get("value"),
-                organization__isnull=True,
-            ).first()
-
-        part, created = CatalogRuleParts.objects.update_or_create(
-            catalog_rule=rule_cache[rule_key],
+        catalog, _ = DesignCatalog.objects.update_or_create(
             id=item["id"],
-            name=item["name"],
-            type=item["type"],
             defaults={
-                "material": material_obj,
+                "name": item["name"],
+                "type": item["type"],
+                "organization": None,
+                "version": None,
+                "parent": parent,
                 "data": item,
             },
         )
 
-        if created:
-            part.data["id"] = str(part.id)
-            part.data["parent"] = str(main_catalog.id)
-            part.save(update_fields=["data"])
+        default_map[item["id"]] = catalog
+        _attach_material_by_name(catalog, item)
+
+    organizations = get_registered_organization()
+
+    for organization in organizations:
+        _duplicate_default_catalogs_for_org(organization, default_map)
+
+
+def _duplicate_default_catalogs_for_org(
+    organization: Organization,
+    default_map: dict[str, DesignCatalog],
+) -> None:
+    old_to_new = {}
+
+    for old in default_map.values():
+        clone = DesignCatalog.objects.create(
+            organization=organization,
+            version=None,
+            type=old.type,
+            name=old.name,
+            parent=None,
+            data={**old.data} if old.data else {},
+        )
+
+        clone.data["id"] = str(clone.id)
+        clone.save(update_fields=["data"])
+
+        _attach_material_by_name(clone, old, organization)
+
+        old_to_new[old.id] = clone
+
+    for old in default_map.values():
+        if old.parent_id:
+            child = old_to_new[old.id]
+            parent = old_to_new.get(old.parent_id)
+
+            if not parent:
+                raise ValueError(f"Missing parent clone for {old.id}")
+
+            child.parent = parent
+            child.data["parent"] = str(parent.id)
+            child.save(update_fields=["parent", "data"])
+
+
+def _attach_material_by_name(
+    catalog: DesignCatalog,
+    item,
+    organization=None,
+) -> None:
+    """
+    Attach material using material.name instead of file path.
+    Supports both dict input and DesignCatalog model input.
+    """
+    if isinstance(item, dict):
+        material_data = item.get("material")
+    elif isinstance(item, DesignCatalog):
+        material_data = list(item.materials.values_list("name", flat=True))
+    else:
+        return
+
+    if not material_data:
+        return
+
+    for material_name in material_data:
+        if not material_name:
+            continue
+        material = Material.objects.filter(
+            name=material_name,
+            organization=organization,
+        ).first()
+
+        if not material:
+            continue
+        catalog.materials.add(material)
 
 
 if __name__ == "__main__":

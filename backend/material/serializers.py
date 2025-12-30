@@ -112,7 +112,7 @@ class ValidationMixin:
 class BandingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
-        fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness"]
+        fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness", "model_file"]
 
 
 class BoardStockSerializer(ValidationMixin, serializers.ModelSerializer):

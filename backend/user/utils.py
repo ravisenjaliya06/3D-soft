@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
 # App imports
+from design.models import DesignCatalog
 from material.models import Company, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
@@ -174,3 +175,46 @@ def default_material_data(organization: Organization) -> bool:
             Properties.objects.create(**prop_data, material=new_material)
 
     return True
+
+
+def duplicate_default_catalogs_for_organization(organization: Organization) -> None:
+    """
+    Clone all default catalogs (organization IS NULL) into the given organization.
+    Preserves parent-child relationships.
+    """
+
+    default_catalogs = (
+        DesignCatalog.objects
+        .filter(organization__isnull=True)
+        .order_by("created_at")
+    )
+
+    old_to_new = {}
+    for catalog in default_catalogs:
+        clone = DesignCatalog.objects.create(
+            organization=organization,
+            version=None,
+            type=catalog.type,
+            name=catalog.name,
+            parent=None,
+            data={**catalog.data} if catalog.data else {},
+        )
+
+        clone.data["id"] = str(clone.id)
+        clone.save(update_fields=["data"])
+
+        clone.material.set(catalog.material.all())
+
+        old_to_new[catalog.id] = clone
+
+    for catalog in default_catalogs:
+        if catalog.parent_id:
+            child = old_to_new[catalog.id]
+            parent = old_to_new.get(catalog.parent_id)
+
+            if not parent:
+                raise ValueError(f"Missing cloned parent for {catalog.id}")
+
+            child.parent = parent
+            child.data["parent"] = str(parent.id)
+            child.save(update_fields=["parent", "data"])

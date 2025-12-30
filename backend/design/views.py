@@ -316,7 +316,7 @@ class DesignCatalogViewSet(ModelViewSet):
         if not design_id and not version_id:
             catalogs = (
                 self.get_queryset()
-                .filter(organization__isnull=True)
+                .filter(organization=request.user.selected_organization)
                 .prefetch_related("catalog_rule__catalog_rule_parts")
             )
 

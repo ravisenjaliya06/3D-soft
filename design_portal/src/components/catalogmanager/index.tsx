@@ -111,15 +111,15 @@ const CatalogManager = () => {
   const handleAddCatalog = () => setShowPopup(true);
 
   /** Fetch catalog list based on the selected catalog type */
-  const getCatalog = useCallback(async () => {
+  const getCatalog = async () => {
     const response: { status: number; data: Catalog[] } = await commonService.get(
-      API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
+      API_ENDPOINT.GET_CATALOG_ITEMS
     );
 
     if (response.status === 200) {
       setCatalogData(response.data);
     }
-  }, [catalogType]);
+  };
 
   /** Load all rule parts for the selected rule */
   const fetchRuleParts = async (ruleId: string) => {
@@ -400,12 +400,12 @@ const CatalogManager = () => {
                         onChange={(e) => setName(e.target.value)}
                         onBlur={handleBlur(setIsEditingName)}
                         onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                        className="h-[15px] w-[11rem] rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
+                        className="h-[15px] w-[11rem] rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
                       />
                     ) : (
                       <div
                         onClick={() => setIsEditingName(true)}
-                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
+                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
                       >
                         {selectedCatalog?.name}
                       </div>
@@ -426,12 +426,12 @@ const CatalogManager = () => {
                         onChange={(e) => setDescription(e.target.value)}
                         onBlur={handleBlur(setIsEditingDescription)}
                         onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                        className="h-[15px] w-[11rem] rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
+                        className="h-[15px] w-[11rem] rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
                       />
                     ) : (
                       <div
                         onClick={() => setIsEditingDescription(true)}
-                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
+                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
                       >
                         {selectedCatalog?.description}
                       </div>
@@ -440,30 +440,6 @@ const CatalogManager = () => {
                     {/* FLOATING LABEL */}
                     <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
                       Description
-                    </span>
-                  </div>
-
-                  {/* UP CHARGE */}
-                  <div className="relative mb-[0.5rem]">
-                    <div className="flex h-[15px] w-[11rem] items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]">
-                      10%
-                    </div>
-
-                    {/* FLOATING LABEL */}
-                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
-                      up charge
-                    </span>
-                  </div>
-
-                  {/* BUYOUT */}
-                  <div className="relative mb-[0.5rem]">
-                    <div className="flex h-[15px] w-[11rem] items-start rounded-[0.8rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]">
-                      NO
-                    </div>
-
-                    {/* FLOATING LABEL */}
-                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
-                      buyout
                     </span>
                   </div>
                 </div>

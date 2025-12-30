@@ -405,6 +405,9 @@ class Properties(models.Model):
         Material, on_delete=models.CASCADE, related_name="properties"
     )
 
+    model_file = models.FileField(
+        upload_to="model_files", null=True, blank=True
+    )
     width = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     length = models.FloatField(null=True, blank=True)
@@ -421,7 +424,7 @@ class Properties(models.Model):
     unit_of_issue = models.CharField(
         max_length=100,
         choices=UnitOfIssueChoices.choices,
-        default="UnitOfIssueChoices.Each",
+        default=UnitOfIssueChoices.EACH,
     )
     default_cost = models.FloatField(default=0.00)
     sell_price = models.FloatField(default=0.00)

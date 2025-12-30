@@ -11,7 +11,6 @@ from rest_framework import status
 # App imports
 from design.models import (
     CatalogRuleParts,
-    CatalogRules,
     DesignCatalog,
     DesignSetting,
     DesignVersion,
