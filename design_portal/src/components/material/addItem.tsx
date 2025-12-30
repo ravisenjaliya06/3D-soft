@@ -1,7 +1,7 @@
 import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { assets } from '@/svgPaths';
+import { assets, DESIGN } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
 import styles from './material.module.css';
@@ -47,6 +47,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<MaterialPropertiesInput>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
+  const [errorMessage, setFinishError] = useState<string | null>(null);
 
   // Material type options
   const materialTypes = [
@@ -2814,6 +2815,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   /** Go to the previous step in the popup wizard */
   const handleBack = () => {
     if (currentStep > 0) {
+      setFinishError(null);
       setCurrentStep((prev) => prev - 1);
     }
   };
@@ -3159,10 +3161,11 @@ const AddMaterialPopup: React.FC<Props> = ({
         setCreateWorkOrderPopup(false);
         handleGetCompanyMaterials(companyId);
       } else {
-        console.error('Something went wrong');
+        setFinishError('Failed to create material. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating material:', error);
+      setFinishError('Finish action failed. Please check your inputs or try again.');
+      console.error('Error submitting material:', error);
     }
   };
 
@@ -3173,22 +3176,24 @@ const AddMaterialPopup: React.FC<Props> = ({
     switch (field.type) {
       case 'select':
         return (
-          <InputField
-            label={field.label}
-            type="select"
-            value={value}
-            onFocus={onActivate}
-            placeholder={field.placeholder}
-            className="text-[#392579]"
-            mediumField={true}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              handleInputChange(field.key, e.target.value)
-            }
-            options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              type="select"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              className="text-[#392579]"
+              mediumField={true}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                handleInputChange(field.key, e.target.value)
+              }
+              options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
 
       case 'toggle':
@@ -3218,37 +3223,41 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       case 'number':
         return (
-          <InputField
-            label={field.label}
-            minField={true}
-            type="number"
-            value={value}
-            onFocus={onActivate}
-            placeholder={field.placeholder}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
-            }
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              minField={true}
+              type="number"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
+              }
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
 
       default:
         return (
-          <InputField
-            label={field.label}
-            type="text"
-            value={value}
-            onFocus={onActivate}
-            placeholder={field.placeholder}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(field.key, e.target.value)
-            }
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              type="text"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange(field.key, e.target.value)
+              }
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
     }
   };
@@ -3355,9 +3364,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   {hasImageFields ? (
                     <div className="flex flex-wrap gap-2">
                       {currentPopup?.fields.map((field, index) => {
-                        const isSmall =
-                          field.type === 'toggle' ||
-                          field.type === 'number';
+                        const isSmall = field.type === 'toggle' || field.type === 'number';
                         return (
                           <div
                             key={field.key || index}
@@ -3373,9 +3380,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <div className="flex flex-wrap gap-x-4">
                       {currentPopup?.fields.map((field, index) => {
-                        const isSmall =
-                          field.type === 'toggle' ||
-                          field.type === 'number';
+                        const isSmall = field.type === 'toggle' || field.type === 'number';
                         return (
                           <div
                             key={field.key || index}
@@ -3417,7 +3422,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             <div className="mr-[3rem] flex gap-[1rem]">
               {!isFirstStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
                   onClick={handleBack}
                   disabled={isFirstStep}
                 >
@@ -3425,7 +3430,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </button>
               ) : (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
                   onClick={() => setCreateWorkOrderPopup(false)}
                 >
                   Cancel
@@ -3434,19 +3439,27 @@ const AddMaterialPopup: React.FC<Props> = ({
 
               {!isLastStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
                   onClick={handleNext}
                   disabled={!formData.name && currentStep === 0}
                 >
                   Next
                 </button>
               ) : (
-                <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
-                  onClick={handleFinish}
-                >
-                  Finish
-                </button>
+                <>
+                  <button
+                    className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
+                    onClick={handleFinish}
+                  >
+                    Finish
+                  </button>
+                  {errorMessage && (
+                    <div className={styles.errorPopup}>
+                      <img src={DESIGN.error} alt="Error" />
+                      <p className="mt-[1rem] text-sm text-red-600">{errorMessage}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

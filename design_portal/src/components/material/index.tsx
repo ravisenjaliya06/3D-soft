@@ -183,7 +183,7 @@ const Material: React.FC = () => {
                 onSearchChange={setSearchQuery}
                 actionButton={
                   <button
-                    className="ml-[1rem] h-[1.5rem] rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 font-[comfortaa] text-xs font-bold text-[#fff]"
+                    className="ml-[1rem] h-[1.5rem] cursor-pointer rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 font-[comfortaa] text-xs font-bold text-[#fff]"
                     onClick={() => setAddMaterialPopup(true)}
                   >
                     <img src={assets.plus} alt="Plus icon" /> Add New
