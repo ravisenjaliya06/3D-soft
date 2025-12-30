@@ -202,6 +202,13 @@ export const MATERIAL = {
   mis: '/assets/material/mis.svg',
   molding: '/assets/material/molding.svg',
   up_arrow: '/assets/material/up arrow.svg',
+  leg: '/assets/material/leg.svg',
+  leg_leveler: '/assets/material/leg_leveler.svg',
+  panel_stock: '/assets/material/panel_stock.svg',
+  rod: '/assets/material/rod.svg',
+  door_rail: '/assets/material/door_rail.svg',
+  sliding_door_roller: '/assets/material/sliding_door_roller.svg',
+  wire_basket: '/assets/material/wire_basket.svg',
 };
 
 export const MENU_DOWN_SVG = {
