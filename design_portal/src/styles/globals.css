@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
 
 @tailwind components;
 @tailwind utilities;
@@ -114,7 +115,7 @@
   --edithover-color: #3925795d;
 
   /* font style */
-  --font-family: 'Poppins';
+  --font-family: 'Comfortaa';
 
   /* sizecontrole colors */
   --sizecontrole-background-color: #007bff;
