@@ -360,6 +360,10 @@ export const ADDMATERIAL_IMG = {
   groov_gap: '/assets/addmaterial/Guide_Position_5.png',
 };
 
+export const UP_DOWN_ARROW = {
+  up_down_arrow: '/assets/updown_arrow.svg',
+};
+
 export const assets = {
   ...ADDMATERIAL_IMG,
   ..._3DMODEL,
@@ -402,4 +406,5 @@ export const assets = {
   ...TITLELOGO_SVG,
   ...TOOLBAR,
   ...LOAD_MORE,
+  ...UP_DOWN_ARROW,
 };
