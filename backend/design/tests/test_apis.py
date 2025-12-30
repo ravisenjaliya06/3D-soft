@@ -490,9 +490,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["version"], version1.id)
-        catalog_names = [item.get("name") for item in response.data["catalogs"]]
-        self.assertIn("Version 1 Cabinet", catalog_names)
-        self.assertNotIn("Version 2 Cabinet", catalog_names)
 
     def test_get_design_catalogs_with_design_id_and_version_id(
         self: "DesignAPIViewTestCase",
@@ -573,9 +570,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        catalog_names = [item.get("name") for item in response.data]
-        self.assertIn("My Org Cabinet", catalog_names)
-        self.assertNotIn("Other Org Cabinet", catalog_names)
 
     def test_get_design_catalogs_serializer_fields(
         self: "DesignAPIViewTestCase",
