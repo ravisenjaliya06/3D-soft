@@ -292,14 +292,14 @@ const CatalogManager = () => {
 
         {/* TOP TOOLBAR */}
         <div className="mt-[1rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[2rem]">
-          <div className="mb-[1rem] flex w-[78.6rem] items-center gap-[0.8rem] rounded-2xl rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] px-[1rem] py-[1.5rem]">
+          <div className="mb-[1rem] flex w-[78.6rem] items-center gap-[0.8rem] rounded-2xl rounded-[5px] border border-[rgba(57,37,121,0.3)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] px-[1rem] py-[1.5rem]">
             <div className="flex items-center">
               <div className="flex items-center gap-[0.75rem]">
-                <span className="ml-[1rem] text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[var(--primary-color)]">
+                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
                   Catalog Type
                 </span>
                 <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#f4f3ff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[var(--primary-black)] outline-none"
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[#392579] outline-none"
                   value={catalogType}
                   onChange={(e) => setCatalogType(e.target.value)}
                 >
@@ -311,14 +311,14 @@ const CatalogManager = () => {
                 </select>
               </div>
             </div>
-            <div className="h-full w-px self-stretch bg-[#ccc]" />
+            <div className="h-[6vh] w-px bg-[#D7D3E4]" />
             <div className="flex items-center">
               <div className="flex items-center gap-[0.75rem]">
-                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[var(--primary-color)]">
+                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
                   Part
                 </span>
                 <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#f4f3ff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[var(--primary-black)] outline-none"
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-[var(--font-family)] text-[#392579] outline-none"
                   value={selectedCatalog?.id || ''}
                   onChange={(e) => {
                     const catalog = catalogData.find((c) => c.id === e.target.value);
@@ -331,11 +331,12 @@ const CatalogManager = () => {
                     </option>
                   ))}
                 </select>
-                <div className="ml-[0.5rem] flex">
+                <div className="ml-[1.7rem] h-[6vh] w-px bg-[#D7D3E4]" />
+                <div className="flex">
                   <img
                     src={assets.addd}
                     alt="Add"
-                    className="ml-[40rem] h-[5rem] w-[5rem] cursor-pointer"
+                    className="ml-[39rem] h-[5rem] w-[5rem] cursor-pointer"
                     onClick={handleAddCatalog}
                   />
                 </div>
@@ -477,23 +478,35 @@ const CatalogManager = () => {
             <div className="overflow-y-auto">
               <table className="w-full border-collapse">
                 {/* TABLE HEADER */}
-                <thead className="sticky top-0 z-10 bg-[rgba(255,255,255,1)]">
+                <thead className="sticky top-0 z-10 bg-[#ffffff]">
                   <tr>
                     <th
                       colSpan={3}
-                      className="h-[30px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] py-[3] text-left font-[400] text-[rgba(57,37,121,1)]"
+                      className="h-[3rem] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] text-left font-[700] text-[#392579]"
                     >
-                      Material Properties
+                      <div className="ml-[0.87rem] text-[0.85rem]">Material Properties</div>
                     </th>
                   </tr>
                   <tr>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
-                      Part ↑↓
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                      <div className="ml-[0.87rem]">
+                        Part
+                        <img
+                          src={assets.up_down_arrow}
+                          alt="Sort"
+                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                        />
+                      </div>
                     </th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
-                      Material ↑↓
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                      Material{' '}
+                      <img
+                        src={assets.up_down_arrow}
+                        alt="Sort"
+                        className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                      />
                     </th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-center text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
                       Action
                     </th>
                   </tr>
@@ -567,12 +580,12 @@ const CatalogManager = () => {
           {/* RIGHT BOX */}
           <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] border border-[rgba(57,37,121,0.2)] bg-[rgba(255,255,255,1)]">
             {/* ================= TOP BAR ================= */}
-            <div className="flex h-[40px] items-center gap-[15px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[16px]">
+            <div className="flex h-[3rem] items-center gap-[15px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[16px]">
               {/* DROPDOWN */}
               <select
                 value={selectedMaterialType}
                 onChange={(e) => setSelectedMaterialType(e.target.value)}
-                className="h-[26px] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white px-[12px] text-[0.65rem] text-[rgba(57,37,121,1)] focus:outline-none"
+                className="h-[1.7rem] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white text-[0.65rem] font-[var(--font-family)] text-[rgba(57,37,121,1)] focus:outline-none"
               >
                 {materialTypes.map((type) => (
                   <option key={type} value={type}>
@@ -582,13 +595,25 @@ const CatalogManager = () => {
               </select>
 
               {/* SEARCH */}
-              <input
-                type="text"
-                placeholder="Search"
-                value={materialSearch}
-                onChange={(e) => setMaterialSearch(e.target.value)}
-                className="h-[26px] flex-1 rounded-[0.3rem] border border-[rgba(57,37,121,0.25)] bg-white px-[12px] text-[0.65rem] focus:outline-none"
-              />
+              <div className="relative flex items-center">
+                <svg
+                  className="pointer-events-none absolute right-3 h-[17px] pb-[2px] pl-[3px] text-[#392579]/50"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1}
+                >
+                  <circle cx="11" cy="11" r="5" />
+                  <path d="m20 20-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={materialSearch}
+                  onChange={(e) => setMaterialSearch(e.target.value)}
+                  className="h-[1.5rem] w-[19rem] flex-1 rounded-[7px] border border-[#C4BED7]/50 bg-white pr-9 pl-[1.5rem] text-[0.65rem] text-[#A0AEC0] outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300"
+                />
+              </div>
             </div>
 
             {/* ================= TABLE ================= */}
@@ -598,12 +623,26 @@ const CatalogManager = () => {
                 <thead className="sticky top-[0rem] z-10 bg-[rgba(255,255,255,1)]">
                   <tr>
                     <th className="h-[28px] w-[40px] border-b-[0.5px] border-[rgba(57,37,121,0.2)]"></th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
-                      Material Name
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[rgba(57,37,121,1)]">
+                      <div>
+                        Material Name
+                        <img
+                          src={assets.up_down_arrow}
+                          alt="Sort"
+                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                        />
+                      </div>
                     </th>
 
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-xs font-[400] font-semibold text-[rgba(57,37,121,1)]">
-                      Description
+                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[rgba(57,37,121,1)]">
+                      <div>
+                        Description
+                        <img
+                          src={assets.up_down_arrow}
+                          alt="Sort"
+                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                        />
+                      </div>
                     </th>
                   </tr>
                 </thead>
@@ -622,7 +661,7 @@ const CatalogManager = () => {
                         } `}
                       >
                         {/* RADIO */}
-                        <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px] last:pr-[6]">
+                        <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px]">
                           <input
                             type="radio"
                             checked={selectedMaterialId === row.id}
@@ -632,12 +671,12 @@ const CatalogManager = () => {
                         </td>
 
                         {/* NAME */}
-                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] px-[16px] text-[0.65rem] text-[#3F3F46] last:pr-[6]">
+                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] text-left text-[0.65rem] text-[#3F3F46]">
                           {row.name}
                         </td>
 
                         {/* DESCRIPTION */}
-                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] px-[16px] text-[0.65rem] text-[#3F3F46] last:pr-[6]">
+                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] text-left text-[0.65rem] text-[#3F3F46]">
                           {row.description}
                         </td>
                       </tr>
@@ -657,7 +696,7 @@ const CatalogManager = () => {
         {/* ================= BOTTOM ACTION BAR ================= */}
         <div
           onClick={handleAssignMaterialButton}
-          className="absolute right-[21.50rem] bottom-[1rem] flex h-[30px] w-[10rem] cursor-pointer items-center gap-[8px] rounded-[0.8rem] border-t border-l border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[14px] text-[0.80rem] text-[rgba(57,37,121,1)] hover:bg-[rgba(245,245,245,1)]"
+          className="absolute right-[23.50rem] bottom-[1rem] flex h-[30px] w-[8rem] cursor-pointer items-center gap-[8px] rounded-[5px] border-t border-l border-[rgba(57,37,121,0.15)] bg-[#ffffff] px-[14px] text-[0.80rem] text-[rgba(57,37,121,1)]"
         >
           <img src={assets.addMaterialIcon} alt="Add Material" className="h-4 w-4" />
           Add to Material
