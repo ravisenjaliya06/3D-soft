@@ -167,6 +167,7 @@ class DesignCatalog(models.Model):
     )
     type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
     name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
     materials = models.ManyToManyField(

@@ -70,6 +70,7 @@ export interface MeshObjectData {
   rotation: Rotation;
 
   //optional properties
+  description?: string;
   parent?: string;
   scale?: Position;
   material?: Material;

@@ -8,6 +8,7 @@ import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
 import { Catalog, Material } from './interface';
+import { MeshObjectData } from '../3dmodel/sceneCreator/interface';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -20,8 +21,8 @@ const CatalogManager = () => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [catalogType, setCatalogType] = useState('Door');
   const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
-  const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
-  const [catalogData, setCatalogData] = useState<Catalog[]>([]);
+  const [selectedCatalog, setSelectedCatalog] = useState<MeshObjectData | null>(null);
+  const [catalogData, setCatalogData] = useState<MeshObjectData[]>([]);
   const [ruleParts, setRuleParts] = useState<RulePart[]>([]);
   const [materialData, setMaterialData] = useState<Material[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
@@ -112,7 +113,7 @@ const CatalogManager = () => {
 
   /** Fetch catalog list based on the selected catalog type */
   const getCatalog = async () => {
-    const response: { status: number; data: Catalog[] } = await commonService.get(
+    const response: { status: number; data: MeshObjectData[] } = await commonService.get(
       API_ENDPOINT.GET_CATALOG_ITEMS
     );
 
@@ -137,17 +138,11 @@ const CatalogManager = () => {
     }
   };
 
-  useEffect(() => {
-    getCatalog();
-  }, [getCatalog]);
+  // useEffect(() => {
+  //   getCatalog();
+  // }, [getCatalog]);
 
   useEffect(() => {
-    if (selectedCatalog && selectedCatalog.catalog_rules.length > 0) {
-      fetchRuleParts(selectedCatalog.catalog_rules[0].id);
-    } else {
-      setActiveRuleId(null);
-      setRuleParts([]);
-    }
   }, [selectedCatalog]);
 
   useEffect(() => {
@@ -166,14 +161,14 @@ const CatalogManager = () => {
       description: newDescription,
     };
 
-    const response: { status: number; data: Catalog } = await commonService.post(
+    const response: { status: number; data: MeshObjectData } = await commonService.post(
       API_ENDPOINT.CREATE_MATERIAL_CATALOG,
       payload
     );
 
     if (response.status === 201) {
       // fetch all catalogs
-      const catalogResponse: { status: number; data: Catalog[] } = await commonService.get(
+      const catalogResponse: { status: number; data: MeshObjectData[] } = await commonService.get(
         API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
       );
       if (catalogResponse.status === 200) {
@@ -352,33 +347,6 @@ const CatalogManager = () => {
             {/* ================= RULE LIST ================= */}
             <div className="flex flex-[1] flex-col">
               <div className="mt-[1] flex-[1] space-y-[1] overflow-y-auto pr-[1]">
-                {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
-                  <div
-                    key={rule.id}
-                    onClick={() => fetchRuleParts(rule.id)}
-                    className={`relative mt-[5px] ml-[1rem] flex h-[32px] w-[11rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.5rem] px-[3] py-[2] transition-colors duration-150 ${
-                      activeRuleId === rule.id
-                        ? 'bg-[#E6DEFF]'
-                        : 'hover:bg-[rgba(229, 221, 255, 1)]'
-                    } `}
-                  >
-                    <img
-                      src={assets.matariel}
-                      alt=""
-                      className="h-[1.2rem] w-[1.2rem] bg-[#F3F4F6]"
-                    />
-
-                    <span
-                      className={`text-[0.7rem] ${
-                        activeRuleId === rule.id
-                          ? 'font-medium text-[var(--primary-color)]'
-                          : 'text-[rgba(229, 221, 255, 1)]'
-                      } `}
-                    >
-                      {rule.name}
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
 
