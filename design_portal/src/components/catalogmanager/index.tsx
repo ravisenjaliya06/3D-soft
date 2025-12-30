@@ -1,7 +1,7 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CatalogRule, RulePart } from '../3dmodel/handler/interface';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';

@@ -9,8 +9,6 @@ from django.utils import timezone
 
 # App imports
 from design.models import (
-    CatalogRuleParts,
-    CatalogRules,
     Design,
     DesignCatalog,
     DesignSetting,
@@ -170,30 +168,5 @@ def new_design_catalog(
         type=type,
         name=name,
         parent=parent,
-        data=data or {},
-    )
-
-
-def new_catalog_rule(
-    database: str,
-    catalog: DesignCatalog,
-    name: str,
-) -> CatalogRules:
-    rule, _ = CatalogRules.objects.using(database).get_or_create(
-        catalog=catalog,
-        name=name,
-    )
-    return rule
-
-
-def new_catalog_rule_part(
-    database: str,
-    catalog_rule: CatalogRules,
-    name: str,
-    data: Optional[dict] = None,
-) -> CatalogRuleParts:
-    return CatalogRuleParts.objects.using(database).create(
-        catalog_rule=catalog_rule,
-        name=name,
         data=data or {},
     )

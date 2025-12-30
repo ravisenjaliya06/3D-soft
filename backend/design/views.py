@@ -317,7 +317,6 @@ class DesignCatalogViewSet(ModelViewSet):
             catalogs = (
                 self.get_queryset()
                 .filter(organization=request.user.selected_organization)
-                .prefetch_related("catalog_rule__catalog_rule_parts")
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)
@@ -344,7 +343,6 @@ class DesignCatalogViewSet(ModelViewSet):
                 version=version,
                 organization=request.user.selected_organization,
             )
-            .prefetch_related("catalog_rule__catalog_rule_parts")
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)

@@ -6,6 +6,7 @@ from django.db import transaction
 
 # External imports
 from rest_framework import serializers
+from uuid import uuid4
 
 # App imports
 from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
@@ -13,7 +14,6 @@ from design.utils import create_design_settings
 from material.models import Material
 from umaboy.models import Organization
 from user.constant import PUT
-
 
 class DesignSerializer(serializers.ModelSerializer):
 
@@ -135,35 +135,46 @@ class ScenePayloadSerializer(serializers.Serializer):
             design = self._get_design(validated_data["design_id"], organization)
             version = DesignVersion.objects.create(design=design)
 
-            catalog_map = {}
+            temp_key_to_catalog: dict[str, DesignCatalog] = {}
+            frontend_id_to_temp_keys: dict[str, list[str]] = {}
 
-            for item in items:
+            for index, item in enumerate(items):
+                temp_key = f"{index}_{uuid4()}"
+
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
                     version=version,
                     type=item.get("type"),
                     name=item.get("name"),
                     parent=None,
-                    data=item,
+                    data=item.copy(),
                 )
 
                 catalog.data["id"] = str(catalog.id)
                 catalog.save(update_fields=["data"])
 
-                self._attach_material(catalog, item)
+                self._attach_material_by_name(catalog, item)
 
-                catalog_map[item["id"]] = catalog
+                temp_key_to_catalog[temp_key] = catalog
+
+                frontend_id = item.get("id")
+                if frontend_id:
+                    frontend_id_to_temp_keys.setdefault(frontend_id, []).append(temp_key)
+
+                item["_temp_key"] = temp_key
 
             for item in items:
                 parent_frontend_id = item.get("parent")
                 if not parent_frontend_id:
                     continue
 
-                child_catalog = catalog_map[item["id"]]
-                parent_catalog = catalog_map.get(parent_frontend_id)
+                child_catalog = temp_key_to_catalog[item["_temp_key"]]
 
-                if not parent_catalog:
+                possible_parents = frontend_id_to_temp_keys.get(parent_frontend_id)
+                if not possible_parents:
                     raise ValueError(f"Parent not found: {parent_frontend_id}")
+
+                parent_catalog = temp_key_to_catalog[possible_parents[0]]
 
                 child_catalog.parent = parent_catalog
                 child_catalog.data["parent"] = str(parent_catalog.id)
@@ -172,5 +183,5 @@ class ScenePayloadSerializer(serializers.Serializer):
         return {
             "message": "Design saved successfully",
             "version_id": version.id,
-            "catalog_ids": [c.id for c in catalog_map.values()],
+            "catalog_ids": [c.id for c in temp_key_to_catalog.values()],
         }
