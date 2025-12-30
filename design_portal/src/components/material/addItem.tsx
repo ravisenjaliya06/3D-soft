@@ -546,7 +546,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Slot Type',
               type: 'text',
               placeholder: 'Enter slot type',
-              disabled: true,
+              disabled: false,
               img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
@@ -3238,7 +3238,6 @@ const AddMaterialPopup: React.FC<Props> = ({
         return (
           <InputField
             label={field.label}
-            minField={true}
             type="text"
             value={value}
             onFocus={onActivate}
@@ -3335,9 +3334,9 @@ const AddMaterialPopup: React.FC<Props> = ({
         <div className="relative flex h-full flex-2 flex-col p-8">
           <div className="relative mb-8 shrink-0">
             <div className="font-[var(--font-family)]">
-              <h2 className="mb-[0px] text-[1.5rem] font-[400] text-[#170F49]">
+              <h3 className="mb-[0.5rem] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
-              </h2>
+              </h3>
               <p className="mt-[0px] text-sm font-normal text-[#6F6C8F]">
                 Fill in the details and choose the materials that perfectly match your needs.
               </p>
@@ -3358,7 +3357,6 @@ const AddMaterialPopup: React.FC<Props> = ({
                       {currentPopup?.fields.map((field, index) => {
                         const isSmall =
                           field.type === 'toggle' ||
-                          field.type === 'text' ||
                           field.type === 'number';
                         return (
                           <div
@@ -3377,7 +3375,6 @@ const AddMaterialPopup: React.FC<Props> = ({
                       {currentPopup?.fields.map((field, index) => {
                         const isSmall =
                           field.type === 'toggle' ||
-                          field.type === 'text' ||
                           field.type === 'number';
                         return (
                           <div
@@ -3420,7 +3417,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             <div className="mr-[3rem] flex gap-[1rem]">
               {!isFirstStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
                   onClick={handleBack}
                   disabled={isFirstStep}
                 >
@@ -3428,7 +3425,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </button>
               ) : (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
                   onClick={() => setCreateWorkOrderPopup(false)}
                 >
                   Cancel
@@ -3437,7 +3434,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
               {!isLastStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
                   onClick={handleNext}
                   disabled={!formData.name && currentStep === 0}
                 >
@@ -3445,7 +3442,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </button>
               ) : (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-['Comfortaa'] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
                   onClick={handleFinish}
                 >
                   Finish
