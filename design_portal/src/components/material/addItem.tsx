@@ -3054,6 +3054,9 @@ const AddMaterialPopup: React.FC<Props> = ({
             label={field.label}
             type="select"
             value={value}
+            placeholder={field.placeholder}
+            className="text-[#392579]"
+            mediumField={true}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               handleInputChange(field.key, e.target.value)
             }
