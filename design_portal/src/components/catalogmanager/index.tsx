@@ -9,6 +9,7 @@ import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
 import { Catalog, Material } from './interface';
 import { MeshObjectData } from '../3dmodel/sceneCreator/interface';
+import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -23,7 +24,7 @@ const CatalogManager = () => {
   const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
   const [selectedCatalog, setSelectedCatalog] = useState<MeshObjectData | null>(null);
   const [catalogData, setCatalogData] = useState<MeshObjectData[]>([]);
-  const [ruleParts, setRuleParts] = useState<RulePart[]>([]);
+  const [ruleParts, setRuleParts] = useState<MeshObjectData[]>([]);
   const [materialData, setMaterialData] = useState<Material[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
   const [materialSearch, setMaterialSearch] = useState('');
@@ -69,13 +70,13 @@ const CatalogManager = () => {
   ];
 
   // ---------- DROPDOWN DATA ----------
-  const catalogTypes = [
-    { value: 'Plank', label: 'Plank' },
-    { value: 'Door', label: 'Door' },
-    { value: 'Drawer', label: 'Drawer' },
-    { value: 'Sliding Door', label: 'Sliding Door' },
-    { value: 'Cabinet', label: 'Cabinet' },
-  ];
+  const catalogTypes = React.useMemo(() => {
+    const unique = new Map<string, string>();
+    catalogData.forEach((c) => {
+      if (c.type) unique.set(c.type, c.type.toUpperCase());
+    });
+    return Array.from(unique.entries()).map(([value, label]) => ({ value, label }));
+  }, [catalogData]);
 
   const materialTypes = [
     'Banding',
@@ -118,7 +119,11 @@ const CatalogManager = () => {
     );
 
     if (response.status === 200) {
-      setCatalogData(response.data);
+      const catalogs: MeshObjectData[] = [];
+      response.data.forEach((catalog) => {
+        catalogs.push(convertKeysToCamel(catalog));
+      })
+      setCatalogData(catalogs);
     }
   };
 
@@ -126,7 +131,7 @@ const CatalogManager = () => {
   const fetchRuleParts = async (ruleId: string) => {
     setActiveRuleId(ruleId); // mark active rule
     try {
-      const response: { status: number; data: RulePart[] } = await commonService.get(
+      const response: { status: number; data: MeshObjectData[] } = await commonService.get(
         API_ENDPOINT.GET_CATALOG_RULES_PARTS(ruleId)
       );
       if (response.status === 200) {
@@ -138,9 +143,9 @@ const CatalogManager = () => {
     }
   };
 
-  // useEffect(() => {
-  //   getCatalog();
-  // }, [getCatalog]);
+  useEffect(() => {
+    getCatalog();
+  }, []);
 
   useEffect(() => {
   }, [selectedCatalog]);
@@ -279,6 +284,31 @@ const CatalogManager = () => {
     setshowDeletePopup(true);
   };
 
+  useEffect(() => {
+    const first = catalogData.find(
+      (c) => c.isMain && c.type === catalogType.toLowerCase()
+    );
+    setSelectedCatalog(first || null);
+  }, [catalogType, catalogData]);
+
+  useEffect(() => {
+    if (!selectedCatalog) return;
+
+    const parts = catalogData.filter(
+      (c) => c.parent === selectedCatalog.id
+    );
+
+    setRuleParts(
+      parts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        material: p.material?.length
+          ? { id: p.material[0], name: p.material[0] }
+          : null,
+      }))
+    );
+  }, [selectedCatalog, catalogData]);
+
   return (
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
@@ -300,7 +330,7 @@ const CatalogManager = () => {
                 >
                   {catalogTypes.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {formatEnumLabel(opt.label)}
                     </option>
                   ))}
                 </select>
@@ -320,9 +350,11 @@ const CatalogManager = () => {
                     setSelectedCatalog(catalog || null);
                   }}
                 >
-                  {catalogData.map((opt) => (
+                  {catalogData
+                  .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
+                  .map((opt) => (
                     <option key={opt.id} value={opt.id}>
-                      {opt.name}
+                      {formatEnumLabel(opt.name)}
                     </option>
                   ))}
                 </select>
@@ -355,7 +387,7 @@ const CatalogManager = () => {
               <div className="rounded-xl bg-white p-3">
                 {/* HEADER */}
                 <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
-                  Door ID 45
+                  Part Details
                 </p>
 
                 {/* INPUTS */}
@@ -376,7 +408,7 @@ const CatalogManager = () => {
                         onClick={() => setIsEditingName(true)}
                         className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
                       >
-                        {selectedCatalog?.name}
+                        {formatEnumLabel(selectedCatalog?.name ? selectedCatalog.name : '')}
                       </div>
                     )}
 
@@ -435,20 +467,10 @@ const CatalogManager = () => {
                     <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
                       <div className="ml-[0.87rem]">
                         Part
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                        />
                       </div>
                     </th>
                     <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                      Material{' '}
-                      <img
-                        src={assets.up_down_arrow}
-                        alt="Sort"
-                        className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                      />
+                      Material
                     </th>
                     <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
                       Action
@@ -472,12 +494,12 @@ const CatalogManager = () => {
                           selectedPartId === part.id ? 'bg-[rgba(245,242,255,1)]' : ''
                         } `}
                       >
-                        <td className="h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                          {part.name}
+                        <td className="ml-[0.87rem] h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                          {formatEnumLabel(part.name)}
                         </td>
 
                         <td className="h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                          {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                          {formatEnumLabel(part.material?.name) || 'No Material Assigned'}
                         </td>
 
                         <td className="h-[28px] px-[5] py-[2.5]">

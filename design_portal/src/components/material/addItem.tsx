@@ -3141,6 +3141,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       properties: {
         ...baseProperties,
         ...materialSpecificProperties,
+        model_file: null,
       },
       finishes,
       finish_types,
