@@ -405,9 +405,7 @@ class Properties(models.Model):
         Material, on_delete=models.CASCADE, related_name="properties"
     )
 
-    model_file = models.FileField(
-        upload_to="model_files", null=True, blank=True
-    )
+    model_file = models.FileField(upload_to="model_files", null=True, blank=True)
     width = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     length = models.FloatField(null=True, blank=True)

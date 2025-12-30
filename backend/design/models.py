@@ -170,8 +170,7 @@ class DesignCatalog(models.Model):
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
     materials = models.ManyToManyField(
-        "material.Material",
-        related_name="design_catalog_material"
+        "material.Material", related_name="design_catalog_material"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

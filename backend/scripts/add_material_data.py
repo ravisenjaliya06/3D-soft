@@ -1254,9 +1254,7 @@ CATALOG = [
         "position": {"x": 0, "y": 1, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 0.001, "y": 0.001, "z": 0.001},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111111",
@@ -1268,9 +1266,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1283,9 +1279,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1298,9 +1292,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1313,9 +1305,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1328,9 +1318,7 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1343,9 +1331,7 @@ CATALOG = [
         "position": {"x": 0, "y": -955, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -1358,9 +1344,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111404",
@@ -1372,9 +1356,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111505",
@@ -1386,9 +1368,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
@@ -1400,9 +1380,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [
-            "Alder Ven EB"
-        ],
+        "material": ["Alder Ven EB"],
     },
 ]
 
@@ -1706,8 +1684,8 @@ def _duplicate_default_catalogs_for_org(
 
 def _attach_material_by_name(
     catalog: DesignCatalog,
-    item,
-    organization=None,
+    item: DesignCatalog | dict,
+    organization: Organization | None = None,
 ) -> None:
     """
     Attach material using material.name instead of file path.

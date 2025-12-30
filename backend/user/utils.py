@@ -183,10 +183,8 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
     Preserves parent-child relationships.
     """
 
-    default_catalogs = (
-        DesignCatalog.objects
-        .filter(organization__isnull=True)
-        .order_by("created_at")
+    default_catalogs = DesignCatalog.objects.filter(organization__isnull=True).order_by(
+        "created_at"
     )
 
     old_to_new = {}

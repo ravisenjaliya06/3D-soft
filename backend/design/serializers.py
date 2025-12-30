@@ -8,14 +8,10 @@ from django.db import transaction
 from rest_framework import serializers
 
 # App imports
-from material.models import Material
-from design.models import (
-    Design,
-    DesignCatalog,
-    DesignSetting,
-    DesignVersion,
-)
+from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
 from design.utils import create_design_settings
+from material.models import Material
+from umaboy.models import Organization
 from user.constant import PUT
 
 
@@ -87,7 +83,7 @@ class SceneGetSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     data = serializers.DictField(required=False)
 
-    def to_representation(self, catalog: DesignCatalog) -> dict:
+    def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
         Serialize a single DesignCatalog into a scene item.
         DRF will iterate when many=True.
@@ -101,14 +97,19 @@ class SceneGetSerializer(serializers.Serializer):
             "parent": str(catalog.parent.id) if catalog.parent else None,
         }
 
+
 class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField()
 
-    def _get_design(self, design_id, organization):
+    def _get_design(
+        self: "ScenePayloadSerializer", design_id: str, organization: Organization
+    ) -> Design:
         return Design.objects.get(id=design_id, organization=organization)
 
-    def _attach_material_by_name(catalog: DesignCatalog, item: dict) -> None:
+    def _attach_material_by_name(
+        self: "ScenePayloadSerializer", catalog: DesignCatalog, item: dict
+    ) -> None:
         """
         Attach material using material.name instead of file path.
         """
@@ -125,7 +126,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                 continue
             catalog.materials.add(material)
 
-    def create(self, validated_data):
+    def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
@@ -153,7 +154,6 @@ class ScenePayloadSerializer(serializers.Serializer):
 
                 catalog_map[item["id"]] = catalog
 
-            # 2️⃣ Link parents
             for item in items:
                 parent_frontend_id = item.get("parent")
                 if not parent_frontend_id:
