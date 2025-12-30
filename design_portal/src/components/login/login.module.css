@@ -8,10 +8,11 @@
 .card {
   width: 53rem;
   display: flex;
-  border: 0.2rem solid var(--primary-white);
+
   border-radius: 1.6rem;
+  border-color: rgb(72, 50, 145);
   box-shadow: var(--box-shadow);
-  background-image: url('/assets/login-background.svg');
+  background-color: rgb(72, 50, 145);
   background-size: cover;
 }
 
@@ -75,7 +76,7 @@
   width: 34rem;
   display: flex;
   flex-direction: column;
-  border-radius: 1rem;
+  border-radius: 1.6rem;
   background: var(--primary-white);
 }
 

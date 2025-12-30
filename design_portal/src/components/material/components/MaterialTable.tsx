@@ -67,11 +67,11 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
               className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-base font-semibold whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
                   ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-semibold text-[var(--primary-color)]`
-                  : `text-[var(--primary-color-grey-2)] hover:rounded-[0.199rem] hover:border hover:border-b hover:border-[var(--primary-color-grey-2)] hover:bg-[var(--primary-hover)]`
+                  : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
               } `}
               onClick={() => onTabChange(tab.id)}
             >
-              <p className="mb-[0px] pb-[5px]">{tab.label}</p>
+              <p className="mb-[0px] pb-[5px] text-[0.9rem]">{tab.label}</p>
             </div>
           ))}
         </div>
@@ -86,7 +86,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
-                  <p className="text-[0.9rem] font-[600]">{column.label}</p>
+                  <p className="text-[0.88rem] font-[500]">{column.label}</p>
                   {column.sortable && (
                     <div className="flex flex-col items-center">
                       <img
