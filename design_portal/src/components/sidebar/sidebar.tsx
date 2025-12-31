@@ -194,14 +194,11 @@ const Sidebar = () => {
                 onClick={() => handleClick('dashboard', REDIRECT.DASHBOARD)}
                 data-title="Dashboard"
               >
-                {activeItem === 'dashboard' && (
-                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
-                )}
                 <img
                   src={assets.dashboard}
                   alt="Dashboard"
                   className={`${styles.sidebar_icon} ${
-                    activeItem === 'dashboard' ? styles.icon_adjusted : ''
+                    activeItem === 'dashboard' ? styles.icon_adjusteds : ''
                   }`}
                 />
               </li>
@@ -210,14 +207,11 @@ const Sidebar = () => {
                 onClick={() => handleClick('mes', REDIRECT.MES)}
                 data-title="MES"
               >
-                {activeItem === 'mes' && (
-                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
-                )}
                 <img
                   src={assets.mes}
                   alt="MES"
                   className={`${styles.sidebar_icon} ${
-                    activeItem === 'mes' ? styles.icon_adjusted : ''
+                    activeItem === 'mes' ? styles.icon_adjusteds : ''
                   }`}
                 />
               </li>
@@ -226,14 +220,11 @@ const Sidebar = () => {
                 onClick={() => handleClick('material', REDIRECT.MATERIAL)}
                 data-title="Material"
               >
-                {activeItem === 'material' && (
-                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
-                )}
                 <img
                   src={assets.material}
                   alt="Material"
                   className={`${styles.sidebar_icon} ${
-                    activeItem === 'material' ? styles.icon_adjusted : ''
+                    activeItem === 'material' ? styles.icon_adjusteds : ''
                   }`}
                 />
               </li>
@@ -242,14 +233,11 @@ const Sidebar = () => {
                 onClick={() => handleClick('catalogmanager', REDIRECT.CATALOG_MANAGER)}
                 data-title="Catalog Manager"
               >
-                {activeItem === 'catalogmanager' && (
-                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
-                )}
                 <img
                   src={assets.catalogmanager}
                   alt="Catalog Manager"
                   className={`${styles.sidebar_icon} ${
-                    activeItem === 'catalogmanager' ? styles.icon_adjusted : ''
+                    activeItem === 'catalogmanager' ? styles.icon_adjusteds : ''
                   }`}
                 />
               </li>
@@ -258,14 +246,11 @@ const Sidebar = () => {
                 onClick={() => handleClick('designs', REDIRECT.DESIGNS)}
                 data-title="Design"
               >
-                {activeItem === 'designs' && (
-                  <img src={assets.selected} alt="Selected" className={styles.selected_icon} />
-                )}
                 <img
                   src={assets.design}
                   alt="design"
                   className={`${styles.sidebar_icon} ${
-                    activeItem === 'designs' ? styles.icon_adjusted : ''
+                    activeItem === 'designs' ? styles.icon_adjusteds : ''
                   }`}
                 />
               </li>
