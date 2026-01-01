@@ -13,7 +13,6 @@ export const ContextMenus: React.FC<ContextMenusProps> = ({
   contextMenu,
   contextMaterialMenu,
   onAddCompany,
-  onAddMaterial,
 }) => {
   return (
     <>
@@ -40,14 +39,7 @@ export const ContextMenus: React.FC<ContextMenusProps> = ({
             left: contextMaterialMenu.x,
             position: 'absolute',
           }}
-        >
-          <button
-            className={styles.contextMenuItem}
-            onClick={() => onAddMaterial(contextMaterialMenu.companyId)}
-          >
-            ➕ Add Material
-          </button>
-        </div>
+        ></div>
       )}
     </>
   );

@@ -161,7 +161,8 @@ const Material: React.FC = () => {
       className={`${styles.custom_scrollbar} flex h-dvh flex-row overflow-hidden max-2xl:overflow-auto`}
     >
       <Sidebar />
-      <div className="max-w-[85rem] min-w-0 flex-[3]">
+
+      <div className="max-w-[80rem] min-w-0 flex-[3]">
         <Header isBorderRadius={true} />
 
         {!addMaterialPopup && (

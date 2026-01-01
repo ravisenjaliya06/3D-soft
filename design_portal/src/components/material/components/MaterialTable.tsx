@@ -92,12 +92,12 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                       <img
                         src={MENU_UP_SVG.menu_up}
                         alt="Sort icon"
-                        className="mb-[-10.5px] ml-[3px] w-[1rem]"
+                        className="mb-[-6px] ml-[3px] w-[1rem]"
                       />
                       <img
                         src={MENU_DOWN_SVG.menu_down}
                         alt="Sort icon"
-                        className="mt-[-2.5px] ml-[7px] w-[1rem]"
+                        className="mt-[-2.5px] ml-[6px] w-[1rem]"
                       />
                     </div>
                   )}
