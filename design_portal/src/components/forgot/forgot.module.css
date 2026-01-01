@@ -8,10 +8,9 @@
 .card {
   width: 53rem;
   display: flex;
-  border: 0.2rem solid var(--primary-white);
   border-radius: 1.6rem;
-  box-shadow: var(--box-shadow);
-  background-image: url('/assets/login-background.svg');
+  border-color: rgb(72, 50, 145);
+  background-color: rgb(72, 50, 145);
   background-size: cover;
 }
 
@@ -53,7 +52,7 @@
 
 .left_side {
   width: 19rem;
-  height: 33rem;
+  height: 36rem;
 }
 
 .left_side h1 {
@@ -100,7 +99,7 @@
   width: 34rem;
   display: flex;
   flex-direction: column;
-  border-radius: 1rem;
+  border-radius: 1.6rem;
   background: var(--primary-white);
 }
 
