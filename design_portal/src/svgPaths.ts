@@ -20,6 +20,9 @@ export const _3DMODEL = {
   part_line: '/assets/3dmodel/part-line.svg',
   down_arrow: '/assets/3dmodel/sidebar/down-arrow.svg',
   up_arrow: '/assets/3dmodel/sidebar/up-arrow.svg',
+  rotateIcon: '/assets/3dmodel/sidebar/rotateIcon.svg',
+  topIcon: '/assets/3dmodel/sidebar/topIcon.svg',
+  leftIcon: '/assets/3dmodel/sidebar/leftIcon.svg',
   alingDimension: '/assets/3dmodel/toolbar/aling.svg',
   arrow: '/assets/3dmodel/toolbar/arrow.svg',
   back: '/assets/3dmodel/toolbar/back.svg',
@@ -188,6 +191,7 @@ export const LOGIN_BACKGROUND_SVG = {
 export const LOGO_SVG = {
   Logo: '/assets/Logo.svg',
   close: '/assets/close.svg',
+  loginimage: '/assets/loginimage.svg',
 };
 
 export const MATERIAL = {
@@ -202,6 +206,7 @@ export const MATERIAL = {
   mis: '/assets/material/mis.svg',
   molding: '/assets/material/molding.svg',
   up_arrow: '/assets/material/up arrow.svg',
+  down_arrow1: '/assets/material/down-arrow1.svg',
   leg: '/assets/material/leg.svg',
   leg_leveler: '/assets/material/leg_leveler.svg',
   panel_stock: '/assets/material/panel_stock.svg',
