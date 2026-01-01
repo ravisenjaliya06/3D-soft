@@ -1,7 +1,7 @@
 import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { assets } from '@/svgPaths';
+import { assets, DESIGN } from '@/svgPaths';
 import type React from 'react';
 import { useState } from 'react';
 import styles from './material.module.css';
@@ -36,10 +36,6 @@ interface Field {
   img?: string;
 }
 
-interface FieldWithImage extends Field {
-  img: string;
-}
-
 const AddMaterialPopup: React.FC<Props> = ({
   setCreateWorkOrderPopup,
   companyId,
@@ -51,6 +47,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<MaterialPropertiesInput>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
+  const [errorMessage, setFinishError] = useState<string | null>(null);
 
   // Material type options
   const materialTypes = [
@@ -172,6 +169,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length Trim',
               type: 'number',
               placeholder: 'Enter length trim',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -251,6 +249,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness (mm)',
+              img: assets.groov,
             },
             {
               key: 'roughThickness',
@@ -280,24 +279,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Drop Width',
               type: 'number',
               placeholder: 'Enter CNC drop width (mm)',
+              img: assets.groov,
             },
             {
               key: 'cncDropLength',
               label: 'CNC Drop Length',
               type: 'number',
               placeholder: 'Enter CNC drop length (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'cncFeedRatePercent',
               label: 'CNC Feed Rate Percent',
               type: 'number',
               placeholder: 'Enter feed rate percent',
+              img: assets.groov,
             },
             {
               key: 'cncSpindleSpeedPercent',
               label: 'CNC Spindle Speed Percent',
               type: 'number',
               placeholder: 'Enter spindle speed percent',
+              img: assets.groov_gap,
             },
             {
               key: 'cncMinimizeFaceChip',
@@ -319,6 +322,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Maximum Depth Per Pass',
               type: 'number',
               placeholder: 'Enter maximum depth per pass (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -543,7 +547,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Slot Type',
               type: 'text',
               placeholder: 'Enter slot type',
-              disabled: true,
+              disabled: false,
               img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
@@ -630,61 +634,70 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
-              img: assets.groov,
+              img: assets.groov_gap,
             },
             {
               key: 'height',
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov,
             },
             {
               key: 'extension',
               label: 'Extension',
               type: 'number',
               placeholder: 'Enter extension (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'sideClearance',
               label: 'Side Clearance',
               type: 'number',
               placeholder: 'Enter side clearance (mm)',
+              img: assets.groov,
             },
             {
               key: 'topClearance',
               label: 'Top Clearance',
               type: 'number',
               placeholder: 'Enter top clearance (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'bottomClearance',
               label: 'Bottom Clearance',
               type: 'number',
               placeholder: 'Enter bottom clearance (mm)',
+              img: assets.groov,
             },
             {
               key: 'minimumBelowBox',
               label: 'Minimum Below Box',
               type: 'number',
               placeholder: 'Enter minimum below box (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'minimumAboveBox',
               label: 'Minimum Above Box',
               type: 'number',
               placeholder: 'Enter minimum above box (mm)',
+              img: assets.groov,
             },
             {
               key: 'screwCenterReferenceToTop',
               label: 'Screw Center Reference To Top',
               type: 'number',
               placeholder: 'Enter screw center reference to top (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'screwCenterToBoxReference',
               label: 'Screw Center To Box Reference',
               type: 'number',
               placeholder: 'Enter screw center to box reference (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -697,18 +710,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountHolesTopReference',
               label: 'Top Reference',
               type: 'number',
               placeholder: 'Enter top reference (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesScrewCenterToReference',
@@ -722,36 +738,42 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Position 1',
               type: 'number',
               placeholder: 'Enter position 1 (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesPosition2',
               label: 'Position 2',
               type: 'number',
               placeholder: 'Enter position 2 (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountHolesPosition3',
               label: 'Position 3',
               type: 'number',
               placeholder: 'Enter position 3 (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesPosition4',
               label: 'Position 4',
               type: 'number',
               placeholder: 'Enter position 4 (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountHolesPosition5',
               label: 'Position 5',
               type: 'number',
               placeholder: 'Enter position 5 (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesPosition6',
               label: 'Position 6',
               type: 'number',
               placeholder: 'Enter position 6 (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -763,12 +785,14 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Offsets',
               type: 'number',
               placeholder: 'Enter offsets (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'frontDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'frontDepth',
@@ -782,12 +806,14 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov,
             },
             {
               key: 'frontQty',
               label: 'Quantity',
               type: 'number',
               placeholder: 'Enter quantity',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -799,6 +825,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Offsets',
               type: 'number',
               placeholder: 'Enter offsets (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'backDiameter',
@@ -812,18 +839,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'backSpacing',
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov,
             },
             {
               key: 'backQty',
               label: 'Quantity',
               type: 'number',
               placeholder: 'Enter quantity',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -835,12 +865,14 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Offsets',
               type: 'number',
               placeholder: 'Enter offsets (mm)',
+              img: assets.groov,
             },
             {
               key: 'bottomDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'bottomDepth',
@@ -854,18 +886,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'bottomQty',
               label: 'Quantity',
               type: 'number',
               placeholder: 'Enter quantity',
+              img: assets.groov,
             },
             {
               key: 'bottomMountHolesFirstPosition',
               label: 'First Position',
               type: 'number',
               placeholder: 'Enter first position (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -877,6 +912,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'bottomMountGroovesWidth',
@@ -890,6 +926,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -901,6 +938,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             {
               key: 'backNotchHeight',
@@ -914,6 +952,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Offset',
               type: 'number',
               placeholder: 'Enter offset (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -925,18 +964,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             {
               key: 'backMountNotchesHeight',
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'backMountNotchesHorizontalOffset',
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter offset (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -1045,12 +1087,14 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'cupDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -1062,24 +1106,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Cup to Anchor',
               type: 'number',
               placeholder: 'Enter distance (mm)',
+              img: assets.groov,
             },
             {
               key: 'anchorHolesDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'anchorHolesDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov,
             },
             {
               key: 'anchorHolesSpacing',
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -1170,24 +1218,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'depth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'spacing',
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov,
             },
             {
               key: 'holeOffset',
               label: 'Hole Offset',
               type: 'number',
               placeholder: 'Enter hole offset (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -1266,24 +1318,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'thickness',
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness (mm)',
+              img: assets.groov,
             },
             {
               key: 'oversize',
               label: 'Oversize',
               type: 'number',
               placeholder: 'Enter oversize',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1306,24 +1362,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Drop Width',
               type: 'number',
               placeholder: 'Enter CNC drop width (mm)',
+              img: assets.groov,
             },
             {
               key: 'cncDropLength',
               label: 'CNC Drop Length',
               type: 'number',
               placeholder: 'Enter CNC drop length (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'cncFeedRatePercent',
               label: 'CNC Feed Rate Percent',
               type: 'number',
               placeholder: 'Enter feed rate percent',
+              img: assets.groov,
             },
             {
               key: 'cncSpindleSpeedPercent',
               label: 'CNC Spindle Speed Percent',
               type: 'number',
               placeholder: 'Enter spindle speed percent',
+              img: assets.groov_gap,
             },
             {
               key: 'cncMinimizeFaceChip',
@@ -1345,6 +1405,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Maximum Depth Per Pass',
               type: 'number',
               placeholder: 'Enter maximum depth per pass (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -1429,12 +1490,14 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1514,6 +1577,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1625,18 +1689,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Molding Type',
               type: 'text',
               placeholder: 'Enter molding type',
+              img: assets.groov,
             },
             {
               key: 'height',
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'length',
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1716,18 +1783,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             {
               key: 'thickness',
               label: 'Thickness',
               type: 'number',
               placeholder: 'Enter thickness (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1750,24 +1820,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Drop Width',
               type: 'number',
               placeholder: 'Enter CNC drop width (mm)',
+              img: assets.groov,
             },
             {
               key: 'cncDropLength',
               label: 'CNC Drop Length',
               type: 'number',
               placeholder: 'Enter CNC drop length (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'cncFeedRatePercent',
               label: 'CNC Feed Rate Percent',
               type: 'number',
               placeholder: 'Enter feed rate percent',
+              img: assets.groov,
             },
             {
               key: 'cncSpindleSpeedPercent',
               label: 'CNC Spindle Speed Percent',
               type: 'number',
               placeholder: 'Enter spindle speed percent',
+              img: assets.groov_gap,
             },
             {
               key: 'cncMinimizeFaceChip',
@@ -1789,6 +1863,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'CNC Maximum Depth Per Pass',
               type: 'number',
               placeholder: 'Enter maximum depth per pass (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -1873,30 +1948,35 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Center To Center',
               type: 'number',
               placeholder: 'Enter center to center (mm)',
+              img: assets.groov,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'depth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov,
             },
             {
               key: 'horizontalInset',
               label: 'Horizontal Inset',
               type: 'number',
               placeholder: 'Enter horizontal inset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'verticalInset',
               label: 'Vertical Inset',
               type: 'number',
               placeholder: 'Enter vertical inset (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1909,6 +1989,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
           ],
         },
@@ -1993,18 +2074,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             {
               key: 'height',
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -2030,24 +2114,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'boringDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'boringSpacing',
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov,
             },
             {
               key: 'boringQuantity',
               label: 'Quantity',
               type: 'number',
               placeholder: 'Enter quantity',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2132,6 +2220,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Length',
               type: 'number',
               placeholder: 'Enter length (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -2144,24 +2233,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: '1st Position',
               type: 'number',
               placeholder: 'Enter 1st position (mm)',
+              img: assets.groov,
             },
             {
               key: 'railBoringDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'boringDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov,
             },
             {
               key: 'boringSpacing',
               label: 'Spacing',
               type: 'number',
               placeholder: 'Enter spacing (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2245,42 +2338,49 @@ const AddMaterialPopup: React.FC<Props> = ({
               key: 'mountOnBack',
               label: 'Mount On Back',
               type: 'toggle',
+              img: assets.groov,
             },
             {
               key: 'doorEdgeInset',
               label: 'Door Edge Inset',
               type: 'number',
               placeholder: 'Enter door edge inset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'doorEndInset',
               label: 'Door End Inset',
               type: 'number',
               placeholder: 'Enter door end inset (mm)',
+              img: assets.groov,
             },
             {
               key: 'dadoReference',
               label: 'Dado Reference',
               type: 'number',
               placeholder: 'Enter dado reference (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'dadoOffset',
               label: 'Dado Offset',
               type: 'number',
               placeholder: 'Enter dado offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'horizontalInset',
               label: 'Horizontal Inset',
               type: 'number',
               placeholder: 'Enter horizontal inset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'verticalInset',
               label: 'Vertical Inset',
               type: 'number',
               placeholder: 'Enter vertical inset (mm)',
+              img: assets.groov,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -2293,24 +2393,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleOneVerticalOffset',
               label: 'Vertical Offset',
               type: 'number',
               placeholder: 'Enter vertical offset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountPlateHoleOneDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleOneDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2322,24 +2426,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleTwoVerticalOffset',
               label: 'Vertical Offset',
               type: 'number',
               placeholder: 'Enter vertical offset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountPlateHoleTwoDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleTwoDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2351,24 +2459,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleThirdVerticalOffset',
               label: 'Vertical Offset',
               type: 'number',
               placeholder: 'Enter vertical offset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountPlateHoleThirdDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleThirdDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2380,24 +2492,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleForthVerticalOffset',
               label: 'Vertical Offset',
               type: 'number',
               placeholder: 'Enter vertical offset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountPlateHoleForthDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleForthDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2409,24 +2525,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Horizontal Offset',
               type: 'number',
               placeholder: 'Enter horizontal offset (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleFifthVerticalOffset',
               label: 'Vertical Offset',
               type: 'number',
               placeholder: 'Enter vertical offset (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountPlateHoleFifthDiameter',
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountPlateHoleFifthDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2511,24 +2631,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Height',
               type: 'number',
               placeholder: 'Enter height (mm)',
+              img: assets.groov,
             },
             {
               key: 'width',
               label: 'Width',
               type: 'number',
               placeholder: 'Enter width (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'depth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov,
             },
             {
               key: 'basketDiameter',
               label: 'Basket Diameter',
               type: 'number',
               placeholder: 'Enter basket diameter (mm)',
+              img: assets.groov_gap,
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -2541,24 +2665,28 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Diameter',
               type: 'number',
               placeholder: 'Enter diameter (mm)',
+              img: assets.groov,
             },
             {
               key: 'mountHolesDepth',
               label: 'Depth',
               type: 'number',
               placeholder: 'Enter depth (mm)',
+              img: assets.groov_gap,
             },
             {
               key: 'mountHolesScrewCenterToReference',
               label: 'Screw Center to Reference',
               type: 'number',
               placeholder: 'Enter screw center to reference (mm)',
+              img: assets.groov,
             },
             {
               key: 'position1To6',
               label: 'Position 1 → Position6',
               type: 'text',
               placeholder: 'Enter positions (comma separated)',
+              img: assets.groov_gap,
             },
           ],
         },
@@ -2661,10 +2789,6 @@ const AddMaterialPopup: React.FC<Props> = ({
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
-  const isFieldWithImage = (field: Field): field is FieldWithImage => {
-    return typeof field.img === 'string' && field.img.length > 0;
-  };
-  const fieldWithImage = currentPopup?.fields.find(isFieldWithImage);
 
   /** Update the form value when the user types or selects something */
   const handleInputChange = (key: string, value: string | number | boolean) => {
@@ -2691,6 +2815,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   /** Go to the previous step in the popup wizard */
   const handleBack = () => {
     if (currentStep > 0) {
+      setFinishError(null);
       setCurrentStep((prev) => prev - 1);
     }
   };
@@ -3036,35 +3161,39 @@ const AddMaterialPopup: React.FC<Props> = ({
         setCreateWorkOrderPopup(false);
         handleGetCompanyMaterials(companyId);
       } else {
-        console.error('Something went wrong');
+        setFinishError('Failed to create material. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating material:', error);
+      setFinishError('Finish action failed. Please check your inputs or try again.');
+      console.error('Error submitting material:', error);
     }
   };
 
   /** Show the correct input field based on field type (text, number, select, toggle) */
-  const renderField = (field: Field) => {
+  const renderField = (field: Field, onActivate?: () => void) => {
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 
     switch (field.type) {
       case 'select':
         return (
-          <InputField
-            label={field.label}
-            type="select"
-            value={value}
-            placeholder={field.placeholder}
-            className="text-[#392579]"
-            mediumField={true}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              handleInputChange(field.key, e.target.value)
-            }
-            options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              type="select"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              className="text-[#392579]"
+              mediumField={true}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                handleInputChange(field.key, e.target.value)
+              }
+              options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
 
       case 'toggle':
@@ -3080,7 +3209,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               />
 
               <div
-                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[var(--common-text-color)]' : 'bg-[#fff]'}`}
+                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
               >
                 <div
                   className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
@@ -3094,34 +3223,41 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       case 'number':
         return (
-          <InputField
-            label={field.label}
-            type="number"
-            value={value}
-            placeholder={field.placeholder}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
-            }
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              minField={true}
+              type="number"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange(field.key, e.target.value ? parseFloat(e.target.value) : '')
+              }
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
 
       default:
         return (
-          <InputField
-            label={field.label}
-            type="text"
-            value={value}
-            placeholder={field.placeholder}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(field.key, e.target.value)
-            }
-            disabled={field.disabled}
-            borderColor={undefined}
-            error={undefined}
-          />
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              type="text"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange(field.key, e.target.value)
+              }
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+            />
+          </div>
         );
     }
   };
@@ -3141,9 +3277,11 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   const uiStep = getUIStepIndex(currentPopup);
 
+  const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
+
   return (
     <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
-      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[var(--wizard-border-color)] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
+      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[#d8cffc] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
         <div className="flex items-center justify-center gap-[0.5rem]">
           {steps.map((label, index) => {
             const isCurrent = index === uiStep;
@@ -3155,8 +3293,8 @@ const AddMaterialPopup: React.FC<Props> = ({
                 <div
                   className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
                     isCurrent || isCompleted
-                      ? 'border-[var(--wizardstepbox-border-color)] bg-[var(--wizardstepbox-bg-color)]'
-                      : 'border-[var(--wizardstepbox-incomplete-border-color)] bg-[white]'
+                      ? 'border-[#4b2aad] bg-[#4b2aad]'
+                      : 'border-[#b8aef3] bg-white'
                   }`}
                 >
                   {isCurrent ? (
@@ -3168,7 +3306,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <span
                       className={`text-sm font-semibold ${
-                        isCompleted ? 'text-[white]' : 'text-[var(--wizardstepbox-text-color)]'
+                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
                       }`}
                     >
                       {index + 1}
@@ -3179,9 +3317,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* LABEL */}
                 <span
                   className={`text-sm font-medium ${
-                    isCurrent || isCompleted
-                      ? 'text-[var(--wizardstepbox-complete-text-color)]'
-                      : 'text-[var(--wizardstepbox-incomplete-text-color)]'
+                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
                   }`}
                 >
                   {label}
@@ -3191,9 +3327,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {index < steps.length - 1 && (
                   <div
                     className={`h-[0.25rem] w-[9rem] rounded ${
-                      index < uiStep
-                        ? 'bg-[var(--wizardstepbox-bg-color)]'
-                        : 'bg-[var(--wizard-border-color)]'
+                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
                     }`}
                   />
                 )}
@@ -3204,14 +3338,14 @@ const AddMaterialPopup: React.FC<Props> = ({
       </div>
 
       <div
-        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] overflow-auto rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
+        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
       >
         <div className="relative flex h-full flex-2 flex-col p-8">
-          <div className="relative mb-8 min-h-0">
+          <div className="relative mb-8 shrink-0">
             <div className="font-[var(--font-family)]">
-              <h2 className="mb-[0px] text-[1.5rem] font-[400] text-[#170F49]">
+              <h3 className="mb-[0.5rem] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
-              </h2>
+              </h3>
               <p className="mt-[0px] text-sm font-normal text-[#6F6C8F]">
                 Fill in the details and choose the materials that perfectly match your needs.
               </p>
@@ -3219,55 +3353,68 @@ const AddMaterialPopup: React.FC<Props> = ({
           </div>
 
           {(() => {
-            const title = currentPopup?.title || '';
-            const isPricingOrCNC =
-              title === 'Pricing Details' ||
-              title.includes('CNC') ||
-              title.includes('Add New Material');
+            // Check if any field in the current popup has an image
+            const hasImageFields = currentPopup?.fields.some((field) => field.img);
+
             return (
-              <div className="mb-8 flex w-[95%] flex-row gap-6 lg:flex-col">
-                <div className={isPricingOrCNC ? 'w-full' : 'w-1/2'}>
-                  {isPricingOrCNC ? (
-                    <div className="grid grid-cols-2 gap-x-4">
-                      {currentPopup?.fields.map((field, index) => (
-                        <div
-                          key={field.key || index}
-                          className={`m-[1rem] pt-3 pb-2 ${
-                            field.label === 'Material Description' ? 'col-span-2' : ''
-                          } ${field.type === 'toggle' ? 'col-span-1 flex flex-row items-center' : ''}`}
-                        >
-                          {renderField(field)}
-                        </div>
-                      ))}
+              <div className="mb-8 flex w-[95%] flex-1 flex-row gap-6 overflow-hidden lg:flex-col">
+                <div
+                  className={`${hasImageFields ? 'w-1/2' : 'w-full'} overflow-x-hidden overflow-y-auto pr-2 ${styles.custom_scrollbar}`}
+                >
+                  {hasImageFields ? (
+                    <div className="flex flex-wrap gap-2">
+                      {currentPopup?.fields.map((field, index) => {
+                        const isSmall = field.type === 'toggle' || field.type === 'number';
+                        return (
+                          <div
+                            key={field.key || index}
+                            className={`m-[1rem] pt-3 pb-2 ${
+                              isSmall ? 'max-w-[100%] min-w-[200px] flex-1' : 'w-full'
+                            }`}
+                          >
+                            {renderField(field, () => setActiveFieldKey(field.key))}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-2">
-                      {currentPopup?.fields.map((field, index) => (
-                        <div key={field.key || index} className="m-[1rem] w-full pt-3 pb-2">
-                          {renderField(field)}
-                        </div>
-                      ))}
+                    <div className="flex flex-wrap gap-x-4">
+                      {currentPopup?.fields.map((field, index) => {
+                        const isSmall = field.type === 'toggle' || field.type === 'number';
+                        return (
+                          <div
+                            key={field.key || index}
+                            className={`m-[1rem] pt-3 pb-2 ${
+                              isSmall ? 'max-w-[48%] min-w-[200px] flex-1' : 'w-[48%]'
+                            } ${isSmall ? 'flex h-[2.5rem] flex-wrap gap-3' : ''}`}
+                          >
+                            {renderField(field)}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {!isPricingOrCNC && fieldWithImage && (
-                  <div className="m-[2rem] flex w-1/2 flex-col rounded-lg bg-gray-50 p-4 pt-2 pl-[5rem]">
-                    <img
-                      src={fieldWithImage.img}
-                      alt={`${selectedMaterialType} Preview`}
-                      className="h-2/4 w-full max-w-[400px] rounded-[5px] border border-[#6F6C8F]/50 object-fill shadow-md"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/default-material-icon.svg';
-                      }}
-                    />
-                  </div>
-                )}
+                {hasImageFields &&
+                  activeFieldKey &&
+                  (() => {
+                    const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
+                    return activeField?.img ? (
+                      <div className="flex w-1/2 shrink-0 items-center justify-center overflow-hidden">
+                        <img
+                          src={activeField.img}
+                          className="ml-[3rem] max-h-full w-[21rem] max-w-full rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
+                          alt="Field Preview"
+                        />
+                      </div>
+                    ) : null;
+                  })()}
               </div>
             );
           })()}
 
-          <div className="mt-auto flex items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
+          <div className="mt-auto flex shrink-0 items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
             <p className="text-[0.9rem] text-[#666]">
               Step {currentStep + 1} of {currentSequence.length}
             </p>
@@ -3275,7 +3422,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             <div className="mr-[3rem] flex gap-[1rem]">
               {!isFirstStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
                   onClick={handleBack}
                   disabled={isFirstStep}
                 >
@@ -3283,7 +3430,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </button>
               ) : (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
                   onClick={() => setCreateWorkOrderPopup(false)}
                 >
                   Cancel
@@ -3292,19 +3439,27 @@ const AddMaterialPopup: React.FC<Props> = ({
 
               {!isLastStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
                   onClick={handleNext}
                   disabled={!formData.name && currentStep === 0}
                 >
                   Next
                 </button>
               ) : (
-                <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 text-[0.9rem] font-[var(--font-family)] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
-                  onClick={handleFinish}
-                >
-                  Finish
-                </button>
+                <>
+                  <button
+                    className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
+                    onClick={handleFinish}
+                  >
+                    Finish
+                  </button>
+                  {errorMessage && (
+                    <div className={styles.errorPopup}>
+                      <img src={DESIGN.error} alt="Error" />
+                      <p className="mt-[1rem] text-sm text-red-600">{errorMessage}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

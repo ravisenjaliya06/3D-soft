@@ -207,6 +207,13 @@ export const MATERIAL = {
   molding: '/assets/material/molding.svg',
   up_arrow: '/assets/material/up arrow.svg',
   down_arrow1: '/assets/material/down-arrow1.svg',
+  leg: '/assets/material/leg.svg',
+  leg_leveler: '/assets/material/leg_leveler.svg',
+  panel_stock: '/assets/material/panel_stock.svg',
+  rod: '/assets/material/rod.svg',
+  door_rail: '/assets/material/door_rail.svg',
+  sliding_door_roller: '/assets/material/sliding_door_roller.svg',
+  wire_basket: '/assets/material/wire_basket.svg',
 };
 
 export const MENU_DOWN_SVG = {
@@ -305,6 +312,7 @@ export const SIMPLE_LINE_SVG = {
 export const PLUS = {
   plus: '/assets/plus.svg',
 };
+
 export const LOAD_MORE = {
   loadMore: '/assets/LoadMore.svg',
 };
@@ -351,9 +359,14 @@ export const TOOLBAR = {
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
 };
+
 export const ADDMATERIAL_IMG = {
   groov: '/assets/addmaterial/Guide_Bottom_Groove_Offset.png',
   groov_gap: '/assets/addmaterial/Guide_Position_5.png',
+};
+
+export const UP_DOWN_ARROW = {
+  up_down_arrow: '/assets/updown_arrow.svg',
 };
 
 export const assets = {
@@ -398,4 +411,5 @@ export const assets = {
   ...TITLELOGO_SVG,
   ...TOOLBAR,
   ...LOAD_MORE,
+  ...UP_DOWN_ARROW,
 };
