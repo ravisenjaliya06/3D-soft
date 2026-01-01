@@ -134,23 +134,10 @@ class PullTypesChoices(models.TextChoices):
     Pull Types
     """
 
-    CUP_1 = "Cup #1"
-    KNOB_1 = "Knob #1"
-    KNOB_2 = "Knob #2"
-    KNOB_3 = "Knob #3"
-    KNOB_4 = "Knob #4"
-    KNOB_5 = "Knob #5"
-    KNOB_6 = "Knob #6"
-    PULL_1 = "Pull #1"
-    PULL_2 = "Pull #2"
-    PULL_3 = "Pull #3"
-    PULL_4 = "Pull #4"
-    PULL_5 = "Pull #5"
-    PULL_6 = "Pull #6"
-    PULL_7 = "Pull #7"
-    PULL_8 = "Pull #8"
-    PULL_9 = "Pull #9"
-    SWING_1 = "Swing #1"
+    CUP = "Cup"
+    KNOB = "Knob"
+    PULL = "Pull"
+    SWING = "Swing"
 
 
 class RodTypesChoices(models.TextChoices):
