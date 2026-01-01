@@ -125,3 +125,27 @@ def split_parents_and_children(items: List[Dict]) -> tuple:
         children_map[parent_id].append(item)
 
     return parents, children_map
+
+def group_catalogs_as_lists(items: list[dict]) -> list[list[dict]]:
+    by_id = {item["id"]: item for item in items}
+    groups = {}
+    roots = []
+
+    for item in items:
+        if not item.get("parent"):
+            roots.append(item)
+            groups[item["id"]] = [item]
+
+    for item in items:
+        parent_id = item.get("parent")
+        if not parent_id:
+            continue
+
+        current = item
+        while current.get("parent") and current["parent"] in by_id:
+            current = by_id[current["parent"]]
+
+        root_id = current["id"]
+        groups.setdefault(root_id, []).append(item)
+
+    return list(groups.values())

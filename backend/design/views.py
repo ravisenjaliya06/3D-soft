@@ -41,7 +41,7 @@ from design.serializers import (
     SceneGetSerializer,
     ScenePayloadSerializer,
 )
-from design.utils import parse_design_data
+from design.utils import group_catalogs_as_lists, parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -319,7 +319,8 @@ class DesignCatalogViewSet(ModelViewSet):
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)
-            return Response(serializer.data)
+            items = group_catalogs_as_lists(serializer.data)
+            return Response(items)
 
         version = (
             DesignVersion.objects.filter(design_id=design_id)
@@ -342,8 +343,9 @@ class DesignCatalogViewSet(ModelViewSet):
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)
+        items = group_catalogs_as_lists(serializer.data)
         return Response(
-            {"version": version.id, "catalogs": serializer.data}, status=HTTP_200_OK
+            {"version": version.id, "catalogs": items}, status=HTTP_200_OK
         )
 
     def create(
