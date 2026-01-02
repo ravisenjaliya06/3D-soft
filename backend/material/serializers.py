@@ -477,7 +477,7 @@ class FinishesLibrarySerializerFactory:
 class FinishesLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = FinishesLibrary
-        fields = ["id", "name", "organization", "type"]
+        fields = ["id", "name", "organization", "type", "image"]
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary

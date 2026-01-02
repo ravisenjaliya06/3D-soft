@@ -9,6 +9,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 # App imports
+from material.serializers import MaterialSerializer
 from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
 from design.utils import create_design_settings
 from material.models import Material
@@ -97,7 +98,7 @@ class SceneGetSerializer(serializers.Serializer):
             "name": catalog.name,
             "type": catalog.type,
             "parent": str(catalog.parent.id) if catalog.parent else None,
-            "material": [{"id": material.id, "name": material.name, "type": material.type} for material in catalog.materials.all()],
+            "material": MaterialSerializer(catalog.materials.all(), many=True).data,
         }
 
 

@@ -316,6 +316,11 @@ class DesignCatalogViewSet(ModelViewSet):
         if not design_id and not version_id:
             catalogs = self.get_queryset().filter(
                 organization=request.user.selected_organization
+            ).prefetch_related(
+                "materials__finishes",
+                "materials__finish_types",
+                "materials__textures__texture",
+                "materials__properties",
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)

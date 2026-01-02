@@ -12,7 +12,7 @@ django.setup()
 
 # App imports
 from design.models import DesignCatalog
-from material.models import Company, FinishesLibrary, Material, Properties
+from material.models import Company, FinishesChoices, FinishesLibrary, Material, MaterialFinish, MaterialFinishType, MaterialTexture, Properties
 from umaboy.models import Organization
 
 FINISH = [
@@ -147,7 +147,7 @@ TEXTURE = [
         "height": 685.8,
         "decal": False,
         "tile": True,
-        "image": None,
+        "image": '/textures/wall/Bricks092_2K-JPG_Color.jpg',
         "organization": None,
     },
     {
@@ -469,6 +469,24 @@ MATERIAL = [
             "length_trim": 25.4,
             "thickness": 0.8,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass",
+            }
+        ],
+        "finishes": [
+            {
+                "name": "First",
+                "finish": "Alder" 
+            }
+        ],
+        "finish_types": [
+            {
+                "name": "First",
+                "finish_type": "Art Glass"
+            }
+        ],
     },
     {
         "name": "PVC Woodgrain",
@@ -1476,7 +1494,7 @@ def create_textures() -> None:
         if created:
             organization = get_registered_organization()
             for org in organization:
-                FinishesLibrary.objects.create(
+                FinishesLibrary.objects.update_or_create(
                     type=texture_data["type"],
                     name=texture_data["name"],
                     organization=org,
@@ -1543,6 +1561,9 @@ def create_materials(
         company_name = material_data.get("company") or None
         material_type = material_data["type"]
         properties = material_data.get("properties", {})
+        textures = material_data.get("textures", [])
+        finishes = material_data.get("finishes", [])
+        finish_types = material_data.get("finish_types", [])
 
         if company_name is None:
             company = None
@@ -1563,6 +1584,56 @@ def create_materials(
             material=material,
             defaults=properties,
         )
+
+        for texture_data in textures:
+            texture_name = texture_data["texture"]
+
+            texture = FinishesLibrary.objects.filter(
+                name=texture_name,
+                type=FinishesChoices.TEXTURE.value,
+                organization=None
+            ).first()
+
+            if not texture:
+                continue
+
+            MaterialTexture.objects.update_or_create(
+                material=material,
+                texture=texture,
+                defaults={"name": texture_data["name"]},
+            )
+        
+        for finish_data in finishes:
+            finish_name = finish_data["finish"]
+            finish = FinishesLibrary.objects.filter(
+                name=finish_name,
+                type=FinishesChoices.FINISH.value,
+                organization=None
+            ).first()
+            if not finish:
+                continue
+
+            MaterialFinish.objects.update_or_create(
+                material=material,
+                finish=finish,
+                defaults={"name": finish_data["name"]},
+            )
+
+        for finish_type_data in finish_types:
+            finish_type_name = finish_type_data["finish_type"]
+            finish_type = FinishesLibrary.objects.filter(
+                name=finish_type_name,
+                type=FinishesChoices.FINISH_TYPE.value,
+                organization=None
+            ).first()
+            if not finish_type:
+                continue
+
+            MaterialFinishType.objects.update_or_create(
+                material=material,
+                finish_type=finish_type,
+                defaults={"name": finish_type_data["name"]},
+            )
 
         for org in organizations:
             if company_name is None:
@@ -1586,6 +1657,56 @@ def create_materials(
                 material=org_material,
                 defaults=properties,
             )
+
+            for texture_data in textures:
+                texture_name = texture_data["texture"]
+
+                texture = FinishesLibrary.objects.filter(
+                    name=texture_name,
+                    type=FinishesChoices.TEXTURE.value,
+                    organization=org
+                ).first()
+
+                if not texture:
+                    continue
+
+                MaterialTexture.objects.update_or_create(
+                    material=org_material,
+                    texture=texture,
+                    defaults={"name": texture_data["name"]},
+                )
+            
+            for finish_data in finishes:
+                finish_name = finish_data["finish"]
+                finish = FinishesLibrary.objects.filter(
+                    name=finish_name,
+                    type=FinishesChoices.FINISH.value,
+                    organization=org
+                ).first()
+                if not finish:
+                    continue
+
+                MaterialFinish.objects.update_or_create(
+                    material=org_material,
+                    finish=finish,
+                    defaults={"name": finish_data["name"]},
+                )
+
+            for finish_type_data in finish_types:
+                finish_type_name = finish_type_data["finish_type"]
+                finish_type = FinishesLibrary.objects.filter(
+                    name=finish_type_name,
+                    type=FinishesChoices.FINISH_TYPE.value,
+                    organization=org
+                ).first()
+                if not finish_type:
+                    continue
+
+                MaterialFinishType.objects.update_or_create(
+                    material=org_material,
+                    finish_type=finish_type,
+                    defaults={"name": finish_type_data["name"]},
+                )
 
 
 def create_catalog(catalog_list: list[dict]) -> None:
@@ -1653,17 +1774,13 @@ def _duplicate_default_catalogs_for_org(
     old_to_new = {}
 
     for old in default_map.values():
-        clone = DesignCatalog.objects.create(
+        clone, _ = DesignCatalog.objects.update_or_create(
             organization=organization,
             version=None,
-            type=old.type,
             name=old.name,
-            parent=None,
-            data={**old.data} if old.data else {},
+            type=old.type,
+            defaults={"data": old.data},
         )
-
-        clone.data["id"] = str(clone.id)
-        clone.save(update_fields=["data"])
 
         _attach_material_by_name(clone, old, organization)
 
@@ -1687,31 +1804,24 @@ def _attach_material_by_name(
     item: DesignCatalog | dict,
     organization: Organization | None = None,
 ) -> None:
-    """
-    Attach material using material.name instead of file path.
-    Supports both dict input and DesignCatalog model input.
-    """
     if isinstance(item, dict):
-        material_data = item.get("material")
+        material_data = item.get("material", [])
     elif isinstance(item, DesignCatalog):
         material_data = list(item.materials.values_list("name", flat=True))
     else:
         return
 
-    if not material_data:
-        return
-
     for material_name in material_data:
         if not material_name:
             continue
+
         material = Material.objects.filter(
             name=material_name,
             organization=organization,
         ).first()
 
-        if not material:
-            continue
-        catalog.materials.add(material)
+        if material:
+            catalog.materials.add(material)
 
 
 if __name__ == "__main__":
