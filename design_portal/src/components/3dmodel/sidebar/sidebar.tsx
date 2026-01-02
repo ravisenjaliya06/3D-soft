@@ -469,19 +469,18 @@ const Sidebar: React.FC = () => {
   };
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
-  minifix: false,
-  camlock: false,
-  edgeBanding: false,
-  material: false,
-});
+    minifix: false,
+    camlock: false,
+    edgeBanding: false,
+    material: false,
+  });
 
-const toggleSection = (key: string) => {
-  setCollapsed((prev) => ({
-    ...prev,
-    [key]: !prev[key],
-  }));
-};
-
+  const toggleSection = (key: string) => {
+    setCollapsed((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   return (
     <div
@@ -514,7 +513,7 @@ const toggleSection = (key: string) => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`border-[0rem] p-[0rem] w-[4rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                 isSettingOpen
                   ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -525,7 +524,7 @@ const toggleSection = (key: string) => {
 
             <button
               onClick={handleNavigation}
-              className={`border-[0rem] p-[0rem] w-[4.5rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                 isNavOpen
                   ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -556,123 +555,121 @@ const toggleSection = (key: string) => {
                 {/* ================= Minifix & Grooving ================= */}
                 <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
                   {/* Header */}
-                  <div className="mb-[0rem] flex items-center justify-between ">
+                  <div className="mb-[0rem] flex items-center justify-between">
                     <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
                       Minifix & Grooving
                     </p>
                     <button
-    onClick={() => toggleSection('minifix')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.minifix ? '+' : '−'}
-  </button>
+                      onClick={() => toggleSection('minifix')}
+                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    >
+                      {collapsed.minifix ? '+' : '−'}
+                    </button>
                   </div>
-{!collapsed.minifix && (
-  <>
-                  {/* ================= Split Inputs ================= */}
-                  <div className="flex gap-[0.75rem]">
-                    {/* -------- LEFT PART -------- */}
-                    <div className="flex w-[6rem] flex-col">
-                      {/* Toggle */}
-                      <div className="ml-[0rem] flex items-center gap-[1rem]">
-                        <div
-                          onClick={handleMinifixToggle}
-                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                        >
-                          {/* Knob */}
-                          <div
-                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                              minifixEnabled
-                                ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                            }`}
-                          />
+                  {!collapsed.minifix && (
+                    <>
+                      {/* ================= Split Inputs ================= */}
+                      <div className="flex gap-[0.75rem]">
+                        {/* -------- LEFT PART -------- */}
+                        <div className="flex w-[6rem] flex-col">
+                          {/* Toggle */}
+                          <div className="ml-[0rem] flex items-center gap-[1rem]">
+                            <div
+                              onClick={handleMinifixToggle}
+                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            >
+                              {/* Knob */}
+                              <div
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  minifixEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                }`}
+                              />
+                            </div>
+                            <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Minifix
+                            </p>
+                          </div>
+
+                          {/* Distance */}
+                          <div className="mt-[0rem]">
+                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Distance
+                            </p>
+                            <input
+                              type="number"
+                              value="128"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+
+                          {/* Diameter Hole */}
+                          <div className="">
+                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Diameter Hole
+                            </p>
+                            <input
+                              type="number"
+                              value="8"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
                         </div>
-                        <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Minifix
-                        </p>
-                      </div>
 
-                      {/* Distance */}
-                      <div className="mt-[0rem]">
-                        <p className="mb-[0rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Distance
-                        </p>
-                        <input
-                          type="number"
-                          value="128"
-                          className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
+                        {/* -------- VERTICAL DIVIDER -------- */}
+                        <hr className="mr-[0.3rem] ml-[0.2rem] h-[8rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
 
-                      {/* Diameter Hole */}
-                      <div className="">
-                        <p className="mb-[0rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Diameter Hole
-                        </p>
-                        <input
-                          type="number"
-                          value="8"
-                          className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
+                        {/* -------- RIGHT PART -------- */}
+                        <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                          {/* Toggle */}
+                          <div className="flex items-center gap-[0.5rem]">
+                            <div
+                              onClick={handleGroovingToggle}
+                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            >
+                              {/* Knob */}
+                              <div
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  groovingEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                }`}
+                              />
+                            </div>
+                            <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Grooving
+                            </p>
+                          </div>
 
-                    {/* -------- VERTICAL DIVIDER -------- */}
-                    <hr className="mr-[0.3rem] ml-[0.2rem] h-[8rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+                          {/* Inside */}
+                          <div>
+                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Inside
+                            </p>
+                            <input
+                              type="number"
+                              value="25"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
 
-                    {/* -------- RIGHT PART -------- */}
-                    <div className="mr-[0.7rem] flex w-[6rem] flex-col">
-                      {/* Toggle */}
-                      <div className="flex items-center gap-[0.5rem]">
-                        <div
-                          onClick={handleGroovingToggle}
-                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                        >
-                          {/* Knob */}
-                          <div
-                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                              groovingEnabled
-                                ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                            }`}
-                          />
+                          {/* Edge to End */}
+                          <div>
+                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Edge to End
+                            </p>
+                            <input
+                              type="number"
+                              value="6"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
                         </div>
-                        <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Grooving
-                        </p>
                       </div>
-
-                      {/* Inside */}
-                      <div>
-                        <p className="mb-[0rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Inside
-                        </p>
-                        <input
-                          type="number"
-                          value="25"
-                          className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-
-                      {/* Edge to End */}
-                      <div>
-                        <p className="mb-[0rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                          Edge to End
-                        </p>
-                        <input
-                          type="number"
-                          value="6"
-                          className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  </>
-                          )}
+                    </>
+                  )}
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
                 </div>
 
                 {/* ================= Camlock Screw Hole ================= */}
@@ -681,53 +678,54 @@ const toggleSection = (key: string) => {
                     <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                       Camlock Screw Hole
                     </p>
-                                        <button
-    onClick={() => toggleSection('camlock')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.camlock ? '+' : '−'}
-  </button>
+                    <button
+                      onClick={() => toggleSection('camlock')}
+                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    >
+                      {collapsed.camlock ? '+' : '−'}
+                    </button>
                   </div>
                   {!collapsed.camlock && (
                     <>
-                  <div className="mt-[1rem] flex gap-[0.5rem] font-[500]">
-                    <div>
-                      <p className="mt-[0px] mb-[0px] text-[0.5rem]  text-[var(--primary-color)]">
-                        Diameter
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
+                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[500]">
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Diameter
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
 
-                    <div>
-                      <p className="mt-[0px] mb-[0px] text-[0.5rem] text-[var(--primary-color)]">
-                        Depth
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Depth
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
 
-                    <div>
-                      <p className="mt-[0px] mb-[0px] text-[0.5rem] text-[var(--primary-color)]">
-                        Height
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Height
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  </>)}
+                    </>
+                  )}
                 </div>
 
                 <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
@@ -737,40 +735,40 @@ const toggleSection = (key: string) => {
                     <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                       Edge Banding
                     </p>
-                                        <button
-    onClick={() => toggleSection('edgeBanding')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.edgeBanding ? '+' : '−'}
-  </button>
+                    <button
+                      onClick={() => toggleSection('edgeBanding')}
+                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    >
+                      {collapsed.edgeBanding ? '+' : '−'}
+                    </button>
                   </div>
                   {!collapsed.edgeBanding && (
                     <>
-                  <div className="flex items-center gap-[1rem]">
-                    <div
-                      onClick={handleEdgeBandingToggle}
-                      className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                    >
-                      {/* Knob */}
-                      <div
-                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                          edgeBandingEnabled
-                            ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                            : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                        }`}
-                      />
-                    </div>
+                      <div className="flex items-center gap-[1rem]">
+                        <div
+                          onClick={handleEdgeBandingToggle}
+                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                        >
+                          {/* Knob */}
+                          <div
+                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                              edgeBandingEnabled
+                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                            }`}
+                          />
+                        </div>
 
-                    <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                      Edge Banding
-                    </p>
-                    <div className="flex items-center gap-[2rem]">
-                      <input
-                        type="number"
-                        className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
-                  </div>
+                        <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          Edge Banding
+                        </p>
+                        <div className="flex items-center gap-[2rem]">
+                          <input
+                            type="number"
+                            className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </div>
+                      </div>
                     </>
                   )}
                 </div>
@@ -783,27 +781,28 @@ const toggleSection = (key: string) => {
                       <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Shelf
                       </p>
-                                          <button
-    onClick={() => toggleSection('shelf')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.shelf ? '+' : '−'}
-  </button>
+                      <button
+                        onClick={() => toggleSection('shelf')}
+                        className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.shelf ? '+' : '−'}
+                      </button>
                     </div>
                     {!collapsed.shelf && (
                       <>
-                    <div className="flex items-center gap-[1.8rem]">
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Shelves Inner Distance
-                      </p>
-                      <div className="flex items-center gap-[2rem]">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                      </>)}
+                        <div className="flex items-center gap-[1.8rem]">
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            Shelves Inner Distance
+                          </p>
+                          <div className="flex items-center gap-[2rem]">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
@@ -814,75 +813,76 @@ const toggleSection = (key: string) => {
                   {sideBarMenuConfig.map((menu) => (
                     <div key={menu.subMenu}>
                       {/* HEADER */}
-                      <div className="mb-[0.7rem] ml-[1rem] flex flex-col">
-                        <div className="mb-[0.5rem] flex items-center justify-between">
+                      <div className="mb-[0rem] ml-[1rem] flex flex-col">
+                        <div className="mb-[0rem] flex items-center justify-between">
                           <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             {menu.title}
                           </p>
-                                              <button
-    onClick={() => toggleSection('layout')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.layout ? '+' : '−'}
-  </button>
+                          <button
+                            onClick={() => toggleSection('layout')}
+                            className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                          >
+                            {collapsed.layout ? '+' : '−'}
+                          </button>
                         </div>
-{!collapsed.layout && (
-  <>
-                        {/* FIELDS */}
-                        <div className="flex flex-col gap-[0.6rem]">
-                          {menu.fields.map((field) => (
-                            <div
-                              key={field.name}
-                              className="flex flex-row items-start justify-between gap-[0rem]"
-                            >
-                              {/* LEFT SIDE */}
-                              <div className="flex items-center justify-between gap-[0rem]">
-                                {/* LEFT: LABEL */}
-                                <p className="w-[3.5rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                                  {field.label}
-                                </p>
+                        {!collapsed.layout && (
+                          <>
+                            {/* FIELDS */}
+                            <div className="flex flex-col gap-[0.6rem]">
+                              {menu.fields.map((field) => (
+                                <div
+                                  key={field.name}
+                                  className="flex flex-row items-start justify-between gap-[0rem]"
+                                >
+                                  {/* LEFT SIDE */}
+                                  <div className="flex items-center justify-between gap-[0rem]">
+                                    {/* LEFT: LABEL */}
+                                    <p className="w-[3.5rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                      {field.label}
+                                    </p>
 
-                                {isPlankSelected && (
-                                  <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                    {controlIconMap[field.name].map((icon, idx) => {
-                                      const isActive = activeControls[field.name] === idx;
+                                    {isPlankSelected && (
+                                      <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                        {controlIconMap[field.name].map((icon, idx) => {
+                                          const isActive = activeControls[field.name] === idx;
 
-                                      return (
-                                        <button
-                                          key={idx}
-                                          type="button"
-                                          onClick={() => handleControlClick(field.name, idx)}
-                                          className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                            isActive
-                                              ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                              : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                          } `}
-                                        >
-                                          <img
-                                            src={icon}
-                                            alt="control"
-                                            className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                          />
-                                        </button>
-                                      );
-                                    })}
+                                          return (
+                                            <button
+                                              key={idx}
+                                              type="button"
+                                              onClick={() => handleControlClick(field.name, idx)}
+                                              className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                isActive
+                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                              } `}
+                                            >
+                                              <img
+                                                src={icon}
+                                                alt="control"
+                                                className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                              />
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
 
-                              {/* RIGHT SIDE INPUT */}
-                              <input
-                                type="number"
-                                min={field.min}
-                                value={field.value ?? ''}
-                                onChange={field.onChange}
-                                disabled={field.disabled}
-                                className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
+                                  {/* RIGHT SIDE INPUT */}
+                                  <input
+                                    type="number"
+                                    min={field.min}
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    disabled={field.disabled}
+                                    className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        </>)}
+                          </>
+                        )}
                       </div>
 
                       <hr className="my-[0.4rem] opacity-20" />
@@ -898,90 +898,103 @@ const toggleSection = (key: string) => {
                       <p className="mt-[0rem] mb-[0rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Position Move
                       </p>
-                                          <button
-    onClick={() => toggleSection('positionMove')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.positionMove ? '+' : '−'}
-  </button>
+                      <button
+                        onClick={() => toggleSection('positionMove')}
+                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.positionMove ? '+' : '−'}
+                      </button>
                     </div>
-                    {!collapsed.positionMove && ( 
+                    {!collapsed.positionMove && (
                       <>
-                    <div className="grid grid-cols-2 gap-[0.4rem]">
-                      {/* LEFT */}
-                      <div className="flex flex-col items-start gap-[0.1rem]">
-                        <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
-                          Left
-                        </p>
-                        <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                          <img
-                            src={assets.directionIcon}
-                            className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
-                          />
-                          <img src={assets.vrLine} className="ml-[0.3rem] h-[1rem] w-[0.5rem]" />
+                        <div className="grid grid-cols-2 gap-[0.4rem]">
+                          {/* LEFT */}
+                          <div className="flex flex-col items-start gap-[0.1rem]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                              Left
+                            </p>
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                              <img
+                                src={assets.directionIcon}
+                                className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
+                              />
+                              <img
+                                src={assets.vrLine}
+                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
+                              />
 
-                          <input
-                            type="number"
-                            className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
+                              <input
+                                type="number"
+                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* RIGHT */}
+                          <div className="flex flex-col items-start gap-[0.1rem]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                              Right
+                            </p>
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                              <img
+                                src={assets.directionIcon}
+                                className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
+                              />
+                              <img
+                                src={assets.vrLine}
+                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
+                              />
+
+                              <input
+                                type="number"
+                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* TOP */}
+                          <div className="flex flex-col items-start gap-[0.1rem]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                              Top
+                            </p>
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                              <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
+                              <img
+                                src={assets.vrLine}
+                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
+                              />
+
+                              <input
+                                type="number"
+                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* BOTTOM */}
+                          <div className="flex flex-col items-start gap-[0rem]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                              Bottom
+                            </p>
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                              <img
+                                src={assets.directionIcon}
+                                className="h-[0.5rem] w-[0.5rem] rotate-[180deg]"
+                              />
+                              <img
+                                src={assets.vrLine}
+                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
+                              />
+
+                              <input
+                                type="number"
+                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* RIGHT */}
-                      <div className="flex flex-col items-start gap-[0.1rem]">
-                        <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
-                          Right
-                        </p>
-                        <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                          <img
-                            src={assets.directionIcon}
-                            className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
-                          />
-                          <img src={assets.vrLine} className="ml-[0.3rem] h-[1rem] w-[0.5rem]" />
-
-                          <input
-                            type="number"
-                            className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* TOP */}
-                      <div className="flex flex-col items-start gap-[0.1rem]">
-                        <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
-                          Top
-                        </p>
-                        <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                          <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
-                          <img src={assets.vrLine} className="ml-[0.3rem] h-[1rem] w-[0.5rem]" />
-
-                          <input
-                            type="number"
-                            className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* BOTTOM */}
-                      <div className="flex flex-col items-start gap-[0rem]">
-                        <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
-                          Bottom
-                        </p>
-                        <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                          <img
-                            src={assets.directionIcon}
-                            className="h-[0.5rem] w-[0.5rem] rotate-[180deg]"
-                          />
-                          <img src={assets.vrLine} className="ml-[0.3rem] h-[1rem] w-[0.5rem]" />
-
-                          <input
-                            type="number"
-                            className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    </>)}
+                      </>
+                    )}
                   </div>
 
                   <hr className="mx-[0.2rem] my-[0.2rem] w-[15rem] opacity-20" />
@@ -996,41 +1009,42 @@ const toggleSection = (key: string) => {
                       <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Top Plank
                       </p>
-                                          <button
-    onClick={() => toggleSection('topPlank')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.topPlank ? '+' : '−'}
-  </button>
+                      <button
+                        onClick={() => toggleSection('topPlank')}
+                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.topPlank ? '+' : '−'}
+                      </button>
                     </div>
                     {!collapsed.topPlank && (
                       <>
-                    <div className="flex items-center gap-[0.7rem]">
-                      <div
-                        onClick={handleTopPlankToggle}
-                        className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                      >
-                        {/* Knob */}
-                        <div
-                          className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                            topPlankEnabled
-                              ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                              : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                          }`}
-                        />
-                      </div>
+                        <div className="flex items-center gap-[0.7rem]">
+                          <div
+                            onClick={handleTopPlankToggle}
+                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                          >
+                            {/* Knob */}
+                            <div
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                topPlankEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
+                            />
+                          </div>
 
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Top Plank Depth
-                      </p>
-                      <div className="flex items-center gap-[2rem]">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                    </>)}
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            Top Plank Depth
+                          </p>
+                          <div className="flex items-center gap-[2rem]">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
@@ -1042,92 +1056,89 @@ const toggleSection = (key: string) => {
                       <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Base
                       </p>
-                                          <button
-    onClick={() => toggleSection('base')}
-    className="mr-[1rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.base ? '+' : '−'}
-  </button>
+                      <button
+                        onClick={() => toggleSection('base')}
+                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.base ? '+' : '−'}
+                      </button>
                     </div>
                     {!collapsed.base && (
                       <>
-                      
-                    <div className="flex items-center gap-[1.29rem]">
-                      <div
-                        onClick={handleBaseheightToggle}
-                        className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                      >
-                        {/* Knob */}
-                        <div
-                          className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                            baseheightEnabled
-                              ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                              : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                          }`}
-                        />
-                      </div>
+                        <div className="flex items-center gap-[1.29rem]">
+                          <div
+                            onClick={handleBaseheightToggle}
+                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                          >
+                            {/* Knob */}
+                            <div
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                baseheightEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
+                            />
+                          </div>
 
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Base Height
-                      </p>
-                      <div className="flex items-center gap-[2rem]">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-[0.35rem]">
-                      <div
-                        onClick={handleFrontpanelToggle}
-                        className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                      >
-                        {/* Knob */}
-                        <div
-                          className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                            frontpanelEnabled
-                              ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                              : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                          }`}
-                        />
-                      </div>
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            Base Height
+                          </p>
+                          <div className="flex items-center gap-[2rem]">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-[0.35rem]">
+                          <div
+                            onClick={handleFrontpanelToggle}
+                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                          >
+                            {/* Knob */}
+                            <div
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                frontpanelEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
+                            />
+                          </div>
 
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Front & Back Panel
-                      </p>
-                      <div className="flex items-center gap-[2rem]">
-                        <input
-                          type="number"
-                          className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                    
-                 
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            Front & Back Panel
+                          </p>
+                          <div className="flex items-center gap-[2rem]">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
 
-                  <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.5rem] pb-[0rem]">
-                    <div className="mr-[1rem] px-3 py-2">
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Back Panel
-                      </p>
-                      <input
-                        type="number"
-                        className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
-                    <div className="mr-[1rem] px-3 py-2">
-                      <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                        Inward Size
-                      </p>
-                      <input
-                        type="number"
-                        className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
+                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.5rem] pb-[0rem]">
+                          <div className="mr-[1rem] px-3 py-2">
+                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                              Back Panel
+                            </p>
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                          <div className="mr-[1rem] px-3 py-2">
+                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                              Inward Size
+                            </p>
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                    </>)}
-                  </div>
-                  
 
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
@@ -1139,199 +1150,201 @@ const toggleSection = (key: string) => {
                   <p className="mb-2 ml-[1rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
                     Material
                   </p>
-                                      <button
-    onClick={() => toggleSection('material')}
-    className="mr-[0rem] text-[0.9rem] boredr-[0rem] text-[var(--primary-color)] border-0 bg-[var(--primary-white)]"
-  >
-    {collapsed.material ? '+' : '−'}
-  </button>
+                  <button
+                    onClick={() => toggleSection('material')}
+                    className="boredr-[0rem] mr-[0rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                  >
+                    {collapsed.material ? '+' : '−'}
+                  </button>
                 </div>
                 {!collapsed.material && (
                   <>
-                {/* Color */}
-                <div className="mb-[] ml-[1rem] flex items-center justify-between">
-                  <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">Color</p>
+                    {/* Color */}
+                    <div className="mb-[] ml-[1rem] flex items-center justify-between">
+                      <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">Color</p>
 
-                  <div className="flex w-[9.5rem] items-center gap-[0.3rem] rounded-[0.4rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem] px-[0.3rem] py-[0.3rem]">
-                    <input
-                      type="color"
-                      value={selectedColor}
-                      onChange={(e) => applyColorToSelected(e.target.value)}
-                      className="h-[1.6rem] w-[1.6rem] cursor-pointer border-[0rem] p-[0rem]"
-                    />
-                    <input
-                      type="text"
-                      value={selectedColor.toUpperCase()}
-                      onChange={(e) => applyColorToSelected(e.target.value)}
-                      className="w-[4rem] border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Change Material */}
-                <div
-                  onClick={handleMaterialChange}
-                  className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
-                >
-                  <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                    Change Material
-                  </p>
-                  <button
-                    className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                    disabled={isQuickHideActive}
-                  >
-                    Press to Change
-                    <img src={assets.swapHorizontalIcon} className="h-[0.8rem] w-[0.8rem]" />
-                  </button>
-                </div>
-
-                {/* Texture */}
-
-                {/* ================= Change Texture ================= */}
-                <div className="ml-[1rem] flex flex-row items-center justify-between gap-[0.25rem]">
-                  <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                    Change Texture
-                  </p>
-
-                  <button
-                    onClick={toggleTextureList}
-                    className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                  >
-                    Select Texture
-                    <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
-                  </button>
-                </div>
-
-                {/* Texture List */}
-                {isTextureListOpen && (
-                  <div className="absolute left-[14%] z-[100] mt-[0.25rem] flex max-h-[7rem] max-w-[8.5rem] flex-wrap gap-[0.1rem] overflow-y-auto rounded-[0.375rem] border border-[var(--border-color)] bg-[var(--primary-white)] p-[0.3rem] shadow-[0_0.25rem_0.5rem_rgba(0,0,0,0.1)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
-                    {materialModal.map((m) => (
-                      <div
-                        key={m.option}
-                        className="flex cursor-pointer flex-col items-center rounded border-[0.1rem] border-transparent p-[0rem] transition-all duration-200 ease-in-out hover:border-[var(--primary-color)] hover:shadow-[0_0_6px_rgba(0,0,0,0.25)]"
-                        onClick={() => handleTextureSelect(m.image)}
-                        title={m.name}
-                      >
-                        <img
-                          src={m.image}
-                          className="h-[2.5rem] w-[2.5rem] rounded-[0.125rem] object-cover"
+                      <div className="flex w-[9.5rem] items-center gap-[0.3rem] rounded-[0.4rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem] px-[0.3rem] py-[0.3rem]">
+                        <input
+                          type="color"
+                          value={selectedColor}
+                          onChange={(e) => applyColorToSelected(e.target.value)}
+                          className="h-[1.6rem] w-[1.6rem] cursor-pointer border-[0rem] p-[0rem]"
+                        />
+                        <input
+                          type="text"
+                          value={selectedColor.toUpperCase()}
+                          onChange={(e) => applyColorToSelected(e.target.value)}
+                          className="w-[4rem] border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
                         />
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* ================= Texture Grain ================= */}
-                <div className="flex items-center justify-between gap-[0rem]">
-                  <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                    Texture Grain
-                  </p>
-
-                  <div className="relative mr-[0rem] h-[1.2rem] w-[6.8rem] appearance-none rounded-[0.35rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] p-[0rem]">
-                    {/* Rotate Icon */}
-                    <div>
-                      <img
-                        src={assets.rotateIcon}
-                        alt="rotate"
-                        className="pointer-events-none absolute top-[0.55rem] left-[0.35rem] h-[1rem] w-[1rem] -translate-y-[0.45rem] opacity-70"
-                      />
-                    </div>
-                    <div className="absolute top-0 left-[1.5rem] flex h-full w-[4.8rem] items-center justify-center">
-                      {/* Input */}
-                      <input
-                        type="number"
-                        className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Door Position */}
-                {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
-                  <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
-                    <div className={'relative flex items-center justify-between'}>
-                      <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                        Door Position
-                      </p>
-                      <select
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        value={doorPosition}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDoorPosition(value);
-                          handleDoorPositionChange(value);
-                        }}
-                        disabled={isQuickHideActive}
-                      >
-                        <option value="None">None</option>
-                        <option value="Left">Left</option>
-                        <option value="Right">Right</option>
-                        <option value="Top">Top</option>
-                        <option value="Bottom">Bottom</option>
-                      </select>
                     </div>
 
-                    <div className="relative flex items-center justify-between pl-[1rem]">
-                      <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                        Open/Close
+                    {/* Change Material */}
+                    <div
+                      onClick={handleMaterialChange}
+                      className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
+                    >
+                      <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                        Change Material
                       </p>
                       <button
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--button-soft-grey)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         disabled={isQuickHideActive}
-                        onClick={handleOpenCloseChange}
                       >
-                        Open/Close
+                        Press to Change
+                        <img src={assets.swapHorizontalIcon} className="h-[0.8rem] w-[0.8rem]" />
                       </button>
                     </div>
-                    <>
-                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                      <div className="mt-[0rem] ml-[1rem] flex flex-col items-start">
-                        <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Handle Position
-                        </p>
-                        <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
-                          {handlePositionInputFlid.map((field) => (
-                            <div key={field.name} className="mt-[0rem]">
-                              <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
-                                {field.label}
-                              </p>
-                              <div
-                                className={`flex h-[1.9rem] w-[3.2rem] items-center gap-[0.1rem] rounded-[0.35rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
-                              >
-                                {/* IMAGE ICON */}
-                                <Image
-                                  src={field.icon}
-                                  alt={field.label}
-                                  width={19}
-                                  height={19}
-                                  className="h-[0.8rem] w-[0.8rem] object-contain opacity-70"
-                                />
+                    {/* Texture */}
 
-                                <img src={assets.vrLine} className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]" />
+                    {/* ================= Change Texture ================= */}
+                    <div className="ml-[1rem] flex flex-row items-center justify-between gap-[0.25rem]">
+                      <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                        Change Texture
+                      </p>
 
-                                {/* Input */}
-                                <input
-                                  id={field.name}
-                                  name={field.name}
-                                  type={field.type}
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </div>
-                            </div>
-                          ))}
+                      <button
+                        onClick={toggleTextureList}
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                      >
+                        Select Texture
+                        <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
+                      </button>
+                    </div>
+
+                    {/* Texture List */}
+                    {isTextureListOpen && (
+                      <div className="absolute left-[14%] z-[100] mt-[0.25rem] flex max-h-[7rem] max-w-[8.5rem] flex-wrap gap-[0.1rem] overflow-y-auto rounded-[0.375rem] border border-[var(--border-color)] bg-[var(--primary-white)] p-[0.3rem] shadow-[0_0.25rem_0.5rem_rgba(0,0,0,0.1)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
+                        {materialModal.map((m) => (
+                          <div
+                            key={m.option}
+                            className="flex cursor-pointer flex-col items-center rounded border-[0.1rem] border-transparent p-[0rem] transition-all duration-200 ease-in-out hover:border-[var(--primary-color)] hover:shadow-[0_0_6px_rgba(0,0,0,0.25)]"
+                            onClick={() => handleTextureSelect(m.image)}
+                            title={m.name}
+                          >
+                            <img
+                              src={m.image}
+                              className="h-[2.5rem] w-[2.5rem] rounded-[0.125rem] object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ================= Texture Grain ================= */}
+                    <div className="flex items-center justify-between gap-[0rem]">
+                      <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                        Texture Grain
+                      </p>
+
+                      <div className="relative mr-[0rem] h-[1.2rem] w-[6.8rem] appearance-none rounded-[0.35rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] p-[0rem]">
+                        {/* Rotate Icon */}
+                        <div>
+                          <img
+                            src={assets.rotateIcon}
+                            alt="rotate"
+                            className="pointer-events-none absolute top-[0.55rem] left-[0.35rem] h-[1rem] w-[1rem] -translate-y-[0.45rem] opacity-70"
+                          />
+                        </div>
+                        <div className="absolute top-0 left-[1.5rem] flex h-full w-[4.8rem] items-center justify-center">
+                          {/* Input */}
+                          <input
+                            type="number"
+                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
                         </div>
                       </div>
-                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                    </>
-                  </div>
+                    </div>
+
+                    {/* Door Position */}
+                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                      <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
+                        <div className={'relative flex items-center justify-between'}>
+                          <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Door Position
+                          </p>
+                          <select
+                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            value={doorPosition}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDoorPosition(value);
+                              handleDoorPositionChange(value);
+                            }}
+                            disabled={isQuickHideActive}
+                          >
+                            <option value="None">None</option>
+                            <option value="Left">Left</option>
+                            <option value="Right">Right</option>
+                            <option value="Top">Top</option>
+                            <option value="Bottom">Bottom</option>
+                          </select>
+                        </div>
+
+                        <div className="relative flex items-center justify-between pl-[1rem]">
+                          <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Open/Close
+                          </p>
+                          <button
+                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--button-soft-grey)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            onClick={handleOpenCloseChange}
+                          >
+                            Open/Close
+                          </button>
+                        </div>
+                        <>
+                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start">
+                            <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              Handle Position
+                            </p>
+                            <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
+                              {handlePositionInputFlid.map((field) => (
+                                <div key={field.name} className="mt-[0rem]">
+                                  <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
+                                    {field.label}
+                                  </p>
+                                  <div
+                                    className={`flex h-[1.9rem] w-[3.2rem] items-center gap-[0.1rem] rounded-[0.35rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                  >
+                                    {/* IMAGE ICON */}
+                                    <Image
+                                      src={field.icon}
+                                      alt={field.label}
+                                      width={19}
+                                      height={19}
+                                      className="h-[0.8rem] w-[0.8rem] object-contain opacity-70"
+                                    />
+
+                                    <img
+                                      src={assets.vrLine}
+                                      className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]"
+                                    />
+
+                                    {/* Input */}
+                                    <input
+                                      id={field.name}
+                                      name={field.name}
+                                      type={field.type}
+                                      value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                        </>
+                      </div>
+                    )}
+                  </>
                 )}
-                </>)}
               </div>
-              
-           
             </>
           )}
         </>
