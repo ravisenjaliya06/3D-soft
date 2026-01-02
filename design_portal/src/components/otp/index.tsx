@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 const Otp = () => {
   const otpLength = 5;
   const router = useRouter();
-  const { email } = router.query || {};
+  const { email, message } = router.query || {};
   const [otp, setOtp] = useState(new Array(otpLength).fill(''));
   const [timer, setTimer] = useState(120);
   const [setResend, setSetResend] = useState(true);
@@ -15,15 +15,17 @@ const Otp = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccessMessage] = useState<string | null>(null);
 
-  const handleChange = (element: HTMLInputElement, index: number) => {
-    if (isNaN(parseInt(element.value))) return;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = e.target.value;
+
+    if (!/^\d?$/.test(value)) return;
 
     const newOtp = [...otp];
-    newOtp[index] = element.value;
+    newOtp[index] = value;
     setOtp(newOtp);
 
-    if (element.nextSibling) {
-      (element.nextSibling as HTMLInputElement).focus();
+    if (value && index < otpLength - 1) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
@@ -39,6 +41,12 @@ const Otp = () => {
       setSetResend(false);
     }
   }, [timer]);
+
+  React.useEffect(() => {
+    if (message) {
+      setError(message as string);
+    }
+  }, []);
 
   const handleOTPVerify = async () => {
     if (otp.includes('')) {
@@ -65,6 +73,25 @@ const Otp = () => {
 
     setTimer(120);
     setOtp(new Array(otpLength).fill(''));
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, otpLength);
+
+    if (!pastedData) return;
+
+    const newOtp = [...otp];
+
+    pastedData.split('').forEach((digit, index) => {
+      newOtp[index] = digit;
+    });
+
+    setOtp(newOtp);
+
+    // Focus last filled input
+    document.getElementById(`otp-${pastedData.length - 1}`)?.focus();
   };
 
   return (
@@ -99,10 +126,13 @@ const Otp = () => {
               {otp.map((value, index) => (
                 <input
                   key={index}
+                  id={`otp-${index}`}
                   type="text"
+                  inputMode="numeric"
                   maxLength={1}
                   value={value}
-                  onChange={(e) => handleChange(e.target, index)}
+                  onChange={(e) => handleChange(e, index)}
+                  onPaste={handlePaste}
                   onFocus={(e) => e.target.select()}
                   className={styles.otpInput}
                 />
