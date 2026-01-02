@@ -35,6 +35,7 @@ export const _3DMODEL = {
   searchIcon: '/assets/3dmodel/toolbar/searchIcon.svg',
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
+  vrLine: '/assets/3dmodel/sidebar/line 129.svg',
 };
 
 export const ARROW_SVG = {
