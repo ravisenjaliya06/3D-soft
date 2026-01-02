@@ -113,6 +113,9 @@ const Login = () => {
             3D Models of <span>wooden sheet cutting</span>
           </h1>
           <p>Make your design and nesting with 3D to less wastage</p>
+          <div className="ml-[5rem]">
+            <img src={assets.loginimage} alt="loginpage image" />
+          </div>
           <div className={styles.logo}>
             <img src={assets.Logo} alt="Bravento Logo" />
           </div>
