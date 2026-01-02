@@ -72,7 +72,8 @@
   --wizard-border-color: #d8cffc;
   --wizardstepbox-border-color: #4b2aad;
   --wizardstepbox-incomplete-border-color: #b8aef3;
-
+  --toggle-border-color: #D5D5D5;
+  
   /* text colors */
   --common-text-color: #392579;
   --text-color: #232d42;

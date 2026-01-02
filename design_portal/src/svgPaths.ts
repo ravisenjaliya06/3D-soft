@@ -34,7 +34,11 @@ export const _3DMODEL = {
   quickhide: '/assets/3dmodel/toolbar/quickhide.svg',
   searchIcon: '/assets/3dmodel/toolbar/searchIcon.svg',
   sink: '/assets/3dmodel/toolbar/sink.svg',
-  vertical: '/assets/3dmodel/toolbar/vertical.svg',
+  vertical: '/assets/3dmodel/toolbar/vertical.svg',  
+  directionIcon: '/assets/3dmodel/sidebar/directionarrow.svg',
+  swapHorizontalIcon: '/assets/3dmodel/sidebar/swap-horizontal.svg',
+  vrLine: '/assets/3dmodel/sidebar/line 129.svg',
+
 };
 
 export const ARROW_SVG = {
