@@ -12,7 +12,7 @@ import { MeshObjectData, MeshObjectPatch, PART_TYPES } from '../sceneCreator/int
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
-import { Position, Rotation } from '../store/interface';
+
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
@@ -256,24 +256,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handlePositionChange = (axis: Axis, value: number) => {
-    if (!selectedObject || isDisabled) return;
-    applyObjectUpdate(selectedObject, {
-      position: {
-        [axis]: value,
-      },
-    });
-  };
-
-  const handleRotationChange = (axis: Axis, value: number) => {
-    if (!selectedObject || isDisabled) return;
-    applyObjectUpdate(selectedObject, {
-      rotation: {
-        [axis]: value,
-      },
-    });
-  };
-
   const handleTextureSelect = (texturePath: string) => {
     if (!selectedObject) return;
     applyObjectUpdate(selectedObject, {
@@ -290,18 +272,6 @@ const Sidebar: React.FC = () => {
     width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
     depth: selectedObject?.dimensions?.depth ?? 0,
-  };
-
-  const positionUI: Position = {
-    x: selectedObject?.position?.x ?? 0,
-    y: selectedObject?.position?.y ?? 0,
-    z: selectedObject?.position?.z ?? 0,
-  };
-
-  const rotationUI: Rotation = {
-    x: selectedObject?.rotation?.x ?? 0,
-    y: selectedObject?.rotation?.y ?? 0,
-    z: selectedObject?.rotation?.z ?? 0,
   };
 
   const controlIconMap: Record<string, string[]> = {
@@ -387,19 +357,24 @@ const Sidebar: React.FC = () => {
     },
   ];
 
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
   const isDoorSelected =
     selectedObject?.type === PART_TYPES.DOOR ||
     selectedObject?.name?.toLowerCase().includes('door');
 
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
   const isDrawerSelected =
     selectedObject?.type === PART_TYPES.DRAWER ||
     selectedObject?.name?.toLowerCase().includes('drawer');
 
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
   const isPlankSelected =
     selectedObject?.type === PART_TYPES.PLANK ||
     selectedObject?.type === PART_TYPES.VERTICAL_PLANK ||
     selectedObject?.type === PART_TYPES.HORIZONTAL_PLANK;
   selectedObject?.name?.toLowerCase().includes('planks');
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isFullCupboard =
     !!selectedObject &&
@@ -411,10 +386,13 @@ const Sidebar: React.FC = () => {
       PART_TYPES.VERTICAL_PLANK,
       PART_TYPES.HORIZONTAL_PLANK,
     ].includes(selectedObject.type);
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isFullCupboardorPlankSelected = isFullCupboard || isPlankSelected;
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
@@ -428,21 +406,34 @@ const Sidebar: React.FC = () => {
   const [baseheightDisabled, setBaseheightDisabled] = useState(false);
   const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
   const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleEdgeBandingToggle = () => {
     if (edgeBandingDisabled) return;
     setEdgeBandingEnabled((prev) => !prev);
   };
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleMinifixToggle = () => {
     if (minifixDisabled) return;
     setMinifixEnabled((prev) => !prev);
   };
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleGroovingToggle = () => {
     if (groovingDisabled) return;
     setGroovingEnabled((prev) => !prev);
   };
+
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+  useEffect(() => {
+    setMinifixDisabled(false);
+    setGroovingDisabled(false);
+    setEdgeBandingDisabled(false);
+    setTopPlankDisabled(false);
+    setBaseheightDisabled(false);
+    setFrontpanelDisabled(false);
+  }, []);
 
   const handleTopPlankToggle = () => {
     if (topPlankDisabled) return;
@@ -473,6 +464,11 @@ const Sidebar: React.FC = () => {
     camlock: false,
     edgeBanding: false,
     material: false,
+    layout: false,
+    shelfs: false,
+    positionMove: false,
+    topPlank: false,
+    base: false,
   });
 
   const toggleSection = (key: string) => {
@@ -561,7 +557,7 @@ const Sidebar: React.FC = () => {
                     </p>
                     <button
                       onClick={() => toggleSection('minifix')}
-                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                     >
                       {collapsed.minifix ? '+' : '−'}
                     </button>
@@ -669,8 +665,8 @@ const Sidebar: React.FC = () => {
                       </div>
                     </>
                   )}
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </div>
+                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
                 {/* ================= Camlock Screw Hole ================= */}
                 <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
@@ -680,7 +676,7 @@ const Sidebar: React.FC = () => {
                     </p>
                     <button
                       onClick={() => toggleSection('camlock')}
-                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                     >
                       {collapsed.camlock ? '+' : '−'}
                     </button>
@@ -737,7 +733,7 @@ const Sidebar: React.FC = () => {
                     </p>
                     <button
                       onClick={() => toggleSection('edgeBanding')}
-                      className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                     >
                       {collapsed.edgeBanding ? '+' : '−'}
                     </button>
@@ -783,7 +779,7 @@ const Sidebar: React.FC = () => {
                       </p>
                       <button
                         onClick={() => toggleSection('shelf')}
-                        className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                       >
                         {collapsed.shelf ? '+' : '−'}
                       </button>
@@ -820,7 +816,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <button
                             onClick={() => toggleSection('layout')}
-                            className="boredr-[0rem] cursor-pointer mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                            className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                           >
                             {collapsed.layout ? '+' : '−'}
                           </button>
@@ -900,7 +896,7 @@ const Sidebar: React.FC = () => {
                       </p>
                       <button
                         onClick={() => toggleSection('positionMove')}
-                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                       >
                         {collapsed.positionMove ? '+' : '−'}
                       </button>
@@ -996,8 +992,7 @@ const Sidebar: React.FC = () => {
                       </>
                     )}
                   </div>
-
-                  <hr className="mx-[0.2rem] my-[0.2rem] w-[15rem] opacity-20" />
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
               )}
 
@@ -1011,7 +1006,7 @@ const Sidebar: React.FC = () => {
                       </p>
                       <button
                         onClick={() => toggleSection('topPlank')}
-                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                       >
                         {collapsed.topPlank ? '+' : '−'}
                       </button>
@@ -1058,7 +1053,7 @@ const Sidebar: React.FC = () => {
                       </p>
                       <button
                         onClick={() => toggleSection('base')}
-                        className="boredr-[0rem] mr-[1rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                       >
                         {collapsed.base ? '+' : '−'}
                       </button>
@@ -1152,7 +1147,7 @@ const Sidebar: React.FC = () => {
                   </p>
                   <button
                     onClick={() => toggleSection('material')}
-                    className="boredr-[0rem] mr-[0rem] cursor-pointer border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    className="boredr-[0rem] mr-[0rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
                   >
                     {collapsed.material ? '+' : '−'}
                   </button>

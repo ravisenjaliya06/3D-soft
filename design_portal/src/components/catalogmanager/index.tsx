@@ -299,7 +299,7 @@ const CatalogManager = () => {
                   Catalog Type
                 </span>
                 <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-['Comfortaa'] text-[#392579] outline-none"
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                   value={catalogType}
                   onChange={(e) => setCatalogType(e.target.value)}
                 >
@@ -318,7 +318,7 @@ const CatalogManager = () => {
                   Part
                 </span>
                 <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] text-[0.69rem] font-['Comfortaa'] text-[#392579] outline-none"
+                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                   value={selectedCatalog?.id || ''}
                   onChange={(e) => {
                     const catalog = catalogData.find((c) => c.id === e.target.value);
@@ -585,7 +585,7 @@ const CatalogManager = () => {
               <select
                 value={selectedMaterialType}
                 onChange={(e) => setSelectedMaterialType(e.target.value)}
-                className="h-[1.7rem] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white text-[0.65rem] font-['Comfortaa'] text-[rgba(57,37,121,1)] focus:outline-none"
+                className="h-[1.7rem] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white font-['Comfortaa'] text-[0.65rem] text-[rgba(57,37,121,1)] focus:outline-none"
               >
                 {materialTypes.map((type) => (
                   <option key={type} value={type}>
