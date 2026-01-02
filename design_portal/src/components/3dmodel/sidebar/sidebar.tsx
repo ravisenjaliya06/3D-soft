@@ -421,7 +421,7 @@ const Sidebar: React.FC = () => {
     {
       label: 'Top',
       name: 'Top',
-      
+
       type: 'number',
       icon: _3DMODEL.leftIcon,
 
@@ -442,7 +442,7 @@ const Sidebar: React.FC = () => {
     },
   ];
 
-    const isDoorSelected =
+  const isDoorSelected =
     selectedObject?.type === PART_TYPES.DOOR ||
     selectedObject?.name?.toLowerCase().includes('door');
 
@@ -450,8 +450,7 @@ const Sidebar: React.FC = () => {
     selectedObject?.type === PART_TYPES.DRAWER ||
     selectedObject?.name?.toLowerCase().includes('drawer');
 
-      const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
-
+  const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled] = useState(false);
@@ -919,7 +918,10 @@ const Sidebar: React.FC = () => {
                                   className="h-[0.8rem] w-[0.8rem] object-contain opacity-70"
                                 />
 
-                                <img src={assets.vrLine} className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]" />
+                                <img
+                                  src={assets.vrLine}
+                                  className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]"
+                                />
 
                                 {/* Input */}
                                 <input
@@ -939,7 +941,6 @@ const Sidebar: React.FC = () => {
                     </>
                   </div>
                 )}
-                
               </div>
             </>
           )}

@@ -11,7 +11,6 @@ interface ContextMenusProps {
 
 export const ContextMenus: React.FC<ContextMenusProps> = ({
   contextMenu,
-  contextMaterialMenu,
   onAddCompany,
 }) => {
   return (
@@ -29,17 +28,6 @@ export const ContextMenus: React.FC<ContextMenusProps> = ({
             ➕ Add Company
           </button>
         </div>
-      )}
-
-      {contextMaterialMenu && (
-        <div
-          className={styles.contextMenu}
-          style={{
-            top: contextMaterialMenu.y,
-            left: contextMaterialMenu.x,
-            position: 'absolute',
-          }}
-        ></div>
       )}
     </>
   );

@@ -184,10 +184,15 @@ const Material: React.FC = () => {
                 onSearchChange={setSearchQuery}
                 actionButton={
                   <button
-                    className="ml-[1rem] h-[1.5rem] cursor-pointer rounded-[7px] border-0 bg-[#392579] px-[0.75rem] py-2 font-[comfortaa] text-xs font-bold text-[#fff]"
-                    onClick={() => setAddMaterialPopup(true)}
+                    disabled={!selectedSubItem}
+                    className={`ml-[1rem] h-[1.5rem] rounded-[0.3rem] px-[0.75rem] py-2 font-[comfortaa] text-[0.65rem] font-bold text-[var(--primary-white)] ${selectedSubItem ? 'cursor-pointer bg-[var(--primary-color)]' : 'cursor-not-allowed bg-[var(--primary-light-grey)]'} `}
+                    onClick={() => {
+                      if (!selectedSubItem) return;
+                      handleAddMaterial(selectedSubItem);
+                    }}
                   >
-                    <img src={assets.plus} alt="Plus icon" /> Add New
+                    <img src={assets.plus} alt="Plus icon" className="w-[0.70rem] pr-[0.25rem]" />
+                    Add New
                   </button>
                 }
               />
@@ -226,6 +231,7 @@ const Material: React.FC = () => {
           setCreateWorkOrderPopup={setAddMaterialPopup}
           companyId={companyID}
           handleGetCompanyMaterials={fetchCompanyMaterials}
+          selectedType={expandedCategory}
         />
       )}
     </div>
