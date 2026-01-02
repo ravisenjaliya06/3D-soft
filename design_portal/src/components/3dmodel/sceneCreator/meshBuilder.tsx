@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
-import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData, OBJECT_TYPES } from './interface';
+import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 import { convertKeysToCamel } from './utils';
 // import { store } from '../store';
 // import { addObjects } from '../store/dataSlice';
@@ -14,9 +14,7 @@ export class MeshBuilder {
   }
 
   private _createTexture(): THREE.Texture {
-    if (!this.meshData.material[0]) return new THREE.Texture();
-    console.log(this.meshData, 'this.meshData.material[0]');
-    const texture = new THREE.TextureLoader().load(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + this.meshData.material[0].textures[0].textureDetail.image || '');
+    const texture = new THREE.TextureLoader().load(this.meshData.material?.value || '');
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(this.meshData.material?.repeatX || 1, this.meshData.material?.repeatY || 1);
@@ -31,9 +29,6 @@ export class MeshBuilder {
   }
 
   private _createTextureMaterial(): THREE.MeshStandardMaterial {
-    if (this.meshData.type === OBJECT_TYPES.CUPBOARD) {
-      return new THREE.MeshStandardMaterial({ visible: false });
-    }
     const texture = this._createTexture();
     return new THREE.MeshStandardMaterial({
       map: texture,
@@ -42,14 +37,14 @@ export class MeshBuilder {
   }
 
   private _getMaterial(): THREE.Material | THREE.MeshStandardMaterial {
-    const material = {type:MATERIAL_TYPE.TEXTURE};
+    const material = this.meshData.material;
     if (!material) {
       return new THREE.MeshStandardMaterial({ visible: false });
     }
     if (material.type === MATERIAL_TYPE.COLOR && material.value) {
       return this._createColorMaterial();
     }
-    if (material.type === MATERIAL_TYPE.TEXTURE) {
+    if (material.type === MATERIAL_TYPE.TEXTURE && material.value) {
       return this._createTextureMaterial();
     }
     return new THREE.MeshStandardMaterial({ visible: false });
