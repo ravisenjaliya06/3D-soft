@@ -21,7 +21,12 @@ from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import DesignSetting
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import MOBILE_NUMBER_LENGTH
-from user.utils import add_user_to_organization, verify_otp
+from user.utils import (
+    add_user_to_organization,
+    default_material_data,
+    duplicate_default_catalogs_for_organization,
+    verify_otp,
+)
 
 
 class PhoneValidationSerializer(serializers.Serializer):
@@ -125,6 +130,8 @@ class SignupSerializer(PhoneValidationSerializer):
         user.selected_organization = organization
         user.save()
         add_user_to_organization(user, organization, group_names)
+        default_material_data(organization)
+        duplicate_default_catalogs_for_organization(organization)
 
         DesignSetting.objects.get_or_create(
             organization=organization,
@@ -165,6 +172,18 @@ class LoginSerializer(serializers.Serializer):
             )
 
         if not user.is_verified:
+            request = self.context.get("request")
+            view = request.parser_context.get("view") if request else None
+
+            if (
+                view
+                and hasattr(view, "_generate_otp")
+                and hasattr(view, "_set_user_otp")
+            ):
+                otp, expiration_time = view._generate_otp()
+                view._set_user_otp(user, otp, expiration_time)
+                view._send_otp_email(user, otp)
+
             raise exceptions.ValidationError(
                 _("Account is not verified. Please verify account with the OTP.")
             )
