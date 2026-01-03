@@ -127,7 +127,6 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   // Define popup sequences for each material type
   const getPopupSequence = (materialType: string): PopupStep[] => {
-    console.log('materialType', materialType);
     const sequences: { [key: string]: PopupStep[] } = {
       Banding: [
         {
@@ -2803,9 +2802,6 @@ const AddMaterialPopup: React.FC<Props> = ({
     return sequence;
   };
 
-  // const currentSequence = selectedMaterialType
-  //   ? getPopupSequence(formatEnumLabel(selectedType))
-  //   : getPopupSequence('');
   const currentSequence = getPopupSequence(formatEnumLabel(selectedType ? selectedType : ''));
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;

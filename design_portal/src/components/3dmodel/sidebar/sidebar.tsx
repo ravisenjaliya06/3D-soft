@@ -421,10 +421,8 @@ const Sidebar: React.FC = () => {
     {
       label: 'Top',
       name: 'Top',
-
       type: 'number',
       icon: _3DMODEL.leftIcon,
-
       value: handlePos.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>

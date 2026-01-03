@@ -9,10 +9,7 @@ interface ContextMenusProps {
   onAddMaterial: (companyId: string) => void;
 }
 
-export const ContextMenus: React.FC<ContextMenusProps> = ({
-  contextMenu,
-  onAddCompany,
-}) => {
+export const ContextMenus: React.FC<ContextMenusProps> = ({ contextMenu, onAddCompany }) => {
   return (
     <>
       {contextMenu && (
