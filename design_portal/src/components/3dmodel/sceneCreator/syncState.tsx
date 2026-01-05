@@ -132,7 +132,7 @@ export class SyncManager {
   private _updateMesh(mesh: THREE.Mesh) {
     if (!this.oldData) return;
     const changes = this._getMeshObjectPatch(this.oldData, this.data);
-    this.meshBuilder.updateMesh(mesh, changes);
+    this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
   }
 
   private _findMeshById(): THREE.Mesh | null {

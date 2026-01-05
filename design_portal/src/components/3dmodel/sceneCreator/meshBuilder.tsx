@@ -16,6 +16,32 @@ export class MeshBuilder {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(this.meshData.material?.repeatX || 1, this.meshData.material?.repeatY || 1);
+
+    // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
+    // This maintains the seamless pattern when texture repeats
+    texture.center.set(0, 0);
+    texture.offset.set(0, 0);
+
+    // Apply texture rotation if provided (convert degrees to radians)
+    if (this.meshData.material?.rotation !== undefined) {
+      const rotationRad = THREE.MathUtils.degToRad(this.meshData.material.rotation);
+      texture.rotation = rotationRad;
+
+      // Adjust offset to compensate for rotation and maintain seamless tiling
+      // This prevents the zigzag pattern by aligning the rotated texture properly
+      const cos = Math.cos(rotationRad);
+      const sin = Math.sin(rotationRad);
+      // Calculate offset to maintain seamless pattern
+      const offsetX = (1 - cos) * 0.5 - sin * 0.5;
+      const offsetY = (1 - cos) * 0.5 + sin * 0.5;
+      texture.offset.set(offsetX, offsetY);
+    }
+
+    // Enable texture filtering for smoother appearance
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+
     return texture;
   }
 
@@ -144,7 +170,11 @@ export class MeshBuilder {
     return mesh;
   }
 
-  public updateMesh(mesh: THREE.Mesh, changes: Partial<MeshObjectData>) {
+  public updateMesh(
+    mesh: THREE.Mesh,
+    changes: Partial<MeshObjectData>,
+    oldMaterial?: MeshObjectData['material']
+  ) {
     this._setUserData(mesh);
     if (changes.position) {
       this._setPosition(mesh);
@@ -156,13 +186,78 @@ export class MeshBuilder {
       this._setScale(mesh);
     }
     if (changes.material) {
-      if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
-      mesh.material.dispose();
-      mesh.material = this._getMaterial();
+      const newMaterial = changes.material;
+
+      if (
+        oldMaterial &&
+        newMaterial &&
+        oldMaterial.type === MATERIAL_TYPE.TEXTURE &&
+        newMaterial.type === MATERIAL_TYPE.TEXTURE &&
+        oldMaterial.value === newMaterial.value &&
+        oldMaterial.repeatX === newMaterial.repeatX &&
+        oldMaterial.repeatY === newMaterial.repeatY &&
+        oldMaterial.rotation !== newMaterial.rotation
+      ) {
+        this._updateTextureRotation(mesh, newMaterial.rotation);
+      } else {
+        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+        mesh.material.dispose();
+        mesh.material = this._getMaterial();
+      }
     }
     if (changes.dimensions) {
       mesh.geometry.dispose();
       mesh.geometry = this._getGeometry();
+    }
+  }
+
+  private _updateTextureRotation(mesh: THREE.Mesh, rotationDegrees?: number): void {
+    const updateTextureRotation = (material: THREE.Material) => {
+      if (material instanceof THREE.MeshStandardMaterial && material.map) {
+        // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
+        material.map.center.set(0, 0);
+
+        // Ensure proper wrapping
+        material.map.wrapS = THREE.RepeatWrapping;
+        material.map.wrapT = THREE.RepeatWrapping;
+
+        if (rotationDegrees !== undefined) {
+          const rotationRad = THREE.MathUtils.degToRad(rotationDegrees);
+          material.map.rotation = rotationRad;
+
+          // Adjust offset to compensate for rotation and maintain seamless tiling
+          // This prevents the zigzag pattern by aligning the rotated texture properly
+          const cos = Math.cos(rotationRad);
+          const sin = Math.sin(rotationRad);
+          const offsetX = (1 - cos) * 0.5 - sin * 0.5;
+          const offsetY = (1 - cos) * 0.5 + sin * 0.5;
+          material.map.offset.set(offsetX, offsetY);
+        } else {
+          material.map.rotation = 0;
+          material.map.offset.set(0, 0);
+        }
+        material.map.needsUpdate = true;
+        material.needsUpdate = true;
+      }
+    };
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach(updateTextureRotation);
+    } else {
+      updateTextureRotation(mesh.material);
+    }
+
+    // Also update children if this is a main mesh
+    if (mesh.userData.isMain) {
+      mesh.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(updateTextureRotation);
+          } else {
+            updateTextureRotation(child.material);
+          }
+        }
+      });
     }
   }
 }

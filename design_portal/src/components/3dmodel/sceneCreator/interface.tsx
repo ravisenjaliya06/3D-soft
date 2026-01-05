@@ -71,6 +71,7 @@ interface Material {
   value: string;
   repeatX?: number;
   repeatY?: number;
+  rotation?: number; // Texture rotation in degrees
 }
 
 export interface MeshObjectData {
