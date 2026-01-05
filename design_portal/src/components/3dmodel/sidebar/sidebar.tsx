@@ -28,6 +28,11 @@ const Sidebar: React.FC = () => {
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
 
+  // Anchor States for Directional Scaling
+  const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
+  const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
+  const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
+
   const materialModal = [
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
     { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
@@ -163,7 +168,6 @@ const Sidebar: React.FC = () => {
     patch: MeshObjectPatch
   ): void {
     if (!selectedObject) return;
-
     const updatedObject: MeshObjectData = {
       ...selectedObject,
 
@@ -247,9 +251,53 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionChange = (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
+
+    const oldValue = selectedObject.dimensions?.[field] ?? 0;
+    const delta = value - oldValue;
+
+    // Stores positional offset caused by directional resizing.
+    // Initialized to zero so unaffected axes remain unchanged.
+    const positionShift = { x: 0, y: 0, z: 0 };
+
+    const axisConfig = {
+      width: {
+        axis: 'x',
+        side: widthSide,
+        negative: 'left',
+        positive: 'right',
+      },
+      height: {
+        axis: 'y',
+        side: heightSide,
+        negative: 'bottom',
+        positive: 'top',
+      },
+      depth: {
+        axis: 'z',
+        side: depthSide,
+        negative: 'back',
+        positive: 'front',
+      },
+    } as const;
+
+    const config = axisConfig[field];
+
+    if (config) {
+      if (config.side === config.negative) {
+        positionShift[config.axis] = -delta / 2;
+      } else if (config.side === config.positive) {
+        positionShift[config.axis] = delta / 2;
+      }
+    }
+
+    const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
+
     applyObjectUpdate(selectedObject, {
-      dimensions: {
-        [field]: value,
+      dimensions: { [field]: value },
+      position: {
+        x: currentPos.x + positionShift.x,
+        y: currentPos.y + positionShift.y,
+        z: currentPos.z + positionShift.z,
       },
     });
   };
@@ -476,11 +524,10 @@ const Sidebar: React.FC = () => {
   };
   return (
     <div
-      className={`sidebar-scroll ${
-        isSidebarOpen
-          ? 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)]'
-          : 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent'
-      } scrollbar-thin scrollbar-thumb-[var(--toggle-button-color)] scrollbar-track-transparent [&::-webkit-scrollbar]:w-[0.20rem] [&::-webkit-scrollbar-thumb]:rounded-[0.6rem] [&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-color)] [&::-webkit-scrollbar-thumb:hover]:bg-[var(--toggle-button-color)] [&::-webkit-scrollbar-track]:bg-transparent`}
+      className={`sidebar-scroll ${isSidebarOpen
+        ? 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)]'
+        : 'absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent'
+        } scrollbar-thin scrollbar-thumb-[var(--toggle-button-color)] scrollbar-track-transparent [&::-webkit-scrollbar]:w-[0.20rem] [&::-webkit-scrollbar-thumb]:rounded-[0.6rem] [&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-color)] [&::-webkit-scrollbar-thumb:hover]:bg-[var(--toggle-button-color)] [&::-webkit-scrollbar-track]:bg-transparent`}
     >
       {/* ================= TITLE ================= */}
       <div
@@ -505,22 +552,20 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[1rem]">
             <button
               onClick={handleSetting}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isSettingOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
+                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+              className={`border-0 font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
+                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
             >
               Navigation
             </button>
@@ -570,11 +615,10 @@ const Sidebar: React.FC = () => {
                         >
                           {/* Knob */}
                           <div
-                            className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--toggle-button-border-color)] ring-2 transition-transform duration-300 ease-in-out ${
-                              minifixEnabled
-                                ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                            }`}
+                            className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--toggle-button-border-color)] ring-2 transition-transform duration-300 ease-in-out ${minifixEnabled
+                              ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                              : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                              }`}
                           />
                         </div>
                         <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
@@ -620,11 +664,10 @@ const Sidebar: React.FC = () => {
                         >
                           {/* Knob */}
                           <div
-                            className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--border-color)] ring-2 transition-transform duration-300 ease-in-out ${
-                              groovingEnabled
-                                ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                            }`}
+                            className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--border-color)] ring-2 transition-transform duration-300 ease-in-out ${groovingEnabled
+                              ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                              : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                              }`}
                           />
                         </div>
                         <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
@@ -729,11 +772,10 @@ const Sidebar: React.FC = () => {
                     >
                       {/* Knob */}
                       <div
-                        className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--toggle-border-color)] ring-2 transition-transform duration-300 ease-in-out ${
-                          edgeBandingEnabled
-                            ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                            : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                        }`}
+                        className={`absolute top-[0.1rem] left-[0.1rem] h-[0.69rem] w-[0.69rem] rounded-full border border-[var(--toggle-border-color)] ring-2 transition-transform duration-300 ease-in-out ${edgeBandingEnabled
+                          ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                          : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                          }`}
                       />
                     </div>
 
@@ -762,9 +804,68 @@ const Sidebar: React.FC = () => {
                     <div className="mt-[1] flex gap-[0.5rem]">
                       {menu.fields.map((field, i) => (
                         <div key={i} className="flex flex-col">
-                          <p className="mt-[0px] mb-[0px] text-[0.5rem] text-[var(--primary-color)]">
-                            {field.label}
-                          </p>
+                          <div className="flex items-center justify-between pr-1">
+                            <p className="mt-[0px] mb-[0px] text-[0.5rem] text-[var(--primary-color)]">
+                              {field.label}
+                            </p>
+                            {field.name === 'width' && (
+                              <div className="flex gap-[1px]">
+                                {(['left', 'right'] as const).map((opt) => (
+                                  <button
+                                    key={opt}
+                                    onClick={() =>
+                                      setWidthSide((prev) => (prev === opt ? null : opt))
+                                    }
+                                    className={`rounded border px-[2px] text-[0.4rem] ${widthSide === opt
+                                      ? 'bg-[var(--primary-color)] text-white'
+                                      : 'bg-transparent text-[var(--primary-color)]'
+                                      }`}
+                                    title={`Grow ${opt}`}
+                                  >
+                                    {opt[0]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {field.name === 'height' && (
+                              <div className="flex gap-[1px]">
+                                {(['top', 'bottom'] as const).map((opt) => (
+                                  <button
+                                    key={opt}
+                                    onClick={() =>
+                                      setHeightSide((prev) => (prev === opt ? null : opt))
+                                    }
+                                    className={`rounded border px-[2px] text-[0.4rem] ${heightSide === opt
+                                      ? 'bg-[var(--primary-color)] text-white'
+                                      : 'bg-transparent text-[var(--primary-color)]'
+                                      }`}
+                                    title={`Grow ${opt}`}
+                                  >
+                                    {opt[0]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {field.name === 'depth' && (
+                              <div className="flex gap-[1px]">
+                                {(['front', 'back'] as const).map((opt) => (
+                                  <button
+                                    key={opt}
+                                    onClick={() =>
+                                      setDepthSide((prev) => (prev === opt ? null : opt))
+                                    }
+                                    className={`rounded border px-[2px] text-[0.4rem] ${depthSide === opt
+                                      ? 'bg-[var(--primary-color)] text-white'
+                                      : 'bg-transparent text-[var(--primary-color)]'
+                                      }`}
+                                    title={`Grow ${opt}`}
+                                  >
+                                    {opt[0]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
 
                           <input
                             type={field.type}
