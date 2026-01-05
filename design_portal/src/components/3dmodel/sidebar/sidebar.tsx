@@ -401,16 +401,7 @@ const Sidebar: React.FC = () => {
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandlePosState('x', Number(e.target.value)),
     },
-    {
-      label: 'Top',
-      name: 'Top',
-      type: 'number',
-      icon: _3DMODEL.leftIcon,
-      value: handlePos.y,
-      disabled: isQuickHideActive,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value)),
-    },
+
     {
       label: 'Rotation',
       name: 'rotationZ',
@@ -425,7 +416,6 @@ const Sidebar: React.FC = () => {
 
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
-  const isDoorSelected =
   const isDoorSelected =
     selectedObject?.type === PART_TYPES.DOOR ||
     selectedObject?.name?.toLowerCase().includes('door');
