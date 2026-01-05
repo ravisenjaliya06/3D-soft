@@ -21,6 +21,7 @@ import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { store } from '../store';
 import {
   addObjects,
+  removeObject,
   setobjectSelected,
   setSelectedChildObject,
   updateObject,
@@ -867,6 +868,90 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
         })
       );
     }
+  });
+};
+
+export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
+  if (!boxMesh) return;
+
+  const geometry = boxMesh.geometry;
+  geometry.computeBoundingBox();
+  if (!geometry.boundingBox) return;
+
+  const size = new THREE.Vector3();
+  geometry.boundingBox.getSize(size);
+  const { x: width, y: height, z: depth } = size;
+
+  const thickness = 18;
+  const skirtingHeight = 82;
+
+  // Remove existing first to avoid duplicates
+  removeSkirtingPlanks(boxMesh);
+
+  // Add Back Skirting
+  const backSkirtingData: MeshObjectData = {
+    id: crypto.randomUUID(),
+    name: 'BACK_SKIRTING_PLANK',
+    type: PART_TYPES.PLANK,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    parent: boxMesh.userData.objectId,
+    dimensions: { width, height: skirtingHeight, depth: thickness },
+    // Back is Z negative. Cupboard is centered at 0 in its local space.
+    position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: -depth / 2 + thickness / 2 },
+    rotation: { x: 0, y: 0, z: 0 },
+    material: {
+      type: MATERIAL_TYPE.TEXTURE,
+      value: TEXTURES.LIGHT_WOOD,
+      repeatX: 2,
+      repeatY: 1,
+    },
+    isMain: false,
+  };
+
+  const backSkirting = meshBuilder(backSkirtingData);
+  backSkirting.userData.isSkirting = true;
+  boxMesh.add(backSkirting);
+
+  // Add Front Skirting
+  const frontSkirtingData: MeshObjectData = {
+    id: crypto.randomUUID(),
+    name: 'FRONT_SKIRTING_PLANK',
+    type: PART_TYPES.PLANK,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    parent: boxMesh.userData.objectId,
+    dimensions: { width, height: skirtingHeight, depth: thickness },
+    // Front is Z positive.
+    position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: depth / 2 - thickness / 2 },
+    rotation: { x: 0, y: 0, z: 0 },
+    material: {
+      type: MATERIAL_TYPE.TEXTURE,
+      value: TEXTURES.LIGHT_WOOD,
+      repeatX: 2,
+      repeatY: 1,
+    },
+    isMain: false,
+  };
+
+  const frontSkirting = meshBuilder(frontSkirtingData);
+  frontSkirting.userData.isSkirting = true;
+  boxMesh.add(frontSkirting);
+};
+
+export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
+  if (!boxMesh) return;
+  const toRemove: THREE.Object3D[] = [];
+  boxMesh.children.forEach((child) => {
+    if (child.name && child.name.includes('SKIRTING_PLANK')) {
+      toRemove.push(child);
+    }
+  });
+
+  toRemove.forEach((child) => {
+    const objectId = child.userData.objectId;
+    if (objectId) {
+      store.dispatch(removeObject(objectId));
+    }
+    boxMesh.remove(child);
   });
 };
 
