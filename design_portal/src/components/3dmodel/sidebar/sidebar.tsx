@@ -57,7 +57,6 @@ const Sidebar: React.FC = () => {
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
-  const prevTargetIdRef = useRef<string | null>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
@@ -330,13 +329,13 @@ const Sidebar: React.FC = () => {
 
   const handleTextureRotationChange = (value: number) => {
     if (!selectedObject || isDisabled) return;
-    
+
     const clampedValue = Math.max(0, Math.min(180, value));
     if (isUpdatingTextureRotationRef.current) return;
     if (Math.abs(clampedValue - textureRotation) < 0.01) return;
     isUpdatingTextureRotationRef.current = true;
     setTextureRotation(clampedValue);
-   
+
     if (selectedObject.material && selectedObject.material.type === MATERIAL_TYPES.TEXTURE) {
       applyObjectUpdate(selectedObject, {
         material: {
@@ -345,7 +344,7 @@ const Sidebar: React.FC = () => {
         },
       });
     }
-    
+
     setTimeout(() => {
       isUpdatingTextureRotationRef.current = false;
     }, 100);
@@ -1360,8 +1359,11 @@ const Sidebar: React.FC = () => {
                             max={180}
                             value={textureRotation}
                             onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                            disabled={isDisabled || selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE}
-                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-50"
+                            disabled={
+                              isDisabled ||
+                              selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE
+                            }
+                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                         </div>
                       </div>

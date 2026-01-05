@@ -16,17 +16,17 @@ export class MeshBuilder {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(this.meshData.material?.repeatX || 1, this.meshData.material?.repeatY || 1);
-    
+
     // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
     // This maintains the seamless pattern when texture repeats
     texture.center.set(0, 0);
     texture.offset.set(0, 0);
-    
+
     // Apply texture rotation if provided (convert degrees to radians)
     if (this.meshData.material?.rotation !== undefined) {
       const rotationRad = THREE.MathUtils.degToRad(this.meshData.material.rotation);
       texture.rotation = rotationRad;
-      
+
       // Adjust offset to compensate for rotation and maintain seamless tiling
       // This prevents the zigzag pattern by aligning the rotated texture properly
       const cos = Math.cos(rotationRad);
@@ -36,12 +36,12 @@ export class MeshBuilder {
       const offsetY = (1 - cos) * 0.5 + sin * 0.5;
       texture.offset.set(offsetX, offsetY);
     }
-    
+
     // Enable texture filtering for smoother appearance
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
-    
+
     return texture;
   }
 
@@ -170,7 +170,11 @@ export class MeshBuilder {
     return mesh;
   }
 
-  public updateMesh(mesh: THREE.Mesh, changes: Partial<MeshObjectData>, oldMaterial?: MeshObjectData['material']) {
+  public updateMesh(
+    mesh: THREE.Mesh,
+    changes: Partial<MeshObjectData>,
+    oldMaterial?: MeshObjectData['material']
+  ) {
     this._setUserData(mesh);
     if (changes.position) {
       this._setPosition(mesh);
@@ -183,7 +187,7 @@ export class MeshBuilder {
     }
     if (changes.material) {
       const newMaterial = changes.material;
-      
+
       if (
         oldMaterial &&
         newMaterial &&
@@ -212,15 +216,15 @@ export class MeshBuilder {
       if (material instanceof THREE.MeshStandardMaterial && material.map) {
         // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
         material.map.center.set(0, 0);
-        
+
         // Ensure proper wrapping
         material.map.wrapS = THREE.RepeatWrapping;
         material.map.wrapT = THREE.RepeatWrapping;
-        
+
         if (rotationDegrees !== undefined) {
           const rotationRad = THREE.MathUtils.degToRad(rotationDegrees);
           material.map.rotation = rotationRad;
-          
+
           // Adjust offset to compensate for rotation and maintain seamless tiling
           // This prevents the zigzag pattern by aligning the rotated texture properly
           const cos = Math.cos(rotationRad);

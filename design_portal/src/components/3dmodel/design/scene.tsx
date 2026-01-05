@@ -223,8 +223,8 @@ export const addHorizontalPlanksInsideBox = async (
     };
 
     const localPosInBox = new THREE.Vector3(
-      boxCenterLocal.x, 
-      yLocal, 
+      boxCenterLocal.x,
+      yLocal,
       boxCenterLocal.z - innerDepth / 2
     );
 
