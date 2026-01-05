@@ -3,8 +3,6 @@ import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
 import { convertKeysToCamel } from './utils';
-// import { store } from '../store';
-// import { addObjects } from '../store/dataSlice';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -115,6 +113,7 @@ export class MeshBuilder {
     mesh.userData.objectId = this.meshData.id;
     mesh.userData.isMain = this.meshData.isMain;
     mesh.userData.openDirection = this.meshData.openDirection;
+    mesh.userData.drawerType = this.meshData.drawerType;
   }
 
   private _setName(mesh: THREE.Mesh) {

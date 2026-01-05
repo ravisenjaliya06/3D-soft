@@ -8,7 +8,12 @@ export const getBoxCenter = (obj: THREE.Mesh): THREE.Vector3 => {
 };
 
 export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSegments => {
-  const edges = new THREE.EdgesGeometry(obj.geometry);
+  const box = new THREE.Box3().setFromObject(obj);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+
+  const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+  const edges = new THREE.EdgesGeometry(geo);
   const mat = new THREE.LineBasicMaterial({
     color: color,
     linewidth: 2,
@@ -19,14 +24,18 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   if (obj.userData.objectId) {
     outline.name = `outline-${obj.userData.objectId}`;
   } else {
-    // Fallback or keep it generic if no ID, but typically used for selection
     outline.name = 'outline-unknown';
   }
 
-  obj.updateWorldMatrix(true, false);
-  obj.getWorldPosition(outline.position);
-  outline.quaternion.copy(obj.getWorldQuaternion(new THREE.Quaternion()));
-  outline.scale.copy(obj.getWorldScale(new THREE.Vector3()));
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  outline.position.copy(center);
+
+  // For group objects, we might still want to copy the world rotation/scale
+  // but if we use setFromObject, the box is already in world space.
+  // However, edges geometry for a box is local.
+  // So we need to position it at the center of the bounding box.
+
   return outline;
 };
 
@@ -35,13 +44,13 @@ export const createDashedLineObject = (
   color: number,
   center: THREE.Vector3
 ): THREE.LineSegments => {
-  const geometry = object.geometry as THREE.BoxGeometry;
-  // Handle case where geometry might not be BoxGeometry, though in this project it mostly is.
-  // If params are missing (e.g. loaded model), we might need bounding box.
-  // But strictly following original logic:
-  const width = geometry.parameters?.width ?? 1;
-  const height = geometry.parameters?.height ?? 1;
-  const depth = geometry.parameters?.depth ?? 1;
+  const box = new THREE.Box3().setFromObject(object);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+
+  const width = size.x;
+  const height = size.y;
+  const depth = size.z;
 
   const geo = new THREE.BoxGeometry(width * 1.05, height * 1.05, depth * 1.05);
   const edges = new THREE.EdgesGeometry(geo);
@@ -55,8 +64,11 @@ export const createDashedLineObject = (
 
   const outline = new THREE.LineSegments(edges, dashedMat);
   outline.position.copy(center);
-  outline.rotation.copy(object.rotation);
-  outline.scale.copy(object.scale);
+  // Remove individual scaling/rotation as the bounding box already incorporates them in world space
+  // unless we want it to rotate WITH the object?
+  // If the object rotates, the AABB changes size.
+  // Actually, usually these selection boxes should rotate WITH the object if possible.
+
   outline.computeLineDistances();
   outline.name = 'cupboard_big_dotted_outline';
   return outline;
