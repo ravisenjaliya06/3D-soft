@@ -96,6 +96,7 @@ export const addVerticalPlanksToBox = async (
   const depth = size.z;
 
   const thickness = 18;
+  const innerDepth = 25;
   const edgeClearance = Math.max(0.01, thickness);
 
   const span = width;
@@ -127,12 +128,12 @@ export const addVerticalPlanksToBox = async (
     const dims = {
       width: thickness,
       height: effectiveHeight,
-      depth,
+      depth: depth - innerDepth,
     };
 
     const localX = leftInnerX + interval * i;
 
-    const localPosInBox = new THREE.Vector3(localX, 0, 0);
+    const localPosInBox = new THREE.Vector3(localX, 0, -innerDepth / 2);
 
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const localPosInParent = parent.worldToLocal(worldPos.clone());
@@ -190,6 +191,7 @@ export const addHorizontalPlanksInsideBox = async (
   const depth = size.z;
 
   const thickness = 18;
+  const innerDepth = 25;
   const innerHeight = height;
 
   if (innerHeight <= thickness) {
@@ -218,10 +220,14 @@ export const addHorizontalPlanksInsideBox = async (
     const dims = {
       width: width,
       height: thickness,
-      depth: depth,
+      depth: depth - innerDepth,
     };
 
-    const localPosInBox = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z);
+    const localPosInBox = new THREE.Vector3(
+      boxCenterLocal.x,
+      yLocal,
+      boxCenterLocal.z - innerDepth / 2
+    );
 
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const parentLocalPos = parent.worldToLocal(worldPos.clone());
