@@ -77,3 +77,58 @@ export const removeAllOutlines = (scene: THREE.Scene) => {
     }
   });
 };
+
+export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): void => {
+  mesh.updateWorldMatrix(true, false);
+
+  //  Main Object Dashed Outline
+  if (mesh.userData.isMain) {
+    const dashedName = 'cupboard_big_dotted_outline';
+    const dashed = scene.getObjectByName(dashedName) as THREE.LineSegments;
+
+    // if dashed exists → update it in-place
+    if (dashed) {
+      dashed.geometry.dispose();
+      (dashed.material as THREE.Material).dispose();
+
+      const center = getBoxCenter(mesh);
+      // Create temp to extract geometry/material
+      const tempDashed = createDashedLineObject(mesh, 0x000000, center);
+
+      dashed.geometry = tempDashed.geometry;
+      dashed.material = tempDashed.material;
+
+      // Update transforms to match createDashedLineObject logic
+      dashed.position.copy(center);
+      dashed.rotation.copy(mesh.rotation);
+      dashed.scale.copy(mesh.scale);
+      dashed.computeLineDistances();
+    } else {
+      const center = getBoxCenter(mesh);
+      const newDashed = createDashedLineObject(mesh, 0x000000, center);
+      scene.add(newDashed);
+    }
+  }
+
+  // Solid Selection Outline
+  const solidName = `outline-${mesh.userData.objectId}`;
+  const solid = scene.getObjectByName(solidName) as THREE.LineSegments;
+
+  if (solid) {
+    solid.geometry.dispose();
+    (solid.material as THREE.Material).dispose();
+
+    const tempSolid = createLineObjects(mesh, 0xffff00);
+
+    solid.geometry = tempSolid.geometry;
+    solid.material = tempSolid.material;
+
+    // Update transforms to match createLineObjects logic
+    solid.position.copy(mesh.getWorldPosition(new THREE.Vector3()));
+    solid.quaternion.copy(mesh.getWorldQuaternion(new THREE.Quaternion()));
+    solid.scale.copy(mesh.getWorldScale(new THREE.Vector3()));
+  } else {
+    const newSolid = createLineObjects(mesh, 0xffff00);
+    scene.add(newSolid);
+  }
+};

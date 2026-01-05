@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
+import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
 import { create2DWallFromMeshData } from './utils';
@@ -154,6 +155,8 @@ export class SyncManager {
 
     if (existingMesh !== null) {
       this._updateMesh(existingMesh);
+      // Update outline if it exists
+      updateOrRefreshOutline(this.scene, existingMesh);
     } else {
       const mesh = this._createNewMesh();
       this.scene.add(mesh);
