@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
-import { updateDrawerType } from '../design/scene';
+import { addSkirtingPlanks, removeSkirtingPlanks, updateDrawerType } from '../design/scene';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
@@ -107,6 +107,23 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
   }, [scene, dispatch]);
+
+  useEffect(() => {
+    if (selectedObject && scene) {
+      let targetMesh: THREE.Mesh | null = null;
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+          targetMesh = obj;
+        }
+      });
+      if (targetMesh) {
+        const hasSkirting = (targetMesh as THREE.Mesh).children.some(
+          (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
+        );
+        setFrontpanelEnabled(hasSkirting);
+      }
+    }
+  }, [selectedObject, scene]);
 
   const handleObject = objects.find((obj) => obj.parent === targetId && obj.type === 'handle');
   useEffect(() => {
@@ -460,6 +477,19 @@ const Sidebar: React.FC = () => {
   selectedObject?.name?.toLowerCase().includes('planks');
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
+  const getTopPlank = () => {
+    if (!selectedObject) return undefined;
+    const children = objects.filter((obj) => obj.parent === selectedObject?.id);
+    const planks = children.filter(
+      (obj) =>
+        obj.type === PART_TYPES.HORIZONTAL_PLANK ||
+        obj.type === PART_TYPES.PLANK ||
+        obj.name.toLowerCase().includes('top')
+    );
+    planks.sort((a, b) => (b.position?.y ?? 0) - (a.position?.y ?? 0));
+    return planks[0];
+  };
+
   const isFullCupboard =
     !!selectedObject &&
     ![
@@ -519,9 +549,56 @@ const Sidebar: React.FC = () => {
     setFrontpanelDisabled(false);
   }, []);
 
+  useEffect(() => {
+    if (isFullCupboard && !isQuickHideActive) {
+      const topPlank = getTopPlank();
+      if (topPlank && selectedObject) {
+        // Find a vertical plank (side panel) to serve as reference depth
+        const siblings = objects.filter((obj) => obj.parent === selectedObject?.id);
+        const sidePanel = siblings.find((obj) => obj.type === PART_TYPES.VERTICAL_PLANK);
+        // If no side panel, fallback to cupboard depth
+        const referenceDepth = sidePanel?.dimensions?.depth ?? selectedObject.dimensions?.depth ?? 0;
+
+        const plankDepth = topPlank.dimensions?.depth || 0;
+        setTopPlankEnabled(plankDepth > referenceDepth + 1);
+      }
+    }
+  }, [selectedObject, objects, isFullCupboard, isQuickHideActive]);
+
   const handleTopPlankToggle = () => {
     if (topPlankDisabled) return;
-    setTopPlankEnabled((prev) => !prev);
+
+    const topPlank = getTopPlank();
+    if (!topPlank) return;
+
+    const isEnabled = !topPlankEnabled;
+    setTopPlankEnabled(isEnabled);
+
+    const currentDepth = topPlank.dimensions?.depth || 0;
+    // If enabling, add 20. If disabling, remove 20.
+    const delta = isEnabled ? 20 : -20;
+    const newDepth = currentDepth + delta;
+
+    applyObjectUpdate(topPlank, {
+      dimensions: { depth: newDepth },
+      // Shift Z by half of delta to grow/shrink from front (assuming +Z is front)
+      // If we want it to grow "outward" (usually front), and center shifts by +10.
+      position: { z: (topPlank.position?.z || 0) + delta / 2 },
+    });
+  };
+
+  const handleTopPlankDepthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const topPlank = getTopPlank();
+    if (!topPlank) return;
+
+    const newDepth = parseFloat(e.target.value);
+    const currentDepth = topPlank.dimensions?.depth || 0;
+    const delta = newDepth - currentDepth;
+
+    applyObjectUpdate(topPlank, {
+      dimensions: { depth: newDepth },
+      position: { z: (topPlank.position?.z || 0) + delta / 2 },
+    });
   };
 
   const handleBaseheightToggle = () => {
@@ -531,7 +608,27 @@ const Sidebar: React.FC = () => {
 
   const handleFrontpanelToggle = () => {
     if (frontpanelDisabled) return;
-    setFrontpanelEnabled((prev) => !prev);
+
+    const isEnabled = !frontpanelEnabled;
+    setFrontpanelEnabled(isEnabled);
+
+    if (!scene || !selectedObject) return;
+
+    // Find the actual mesh in the scene
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      if (isEnabled) {
+        addSkirtingPlanks(targetMesh);
+      } else {
+        removeSkirtingPlanks(targetMesh);
+      }
+    }
   };
 
   const handleControlClick = (fieldName: string, idx: number) => {
@@ -1143,6 +1240,8 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[2rem]">
                             <input
                               type="number"
+                              value={getTopPlank()?.dimensions?.depth ?? 0}
+                              onChange={handleTopPlankDepthChange}
                               className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
