@@ -9,12 +9,7 @@ interface ContextMenusProps {
   onAddMaterial: (companyId: string) => void;
 }
 
-export const ContextMenus: React.FC<ContextMenusProps> = ({
-  contextMenu,
-  contextMaterialMenu,
-  onAddCompany,
-  onAddMaterial,
-}) => {
+export const ContextMenus: React.FC<ContextMenusProps> = ({ contextMenu, onAddCompany }) => {
   return (
     <>
       {contextMenu && (
@@ -28,24 +23,6 @@ export const ContextMenus: React.FC<ContextMenusProps> = ({
         >
           <button className={styles.contextMenuItem} onClick={onAddCompany}>
             ➕ Add Company
-          </button>
-        </div>
-      )}
-
-      {contextMaterialMenu && (
-        <div
-          className={styles.contextMenu}
-          style={{
-            top: contextMaterialMenu.y,
-            left: contextMaterialMenu.x,
-            position: 'absolute',
-          }}
-        >
-          <button
-            className={styles.contextMenuItem}
-            onClick={() => onAddMaterial(contextMaterialMenu.companyId)}
-          >
-            ➕ Add Material
           </button>
         </div>
       )}
