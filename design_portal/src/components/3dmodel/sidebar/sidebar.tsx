@@ -33,6 +33,7 @@ const Sidebar: React.FC = () => {
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
+  const [textureRotation, setTextureRotation] = useState(0);
 
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
@@ -55,6 +56,8 @@ const Sidebar: React.FC = () => {
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
+  const isUpdatingTextureRotationRef = useRef(false);
+  const prevTargetIdRef = useRef<string | null>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
@@ -323,6 +326,29 @@ const Sidebar: React.FC = () => {
     });
 
     setIsTextureListOpen(false);
+  };
+
+  const handleTextureRotationChange = (value: number) => {
+    if (!selectedObject || isDisabled) return;
+    
+    const clampedValue = Math.max(0, Math.min(180, value));
+    if (isUpdatingTextureRotationRef.current) return;
+    if (Math.abs(clampedValue - textureRotation) < 0.01) return;
+    isUpdatingTextureRotationRef.current = true;
+    setTextureRotation(clampedValue);
+   
+    if (selectedObject.material && selectedObject.material.type === MATERIAL_TYPES.TEXTURE) {
+      applyObjectUpdate(selectedObject, {
+        material: {
+          ...selectedObject.material,
+          rotation: clampedValue,
+        },
+      });
+    }
+    
+    setTimeout(() => {
+      isUpdatingTextureRotationRef.current = false;
+    }, 100);
   };
 
   const dimensionsUI: Dimensions = {
@@ -1321,7 +1347,12 @@ const Sidebar: React.FC = () => {
                           {/* Input */}
                           <input
                             type="number"
-                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            min={0}
+                            max={180}
+                            value={textureRotation}
+                            onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
+                            disabled={isDisabled || selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE}
+                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-50"
                           />
                         </div>
                       </div>
