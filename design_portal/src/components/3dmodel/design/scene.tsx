@@ -778,6 +778,44 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
 
   // ===== INSET MODE →  =====
   if (!isOverlay) {
+    // First, find the current face and handle positions BEFORE updating
+    const drawerFace = drawerMesh.children.find(
+      (c) => c instanceof THREE.Mesh && c.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+    ) as THREE.Mesh | undefined;
+
+    let currentFaceZ = 0;
+    let handleZOffsets: Map<string, number> = new Map();
+
+    if (drawerFace) {
+      currentFaceZ = drawerFace.position.z;
+
+      // Store current handle offsets before updating face
+      drawerMesh.children.forEach((child) => {
+        if (child.userData.type === 'handle') {
+          const handleId = child.userData.objectId;
+
+          // Find the actual mesh if it's a group
+          let handleMesh: THREE.Mesh | null = null;
+          if (child instanceof THREE.Mesh) {
+            handleMesh = child;
+          } else {
+            child.traverse((obj) => {
+              if (obj instanceof THREE.Mesh && !handleMesh) {
+                handleMesh = obj;
+              }
+            });
+          }
+
+          if (handleMesh) {
+            const zOffset = handleMesh.position.z - currentFaceZ;
+            handleZOffsets.set(handleId, zOffset);
+          }
+        }
+      });
+    }
+
+    let insetFaceZ = 0;
+
     drawerMesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh)) return;
 
@@ -789,6 +827,7 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
         const originalWidth = geo.parameters.width - 30;
 
         const insetZ = geometry.boundingBox!.max.z - faceD / 2 - thickness;
+        insetFaceZ = insetZ; // Store for handle update
 
         child.geometry.dispose();
         child.geometry = new THREE.BoxGeometry(originalWidth, height, faceD);
@@ -816,20 +855,104 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       }
     });
 
+    // Update handle positions using stored offsets
+    drawerMesh.children.forEach((child) => {
+      if (child.userData.type === 'handle') {
+        const handleId = child.userData.objectId;
+        const zOffset = handleZOffsets.get(handleId);
+
+        if (zOffset !== undefined) {
+          // Find the actual mesh if it's a group
+          let handleMesh: THREE.Mesh | null = null;
+          if (child instanceof THREE.Mesh) {
+            handleMesh = child;
+          } else {
+            child.traverse((obj) => {
+              if (obj instanceof THREE.Mesh && !handleMesh) {
+                handleMesh = obj;
+              }
+            });
+          }
+
+          if (handleMesh) {
+            // New handle Z position: new face position + same offset
+            const newHandleZ = insetFaceZ + zOffset;
+
+            // Update handle position
+            handleMesh.position.z = newHandleZ;
+
+            // Update Redux store
+            const handleData = currentObjects.find((obj) => obj.id === handleId);
+            if (handleData) {
+              store.dispatch(
+                updateObject({
+                  ...handleData,
+                  position: {
+                    ...handleData.position,
+                    z: newHandleZ,
+                  },
+                })
+              );
+            }
+          }
+        }
+      }
+    });
+
     return;
   }
 
   // ===== OVERLAY MODE → FULL RECALC =====
 
+  // First, find the current face and handle positions BEFORE updating
+  const drawerFace = drawerMesh.children.find(
+    (c) => c instanceof THREE.Mesh && c.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+  ) as THREE.Mesh | undefined;
+
+  let currentFaceZ = 0;
+  let handleZOffsets: Map<string, number> = new Map();
+
+  if (drawerFace) {
+    currentFaceZ = drawerFace.position.z;
+
+    // Store current handle offsets before updating face
+    drawerMesh.children.forEach((child) => {
+      if (child.userData.type === 'handle') {
+        const handleId = child.userData.objectId;
+
+        // Find the actual mesh if it's a group
+        let handleMesh: THREE.Mesh | null = null;
+        if (child instanceof THREE.Mesh) {
+          handleMesh = child;
+        } else {
+          child.traverse((obj) => {
+            if (obj instanceof THREE.Mesh && !handleMesh) {
+              handleMesh = obj;
+            }
+          });
+        }
+
+        if (handleMesh) {
+          const zOffset = handleMesh.position.z - currentFaceZ;
+          handleZOffsets.set(handleId, zOffset);
+        }
+      }
+    });
+  }
+
   const innerD = d - 120;
   const innerZ = d / 2 - faceD - innerD / 2;
   const frontPlankZ = innerZ + innerD / 2 - thickness / 2;
+  let newFaceZ = 0;
 
   drawerMesh.children.forEach((child) => {
     if (!(child instanceof THREE.Mesh)) return;
 
     const partName = child.name;
     const partId = child.userData.objectId;
+
+    // Skip handles - we'll update them separately
+    if (child.userData.type === 'handle') return;
 
     let newZ = child.position.z;
     let geo = child.geometry as THREE.BoxGeometry;
@@ -841,6 +964,7 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       w += 30;
       dep = faceD;
       newZ = frontPlankZ + thickness / 2 + faceD / 2;
+      newFaceZ = newZ; // Store for handle update
 
       child.geometry.dispose();
       child.geometry = new THREE.BoxGeometry(w, h, dep);
@@ -873,6 +997,50 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
           position: { ...partData.position, z: newZ },
         })
       );
+    }
+  });
+
+  // Update handle positions using stored offsets
+  drawerMesh.children.forEach((child) => {
+    if (child.userData.type === 'handle') {
+      const handleId = child.userData.objectId;
+      const zOffset = handleZOffsets.get(handleId);
+
+      if (zOffset !== undefined) {
+        // Find the actual mesh if it's a group
+        let handleMesh: THREE.Mesh | null = null;
+        if (child instanceof THREE.Mesh) {
+          handleMesh = child;
+        } else {
+          child.traverse((obj) => {
+            if (obj instanceof THREE.Mesh && !handleMesh) {
+              handleMesh = obj;
+            }
+          });
+        }
+
+        if (handleMesh) {
+          // New handle Z position: new face position + same offset
+          const newHandleZ = newFaceZ + zOffset;
+
+          // Update handle position
+          handleMesh.position.z = newHandleZ;
+
+          // Update Redux store
+          const handleData = currentObjects.find((obj) => obj.id === handleId);
+          if (handleData) {
+            store.dispatch(
+              updateObject({
+                ...handleData,
+                position: {
+                  ...handleData.position,
+                  z: newHandleZ,
+                },
+              })
+            );
+          }
+        }
+      }
     }
   });
 };
