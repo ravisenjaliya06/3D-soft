@@ -793,7 +793,7 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       drawerMesh.children.forEach((child) => {
         if (child.userData.type === 'handle') {
           const handleId = child.userData.objectId;
-          
+
           // Find the actual mesh if it's a group
           let handleMesh: THREE.Mesh | null = null;
           if (child instanceof THREE.Mesh) {
@@ -919,7 +919,7 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
     drawerMesh.children.forEach((child) => {
       if (child.userData.type === 'handle') {
         const handleId = child.userData.objectId;
-        
+
         // Find the actual mesh if it's a group
         let handleMesh: THREE.Mesh | null = null;
         if (child instanceof THREE.Mesh) {

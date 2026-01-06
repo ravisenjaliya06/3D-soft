@@ -628,7 +628,8 @@ const Sidebar: React.FC = () => {
         const siblings = objects.filter((obj) => obj.parent === selectedObject?.id);
         const sidePanel = siblings.find((obj) => obj.type === PART_TYPES.VERTICAL_PLANK);
         // If no side panel, fallback to cupboard depth
-        const referenceDepth = sidePanel?.dimensions?.depth ?? selectedObject.dimensions?.depth ?? 0;
+        const referenceDepth =
+          sidePanel?.dimensions?.depth ?? selectedObject.dimensions?.depth ?? 0;
 
         const plankDepth = topPlank.dimensions?.depth || 0;
         setTopPlankEnabled(plankDepth > referenceDepth + 1);

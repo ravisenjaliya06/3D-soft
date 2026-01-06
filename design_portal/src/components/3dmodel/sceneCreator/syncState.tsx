@@ -133,7 +133,7 @@ export class SyncManager {
     if (!this.oldData) return;
     const changes = this._getMeshObjectPatch(this.oldData, this.data);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
-    
+
     // Update children if dimensions changed and this is a main object (cupboard)
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
@@ -183,7 +183,7 @@ export class SyncManager {
 
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
-      
+
       const childParams = child.geometry.parameters;
 
       /**
@@ -217,7 +217,7 @@ export class SyncManager {
       if (child.userData.objectId) {
         const existingObjects = store.getState().data.objects;
         const childData = existingObjects.find((obj) => obj.id === child.userData.objectId);
-        
+
         if (childData) {
           store.dispatch(
             updateObject({
