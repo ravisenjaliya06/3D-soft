@@ -364,7 +364,7 @@ const Sidebar: React.FC = () => {
 
     if (!parentCupboard) return;
     const cupboardDepth = parentCupboard.dimensions?.depth ?? 0;
-    
+
     const clampedValue = Math.max(0, Math.min(25, value));
     if (Math.abs(clampedValue - shelvesInnerDistance) < 0.01) return;
     isUpdatingShelvesDistanceRef.current = true;
@@ -510,16 +510,16 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
-    
+
     if (isPlankSelected && selectedObject) {
       const currentPlankId = selectedObject.id;
-      
+
       if (previousPlankIdRef.current === currentPlankId) {
         return;
       }
-      
+
       previousPlankIdRef.current = currentPlankId;
-      
+
       const parentCupboard = selectedObject.parent
         ? objects.find((obj) => obj.id === selectedObject.parent)
         : null;
