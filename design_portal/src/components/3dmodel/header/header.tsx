@@ -8,23 +8,23 @@ import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { UnknownAction } from 'redux';
+// import { useSelector } from 'react-redux';
+// import { UnknownAction } from 'redux';
 import * as THREE from 'three';
-import { useAppDispatch } from '../hooks';
+// import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
 import { getMinifixStandards } from '../minifix/calculator';
 import { PART_TYPES } from '../sceneCreator/interface';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
-import { redoAction, undoAction } from '../store/historySlice';
-import type { RootState } from '../store/types';
+// import { redoAction, undoAction } from '../store/historySlice';
+// import type { RootState } from '../store/types';
 import styles from './header.module.css';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
-  const dispatch = useAppDispatch();
-  const history = useSelector((state: RootState) => state.history);
+  // const dispatch = useAppDispatch();
+  // const history = useSelector((state: RootState) => state.history);
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -306,20 +306,20 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const headerTools = [
-    {
-      option: 'undo',
-      name: 'Undo',
-      icon: assets.newundo,
-      disabled: !history?.past?.length,
-      onClick: () => dispatch(undoAction() as unknown as UnknownAction),
-    },
-    {
-      option: 'redo',
-      name: 'Redo',
-      icon: assets.newredu,
-      disabled: !history?.future?.length,
-      onClick: () => dispatch(redoAction() as unknown as UnknownAction),
-    },
+    // {
+    //   option: 'undo',
+    //   name: 'Undo',
+    //   icon: assets.newundo,
+    //   disabled: !history?.past?.length,
+    //   onClick: () => dispatch(undoAction() as unknown as UnknownAction),
+    // },
+    // {
+    //   option: 'redo',
+    //   name: 'Redo',
+    //   icon: assets.newredu,
+    //   disabled: !history?.future?.length,
+    //   onClick: () => dispatch(redoAction() as unknown as UnknownAction),
+    // },
     {
       option: 'clear',
       name: 'Clear',

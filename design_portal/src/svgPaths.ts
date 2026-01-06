@@ -146,9 +146,10 @@ export const DESIGN = {
   plus_icon: '/assets/design/plus_icon.svg',
   progress_upload: '/assets/design/progress-upload.svg',
   ready_svg: '/assets/design/ready-svg.svg',
-  search: '/assets/design/search.svg',
+  search_design: '/assets/design/search.svg',
   sort_searching: '/assets/design/sort_searching.svg',
   three_dots: '/assets/design/three_dots.svg',
+
 };
 
 export const DOWNLOAD_JPEG = {
@@ -202,7 +203,7 @@ export const MATERIAL = {
   brandstok: '/assets/material/brandstok.svg',
   caster: '/assets/material/caster.svg',
   connector: '/assets/material/connector.svg',
-  down_arrow: '/assets/material/down arrow.svg',
+  down_arrow: '/assets/material/down_arrow.svg',
   drawerguid: '/assets/material/drawerguid.svg',
   filter: '/assets/material/filter.svg',
   hing: '/assets/material/hing.svg',

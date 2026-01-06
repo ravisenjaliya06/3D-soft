@@ -41,7 +41,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         }}
       >
         <div
-          className={`mx-[0.4rem] my-[0.05rem] mb-[0.5rem] flex cursor-pointer items-center justify-between rounded-[0.375rem] p-[0rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isSubItemActive ? 'bg-[var(--primary-hover)] font-semibold text-[#392579]' : ''} ${!isSubItem && isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
+          className={`mx-[0.4rem] my-[0.05rem] mb-[0.5rem] flex cursor-pointer items-center justify-between rounded-[0.625rem] p-[0rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isSubItemActive ? 'bg-[var(--primary-hover)] font-semibold text-[#392579]' : ''} ${!isSubItem && isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
           onClick={() => {
             if (!isSubItem) {
               onToggleCategory(item.id);
