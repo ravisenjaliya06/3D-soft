@@ -539,7 +539,6 @@ const Sidebar: React.FC = () => {
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   // Check if invisible box is selected
   const isInvisibleBoxSelected =
@@ -813,12 +812,12 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* ================= INVISIBLE BOX SELECTED ================= */}
-          {isSettingOpen && selectedObject && isInvisibleBoxSelected && (
+          {isSettingOpen && selectedObject && (
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Properties Available</p>
           )}
 
           {/* ================= SETTINGS ================= */}
-          {isSettingOpen && selectedObject && !isInvisibleBoxSelected && (
+          {isSettingOpen && selectedObject && (
             <>
               <div className="structure-only pointer-events-none opacity-50 blur-[0.01rem] select-none">
                 {/* your existing code – NO CHANGES inside */}
@@ -1043,7 +1042,7 @@ const Sidebar: React.FC = () => {
                 </div>
               </div>
               <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isInvisibleBoxSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1084,7 +1083,7 @@ const Sidebar: React.FC = () => {
                 </>
               )}
 
-              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && !isInvisibleBoxSelected && (
+              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && (
                 <>
                   {sideBarMenuConfig.map((menu) => (
                     <div key={menu.subMenu}>
@@ -1179,7 +1178,7 @@ const Sidebar: React.FC = () => {
                   ))}
                 </>
               )}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isInvisibleBoxSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1290,7 +1289,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= Top Plank ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && !isInvisibleBoxSelected && (
+              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1555,7 +1554,7 @@ const Sidebar: React.FC = () => {
                     </div>
 
                     {/* Door Position */}
-                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && !isInvisibleBoxSelected && (
+                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
                       <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
                         <div className={'relative flex items-center justify-between'}>
                           <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
