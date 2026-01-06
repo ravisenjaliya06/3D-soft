@@ -37,6 +37,7 @@ const Sidebar: React.FC = () => {
 
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
+  const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
@@ -57,6 +58,8 @@ const Sidebar: React.FC = () => {
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
+  const isUpdatingShelvesDistanceRef = useRef(false);
+  const previousPlankIdRef = useRef<string | null>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
@@ -130,37 +133,39 @@ const Sidebar: React.FC = () => {
     if (!handleObject) return;
 
     setHandlePos({
-      x: handleObject.position.x,
-      y: handleObject.position.y,
-      z: handleObject.position.z,
+      x: Math.round(handleObject.position.x),
+      y: Math.round(handleObject.position.y),
+      z: Math.round(handleObject.position.z),
     });
 
     setHandleRot({
-      x: handleObject.rotation.x,
-      y: handleObject.rotation.y,
-      z: handleObject.rotation.z,
+      x: Math.round(handleObject.rotation.x),
+      y: Math.round(handleObject.rotation.y),
+      z: Math.round(handleObject.rotation.z),
     });
   }, [handleObject]);
 
   const updateHandlePosState = (axis: Axis, value: number) => {
-    setHandlePos((prev) => ({ ...prev, [axis]: value }));
+    const roundedValue = Math.round(value);
+    setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
         handleObject.id,
-        { position: { [axis]: value } },
+        { position: { [axis]: roundedValue } },
         handleObject
       );
     }
   };
 
   const updateHandleRotState = (axis: Axis, value: number) => {
-    setHandleRot((prev) => ({ ...prev, [axis]: value }));
+    const roundedValue = Math.round(value);
+    setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
         handleObject.id,
-        { rotation: { [axis]: value } },
+        { rotation: { [axis]: roundedValue } },
         handleObject
       );
     }
@@ -367,6 +372,31 @@ const Sidebar: React.FC = () => {
     }, 100);
   };
 
+  const handleShelvesInnerDistanceChange = (value: number) => {
+    if (!selectedObject || isDisabled || !isPlankSelected) return;
+
+    const parentCupboard = selectedObject.parent
+      ? objects.find((obj) => obj.id === selectedObject?.parent)
+      : null;
+
+    if (!parentCupboard) return;
+    const cupboardDepth = parentCupboard.dimensions?.depth ?? 0;
+
+    const clampedValue = Math.max(0, Math.min(25, value));
+    if (Math.abs(clampedValue - shelvesInnerDistance) < 0.01) return;
+    isUpdatingShelvesDistanceRef.current = true;
+    setShelvesInnerDistance(clampedValue);
+    const newPlankDepth = cupboardDepth - clampedValue;
+    if (newPlankDepth > 0) {
+      applyObjectUpdate(selectedObject, {
+        dimensions: { depth: newPlankDepth },
+      });
+    }
+    setTimeout(() => {
+      isUpdatingShelvesDistanceRef.current = false;
+    }, 100);
+  };
+
   const dimensionsUI: Dimensions = {
     width: selectedObject?.dimensions?.width ?? 11,
     height: selectedObject?.dimensions?.height ?? 0,
@@ -507,6 +537,35 @@ const Sidebar: React.FC = () => {
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
+  useEffect(() => {
+    if (isUpdatingShelvesDistanceRef.current) return;
+
+    if (isPlankSelected && selectedObject) {
+      const currentPlankId = selectedObject.id;
+
+      if (previousPlankIdRef.current === currentPlankId) {
+        return;
+      }
+
+      previousPlankIdRef.current = currentPlankId;
+
+      const parentCupboard = selectedObject.parent
+        ? objects.find((obj) => obj.id === selectedObject.parent)
+        : null;
+
+      if (parentCupboard) {
+        const cupboardDepth = parentCupboard.dimensions?.depth ?? 0;
+        const plankDepth = selectedObject.dimensions?.depth ?? 0;
+        const calculatedDistance = Math.max(0, cupboardDepth - plankDepth);
+        setShelvesInnerDistance(calculatedDistance);
+      } else {
+        setShelvesInnerDistance(0);
+      }
+    } else {
+      previousPlankIdRef.current = null;
+    }
+  }, [selectedObject?.id, isPlankSelected, objects]);
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
@@ -986,7 +1045,14 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[2rem]">
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              min={0}
+                              max={25}
+                              value={shelvesInnerDistance}
+                              onChange={(e) =>
+                                handleShelvesInnerDistanceChange(Number(e.target.value))
+                              }
+                              disabled={isDisabled}
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
