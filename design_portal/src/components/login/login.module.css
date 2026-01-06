@@ -72,6 +72,14 @@
   margin: 0rem;
 }
 
+.login_logo img {
+  width: 13rem;
+}
+
+.login_logo {
+  margin-left: 3rem;
+}
+
 .right_side {
   width: 34rem;
   display: flex;
