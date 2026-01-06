@@ -64,6 +64,7 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
+  const selectedInvisibleBoxId = useSelector((state: RootState) => state.data.selectedInvisibleBox);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
@@ -537,6 +538,17 @@ const Sidebar: React.FC = () => {
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
+  // Check if invisible box is selected
+  const isInvisibleBoxSelected =
+    !!selectedInvisibleBoxId ||
+    selectedObject?.type === 'INVISIBLEBOX' ||
+    selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
+    selectedObject?.name?.toLowerCase().includes('invisible_box') ||
+    selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
+
+  // Disable texture change for cupboards and invisible boxes
+  const isTextureChangeDisabled = isFullCupboard || isInvisibleBoxSelected || isQuickHideActive;
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
@@ -1475,7 +1487,10 @@ const Sidebar: React.FC = () => {
 
                       <button
                         onClick={toggleTextureList}
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        disabled={isTextureChangeDisabled}
+                        className={`flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                          isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
                       >
                         Select Texture
                         <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
