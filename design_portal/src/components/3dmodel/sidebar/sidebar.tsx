@@ -288,8 +288,10 @@ const Sidebar: React.FC = () => {
   const handleDimensionChange = (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
 
+    // Round the value to ensure it's a whole number
+    const roundedValue = Math.round(value);
     const oldValue = selectedObject.dimensions?.[field] ?? 0;
-    const delta = value - oldValue;
+    const delta = roundedValue - oldValue;
 
     // Stores positional offset caused by directional resizing.
     // Initialized to zero so unaffected axes remain unchanged.
@@ -329,7 +331,7 @@ const Sidebar: React.FC = () => {
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
 
     applyObjectUpdate(selectedObject, {
-      dimensions: { [field]: value },
+      dimensions: { [field]: roundedValue },
       position: {
         x: currentPos.x + positionShift.x,
         y: currentPos.y + positionShift.y,
@@ -399,9 +401,9 @@ const Sidebar: React.FC = () => {
   };
 
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? 11,
-    height: selectedObject?.dimensions?.height ?? 0,
-    depth: selectedObject?.dimensions?.depth ?? 0,
+    width: Math.round(selectedObject?.dimensions?.width ?? 11),
+    height: Math.round(selectedObject?.dimensions?.height ?? 0),
+    depth: Math.round(selectedObject?.dimensions?.depth ?? 0),
   };
 
   const controlIconMap: Record<string, string[]> = {
@@ -810,8 +812,13 @@ const Sidebar: React.FC = () => {
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
           )}
 
+          {/* ================= INVISIBLE BOX SELECTED ================= */}
+          {isSettingOpen && selectedObject && isInvisibleBoxSelected && (
+            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Properties Available</p>
+          )}
+
           {/* ================= SETTINGS ================= */}
-          {isSettingOpen && selectedObject && (
+          {isSettingOpen && selectedObject && !isInvisibleBoxSelected && (
             <>
               <div className="structure-only pointer-events-none opacity-50 blur-[0.01rem] select-none">
                 {/* your existing code – NO CHANGES inside */}
@@ -1036,7 +1043,7 @@ const Sidebar: React.FC = () => {
                 </div>
               </div>
               <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isInvisibleBoxSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1077,7 +1084,7 @@ const Sidebar: React.FC = () => {
                 </>
               )}
 
-              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && (
+              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && !isInvisibleBoxSelected && (
                 <>
                   {sideBarMenuConfig.map((menu) => (
                     <div key={menu.subMenu}>
@@ -1154,6 +1161,7 @@ const Sidebar: React.FC = () => {
                                   <input
                                     type="number"
                                     min={field.min}
+                                    step="1"
                                     value={field.value ?? ''}
                                     onChange={field.onChange}
                                     disabled={field.disabled}
@@ -1171,7 +1179,7 @@ const Sidebar: React.FC = () => {
                   ))}
                 </>
               )}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isInvisibleBoxSelected && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1282,7 +1290,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= Top Plank ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+              {!isQuickHideActive && isSettingOpen && isFullCupboard && !isInvisibleBoxSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between">
@@ -1547,7 +1555,7 @@ const Sidebar: React.FC = () => {
                     </div>
 
                     {/* Door Position */}
-                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && !isInvisibleBoxSelected && (
                       <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
                         <div className={'relative flex items-center justify-between'}>
                           <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
