@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
-import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MATERIAL_TYPES, MeshObjectData, Material } from './interface';
+import { FLOOR_PLAN_TYPES, GEOMETRY, Material, MATERIAL_TYPES, MeshObjectData } from './interface';
 import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
@@ -14,10 +14,10 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-        texture = new THREE.TextureLoader().load(
-          `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
-        );
-        texture.wrapS = THREE.RepeatWrapping;
+      texture = new THREE.TextureLoader().load(
+        `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
+      );
+      texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(1, 1);
       texture.center.set(0, 0);
@@ -164,13 +164,21 @@ export class MeshBuilder {
     }
     if (changes.material) {
       const newMaterial = changes.material;
-      const oldMaterialArray = Array.isArray(oldMaterial) ? oldMaterial : oldMaterial ? [oldMaterial] : [];
-      const newMaterialArray = Array.isArray(newMaterial) ? newMaterial : newMaterial ? [newMaterial] : [];
+      const oldMaterialArray = Array.isArray(oldMaterial)
+        ? oldMaterial
+        : oldMaterial
+          ? [oldMaterial]
+          : [];
+      const newMaterialArray = Array.isArray(newMaterial)
+        ? newMaterial
+        : newMaterial
+          ? [newMaterial]
+          : [];
 
       if (oldMaterialArray.length > 0 && newMaterialArray.length > 0) {
         const oldMat = oldMaterialArray[0];
         const newMat = newMaterialArray[0];
-        
+
         if (
           oldMat.type === MATERIAL_TYPES.PANEL_STOCK &&
           newMat.type === MATERIAL_TYPES.PANEL_STOCK &&

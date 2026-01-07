@@ -79,11 +79,10 @@ export const MATERIAL_TYPES = {
   SLIDING_DOOR_RAIL: 'Sliding Door Rail',
   SLIDING_DOOR_ROLLER: 'Sliding Door Roller',
   WIRE_BASKET: 'Wire Basket',
-}
+};
 
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
-type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
 // interface
@@ -96,36 +95,36 @@ type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 // }
 
 interface Texture {
-	id: string;
-	name: string;
-	texture: string;
-	textureDetail: TextureDetails;
+  id: string;
+  name: string;
+  texture: string;
+  textureDetail: TextureDetails;
 }
 
 interface TextureDetails {
-	decal: number;
-	height: number;
-	id: string;
-	image: string;
-	name: string;
-	organization: string;
-	title: number;
-	type: string;
-	url: string;
-	width: number;
+  decal: number;
+  height: number;
+  id: string;
+  image: string;
+  name: string;
+  organization: string;
+  title: number;
+  type: string;
+  url: string;
+  width: number;
 }
 
 export interface Material {
-	id: string;
-	name: string;
-	type: string;
-	company: string;
-	description: string;
-	isDeleted: boolean;
-	textures?: Texture[];
-	// finishes: Finish[];
-	// finishType: FinishType[];
-	properties: unknown;
+  id: string;
+  name: string;
+  type: string;
+  company: string;
+  description: string;
+  isDeleted: boolean;
+  textures?: Texture[];
+  // finishes: Finish[];
+  // finishType: FinishType[];
+  properties: unknown;
 }
 
 export interface MeshObjectData {

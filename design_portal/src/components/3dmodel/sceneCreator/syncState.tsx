@@ -1,13 +1,13 @@
 import * as THREE from 'three';
+import { ThreeDView } from '../design/interface';
+import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
+import { DesignBuilder } from './designBuilder';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { DesignBuilder } from './designBuilder';
 import { create2DWallFromMeshData } from './utils';
-import { MoveHandler } from '../handler/moveHandler';
-import { ThreeDView } from '../design/interface';
 
 export class SyncManager {
   private scene: THREE.Scene;
@@ -100,7 +100,7 @@ export class SyncManager {
     const toUpdate: MeshObjectData[] = [];
 
     list.forEach((item) => {
-      const existing = existingObjects.find(o => o.id === item.id);
+      const existing = existingObjects.find((o) => o.id === item.id);
 
       if (existing) {
         if (list.length === 1) {
@@ -113,20 +113,19 @@ export class SyncManager {
     });
 
     if (toAdd.length) store.dispatch(addObjects(toAdd));
-    toUpdate.forEach(obj => store.dispatch(updateObject(obj)));
+    toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
   }
 
   private _sync2D(list: MeshObjectData[]): void {
     const existingObjects = store.getState().data.objects;
 
-    list.forEach(item => {
+    list.forEach((item) => {
       if (item.type !== FLOOR_PLAN_TYPES.WALL) return;
 
-      const exists = existingObjects.find(o => o.id === item.id);
+      const exists = existingObjects.find((o) => o.id === item.id);
       if (!exists) create2DWallFromMeshData(item);
     });
   }
-
 
   /**
    * Compares two objects of the same shape using shallow equality.
@@ -317,9 +316,8 @@ export class SyncManager {
     if (pos) mesh.position.set(pos.x, pos.y, pos.z);
   }
 
-
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
-    const rootId = list.find(i => !i.parent)?.id;
+    const rootId = list.find((i) => !i.parent)?.id;
 
     if (rootId) {
       const existing = this._findMeshById(rootId);

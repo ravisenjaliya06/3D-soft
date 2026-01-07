@@ -15,8 +15,8 @@ import {
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
 import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
@@ -29,7 +29,6 @@ import {
 } from '../store/dataSlice';
 import { Datastate, IconMap, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
-import { SyncManager } from '../sceneCreator/syncState';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -48,7 +47,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
-  const moveHandlerRef = React.useRef<MoveHandler | null>(null);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {

@@ -2,13 +2,13 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
+import { MeshObjectData } from '../3dmodel/sceneCreator/interface';
+import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
 import { Material } from './interface';
-import { MeshObjectData } from '../3dmodel/sceneCreator/interface';
-import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -117,7 +117,7 @@ const CatalogManager = () => {
       response.data.forEach((catalog) => {
         catalog.forEach((item) => {
           catalogs.push(convertKeysToCamel(item));
-        })
+        });
       });
       setCatalogData(catalogs);
     }
@@ -255,9 +255,7 @@ const CatalogManager = () => {
   };
 
   useEffect(() => {
-    const first = catalogData.find(
-      (c) => c.isMain && c.type === catalogType.toLowerCase()
-    );
+    const first = catalogData.find((c) => c.isMain && c.type === catalogType.toLowerCase());
     setSelectedCatalog(first || null);
   }, [catalogType, catalogData]);
 
@@ -267,15 +265,15 @@ const CatalogManager = () => {
       return;
     }
 
-    const children = catalogData.filter(c => c.parent === selectedCatalog.id);
+    const children = catalogData.filter((c) => c.parent === selectedCatalog.id);
 
-    const matchingChildren = children.filter(child =>
-      child.material?.some(m => m.type === activeRuleType)
+    const matchingChildren = children.filter((child) =>
+      child.material?.some((m) => m.type === activeRuleType)
     );
 
     if (matchingChildren.length > 0) {
       setRuleParts(
-        matchingChildren.map(child => ({
+        matchingChildren.map((child) => ({
           id: child.id,
           name: child.name,
           material: child.material?.find((m: Material) => m.type === activeRuleType) || null,
@@ -284,14 +282,18 @@ const CatalogManager = () => {
       return;
     }
 
-    const parentMaterial = selectedCatalog.material?.find((m: Material) => m.type === activeRuleType);
+    const parentMaterial = selectedCatalog.material?.find(
+      (m: Material) => m.type === activeRuleType
+    );
 
     if (parentMaterial) {
-      setRuleParts([{
-        id: selectedCatalog.id,
-        name: selectedCatalog.name,
-        material: parentMaterial,
-      }]);
+      setRuleParts([
+        {
+          id: selectedCatalog.id,
+          name: selectedCatalog.name,
+          material: parentMaterial,
+        },
+      ]);
     } else {
       setRuleParts([]);
     }
@@ -300,14 +302,14 @@ const CatalogManager = () => {
   useEffect(() => {
     if (!selectedCatalog) return;
 
-    const children = catalogData.filter(c => c.parent === selectedCatalog.id);
+    const children = catalogData.filter((c) => c.parent === selectedCatalog.id);
 
     const allMaterials = [
       ...(selectedCatalog.material || []),
-      ...children.flatMap(c => c.material || []),
+      ...children.flatMap((c) => c.material || []),
     ];
 
-    const types = [...new Set(allMaterials.map(m => m.type))];
+    const types = [...new Set(allMaterials.map((m) => m.type))];
 
     setRuleMaterialTypes(types);
     setActiveRuleType(types[0] || null);
@@ -355,8 +357,8 @@ const CatalogManager = () => {
                       }}
                     >
                       {catalogData
-                    .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
-                    .map((opt) => (
+                        .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
+                        .map((opt) => (
                           <option key={opt.id} value={opt.id}>
                             {formatEnumLabel(opt.name)}
                           </option>
@@ -377,28 +379,29 @@ const CatalogManager = () => {
             </div>
           </div>
 
-        {/* MAIN CONTENT */}
-        <div className="flex h-[41rem] flex-row gap-[2rem] px-0 pr-[1rem] pb-[1rem] pl-[2rem]">
-          {/* LEFT SIDEBAR */}
-          <div className="flex h-full max-h-[70vh] w-[14rem] flex-col justify-between rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[white] p-2">
-            {/* ================= RULE LIST ================= */}
-            <div className="flex flex-[1] flex-col">
-              <div className="m-[0.5rem] flex flex-col space-y-[1] overflow-y-auto pr-[1] gap-[0.3rem]">
-                {ruleMaterialTypes.map((type) => (
-                  <div
-                    key={type}
-                    onClick={() => setActiveRuleType(type)}
-                    className={`flex items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition cursor-pointer ${activeRuleType === type
-                      ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
-                      : 'text-gray-500 hover:bg-gray-100'
+          {/* MAIN CONTENT */}
+          <div className="flex h-[41rem] flex-row gap-[2rem] px-0 pr-[1rem] pb-[1rem] pl-[2rem]">
+            {/* LEFT SIDEBAR */}
+            <div className="flex h-full max-h-[70vh] w-[14rem] flex-col justify-between rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[white] p-2">
+              {/* ================= RULE LIST ================= */}
+              <div className="flex flex-[1] flex-col">
+                <div className="m-[0.5rem] flex flex-col gap-[0.3rem] space-y-[1] overflow-y-auto pr-[1]">
+                  {ruleMaterialTypes.map((type) => (
+                    <div
+                      key={type}
+                      onClick={() => setActiveRuleType(type)}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
+                        activeRuleType === type
+                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                          : 'text-gray-500 hover:bg-gray-100'
                       }`}
-                  >
-                    <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
-                    {type}
-                  </div>
-                ))}
+                    >
+                      <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
+                      {type}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
 
               {/* ================= DETAILS (BOTTOM) ================= */}
               <div className="border-t-[0.1rem] border-[var(--border-color)] p-[0rem] pt-[2]">
@@ -456,64 +459,63 @@ const CatalogManager = () => {
                         </div>
                       )}
 
-                    {/* FLOATING LABEL */}
-                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
-                      Description
-                    </span>
+                      {/* FLOATING LABEL */}
+                      <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
+                        Description
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Middle Table */}
-          <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] rounded-xl border border-[rgba(57,37,121,0.2)] bg-white">
-            {/* TABLE SCROLL CONTAINER */}
-            <div className="overflow-y-auto">
-              <table className="w-full border-collapse">
-                {/* TABLE HEADER */}
-                <thead className="sticky top-0 z-10 bg-[#ffffff]">
-                  <tr>
-                    <th
-                      colSpan={3}
-                      className="h-[3rem] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] text-left font-[700] text-[#392579]"
-                    >
-                      <div className="ml-[0.87rem] text-[0.85rem]">Material Properties</div>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                      <div className="ml-[0.87rem]">
-                        Part
-                      </div>
-                    </th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                      Material
-                    </th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-
-                {/* TABLE BODY */}
-                <tbody>
-                  {ruleParts.length > 0 &&
-                    ruleParts.map((part) => (
-                      <tr
-                        key={part.id}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          const materialId = e.dataTransfer.getData('materialId');
-                          handleAssignMaterial(part.id, materialId);
-                        }}
-                        onClick={() => setSelectedPartId(part.id)}
-                        className={`cursor-pointer border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)] hover:bg-[rgba(250,250,250,1)] ${selectedPartId === part.id ? 'bg-[rgba(245,242,255,1)]' : ''
-                          } `}
+            {/* Middle Table */}
+            <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] rounded-xl border border-[rgba(57,37,121,0.2)] bg-white">
+              {/* TABLE SCROLL CONTAINER */}
+              <div className="overflow-y-auto">
+                <table className="w-full border-collapse">
+                  {/* TABLE HEADER */}
+                  <thead className="sticky top-0 z-10 bg-[#ffffff]">
+                    <tr>
+                      <th
+                        colSpan={3}
+                        className="h-[3rem] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] text-left font-[700] text-[#392579]"
                       >
-                        <td className="ml-[0.87rem] h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                          {formatEnumLabel(part.name)}
-                        </td>
+                        <div className="ml-[0.87rem] text-[0.85rem]">Material Properties</div>
+                      </th>
+                    </tr>
+                    <tr>
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                        <div className="ml-[0.87rem]">Part</div>
+                      </th>
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                        Material
+                      </th>
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  {/* TABLE BODY */}
+                  <tbody>
+                    {ruleParts.length > 0 &&
+                      ruleParts.map((part) => (
+                        <tr
+                          key={part.id}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            const materialId = e.dataTransfer.getData('materialId');
+                            handleAssignMaterial(part.id, materialId);
+                          }}
+                          onClick={() => setSelectedPartId(part.id)}
+                          className={`cursor-pointer border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)] hover:bg-[rgba(250,250,250,1)] ${
+                            selectedPartId === part.id ? 'bg-[rgba(245,242,255,1)]' : ''
+                          } `}
+                        >
+                          <td className="ml-[0.87rem] h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                            {formatEnumLabel(part.name)}
+                          </td>
 
                           <td className="h-[1.75rem] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
                             {formatEnumLabel(part.material?.name) || 'No Material Assigned'}
@@ -631,27 +633,28 @@ const CatalogManager = () => {
                       </tr>
                     </thead>
 
-                {/* TABLE BODY */}
-                <tbody>
-                  {filteredMaterials.length > 0 ? (
-                    filteredMaterials.map((row) => (
-                      <tr
-                        key={row.id}
-                        draggable
-                        onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
-                        onClick={() => setSelectedMaterialId(row.id)}
-                        className={`cursor-pointer bg-white hover:bg-[rgba(250,250,250,1)] ${selectedMaterialId === row.id ? 'bg-[rgba(245,242,255,1)]' : ''
-                          } `}
-                      >
-                        {/* RADIO */}
-                        <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px]">
-                          <input
-                            type="radio"
-                            checked={selectedMaterialId === row.id}
-                            onChange={() => setSelectedMaterialId(row.id)}
-                            className="cursor-pointer"
-                          />
-                        </td>
+                    {/* TABLE BODY */}
+                    <tbody>
+                      {filteredMaterials.length > 0 ? (
+                        filteredMaterials.map((row) => (
+                          <tr
+                            key={row.id}
+                            draggable
+                            onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
+                            onClick={() => setSelectedMaterialId(row.id)}
+                            className={`cursor-pointer bg-white hover:bg-[rgba(250,250,250,1)] ${
+                              selectedMaterialId === row.id ? 'bg-[rgba(245,242,255,1)]' : ''
+                            } `}
+                          >
+                            {/* RADIO */}
+                            <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px]">
+                              <input
+                                type="radio"
+                                checked={selectedMaterialId === row.id}
+                                onChange={() => setSelectedMaterialId(row.id)}
+                                className="cursor-pointer"
+                              />
+                            </td>
 
                             {/* NAME */}
                             <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
