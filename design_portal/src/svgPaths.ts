@@ -149,7 +149,6 @@ export const DESIGN = {
   search_design: '/assets/design/search.svg',
   sort_searching: '/assets/design/sort_searching.svg',
   three_dots: '/assets/design/three_dots.svg',
-
 };
 
 export const DOWNLOAD_JPEG = {
