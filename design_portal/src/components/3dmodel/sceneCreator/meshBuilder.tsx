@@ -23,29 +23,8 @@ export class MeshBuilder {
       texture.center.set(0, 0);
       texture.offset.set(0, 0);
     });
-
-    // if (this.meshData.material?.rotation !== undefined) {
-    //   const rotationRad = THREE.MathUtils.degToRad(this.meshData.material.rotation);
-    //   texture.rotation = rotationRad;
-    //   const cos = Math.cos(rotationRad);
-    //   const sin = Math.sin(rotationRad);
-    //   const offsetX = (1 - cos) * 0.5 - sin * 0.5;
-    //   const offsetY = (1 - cos) * 0.5 + sin * 0.5;
-    //   texture.offset.set(offsetX, offsetY);
-    // }
-    // texture.minFilter = THREE.LinearMipmapLinearFilter;
-    // texture.magFilter = THREE.LinearFilter;
-    // texture.generateMipmaps = true;
-
     return texture;
   }
-
-  // private _createColorMaterial(): THREE.MeshStandardMaterial {
-  //   return new THREE.MeshStandardMaterial({
-  //     color: this.meshData.material?.value,
-  //     wireframe: false,
-  //   });
-  // }
 
   private _createTextureMaterial(materialData: Material): THREE.MeshStandardMaterial {
     const texture = this._createTexture(materialData);
