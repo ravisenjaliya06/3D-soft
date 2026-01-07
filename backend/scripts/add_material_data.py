@@ -1948,6 +1948,12 @@ MATERIAL = [
             "length": 2438.4,
             "thickness": 19.1,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass",
+            }
+        ],
     },
     {
         "name": "5/8 1s Poplar Ply",
@@ -3093,7 +3099,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
         "catalog_rule": "Panel",
     },
     {
@@ -3106,7 +3112,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
         "catalog_rule": "Panel",
     },
     {
@@ -3119,7 +3125,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
         "catalog_rule": "Panel",
     },
     {
@@ -3132,7 +3138,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
         "catalog_rule": "Panel",
     },
     {
@@ -3145,27 +3151,9 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
         "catalog_rule": "Panel",
     },
-    # {
-    #     "id": "c2d2a8b4-9b3e-4a2e-8f55-666666666666",
-    #     "name": "BACK_SKIRTING_PLANK",
-    #     "type": "plank",
-    #     "geometry_type": "BOX_GEOMETRY",
-    #     "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-    #     "dimensions": {"width": 1464, "height": 82, "depth": 18},
-    #     "position": {"x": 0, "y": -955, "z": -266},
-    #     "rotation": {"x": 0, "y": 0, "z": 0},
-    #     "scale": {"x": 1, "y": 1, "z": 1},
-    #     "material": {
-    #         "type": "TEXTURE",
-    #         "value": "/textures/light_wood.jpg",
-    #         "repeatX": 2,
-    #         "repeatY": 1,
-    #     },
-    #     "catalog_rule": "Panel",
-    # },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111303",
         "name": "HORIZONTAL_PLANK",
@@ -3176,7 +3164,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111404",
@@ -3188,7 +3176,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB"],
+        "material": ["3/4 1s Poplar Ply"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111505",
@@ -3399,6 +3387,10 @@ def create_materials(
             defaults=properties,
         )
 
+        MaterialTexture.objects.filter(material=material).delete()
+        MaterialFinish.objects.filter(material=material).delete()
+        MaterialFinishType.objects.filter(material=material).delete()
+
         for texture_data in textures:
             texture_name = texture_data["texture"]
 
@@ -3471,6 +3463,10 @@ def create_materials(
                 material=org_material,
                 defaults=properties,
             )
+
+            MaterialTexture.objects.filter(material=org_material).delete()
+            MaterialFinish.objects.filter(material=org_material).delete()
+            MaterialFinishType.objects.filter(material=org_material).delete()
 
             for texture_data in textures:
                 texture_name = texture_data["texture"]

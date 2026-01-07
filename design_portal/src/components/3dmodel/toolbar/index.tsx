@@ -29,6 +29,7 @@ import {
 } from '../store/dataSlice';
 import { Datastate, IconMap, SelectedCabinetItem } from './interface';
 import styles from './toolbar.module.css';
+import { SyncManager } from '../sceneCreator/syncState';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const dispatch = useAppDispatch();
@@ -87,29 +88,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (!threeDView) return;
-
-    moveHandlerRef.current = new MoveHandler({
-      scene: threeDView.scene,
-      camera: threeDView.camera as THREE.PerspectiveCamera,
-      renderer: threeDView.renderer,
-      movableObjects: [],
-    });
-  }, [threeDView]);
-
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
-      const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
-      const mesh = designBuilder.createDesign();
-      threeDView!.scene.add(mesh);
-      const finalPosition = await moveHandlerRef.current!.startDragging(mesh);
-      if (finalPosition) {
-        mesh.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
-      }
+      const designBuilder = new SyncManager(fullGroup || [], threeDView);
+      designBuilder.syncData();
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);

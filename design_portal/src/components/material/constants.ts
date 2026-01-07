@@ -15,6 +15,7 @@ export const STATIC_MATERIAL_TYPES: MaterialItem[] = [
   { id: 'miscellaneous', name: 'Miscellaneous', icon: assets.mis },
   { id: 'molding', name: 'Molding', icon: assets.molding },
   { id: 'panel_stock', name: 'Panel Stock', icon: assets.panel_stock },
+  { id: 'pull', name: 'Pull', icon: assets.pull },
   { id: 'rod', name: 'Rod', icon: assets.rod },
   { id: 'sliding_door_rail', name: 'Sliding Door Rail', icon: assets.door_rail },
   { id: 'sliding_door_roller', name: 'Sliding Door Roller', icon: assets.sliding_door_roller },

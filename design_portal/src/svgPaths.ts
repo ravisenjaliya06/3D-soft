@@ -218,6 +218,7 @@ export const MATERIAL = {
   door_rail: '/assets/material/door_rail.svg',
   sliding_door_roller: '/assets/material/sliding_door_roller.svg',
   wire_basket: '/assets/material/wire_basket.svg',
+  pull: '/assets/material/pull.svg',
 };
 
 export const MENU_DOWN_SVG = {

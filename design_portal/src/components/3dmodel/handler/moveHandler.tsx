@@ -22,6 +22,7 @@ export class MoveHandler implements IMoveHandler {
   private walls: THREE.Mesh[] = [];
 
   constructor(options: MoveHandlerOptions) {
+    console.log('constructor', options);
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.scene = options.scene;
@@ -283,6 +284,7 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public startDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
+    console.log('startDragging', object);
     return this.enableDragging(object);
   }
 }
