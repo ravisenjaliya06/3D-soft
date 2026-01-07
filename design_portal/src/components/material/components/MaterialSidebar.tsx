@@ -32,6 +32,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
 
     return (
       <div
+        className="p-[0]"
         key={item.id}
         onContextMenu={(e) => {
           if (!parentType) {
@@ -40,7 +41,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         }}
       >
         <div
-          className={`mx-[0.5rem] my-[0.08rem] flex cursor-pointer items-center justify-between rounded-[0.375rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isSubItemActive ? 'bg-[var(--primary-hover)] font-semibold text-[#392579]' : ''} ${!isSubItem && isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
+          className={`mx-[0.4rem] my-[0.05rem] mb-[0.5rem] flex cursor-pointer items-center justify-between rounded-[0.625rem] p-[0rem] py-[0.75rem] pr-[1.2rem] pl-[0.6rem] text-[0.875rem] transition-all duration-[0.2s] ease-in-out hover:bg-[var(--primary-hover)] ${isSubItemActive ? 'bg-[var(--primary-hover)] font-semibold text-[#392579]' : ''} ${!isSubItem && isExpanded ? `bg-[var(--primary-hover)] font-semibold text-[var(--primary-white)]` : ''}`}
           onClick={() => {
             if (!isSubItem) {
               onToggleCategory(item.id);
@@ -50,13 +51,13 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
             }
           }}
         >
-          <div className="flex min-w-0 flex-1 items-center gap-[0.75rem]">
+          <div className="flex h-[0.6rem] min-w-0 flex-1 items-center gap-[0.75rem]">
             {!isSubItem && item.icon && (
               <span className="text-center text-[0.875rem]">
                 <img
                   src={item.icon || '/placeholder.svg'}
                   alt=""
-                  className={`h-4 w-4 ${isExpanded ? 'bg-[var(--primary-hover)] brightness-[#392579] invert' : ''}`}
+                  className={`h-[1rem] w-[1rem] ${isExpanded ? 'bg-[var(--primary-hover)] brightness-[#392579] invert' : ''}`}
                 />
               </span>
             )}

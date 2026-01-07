@@ -175,7 +175,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   const minH = bb.min.y;
   const maxH = bb.max.y;
 
-  const TARGET_GRID_CELLS = 300;
+  const TARGET_GRID_CELLS = 2000;
   const stepW = (maxW - minW) / TARGET_GRID_CELLS;
   const stepH = (maxH - minH) / TARGET_GRID_CELLS;
   const step = Math.max(stepW, stepH);

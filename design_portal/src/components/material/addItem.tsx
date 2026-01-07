@@ -3,7 +3,8 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets, DESIGN } from '@/svgPaths';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import styles from './material.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
 
@@ -11,6 +12,7 @@ type Props = {
   setCreateWorkOrderPopup: (value: boolean) => void;
   companyId: string;
   handleGetCompanyMaterials: (companyId: string) => void;
+  selectedType: string | null;
 };
 
 interface PopupStep {
@@ -40,6 +42,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   setCreateWorkOrderPopup,
   companyId,
   handleGetCompanyMaterials,
+  selectedType,
 }) => {
   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
     console.log(companyId);
@@ -48,6 +51,19 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [formData, setFormData] = useState<MaterialPropertiesInput>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
   const [errorMessage, setFinishError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedType) {
+      const formattedType = formatEnumLabel(selectedType);
+
+      setFormData((prev) => ({
+        ...prev,
+        type: formattedType,
+      }));
+
+      setSelectedMaterialType(formattedType);
+    }
+  }, [selectedType]);
 
   // Material type options
   const materialTypes = [
@@ -2786,9 +2802,7 @@ const AddMaterialPopup: React.FC<Props> = ({
     return sequence;
   };
 
-  const currentSequence = selectedMaterialType
-    ? getPopupSequence(selectedMaterialType)
-    : getPopupSequence('');
+  const currentSequence = getPopupSequence(formatEnumLabel(selectedType ? selectedType : ''));
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
@@ -3184,7 +3198,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             <InputField
               label={field.label}
               type="select"
-              value={value}
+              value={field.key === 'type' && selectedType ? formatEnumLabel(selectedType) : value}
               onFocus={onActivate}
               placeholder={field.placeholder}
               className="text-[#392579]"
@@ -3193,7 +3207,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 handleInputChange(field.key, e.target.value)
               }
               options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
-              disabled={field.disabled}
+              disabled={field.key === 'type' && currentStep === 0}
               borderColor={undefined}
               error={undefined}
             />

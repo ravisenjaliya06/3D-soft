@@ -127,8 +127,33 @@ export class SelectObjectController {
     store.dispatch(setSelectedChildObject(object.userData.objectId));
 
     this._applyPartSelectOutline(object);
-    this._applyObjectBigOutline(this.selectedMainObject);
+
+    // If the part is also a 'Main' object (like a Drawer group),
+    // we might want the big dotted outline on it.
+    if (object.userData.isMain) {
+      this._applyObjectBigOutline(object);
+    } else {
+      this._applyObjectBigOutline(this.selectedMainObject);
+    }
     return;
+  }
+
+  /**
+   * Retrieve the group parent (E.g.: Drawer, Door)
+   * A group is defined by having isMain: true and type like 'drawer' or 'door'
+   */
+  private _getGroupParent(object: THREE.Mesh): THREE.Mesh | null {
+    let current: THREE.Object3D | null = object;
+    while (current && current instanceof THREE.Mesh && !(current instanceof THREE.Scene)) {
+      if (
+        current.userData.isMain === true &&
+        (current.userData.type === PART_TYPES.DRAWER || current.userData.type === PART_TYPES.DOOR)
+      ) {
+        return current;
+      }
+      current = current.parent;
+    }
+    return null;
   }
 
   /**
@@ -155,19 +180,54 @@ export class SelectObjectController {
     }
 
     const object = this.hoveredObject;
-    if (
-      this.selectedMainObject !== object &&
-      Object.values(OBJECT_TYPES).includes(object.userData.type)
-    ) {
+    const topParent = this._getTopParent(object);
+
+    // 1. Level 0 -> Level 1 (Cupboard)
+    if (this.selectedMainObject?.userData.objectId !== topParent.userData.objectId) {
+      this.hoveredObject = topParent;
       this._selectMainObject();
-    } else if (
-      (Object.values(PART_TYPES).includes(object.userData.type) ||
-        object.userData.isInvisibleBox === true) &&
-      this._getTopParent(object).userData.objectId === this.selectedMainObject?.userData.objectId
-    ) {
-      this._selectChildObject();
+      return;
+    }
+
+    // 2. Level 1 (Cupboard) is selected. Check for Groups (Drawer/Door)
+    const groupParent = this._getGroupParent(object);
+
+    if (groupParent) {
+      // If we clicked inside or on a group
+      if (this.selectedPart === groupParent) {
+        // Group is already selected, now select the specific part (if it's not the group mesh itself)
+        if (object !== groupParent) {
+          this.hoveredObject = object;
+          this._selectChildObject();
+        } else {
+          // Double clicked the group mesh again? Deselect.
+          this._nullAllValues();
+        }
+      } else {
+        // Check if some other part is already selected
+        if (this.selectedPart) {
+          // If the selected part belongs to the same group, and we clicked it again, deselect
+          if (this.selectedPart === object) {
+            this._nullAllValues();
+          } else {
+            // Selecting a different part or selecting the group wrapper
+            this.hoveredObject = groupParent;
+            this._selectChildObject();
+          }
+        } else {
+          // Selecting this group for the first time
+          this.hoveredObject = groupParent;
+          this._selectChildObject();
+        }
+      }
     } else {
-      this._nullAllValues();
+      // Not in a group (e.g. standard plank on cupboard)
+      if (this.selectedPart === object) {
+        this._nullAllValues();
+      } else {
+        this.hoveredObject = object;
+        this._selectChildObject();
+      }
     }
   }
 
@@ -185,8 +245,8 @@ export class SelectObjectController {
     });
 
     if (this.selectedMainObject) {
-      this.selectedMainObject?.children.forEach((child) => {
-        if (child instanceof THREE.Mesh) {
+      this.selectedMainObject.traverse((child) => {
+        if (child instanceof THREE.Mesh && child !== this.selectedMainObject) {
           targets.push(child);
         }
       });

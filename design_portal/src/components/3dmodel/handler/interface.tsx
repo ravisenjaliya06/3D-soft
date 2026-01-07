@@ -328,6 +328,7 @@ export interface UpdatePayload {
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
   material?: MaterialForUpdate;
+  textureRotation?: number;
 }
 
 export interface UpdateDimensionsParams {

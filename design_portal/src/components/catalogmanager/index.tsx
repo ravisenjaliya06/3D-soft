@@ -317,64 +317,65 @@ const CatalogManager = () => {
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
       <div className="max-w-[85rem] flex-[3]">
-        <Header isBorderRadius={true} dashboardName="Catalog Manager" />
+        <Header isBorderRadius={true} />
 
-        {/* TOP TOOLBAR */}
-        <div className="mt-[1rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[2rem]">
-          <div className="mb-[1rem] flex w-[78.6rem] items-center gap-[0.8rem] rounded-2xl rounded-[5px] border border-[rgba(57,37,121,0.3)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] px-[1rem] py-[1.5rem]">
-            <div className="flex items-center">
-              <div className="flex items-center gap-[0.75rem]">
-                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
-                  Catalog Type
-                </span>
-                <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
-                  value={catalogType}
-                  onChange={(e) => setCatalogType(e.target.value)}
-                >
-                  {catalogTypes.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {formatEnumLabel(opt.label)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="h-[6vh] w-px bg-[#D7D3E4]" />
-            <div className="flex items-center">
-              <div className="flex items-center gap-[0.75rem]">
-                <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
-                  Part
-                </span>
-                <select
-                  className="min-w-[10rem] cursor-pointer rounded-[0.3rem] rounded-md border border-[#d1d5db] bg-[#ffff] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
-                  value={selectedCatalog?.id || ''}
-                  onChange={(e) => {
-                    const catalog = catalogData.find((c) => c.id === e.target.value);
-                    setSelectedCatalog(catalog || null);
-                  }}
-                >
-                  {catalogData
+        <div className="justify-between">
+          {/* TOP TOOLBAR */}
+          <div className="mx-auto w-[88rem]">
+            <div className="mt-[3rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[7rem]">
+              <div className="mb-[1rem] flex items-center gap-[0.8rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
+                <div className="flex items-center">
+                  <div className="flex items-center gap-[0.75rem] pr-[1.4rem]">
+                    <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
+                      Catalog Type
+                    </span>
+                    <select
+                      className="rounded-md-[0.1rem] w-[8rem] cursor-pointer rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
+                      value={catalogType}
+                      onChange={(e) => setCatalogType(e.target.value)}
+                    >
+                      {catalogTypes.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {formatEnumLabel(opt.label)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
+                  <div className="flex items-center gap-[0.75rem] pl-[1.4rem]">
+                    <span className="text-[0.7rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
+                      Part
+                    </span>
+                    <select
+                      className="rounded-md-[0.1rem] w-[8rem] cursor-pointer rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
+                      value={selectedCatalog?.id || ''}
+                      onChange={(e) => {
+                        const catalog = catalogData.find((c) => c.id === e.target.value);
+                        setSelectedCatalog(catalog || null);
+                      }}
+                    >
+                      {catalogData
                     .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
                     .map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {formatEnumLabel(opt.name)}
-                      </option>
-                    ))}
-                </select>
-                <div className="ml-[1.7rem] h-[6vh] w-px bg-[#D7D3E4]" />
+                          <option key={opt.id} value={opt.id}>
+                            {formatEnumLabel(opt.name)}
+                          </option>
+                        ))}
+                    </select>
+                    <div className="ml-[1.7rem] h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
+                  </div>
+                </div>
                 <div className="flex">
                   <img
                     src={assets.addd}
                     alt="Add"
-                    className="ml-[39rem] h-[5rem] w-[5rem] cursor-pointer"
+                    className="ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer"
                     onClick={handleAddCatalog}
                   />
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* MAIN CONTENT */}
         <div className="flex h-[41rem] flex-row gap-[2rem] px-0 pr-[1rem] pb-[1rem] pl-[2rem]">
@@ -399,61 +400,61 @@ const CatalogManager = () => {
               </div>
             </div>
 
-            {/* ================= DETAILS (BOTTOM) ================= */}
-            <div className="border-t border-[rgba(57,37,121,0.15)] pt-[2]">
-              <div className="rounded-xl bg-white p-3">
-                {/* HEADER */}
-                <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
-                  Part Details
-                </p>
+              {/* ================= DETAILS (BOTTOM) ================= */}
+              <div className="border-t-[0.1rem] border-[var(--border-color)] p-[0rem] pt-[2]">
+                <div className="rounded-[0.35rem] bg-white p-3">
+                  {/* HEADER */}
+                  <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
+                    Part Details
+                  </p>
 
-                {/* INPUTS */}
-                <div className="mr-[1rem] ml-[1rem] flex flex-col justify-center gap-[1]">
-                  {/* NAME */}
-                  <div className="relative mb-[0.5rem]">
-                    {isEditingName ? (
-                      <input
-                        type="text"
-                        value={selectedCatalog?.name}
-                        // onChange={(e) => setName(e.target.value)}
-                        onBlur={handleBlur(setIsEditingName)}
-                        onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                        className="h-[15px] w-[11rem] rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
-                      />
-                    ) : (
-                      <div
-                        onClick={() => setIsEditingName(true)}
-                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
-                      >
-                        {formatEnumLabel(selectedCatalog?.name ? selectedCatalog.name : '')}
-                      </div>
-                    )}
+                  {/* INPUTS */}
+                  <div className="mr-[1rem] ml-[1rem] flex flex-col justify-center gap-[1]">
+                    {/* NAME */}
+                    <div className="relative mb-[0.5rem]">
+                      {isEditingName ? (
+                        <input
+                          type="text"
+                          value={selectedCatalog?.name}
+                          // onChange={(e) => setName(e.target.value)}
+                          onBlur={handleBlur(setIsEditingName)}
+                          onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
+                          className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
+                        />
+                      ) : (
+                        <div
+                          onClick={() => setIsEditingName(true)}
+                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
+                        >
+                          {formatEnumLabel(selectedCatalog?.name ? selectedCatalog.name : '')}
+                        </div>
+                      )}
 
-                    {/* FLOATING LABEL */}
-                    <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
-                      name
-                    </span>
-                  </div>
+                      {/* FLOATING LABEL */}
+                      <span className="pointer-events-none absolute top-[0.125rem] left-3 pl-[1rem] text-[0.55rem] text-[var(--border-color)]">
+                        name
+                      </span>
+                    </div>
 
-                  {/* DESCRIPTION */}
-                  <div className="relative mb-[0.5rem]">
-                    {isEditingDescription ? (
-                      <input
-                        type="text"
-                        value={selectedCatalog?.description}
-                        // onChange={(e) => setDescription(e.target.value)}
-                        onBlur={handleBlur(setIsEditingDescription)}
-                        onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                        className="h-[15px] w-[11rem] rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[14px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)] outline-none focus:border-[rgba(57,37,121,0.35)]"
-                      />
-                    ) : (
-                      <div
-                        onClick={() => setIsEditingDescription(true)}
-                        className="flex h-[15px] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border border-[rgba(57,37,121,0.15)] bg-white px-3 pt-[18px] pl-[1rem] text-[0.65rem] text-[rgba(57,37,121,0.9)]"
-                      >
-                        {selectedCatalog?.description}
-                      </div>
-                    )}
+                    {/* DESCRIPTION */}
+                    <div className="relative mb-[0.5rem]">
+                      {isEditingDescription ? (
+                        <input
+                          type="text"
+                          value={selectedCatalog?.description}
+                          // onChange={(e) => setDescription(e.target.value)}
+                          onBlur={handleBlur(setIsEditingDescription)}
+                          onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
+                          className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
+                        />
+                      ) : (
+                        <div
+                          onClick={() => setIsEditingDescription(true)}
+                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
+                        >
+                          {selectedCatalog?.description}
+                        </div>
+                      )}
 
                     {/* FLOATING LABEL */}
                     <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
@@ -514,120 +515,121 @@ const CatalogManager = () => {
                           {formatEnumLabel(part.name)}
                         </td>
 
-                        <td className="h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                          {formatEnumLabel(part.material?.name) || 'No Material Assigned'}
-                        </td>
+                          <td className="h-[1.75rem] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                            {formatEnumLabel(part.material?.name) || 'No Material Assigned'}
+                          </td>
 
-                        <td className="h-[28px] px-[5] py-[2.5]">
-                          <div className="flex items-center justify-center gap-[3] text-[rgba(57,37,121,1)]">
-                            {/* DELETE */}
-                            <button
-                              className="flex items-center gap-1 rounded-md border-none bg-transparent px-2 py-[0.1rem] text-[0.6rem] text-[var(--delete-text-color)] outline-none hover:bg-[rgba(255,0,0,0.05)]"
-                              onClick={() => handleShowDeletePopup()}
-                            >
-                              <img src={assets.trash} alt="" className="h-[0.8rem] w-[0.8rem]" />
-                            </button>
+                          <td className="h-[1.75rem] px-[5] py-[2.5]">
+                            <div className="flex items-center justify-center gap-[3] text-[var(--primary-color)]">
+                              {/* DELETE */}
+                              <button
+                                className="flex items-center gap-1 rounded-md border-[0rem] bg-transparent p-[0rem] px-2 py-[0.1rem] text-[0.6rem] text-[var(--delete-text-color)] outline-[0rem] hover:bg-[var(--delete-border-color)] hover:text-[var(--delete-text-color)]"
+                                onClick={() => handleShowDeletePopup()}
+                              >
+                                <img src={assets.trash} alt="" className="h-[0.8rem] w-[0.8rem]" />
+                              </button>
 
-                            {/* EDIT */}
-                            <button className="border-none bg-transparent transition outline-none hover:text-[rgba(57,37,121,0.8)]">
-                              <img
-                                src={assets.edit}
-                                alt=""
-                                className="mt-[0.2rem] h-[0.9rem] w-[0.9rem]"
-                              />
-                            </button>
-                          </div>
-                        </td>
+                              {/* EDIT */}
+                              <button className="border-[0rem] bg-transparent p-[0rem] transition outline-none hover:text-[var(--primary-color)]">
+                                <img
+                                  src={assets.edit}
+                                  alt=""
+                                  className="mt-[0.2rem] h-[0.9rem] w-[0.9rem]"
+                                />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+
+                    {/* EMPTY ROWS (KEEP HEIGHT LIKE IMAGE) */}
+                    {Array.from({
+                      length: Math.max(0, 18 - ruleParts.length),
+                    }).map((_, idx) => (
+                      <tr
+                        key={`empty-${idx}`}
+                        className="border-b-[0.1rem] border-[var(--primary-light-grey)] bg-[var(--primary-white)] p-[0rem]"
+                      >
+                        <td className="h-[1.75rem] px-5 py-2.5">&nbsp;</td>
+                        <td className="h-[1.75rem] px-5 py-2.5">&nbsp;</td>
+                        <td className="h-[1.75rem] px-5 py-2.5">&nbsp;</td>
                       </tr>
                     ))}
-
-                  {/* EMPTY ROWS (KEEP HEIGHT LIKE IMAGE) */}
-                  {Array.from({
-                    length: Math.max(0, 16 - ruleParts.length),
-                  }).map((_, idx) => (
-                    <tr
-                      key={`empty-${idx}`}
-                      className="border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)]"
-                    >
-                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
-                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
-                      <td className="h-[28px] px-5 py-2.5">&nbsp;</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* RIGHT BOX */}
-          <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] border border-[rgba(57,37,121,0.2)] bg-[rgba(255,255,255,1)]">
-            {/* ================= TOP BAR ================= */}
-            <div className="flex h-[3rem] items-center gap-[15px] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[16px]">
-              {/* DROPDOWN */}
-              <select
-                value={selectedMaterialType}
-                onChange={(e) => setSelectedMaterialType(e.target.value)}
-                className="h-[1.7rem] rounded-[0.3rem] rounded-md border border-[rgba(57,37,121,0.25)] bg-white font-['Comfortaa'] text-[0.65rem] text-[rgba(57,37,121,1)] focus:outline-none"
-              >
-                {materialTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-
-              {/* SEARCH */}
-              <div className="relative flex items-center">
-                <svg
-                  className="pointer-events-none absolute right-3 h-[17px] pb-[2px] pl-[3px] text-[#392579]/50"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1}
-                >
-                  <circle cx="11" cy="11" r="5" />
-                  <path d="m20 20-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={materialSearch}
-                  onChange={(e) => setMaterialSearch(e.target.value)}
-                  className="h-[1.5rem] w-[19rem] flex-1 rounded-[7px] border border-[#C4BED7]/50 bg-white pr-9 pl-[1.5rem] text-[0.65rem] text-[#A0AEC0] outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300"
-                />
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* ================= TABLE ================= */}
-            <div className="/* Webkit (Chrome, Edge, Safari) */ h-full w-full overflow-y-auto [scrollbar-color:rgba(57,37,121,0.4)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.35)] [&::-webkit-scrollbar-thumb:hover]:bg-[rgba(57,37,121,0.6)] [&::-webkit-scrollbar-track]:bg-transparent">
-              <table className="w-full border-collapse bg-[rgba(255,255,255,1)]">
-                {/* TABLE HEADER */}
-                <thead className="sticky top-[0rem] z-10 bg-[rgba(255,255,255,1)]">
-                  <tr>
-                    <th className="h-[28px] w-[40px] border-b-[0.5px] border-[rgba(57,37,121,0.2)]"></th>
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[rgba(57,37,121,1)]">
-                      <div>
-                        Material Name
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                        />
-                      </div>
-                    </th>
+            {/* RIGHT BOX */}
+            <div className="relative mb-[2rem] flex h-full flex-col gap-[1rem] rounded-[0.35rem] border-[0rem] bg-white p-[0rem]">
+              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.35rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
+                {/* ================= TOP BAR ================= */}
+                <div className="flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
+                  {/* DROPDOWN */}
+                  <select
+                    value={selectedMaterialType}
+                    onChange={(e) => setSelectedMaterialType(e.target.value)}
+                    className="h-[1.7rem] rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem]"
+                  >
+                    {materialTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
 
-                    <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[rgba(57,37,121,1)]">
-                      <div>
-                        Description
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                        />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
+                  {/* SEARCH */}
+                  <div className="relative flex items-center">
+                    <svg
+                      className="pointer-events-none absolute right-3 h-[1.0625rem] pb-[0.125rem] pl-[0.1875rem] text-[#392579]/50"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1}
+                    >
+                      <circle cx="11" cy="11" r="5" />
+                      <path d="m20 20-4.35-4.35" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      value={materialSearch}
+                      onChange={(e) => setMaterialSearch(e.target.value)}
+                      className="h-[1.5rem] w-[15rem] flex-1 rounded-[0.4375rem] border-[0.1rem] border-[#C4BED7]/50 bg-white p-[0rem] pr-9 pl-[1.5rem] text-[0.65rem] text-[#A0AEC0] outline-none focus:border-purple-400 focus:ring-[0.1rem] focus:ring-purple-300"
+                    />
+                  </div>
+                </div>
+
+                {/* ================= TABLE ================= */}
+                <div className="/* Firefox */ /* Webkit (Chrome, Edge, Safari) */ h-full w-full overflow-y-auto [scrollbar-color:var(--scrollbar-color)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-[0.175rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--common-text-color)] [&::-webkit-scrollbar-thumb:hover]:bg-[var(--common-text-color)] [&::-webkit-scrollbar-track]:bg-transparent">
+                  <table className="w-full border-collapse bg-[var(--primary-white)] p-[0rem]">
+                    {/* TABLE HEADER */}
+                    <thead className="sticky top-[0rem] z-10 bg-[var(--primary-white))]">
+                      <tr>
+                        <th className="h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem]"></th>
+                        <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[var(--primary-color)]">
+                          <div>
+                            Material Name
+                            <img
+                              src={assets.up_down_arrow}
+                              alt="Sort"
+                              className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                            />
+                          </div>
+                        </th>
+
+                        <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] py-[3] text-left text-[0.87rem] font-[700] font-semibold text-[var(--primary-color)]">
+                          <div>
+                            Description
+                            <img
+                              src={assets.up_down_arrow}
+                              alt="Sort"
+                              className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
+                            />
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
 
                 {/* TABLE BODY */}
                 <tbody>
@@ -651,36 +653,43 @@ const CatalogManager = () => {
                           />
                         </td>
 
-                        {/* NAME */}
-                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] text-left text-[0.65rem] text-[#3F3F46]">
-                          {row.name}
-                        </td>
+                            {/* NAME */}
+                            <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
+                              {row.name}
+                            </td>
 
-                        {/* DESCRIPTION */}
-                        <td className="h-[28px] border-b-[0.5px] border-[rgba(57,37,121,0.15)] text-left text-[0.65rem] text-[#3F3F46]">
-                          {row.description}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="h-[28px] text-center text-[0.65rem] text-gray-400">
-                        No materials found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                            {/* DESCRIPTION */}
+                            <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
+                              {row.description}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={3}
+                            className="h-[1.75rem] text-center text-[0.65rem] text-gray-400"
+                          >
+                            No materials found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {/* ================= BOTTOM ACTION BAR ================= */}
+              <div className="sticky bottom-0 z-20 border-[0rem] border-[var(--border-color)] bg-white p-3 p-[0rem]">
+                <div
+                  onClick={handleAssignMaterialButton}
+                  className="flex h-[1.875rem] w-[8.9375rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] bg-white p-[0rem] px-[0.875rem] text-[0.8rem] text-[var(--primary-color)]"
+                >
+                  <img src={assets.addMaterialIcon} alt="Add Material" className="h-4 w-4" />
+                  Add to Material
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        {/* ================= BOTTOM ACTION BAR ================= */}
-        <div
-          onClick={handleAssignMaterialButton}
-          className="absolute right-[23.50rem] bottom-[1rem] flex h-[30px] w-[8rem] cursor-pointer items-center gap-[8px] rounded-[5px] border-t border-l border-[rgba(57,37,121,0.15)] bg-[#ffffff] px-[14px] text-[0.80rem] text-[rgba(57,37,121,1)]"
-        >
-          <img src={assets.addMaterialIcon} alt="Add Material" className="h-4 w-4" />
-          Add to Material
         </div>
       </div>
       {/* add catalog popup  */}

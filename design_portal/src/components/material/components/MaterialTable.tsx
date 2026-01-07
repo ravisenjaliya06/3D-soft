@@ -64,14 +64,14 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.9rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
+              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
                   ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
                   : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
               } `}
               onClick={() => onTabChange(tab.id)}
             >
-              <p className="mb-[0px] pb-[5px] text-[0.9rem]">{tab.label}</p>
+              <p className="mb-[0px] pb-[5px] text-[0.85rem]">{tab.label}</p>
             </div>
           ))}
         </div>
@@ -86,18 +86,18 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
-                  <p className="text-[0.88rem] font-[500]">{column.label}</p>
+                  <p className="text-[0.80rem] font-[500]">{column.label}</p>
                   {column.sortable && (
                     <div className="flex flex-col items-center">
                       <img
                         src={MENU_UP_SVG.menu_up}
                         alt="Sort icon"
-                        className="mb-[-10.5px] ml-[3px] w-[1rem]"
+                        className="mb-[-6px] ml-[3px] w-[1rem]"
                       />
                       <img
                         src={MENU_DOWN_SVG.menu_down}
                         alt="Sort icon"
-                        className="mt-[-2.5px] ml-[7px] w-[1rem]"
+                        className="mt-[-2.5px] ml-[6px] w-[1rem]"
                       />
                     </div>
                   )}
@@ -111,7 +111,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             <tr>
               <td
                 colSpan={columns.length}
-                className="py-[10rem] text-center text-[0.8rem] font-medium text-gray-500"
+                className="py-[10rem] text-center text-[0.75rem] font-medium text-gray-500"
               >
                 No items available
               </td>
@@ -125,7 +125,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.7rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.65rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
                   >
                     {getCellValue(row, column.key)}
                   </td>

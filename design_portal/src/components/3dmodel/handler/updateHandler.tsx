@@ -229,7 +229,6 @@ export class UpdateObjectInScene {
       });
   }
 
-  /** Loads and applies a texture */
   private applyTextureMaterial(mesh: THREE.Mesh, textureUrl: string): void {
     const loader = new THREE.TextureLoader();
     loader.load(
