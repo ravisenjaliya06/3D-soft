@@ -2,13 +2,22 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
 
+import Image from 'next/image';
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
+import { addSkirtingPlanks, removeSkirtingPlanks, updateDrawerType } from '../design/scene';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
-import { MeshObjectData, MeshObjectPatch, PART_TYPES } from '../sceneCreator/interface';
+import {
+  DRAWER_PLANK_TYPES,
+  DRAWER_TYPES,
+  MeshObjectData,
+  MeshObjectPatch,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
@@ -26,9 +35,16 @@ const Sidebar: React.FC = () => {
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
+  const [textureRotation, setTextureRotation] = useState(0);
 
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
+  const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
+
+  // Anchor States for Directional Scaling
+  const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
+  const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
+  const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
 
   const materialModal = [
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
@@ -43,10 +59,14 @@ const Sidebar: React.FC = () => {
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
+  const isUpdatingTextureRotationRef = useRef(false);
+  const isUpdatingShelvesDistanceRef = useRef(false);
+  const previousPlankIdRef = useRef<string | null>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
+  const selectedInvisibleBoxId = useSelector((state: RootState) => state.data.selectedInvisibleBox);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
@@ -94,42 +114,61 @@ const Sidebar: React.FC = () => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
   }, [scene, dispatch]);
 
+  useEffect(() => {
+    if (selectedObject && scene) {
+      let targetMesh: THREE.Mesh | null = null;
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+          targetMesh = obj;
+        }
+      });
+      if (targetMesh) {
+        const hasSkirting = (targetMesh as THREE.Mesh).children.some(
+          (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
+        );
+        setFrontpanelEnabled(hasSkirting);
+      }
+    }
+  }, [selectedObject, scene]);
+
   const handleObject = objects.find((obj) => obj.parent === targetId && obj.type === 'handle');
   useEffect(() => {
     if (!handleObject) return;
 
     setHandlePos({
-      x: handleObject.position.x,
-      y: handleObject.position.y,
-      z: handleObject.position.z,
+      x: Math.round(handleObject.position.x),
+      y: Math.round(handleObject.position.y),
+      z: Math.round(handleObject.position.z),
     });
 
     setHandleRot({
-      x: handleObject.rotation.x,
-      y: handleObject.rotation.y,
-      z: handleObject.rotation.z,
+      x: Math.round(handleObject.rotation.x),
+      y: Math.round(handleObject.rotation.y),
+      z: Math.round(handleObject.rotation.z),
     });
   }, [handleObject]);
 
   const updateHandlePosState = (axis: Axis, value: number) => {
-    setHandlePos((prev) => ({ ...prev, [axis]: value }));
+    const roundedValue = Math.round(value);
+    setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
         handleObject.id,
-        { position: { [axis]: value } },
+        { position: { [axis]: roundedValue } },
         handleObject
       );
     }
   };
 
   const updateHandleRotState = (axis: Axis, value: number) => {
-    setHandleRot((prev) => ({ ...prev, [axis]: value }));
+    const roundedValue = Math.round(value);
+    setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
         handleObject.id,
-        { rotation: { [axis]: value } },
+        { rotation: { [axis]: roundedValue } },
         handleObject
       );
     }
@@ -160,12 +199,13 @@ const Sidebar: React.FC = () => {
     });
   };
 
+  console.log(selectedObject, 'selectedObject');
+
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
   ): void {
     if (!selectedObject) return;
-
     const updatedObject: MeshObjectData = {
       ...selectedObject,
 
@@ -249,9 +289,55 @@ const Sidebar: React.FC = () => {
 
   const handleDimensionChange = (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
+
+    // Round the value to ensure it's a whole number
+    const roundedValue = Math.round(value);
+    const oldValue = selectedObject.dimensions?.[field] ?? 0;
+    const delta = roundedValue - oldValue;
+
+    // Stores positional offset caused by directional resizing.
+    // Initialized to zero so unaffected axes remain unchanged.
+    const positionShift = { x: 0, y: 0, z: 0 };
+
+    const axisConfig = {
+      width: {
+        axis: 'x',
+        side: widthSide,
+        negative: 'left',
+        positive: 'right',
+      },
+      height: {
+        axis: 'y',
+        side: heightSide,
+        negative: 'bottom',
+        positive: 'top',
+      },
+      depth: {
+        axis: 'z',
+        side: depthSide,
+        negative: 'back',
+        positive: 'front',
+      },
+    } as const;
+
+    const config = axisConfig[field];
+
+    if (config) {
+      if (config.side === config.negative) {
+        positionShift[config.axis] = -delta / 2;
+      } else if (config.side === config.positive) {
+        positionShift[config.axis] = delta / 2;
+      }
+    }
+
+    const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
+
     applyObjectUpdate(selectedObject, {
-      dimensions: {
-        [field]: value,
+      dimensions: { [field]: roundedValue },
+      position: {
+        x: currentPos.x + positionShift.x,
+        y: currentPos.y + positionShift.y,
+        z: currentPos.z + positionShift.z,
       },
     });
   };
@@ -268,10 +354,58 @@ const Sidebar: React.FC = () => {
     setIsTextureListOpen(false);
   };
 
+  const handleTextureRotationChange = (value: number) => {
+    if (!selectedObject || isDisabled) return;
+
+    const clampedValue = Math.max(0, Math.min(180, value));
+    if (isUpdatingTextureRotationRef.current) return;
+    if (Math.abs(clampedValue - textureRotation) < 0.01) return;
+    isUpdatingTextureRotationRef.current = true;
+    setTextureRotation(clampedValue);
+
+    if (selectedObject.material && selectedObject.material.type === MATERIAL_TYPES.TEXTURE) {
+      applyObjectUpdate(selectedObject, {
+        material: {
+          ...selectedObject.material,
+          rotation: clampedValue,
+        },
+      });
+    }
+
+    setTimeout(() => {
+      isUpdatingTextureRotationRef.current = false;
+    }, 100);
+  };
+
+  const handleShelvesInnerDistanceChange = (value: number) => {
+    if (!selectedObject || isDisabled || !isPlankSelected) return;
+
+    const parentCupboard = selectedObject.parent
+      ? objects.find((obj) => obj.id === selectedObject?.parent)
+      : null;
+
+    if (!parentCupboard) return;
+    const cupboardDepth = parentCupboard.dimensions?.depth ?? 0;
+
+    const clampedValue = Math.max(0, Math.min(25, value));
+    if (Math.abs(clampedValue - shelvesInnerDistance) < 0.01) return;
+    isUpdatingShelvesDistanceRef.current = true;
+    setShelvesInnerDistance(clampedValue);
+    const newPlankDepth = cupboardDepth - clampedValue;
+    if (newPlankDepth > 0) {
+      applyObjectUpdate(selectedObject, {
+        dimensions: { depth: newPlankDepth },
+      });
+    }
+    setTimeout(() => {
+      isUpdatingShelvesDistanceRef.current = false;
+    }, 100);
+  };
+
   const dimensionsUI: Dimensions = {
-    width: selectedObject?.dimensions?.width ?? 11,
-    height: selectedObject?.dimensions?.height ?? 0,
-    depth: selectedObject?.dimensions?.depth ?? 0,
+    width: Math.round(selectedObject?.dimensions?.width ?? 11),
+    height: Math.round(selectedObject?.dimensions?.height ?? 0),
+    depth: Math.round(selectedObject?.dimensions?.depth ?? 0),
   };
 
   const controlIconMap: Record<string, string[]> = {
@@ -372,9 +506,24 @@ const Sidebar: React.FC = () => {
   const isPlankSelected =
     selectedObject?.type === PART_TYPES.PLANK ||
     selectedObject?.type === PART_TYPES.VERTICAL_PLANK ||
-    selectedObject?.type === PART_TYPES.HORIZONTAL_PLANK;
+    selectedObject?.type === PART_TYPES.HORIZONTAL_PLANK ||
+    selectedObject?.type === PART_TYPES.BACK_PLANK ||
+    Object.values(DRAWER_PLANK_TYPES).includes(selectedObject?.type || '');
   selectedObject?.name?.toLowerCase().includes('planks');
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
+  const getTopPlank = () => {
+    if (!selectedObject) return undefined;
+    const children = objects.filter((obj) => obj.parent === selectedObject?.id);
+    const planks = children.filter(
+      (obj) =>
+        obj.type === PART_TYPES.HORIZONTAL_PLANK ||
+        obj.type === PART_TYPES.PLANK ||
+        obj.name.toLowerCase().includes('top')
+    );
+    planks.sort((a, b) => (b.position?.y ?? 0) - (a.position?.y ?? 0));
+    return planks[0];
+  };
 
   const isFullCupboard =
     !!selectedObject &&
@@ -392,7 +541,46 @@ const Sidebar: React.FC = () => {
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
+  // Check if invisible box is selected
+  const isInvisibleBoxSelected =
+    !!selectedInvisibleBoxId ||
+    selectedObject?.type === 'INVISIBLEBOX' ||
+    selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
+    selectedObject?.name?.toLowerCase().includes('invisible_box') ||
+    selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
+
+  // Disable texture change for cupboards and invisible boxes
+  const isTextureChangeDisabled = isFullCupboard || isInvisibleBoxSelected || isQuickHideActive;
+
+  useEffect(() => {
+    if (isUpdatingShelvesDistanceRef.current) return;
+
+    if (isPlankSelected && selectedObject) {
+      const currentPlankId = selectedObject.id;
+
+      if (previousPlankIdRef.current === currentPlankId) {
+        return;
+      }
+
+      previousPlankIdRef.current = currentPlankId;
+
+      const parentCupboard = selectedObject.parent
+        ? objects.find((obj) => obj.id === selectedObject.parent)
+        : null;
+
+      if (parentCupboard) {
+        const cupboardDepth = parentCupboard.dimensions?.depth ?? 0;
+        const plankDepth = selectedObject.dimensions?.depth ?? 0;
+        const calculatedDistance = Math.max(0, cupboardDepth - plankDepth);
+        setShelvesInnerDistance(calculatedDistance);
+      } else {
+        setShelvesInnerDistance(0);
+      }
+    } else {
+      previousPlankIdRef.current = null;
+    }
+  }, [selectedObject?.id, isPlankSelected, objects]);
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
@@ -435,9 +623,57 @@ const Sidebar: React.FC = () => {
     setFrontpanelDisabled(false);
   }, []);
 
+  useEffect(() => {
+    if (isFullCupboard && !isQuickHideActive) {
+      const topPlank = getTopPlank();
+      if (topPlank && selectedObject) {
+        // Find a vertical plank (side panel) to serve as reference depth
+        const siblings = objects.filter((obj) => obj.parent === selectedObject?.id);
+        const sidePanel = siblings.find((obj) => obj.type === PART_TYPES.VERTICAL_PLANK);
+        // If no side panel, fallback to cupboard depth
+        const referenceDepth =
+          sidePanel?.dimensions?.depth ?? selectedObject.dimensions?.depth ?? 0;
+
+        const plankDepth = topPlank.dimensions?.depth || 0;
+        setTopPlankEnabled(plankDepth > referenceDepth + 1);
+      }
+    }
+  }, [selectedObject, objects, isFullCupboard, isQuickHideActive]);
+
   const handleTopPlankToggle = () => {
     if (topPlankDisabled) return;
-    setTopPlankEnabled((prev) => !prev);
+
+    const topPlank = getTopPlank();
+    if (!topPlank) return;
+
+    const isEnabled = !topPlankEnabled;
+    setTopPlankEnabled(isEnabled);
+
+    const currentDepth = topPlank.dimensions?.depth || 0;
+    // If enabling, add 20. If disabling, remove 20.
+    const delta = isEnabled ? 20 : -20;
+    const newDepth = currentDepth + delta;
+
+    applyObjectUpdate(topPlank, {
+      dimensions: { depth: newDepth },
+      // Shift Z by half of delta to grow/shrink from front (assuming +Z is front)
+      // If we want it to grow "outward" (usually front), and center shifts by +10.
+      position: { z: (topPlank.position?.z || 0) + delta / 2 },
+    });
+  };
+
+  const handleTopPlankDepthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const topPlank = getTopPlank();
+    if (!topPlank) return;
+
+    const newDepth = parseFloat(e.target.value);
+    const currentDepth = topPlank.dimensions?.depth || 0;
+    const delta = newDepth - currentDepth;
+
+    applyObjectUpdate(topPlank, {
+      dimensions: { depth: newDepth },
+      position: { z: (topPlank.position?.z || 0) + delta / 2 },
+    });
   };
 
   const handleBaseheightToggle = () => {
@@ -447,16 +683,48 @@ const Sidebar: React.FC = () => {
 
   const handleFrontpanelToggle = () => {
     if (frontpanelDisabled) return;
-    setFrontpanelEnabled((prev) => !prev);
+
+    const isEnabled = !frontpanelEnabled;
+    setFrontpanelEnabled(isEnabled);
+
+    if (!scene || !selectedObject) return;
+
+    // Find the actual mesh in the scene
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      if (isEnabled) {
+        addSkirtingPlanks(targetMesh);
+      } else {
+        removeSkirtingPlanks(targetMesh);
+      }
+    }
   };
 
-  const [activeControls, setActiveControls] = useState<Record<string, number>>({});
-
   const handleControlClick = (fieldName: string, idx: number) => {
-    setActiveControls((prev) => ({
-      ...prev,
-      [fieldName]: idx,
-    }));
+    // Helper to toggle state: if same side clicked, turn off (null); otherwise set new side.
+    const toggle = <T,>(current: T | null, target: T): T | null => {
+      return current === target ? null : target;
+    };
+
+    if (fieldName === 'width') {
+      // Index 0 -> 'left', Index 1 -> 'right'
+      const target = idx === 0 ? 'left' : 'right';
+      setWidthSide((prev) => toggle(prev, target));
+    } else if (fieldName === 'height') {
+      // Index 0 -> 'top', Index 1 -> 'bottom'
+      const target = idx === 0 ? 'top' : 'bottom';
+      setHeightSide((prev) => toggle(prev, target));
+    } else if (fieldName === 'depth') {
+      // Index 0 -> 'front', Index 1 -> 'back'
+      const target = idx === 0 ? 'front' : 'back';
+      setDepthSide((prev) => toggle(prev, target));
+    }
   };
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
@@ -496,8 +764,9 @@ const Sidebar: React.FC = () => {
         </p>
 
         <img
-          src={isSidebarOpen ? assets.down_arrow1 : assets.up_arrow}
-          className="relative right-2 h-[1rem] w-[1rem]"
+          src={assets.up_arrow}
+          className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
+          alt="Toggle sidebar"
         />
       </div>
 
@@ -544,229 +813,237 @@ const Sidebar: React.FC = () => {
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
           )}
 
+          {/* ================= INVISIBLE BOX SELECTED ================= */}
+          {isSettingOpen && selectedObject && (
+            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Properties Available</p>
+          )}
+
           {/* ================= SETTINGS ================= */}
           {isSettingOpen && selectedObject && (
             <>
-              <div className="w-[15rem] bg-white p-3 shadow-sm">
-                {/* ================= Minifix & Grooving ================= */}
-                <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                  {/* Header */}
-                  <div className="mb-[0rem] flex items-center justify-between">
-                    <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
-                      Minifix & Grooving
-                    </p>
-                    <button
-                      onClick={() => toggleSection('minifix')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.minifix ? '+' : '−'}
-                    </button>
-                  </div>
-                  {!collapsed.minifix && (
-                    <>
-                      {/* ================= Split Inputs ================= */}
-                      <div className="flex gap-[0.75rem]">
-                        {/* -------- LEFT PART -------- */}
-                        <div className="flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="ml-[0rem] flex items-center gap-[1rem]">
-                            <div
-                              onClick={handleMinifixToggle}
-                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {/* Knob */}
+              <div className="structure-only pointer-events-none opacity-50 blur-[0.01rem] select-none">
+                {/* your existing code – NO CHANGES inside */}
+                <div className="w-[15rem] bg-white p-3 shadow-sm">
+                  {/* ================= Minifix & Grooving ================= */}
+                  <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                    {/* Header */}
+                    <div className="mb-[0rem] flex items-center justify-between">
+                      <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                        Minifix & Grooving
+                      </p>
+                      <button
+                        onClick={() => toggleSection('minifix')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.minifix ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.minifix && (
+                      <>
+                        {/* ================= Split Inputs ================= */}
+                        <div className="flex gap-[0.75rem]">
+                          {/* -------- LEFT PART -------- */}
+                          <div className="flex w-[6rem] flex-col">
+                            {/* Toggle */}
+                            <div className="ml-[0rem] flex items-center gap-[1rem]">
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  minifixEnabled
-                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                }`}
+                                onClick={handleMinifixToggle}
+                                className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              >
+                                {/* Knob */}
+                                <div
+                                  className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                    minifixEnabled
+                                      ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                  }`}
+                                />
+                              </div>
+                              <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Minifix
+                              </p>
+                            </div>
+
+                            {/* Distance */}
+                            <div className="mt-[0rem]">
+                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Distance
+                              </p>
+                              <input
+                                type="number"
+                                value="128"
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
-                            <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Minifix
-                            </p>
-                          </div>
 
-                          {/* Distance */}
-                          <div className="mt-[0rem]">
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Distance
-                            </p>
-                            <input
-                              type="number"
-                              value="128"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-
-                          {/* Diameter Hole */}
-                          <div className="">
-                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Diameter Hole
-                            </p>
-                            <input
-                              type="number"
-                              value="8"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        {/* -------- VERTICAL DIVIDER -------- */}
-                        <hr className="mr-[0.3rem] ml-[0.2rem] h-[8rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
-
-                        {/* -------- RIGHT PART -------- */}
-                        <div className="mr-[0.7rem] flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="flex items-center gap-[0.5rem]">
-                            <div
-                              onClick={handleGroovingToggle}
-                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {/* Knob */}
-                              <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  groovingEnabled
-                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                            {/* Diameter Hole */}
+                            <div className="">
+                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Diameter Hole
+                              </p>
+                              <input
+                                type="number"
+                                value="8"
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
-                            <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Grooving
-                            </p>
                           </div>
 
-                          {/* Inside */}
-                          <div>
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Inside
-                            </p>
-                            <input
-                              type="number"
-                              value="25"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
+                          {/* -------- VERTICAL DIVIDER -------- */}
+                          <hr className="mr-[0.3rem] ml-[0.2rem] h-[8rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
 
-                          {/* Edge to End */}
-                          <div>
-                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Edge to End
-                            </p>
-                            <input
-                              type="number"
-                              value="6"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
+                          {/* -------- RIGHT PART -------- */}
+                          <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                            {/* Toggle */}
+                            <div className="flex items-center gap-[0.5rem]">
+                              <div
+                                onClick={handleGroovingToggle}
+                                className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              >
+                                {/* Knob */}
+                                <div
+                                  className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                    groovingEnabled
+                                      ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  }`}
+                                />
+                              </div>
+                              <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Grooving
+                              </p>
+                            </div>
+
+                            {/* Inside */}
+                            <div>
+                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Inside
+                              </p>
+                              <input
+                                type="number"
+                                value="25"
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+
+                            {/* Edge to End */}
+                            <div>
+                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                Edge to End
+                              </p>
+                              <input
+                                type="number"
+                                value="6"
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                {/* ================= Camlock Screw Hole ================= */}
-                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                  <div className="flex items-center justify-between">
-                    <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                      Camlock Screw Hole
-                    </p>
-                    <button
-                      onClick={() => toggleSection('camlock')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.camlock ? '+' : '−'}
-                    </button>
+                      </>
+                    )}
                   </div>
-                  {!collapsed.camlock && (
-                    <>
-                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[500]">
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Diameter
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                  {/* ================= Camlock Screw Hole ================= */}
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Camlock Screw Hole
+                      </p>
+                      <button
+                        onClick={() => toggleSection('camlock')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.camlock ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.camlock && (
+                      <>
+                        <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[500]">
+                          <div>
+                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                              Diameter
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                              Depth
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                              Height
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
                           </div>
                         </div>
-
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Depth
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Height
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                  <div className="flex items-center justify-between">
-                    <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                      Edge Banding
-                    </p>
-                    <button
-                      onClick={() => toggleSection('edgeBanding')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.edgeBanding ? '+' : '−'}
-                    </button>
+                      </>
+                    )}
                   </div>
-                  {!collapsed.edgeBanding && (
-                    <>
-                      <div className="flex items-center gap-[1rem]">
-                        <div
-                          onClick={handleEdgeBandingToggle}
-                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                        >
-                          {/* Knob */}
+
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Edge Banding
+                      </p>
+                      <button
+                        onClick={() => toggleSection('edgeBanding')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.edgeBanding ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.edgeBanding && (
+                      <>
+                        <div className="flex items-center gap-[1rem]">
                           <div
-                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                              edgeBandingEnabled
-                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                            }`}
-                          />
-                        </div>
+                            onClick={handleEdgeBandingToggle}
+                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                          >
+                            {/* Knob */}
+                            <div
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                edgeBandingEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
+                            />
+                          </div>
 
-                        <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
-                          Edge Banding
-                        </p>
-                        <div className="flex items-center gap-[2rem]">
-                          <input
-                            type="number"
-                            className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            Edge Banding
+                          </p>
+                          <div className="flex items-center gap-[2rem]">
+                            <input
+                              type="number"
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
@@ -793,7 +1070,14 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[2rem]">
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              min={0}
+                              max={25}
+                              value={shelvesInnerDistance}
+                              onChange={(e) =>
+                                handleShelvesInnerDistanceChange(Number(e.target.value))
+                              }
+                              disabled={isDisabled}
+                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -840,7 +1124,20 @@ const Sidebar: React.FC = () => {
                                     {isPlankSelected && (
                                       <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
                                         {controlIconMap[field.name].map((icon, idx) => {
-                                          const isActive = activeControls[field.name] === idx;
+                                          let isActive = false;
+                                          if (field.name === 'width') {
+                                            isActive =
+                                              (idx === 0 && widthSide === 'left') ||
+                                              (idx === 1 && widthSide === 'right');
+                                          } else if (field.name === 'height') {
+                                            isActive =
+                                              (idx === 0 && heightSide === 'top') ||
+                                              (idx === 1 && heightSide === 'bottom');
+                                          } else if (field.name === 'depth') {
+                                            isActive =
+                                              (idx === 0 && depthSide === 'front') ||
+                                              (idx === 1 && depthSide === 'back');
+                                          }
 
                                           return (
                                             <button
@@ -869,6 +1166,7 @@ const Sidebar: React.FC = () => {
                                   <input
                                     type="number"
                                     min={field.min}
+                                    step="1"
                                     value={field.value ?? ''}
                                     onChange={field.onChange}
                                     disabled={field.disabled}
@@ -1034,6 +1332,8 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[2rem]">
                             <input
                               type="number"
+                              value={getTopPlank()?.dimensions?.depth ?? 0}
+                              onChange={handleTopPlankDepthChange}
                               className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
@@ -1201,7 +1501,10 @@ const Sidebar: React.FC = () => {
 
                       <button
                         onClick={toggleTextureList}
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        disabled={isTextureChangeDisabled}
+                        className={`flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                          isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
                       >
                         Select Texture
                         <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -1246,7 +1549,15 @@ const Sidebar: React.FC = () => {
                           {/* Input */}
                           <input
                             type="number"
-                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            min={0}
+                            max={180}
+                            value={textureRotation}
+                            onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
+                            disabled={
+                              isDisabled ||
+                              selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE
+                            }
+                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                         </div>
                       </div>
@@ -1282,12 +1593,35 @@ const Sidebar: React.FC = () => {
                             Open/Close
                           </p>
                           <button
-                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--button-soft-grey)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                             disabled={isQuickHideActive}
                             onClick={handleOpenCloseChange}
                           >
                             Open/Close
                           </button>
+                        </div>
+                        <div className="relative flex items-center justify-between pl-[1rem]">
+                          <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Drawer Type
+                          </p>
+                          <select
+                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--primary-color)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            value={
+                              selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
+                                ? DRAWER_TYPES.OVERLAY
+                                : DRAWER_TYPES.INSET
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (selectedObject?.id) {
+                                updateDrawerType(scene, selectedObject.id, value);
+                              }
+                            }}
+                          >
+                            <option value={DRAWER_TYPES.INSET}>In to In</option>
+                            <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
+                          </select>
                         </div>
                         <>
                           <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />

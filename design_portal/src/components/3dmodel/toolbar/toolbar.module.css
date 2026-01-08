@@ -266,6 +266,7 @@
   align-items: space-between;
   justify-content: space-between;
 }
+
 .furnitureItemslist:hover {
   background: var(--toolbarhover-color);
 }

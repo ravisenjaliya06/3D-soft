@@ -431,7 +431,7 @@ const Designs = () => {
             {/* Design View Part */}
             <div className={styles.designfirstpart}>
               <div className={styles.searchWrapper}>
-                <img src={assets.search} alt="Search Icon" className={styles.searchIcon} />
+                <img src={assets.search_design} alt="Search Icon" className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search Design"

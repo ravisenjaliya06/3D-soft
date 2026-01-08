@@ -64,6 +64,12 @@ const Login = () => {
         response.data?.non_field_errors?.[0] ||
         response.data?.message ||
         'Login failed. Please try again.';
+      if (errorMessage === 'Account is not verified. Please verify account with the OTP.') {
+        router.push({
+          pathname: REDIRECT.OTP,
+          query: { email: email, message: errorMessage },
+        });
+      }
       setLoginError(errorMessage);
       setIsLoading(false);
     }
@@ -107,7 +113,7 @@ const Login = () => {
             3D Models of <span>wooden sheet cutting</span>
           </h1>
           <p>Make your design and nesting with 3D to less wastage</p>
-          <div className="ml-[5rem]">
+          <div className={styles.login_logo}>
             <img src={assets.loginimage} alt="loginpage image" />
           </div>
           <div className={styles.logo}>

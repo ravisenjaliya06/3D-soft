@@ -5,7 +5,7 @@ import { MeshObjectData } from '../sceneCreator/interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
-import { createDashedLineObject, createLineObjects, getBoxCenter } from '../utils/outlineHelpers';
+import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
 
 export class UpdateObjectInScene {
@@ -82,7 +82,7 @@ export class UpdateObjectInScene {
       this.updateChildrenDynamic(mesh, updateParams);
     }
 
-    this.updateOrRefreshOutline(mesh);
+    updateOrRefreshOutline(this.scene, mesh);
   }
 
   //update main object with children(planks)
@@ -126,7 +126,7 @@ export class UpdateObjectInScene {
 
       child.position.set(nextX, nextY, nextZ);
 
-      this.updateOrRefreshOutline(child);
+      updateOrRefreshOutline(this.scene, child);
 
       /**
        * If this child also exists in your Redux store,
@@ -152,40 +152,6 @@ export class UpdateObjectInScene {
     });
   }
 
-  private updateOrRefreshOutline(mesh: THREE.Mesh): void {
-    mesh.updateWorldMatrix(true, false);
-
-    //  Main Object Dashed Outline
-    if (mesh.userData.isMain) {
-      const dashedName = 'cupboard_big_dotted_outline';
-      const dashed = this.scene.getObjectByName(dashedName) as THREE.LineSegments;
-
-      // if dashed exists → recreate it fully
-      if (dashed) {
-        this.scene.remove(dashed);
-        dashed.geometry.dispose();
-        (dashed.material as THREE.Material).dispose();
-
-        const center = getBoxCenter(mesh);
-        const newDashed = createDashedLineObject(mesh, 0x000000, center);
-        this.scene.add(newDashed);
-      }
-    }
-
-    // Solid Selection Outline
-    const solidName = `outline-${mesh.userData.objectId}`;
-    const solid = this.scene.getObjectByName(solidName) as THREE.LineSegments;
-
-    if (solid) {
-      this.scene.remove(solid);
-      solid.geometry.dispose();
-      (solid.material as THREE.Material).dispose();
-
-      const newSolid = createLineObjects(mesh, 0xffff00);
-      this.scene.add(newSolid);
-    }
-  }
-
   /** Updates position (x, y, z) */
   private updateMeshPosition(mesh: THREE.Mesh, updates: UpdatePayload): void {
     if (!updates.position) return;
@@ -195,7 +161,7 @@ export class UpdateObjectInScene {
     if (y !== undefined) mesh.position.y = y;
     if (z !== undefined) mesh.position.z = z;
 
-    this.updateOrRefreshOutline(mesh);
+    updateOrRefreshOutline(this.scene, mesh);
   }
 
   /** Updates rotation (in degrees → converted to radians) */
@@ -207,7 +173,7 @@ export class UpdateObjectInScene {
     if (y !== undefined) mesh.rotation.y = THREE.MathUtils.degToRad(y);
     if (z !== undefined) mesh.rotation.z = THREE.MathUtils.degToRad(z);
 
-    this.updateOrRefreshOutline(mesh);
+    updateOrRefreshOutline(this.scene, mesh);
   }
 
   /** Updates material (color or texture) */
@@ -263,7 +229,6 @@ export class UpdateObjectInScene {
       });
   }
 
-  /** Loads and applies a texture */
   private applyTextureMaterial(mesh: THREE.Mesh, textureUrl: string): void {
     const loader = new THREE.TextureLoader();
     loader.load(

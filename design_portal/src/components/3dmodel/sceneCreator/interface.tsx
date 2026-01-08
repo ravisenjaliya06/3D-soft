@@ -23,6 +23,20 @@ export const PART_TYPES = {
   HORIZONTAL_PLANK: 'horizontalPlank',
 };
 
+export const DRAWER_TYPES = {
+  INSET: 'inset',
+  OVERLAY: 'overlay',
+};
+
+export const DRAWER_PLANK_TYPES = {
+  DRAWER_FACE: 'DRAWER_FACE',
+  FRONT_DRAWER_PLANK: 'FRONT_DRAWER_PLANK',
+  BACK_DRAWER_PLANK: 'BACK_DRAWER_PLANK',
+  BOTTOM_DRAWER_PLANK: 'BOTTOM_DRAWER_PLANK',
+  RIGHT_DRAWER_PLANK: 'RIGHT_DRAWER_PLANK',
+  LEFT_DRAWER_PLANK: 'LEFT_DRAWER_PLANK',
+};
+
 export const GEOMETRY = {
   BOX_GEOMETRY: 'BOX_GEOMETRY',
   EXTRUDE_GEOMETRY: 'ExtrudeGeometry',
@@ -57,6 +71,7 @@ interface Material {
   value: string;
   repeatX?: number;
   repeatY?: number;
+  rotation?: number; // Texture rotation in degrees
 }
 
 export interface MeshObjectData {
@@ -78,6 +93,7 @@ export interface MeshObjectData {
   connectedTo?: string[];
   thickness?: number;
   selected?: boolean;
+  drawerType?: string;
 }
 
 export interface userData {
