@@ -223,6 +223,7 @@ export const addHorizontalPlanksInsideBox = async (
       name: `HORIZONTAL_PLANK`,
       type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: parent.userData.objectId, // Link to parent cupboard
       dimensions: dims,
       position: parentLocalPos,
       rotation: { x: 0, y: 0, z: 0 },

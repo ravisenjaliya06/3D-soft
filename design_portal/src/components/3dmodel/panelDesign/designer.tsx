@@ -7,6 +7,7 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import { Circle, Layer, Path, Rect, Stage, Transformer } from 'react-konva';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { RootState } from '../store';
 import styles from './panelDesign.module.css';
 
@@ -83,55 +84,77 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   useEffect(() => {
     const selectedObject = state?.data?.selectedObject;
     const selectedChildObject = state?.data?.selectedChildObject;
-    if (!selectedObject || !selectedChildObject) {
-      router.push(`/design/${designId}`);
-      return;
-    }
+    // if (!selectedObject || !selectedChildObject) {
+    //   router.push(`/design/${designId}`);
+    //   return;
+    // }
 
     const scene = state?.scene?.scene;
     if (!threeCanvasRef.current || !scene) return;
 
-    // Remove existing meshes
-    scene.children.forEach((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        scene.remove(obj);
-      }
-    });
-
+    // 1. Find the selected meshes FIRST
     const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
-
     const selectedChildMesh = selectedMesh?.children.find(
       (obj) => obj.userData?.objectId === selectedChildObject
     );
 
     if (!(selectedChildMesh instanceof THREE.Mesh)) return;
 
+    // 2. Remove existing meshes SAFELY (using spread to avoid skipped indices)
+    [...scene.children].forEach((obj) => {
+      if (obj instanceof THREE.Mesh && obj !== selectedMesh) {
+        scene.remove(obj);
+      }
+    });
+
     if (selectedChildMesh.geometry) {
       setOriginalGeometry(selectedChildMesh.geometry);
-      const geometry = selectedChildMesh.geometry;
-      const params = geometry.parameters; // Fallback values
-      const { width, height, depth } = params;
 
-      if (selectedChildMesh.userData.type === 'HORIZONTAL') {
-        setpanelWidth(width);
-        setpanelHeight(depth);
-      } else if (selectedChildMesh.userData.type === 'VERTICAL') {
-        setpanelWidth(depth);
-        setpanelHeight(height);
+      const plankInfo = detectPlankByBoundingBox(selectedChildMesh);
+      const { size, thicknessAxis } = plankInfo;
+      const currentThickness = size[thicknessAxis];
+
+      // Reset rotation for correct calculation
+      // selectedChildMesh.rotation.set(0, 0, 0);
+
+      if (thicknessAxis === 'y') {
+        // HORIZONTAL (Shelf/Top/Bottom): Width=X, Height=Z
+        setpanelWidth(size.x);
+        setpanelHeight(size.z);
+      } else if (thicknessAxis === 'x') {
+        // VERTICAL (Side Panel): Width=Z, Height=Y
+        setpanelWidth(size.z);
+        setpanelHeight(size.y);
       } else {
-        setpanelWidth(width);
-        setpanelHeight(height);
+        // BACK/FRONT (thicknessAxis === 'z'): Width=X, Height=Y
+        setpanelWidth(size.x);
+        setpanelHeight(size.y);
       }
 
       const shape = new THREE.Shape();
-      shape.moveTo(-width / 2, -height / 2);
-      shape.lineTo(width / 2, -height / 2);
-      shape.lineTo(width / 2, height / 2);
-      shape.lineTo(-width / 2, height / 2);
-      shape.lineTo(-width / 2, -height / 2);
+      // Points for the 2D shape (outline)
+      let pW = 0;
+      let pH = 0;
+
+      if (thicknessAxis === 'y') {
+        pW = size.x;
+        pH = size.z;
+      } else if (thicknessAxis === 'x') {
+        pW = size.z;
+        pH = size.y;
+      } else {
+        pW = size.x;
+        pH = size.y;
+      }
+
+      shape.moveTo(-pW / 2, -pH / 2);
+      shape.lineTo(pW / 2, -pH / 2);
+      shape.lineTo(pW / 2, pH / 2);
+      shape.lineTo(-pW / 2, pH / 2);
+      shape.lineTo(-pW / 2, -pH / 2);
 
       const extrudeSettings: THREE.ExtrudeGeometryOptions = {
-        depth: depth,
+        depth: currentThickness,
         bevelEnabled: false,
       };
       const newGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -142,7 +165,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
       selectedChildMesh.geometry.dispose();
       selectedChildMesh.geometry = newGeometry;
-      selectedChildMesh.position.z = selectedChildMesh.position.z - depth / 2;
+      selectedChildMesh.position.z = selectedChildMesh.position.z - currentThickness / 2;
     }
 
     if (selectedMesh) {
@@ -359,31 +382,38 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       }
     });
 
-    let staticDirectionValue;
+    let staticDirectionValue = 18;
 
-    if (originalGeometry && 'parameters' in originalGeometry) {
-      const params = originalGeometry.parameters;
-      if (selectedChildMesh.userData.type === 'VERTICAL') {
-        staticDirectionValue = params.width || 349;
-        selectedChildMesh.rotation.y = Math.PI / 2 + Math.PI;
-        selectedChildMesh.rotation.z = Math.PI;
-        if (!selectedChildMesh.userData.isPerfect) {
-          selectedChildMesh.position.z = selectedChildMesh.position.z + (params.depth || 18) / 2;
-          selectedChildMesh.userData.isPerfect = true;
-        }
-      } else if (selectedChildMesh.userData.type === 'HORIZONTAL') {
-        staticDirectionValue = params.height || 1960;
+    if (originalGeometry) {
+      // Use cached plank info if available, or re-detect
+      const plankInfo = detectPlankByBoundingBox(selectedChildMesh);
+      const { size, thicknessAxis } = plankInfo;
+
+      staticDirectionValue = size[thicknessAxis];
+
+      if (thicknessAxis === 'y') {
+        // HORIZONTAL: Rotate X 90deg
         selectedChildMesh.rotation.x = Math.PI / 2;
-        if (!selectedChildMesh.userData.isPerfect) {
-          selectedChildMesh.position.z = selectedChildMesh.position.z + (params.depth || 18) / 2;
-          selectedChildMesh.userData.isPerfect = true;
-        }
+        selectedChildMesh.rotation.y = 0;
+        selectedChildMesh.rotation.z = 0;
+      } else if (thicknessAxis === 'x') {
+        // VERTICAL: Rotate Y 90deg
+        selectedChildMesh.rotation.x = 0;
+        selectedChildMesh.rotation.y = Math.PI / 2;
+        selectedChildMesh.rotation.z = 0;
       } else {
-        staticDirectionValue = params.depth || 18;
-        selectedChildMesh.rotation.x = Math.PI;
+        // BACK/FRONT (z): No rotation (Logic: Draw locally X-Y, extrude Z)
+        // Check if we need rotation? Usually Back Panel is in X-Y plane.
+        selectedChildMesh.rotation.x = 0;
+        selectedChildMesh.rotation.y = 0;
+        selectedChildMesh.rotation.z = 0;
+      }
+
+      if (!selectedChildMesh.userData.isPerfect) {
+        selectedChildMesh.userData.isPerfect = true;
       }
     } else {
-      console.warn('originalGeometry is not defined or does not have parameters');
+      console.warn('originalGeometry is not defined');
     }
 
     const extrudeSettings = {
@@ -559,6 +589,20 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     /** Closes the confirmation modal without exiting the current editor. */
 
     setShowConfirmExit(false);
+  };
+
+  const handleComplete = () => {
+    if (!designId) {
+      console.warn('designId missing');
+      return;
+    }
+
+    // ✅ TODO: Save panel geometry / holes / shapePoints here
+    // Example:
+    // savePanelDesign({ shapePoints, holes, cornerRadius });
+
+    // Navigate back to design page
+    router.push(`/design/${designId}`);
   };
 
   const tools = [
@@ -740,7 +784,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           >
             Cancel
           </button>
-          <button className={`${styles.actionButton} ${styles.completeButton}`}>Complete</button>
+          <button
+            className={`${styles.actionButton} ${styles.completeButton}`}
+            onClick={handleComplete}
+          >
+            Complete
+          </button>
         </div>
       </div>
       {renderHorizontalRuler()}

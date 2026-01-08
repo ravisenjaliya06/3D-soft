@@ -22,7 +22,6 @@ import { store } from '../store';
 import {
   setHoverdMesh,
   setSelectedChildObject,
-  setobjectSelected,
   toggleMeasurement,
   toggleQuickHide,
   toggleWallDrawing,
@@ -164,7 +163,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
-    dispatch(setobjectSelected(null));
     dispatch(setSelectedChildObject(null));
     dispatch(setHoverdMesh(null));
     removeExistingLines();

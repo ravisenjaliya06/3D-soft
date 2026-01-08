@@ -4,6 +4,7 @@ export const _3DMODEL = {
   clear: '/assets/3dmodel/header/clear.svg',
   file: '/assets/3dmodel/header/file.svg',
   newclear: '/assets/3dmodel/header/newclear.svg',
+  panel_design: '/assets/3dmodel/header/panel_design.svg',
   newopenclose: '/assets/3dmodel/header/newopenclose.svg',
   newredu: '/assets/3dmodel/header/newredu.svg',
   newundo: '/assets/3dmodel/header/newundo.svg',
@@ -35,8 +36,6 @@ export const _3DMODEL = {
   searchIcon: '/assets/3dmodel/toolbar/searchIcon.svg',
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
-  directionIcon: '/assets/3dmodel/sidebar/directionarrow.svg',
-  swapHorizontalIcon: '/assets/3dmodel/sidebar/swap-horizontal.svg',
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
 };
 
