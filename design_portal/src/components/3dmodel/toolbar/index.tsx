@@ -12,7 +12,6 @@ import {
   addHorizontalPlanksInsideBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
-import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
@@ -27,7 +26,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
-import { Datastate, IconMap, SelectedCabinetItem } from './interface';
+import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
@@ -43,7 +42,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
-  const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
+  const [selectedCabinetItem, setSelectedCabinetItem] = useState<MeshObjectData | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
@@ -91,8 +90,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
-      const designBuilder = new SyncManager(fullGroup || [], threeDView);
-      designBuilder.syncData();
+      if (fullGroup) {
+        const syncManager = new SyncManager(fullGroup, threeDView);
+        await syncManager.syncData();
+      }
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);
@@ -122,6 +123,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         targetBox = obj as THREE.Mesh;
       }
     });
+    console.log(selectedCabinetItem, 'selectedCabinetItem');
 
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
@@ -132,7 +134,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
 
     if (['door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox);
+      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
       await addDrawersOnInvisibleBox(scene, targetBox, num);
     } else if (itemType === 'plank') {

@@ -118,13 +118,13 @@ export interface Material {
   id: string;
   name: string;
   type: string;
-  company: string;
-  description: string;
-  isDeleted: boolean;
+  company?: string;
+  description?: string;
+  isDeleted?: boolean;
   textures?: Texture[];
   // finishes: Finish[];
   // finishType: FinishType[];
-  properties: unknown;
+  properties?: unknown;
 }
 
 export interface MeshObjectData {

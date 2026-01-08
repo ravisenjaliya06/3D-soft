@@ -2,13 +2,19 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
-import { MeshObjectData } from '../3dmodel/sceneCreator/interface';
+import { Material, MeshObjectData } from '../3dmodel/sceneCreator/interface';
 import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
-import { Material } from './interface';
+// import { Material } from './interface';
+
+interface RulePart {
+  id: string;
+  name: string;
+  material: Material | null;
+}
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -22,7 +28,7 @@ const CatalogManager = () => {
   const [catalogType, setCatalogType] = useState('Door');
   const [selectedCatalog, setSelectedCatalog] = useState<MeshObjectData | null>(null);
   const [catalogData, setCatalogData] = useState<MeshObjectData[]>([]);
-  const [ruleParts, setRuleParts] = useState<Material[]>([]);
+  const [ruleParts, setRuleParts] = useState<RulePart[]>([]);
   const [materialData, setMaterialData] = useState<Material[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
   const [materialSearch, setMaterialSearch] = useState('');
@@ -37,6 +43,12 @@ const CatalogManager = () => {
       setEditingDescription(selectedCatalog.description || '');
     }
   }, [selectedCatalog]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(editingDescription, editingName);
+    }
+  }, []);
 
   const filteredMaterials = materialData
     .filter((mat) => mat.type === selectedMaterialType) // keep type filter
@@ -518,7 +530,9 @@ const CatalogManager = () => {
                           </td>
 
                           <td className="h-[1.75rem] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                            {formatEnumLabel(part.material?.name) || 'No Material Assigned'}
+                            {part.material?.name
+                              ? formatEnumLabel(part.material.name)
+                              : 'No Material Assigned'}
                           </td>
 
                           <td className="h-[1.75rem] px-[5] py-[2.5]">

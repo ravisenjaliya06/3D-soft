@@ -355,7 +355,7 @@ class FinishesLibrary(models.Model):
     decal = models.IntegerField(null=True, blank=True)
     tile = models.IntegerField(null=True, blank=True)
     url = models.CharField(max_length=100, null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to="upload_textures")
     is_deleted = models.BooleanField(default=False)
 
 

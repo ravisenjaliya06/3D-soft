@@ -12,6 +12,7 @@ import { Dimensions } from '../interface';
 import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  Material,
   MeshObjectData,
   MeshObjectPatch,
   PART_TYPES,
@@ -38,6 +39,10 @@ const Sidebar: React.FC = () => {
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
+  const [distance, setDistance] = useState(128);
+  const [diameter, setDiameter] = useState(8);
+  const [inside, setInside] = useState(25);
+  const [edgeToEnd, setEdgeToEnd] = useState(6);
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
@@ -264,6 +269,26 @@ const Sidebar: React.FC = () => {
     setShowMaterialPopup(true);
   };
 
+  // Helper function to get texture from Material array
+  const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
+    if (!materialArray || !Array.isArray(materialArray)) return null;
+    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
+    if (panelStock?.textures && panelStock.textures.length > 0) {
+      const texture = panelStock.textures[0];
+      if (texture?.textureDetail?.image) {
+        return texture.textureDetail.image;
+      }
+    }
+    return null;
+  };
+
+  // Helper function to check if material has texture
+  const hasTextureMaterial = (materialArray?: Material[]): boolean => {
+    if (!materialArray || !Array.isArray(materialArray)) return false;
+    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
+    return !!(panelStock?.textures && panelStock.textures.length > 0);
+  };
+
   const applyColorToSelected = (value: string) => {
     setSelectedColor(value);
     if (colorInputRef.current) colorInputRef.current.style.backgroundColor = value;
@@ -277,7 +302,16 @@ const Sidebar: React.FC = () => {
     const name = obj.name?.toLowerCase() ?? '';
     if (name.includes('door') || name.includes('drawer')) return;
 
-    applyObjectUpdate(obj, { material: { type: 'COLOR', value } });
+    // For color updates, we keep the existing Material array structure
+    // The UpdateHandler will handle the color application
+    applyObjectUpdate(obj, { material: obj.material });
+
+    // Also update via UpdateHandler for immediate visual feedback
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(obj.id, {
+        material: { type: MATERIAL_TYPES.COLOR, value },
+      });
+    }
   };
 
   const toggleTextureList = () => {
@@ -342,12 +376,16 @@ const Sidebar: React.FC = () => {
 
   const handleTextureSelect = (texturePath: string) => {
     if (!selectedObject) return;
-    applyObjectUpdate(selectedObject, {
-      material: {
-        type: MATERIAL_TYPES.TEXTURE,
-        value: texturePath,
-      },
-    });
+
+    // Update via UpdateHandler for immediate visual feedback
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(selectedObject.id, {
+        material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
+      });
+    }
+
+    // Keep existing Material array structure
+    applyObjectUpdate(selectedObject, { material: selectedObject.material });
 
     setIsTextureListOpen(false);
   };
@@ -361,13 +399,19 @@ const Sidebar: React.FC = () => {
     isUpdatingTextureRotationRef.current = true;
     setTextureRotation(clampedValue);
 
-    if (selectedObject.material && selectedObject.material.type === MATERIAL_TYPES.TEXTURE) {
-      applyObjectUpdate(selectedObject, {
-        material: {
-          ...selectedObject.material,
-          rotation: clampedValue,
-        },
-      });
+    // Check if material has texture
+    if (hasTextureMaterial(selectedObject.material)) {
+      // Update texture rotation via UpdateHandler
+      const texturePath = getTextureFromMaterial(selectedObject.material);
+      if (texturePath && updateObjectRef.current) {
+        updateObjectRef.current.update(selectedObject.id, {
+          material: {
+            type: MATERIAL_TYPES.TEXTURE,
+            value: texturePath,
+          },
+          textureRotation: clampedValue,
+        });
+      }
     }
 
     setTimeout(() => {
@@ -869,7 +913,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="128"
+                                value={distance}
+                                onChange={(e) => setDistance(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -881,7 +926,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="8"
+                                value={diameter}
+                                onChange={(e) => setDiameter(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -919,7 +965,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="25"
+                                value={inside}
+                                onChange={(e) => setInside(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -931,7 +978,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="6"
+                                value={edgeToEnd}
+                                onChange={(e) => setEdgeToEnd(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -1551,10 +1599,7 @@ const Sidebar: React.FC = () => {
                             max={180}
                             value={textureRotation}
                             onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                            disabled={
-                              isDisabled ||
-                              selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE
-                            }
+                            disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
                             className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                         </div>

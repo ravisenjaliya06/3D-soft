@@ -2,12 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
-import {
-  createDashedLineObject,
-  createLineObjects,
-  getBoxCenter,
-} from '../../utils/outlineHelpers';
-import { OBJECT_TYPES, PART_TYPES } from '../interface';
+import { createLineObjects } from '../../utils/outlineHelpers';
+import { PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -131,9 +127,9 @@ export class SelectObjectController {
     // If the part is also a 'Main' object (like a Drawer group),
     // we might want the big dotted outline on it.
     if (object.userData.isMain) {
-      this._applyObjectBigOutline(object);
+      this._applyObjectBigOutline();
     } else {
-      this._applyObjectBigOutline(this.selectedMainObject);
+      this._applyObjectBigOutline();
     }
     return;
   }
@@ -237,7 +233,7 @@ export class SelectObjectController {
     this.scene.traverse((object) => {
       if (
         object instanceof THREE.Mesh &&
-        Object.values(OBJECT_TYPES).includes(object.userData.type) &&
+        // Object.values(z).includes(object.userData.type) &&
         object.userData.objectId !== this.selectedMainObject?.userData.objectId
       ) {
         targets.push(object);
@@ -349,7 +345,7 @@ export class SelectObjectController {
     this.objectSelectOutline = outline;
   }
 
-  private _applyObjectBigOutline(object: THREE.Mesh) {
+  private _applyObjectBigOutline() {
     if (this.selectedOutline) {
       this._removeOutline(this.selectedOutline);
       this.selectedOutline = null;
@@ -359,10 +355,5 @@ export class SelectObjectController {
       this._removeOutline(this.objectSelectOutline);
       this.objectSelectOutline = null;
     }
-
-    const center = getBoxCenter(object);
-    const outline = createDashedLineObject(object, 0x000000, center);
-    this.scene.add(outline);
-    this.selectedOutline = outline;
   }
 }
