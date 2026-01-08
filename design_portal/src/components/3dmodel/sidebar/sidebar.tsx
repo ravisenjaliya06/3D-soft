@@ -2,8 +2,6 @@ import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
 
-import Image from 'next/image';
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
