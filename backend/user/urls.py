@@ -9,6 +9,7 @@ from user.views import (
     AddUserInOrganizationViewset,
     AdminDashboardView,
     AdminLoginView,
+    AdminLogoutView,
     AdminUsersView,
     ApproveUserView,
     RejectUserView,
@@ -16,8 +17,9 @@ from user.views import (
 )
 
 urlpatterns = [
-    # Admin Dashboard Routes
+    # Admin Dashboard Routes - Custom Auth
     path("django_admin/login/", AdminLoginView.as_view(), name="admin_login"),
+    path("django_admin/logout/", AdminLogoutView.as_view(), name="admin_logout"),
     path(
         "django_admin/dashboard/", AdminDashboardView.as_view(), name="admin_dashboard"
     ),
