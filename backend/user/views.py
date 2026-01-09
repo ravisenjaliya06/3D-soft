@@ -8,17 +8,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.http import JsonResponse
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 
 # External imports
-import json
 import jwt
 from jwt import decode as jwt_decode
 from rest_framework.permissions import AllowAny
@@ -28,11 +24,11 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
+    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
 )
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework.decorators import action
 
 # App imports
 from umaboy.constant import GET, POST, PUT
@@ -74,9 +70,9 @@ class UserAuthViewset(ModelViewSet):
         """
         Handle user registration.
         """
-        common_info_logger = {
-            "function": "register",
-        }
+        # common_info_logger = {
+        #     "function": "register",
+        # }
         groups = Group.objects.all().values_list("id", flat=True)
         group_names = Group.objects.all().values_list("name", flat=True)
         serializer = SignupSerializer(
@@ -91,8 +87,7 @@ class UserAuthViewset(ModelViewSet):
         user.save()
 
         # generate admin approval token
-        approval_token = self._generate_approval_token(user)
-        print("Approval token generated:  ", approval_token)
+        # approval_token = self._generate_approval_token(user)
 
         # send approval mail to admin
         # self._send_admin_approval_email(user, approval_token)
@@ -118,33 +113,33 @@ class UserAuthViewset(ModelViewSet):
             status=HTTP_201_CREATED,
         )
 
-    @action(detail=False, methods=["GET"], url_path="approveuser")
-    def approve_user(self, request: Request) -> Response:
-        token = request.query_params.get("token")
+    # @action(detail=False, methods=["GET"], url_path="approveuser")
+    # def approve_user(self: "UserAuthViewset", request: Request) -> Response:
+    #     token = request.query_params.get("token")
 
-        if not token:
-            return Response({"error": "Token missing"}, status=400)
+    #     if not token:
+    #         return Response({"error": "Token missing"}, status=400)
 
-        try:
-            decoded = AccessToken(token)
-            if not decoded.get("approval"):
-                return Response({"error": "Invalid token"}, status=400)
+    #     try:
+    #         decoded = AccessToken(token)
+    #         if not decoded.get("approval"):
+    #             return Response({"error": "Invalid token"}, status=400)
 
-            user_id = decoded["user_id"]
-        except Exception:
-            return Response({"error": "Invalid or expired token"}, status=400)
+    #         user_id = decoded["user_id"]
+    #     except Exception:
+    #         return Response({"error": "Invalid or expired token"}, status=400)
 
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            return Response({"error": "User not found"}, status=404)
+    #     user = User.objects.filter(id=user_id).first()
+    #     if not user:
+    #         return Response({"error": "User not found"}, status=404)
 
-        user.is_verified = True
-        user.save()
+    #     user.is_verified = True
+    #     user.save()
 
-        return Response(
-            {"message": "User approved successfully"},
-            status=HTTP_200_OK,
-        )
+    #     return Response(
+    #         {"message": "User approved successfully"},
+    #         status=HTTP_200_OK,
+    #     )
 
     def verify_user(self: "UserAuthViewset", request: Request) -> Response:
         """
@@ -371,16 +366,13 @@ class UserAuthViewset(ModelViewSet):
             {"message": "profile updated successfully."}, status=HTTP_200_OK
         )
 
-    def _generate_approval_token(self, user: User) -> str:
+    def _generate_approval_token(self: "UserAuthViewset", user: User) -> str:
         token = AccessToken.for_user(user)
         token["approval"] = True
-        print("Generated approval token: ", str(token))
         return str(token)
 
     # def _send_admin_approval_email(self, user: User, token: str) -> None:
-    #     print("Sending admin approval email...")
     #     approval_url = f"{settings.SERVER_URL}/api/auth/approveuser/?token={token}"
-    #     print("Approval URL: ", approval_url)
 
     #     context = {
     #         "user": user,
@@ -397,9 +389,7 @@ class UserAuthViewset(ModelViewSet):
     #         html=email_content,
     #     )
 
-    #     print("Email data prepared, sending email...", email_data.__dict__)
     #     send_email(email_data)
-    #     print("Admin approval email sent.")
 
     def _generate_otp(self: "UserAuthViewset") -> Tuple[str, timezone]:
         """
@@ -663,6 +653,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data, status=HTTP_200_OK)
 
+
 # Admin Dashboard Views
 # class AdminDashboardViewSet(ModelViewSet):
 #     permission_classes = [AccountManager]
@@ -705,38 +696,34 @@ class AddUserInOrganizationViewset(ModelViewSet):
 #         return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
-from django.views import View
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
+# Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.contrib.auth import get_user_model
+from django.views import View
+
 
 class AdminRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
+    def test_func(self: "AdminRequiredMixin") -> bool:
         return self.request.user.is_staff or self.request.user.is_superuser
 
+
 class AdminLoginView(View):
-    def get(self, request):
-        context = {
-            "log_entries": [],
-        }
+    def get(self: "AdminLoginView", request: Request) -> render:
         return render(request, "custom_admin/index.html")
 
+
 class AdminDashboardView(LoginRequiredMixin, AdminRequiredMixin, View):
-    def get(self, request):
-        pending_users = User.objects.filter(
-            is_verified=False, is_superuser=False
-        )
+    def get(self: "AdminDashboardView", request: Request) -> render:
+        pending_users = User.objects.filter(is_verified=False, is_superuser=False)
         return render(
             request,
             "custom_admin/dashboard.html",
             {"pending_users": pending_users},
         )
 
+
 class AdminUsersView(LoginRequiredMixin, AdminRequiredMixin, View):
-    def get(self, request):
+    def get(self: "AdminUsersView", request: Request) -> render:
         approved_users = User.objects.filter(
             is_verified=True, is_superuser=False
         ).order_by("-date_joined")
@@ -747,9 +734,10 @@ class AdminUsersView(LoginRequiredMixin, AdminRequiredMixin, View):
             {"approved_users": approved_users},
         )
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class ApproveUserView(LoginRequiredMixin, AdminRequiredMixin, View):
-    def post(self, request, user_id):
+    def post(self: "ApproveUserView", request: Request, user_id: str) -> JsonResponse:
         user = User.objects.filter(id=user_id).first()
         if not user:
             return JsonResponse({"error": "User not found"}, status=404)
@@ -758,9 +746,10 @@ class ApproveUserView(LoginRequiredMixin, AdminRequiredMixin, View):
         user.save()
         return JsonResponse({"message": "User approved"})
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class RejectUserView(LoginRequiredMixin, AdminRequiredMixin, View):
-    def post(self, request, user_id):
+    def post(self: "RejectUserView", request: Request, user_id: str) -> JsonResponse:
         user = User.objects.filter(id=user_id).first()
         if not user:
             return JsonResponse({"error": "User not found"}, status=404)
