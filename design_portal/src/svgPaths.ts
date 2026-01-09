@@ -444,6 +444,12 @@ export const UP_DOWN_ARROW = {
   up_down_arrow: '/assets/updown_arrow.svg',
 };
 
+export const FEATURED_ICON = {
+  featured_icon: '/assets/featured_icon.svg',
+  alert_circle_outline: '/assets/alert_circle_outline.svg',
+  alert: '/assets/alert.svg',
+};
+
 export const assets = {
   ...PROPERTY_IMG,
   ..._3DMODEL,
@@ -487,4 +493,5 @@ export const assets = {
   ...TOOLBAR,
   ...LOAD_MORE,
   ...UP_DOWN_ARROW,
+  ...FEATURED_ICON,
 };

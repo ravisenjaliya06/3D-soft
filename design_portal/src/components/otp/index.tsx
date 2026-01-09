@@ -1,8 +1,9 @@
 import styles from '@/components/otp/otp.module.css';
 import { handleResendOtp, handleVerify } from '@/components/otp/utils';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const Otp = () => {
   const otpLength = 5;
@@ -14,6 +15,10 @@ const Otp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccessMessage] = useState<string | null>(null);
+
+  // Custom Success Popup State
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [redirectTimer, setRedirectTimer] = useState(5);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
@@ -48,6 +53,28 @@ const Otp = () => {
     }
   }, []);
 
+  // Timer for Success Popup Redirect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showSuccessPopup && redirectTimer > 0) {
+      interval = setInterval(() => {
+        setRedirectTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (showSuccessPopup && redirectTimer === 0) {
+      handleRedirect();
+    }
+    return () => clearInterval(interval);
+  }, [showSuccessPopup, redirectTimer]);
+
+  const handleRedirect = () => {
+    router.push({
+      pathname: REDIRECT.LOGIN,
+      query: {
+        message: 'Your Account has been verified. To access login now.',
+      },
+    });
+  };
+
   const handleOTPVerify = async () => {
     if (otp.includes('')) {
       setError('Please enter a valid OTP');
@@ -59,7 +86,13 @@ const Otp = () => {
       email: email as string,
     };
 
-    await handleVerify(otppayload, setError, router, setIsLoading);
+    await handleVerify(
+      otppayload,
+      setError,
+      router,
+      setIsLoading,
+      () => setShowSuccessPopup(true) // onSuccess callback
+    );
   };
 
   const handleResend = async () => {
@@ -96,6 +129,46 @@ const Otp = () => {
 
   return (
     <div className={styles.container}>
+      {showSuccessPopup && (
+        <div className={styles.createpopupOverlay}>
+          <div className={styles.createpopup}>
+            <div className={styles.create_right_side}></div>
+            <div className={styles.createButtonGrop}>
+              <div className={styles.createicon}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full pl-[2rem]">
+                  <img src={assets.featured_icon} alt="icon" />
+                </div>
+              </div>
+              <div>
+                <h3 className="m-0 mb-2 pl-[1rem] text-[1.1rem] font-[var(--font-family)] font-semibold text-[#333]">
+                  <b>Registration Successful!</b>
+                </h3>
+                <p className="m-0 mb-4 pr-[2rem] pl-[1rem] text-[0.85rem] leading-relaxed font-[var(--font-family)] text-[#666]">
+                  <b>Your request has been sent to the administrator for approval.</b>
+                  <br />
+                  Once approved, the Bravento Tech team will be connected, you&apos;ll receive a
+                  confirmation email, and you&apos;ll be able to log in.
+                </p>
+              </div>
+              <div className={styles.createclose} onClick={handleRedirect}>
+                <img src={assets.close} alt="close" />
+              </div>
+            </div>
+            <div className="pl-[1rem] text-[0.6rem] font-[var(--font-family)] text-[#888]">
+              You&apos;ll be redirected automatically in <strong>{redirectTimer} seconds</strong>.
+              If the redirection doesn&apos;t happen,{' '}
+              <span
+                className="cursor-pointer font-semibold text-[#00BF13] hover:underline"
+                onClick={handleRedirect}
+              >
+                click here
+              </span>{' '}
+              to continue.
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.card}>
         {/* Left Section */}
         <div className={styles.left_side}>
