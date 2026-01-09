@@ -5,9 +5,23 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # App imports
-from user.views import AddUserInOrganizationViewset, UserAuthViewset
+from user.views import (
+    AddUserInOrganizationViewset,
+    UserAuthViewset,
+    AdminLoginView,
+    AdminDashboardView,
+    AdminUsersView,
+    ApproveUserView,
+    RejectUserView,
+)
 
 urlpatterns = [
+    # Admin Dashboard Routes
+    path("django_admin/login/", AdminLoginView.as_view(), name="admin_login"),
+    path("django_admin/dashboard/", AdminDashboardView.as_view(), name="admin_dashboard"),
+    path("django_admin/users/", AdminUsersView.as_view(), name="admin_users"),
+    path("django_admin/approve/<str:user_id>/", ApproveUserView.as_view(), name="approve_user"),
+    path("django_admin/reject/<str:user_id>/", RejectUserView.as_view(), name="reject_user"),
     path("register/", UserAuthViewset.as_view({"post": "register"}), name="register"),
     path("otp/", UserAuthViewset.as_view({"post": "send_otp"}), name="send_otp"),
     path("otp/validate/", UserAuthViewset.as_view({"post": "verify_user"}), name="otp"),

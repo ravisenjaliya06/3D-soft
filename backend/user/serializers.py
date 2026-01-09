@@ -177,15 +177,14 @@ class LoginSerializer(serializers.Serializer):
 
             if (
                 view
-                and hasattr(view, "_generate_otp")
-                and hasattr(view, "_set_user_otp")
+                and hasattr(view, "_send_admin_approval_email")
+                and hasattr(view, "_generate_approval_token")
             ):
-                otp, expiration_time = view._generate_otp()
-                view._set_user_otp(user, otp, expiration_time)
-                view._send_otp_email(user, otp)
+                approval_token = view._generate_approval_token(user)
+                view._send_admin_approval_email(user, approval_token)
 
             raise exceptions.ValidationError(
-                _("Account is not verified. Please verify account with the OTP.")
+                _("Account is not verified. Please verify account with Admin.")
             )
         user.otp = None
         user.otp_expiration_time = None
