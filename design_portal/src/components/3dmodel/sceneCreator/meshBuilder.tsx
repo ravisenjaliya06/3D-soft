@@ -54,6 +54,7 @@ export class MeshBuilder {
 
   private _createTextureMaterial(): THREE.MeshStandardMaterial {
     const texture = this._createTexture();
+    texture.colorSpace = THREE.SRGBColorSpace;
     return new THREE.MeshStandardMaterial({
       map: texture,
       wireframe: false,

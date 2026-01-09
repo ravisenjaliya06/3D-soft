@@ -453,8 +453,9 @@ const Designs = () => {
                       {filterStatusOptions.map((option) => (
                         <li
                           key={option.label}
-                          className={`${styles.dropdownItem} ${activeFilter === option.value ? styles.activeDropdownItem : ''
-                            }`}
+                          className={`${styles.dropdownItem} ${
+                            activeFilter === option.value ? styles.activeDropdownItem : ''
+                          }`}
                           onClick={() => filterData(option.value)}
                         >
                           {option.icon && (
@@ -494,8 +495,9 @@ const Designs = () => {
                 filteredDesigns.slice(0, visibleDesigns).map((design) => (
                   <div
                     key={design.id}
-                    className={`${styles.designview} ${design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
-                      }`}
+                    className={`${styles.designview} ${
+                      design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
+                    }`}
                     onClick={() => {
                       if (design.status.toLowerCase() === 'deleted') return;
                       handleRedirectDesign(design.id);
@@ -589,8 +591,9 @@ const Designs = () => {
                   {filteredDesigns.slice(0, visibleDesigns).map((design) => (
                     <div
                       key={design.id}
-                      className={`${styles.gridItemContainer} ${design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
-                        }`}
+                      className={`${styles.gridItemContainer} ${
+                        design.status.toLowerCase() === 'deleted' ? styles.cursorNotAllowed : ''
+                      }`}
                       onClick={() => {
                         if (design.status.toLowerCase() === 'deleted') return;
                         handleRedirectDesign(design.id);
