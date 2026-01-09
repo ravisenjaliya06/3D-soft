@@ -1,6 +1,6 @@
 # Python imports
-import secrets
 import json
+import secrets
 from datetime import timedelta
 from typing import Tuple
 
@@ -8,18 +8,17 @@ from typing import Tuple
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.views import View
-from django.shortcuts import render, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 # External imports
 import jwt
@@ -141,9 +140,16 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         Logger.info(
-            {"message": "User verified with otp wait for admin approval.", "email": user.email} | common_info_logger
+            {
+                "message": "User verified with otp wait for admin approval.",
+                "email": user.email,
+            }
+            | common_info_logger
         )
-        return Response({"message": "User verified with otp wait for admin approval."}, status=HTTP_200_OK)
+        return Response(
+            {"message": "User verified with otp wait for admin approval."},
+            status=HTTP_200_OK,
+        )
 
     def login(self: "UserAuthViewset", request: Request) -> Response:
         """
@@ -342,7 +348,6 @@ class UserAuthViewset(ModelViewSet):
         return Response(
             {"message": "profile updated successfully."}, status=HTTP_200_OK
         )
-
 
     def _generate_otp(self: "UserAuthViewset") -> Tuple[str, timezone]:
         """
@@ -607,7 +612,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         return Response(serializer.data, status=HTTP_200_OK)
 
 
-class AdminRequiredMixin(LoginRequiredMixin,UserPassesTestMixin):
+class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
     def test_func(self: "AdminRequiredMixin") -> bool:
@@ -623,33 +628,46 @@ class AdminLoginView(View):
     def post(self: "AdminLoginView", request: Request) -> JsonResponse:
         try:
             data = json.loads(request.body)
-            email = data.get("email")
-            password = data.get("password")
-
-            user = User.objects.filter(email=email).first()
-
-            print(f"DEBUG: Attempting login for {email}")
-            print(f"DEBUG: User found: {user is not None}")
-            
-            if user:
-                print(f"DEBUG: Password check: {user.check_password(password)}")
-                print(f"DEBUG: Is Superuser: {user.is_superuser}")
-
-            if user and user.check_password(password):
-                if user.is_superuser:
-                    login(request, user)
-                    return JsonResponse({"message": "Login successful"})
-                else:
-                    return JsonResponse(
-                        {"error": "You do not have admin access"},
-                        status=HTTP_403_FORBIDDEN,
-                    )
-            
+        except json.JSONDecodeError:
             return JsonResponse(
-                {"error": "Invalid email or password"}, status=HTTP_400_BAD_REQUEST
+                {"error": "Invalid JSON payload"},
+                status=HTTP_400_BAD_REQUEST,
             )
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            return JsonResponse(
+                {"error": "Email and password are required"},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(email=email).first()
+
+        Logger.info(f"DEBUG: Attempting login for {email}")
+        Logger.info(f"DEBUG: User found: {user is not None}")
+
+        if user:
+            Logger.info(f"DEBUG: Password check: {user.check_password(password)}")
+            Logger.info(f"DEBUG: Is Superuser: {user.is_superuser}")
+
+        if not user or not user.check_password(password):
+            return JsonResponse(
+                {"error": "Invalid email or password"},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.is_superuser:
+            return JsonResponse(
+                {"error": "You do not have admin access"},
+                status=HTTP_403_FORBIDDEN,
+            )
+
+        login(request, user)
+        return JsonResponse(
+            {"message": "Login successful"},
+            status=HTTP_200_OK,
+        )
 
 
 class AdminLogoutView(View):
