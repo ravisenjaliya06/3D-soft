@@ -85,13 +85,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
   };
 
+  const regenerateGroupIds = (group: MeshObjectData[]): MeshObjectData[] => {
+    const idMap = new Map<string, string>();
+
+    return group.map((item) => {
+      const newId = crypto.randomUUID();
+      idMap.set(item.id, newId);
+
+      return {
+        ...item,
+        id: newId,
+        parent: item.parent ? idMap.get(item.parent) ?? item.parent : null,
+      };
+    });
+  };
+
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
       if (fullGroup) {
-        const syncManager = new SyncManager(fullGroup, threeDView);
+        const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
+        const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
         await syncManager.syncData();
       }
     } else {
@@ -132,11 +148,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       alert('❌ Target box not found!');
       return;
     }
-
+    console.log(selectedCabinetItem, 'selectedCabinetItem');
     if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num);
+      const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === selectedCabinetItem.id));
+      await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {

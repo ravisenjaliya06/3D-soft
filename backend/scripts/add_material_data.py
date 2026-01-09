@@ -159,7 +159,7 @@ TEXTURE = [
         "height": 685.8,
         "decal": True,
         "tile": True,
-        "image": None,
+        "image": '/textures/Texture0004.jpg',
         "organization": None,
     },
     {
@@ -1979,6 +1979,12 @@ MATERIAL = [
             "length": 2438.4,
             "thickness": 15.9,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass_Frost",
+            }
+        ],
     },
     {
         "name": "1/2 1s Poplar Ply",
@@ -2448,6 +2454,7 @@ MATERIAL = [
             "pull_type": "Pull",
             "horizontal_inset": 50.8,
             "vertical_inset": 88.9,
+            "model_file": "/glb/door_handle.glb",
         },
     },
     {
@@ -3188,7 +3195,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "3/4 1s Poplar Ply", "4in Bar Pull"],
+        "material": ["Alder Ven EB", "5/8 1s Poplar Ply", "4in Bar Pull"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",

@@ -3,9 +3,11 @@ import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
 import { FLOOR_PLAN_TYPES, GEOMETRY, Material, MATERIAL_TYPES, MeshObjectData } from './interface';
 import { convertKeysToCamel } from './utils';
+import { GLBLoader } from '../helper/glbLoader';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
+  private mesh: THREE.Mesh | null = null;
 
   constructor(data: MeshObjectData) {
     this.meshData = convertKeysToCamel(data);
@@ -40,9 +42,9 @@ export class MeshBuilder {
     const material = this.meshData.material;
     if (!material) return new THREE.MeshStandardMaterial({ visible: false });
 
-    const materialsArray = Array.isArray(material) ? material : [material];
+    const materialArray = Array.isArray(material) ? material : [material];
 
-    materialsArray.forEach((materialData) => {
+    materialArray.forEach((materialData) => {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
       }
@@ -123,6 +125,68 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
+  private _placeHandleOnMesh(
+    handle: THREE.Object3D,
+    createdMesh: THREE.Mesh,
+    materialProps: any
+  ) {
+    createdMesh.geometry.computeBoundingBox();
+    const bBox = createdMesh.geometry.boundingBox;
+    if (!bBox) return;
+
+    const size = new THREE.Vector3();
+    bBox.getSize(size);
+
+    const horizontalInset = (materialProps.horizontalInset ?? 0);
+    const verticalInset = (materialProps.verticalInset ?? 0);
+
+    const localPos = new THREE.Vector3(
+      bBox.min.x + horizontalInset,
+      bBox.max.y - verticalInset,
+      bBox.max.z
+    );
+
+    const worldPos = createdMesh.localToWorld(localPos.clone());
+    const parent = createdMesh.parent!;
+    const parentLocal = parent.worldToLocal(worldPos.clone());
+
+    handle.position.copy(parentLocal);
+    handle.rotation.set(0, Math.PI / 2, 0);
+
+    parent.add(handle);
+    createdMesh.attach(handle);
+  }
+
+  private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
+    const url = materialProps.modelFile;
+    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` : '/glb/door_handle.glb';
+
+    const handleModel = await GLBLoader(backendUrl, mesh.name, {
+      width: materialProps.width ? materialProps.width : 20,
+      height: materialProps.height ? materialProps.height : 30,
+      depth: materialProps.depth ? materialProps.depth : 100,
+    });
+
+    handleModel.name = `DoorHandle_for_${mesh.name}`;
+    handleModel.userData.type = 'handle';
+
+    this._placeHandleOnMesh(handleModel, mesh, materialProps);
+  }
+
+  private _handleMaterial() {
+    if (!this.mesh) return;
+
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : [this.meshData.material];
+
+    materialArray.forEach((materialData) => {
+      if (materialData?.type === MATERIAL_TYPES.PULL) {
+        this._loadHandle(this.mesh!, materialData.properties);
+      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {}
+    });
+  }
+
   private _setDataInObjectsState() {
     store.dispatch(addObjects([this.meshData]));
   }
@@ -135,7 +199,9 @@ export class MeshBuilder {
       geometry,
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
+    this.mesh = mesh;
 
+    this._handleMaterial();
     this._setName(mesh);
     this._setPosition(mesh);
     this._setRotation(mesh);
@@ -184,19 +250,15 @@ export class MeshBuilder {
           newMat.type === MATERIAL_TYPES.PANEL_STOCK &&
           oldMat.textures?.[0]?.textureDetail?.image === newMat.textures?.[0]?.textureDetail?.image
         ) {
-          // If only rotation might have changed, update texture rotation
-          // Note: Material interface doesn't have rotation, so we'll recreate the material
           if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
           mesh.material.dispose();
           mesh.material = this._getMaterial();
         } else {
-          // Material changed, recreate it
           if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
           mesh.material.dispose();
           mesh.material = this._getMaterial();
         }
       } else {
-        // Material added or removed
         if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
         mesh.material.dispose();
         mesh.material = this._getMaterial();

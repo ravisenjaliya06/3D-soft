@@ -124,7 +124,7 @@ export interface Material {
   textures?: Texture[];
   // finishes: Finish[];
   // finishType: FinishType[];
-  properties?: unknown;
+  properties?: any;
 }
 
 export interface MeshObjectData {

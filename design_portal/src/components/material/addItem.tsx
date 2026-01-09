@@ -2849,6 +2849,7 @@ const AddMaterialPopup: React.FC<Props> = ({
       default_tax_rate: formData.defaultTaxRate || 0,
       waste: formData.waste || 0,
       estimate: formData.estimate || false,
+      model_file: formData.model_file || null,
     };
 
     // Material type specific properties
