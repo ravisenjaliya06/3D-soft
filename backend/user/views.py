@@ -42,6 +42,7 @@ from umaboy.models import Organization, User, UserOrganizationPermission
 
 # Local Imports
 from user.constant import (
+    ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
     FORGOT_EMAIL_SUBJECT,
     FORGOT_PASSWORD_TOKEN_EXPIRE_TIME,
     OTP_VERIFICATION_EMAIL_SUBJECT,
@@ -139,6 +140,9 @@ class UserAuthViewset(ModelViewSet):
         serializer = OtpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        self._send_registration_notification_to_admin(request, user)
+
         Logger.info(
             {
                 "message": "User verified with otp wait for admin approval.",
@@ -387,6 +391,33 @@ class UserAuthViewset(ModelViewSet):
         user.otp_expiration_time = expiration_time
         user.save()
 
+    def _send_registration_notification_to_admin(
+        self: "UserAuthViewset", request: Request, user: User
+    ) -> None:
+        """
+        Private method to send registration notification to admin.
+        """
+        context = {
+            "user_name": user.name or user.username,
+            "user_email": user.email,
+            "username": user.username,
+            "user_phone": user.phone,
+            "date_joined": user.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
+            "admin_dashboard_url": request.build_absolute_uri(
+                reverse("admin_dashboard")
+            ),
+        }
+        email_content = render_to_string("admin_notification.html", context)
+        email_data = EmailData(
+            sender_email=settings.SENDER_EMAIL,
+            sender_password=settings.SENDER_PASSWORD,
+            receiver_email=settings.ADMIN_EMAIL,
+            subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
+            html=email_content,
+        )
+
+        return send_email(email_data)
+
     def _send_forgot_password_email(
         self: "UserAuthViewset", user: User, email: str, token: str
     ) -> None:
@@ -615,6 +646,49 @@ class AddUserInOrganizationViewset(ModelViewSet):
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
+    def dispatch(
+        self: "AdminRequiredMixin", request: Request, *args, **kwargs
+    ) -> Response:
+        """Verify JWT token from cookie for admin authentication"""
+        token = request.COOKIES.get(settings.ADMIN_JWT_COOKIE_NAME)
+
+        if token:
+            try:
+                # External imports
+                from rest_framework_simplejwt.tokens import AccessToken
+
+                access_token = AccessToken(token)
+                user_id = access_token["user_id"]
+
+                user = User.objects.filter(id=user_id, is_superuser=True).first()
+
+                if user:
+                    request.user = user
+                    Logger.info(
+                        {
+                            "message": "Admin authenticated via JWT",
+                            "user_id": user.id,
+                            "function": "AdminRequiredMixin.dispatch",
+                        }
+                    )
+                else:
+                    return HttpResponseRedirect(reverse(self.login_url))
+
+            except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
+                Logger.warning(
+                    {
+                        "message": "JWT verification failed",
+                        "error": str(e),
+                        "function": "AdminRequiredMixin.dispatch",
+                    }
+                )
+                return HttpResponseRedirect(reverse(self.login_url))
+        else:
+            if not request.user.is_authenticated or not request.user.is_superuser:
+                return HttpResponseRedirect(reverse(self.login_url))
+
+        return super().dispatch(request, *args, **kwargs)
+
     def test_func(self: "AdminRequiredMixin") -> bool:
         return self.request.user.is_superuser
 
@@ -657,16 +731,52 @@ class AdminLoginView(View):
             )
 
         login(request, user)
-        return JsonResponse(
+
+        access_token = AccessToken.for_user(user)
+
+        # Create response
+        response = JsonResponse(
             {"message": "Login successful"},
             status=HTTP_200_OK,
         )
+
+        # Set JWT token in HTTP-only cookie
+        response.set_cookie(
+            key=settings.ADMIN_JWT_COOKIE_NAME,
+            value=str(access_token),
+            max_age=settings.ADMIN_SESSION_TIMEOUT_MINUTES * 60,
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+        )
+
+        Logger.info(
+            {
+                "message": "Admin logged in successfully with JWT",
+                "user_id": user.id,
+                "email": user.email,
+                "function": "AdminLoginView.post",
+            }
+        )
+
+        return response
 
 
 class AdminLogoutView(View):
     def get(self: "AdminLogoutView", request: Request) -> HttpResponseRedirect:
         logout(request)
-        return HttpResponseRedirect(reverse("admin_login"))
+
+        response = HttpResponseRedirect(reverse("admin_login"))
+        response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
+
+        Logger.info(
+            {
+                "message": "Admin logged out successfully",
+                "function": "AdminLogoutView.get",
+            }
+        )
+
+        return response
 
 
 class AdminDashboardView(AdminRequiredMixin, View):

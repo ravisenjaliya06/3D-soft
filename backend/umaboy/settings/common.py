@@ -137,6 +137,10 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME_LATE_USER": timedelta(days=30),
 }
 
+# Admin Session Settings
+ADMIN_JWT_COOKIE_NAME = "admin_access_token"
+ADMIN_SESSION_TIMEOUT_MINUTES = 30
+
 # set logging
 LOGGING = {
     "version": 1,
@@ -219,6 +223,8 @@ SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD", "")
 
 # Admin Email
 ADMIN_EMAIL = "harshkathiriya88@gmail.com"
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# SESSION_SAVE_EVERY_REQUEST = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
