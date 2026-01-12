@@ -616,12 +616,12 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
     def test_func(self: "AdminRequiredMixin") -> bool:
-        return self.request.user.is_admin
+        return self.request.user.is_superuser
 
 
 class AdminLoginView(View):
     def get(self: "AdminLoginView", request: Request) -> render:
-        if request.user.is_authenticated and request.user.is_admin:
+        if request.user.is_authenticated and request.user.is_superuser:
             return HttpResponseRedirect(reverse("admin_dashboard"))
         return render(request, "custom_admin/index.html")
 
