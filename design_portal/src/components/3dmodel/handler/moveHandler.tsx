@@ -283,7 +283,6 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public startDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
-    console.log('startDragging', object);
     return this.enableDragging(object);
   }
 }

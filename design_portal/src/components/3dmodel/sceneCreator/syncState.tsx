@@ -44,7 +44,6 @@ export class SyncManager {
   }
 
   public async syncData(): Promise<void> {
-    console.log('syncData', this.data);
     if (!this.scene) return;
 
     const list = this._normalizeData(this.data);
@@ -55,12 +54,10 @@ export class SyncManager {
   }
 
   private _findMeshById(id: string): THREE.Mesh | null {
-    console.log('findMeshById', id);
     let found: THREE.Mesh | null = null;
 
     this.scene.traverse((obj) => {
       if (!found && obj instanceof THREE.Mesh) {
-        console.log(obj, "obj");
         const objId = obj.userData?.objectId;
         if (objId === id) {
           found = obj;
@@ -234,7 +231,6 @@ export class SyncManager {
 
   // Updates the mesh
   private _updateMesh(mesh: THREE.Mesh) {
-    console.log('updateMesh', this.oldData, this.isArray);
     if (!this.oldData || !this.meshBuilder || this.isArray) return;
 
     const data = this.data as MeshObjectData;
@@ -251,22 +247,18 @@ export class SyncManager {
     mesh: THREE.Mesh,
     newDimensions: Partial<{ width: number; height: number; depth: number }>
   ): void {
-    console.log('updateChildrenDimensions', this.oldData, this.isArray);
     if (this.isArray || !this.oldData) return;
 
     const data = this.data as MeshObjectData;
-    console.log('data', data);
     if (!data.dimensions) return;
 
     // Use oldData dimensions (before update) and new data dimensions (after update)
     const oldWidth = this.oldData.dimensions?.width ?? 0;
     const oldHeight = this.oldData.dimensions?.height ?? 0;
     const oldDepth = this.oldData.dimensions?.depth ?? 0;
-    console.log('oldWidth', oldWidth, 'oldHeight', oldHeight, 'oldDepth', oldDepth);
     const newWidth = newDimensions.width ?? data.dimensions.width ?? oldWidth;
     const newHeight = newDimensions.height ?? data.dimensions.height ?? oldHeight;
     const newDepth = newDimensions.depth ?? data.dimensions.depth ?? oldDepth;
-    console.log('newWidth', newWidth, 'newHeight', newHeight, 'newDepth', newDepth);
 
     // Temporary fix for zero dimension
     const MIN_DIM = 0.01;
@@ -360,12 +352,9 @@ export class SyncManager {
   }
 
   private async _handleSingle(item: MeshObjectData) {
-    console.log('handleSingle', item);
     const existingMesh = this._findMeshById(item.id);
-    console.log('existingMesh', existingMesh);
 
     if (existingMesh) {
-      console.log('existingMesh', existingMesh);
       this._updateMesh(existingMesh);
       updateOrRefreshOutline(this.scene, existingMesh);
       if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
@@ -412,15 +401,12 @@ export class SyncManager {
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
-    console.log('sync3D', list);
     const rootItem = list.find((i) => !i.parent);
-    console.log('rootItem', rootItem);
     // const rootId = rootItem?.id;
 
     // if (rootId) this._removeExistingRoot(rootId);
 
     if (list.length > 1) {
-      console.log('multiple', list, rootItem);
       await this._handleMultiple(list, rootItem);
       return;
     }

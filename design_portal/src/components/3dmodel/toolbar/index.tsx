@@ -139,7 +139,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         targetBox = obj as THREE.Mesh;
       }
     });
-    console.log(selectedCabinetItem, 'selectedCabinetItem');
 
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
@@ -148,7 +147,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       alert('❌ Target box not found!');
       return;
     }
-    console.log(selectedCabinetItem, 'selectedCabinetItem');
     if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {

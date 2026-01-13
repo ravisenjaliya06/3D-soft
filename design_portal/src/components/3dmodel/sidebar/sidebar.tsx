@@ -134,7 +134,6 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  console.log('handleObject', objects);
   const handleObject = objects.find((obj) => obj.parent === targetId);
   useEffect(() => {
     if (!handleObject) return;
@@ -203,7 +202,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  console.log(selectedObject, 'selectedObject');
 
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
@@ -227,7 +225,6 @@ const Sidebar: React.FC = () => {
 
       material: patch.material ?? selectedObject.material,
     };
-    console.log('updatedObject', updatedObject);
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -266,7 +263,6 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
-    console.log('function called');
 
     setShowMaterialPopup(true);
   };
@@ -1728,7 +1724,6 @@ const Sidebar: React.FC = () => {
           onClose={() => setShowMaterialPopup(false)}
           onSave={(selectedMaterials) => {
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-              console.log('Selected materials:', selectedMaterials);
             }
             setShowMaterialPopup(false);
           }}

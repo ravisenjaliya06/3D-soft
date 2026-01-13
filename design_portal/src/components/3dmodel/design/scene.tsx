@@ -228,8 +228,7 @@ export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   selectedCabinetItem: MeshObjectData | null = null
-) => {
-  console.log('selectedCabinetItem', selectedCabinetItem);
+) => {s
   if (!selectedCabinetItem) {
     console.error('No cabinet item selected');
     return;

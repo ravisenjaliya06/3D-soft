@@ -14,7 +14,6 @@ export class MeshBuilder {
   }
 
   private _createTexture(materialData: Material): THREE.Texture | null {
-    console.log('materialData', materialData);
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
       texture = new THREE.TextureLoader().load(
