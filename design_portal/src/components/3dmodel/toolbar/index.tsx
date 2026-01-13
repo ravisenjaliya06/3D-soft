@@ -209,7 +209,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
     {
       option: 'Wall',
-      icon: assets.mesurment,
+      icon: assets.wall,
       onClick: () => {
         dispatch(toggleWallDrawing(!isWallDrawingActive));
         if (onViewModeChange && !isWallDrawingActive) {

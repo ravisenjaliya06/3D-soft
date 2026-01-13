@@ -1,31 +1,28 @@
+import { assets } from '@/svgPaths';
 import React from 'react';
 import { FooterProps } from './interface';
 
 const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
   return (
-    <footer className="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200">
+    <footer className="fixed right-0 right-[15.5rem] bottom-[1rem] z-50">
       {/* temporary button created */}
-      <div className="relative left-[14.5rem] flex w-52 items-center justify-start gap-2 px-4 py-3">
+      <div className="relative flex w-52 items-center justify-start gap-2 rounded-[0.4rem] bg-[#ffffff] p-[0.3rem]">
         <button
-          onClick={() => onViewModeChange('3d')}
-          className={`h-10 w-28 rounded-lg font-medium transition-all duration-200 ${
-            viewMode === '3d'
-              ? 'bg-blue-700 text-white hover:bg-blue-800'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          onClick={() => onViewModeChange('2d')}
+          className={`m-[0.3rem] h-10 w-28 rounded-lg border-none font-medium transition-all duration-200 ${
+            viewMode === '2d' ? 'bg-[#DEEBF9] hover:bg-gray-200' : 'bg-[#ffffff] hover:bg-[#DEEBF9]'
           } `}
         >
-          3D
+          <img src={assets.icon_2d || '/placeholder.svg'} alt="2d Icon" />
         </button>
 
         <button
-          onClick={() => onViewModeChange('2d')}
-          className={`h-10 w-28 rounded-lg font-medium transition-all duration-200 ${
-            viewMode === '2d'
-              ? 'bg-blue-700 text-white hover:bg-blue-800'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          onClick={() => onViewModeChange('3d')}
+          className={`m-[0.3rem] h-10 w-28 rounded-lg border-none font-medium transition-all duration-200 ${
+            viewMode === '3d' ? 'bg-[#DEEBF9] hover:bg-gray-200' : 'bg-[#ffffff] hover:bg-[#DEEBF9]'
           } `}
         >
-          2D
+          <img alt="3d Icon" src={assets.icon_3d || '/placeholder.svg'} />
         </button>
       </div>
     </footer>
