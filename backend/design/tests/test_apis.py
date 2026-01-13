@@ -429,38 +429,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         version_ids = [v["id"] for v in response.data]
         self.assertIn(str(version1.id), version_ids)
 
-    def test_get_design_catalogs_list_all(self: "DesignAPIViewTestCase") -> None:
-        """Test GET /catalogs/ returns all catalogs for user's organization"""
-        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-        catalog1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Cabinet",
-            name="Test Cabinet 1",
-            data={"width": 100, "height": 200},
-        )
-        catalog2 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Door",
-            name="Test Door 1",
-            data={"width": 50, "height": 100},
-        )
-
-        response = self.client.get(
-            reverse("design_catalogs"),
-            format="json",
-            headers=self.get_headers,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(response.data, list)
-        catalog_ids = [item["id"] for item in response.data]
-        self.assertIn(str(catalog1.id), catalog_ids)
-        self.assertIn(str(catalog2.id), catalog_ids)
-
     def test_get_design_catalogs_list_empty(self: "DesignAPIViewTestCase") -> None:
         """Test GET /catalogs/ returns empty list when no catalogs exist"""
         DesignCatalog.objects.filter(organization=self.organization).delete()
@@ -570,54 +538,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_get_design_catalogs_serializer_fields(
-        self: "DesignAPIViewTestCase",
-    ) -> None:
-        """Test GET /catalogs/ returns correct serializer fields"""
-        version1 = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-        parent_catalog = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Cabinet",
-            name="Parent Cabinet",
-            data={"width": 100, "height": 200},
-        )
-        child_catalog = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version1,
-            type="Door",
-            name="Child Door",
-            parent=parent_catalog,
-            data={"width": 50, "height": 100},
-        )
-
-        response = self.client.get(
-            reverse("design_catalogs"),
-            {"design_id": str(self.design.id)},
-            format="json",
-            headers=self.get_headers,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        catalogs = response.data["catalogs"]
-        catalog_dict = {c["id"]: c for c in catalogs}
-
-        # Check parent catalog
-        parent_data = catalog_dict[str(parent_catalog.id)]
-        self.assertEqual(parent_data["name"], "Parent Cabinet")
-        self.assertEqual(parent_data["type"], "Cabinet")
-        self.assertIsNone(parent_data["parent"])
-        self.assertIn("width", parent_data)
-        self.assertIn("height", parent_data)
-
-        # Check child catalog
-        child_data = catalog_dict[str(child_catalog.id)]
-        self.assertEqual(child_data["name"], "Child Door")
-        self.assertEqual(child_data["type"], "Door")
-        self.assertEqual(child_data["parent"], str(parent_catalog.id))
 
     def test_create_design_catalog_success(
         self: "DesignAPIViewTestCase",

@@ -97,6 +97,9 @@ const Sidebar: React.FC = () => {
       setSettingOpen(false);
       setNavOpen(true);
     }
+    setWidthSide(null);
+    setHeightSide(null);
+    setDepthSide(null);
   }, [selectedObjectId, selectedChildObjectId]);
 
   useEffect(() => {
