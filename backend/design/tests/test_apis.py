@@ -10,7 +10,7 @@ from rest_framework import status
 
 # App imports
 from design.models import DesignCatalog, DesignSetting, DesignVersion
-from tests.model_factory import new_design_catalog, new_design_version
+from tests.model_factory import new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 

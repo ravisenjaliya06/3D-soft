@@ -18,6 +18,7 @@ celerybeat**
 **/media/output/
 **/media/project/
 **/umaboy/media/output/*
+**/umaboy/media/model_files/
 /output.pdf
 /output_sheet_1.svg
 /output_sheet_1.gcode
