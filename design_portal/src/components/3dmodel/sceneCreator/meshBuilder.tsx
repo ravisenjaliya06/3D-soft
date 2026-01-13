@@ -251,6 +251,7 @@ export class MeshBuilder {
       this._setScale(mesh);
     }
     if (changes.material) {
+      if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
       const newMaterial = changes.material;
       const oldMaterialArray = Array.isArray(oldMaterial)
         ? oldMaterial
@@ -266,22 +267,18 @@ export class MeshBuilder {
       if (oldMaterialArray.length > 0 && newMaterialArray.length > 0) {
         const oldMat = oldMaterialArray[0];
         const newMat = newMaterialArray[0];
-
         if (
           oldMat.type === MATERIAL_TYPES.PANEL_STOCK &&
           newMat.type === MATERIAL_TYPES.PANEL_STOCK &&
           oldMat.textures?.[0]?.textureDetail?.image === newMat.textures?.[0]?.textureDetail?.image
         ) {
-          if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
           mesh.material.dispose();
           mesh.material = this._getMaterial();
         } else {
-          if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
           mesh.material.dispose();
           mesh.material = this._getMaterial();
         }
       } else {
-        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
         mesh.material.dispose();
         mesh.material = this._getMaterial();
       }

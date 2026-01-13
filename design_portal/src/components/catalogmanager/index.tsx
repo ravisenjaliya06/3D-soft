@@ -8,13 +8,8 @@ import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
-// import { Material } from './interface';
+import { RulePart } from './interface';
 
-interface RulePart {
-  id: string;
-  name: string;
-  material: Material | null;
-}
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -431,7 +426,6 @@ const CatalogManager = () => {
                         <input
                           type="text"
                           value={selectedCatalog?.name}
-                          // onChange={(e) => setName(e.target.value)}
                           onBlur={handleBlur(setIsEditingName)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
                           className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
@@ -457,7 +451,6 @@ const CatalogManager = () => {
                         <input
                           type="text"
                           value={selectedCatalog?.description}
-                          // onChange={(e) => setDescription(e.target.value)}
                           onBlur={handleBlur(setIsEditingDescription)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
                           className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"

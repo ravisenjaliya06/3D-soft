@@ -14,3 +14,9 @@ export interface Catalog {
   description: string;
   catalog_rules: CatalogRule[];
 }
+
+export interface RulePart {
+  id: string;
+  name: string;
+  material: Material | null;
+}

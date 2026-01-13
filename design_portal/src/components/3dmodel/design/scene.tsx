@@ -228,7 +228,7 @@ export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   selectedCabinetItem: MeshObjectData | null = null
-) => {s
+) => {
   if (!selectedCabinetItem) {
     console.error('No cabinet item selected');
     return;
@@ -929,11 +929,9 @@ export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
 
 export const ensureHandleLoaded = async (model?: string) => {
   if (cachedHandleModel) return;
-  let url;
+  let url = '/glb/door_model.glb';;
   if (model) {
     url = `${process.env.NEXT_PUBLIC_PUBLIC_API}` + model;
-  } else {
-    url = '/glb/door_model.glb';
   }
   cachedHandleModel = await GLBLoader(url, 'DoorHandleGLB', {
     width: 20,

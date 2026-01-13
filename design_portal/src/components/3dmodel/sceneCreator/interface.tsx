@@ -85,15 +85,6 @@ export const MATERIAL_TYPES = {
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
-// interface
-// interface Material {
-//   type: MaterialType;
-//   value: string;
-//   repeatX?: number;
-//   repeatY?: number;
-//   rotation?: number;
-// }
-
 interface Texture {
   id: string;
   name: string;
@@ -122,8 +113,6 @@ export interface Material {
   description?: string;
   isDeleted?: boolean;
   textures?: Texture[];
-  // finishes: Finish[];
-  // finishType: FinishType[];
   properties?: any;
 }
 

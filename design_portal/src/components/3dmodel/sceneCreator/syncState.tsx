@@ -402,9 +402,6 @@ export class SyncManager {
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
     const rootItem = list.find((i) => !i.parent);
-    // const rootId = rootItem?.id;
-
-    // if (rootId) this._removeExistingRoot(rootId);
 
     if (list.length > 1) {
       await this._handleMultiple(list, rootItem);

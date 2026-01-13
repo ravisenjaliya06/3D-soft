@@ -39,41 +39,6 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   return outline;
 };
 
-// export const createDashedLineObject = (
-//   object: THREE.Mesh,
-//   color: number,
-//   center: THREE.Vector3
-// ): THREE.LineSegments => {
-//   const box = new THREE.Box3().setFromObject(object);
-//   const size = new THREE.Vector3();
-//   box.getSize(size);
-
-//   const width = size.x;
-//   const height = size.y;
-//   const depth = size.z;
-
-//   const geo = new THREE.BoxGeometry(width * 1.05, height * 1.05, depth * 1.05);
-//   const edges = new THREE.EdgesGeometry(geo);
-
-//   const dashedMat = new THREE.LineDashedMaterial({
-//     color: color,
-//     dashSize: 0.04,
-//     gapSize: 0.02,
-//     linewidth: 2,
-//   });
-
-//   const outline = new THREE.LineSegments(edges, dashedMat);
-//   outline.position.copy(center);
-//   // Remove individual scaling/rotation as the bounding box already incorporates them in world space
-//   // unless we want it to rotate WITH the object?
-//   // If the object rotates, the AABB changes size.
-//   // Actually, usually these selection boxes should rotate WITH the object if possible.
-
-//   outline.computeLineDistances();
-//   outline.name = 'cupboard_big_dotted_outline';
-//   return outline;
-// };
-
 export const removeAllOutlines = (scene: THREE.Scene) => {
   const outlinesToRemove: THREE.Object3D[] = [];
 

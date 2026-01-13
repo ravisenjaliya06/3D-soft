@@ -126,11 +126,7 @@ export class SelectObjectController {
 
     // If the part is also a 'Main' object (like a Drawer group),
     // we might want the big dotted outline on it.
-    if (object.userData.isMain) {
-      this._applyObjectBigOutline();
-    } else {
-      this._applyObjectBigOutline();
-    }
+    this._applyObjectBigOutline();
     return;
   }
 
@@ -233,7 +229,6 @@ export class SelectObjectController {
     this.scene.traverse((object) => {
       if (
         object instanceof THREE.Mesh &&
-        // Object.values(z).includes(object.userData.type) &&
         object.userData.objectId !== this.selectedMainObject?.userData.objectId
       ) {
         targets.push(object);
