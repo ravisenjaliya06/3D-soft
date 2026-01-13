@@ -18,18 +18,13 @@ import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { SyncManager } from '../sceneCreator/syncState';
 import { store } from '../store';
 import {
-  addObjects,
   removeObject,
   setobjectSelected,
   setSelectedChildObject,
   updateObject,
 } from '../store/dataSlice';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
 
 let cachedHandleModel: THREE.Object3D | null = null;
-
-// Constants
-const EPSILON_OFFSET = 0.001; // Small offset to avoid Z-fighting
 
 export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
@@ -537,7 +532,7 @@ export const addDrawersOnInvisibleBox = async (
     );
 
     await meshBuilder(drawerGroupWithAllPlank);
-    
+
     // Select the first drawer (or each as they are added, but usually just the last/main one)
     store.dispatch(setobjectSelected(parent.userData.objectId));
     store.dispatch(setSelectedChildObject(drawerGroupId));
@@ -929,7 +924,7 @@ export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
 
 export const ensureHandleLoaded = async (model?: string) => {
   if (cachedHandleModel) return;
-  let url = '/glb/door_model.glb';;
+  let url = '/glb/door_model.glb';
   if (model) {
     url = `${process.env.NEXT_PUBLIC_PUBLIC_API}` + model;
   }

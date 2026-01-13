@@ -202,7 +202,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
@@ -298,7 +297,7 @@ const Sidebar: React.FC = () => {
     if (!obj) return;
 
     const name = obj.name?.toLowerCase() ?? '';
-    if (name.includes('door') || name.includes('drawer')) return;
+    if (name.includes(PART_TYPES.DOOR) || name.includes(PART_TYPES.DRAWER)) return;
 
     // For color updates, we keep the existing Material array structure
     // The UpdateHandler will handle the color application
@@ -307,6 +306,7 @@ const Sidebar: React.FC = () => {
     // Also update via UpdateHandler for immediate visual feedback
     if (updateObjectRef.current) {
       updateObjectRef.current.update(obj.id, {
+        //@ts-ignore
         material: { type: MATERIAL_TYPES.COLOR, value },
       });
     }
@@ -378,6 +378,7 @@ const Sidebar: React.FC = () => {
     // Update via UpdateHandler for immediate visual feedback
     if (updateObjectRef.current) {
       updateObjectRef.current.update(selectedObject.id, {
+        //@ts-ignore
         material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
       });
     }
@@ -405,6 +406,7 @@ const Sidebar: React.FC = () => {
         updateObjectRef.current.update(selectedObject.id, {
           material: {
             type: MATERIAL_TYPES.TEXTURE,
+            //@ts-ignore
             value: texturePath,
           },
           textureRotation: clampedValue,
@@ -1678,7 +1680,7 @@ const Sidebar: React.FC = () => {
                                     {field.label}
                                   </p>
                                   <div
-                                    className={`flex h-[1.3rem] w-[3rem] mt-2 items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                    className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
                                   >
                                     {/* IMAGE ICON */}
                                     <Image
@@ -1722,7 +1724,7 @@ const Sidebar: React.FC = () => {
       {showMaterialPopup && (
         <MaterialChangePopup
           onClose={() => setShowMaterialPopup(false)}
-          onSave={(selectedMaterials) => {
+          onSave={() => {
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
             }
             setShowMaterialPopup(false);

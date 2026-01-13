@@ -148,10 +148,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       position: convertPosition2DTo3D({ startPoint, endPoint: clickedPoint }),
       rotation: findRotation({ startPoint, endPoint: clickedPoint }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
-      material: {
-        type: MATERIAL_TYPE.COLOR,
-        value: '#c4c3c3',
-      },
+      material: [],
       connectedTo: [],
     };
 

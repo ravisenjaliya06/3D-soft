@@ -95,7 +95,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       return {
         ...item,
         id: newId,
-        parent: item.parent ? idMap.get(item.parent) ?? item.parent : null,
+        parent: item.parent !== null ? idMap.get(item.parent ? item.parent : '') ?? item.parent : undefined,
       };
     });
   };
@@ -150,7 +150,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
-      const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === selectedCabinetItem.id));
+      const fullGroup = cabinetItems.find((group) =>
+        group.some((g) => g.id === selectedCabinetItem.id)
+      );
       await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();

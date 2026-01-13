@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GEOMETRY, MATERIAL_TYPE, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 export function showFullScreenLoader(message = 'Loading...') {

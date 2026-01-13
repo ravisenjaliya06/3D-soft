@@ -1,9 +1,15 @@
 import * as THREE from 'three';
-import { store } from '../store';
-import { addObjects } from '../store/dataSlice';
-import { FLOOR_PLAN_TYPES, GEOMETRY, Material, MATERIAL_TYPES, MeshObjectData, DRAWER_PLANK_TYPES, PART_TYPES } from './interface';
-import { convertKeysToCamel } from './utils';
 import { GLBLoader } from '../helper/glbLoader';
+import {
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  GEOMETRY,
+  Material,
+  MATERIAL_TYPES,
+  MeshObjectData,
+  PART_TYPES,
+} from './interface';
+import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -50,7 +56,7 @@ export class MeshBuilder {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
-        createdMaterial = new THREE.MeshStandardMaterial({ 
+        createdMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
         });
       }
@@ -131,20 +137,16 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
-  private _placeHandleOnMesh(
-    handle: THREE.Object3D,
-    createdMesh: THREE.Mesh,
-    materialProps: any
-  ) {
+  private _placeHandleOnMesh(handle: THREE.Object3D, createdMesh: THREE.Mesh, materialProps: any) {
     const placeHandle = () => {
       let targetMesh = createdMesh;
       let attachParent = createdMesh;
-      
+
       if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
         const drawerFace = createdMesh.children.find(
           (child) => child instanceof THREE.Mesh && child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
         ) as THREE.Mesh | undefined;
-        
+
         if (drawerFace) {
           targetMesh = drawerFace;
           attachParent = createdMesh;
@@ -158,8 +160,8 @@ export class MeshBuilder {
       const size = new THREE.Vector3();
       bBox.getSize(size);
 
-      const horizontalInset = (materialProps.horizontalInset ?? 0);
-      const verticalInset = (materialProps.verticalInset ?? 0);
+      const horizontalInset = materialProps.horizontalInset ?? 0;
+      const verticalInset = materialProps.verticalInset ?? 0;
 
       const localPos = new THREE.Vector3(
         bBox.min.x + horizontalInset,
@@ -186,7 +188,9 @@ export class MeshBuilder {
 
   private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` : '/glb/door_handle.glb';
+    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
       width: materialProps.width ? materialProps.width : 5,

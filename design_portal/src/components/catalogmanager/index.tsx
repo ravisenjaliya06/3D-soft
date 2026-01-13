@@ -10,7 +10,6 @@ import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
 import { RulePart } from './interface';
 
-
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
