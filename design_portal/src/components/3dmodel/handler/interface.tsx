@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { MaterialForUpdate } from '../sidebar/interface';
 import { Object3D, Position, Rotation } from '../store/interface';
 import { Material } from '../sceneCreator/interface';
 

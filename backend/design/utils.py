@@ -126,6 +126,7 @@ def split_parents_and_children(items: List[Dict]) -> tuple:
 
     return parents, children_map
 
+
 def group_catalogs_as_lists(items: list[dict]) -> list[list[dict]]:
     by_id = {item["id"]: item for item in items}
     groups = {}

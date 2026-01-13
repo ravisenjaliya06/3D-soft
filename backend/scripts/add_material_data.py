@@ -12,7 +12,16 @@ django.setup()
 
 # App imports
 from design.models import DesignCatalog
-from material.models import Company, FinishesChoices, FinishesLibrary, Material, MaterialFinish, MaterialFinishType, MaterialTexture, Properties
+from material.models import (
+    Company,
+    FinishesChoices,
+    FinishesLibrary,
+    Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
+    Properties,
+)
 from umaboy.models import Organization
 
 FINISH = [
@@ -147,7 +156,7 @@ TEXTURE = [
         "height": 685.8,
         "decal": False,
         "tile": True,
-        "image": '/textures/light_wood.jpg',
+        "image": "/textures/light_wood.jpg",
         "organization": None,
     },
     {
@@ -159,7 +168,7 @@ TEXTURE = [
         "height": 685.8,
         "decal": True,
         "tile": True,
-        "image": '/textures/Texture0004.jpg',
+        "image": "/textures/Texture0004.jpg",
         "organization": None,
     },
     {
@@ -475,18 +484,8 @@ MATERIAL = [
                 "texture": "Art Glass",
             }
         ],
-        "finishes": [
-            {
-                "name": "First",
-                "finish": "Alder" 
-            }
-        ],
-        "finish_types": [
-            {
-                "name": "First",
-                "finish_type": "Art Glass"
-            }
-        ],
+        "finishes": [{"name": "First", "finish": "Alder"}],
+        "finish_types": [{"name": "First", "finish_type": "Art Glass"}],
     },
     {
         "name": "PVC Woodgrain",
@@ -3475,9 +3474,7 @@ def create_materials(
             texture_name = texture_data["texture"]
 
             texture = FinishesLibrary.objects.filter(
-                name=texture_name,
-                type=FinishesChoices.TEXTURE.value,
-                organization=None
+                name=texture_name, type=FinishesChoices.TEXTURE.value, organization=None
             ).first()
 
             if not texture:
@@ -3488,13 +3485,11 @@ def create_materials(
                 texture=texture,
                 defaults={"name": texture_data["name"]},
             )
-        
+
         for finish_data in finishes:
             finish_name = finish_data["finish"]
             finish = FinishesLibrary.objects.filter(
-                name=finish_name,
-                type=FinishesChoices.FINISH.value,
-                organization=None
+                name=finish_name, type=FinishesChoices.FINISH.value, organization=None
             ).first()
             if not finish:
                 continue
@@ -3510,7 +3505,7 @@ def create_materials(
             finish_type = FinishesLibrary.objects.filter(
                 name=finish_type_name,
                 type=FinishesChoices.FINISH_TYPE.value,
-                organization=None
+                organization=None,
             ).first()
             if not finish_type:
                 continue
@@ -3554,7 +3549,7 @@ def create_materials(
                 texture = FinishesLibrary.objects.filter(
                     name=texture_name,
                     type=FinishesChoices.TEXTURE.value,
-                    organization=org
+                    organization=org,
                 ).first()
 
                 if not texture:
@@ -3565,13 +3560,13 @@ def create_materials(
                     texture=texture,
                     defaults={"name": texture_data["name"]},
                 )
-            
+
             for finish_data in finishes:
                 finish_name = finish_data["finish"]
                 finish = FinishesLibrary.objects.filter(
                     name=finish_name,
                     type=FinishesChoices.FINISH.value,
-                    organization=org
+                    organization=org,
                 ).first()
                 if not finish:
                     continue
@@ -3587,7 +3582,7 @@ def create_materials(
                 finish_type = FinishesLibrary.objects.filter(
                     name=finish_type_name,
                     type=FinishesChoices.FINISH_TYPE.value,
-                    organization=org
+                    organization=org,
                 ).first()
                 if not finish_type:
                     continue

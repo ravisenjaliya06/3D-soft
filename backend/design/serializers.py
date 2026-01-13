@@ -9,10 +9,10 @@ from django.db import transaction
 from rest_framework import serializers
 
 # App imports
-from material.serializers import MaterialSerializer
 from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
 from design.utils import create_design_settings
 from material.models import Material
+from material.serializers import MaterialSerializer
 from umaboy.models import Organization
 from user.constant import PUT
 
@@ -90,7 +90,6 @@ class SceneGetSerializer(serializers.Serializer):
         Serialize a single DesignCatalog into a scene item.
         DRF will iterate when many=True.
         """
-
 
         return {
             **(catalog.data or {}),

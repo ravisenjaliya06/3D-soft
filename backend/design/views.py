@@ -314,13 +314,15 @@ class DesignCatalogViewSet(ModelViewSet):
         version_id = request.query_params.get("version_id")
 
         if not design_id and not version_id:
-            catalogs = self.get_queryset().filter(
-                organization=request.user.selected_organization
-            ).prefetch_related(
-                "materials__finishes",
-                "materials__finish_types",
-                "materials__textures__texture",
-                "materials__properties",
+            catalogs = (
+                self.get_queryset()
+                .filter(organization=request.user.selected_organization)
+                .prefetch_related(
+                    "materials__finishes",
+                    "materials__finish_types",
+                    "materials__textures__texture",
+                    "materials__properties",
+                )
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)
@@ -349,9 +351,7 @@ class DesignCatalogViewSet(ModelViewSet):
 
         serializer = SceneGetSerializer(catalogs, many=True)
         items = group_catalogs_as_lists(serializer.data)
-        return Response(
-            {"version": version.id, "catalogs": items}, status=HTTP_200_OK
-        )
+        return Response({"version": version.id, "catalogs": items}, status=HTTP_200_OK)
 
     def create(
         self: "DesignCatalogViewSet", request: Request, *args, **kwargs

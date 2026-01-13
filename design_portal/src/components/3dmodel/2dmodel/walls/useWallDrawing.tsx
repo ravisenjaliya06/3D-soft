@@ -5,7 +5,6 @@ import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
 import {
   FLOOR_PLAN_TYPES,
   GEOMETRY,
-  MATERIAL_TYPE,
   MeshObjectData,
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
