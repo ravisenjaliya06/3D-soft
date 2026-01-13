@@ -389,9 +389,19 @@ const Settings = () => {
   ];
   const designMinifixInputFields = [
     {
-      label: 'Distance(mm)',
+      label: 'Distance',
       type: 'number',
       placeholder: 'Distance',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
+      error: '',
+      minField: true,
+      value: minifixDistance,
+    },
+
+    {
+      label: 'Diameter Hole',
+      type: 'number',
+      placeholder: 'Diameter Hole',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
       error: '',
       minField: true,
@@ -400,22 +410,43 @@ const Settings = () => {
   ];
   const designGroovingInputFields = [
     {
-      label: 'Gap(mm)',
+      label: 'Diameter',
       type: 'number',
-      placeholder: 'Gap',
+      placeholder: 'Diameter',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveGap(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: grooveGap,
     },
     {
-      label: 'Dig(mm)',
+      label: 'Height',
       type: 'number',
-      placeholder: 'Dig',
+      placeholder: 'Height',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveDig(parseInt(e.target.value)),
       error: '',
       minField: true,
       value: grooveDig,
+    },
+    {
+      label: 'Width',
+      type: 'number',
+      placeholder: 'Width',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveDig(parseInt(e.target.value)),
+      error: '',
+      minField: true,
+      value: grooveDig,
+    },
+  ];
+
+  const EdgeBandingInputFields = [
+    {
+      label: 'Distance',
+      type: 'number',
+      placeholder: 'Distance',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
+      error: '',
+      minField: true,
+      value: minifixDistance,
     },
   ];
 
@@ -470,6 +501,19 @@ const Settings = () => {
       mediumField: true,
     },
   ];
+  //smit|Harsh only for design not add function
+  const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
+  const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
+
+  const handleEdgeBandingToggle = () => {
+    if (edgeBandingDisabled) return;
+    setEdgeBandingEnabled((prev) => !prev);
+  };
+
+  useEffect(() => {
+    setEdgeBandingDisabled(false);
+  }, []);
+
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -848,9 +892,8 @@ const Settings = () => {
 
                   <input
                     type="text"
-                    className={`${styles.organizationInputfild} ${
-                      organizationNameError ? styles.errorInput : ''
-                    }`}
+                    className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
+                      }`}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       setOrganizationName(e.target.value);
                       setOrganizationNameError(null);
@@ -879,7 +922,6 @@ const Settings = () => {
             )}
 
             {/* Design Setting menu active */}
-
             {activeMenu === 'Design setting' && (
               <>
                 <div className={styles.heading_containar}>
@@ -968,7 +1010,7 @@ const Settings = () => {
                 </div>
                 <img src={assets.design_line} alt="design" className={styles.designline} />
                 {/*Minifix setting and grooving data */}
-                <div className={styles.mainContentdesign}>
+                <div className={styles.mainContentminifix}>
                   <div className={styles.firstbox}>
                     <p>Minifix Setting</p>
                     <div className={styles.minifixfieldsgroupdesign}>
@@ -981,6 +1023,7 @@ const Settings = () => {
                       ))}
                     </div>
                   </div>
+                  <img src={assets.design_line} alt="design" className={styles.designline} />
                   <div className={styles.firstbox}>
                     <p>Grooving Settings</p>
                     <div className={styles.minifixfieldsgroupdesign}>
@@ -994,12 +1037,41 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                <button
-                  className={styles.design_profile_save_button}
-                  onClick={handleSettingsSubmit}
-                >
-                  save
-                </button>
+                <img src={assets.design_line} alt="design" className={styles.designline} />
+                <div className={styles.lastbox}>
+                  <div className="flex items-center gap-[2rem]">
+                    <p>Edge Banding</p>
+                    <div
+                      onClick={handleEdgeBandingToggle}
+                      className={`relative mb-[0.5rem] h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                    >
+                      {/* Knob */}
+                      <div
+                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${edgeBandingEnabled
+                          ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                          : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                          }`}
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.lastboxindiv}>
+                    <div className={styles.minifixfieldsgroupdesign}>
+                      {EdgeBandingInputFields.map((field, index) => (
+                        <InputField
+                          key={index}
+                          {...field}
+                          borderColor="var(--primary-color-grey-2 )"
+                        />
+                      ))}
+                    </div>
+                    <button
+                      className={styles.design_profile_save_button}
+                      onClick={handleSettingsSubmit}
+                    >
+                      save
+                    </button>
+                  </div>
+                </div>
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />

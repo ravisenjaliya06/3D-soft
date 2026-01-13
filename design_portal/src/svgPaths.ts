@@ -120,6 +120,10 @@ export const DASHBOARD = {
   public_library: '/assets/dashboard/public_library.svg',
   sells: '/assets/dashboard/sells.svg',
   users: '/assets/dashboard/users.svg',
+  Mes: '/assets/dashboard/Mes.svg',
+  Designs: '/assets/dashboard/Designs.svg',
+  Material: '/assets/dashboard/Material.svg',
+  Catalogmanager: '/assets/dashboard/Catalogmanager.svg',
 };
 
 export const DELETEICON_SVG = {

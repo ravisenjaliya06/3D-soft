@@ -38,18 +38,18 @@ const ProjectDashboard = () => {
         <div className={styles.mainContent}>
           <div className={styles.showdetails}>
             <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.dashboarddesign} alt="Design" />
-              <div className={styles.projectDetails}>
-                <p className={styles.showname}>Designs</p>
-                <p className={styles.showValues}>{designsCount}</p>
-              </div>
-            </div>
-            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
-            <div className={styles.showprojectdetails}>
               <img className={styles.showprojectimage} src={assets.projects} alt="Project" />
               <div className={styles.projectDetails}>
                 <p className={styles.showname}>Projects</p>
                 <p className={styles.showValues}>0</p>
+              </div>
+            </div>
+            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
+            <div className={styles.showprojectdetails}>
+              <img className={styles.showprojectimage} src={assets.dashboarddesign} alt="Design" />
+              <div className={styles.projectDetails}>
+                <p className={styles.showname}>Designs</p>
+                <p className={styles.showValues}>{designsCount}</p>
               </div>
             </div>
             <img className={styles.Lines} src={assets.tab_line} alt="Line" />
@@ -71,24 +71,21 @@ const ProjectDashboard = () => {
           </div>
           <div className={styles.CardSectionlist}>
             <div className={styles.CardSection}>
-              <img src={assets.floorplan} alt="Floorplan" />
-              <p>Floor plan</p>
+              <img src={assets.Mes} alt="Floorplan" />
+              <p>MES</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={assets.public_library} alt="Public_library" />
-              <p>Public library</p>
+              <img src={assets.Material} alt="Public_library" />
+              <p>Material</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={assets.final_design} alt="Final_design" />
-              <p>Final Design</p>
+              <img src={assets.Catalogmanager} alt="Final_design" />
+              <p>Catalog Manager</p>
             </div>
             <div className={styles.CardSection}>
-              <img src={assets.nesting} alt="Nesting" />
-              <p>Nesting</p>
+              <img src={assets.Designs} alt="Nesting" />
+              <p>Design</p>
             </div>
-          </div>
-          <div className={styles.Analytics}>
-            <p>Analytics Coming Soon...</p>
           </div>
         </div>
       </div>
