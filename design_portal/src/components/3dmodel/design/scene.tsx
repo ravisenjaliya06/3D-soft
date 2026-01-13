@@ -54,7 +54,7 @@ export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   scene.add(sinkModel);
 };
 
-const meshBuilder = (data: MeshObjectData) => {
+const meshBuilder = (data: MeshObjectData | MeshObjectData[]) => {
   const builder = new SyncManager(data);
   return builder.syncData();
 };
@@ -263,7 +263,6 @@ export const addDoorOnInvisibleBox = async (
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const doorDepth = 18;
-  const doorId = selectedCabinetItem?.id || crypto.randomUUID();
 
   const doorDimensions = {
     width: w,
@@ -282,7 +281,7 @@ export const addDoorOnInvisibleBox = async (
 
   await meshBuilder({
     ...selectedCabinetItem,
-    id: doorId,
+    id: crypto.randomUUID(),
     dimensions: doorDimensions,
     position: {
       x: parentLocalDoorPos.x,
@@ -538,72 +537,8 @@ export const addDrawersOnInvisibleBox = async (
       geometryBoundingBox.max.x - railT / 2 - 0.01
     );
 
-    // Build the drawer group using DesignBuilder
-    const builder = new DesignBuilder(drawerGroupWithAllPlank, scene);
-    const drawerMesh = builder.createDesign();
-    parent.add(drawerMesh);
-
-    // Add handle to the drawerMesh
-    if (cachedHandleModel) {
-      const handleGroup = cachedHandleModel.clone(true);
-      let handle = handleGroup;
-
-      let meshFound = false;
-      handleGroup.traverse((child) => {
-        if (child instanceof THREE.Mesh && !meshFound) {
-          handle = child;
-          handle.scale.multiply(handleGroup.scale);
-          meshFound = true;
-        }
-      });
-
-      handle.rotation.set(0, 0, 0);
-
-      // Calculate minZ offset from geometry
-      // This assumes the handle model is aligned such that Z-min is the back face.
-      // handle as mesh and calculate minZ offset from geometry
-      (handle as THREE.Mesh).geometry.computeBoundingBox();
-      const minZ = ((handle as THREE.Mesh).geometry.boundingBox?.min.z ?? 0) * handle.scale.z;
-
-      const faceZLocalInParent = parentFacePos.z;
-      const frontZOffset = thickness / 2;
-
-      handle.position.set(
-        parentFacePos.x - parentGroupPos.x,
-        parentFacePos.y - parentGroupPos.y,
-        faceZLocalInParent + frontZOffset - minZ + EPSILON_OFFSET - parentGroupPos.z
-      );
-
-      handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
-
-      const handleId = crypto.randomUUID();
-      handle.userData.objectId = handleId;
-      handle.userData.type = 'handle';
-
-      drawerMesh.add(handle);
-
-      const handleData: MeshObjectData = {
-        id: handleId,
-        name: handle.name,
-        type: 'handle',
-        parent: drawerGroupId,
-        geometryType: GEOMETRY.NONE,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: {
-          x: handle.position.x,
-          y: handle.position.y,
-          z: handle.position.z,
-        },
-        rotation: {
-          x: THREE.MathUtils.radToDeg(handle.rotation.x),
-          y: THREE.MathUtils.radToDeg(handle.rotation.y),
-          z: THREE.MathUtils.radToDeg(handle.rotation.z),
-        },
-      };
-
-      store.dispatch(addObjects([handleData]));
-    }
-
+    await meshBuilder(drawerGroupWithAllPlank);
+    
     // Select the first drawer (or each as they are added, but usually just the last/main one)
     store.dispatch(setobjectSelected(parent.userData.objectId));
     store.dispatch(setSelectedChildObject(drawerGroupId));

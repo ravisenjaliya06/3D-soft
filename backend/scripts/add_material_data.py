@@ -2454,7 +2454,7 @@ MATERIAL = [
             "pull_type": "Pull",
             "horizontal_inset": 50.8,
             "vertical_inset": 88.9,
-            "model_file": "/glb/door_handle.glb",
+            "model_file": "/glb/door_handle2.glb",
         },
     },
     {
@@ -2474,6 +2474,7 @@ MATERIAL = [
             "pull_type": "Knob",
             "horizontal_inset": 50.8,
             "vertical_inset": 50.8,
+            "model_file": "/glb/3dmodel.glb",
         },
     },
     {
@@ -3207,7 +3208,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "3/4 1s Poplar Ply", "4in Bar Pull"],
+        "material": ["Alder Ven EB", "Wooden Knob"],
     },
     {
         "id": "c2d2a8b4-9b3e-4a2e-7f85-111111111111",
@@ -3219,7 +3220,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["5/8 1s Poplar Ply"],
     },
     {
         "id": "c2d2a8b4-9b3e-4a2e-7f85-222222222222",

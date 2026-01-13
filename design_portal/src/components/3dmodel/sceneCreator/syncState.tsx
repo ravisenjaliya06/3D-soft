@@ -44,6 +44,7 @@ export class SyncManager {
   }
 
   public async syncData(): Promise<void> {
+    console.log('syncData', this.data);
     if (!this.scene) return;
 
     const list = this._normalizeData(this.data);
@@ -54,15 +55,20 @@ export class SyncManager {
   }
 
   private _findMeshById(id: string): THREE.Mesh | null {
-    let foundMesh: THREE.Mesh | null = null;
+    console.log('findMeshById', id);
+    let found: THREE.Mesh | null = null;
 
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh && object.userData.objectId === id) {
-        foundMesh = object;
+    this.scene.traverse((obj) => {
+      if (!found && obj instanceof THREE.Mesh) {
+        console.log(obj, "obj");
+        const objId = obj.userData?.objectId;
+        if (objId === id) {
+          found = obj;
+        }
       }
     });
 
-    return foundMesh;
+    return found;
   }
 
   private _findParentMesh(parentId: string): THREE.Mesh | null {
@@ -130,8 +136,11 @@ export class SyncManager {
       }
     });
 
-    if (toAdd.length) store.dispatch(addObjects(toAdd));
-    toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
+    if (toAdd.length) {
+      store.dispatch(addObjects(toAdd));
+    } else {
+      toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
+    }
   }
 
   private _sync2D(list: MeshObjectData[]): void {
@@ -225,13 +234,13 @@ export class SyncManager {
 
   // Updates the mesh
   private _updateMesh(mesh: THREE.Mesh) {
+    console.log('updateMesh', this.oldData, this.isArray);
     if (!this.oldData || !this.meshBuilder || this.isArray) return;
 
     const data = this.data as MeshObjectData;
     const changes = this._getMeshObjectPatch(this.oldData, data);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
-    // Update children if dimensions changed and this is a main object (cupboard)
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
     }
@@ -242,19 +251,22 @@ export class SyncManager {
     mesh: THREE.Mesh,
     newDimensions: Partial<{ width: number; height: number; depth: number }>
   ): void {
+    console.log('updateChildrenDimensions', this.oldData, this.isArray);
     if (this.isArray || !this.oldData) return;
 
     const data = this.data as MeshObjectData;
+    console.log('data', data);
     if (!data.dimensions) return;
 
     // Use oldData dimensions (before update) and new data dimensions (after update)
     const oldWidth = this.oldData.dimensions?.width ?? 0;
     const oldHeight = this.oldData.dimensions?.height ?? 0;
     const oldDepth = this.oldData.dimensions?.depth ?? 0;
-
+    console.log('oldWidth', oldWidth, 'oldHeight', oldHeight, 'oldDepth', oldDepth);
     const newWidth = newDimensions.width ?? data.dimensions.width ?? oldWidth;
     const newHeight = newDimensions.height ?? data.dimensions.height ?? oldHeight;
     const newDepth = newDimensions.depth ?? data.dimensions.depth ?? oldDepth;
+    console.log('newWidth', newWidth, 'newHeight', newHeight, 'newDepth', newDepth);
 
     // Temporary fix for zero dimension
     const MIN_DIM = 0.01;
@@ -334,11 +346,6 @@ export class SyncManager {
     if (pos) mesh.position.set(pos.x, pos.y, pos.z);
   }
 
-  private _removeExistingRoot(rootId: string) {
-    const existing = this._findMeshById(rootId);
-    if (existing) this._removeMeshFromScene(existing);
-  }
-
   private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
     const builder = new DesignBuilder(list, this.scene);
     const root = builder.createDesign();
@@ -353,9 +360,12 @@ export class SyncManager {
   }
 
   private async _handleSingle(item: MeshObjectData) {
+    console.log('handleSingle', item);
     const existingMesh = this._findMeshById(item.id);
+    console.log('existingMesh', existingMesh);
 
     if (existingMesh) {
+      console.log('existingMesh', existingMesh);
       this._updateMesh(existingMesh);
       updateOrRefreshOutline(this.scene, existingMesh);
       if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
@@ -387,15 +397,12 @@ export class SyncManager {
       return;
     }
 
-    // Find the target mesh (could be the selected child object or parent ID)
     const targetMesh = this._findMeshById(targetParentId);
     if (!targetMesh) {
       this.scene.add(mesh);
       return;
     }
 
-    // Follow the same pattern as scene.tsx:
-    // If targetMesh has a parent with isMain, use the parent; otherwise use targetMesh itself
     const parent: THREE.Mesh = !targetMesh.parent?.userData?.isMain
       ? targetMesh
       : (targetMesh.parent as THREE.Mesh);
@@ -405,12 +412,15 @@ export class SyncManager {
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
+    console.log('sync3D', list);
     const rootItem = list.find((i) => !i.parent);
-    const rootId = rootItem?.id;
+    console.log('rootItem', rootItem);
+    // const rootId = rootItem?.id;
 
-    if (rootId) this._removeExistingRoot(rootId);
+    // if (rootId) this._removeExistingRoot(rootId);
 
     if (list.length > 1) {
+      console.log('multiple', list, rootItem);
       await this._handleMultiple(list, rootItem);
       return;
     }

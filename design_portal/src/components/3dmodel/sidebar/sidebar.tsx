@@ -134,7 +134,8 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const handleObject = objects.find((obj) => obj.parent === targetId && obj.type === 'handle');
+  console.log('handleObject', objects);
+  const handleObject = objects.find((obj) => obj.parent === targetId);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -226,6 +227,7 @@ const Sidebar: React.FC = () => {
 
       material: patch.material ?? selectedObject.material,
     };
+    console.log('updatedObject', updatedObject);
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -1669,7 +1671,7 @@ const Sidebar: React.FC = () => {
                         <>
                           <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start">
+                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
                             <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                               Handle Position
                             </p>
@@ -1680,7 +1682,7 @@ const Sidebar: React.FC = () => {
                                     {field.label}
                                   </p>
                                   <div
-                                    className={`flex h-[1.9rem] w-[3.2rem] items-center gap-[0.1rem] rounded-[0.35rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                    className={`flex h-[1.3rem] w-[3rem] mt-2 items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
                                   >
                                     {/* IMAGE ICON */}
                                     <Image
@@ -1688,12 +1690,12 @@ const Sidebar: React.FC = () => {
                                       alt={field.label}
                                       width={19}
                                       height={19}
-                                      className="h-[0.8rem] w-[0.8rem] object-contain opacity-70"
+                                      className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
                                     />
 
                                     <img
                                       src={assets.vrLine}
-                                      className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]"
+                                      className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
                                     />
 
                                     {/* Input */}

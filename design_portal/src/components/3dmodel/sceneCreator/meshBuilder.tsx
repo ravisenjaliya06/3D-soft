@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../store';
 import { addObjects } from '../store/dataSlice';
-import { FLOOR_PLAN_TYPES, GEOMETRY, Material, MATERIAL_TYPES, MeshObjectData } from './interface';
+import { FLOOR_PLAN_TYPES, GEOMETRY, Material, MATERIAL_TYPES, MeshObjectData, DRAWER_PLANK_TYPES, PART_TYPES } from './interface';
 import { convertKeysToCamel } from './utils';
 import { GLBLoader } from '../helper/glbLoader';
 
@@ -14,6 +14,7 @@ export class MeshBuilder {
   }
 
   private _createTexture(materialData: Material): THREE.Texture | null {
+    console.log('materialData', materialData);
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
       texture = new THREE.TextureLoader().load(
@@ -21,7 +22,8 @@ export class MeshBuilder {
       );
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(1, 1);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.repeat.set(2, 2);
       texture.center.set(0, 0);
       texture.offset.set(0, 0);
     });
@@ -30,6 +32,7 @@ export class MeshBuilder {
 
   private _createTextureMaterial(materialData: Material): THREE.MeshStandardMaterial {
     const texture = this._createTexture(materialData);
+    if (!texture) return new THREE.MeshStandardMaterial({ visible: false });
     return new THREE.MeshStandardMaterial({
       map: texture,
       wireframe: false,
@@ -47,6 +50,10 @@ export class MeshBuilder {
     materialArray.forEach((materialData) => {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
+      } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
+        createdMaterial = new THREE.MeshStandardMaterial({ 
+          color: 0xffffff,
+        });
       }
     });
 
@@ -130,31 +137,52 @@ export class MeshBuilder {
     createdMesh: THREE.Mesh,
     materialProps: any
   ) {
-    createdMesh.geometry.computeBoundingBox();
-    const bBox = createdMesh.geometry.boundingBox;
-    if (!bBox) return;
+    const placeHandle = () => {
+      let targetMesh = createdMesh;
+      let attachParent = createdMesh;
+      
+      if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
+        const drawerFace = createdMesh.children.find(
+          (child) => child instanceof THREE.Mesh && child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+        ) as THREE.Mesh | undefined;
+        
+        if (drawerFace) {
+          targetMesh = drawerFace;
+          attachParent = createdMesh;
+        }
+      }
 
-    const size = new THREE.Vector3();
-    bBox.getSize(size);
+      targetMesh.geometry.computeBoundingBox();
+      const bBox = targetMesh.geometry.boundingBox;
+      if (!bBox) return;
 
-    const horizontalInset = (materialProps.horizontalInset ?? 0);
-    const verticalInset = (materialProps.verticalInset ?? 0);
+      const size = new THREE.Vector3();
+      bBox.getSize(size);
 
-    const localPos = new THREE.Vector3(
-      bBox.min.x + horizontalInset,
-      bBox.max.y - verticalInset,
-      bBox.max.z
-    );
+      const horizontalInset = (materialProps.horizontalInset ?? 0);
+      const verticalInset = (materialProps.verticalInset ?? 0);
 
-    const worldPos = createdMesh.localToWorld(localPos.clone());
-    const parent = createdMesh.parent!;
-    const parentLocal = parent.worldToLocal(worldPos.clone());
+      const localPos = new THREE.Vector3(
+        bBox.min.x + horizontalInset,
+        bBox.max.y - verticalInset,
+        bBox.max.z
+      );
 
-    handle.position.copy(parentLocal);
-    handle.rotation.set(0, Math.PI / 2, 0);
+      const worldPos = targetMesh.localToWorld(localPos.clone());
+      const attachParentLocal = attachParent.worldToLocal(worldPos.clone());
 
-    parent.add(handle);
-    createdMesh.attach(handle);
+      handle.position.copy(attachParentLocal);
+      handle.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+      attachParent.add(handle);
+    };
+
+    if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(placeHandle);
+      });
+    } else {
+      placeHandle();
+    }
   }
 
   private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
@@ -162,12 +190,12 @@ export class MeshBuilder {
     const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}` : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
-      width: materialProps.width ? materialProps.width : 20,
-      height: materialProps.height ? materialProps.height : 30,
-      depth: materialProps.depth ? materialProps.depth : 100,
+      width: materialProps.width ? materialProps.width : 5,
+      height: materialProps.height ? materialProps.height : 5,
+      depth: materialProps.depth ? materialProps.depth : 25,
     });
 
-    handleModel.name = `DoorHandle_for_${mesh.name}`;
+    handleModel.name = `Handle_for_${mesh.name}`;
     handleModel.userData.type = 'handle';
 
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
@@ -183,12 +211,10 @@ export class MeshBuilder {
     materialArray.forEach((materialData) => {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
         this._loadHandle(this.mesh!, materialData.properties);
-      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {}
+      } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
+      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
+      }
     });
-  }
-
-  private _setDataInObjectsState() {
-    store.dispatch(addObjects([this.meshData]));
   }
 
   public createMesh(): THREE.Mesh {
@@ -207,9 +233,6 @@ export class MeshBuilder {
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-    if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
-      this._setDataInObjectsState();
-    }
     return mesh;
   }
 

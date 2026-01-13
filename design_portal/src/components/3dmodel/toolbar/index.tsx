@@ -153,7 +153,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === selectedCabinetItem.id));
-      await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup);
+      await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {

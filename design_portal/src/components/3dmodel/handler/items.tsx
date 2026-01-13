@@ -259,10 +259,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       },
       position: { x: c.position.x, y: c.position.y, z: c.position.z },
       rotation: { x: 0, y: 0, z: 0 },
-      material: {
-        type: MATERIAL_TYPE.COLOR,
-        value: 'transparent',
-      },
+      material: [],
     });
     const mesh = meshBuilder.createMesh();
     mesh.userData.isInvisibleBox = true;
