@@ -81,6 +81,15 @@ export const MATERIAL_TYPES = {
   WIRE_BASKET: 'Wire Basket',
 };
 
+export const EDGES = {
+  TOP: 'top',
+  BOTTOM: 'bottom',
+  LEFT: 'left',
+  RIGHT: 'right',
+  FRONT: 'front',
+  BACK: 'back',
+}
+
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];

@@ -340,7 +340,7 @@ export class SyncManager {
 
   private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
     const builder = new DesignBuilder(list, this.scene);
-    const root = builder.createDesign();
+    const root = await builder.createDesign();
 
     if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
       this.scene.add(root);

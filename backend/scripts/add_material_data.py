@@ -3207,7 +3207,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "Wooden Knob"],
+        "material": ["Alder Ven EB", "Wooden Knob", "430E6500V"],
     },
     {
         "id": "c2d2a8b4-9b3e-4a2e-7f85-111111111111",

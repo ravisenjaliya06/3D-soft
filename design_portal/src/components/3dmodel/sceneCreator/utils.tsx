@@ -213,3 +213,60 @@ export function convertKeysToCamel<T>(obj: Object): T {
   }
   return obj;
 }
+
+/**
+ * Extract dominant/average color from an image URL
+ * Returns a hex color value
+ */
+export async function extractColorFromImage(imageUrl: string): Promise<number> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          resolve(0x000000);
+          return;
+        }
+
+        const sampleSize = Math.min(100, Math.max(img.width, img.height));
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+        
+        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+        
+        const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+        const data = imageData.data;
+        
+        let r = 0, g = 0, b = 0, count = 0;
+        
+        for (let i = 0; i < data.length; i += 16) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        
+        r = Math.floor(r / count);
+        g = Math.floor(g / count);
+        b = Math.floor(b / count);
+        
+        const hexColor = (r << 16) | (g << 8) | b;
+        resolve(hexColor);
+      } catch (error) {
+        console.warn('Failed to extract color from image:', error);
+        resolve(0x000000);
+      }
+    };
+    
+    img.onerror = () => {
+      resolve(0x000000);
+    };
+    
+    img.src = imageUrl;
+  });
+}

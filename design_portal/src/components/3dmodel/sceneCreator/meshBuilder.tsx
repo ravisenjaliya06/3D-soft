@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
 import {
   DRAWER_PLANK_TYPES,
+  EDGES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
   Material,
@@ -9,14 +10,121 @@ import {
   MeshObjectData,
   PART_TYPES,
 } from './interface';
-import { convertKeysToCamel } from './utils';
+import { convertKeysToCamel, extractColorFromImage } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
   private mesh: THREE.Mesh | null = null;
+  private parentMesh: THREE.Mesh | null = null;
 
   constructor(data: MeshObjectData) {
     this.meshData = convertKeysToCamel(data);
+  }
+
+  /**
+   * Set the parent mesh to enable checking for adjacent planks
+   */
+  public setParentMesh(parent: THREE.Mesh | null): void {
+    this.parentMesh = parent;
+  }
+
+  /**
+   * Check if an edge of the current plank is covered by another plank
+   * Returns true if the edge is touching/covered by another plank
+   * Uses dynamic geometry-based detection, not name-based
+   */
+  private _isEdgeCovered(
+    mesh: THREE.Mesh,
+    edge: string,
+    threshold: number = 0.5
+  ): boolean {
+    if (!this.parentMesh || !(mesh.geometry instanceof THREE.BoxGeometry)) return false;
+
+    // Get current plank's bounding box in world space
+    mesh.updateMatrixWorld(true);
+    const currentBox = new THREE.Box3().setFromObject(mesh);
+    const currentMin = currentBox.min;
+    const currentMax = currentBox.max;
+    const currentSize = new THREE.Vector3();
+    currentBox.getSize(currentSize);
+
+    // Get all sibling planks
+    const siblings: THREE.Mesh[] = [];
+    this.parentMesh.traverse((child) => {
+      if (
+        child !== mesh &&
+        child instanceof THREE.Mesh &&
+        (Object.values(PART_TYPES).includes(child.userData.type))
+      ) {
+        siblings.push(child);
+      }
+    });
+
+    // Check if any sibling plank covers this edge
+    for (const sibling of siblings) {
+      if (!(sibling.geometry instanceof THREE.BoxGeometry)) continue;
+      
+      sibling.updateMatrixWorld(true);
+      const siblingBox = new THREE.Box3().setFromObject(sibling);
+      const siblingMin = siblingBox.min;
+      const siblingMax = siblingBox.max;
+      const siblingSize = new THREE.Vector3();
+      siblingBox.getSize(siblingSize);
+
+      // Determine which edge we're checking and calculate the edge area
+      let edgeOverlap = false;
+      let edgeTouching = false;
+
+      if (edge === EDGES.TOP) {
+        // Top edge: check if sibling overlaps in X and Z, and touches from above
+        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingY = Math.abs(siblingMin.y - currentMax.y) < threshold && siblingMin.y <= currentMax.y;
+        edgeOverlap = overlapX && overlapZ;
+        edgeTouching = touchingY;
+      } else if (edge === EDGES.BOTTOM) {
+        // Bottom edge: check if sibling overlaps in X and Z, and touches from below
+        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingY = Math.abs(siblingMax.y - currentMin.y) < threshold && siblingMax.y >= currentMin.y;
+        edgeOverlap = overlapX && overlapZ;
+        edgeTouching = touchingY;
+      } else if (edge === EDGES.LEFT) {
+        // Left edge: check if sibling overlaps in Y and Z, and touches from left
+        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingX = Math.abs(siblingMax.x - currentMin.x) < threshold && siblingMax.x <= currentMin.x;
+        edgeOverlap = overlapY && overlapZ;
+        edgeTouching = touchingX;
+      } else if (edge === EDGES.RIGHT) {
+        // Right edge: check if sibling overlaps in Y and Z, and touches from right
+        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingX = Math.abs(siblingMin.x - currentMax.x) < threshold && siblingMin.x >= currentMax.x;
+        edgeOverlap = overlapY && overlapZ;
+        edgeTouching = touchingX;
+      } else if (edge === EDGES.FRONT) {
+        // Front edge: check if sibling overlaps in X and Y, and touches from front
+        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const touchingZ = Math.abs(siblingMin.z - currentMax.z) < threshold && siblingMin.z <= currentMax.z;
+        edgeOverlap = overlapX && overlapY;
+        edgeTouching = touchingZ;
+      } else if (edge === EDGES.BACK) {
+        // Back edge: check if sibling overlaps in X and Y, and touches from back
+        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const touchingZ = Math.abs(siblingMax.z - currentMin.z) < threshold && siblingMax.z >= currentMin.z;
+        edgeOverlap = overlapX && overlapY;
+        edgeTouching = touchingZ;
+      }
+
+      if (edgeOverlap && edgeTouching) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private _createTexture(materialData: Material): THREE.Texture | null {
@@ -204,6 +312,243 @@ export class MeshBuilder {
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
   }
 
+  /**
+   * Get the plank's texture image URL from its material
+   */
+  private _getPlankTextureUrl(): string | null {
+    if (!this.meshData.material) return null;
+    
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : [this.meshData.material];
+    
+    // Find Panel Stock material (plank texture)
+    for (const materialData of materialArray) {
+      if (materialData?.type === MATERIAL_TYPES.PANEL_STOCK) {
+        if (materialData.textures && materialData.textures.length > 0) {
+          const textureUrl = materialData.textures[0]?.textureDetail?.image;
+          if (textureUrl) {
+            return `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureUrl}`;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  private async _createBandingMaterial(): Promise<THREE.MeshStandardMaterial> {
+    const plankTextureUrl = this._getPlankTextureUrl();
+    
+    if (plankTextureUrl) {
+      try {
+        const color = await extractColorFromImage(plankTextureUrl);
+        return new THREE.MeshStandardMaterial({
+          color: color,
+          wireframe: false,
+        });
+      } catch (error) {
+        console.warn('Failed to extract color from plank texture, using default:', error);
+      }
+    }
+    
+    return new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      wireframe: false,
+    });
+  }
+
+  /**
+   * Helper function to create a banding mesh on a specific edge
+   */
+  private _createBandingMesh(
+    mesh: THREE.Mesh,
+    edge: string,
+    geometry: THREE.BoxGeometry,
+    position: THREE.Vector3,
+    sideName: string,
+    bandingMaterial: THREE.MeshStandardMaterial
+  ): void {
+    if (this._isEdgeCovered(mesh, edge)) return;
+
+    const banding = new THREE.Mesh(geometry, bandingMaterial);
+    banding.position.copy(position);
+    banding.name = `Banding_${sideName}_${mesh.name}`;
+    banding.userData.type = 'banding';
+    banding.userData.objectId = `${mesh.userData.objectId}_banding_${sideName.toLowerCase()}`;
+    mesh.add(banding);
+  }
+
+  private async _createBandingOnPlank(mesh: THREE.Mesh, materialData: Material) {
+    // Check if this is a plank
+    const isPlank = Object.values(PART_TYPES).includes(mesh.userData.type);
+
+    if (!isPlank) return;
+
+    const bandingThickness = (materialData.properties?.thickness || 1.5);
+
+    // Get plank dimensions
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
+    
+    const { width, height, depth } = mesh.geometry.parameters;
+    
+    // Create banding material (async - extracts color from plank texture)
+    const bandingMaterial = await this._createBandingMaterial();
+
+    const dimensions = [
+      { value: width, name: 'width', axis: 'x' },
+      { value: height, name: 'height', axis: 'y' },
+      { value: depth, name: 'depth', axis: 'z' }
+    ].sort((a, b) => a.value - b.value);
+    
+    const thicknessAxis = dimensions[0].axis;
+    
+    // Determine which faces are the main faces (with texture) vs edges dynamically
+    let isVerticalPlank = false;
+    let isHorizontalPlank = false;
+    let isBackPlank = false;
+    
+    // Dynamic detection: smallest dimension determines the textured faces
+    if (thicknessAxis === 'x') {
+      isVerticalPlank = true;
+    } else if (thicknessAxis === 'y') {
+      isHorizontalPlank = true;
+    } else if (thicknessAxis === 'z') {
+      isBackPlank = true;
+    } else {
+      isVerticalPlank = true;
+    }
+
+    // Create banding only on visible/exposed edges (not touching other planks)
+    // For vertical planks: create banding on left, right, front, back sides
+    // where: front = top edge, back = bottom edge, right = front edge, left = back edge
+    if (isVerticalPlank) {
+      // Front side (top edge): width x depth, banding extends in Y direction
+      this._createBandingMesh(
+        mesh,
+        EDGES.TOP,
+        new THREE.BoxGeometry(width, bandingThickness, depth),
+        new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0),
+        EDGES.FRONT,
+        bandingMaterial
+      );
+
+      // Back side (bottom edge): width x depth, banding extends in Y direction
+      this._createBandingMesh(
+        mesh,
+        EDGES.BOTTOM,
+        new THREE.BoxGeometry(width, bandingThickness, depth),
+        new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0),
+        EDGES.BACK,
+        bandingMaterial
+      );
+
+      // Right side (front edge): height x width, banding extends in Z direction
+      this._createBandingMesh(
+        mesh,
+        EDGES.FRONT,
+        new THREE.BoxGeometry(width, height, bandingThickness),
+        new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2),
+        EDGES.RIGHT,
+        bandingMaterial
+      );
+
+      // Left side (back edge): height x width, banding extends in Z direction
+      this._createBandingMesh(
+        mesh,
+        EDGES.BACK,
+        new THREE.BoxGeometry(width, height, bandingThickness),
+        new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2),
+        EDGES.LEFT,
+        bandingMaterial
+      );
+    } else if (isHorizontalPlank) {
+      // Horizontal plank: banding on Left, Right, Front, Back faces
+      this._createBandingMesh(
+        mesh,
+        EDGES.LEFT,
+        new THREE.BoxGeometry(bandingThickness, height, depth),
+        new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0),
+        EDGES.LEFT,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.RIGHT,
+        new THREE.BoxGeometry(bandingThickness, height, depth),
+        new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0),
+        EDGES.RIGHT,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.FRONT,
+        new THREE.BoxGeometry(width, height, bandingThickness),
+        new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2),
+        EDGES.FRONT,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.BACK,
+        new THREE.BoxGeometry(width, height, bandingThickness),
+        new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2),
+        EDGES.BACK,
+        bandingMaterial
+      );
+    } else if (isBackPlank) {
+      // Back plank: banding on Top, Bottom, Left, Right faces
+      this._createBandingMesh(
+        mesh,
+        EDGES.TOP,
+        new THREE.BoxGeometry(width, bandingThickness, depth),
+        new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0),
+        EDGES.TOP,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.BOTTOM,
+        new THREE.BoxGeometry(width, bandingThickness, depth),
+        new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0),
+        EDGES.BOTTOM,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.LEFT,
+        new THREE.BoxGeometry(bandingThickness, height, depth),
+        new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0),
+        EDGES.LEFT,
+        bandingMaterial
+      );
+
+      this._createBandingMesh(
+        mesh,
+        EDGES.RIGHT,
+        new THREE.BoxGeometry(bandingThickness, height, depth),
+        new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0),
+        EDGES.RIGHT,
+        bandingMaterial
+      );
+    }
+  }
+
+  /**
+   * Apply banding material from parent to this plank mesh
+   * This is used when the parent (e.g., cupboard) has banding material
+   * that should be applied to all child planks
+   */
+  public async applyParentBandingMaterial(parentBandingMaterial: Material): Promise<void> {
+    if (!this.mesh) return;
+    await this._createBandingOnPlank(this.mesh, parentBandingMaterial);
+  }
+
   private _handleMaterial() {
     if (!this.mesh) return;
 
@@ -215,6 +560,9 @@ export class MeshBuilder {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
         this._loadHandle(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
+        this._createBandingOnPlank(this.mesh!, materialData).catch((error) => {
+          console.warn('Failed to create banding:', error);
+        });
       } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
       }
     });
