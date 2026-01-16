@@ -1,56 +1,154 @@
 import * as THREE from 'three';
+import { ThreeDView } from '../design/interface';
+import { generateCompartmentsFromMesh } from '../handler/items';
+import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
-import { FLOOR_PLAN_TYPES, MeshObjectData } from './interface';
+import { DesignBuilder } from './designBuilder';
+import { FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { create2DWallFromMeshData } from './utils';
+import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
 
 export class SyncManager {
   private scene: THREE.Scene;
-  private data: MeshObjectData;
+  private data: MeshObjectData | MeshObjectData[];
   private oldData: MeshObjectData | null = null;
-  private meshBuilder: MeshBuilder;
+  private meshBuilder: MeshBuilder | null = null;
+  private isArray: boolean;
+  private moveHandlerRef: MoveHandler | null = null;
 
-  constructor(data: MeshObjectData) {
-    this.scene = store.getState().scene?.scene;
-    this.data = data;
-    this.meshBuilder = new MeshBuilder(data);
+  constructor(data: MeshObjectData | MeshObjectData[], threeDView?: ThreeDView) {
+    const scene = store.getState().scene?.scene;
+    this.scene = scene;
+    // Convert snake_case keys from database to camelCase
+    this.data = convertKeysToCamel<MeshObjectData | MeshObjectData[]>(data);
+    this.isArray = Array.isArray(this.data);
+
+    if (!this.isArray) {
+      this.meshBuilder = new MeshBuilder(this.data as MeshObjectData);
+    }
+
+    if (threeDView?.camera && threeDView?.renderer && scene) {
+      this.moveHandlerRef = new MoveHandler({
+        scene: scene,
+        camera: threeDView.camera as THREE.PerspectiveCamera,
+        renderer: threeDView.renderer,
+        movableObjects: [],
+      });
+    }
   }
 
-  // Syncs the data with the scene
-  public syncData(): void {
-    this._handleState();
-    this._handle2d();
-    this._handle3d();
+  private _normalizeData(data: MeshObjectData | MeshObjectData[]): MeshObjectData[] {
+    return Array.isArray(data) ? data : [data];
   }
 
-  // Updates the data in the redux store
-  private _handleState() {
+  public async syncData(): Promise<void> {
+    if (!this.scene) return;
+
+    const list = this._normalizeData(this.data);
+
+    this._syncState(list);
+    this._sync2D(list);
+    await this._sync3D(list);
+  }
+
+  private _findMeshById(id: string): THREE.Mesh | null {
+    let found: THREE.Mesh | null = null;
+
+    this.scene.traverse((obj) => {
+      if (!found && obj instanceof THREE.Mesh) {
+        const objId = obj.userData?.objectId;
+        if (objId === id) {
+          found = obj;
+        }
+      }
+    });
+
+    return found;
+  }
+
+  private _findParentMesh(parentId: string): THREE.Mesh | null {
+    let foundParent: THREE.Mesh | null = null;
+
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.objectId === parentId) {
+        foundParent = object;
+      }
+    });
+
+    return foundParent;
+  }
+
+  private _isObjectType(type: string): boolean {
+    return Object.values(OBJECT_TYPES).includes(type);
+  }
+
+  private _removeMeshFromScene(mesh: THREE.Mesh): void {
+    if (mesh.geometry) {
+      mesh.geometry.dispose();
+    }
+
+    if (mesh.material) {
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => {
+          if (mat instanceof THREE.Material) {
+            mat.dispose();
+          }
+        });
+      } else if (mesh.material instanceof THREE.Material) {
+        mesh.material.dispose();
+      }
+    }
+
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        this._removeMeshFromScene(child);
+      }
+    });
+
+    if (mesh.parent) {
+      mesh.parent.remove(mesh);
+    } else {
+      this.scene.remove(mesh);
+    }
+  }
+
+  private _syncState(list: MeshObjectData[]): void {
     const existingObjects = store.getState().data.objects;
 
-    const existing = existingObjects.find((obj) => obj.id === this.data.id);
+    const toAdd: MeshObjectData[] = [];
+    const toUpdate: MeshObjectData[] = [];
 
-    if (existing) {
-      // SAVE OLD DATA FIRST
-      this.oldData = structuredClone(existing);
+    list.forEach((item) => {
+      const existing = existingObjects.find((o) => o.id === item.id);
 
-      // THEN UPDATE REDUX
-      store.dispatch(updateObject({ ...this.data, id: this.data.id }));
+      if (existing) {
+        if (list.length === 1) {
+          this.oldData = structuredClone(existing);
+        }
+        toUpdate.push(item);
+      } else {
+        toAdd.push(item);
+      }
+    });
+
+    if (toAdd.length) {
+      store.dispatch(addObjects(toAdd));
     } else {
-      store.dispatch(addObjects([this.data]));
+      toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
     }
   }
 
-  // Updates the 2D in the canvas
-  private _handle2d() {
-    if (!(this.data.type === FLOOR_PLAN_TYPES.WALL)) return;
+  private _sync2D(list: MeshObjectData[]): void {
+    const existingObjects = store.getState().data.objects;
 
-    const existing2DWall = store.getState().data.objects.find((obj) => obj.id === this.data.id);
-    if (existing2DWall) {
-      return;
-    }
-    create2DWallFromMeshData(this.data);
+    list.forEach((item) => {
+      if (item.type !== FLOOR_PLAN_TYPES.WALL) return;
+
+      const exists = existingObjects.find((o) => o.id === item.id);
+      if (!exists) create2DWallFromMeshData(item);
+    });
   }
 
   /**
@@ -124,32 +222,24 @@ export class SyncManager {
 
   // Creates a new mesh
   private _createNewMesh() {
+    if (!this.meshBuilder) {
+      throw new Error('MeshBuilder is not initialized. This should not happen for single objects.');
+    }
     const mesh = this.meshBuilder.createMesh();
     return mesh;
   }
 
   // Updates the mesh
   private _updateMesh(mesh: THREE.Mesh) {
-    if (!this.oldData) return;
-    const changes = this._getMeshObjectPatch(this.oldData, this.data);
+    if (!this.oldData || !this.meshBuilder || this.isArray) return;
+
+    const data = this.data as MeshObjectData;
+    const changes = this._getMeshObjectPatch(this.oldData, data);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
-    // Update children if dimensions changed and this is a main object (cupboard)
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
     }
-  }
-
-  private _findMeshById(): THREE.Mesh | null {
-    let foundMesh: THREE.Mesh | null = null;
-
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh && object.userData.objectId === this.data.id) {
-        foundMesh = object;
-      }
-    });
-
-    return foundMesh;
   }
 
   // Updates children dimensions when parent dimensions change
@@ -157,16 +247,18 @@ export class SyncManager {
     mesh: THREE.Mesh,
     newDimensions: Partial<{ width: number; height: number; depth: number }>
   ): void {
-    if (!this.oldData || !this.data.dimensions) return;
+    if (this.isArray || !this.oldData) return;
+
+    const data = this.data as MeshObjectData;
+    if (!data.dimensions) return;
 
     // Use oldData dimensions (before update) and new data dimensions (after update)
     const oldWidth = this.oldData.dimensions?.width ?? 0;
     const oldHeight = this.oldData.dimensions?.height ?? 0;
     const oldDepth = this.oldData.dimensions?.depth ?? 0;
-
-    const newWidth = newDimensions.width ?? this.data.dimensions.width ?? oldWidth;
-    const newHeight = newDimensions.height ?? this.data.dimensions.height ?? oldHeight;
-    const newDepth = newDimensions.depth ?? this.data.dimensions.depth ?? oldDepth;
+    const newWidth = newDimensions.width ?? data.dimensions.width ?? oldWidth;
+    const newHeight = newDimensions.height ?? data.dimensions.height ?? oldHeight;
+    const newDepth = newDimensions.depth ?? data.dimensions.depth ?? oldDepth;
 
     // Temporary fix for zero dimension
     const MIN_DIM = 0.01;
@@ -239,19 +331,83 @@ export class SyncManager {
     });
   }
 
-  // Handles the 3D mesh
-  private _handle3d() {
-    if (!this.scene) return;
+  private async _applyDrag(mesh: THREE.Mesh) {
+    if (!this.moveHandlerRef) return;
 
-    const existingMesh = this._findMeshById();
+    const pos = await this.moveHandlerRef.enableDragging(mesh);
+    if (pos) mesh.position.set(pos.x, pos.y, pos.z);
+  }
 
-    if (existingMesh !== null) {
-      this._updateMesh(existingMesh);
-      // Update outline if it exists
-      updateOrRefreshOutline(this.scene, existingMesh);
-    } else {
-      const mesh = this._createNewMesh();
-      this.scene.add(mesh);
+  private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
+    const builder = new DesignBuilder(list, this.scene);
+    const root = builder.createDesign();
+
+    if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
+      this.scene.add(root);
+      await this._applyDrag(root);
+      return;
     }
+
+    this._attachToParentOrScene(root, rootItem?.parent);
+  }
+
+  private async _handleSingle(item: MeshObjectData) {
+    const existingMesh = this._findMeshById(item.id);
+
+    if (existingMesh) {
+      this._updateMesh(existingMesh);
+      updateOrRefreshOutline(this.scene, existingMesh);
+      if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
+      return;
+    }
+
+    const mesh = this._createNewMesh();
+
+    if (this._isObjectType(item.type)) {
+      this.scene.add(mesh);
+      await this._applyDrag(mesh);
+      if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
+    } else {
+      this._attachToParentOrScene(mesh, item.parent);
+    }
+  }
+
+  private _attachToParentOrScene(mesh: THREE.Object3D, parentId?: string | null) {
+    let targetParentId = parentId;
+    if (!targetParentId) {
+      const selectedChildObject = store.getState().data.selectedChildObject;
+      if (selectedChildObject) {
+        targetParentId = selectedChildObject;
+      }
+    }
+
+    if (!targetParentId) {
+      this.scene.add(mesh);
+      return;
+    }
+
+    const targetMesh = this._findMeshById(targetParentId);
+    if (!targetMesh) {
+      this.scene.add(mesh);
+      return;
+    }
+
+    const parent: THREE.Mesh = !targetMesh.parent?.userData?.isMain
+      ? targetMesh
+      : (targetMesh.parent as THREE.Mesh);
+
+    parent.add(mesh);
+    generateCompartmentsFromMesh(parent);
+  }
+
+  private async _sync3D(list: MeshObjectData[]): Promise<void> {
+    const rootItem = list.find((i) => !i.parent);
+
+    if (list.length > 1) {
+      await this._handleMultiple(list, rootItem);
+      return;
+    }
+
+    await this._handleSingle(list[0]);
   }
 }

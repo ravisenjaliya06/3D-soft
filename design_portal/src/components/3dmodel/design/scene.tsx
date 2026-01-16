@@ -6,38 +6,25 @@ import {
 } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
 import {
   DIRECTION_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   GEOMETRY,
-  MATERIAL_TYPE,
   MeshObjectData,
   PART_TYPES,
-  TEXTURES,
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
+import { SyncManager } from '../sceneCreator/syncState';
 import { store } from '../store';
 import {
-  addObjects,
   removeObject,
   setobjectSelected,
   setSelectedChildObject,
   updateObject,
 } from '../store/dataSlice';
-import { SelectedCabinetItem } from '../toolbar/interface';
 
 let cachedHandleModel: THREE.Object3D | null = null;
-
-// Constants
-const EPSILON_OFFSET = 0.001; // Small offset to avoid Z-fighting
-
-const convertDimensionsToMM = (dimensions: { width: number; height: number; depth: number }) => ({
-  width: Math.round(dimensions.width * 1000),
-  height: Math.round(dimensions.height * 1000),
-  depth: Math.round(dimensions.depth * 1000),
-});
 
 export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
@@ -62,18 +49,21 @@ export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   scene.add(sinkModel);
 };
 
-const meshBuilder = (data: MeshObjectData) => {
-  const builder = new MeshBuilder(data);
-  return builder.createMesh();
+const meshBuilder = (data: MeshObjectData | MeshObjectData[]) => {
+  const builder = new SyncManager(data);
+  return builder.syncData();
 };
 
 export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: SelectedCabinetItem | null = null
+  selectedCabinetItem: MeshObjectData | null = null
 ) => {
+  if (!selectedCabinetItem) return console.error('No cabinet item selected');
+
   showFullScreenLoader('Adding vertical planks.');
+
   if (!boxMesh || count <= 0) {
     hideFullScreenLoader();
     return;
@@ -87,9 +77,9 @@ export const addVerticalPlanksToBox = async (
     return;
   }
 
-  const geometryBoundingBox = geometry.boundingBox;
+  const bbox = geometry.boundingBox;
   const size = new THREE.Vector3();
-  geometryBoundingBox.getSize(size);
+  bbox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -97,11 +87,9 @@ export const addVerticalPlanksToBox = async (
 
   const thickness = 18;
   const innerDepth = 25;
-  const edgeClearance = Math.max(0.01, thickness);
+  const edgeClearance = thickness;
 
-  const span = width;
-  const innerSpan = span - 2 * edgeClearance;
-
+  const innerSpan = width - 2 * edgeClearance;
   if (innerSpan <= thickness) {
     hideFullScreenLoader();
     return;
@@ -112,50 +100,35 @@ export const addVerticalPlanksToBox = async (
     : (boxMesh.parent as THREE.Mesh);
 
   const interval = innerSpan / (count + 1);
+  const leftInnerX = bbox.min.x + edgeClearance;
 
-  const effectiveHeight = height;
-
-  const commonMaterial = {
-    type: MATERIAL_TYPE.TEXTURE,
-    value: TEXTURES.LIGHT_WOOD,
-    repeatX: 2,
-    repeatY: 1,
-  };
-
-  const leftInnerX = geometryBoundingBox.min.x + edgeClearance;
+  const plankList: MeshObjectData[] = [];
 
   for (let i = 1; i <= count; i++) {
     const dims = {
       width: thickness,
-      height: effectiveHeight,
+      height: height,
       depth: depth - innerDepth,
     };
 
     const localX = leftInnerX + interval * i;
-
     const localPosInBox = new THREE.Vector3(localX, 0, -innerDepth / 2);
 
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const localPosInParent = parent.worldToLocal(worldPos.clone());
 
-    const plank = meshBuilder({
+    plankList.push({
+      ...selectedCabinetItem,
       id: crypto.randomUUID(),
-      name: `VERTICAL_PLANK`,
-      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
-      parent: parent.userData.objectId,
       dimensions: dims,
       position: localPosInParent,
-      rotation: { x: 0, y: 0, z: 0 },
-      material: commonMaterial,
-      isMain: false,
+      parent: parent.userData.objectId,
     });
+  }
 
-    plank.userData.isVerticalPlank = true;
-    plank.userData.cabinetItem = selectedCabinetItem;
-    plank.userData.dimensions = convertDimensionsToMM(dims);
-
-    parent.add(plank);
+  for (const plank of plankList) {
+    await meshBuilder(plank);
   }
 
   generateCompartmentsFromMesh(parent);
@@ -166,9 +139,12 @@ export const addHorizontalPlanksInsideBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   count: number,
-  selectedCabinetItem: SelectedCabinetItem | null = null
+  selectedCabinetItem: MeshObjectData | null = null
 ) => {
+  if (!selectedCabinetItem) return console.error('No cabinet item selected');
+
   showFullScreenLoader('Loading design objects.');
+
   if (!boxMesh || count <= 0) {
     hideFullScreenLoader();
     return;
@@ -176,15 +152,15 @@ export const addHorizontalPlanksInsideBox = async (
 
   const geometry = boxMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
+  const bbox = geometry.boundingBox;
 
-  const geometryBoundingBox = geometry.boundingBox;
-  if (!geometryBoundingBox) {
+  if (!bbox) {
     hideFullScreenLoader();
     return;
   }
 
   const size = new THREE.Vector3();
-  geometryBoundingBox.getSize(size);
+  bbox.getSize(size);
 
   const width = size.x;
   const height = size.y;
@@ -192,30 +168,24 @@ export const addHorizontalPlanksInsideBox = async (
 
   const thickness = 18;
   const innerDepth = 25;
-  const innerHeight = height;
 
-  if (innerHeight <= thickness) {
+  if (height <= thickness) {
     hideFullScreenLoader();
     return;
   }
 
-  const interval = innerHeight / (count + 1);
+  const interval = height / (count + 1);
 
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
-  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
+  const boxCenterLocal = bbox.getCenter(new THREE.Vector3());
 
-  const commonMaterial = {
-    type: MATERIAL_TYPE.TEXTURE,
-    value: TEXTURES.LIGHT_WOOD,
-    repeatX: 2,
-    repeatY: 1,
-  };
+  const plankList: MeshObjectData[] = [];
 
   for (let i = 1; i <= count; i++) {
-    const yLocal = geometryBoundingBox.min.y + interval * i;
+    const yLocal = bbox.min.y + interval * i;
 
     const dims = {
       width: width,
@@ -232,30 +202,32 @@ export const addHorizontalPlanksInsideBox = async (
     const worldPos = boxMesh.localToWorld(localPosInBox.clone());
     const parentLocalPos = parent.worldToLocal(worldPos.clone());
 
-    const shelf = meshBuilder({
+    plankList.push({
+      ...selectedCabinetItem,
       id: crypto.randomUUID(),
-      name: `HORIZONTAL_PLANK`,
-      type: PART_TYPES.PLANK,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: dims,
       position: parentLocalPos,
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1, z: 1 },
-      material: commonMaterial,
-      isMain: false,
+      parent: parent.userData.objectId,
     });
-    shelf.userData.isHorizontalPlank = true;
-    shelf.userData.cabinetItem = selectedCabinetItem;
-    shelf.userData.dimensions = convertDimensionsToMM(dims);
-
-    parent.add(shelf);
+  }
+  for (const plank of plankList) {
+    await meshBuilder(plank);
   }
 
   generateCompartmentsFromMesh(parent);
   hideFullScreenLoader();
 };
 
-export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.Mesh) => {
+export const addDoorOnInvisibleBox = async (
+  scene: THREE.Scene,
+  boxMesh: THREE.Mesh,
+  selectedCabinetItem: MeshObjectData | null = null
+) => {
+  if (!selectedCabinetItem) {
+    console.error('No cabinet item selected');
+    return;
+  }
   showFullScreenLoader('Loading design objects.');
 
   if (!boxMesh) {
@@ -284,133 +256,37 @@ export const addDoorOnInvisibleBox = async (scene: THREE.Scene, boxMesh: THREE.M
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const doorTexture = new THREE.TextureLoader().load(TEXTURES.WHITE_TEXTURE);
-  doorTexture.wrapS = doorTexture.wrapT = THREE.RepeatWrapping;
-  doorTexture.repeat.set(2, 1);
+  const doorDepth = 18;
 
-  const doorMatProps = { map: doorTexture, side: THREE.DoubleSide };
-
-  const facePart = {
-    name: `Door_for_${boxMesh.name}`,
-    dimensions: { width: w, height: h, depth: 18 },
-    position: { x: 0, y: 0, z: 0 },
-    material: doorMatProps,
+  const doorDimensions = {
+    width: w,
+    height: h,
+    depth: doorDepth,
   };
-
-  const commonMaterial = {
-    type: MATERIAL_TYPE.TEXTURE,
-    value: TEXTURES.WHITE_TEXTURE,
-    repeatX: 2,
-    repeatY: 1,
-  };
-
-  const doorId = crypto.randomUUID();
-
-  const doorGroup = meshBuilder({
-    id: doorId,
-    name: `Door_for_${boxMesh.name}`,
-    type: PART_TYPES.DOOR,
-    geometryType: GEOMETRY.BOX_GEOMETRY,
-    dimensions: { width: w, height: h, depth: 18 },
-    position: { x: 0, y: 0, z: 0 },
-    rotation: { x: 0, y: 0, z: 0 },
-    scale: { x: 1, y: 1, z: 1 },
-    material: commonMaterial,
-    isMain: false,
-    openDirection: DIRECTION_TYPES.RIGHT,
-  });
-
-  parent.add(doorGroup);
 
   const localDoorPos = new THREE.Vector3(
     boxCenterLocal.x,
     boxCenterLocal.y,
-    geometryBoundingBox.max.z + facePart.dimensions.depth / 2
+    geometryBoundingBox.max.z + doorDimensions.depth / 2
   );
 
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
   const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
 
-  doorGroup.position.copy(parentLocalDoorPos);
+  await meshBuilder({
+    ...selectedCabinetItem,
+    id: crypto.randomUUID(),
+    dimensions: doorDimensions,
+    position: {
+      x: parentLocalDoorPos.x,
+      y: parentLocalDoorPos.y,
+      z: parentLocalDoorPos.z,
+    },
+    isMain: false,
+    openDirection: DIRECTION_TYPES.RIGHT,
+  });
 
-  await ensureHandleLoaded();
-  if (cachedHandleModel) {
-    const handleGroup = cachedHandleModel.clone(true);
-    let handle = handleGroup;
-
-    // Extract the first mesh found in the group to use as the handle object
-    // This ensures compatibility with UpdateHandler which strictly expects THREE.Mesh
-    let meshFound = false;
-    handleGroup.traverse((child) => {
-      if (child instanceof THREE.Mesh && !meshFound) {
-        handle = child;
-        // Apply the group's scale to the mesh, as GLBLoader applies scale to the root group
-        handle.scale.multiply(handleGroup.scale);
-        meshFound = true;
-      }
-    });
-
-    const handleId = crypto.randomUUID();
-
-    const doorGeo = doorGroup.geometry as THREE.BufferGeometry;
-    doorGeo.computeBoundingBox();
-    const doorBoundingBox = doorGeo.boundingBox;
-
-    if (doorBoundingBox) {
-      const doorSize = new THREE.Vector3();
-      doorBoundingBox.getSize(doorSize);
-
-      const marginX = 0.04;
-
-      const localHandlePos = new THREE.Vector3(
-        doorBoundingBox.min.x + marginX,
-        0,
-        doorBoundingBox.max.z
-      );
-
-      const worldHandlePos = doorGroup.localToWorld(localHandlePos.clone());
-      const parentLocalHandlePos = parent.worldToLocal(worldHandlePos.clone());
-
-      handle.rotation.set(0, 0, Math.PI / 2);
-      handle.name = `DoorHandle_for_${boxMesh.name}`;
-      handle.userData.objectId = handleId;
-
-      // Calculate minZ offset from geometry (unaffected by rotation, only scale)
-      // This assumes the handle model is aligned such that Z-min is the back face.
-      (handle as THREE.Mesh).geometry.computeBoundingBox();
-      const minZ = ((handle as THREE.Mesh).geometry.boundingBox?.min.z ?? 0) * handle.scale.z;
-
-      parent.add(handle);
-      handle.position.copy(parentLocalHandlePos);
-
-      // Adjust Z to align minZ with surface
-      handle.position.z -= minZ;
-
-      doorGroup.attach(handle);
-
-      const handleData = {
-        id: handleId,
-        name: handle.name,
-        type: 'handle',
-        parent: doorId,
-        geometryType: GEOMETRY.NONE,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: {
-          x: handle.position.x,
-          y: handle.position.y,
-          z: handle.position.z,
-        },
-        rotation: {
-          x: THREE.MathUtils.radToDeg(handle.rotation.x),
-          y: THREE.MathUtils.radToDeg(handle.rotation.y),
-          z: THREE.MathUtils.radToDeg(handle.rotation.z),
-        },
-      };
-
-      store.dispatch(addObjects([handleData]));
-    }
-  }
-
+  // await ensureHandleLoaded();
   hideFullScreenLoader();
 };
 
@@ -418,6 +294,7 @@ export const addDrawersOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
   drawers: number,
+  selectedCabinetItem: MeshObjectData[],
   drawerType: string = DRAWER_TYPES.INSET
 ) => {
   if (!boxMesh || drawers <= 0) return;
@@ -440,8 +317,6 @@ export const addDrawersOnInvisibleBox = async (
   const eachH = h / drawers;
   const thickness = 18;
   const drawerConstructionType = 'fivePlank';
-
-  await ensureHandleLoaded();
 
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
@@ -486,12 +361,12 @@ export const addDrawersOnInvisibleBox = async (
       scale: { x: 1, y: 1, z: 1 },
       isMain: true,
       openDirection: DIRECTION_TYPES.RIGHT,
-      drawerType: drawerType, // Store the drawer type
+      drawerType: drawerType,
+      material: selectedCabinetItem[0].material,
     };
 
     drawerGroupWithAllPlank.push(drawerGroup);
 
-    // Face position relative to group center
     const faceZRel = boxFrontZRel + faceD / 2;
 
     const localFacePos = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z + faceZRel);
@@ -499,6 +374,7 @@ export const addDrawersOnInvisibleBox = async (
     const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
     const parentFacePos = parent.worldToLocal(worldFacePos.clone());
 
+    const facePlank = selectedCabinetItem.find((item) => item.name === 'DRAWER_FACE_PLANK');
     const face: MeshObjectData = {
       id: crypto.randomUUID(),
       name: 'DRAWER_FACE',
@@ -513,12 +389,7 @@ export const addDrawersOnInvisibleBox = async (
       },
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
-      material: {
-        type: MATERIAL_TYPE.TEXTURE,
-        value: TEXTURES.WHITE_TEXTURE,
-        repeatX: 1,
-        repeatY: 1,
-      },
+      material: facePlank?.material,
     };
 
     drawerGroupWithAllPlank.push(face);
@@ -560,17 +431,14 @@ export const addDrawersOnInvisibleBox = async (
           },
           rotation: { x: 0, y: 0, z: 0 },
           scale: { x: 1, y: 1, z: 1 },
-          material: {
-            type: MATERIAL_TYPE.TEXTURE,
-            value: TEXTURES.LIGHT_WOOD,
-          },
+          material: selectedCabinetItem.find((item) => item.name === name)?.material,
         };
         drawerGroupWithAllPlank.push(part);
       };
 
       // LEFT plank position (12mm from left)
       createInnerPartData(
-        'LEFT_DRAWER_PLANK',
+        'DRAWER_LEFT_PLANK',
         { width: thickness, height: innerH, depth: innerD },
         new THREE.Vector3(
           boxCenterLocal.x - drawerOuterW / 2 + sideGap + thickness / 2,
@@ -581,7 +449,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // RIGHT plank position (12mm from right)
       createInnerPartData(
-        'RIGHT_DRAWER_PLANK',
+        'DRAWER_RIGHT_PLANK',
         { width: thickness, height: innerH, depth: innerD },
         new THREE.Vector3(
           boxCenterLocal.x + drawerOuterW / 2 - sideGap - thickness / 2,
@@ -592,7 +460,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // BACK plank
       createInnerPartData(
-        'BACK_DRAWER_PLANK',
+        'DRAWER_BACK_PLANK',
         { width: innerW, height: innerH, depth: thickness },
         new THREE.Vector3(
           boxCenterLocal.x,
@@ -603,7 +471,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // FRONT plank
       createInnerPartData(
-        'FRONT_DRAWER_PLANK',
+        'DRAWER_FRONT_PLANK',
         { width: innerW, height: innerH, depth: thickness },
         new THREE.Vector3(
           boxCenterLocal.x,
@@ -614,7 +482,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // BOTTOM plank
       createInnerPartData(
-        'BOTTOM_DRAWER_PLANK',
+        'DRAWER_BOTTOM_PLANK',
         { width: innerW, height: thickness, depth: innerD },
         new THREE.Vector3(
           boxCenterLocal.x,
@@ -648,10 +516,7 @@ export const addDrawersOnInvisibleBox = async (
         },
         rotation: { x: 0, y: 0, z: 0 },
         scale: { x: 1, y: 1, z: 1 },
-        material: {
-          type: MATERIAL_TYPE.COLOR,
-          value: '#000000',
-        },
+        material: [],
       };
       drawerGroupWithAllPlank.push(rail);
     };
@@ -666,71 +531,7 @@ export const addDrawersOnInvisibleBox = async (
       geometryBoundingBox.max.x - railT / 2 - 0.01
     );
 
-    // Build the drawer group using DesignBuilder
-    const builder = new DesignBuilder(drawerGroupWithAllPlank, scene);
-    const drawerMesh = builder.createDesign();
-    parent.add(drawerMesh);
-
-    // Add handle to the drawerMesh
-    if (cachedHandleModel) {
-      const handleGroup = cachedHandleModel.clone(true);
-      let handle = handleGroup;
-
-      let meshFound = false;
-      handleGroup.traverse((child) => {
-        if (child instanceof THREE.Mesh && !meshFound) {
-          handle = child;
-          handle.scale.multiply(handleGroup.scale);
-          meshFound = true;
-        }
-      });
-
-      handle.rotation.set(0, 0, 0);
-
-      // Calculate minZ offset from geometry
-      // This assumes the handle model is aligned such that Z-min is the back face.
-      // handle as mesh and calculate minZ offset from geometry
-      (handle as THREE.Mesh).geometry.computeBoundingBox();
-      const minZ = ((handle as THREE.Mesh).geometry.boundingBox?.min.z ?? 0) * handle.scale.z;
-
-      const faceZLocalInParent = parentFacePos.z;
-      const frontZOffset = thickness / 2;
-
-      handle.position.set(
-        parentFacePos.x - parentGroupPos.x,
-        parentFacePos.y - parentGroupPos.y,
-        faceZLocalInParent + frontZOffset - minZ + EPSILON_OFFSET - parentGroupPos.z
-      );
-
-      handle.name = `Handle_Drawer_${i}_for_${boxMesh.name}`;
-
-      const handleId = crypto.randomUUID();
-      handle.userData.objectId = handleId;
-      handle.userData.type = 'handle';
-
-      drawerMesh.add(handle);
-
-      const handleData: MeshObjectData = {
-        id: handleId,
-        name: handle.name,
-        type: 'handle',
-        parent: drawerGroupId,
-        geometryType: GEOMETRY.NONE,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: {
-          x: handle.position.x,
-          y: handle.position.y,
-          z: handle.position.z,
-        },
-        rotation: {
-          x: THREE.MathUtils.radToDeg(handle.rotation.x),
-          y: THREE.MathUtils.radToDeg(handle.rotation.y),
-          z: THREE.MathUtils.radToDeg(handle.rotation.z),
-        },
-      };
-
-      store.dispatch(addObjects([handleData]));
-    }
+    await meshBuilder(drawerGroupWithAllPlank);
 
     // Select the first drawer (or each as they are added, but usually just the last/main one)
     store.dispatch(setobjectSelected(parent.userData.objectId));
@@ -1073,18 +874,14 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     // Back is Z negative. Cupboard is centered at 0 in its local space.
     position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: -depth / 2 + thickness / 2 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: {
-      type: MATERIAL_TYPE.TEXTURE,
-      value: TEXTURES.LIGHT_WOOD,
-      repeatX: 2,
-      repeatY: 1,
-    },
+    material: [],
     isMain: false,
   };
 
-  const backSkirting = meshBuilder(backSkirtingData);
-  backSkirting.userData.isSkirting = true;
-  boxMesh.add(backSkirting);
+  const backSkirting = new MeshBuilder(backSkirtingData);
+  const back = backSkirting.createMesh();
+  back.userData.isSkirting = true;
+  boxMesh.add(back);
 
   // Add Front Skirting
   const frontSkirtingData: MeshObjectData = {
@@ -1097,18 +894,14 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     // Front is Z positive.
     position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: depth / 2 - thickness / 2 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: {
-      type: MATERIAL_TYPE.TEXTURE,
-      value: TEXTURES.LIGHT_WOOD,
-      repeatX: 2,
-      repeatY: 1,
-    },
+    material: [],
     isMain: false,
   };
 
-  const frontSkirting = meshBuilder(frontSkirtingData);
-  frontSkirting.userData.isSkirting = true;
-  boxMesh.add(frontSkirting);
+  const frontSkirting = new MeshBuilder(frontSkirtingData);
+  const front = frontSkirting.createMesh();
+  front.userData.isSkirting = true;
+  boxMesh.add(front);
 };
 
 export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
@@ -1129,9 +922,13 @@ export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   });
 };
 
-export const ensureHandleLoaded = async () => {
+export const ensureHandleLoaded = async (model?: string) => {
   if (cachedHandleModel) return;
-  cachedHandleModel = await GLBLoader('/glb/door_handle.glb', 'DoorHandleGLB', {
+  let url = '/glb/door_model.glb';
+  if (model) {
+    url = `${process.env.NEXT_PUBLIC_PUBLIC_API}` + model;
+  }
+  cachedHandleModel = await GLBLoader(url, 'DoorHandleGLB', {
     width: 20,
     height: 30,
     depth: 100,

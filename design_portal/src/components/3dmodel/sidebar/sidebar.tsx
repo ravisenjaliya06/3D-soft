@@ -12,6 +12,7 @@ import { Dimensions } from '../interface';
 import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  Material,
   MeshObjectData,
   MeshObjectPatch,
   PART_TYPES,
@@ -38,6 +39,10 @@ const Sidebar: React.FC = () => {
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
+  const [distance, setDistance] = useState(128);
+  const [diameter, setDiameter] = useState(8);
+  const [inside, setInside] = useState(25);
+  const [edgeToEnd, setEdgeToEnd] = useState(6);
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
@@ -92,6 +97,9 @@ const Sidebar: React.FC = () => {
       setSettingOpen(false);
       setNavOpen(true);
     }
+    setWidthSide(null);
+    setHeightSide(null);
+    setDepthSide(null);
   }, [selectedObjectId, selectedChildObjectId]);
 
   useEffect(() => {
@@ -129,7 +137,7 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const handleObject = objects.find((obj) => obj.parent === targetId && obj.type === 'handle');
+  const handleObject = objects.find((obj) => obj.parent === targetId);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -197,8 +205,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  console.log(selectedObject, 'selectedObject');
-
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
@@ -259,9 +265,28 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
-    console.log('function called');
 
     setShowMaterialPopup(true);
+  };
+
+  // Helper function to get texture from Material array
+  const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
+    if (!materialArray || !Array.isArray(materialArray)) return null;
+    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
+    if (panelStock?.textures && panelStock.textures.length > 0) {
+      const texture = panelStock.textures[0];
+      if (texture?.textureDetail?.image) {
+        return texture.textureDetail.image;
+      }
+    }
+    return null;
+  };
+
+  // Helper function to check if material has texture
+  const hasTextureMaterial = (materialArray?: Material[]): boolean => {
+    if (!materialArray || !Array.isArray(materialArray)) return false;
+    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
+    return !!(panelStock?.textures && panelStock.textures.length > 0);
   };
 
   const applyColorToSelected = (value: string) => {
@@ -275,9 +300,19 @@ const Sidebar: React.FC = () => {
     if (!obj) return;
 
     const name = obj.name?.toLowerCase() ?? '';
-    if (name.includes('door') || name.includes('drawer')) return;
+    if (name.includes(PART_TYPES.DOOR) || name.includes(PART_TYPES.DRAWER)) return;
 
-    applyObjectUpdate(obj, { material: { type: 'COLOR', value } });
+    // For color updates, we keep the existing Material array structure
+    // The UpdateHandler will handle the color application
+    applyObjectUpdate(obj, { material: obj.material });
+
+    // Also update via UpdateHandler for immediate visual feedback
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(obj.id, {
+        //@ts-ignore
+        material: { type: MATERIAL_TYPES.COLOR, value },
+      });
+    }
   };
 
   const toggleTextureList = () => {
@@ -342,12 +377,17 @@ const Sidebar: React.FC = () => {
 
   const handleTextureSelect = (texturePath: string) => {
     if (!selectedObject) return;
-    applyObjectUpdate(selectedObject, {
-      material: {
-        type: MATERIAL_TYPES.TEXTURE,
-        value: texturePath,
-      },
-    });
+
+    // Update via UpdateHandler for immediate visual feedback
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(selectedObject.id, {
+        //@ts-ignore
+        material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
+      });
+    }
+
+    // Keep existing Material array structure
+    applyObjectUpdate(selectedObject, { material: selectedObject.material });
 
     setIsTextureListOpen(false);
   };
@@ -361,13 +401,20 @@ const Sidebar: React.FC = () => {
     isUpdatingTextureRotationRef.current = true;
     setTextureRotation(clampedValue);
 
-    if (selectedObject.material && selectedObject.material.type === MATERIAL_TYPES.TEXTURE) {
-      applyObjectUpdate(selectedObject, {
-        material: {
-          ...selectedObject.material,
-          rotation: clampedValue,
-        },
-      });
+    // Check if material has texture
+    if (hasTextureMaterial(selectedObject.material)) {
+      // Update texture rotation via UpdateHandler
+      const texturePath = getTextureFromMaterial(selectedObject.material);
+      if (texturePath && updateObjectRef.current) {
+        updateObjectRef.current.update(selectedObject.id, {
+          material: {
+            type: MATERIAL_TYPES.TEXTURE,
+            //@ts-ignore
+            value: texturePath,
+          },
+          textureRotation: clampedValue,
+        });
+      }
     }
 
     setTimeout(() => {
@@ -869,7 +916,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="128"
+                                value={distance}
+                                onChange={(e) => setDistance(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -881,7 +929,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="8"
+                                value={diameter}
+                                onChange={(e) => setDiameter(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -919,7 +968,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="25"
+                                value={inside}
+                                onChange={(e) => setInside(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -931,7 +981,8 @@ const Sidebar: React.FC = () => {
                               </p>
                               <input
                                 type="number"
-                                value="6"
+                                value={edgeToEnd}
+                                onChange={(e) => setEdgeToEnd(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -1551,10 +1602,7 @@ const Sidebar: React.FC = () => {
                             max={180}
                             value={textureRotation}
                             onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                            disabled={
-                              isDisabled ||
-                              selectedObject?.material?.type !== MATERIAL_TYPES.TEXTURE
-                            }
+                            disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
                             className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                         </div>
@@ -1624,7 +1672,7 @@ const Sidebar: React.FC = () => {
                         <>
                           <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start">
+                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
                             <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                               Handle Position
                             </p>
@@ -1635,7 +1683,7 @@ const Sidebar: React.FC = () => {
                                     {field.label}
                                   </p>
                                   <div
-                                    className={`flex h-[1.9rem] w-[3.2rem] items-center gap-[0.1rem] rounded-[0.35rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                    className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
                                   >
                                     {/* IMAGE ICON */}
                                     <Image
@@ -1643,12 +1691,12 @@ const Sidebar: React.FC = () => {
                                       alt={field.label}
                                       width={19}
                                       height={19}
-                                      className="h-[0.8rem] w-[0.8rem] object-contain opacity-70"
+                                      className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
                                     />
 
                                     <img
                                       src={assets.vrLine}
-                                      className="ml-[0.1rem] h-[1.5rem] w-[0.5rem]"
+                                      className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
                                     />
 
                                     {/* Input */}
@@ -1679,9 +1727,8 @@ const Sidebar: React.FC = () => {
       {showMaterialPopup && (
         <MaterialChangePopup
           onClose={() => setShowMaterialPopup(false)}
-          onSave={(selectedMaterials) => {
+          onSave={() => {
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-              console.log('Selected materials:', selectedMaterials);
             }
             setShowMaterialPopup(false);
           }}

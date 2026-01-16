@@ -12,11 +12,10 @@ import {
   addHorizontalPlanksInsideBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
-import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
 import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
@@ -27,7 +26,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
-import { Datastate, IconMap, SelectedCabinetItem } from './interface';
+import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
@@ -43,11 +42,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
-  const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
+  const [selectedCabinetItem, setSelectedCabinetItem] = useState<MeshObjectData | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
-  const moveHandlerRef = React.useRef<MoveHandler | null>(null);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
@@ -87,28 +85,30 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (!threeDView) return;
+  const regenerateGroupIds = (group: MeshObjectData[]): MeshObjectData[] => {
+    const idMap = new Map<string, string>();
 
-    moveHandlerRef.current = new MoveHandler({
-      scene: threeDView.scene,
-      camera: threeDView.camera as THREE.PerspectiveCamera,
-      renderer: threeDView.renderer,
-      movableObjects: [],
+    return group.map((item) => {
+      const newId = crypto.randomUUID();
+      idMap.set(item.id, newId);
+
+      return {
+        ...item,
+        id: newId,
+        parent: item.parent !== null ? idMap.get(item.parent ? item.parent : '') ?? item.parent : undefined,
+      };
     });
-  }, [threeDView]);
+  };
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
-      const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
-      const mesh = designBuilder.createDesign();
-      threeDView!.scene.add(mesh);
-      const finalPosition = await moveHandlerRef.current!.startDragging(mesh);
-      if (finalPosition) {
-        mesh.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
+      if (fullGroup) {
+        const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
+        const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
+        await syncManager.syncData();
       }
     } else {
       setSelectedCabinetItem(item);
@@ -147,11 +147,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       alert('❌ Target box not found!');
       return;
     }
-
     if (['door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox);
+      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num);
+      const fullGroup = cabinetItems.find((group) =>
+        group.some((g) => g.id === selectedCabinetItem.id)
+      );
+      await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {

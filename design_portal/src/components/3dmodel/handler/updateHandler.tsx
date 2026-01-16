@@ -180,6 +180,7 @@ export class UpdateObjectInScene {
   private updateMeshMaterial(mesh: THREE.Mesh, updates: UpdatePayload): void {
     if (!updates.material) return;
 
+    //@ts-ignore
     const { type, value } = updates.material;
 
     const updateTarget = (targetMesh: THREE.Mesh) => {
@@ -201,6 +202,7 @@ export class UpdateObjectInScene {
             this.dispatch(
               updateObject({
                 id: child.userData.objectId,
+                //@ts-ignore
                 material: updates.material,
               })
             );
@@ -287,6 +289,7 @@ export class UpdateObjectInScene {
           ? ({ ...currentObject.rotation, ...updates.rotation } as Position)
           : currentObject.rotation,
 
+        //@ts-ignore
         material: updates.material ?? currentObject.material,
       })
     );

@@ -60,18 +60,60 @@ export const TEXTURES = {
   WHITE_TEXTURE: '/Texture0004.jpg',
 };
 
+export const MATERIAL_TYPES = {
+  BANDING: 'Banding',
+  BOARD_STOCK: 'Board Stock',
+  CASTER: 'Caster',
+  CONNECTOR: 'Connector',
+  DRAWER_GUIDE: 'Drawer Guide',
+  HINGE: 'Hinge',
+  HINGE_PLATE: 'Hinge Plate',
+  LAMINATE: 'Laminate',
+  LEG: 'Leg',
+  LEG_LEVELER: 'Leg Leveler',
+  MISCELLANEOUS: 'Miscellaneous',
+  MOLDING: 'Molding',
+  PANEL_STOCK: 'Panel Stock',
+  PULL: 'Pull',
+  ROD: 'Rod',
+  SLIDING_DOOR_RAIL: 'Sliding Door Rail',
+  SLIDING_DOOR_ROLLER: 'Sliding Door Roller',
+  WIRE_BASKET: 'Wire Basket',
+};
+
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
-type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
-// interface
-interface Material {
-  type: MaterialType;
-  value: string;
-  repeatX?: number;
-  repeatY?: number;
-  rotation?: number; // Texture rotation in degrees
+interface Texture {
+  id: string;
+  name: string;
+  texture: string;
+  textureDetail: TextureDetails;
+}
+
+interface TextureDetails {
+  decal: number;
+  height: number;
+  id: string;
+  image: string;
+  name: string;
+  organization: string;
+  title: number;
+  type: string;
+  url: string;
+  width: number;
+}
+
+export interface Material {
+  id: string;
+  name: string;
+  type: string;
+  company?: string;
+  description?: string;
+  isDeleted?: boolean;
+  textures?: Texture[];
+  properties?: any;
 }
 
 export interface MeshObjectData {
@@ -85,9 +127,10 @@ export interface MeshObjectData {
   rotation: Rotation;
 
   //optional properties
+  description?: string;
   parent?: string;
   scale?: Position;
-  material?: Material;
+  material?: Material[];
   isMain?: boolean;
   openDirection?: DirectionType;
   connectedTo?: string[];

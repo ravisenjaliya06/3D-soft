@@ -2,45 +2,47 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
-import { CatalogRule, RulePart } from '../3dmodel/handler/interface';
+import { Material, MeshObjectData } from '../3dmodel/sceneCreator/interface';
+import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import Header from '../header/header';
 import InputField from '../inputfields/InputField';
 import Sidebar from '../sidebar/sidebar';
 import styles from './catalogmanager.module.css';
-import { Catalog, Material } from './interface';
+import { RulePart } from './interface';
 
 const CatalogManager = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [name, setName] = useState('Data 1');
+  const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
-  const [description, setDescription] = useState('1/2 millimeter');
+  const [editingDescription, setEditingDescription] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [catalogType, setCatalogType] = useState('Door');
-  const [activeRuleId, setActiveRuleId] = useState<string | null>(null);
-  const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
-  const [catalogData, setCatalogData] = useState<Catalog[]>([]);
+  const [selectedCatalog, setSelectedCatalog] = useState<MeshObjectData | null>(null);
+  const [catalogData, setCatalogData] = useState<MeshObjectData[]>([]);
   const [ruleParts, setRuleParts] = useState<RulePart[]>([]);
   const [materialData, setMaterialData] = useState<Material[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState('Banding');
   const [materialSearch, setMaterialSearch] = useState('');
   const [selectedPartId, setSelectedPartId] = useState<string>('');
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
+  const [ruleMaterialTypes, setRuleMaterialTypes] = useState<string[]>([]);
+  const [activeRuleType, setActiveRuleType] = useState<string | null>(null);
 
   useEffect(() => {
-    if (catalogData.length > 0) {
-      setSelectedCatalog(catalogData[0]);
+    if (selectedCatalog) {
+      setEditingName(selectedCatalog.name || '');
+      setEditingDescription(selectedCatalog.description || '');
     }
-  }, [catalogData]);
+  }, [selectedCatalog]);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log('name', name);
-      console.log('description', description);
+      console.log(editingDescription, editingName);
     }
-  });
+  }, []);
 
   const filteredMaterials = materialData
     .filter((mat) => mat.type === selectedMaterialType) // keep type filter
@@ -68,13 +70,13 @@ const CatalogManager = () => {
   ];
 
   // ---------- DROPDOWN DATA ----------
-  const catalogTypes = [
-    { value: 'Plank', label: 'Plank' },
-    { value: 'Door', label: 'Door' },
-    { value: 'Drawer', label: 'Drawer' },
-    { value: 'Sliding Door', label: 'Sliding Door' },
-    { value: 'Cabinet', label: 'Cabinet' },
-  ];
+  const catalogTypes = React.useMemo(() => {
+    const unique = new Map<string, string>();
+    catalogData.forEach((c) => {
+      if (c.type) unique.set(c.type, c.type.toUpperCase());
+    });
+    return Array.from(unique.entries()).map(([value, label]) => ({ value, label }));
+  }, [catalogData]);
 
   const materialTypes = [
     'Banding',
@@ -112,51 +114,24 @@ const CatalogManager = () => {
 
   /** Fetch catalog list based on the selected catalog type */
   const getCatalog = useCallback(async () => {
-    const response: { status: number; data: Catalog[] } = await commonService.get(
-      API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
+    const response: { status: number; data: MeshObjectData[][] } = await commonService.get(
+      API_ENDPOINT.GET_CATALOG_ITEMS
     );
 
     if (response.status === 200) {
-      setCatalogData(response.data);
+      const catalogs: MeshObjectData[] = [];
+      response.data.forEach((catalog) => {
+        catalog.forEach((item) => {
+          catalogs.push(convertKeysToCamel(item));
+        });
+      });
+      setCatalogData(catalogs);
     }
-  }, [catalogType]);
-
-  /** Load all rule parts for the selected rule */
-  const fetchRuleParts = async (ruleId: string) => {
-    setActiveRuleId(ruleId); // mark active rule
-    try {
-      const response: { status: number; data: RulePart[] } = await commonService.get(
-        API_ENDPOINT.GET_CATALOG_RULES_PARTS(ruleId)
-      );
-      if (response.status === 200) {
-        setRuleParts(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching rule parts:', error);
-      setRuleParts([]);
-    }
-  };
+  }, []);
 
   useEffect(() => {
     getCatalog();
   }, [getCatalog]);
-
-  useEffect(() => {
-    if (selectedCatalog && selectedCatalog.catalog_rules.length > 0) {
-      fetchRuleParts(selectedCatalog.catalog_rules[0].id);
-    } else {
-      setActiveRuleId(null);
-      setRuleParts([]);
-    }
-  }, [selectedCatalog]);
-
-  useEffect(() => {
-    if (catalogData.length > 0) {
-      if (!selectedCatalog) {
-        setSelectedCatalog(catalogData[0]);
-      }
-    }
-  }, [catalogData, selectedCatalog]);
 
   /** Create a new catalog and refresh the catalog list */
   const handleCreateCatalog = async () => {
@@ -166,14 +141,14 @@ const CatalogManager = () => {
       description: newDescription,
     };
 
-    const response: { status: number; data: Catalog } = await commonService.post(
+    const response: { status: number; data: MeshObjectData } = await commonService.post(
       API_ENDPOINT.CREATE_MATERIAL_CATALOG,
       payload
     );
 
     if (response.status === 201) {
       // fetch all catalogs
-      const catalogResponse: { status: number; data: Catalog[] } = await commonService.get(
+      const catalogResponse: { status: number; data: MeshObjectData[] } = await commonService.get(
         API_ENDPOINT.GET_CATALOG_USING_TYPE(catalogType)
       );
       if (catalogResponse.status === 200) {
@@ -185,18 +160,18 @@ const CatalogManager = () => {
   };
 
   /** Fetch all available materials from the server */
-  const getMaterial = async () => {
+  const getMaterial = useCallback(async () => {
     const response: { status: number; data: Material[] } = await commonService.get(
       API_ENDPOINT.GET_MATERIAL
     );
     if (response.status === 200) {
       setMaterialData(response.data);
     }
-  };
+  }, []);
 
   useEffect(() => {
     getMaterial();
-  }, []);
+  }, [getMaterial]);
 
   /** Assign a selected material to a selected part */
   const handleAssignMaterial = async (partId: string, materialId: string | null) => {
@@ -257,6 +232,7 @@ const CatalogManager = () => {
       alert('Please select a part and material');
       setSelectedPartId('');
       setSelectedMaterialId('');
+      return;
     }
     handleAssignMaterial(selectedPartId, selectedMaterialId);
     setSelectedPartId('');
@@ -284,6 +260,67 @@ const CatalogManager = () => {
     setshowDeletePopup(true);
   };
 
+  useEffect(() => {
+    const first = catalogData.find((c) => c.isMain && c.type === catalogType.toLowerCase());
+    setSelectedCatalog(first || null);
+  }, [catalogType, catalogData]);
+
+  useEffect(() => {
+    if (!selectedCatalog || !activeRuleType) {
+      setRuleParts([]);
+      return;
+    }
+
+    const children = catalogData.filter((c) => c.parent === selectedCatalog.id);
+
+    const matchingChildren = children.filter((child) =>
+      child.material?.some((m) => m.type === activeRuleType)
+    );
+
+    if (matchingChildren.length > 0) {
+      setRuleParts(
+        matchingChildren.map((child) => ({
+          id: child.id,
+          name: child.name,
+          material: child.material?.find((m: Material) => m.type === activeRuleType) || null,
+        }))
+      );
+      return;
+    }
+
+    const parentMaterial = selectedCatalog.material?.find(
+      (m: Material) => m.type === activeRuleType
+    );
+
+    if (parentMaterial) {
+      setRuleParts([
+        {
+          id: selectedCatalog.id,
+          name: selectedCatalog.name,
+          material: parentMaterial,
+        },
+      ]);
+    } else {
+      setRuleParts([]);
+    }
+  }, [selectedCatalog, activeRuleType, catalogData]);
+
+  useEffect(() => {
+    if (!selectedCatalog) return;
+
+    const children = catalogData.filter((c) => c.parent === selectedCatalog.id);
+
+    const allMaterials = [
+      ...(selectedCatalog.material || []),
+      ...children.flatMap((c) => c.material || []),
+    ];
+
+    const types = [...new Set(allMaterials.map((m) => m.type))];
+
+    setRuleMaterialTypes(types);
+    setActiveRuleType(types[0] || null);
+  }, [selectedCatalog, catalogData]);
+
   return (
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
@@ -307,7 +344,7 @@ const CatalogManager = () => {
                     >
                       {catalogTypes.map((opt) => (
                         <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {formatEnumLabel(opt.label)}
                         </option>
                       ))}
                     </select>
@@ -325,11 +362,13 @@ const CatalogManager = () => {
                         setSelectedCatalog(catalog || null);
                       }}
                     >
-                      {catalogData.map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {opt.name}
-                        </option>
-                      ))}
+                      {catalogData
+                        .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
+                        .map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {formatEnumLabel(opt.name)}
+                          </option>
+                        ))}
                     </select>
                     <div className="ml-[1.7rem] h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
                   </div>
@@ -347,37 +386,24 @@ const CatalogManager = () => {
           </div>
 
           {/* MAIN CONTENT */}
-          <div className="flex h-[40rem] flex-row gap-[0.9rem] px-0 pr-[7rem] pb-[1rem] pl-[7rem]">
+          <div className="flex h-[41rem] flex-row gap-[2rem] px-0 pr-[1rem] pb-[1rem] pl-[2rem]">
             {/* LEFT SIDEBAR */}
-            <div className="flex h-full max-h-[66vh] w-[14rem] flex-col justify-between rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-[white] p-2 p-[0rem]">
+            <div className="flex h-full max-h-[70vh] w-[14rem] flex-col justify-between rounded-[0.5rem] border border-[rgba(57,37,121,0.3)] bg-[white] p-2">
               {/* ================= RULE LIST ================= */}
               <div className="flex flex-[1] flex-col">
-                <div className="mt-[1] flex-[1] space-y-[1] overflow-y-auto pr-[1]">
-                  {selectedCatalog?.catalog_rules.map((rule: CatalogRule) => (
+                <div className="m-[0.5rem] flex flex-col gap-[0.3rem] space-y-[1] overflow-y-auto pr-[1]">
+                  {ruleMaterialTypes.map((type) => (
                     <div
-                      key={rule.id}
-                      onClick={() => fetchRuleParts(rule.id)}
-                      className={`relative mt-[0.3125rem] ml-[1rem] flex h-[2rem] w-[11rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.5rem] px-[3] py-[2] transition-colors duration-150 ${
-                        activeRuleId === rule.id
-                          ? 'bg-[#E6DEFF]'
-                          : 'hover:bg-[var(--primary-hover)]'
-                      } `}
+                      key={type}
+                      onClick={() => setActiveRuleType(type)}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
+                        activeRuleType === type
+                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                          : 'text-gray-500 hover:bg-gray-100'
+                      }`}
                     >
-                      <img
-                        src={assets.matariel}
-                        alt=""
-                        className="h-[1.2rem] w-[1.2rem] bg-[#F3F4F6]"
-                      />
-
-                      <span
-                        className={`text-[0.7rem] ${
-                          activeRuleId === rule.id
-                            ? 'font-medium text-[var(--primary-color)]'
-                            : 'text-[var(--primary-hover)]'
-                        } `}
-                      >
-                        {rule.name}
-                      </span>
+                      <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
+                      {type}
                     </div>
                   ))}
                 </div>
@@ -388,7 +414,7 @@ const CatalogManager = () => {
                 <div className="rounded-[0.35rem] bg-white p-3">
                   {/* HEADER */}
                   <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
-                    Door ID 45
+                    Part Details
                   </p>
 
                   {/* INPUTS */}
@@ -399,17 +425,16 @@ const CatalogManager = () => {
                         <input
                           type="text"
                           value={selectedCatalog?.name}
-                          onChange={(e) => setName(e.target.value)}
                           onBlur={handleBlur(setIsEditingName)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                          className="h-[0.9375rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
+                          className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
                         />
                       ) : (
                         <div
                           onClick={() => setIsEditingName(true)}
-                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
+                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
                         >
-                          {selectedCatalog?.name}
+                          {formatEnumLabel(selectedCatalog?.name ? selectedCatalog.name : '')}
                         </div>
                       )}
 
@@ -425,47 +450,22 @@ const CatalogManager = () => {
                         <input
                           type="text"
                           value={selectedCatalog?.description}
-                          onChange={(e) => setDescription(e.target.value)}
                           onBlur={handleBlur(setIsEditingDescription)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                          className="h-[0.9375rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
+                          className="h-[0.9375rem] w-[11rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
                         />
                       ) : (
                         <div
                           onClick={() => setIsEditingDescription(true)}
-                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
+                          className="flex h-[0.9375rem] w-[11rem] cursor-pointer items-start rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
                         >
                           {selectedCatalog?.description}
                         </div>
                       )}
 
                       {/* FLOATING LABEL */}
-                      <span className="pointer-events-none absolute top-[0.125rem] left-3 pl-[1rem] text-[0.55rem] text-[var(--primary-color)]">
+                      <span className="pointer-events-none absolute top-[2px] left-3 pl-[1rem] text-[0.55rem] text-[rgba(57,37,121,0.55)]">
                         Description
-                      </span>
-                    </div>
-
-                    {/* UP CHARGE */}
-                    <div className="relative mb-[0.5rem]">
-                      <div className="flex h-[0.9375rem] w-[11rem] items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]">
-                        10%
-                      </div>
-
-                      {/* FLOATING LABEL */}
-                      <span className="pointer-events-none absolute top-[0.125rem] left-3 pl-[1rem] text-[0.55rem] text-[var(--primary-color)]">
-                        up charge
-                      </span>
-                    </div>
-
-                    {/* BUYOUT */}
-                    <div className="relative mb-[0.5rem]">
-                      <div className="flex h-[0.9375rem] w-[11rem] items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-3 pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]">
-                        NO
-                      </div>
-
-                      {/* FLOATING LABEL */}
-                      <span className="pointer-events-none absolute top-[0.125rem] left-3 pl-[1rem] text-[0.55rem] text-[var(--primary-color)]">
-                        buyout
                       </span>
                     </div>
                   </div>
@@ -474,7 +474,7 @@ const CatalogManager = () => {
             </div>
 
             {/* Middle Table */}
-            <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.35rem] border-[0.1rem] border-[var(--primary-light-grey)] bg-white p-[0rem]">
+            <div className="h-full max-h-[70vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.5rem] rounded-xl border border-[rgba(57,37,121,0.2)] bg-white">
               {/* TABLE SCROLL CONTAINER */}
               <div className="overflow-y-auto">
                 <table className="w-full border-collapse">
@@ -483,31 +483,19 @@ const CatalogManager = () => {
                     <tr>
                       <th
                         colSpan={3}
-                        className="h-[3rem] border-b-[0.1rem] border-[var(--primary-light-grey)] bg-[var(--thbackground-color)] px-[5] text-left font-[700] text-[#392579]"
+                        className="h-[3rem] border-b border-[rgba(57,37,121,0.15)] bg-[rgba(250,250,250,1)] px-[5] text-left font-[700] text-[#392579]"
                       >
                         <div className="ml-[0.87rem] text-[0.85rem]">Material Properties</div>
                       </th>
                     </tr>
                     <tr>
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                        <div className="ml-[0.87rem]">
-                          Part
-                          <img
-                            src={assets.up_down_arrow}
-                            alt="Sort"
-                            className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                          />
-                        </div>
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                        <div className="ml-[0.87rem]">Part</div>
                       </th>
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
-                        Material{' '}
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] inline-block h-[0.8rem] w-3"
-                        />
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                        Material
                       </th>
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
+                      <th className="h-[28px] border-b border-[rgba(57,37,121,0.15)] px-[5] py-[3] text-left text-[0.85rem] font-[700] text-[#392579]">
                         Action
                       </th>
                     </tr>
@@ -525,16 +513,18 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer border-b-[0.1rem] border-[var(--primary-light-grey)] bg-[var(--primary-hover)] hover:bg-[var(--primary-hover)] ${
-                            selectedPartId === part.id ? 'bg-[var(--primary-hover)]' : ''
+                          className={`cursor-pointer border-b border-[rgba(57,37,121,0.1)] bg-[rgba(255,255,255,1)] hover:bg-[rgba(250,250,250,1)] ${
+                            selectedPartId === part.id ? 'bg-[rgba(245,242,255,1)]' : ''
                           } `}
                         >
-                          <td className="h-[1.75rem] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                            {part.name}
+                          <td className="ml-[0.87rem] h-[28px] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
+                            {formatEnumLabel(part.name)}
                           </td>
 
                           <td className="h-[1.75rem] px-[5] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                            {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                            {part.material?.name
+                              ? formatEnumLabel(part.material.name)
+                              : 'No Material Assigned'}
                           </td>
 
                           <td className="h-[1.75rem] px-[5] py-[2.5]">
@@ -658,12 +648,12 @@ const CatalogManager = () => {
                             draggable
                             onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                             onClick={() => setSelectedMaterialId(row.id)}
-                            className={`cursor-pointer bg-white hover:bg-[var(--primary-hover)] ${
-                              selectedMaterialId === row.id ? 'bg-[var(--primary-white)]' : ''
+                            className={`cursor-pointer bg-white hover:bg-[rgba(250,250,250,1)] ${
+                              selectedMaterialId === row.id ? 'bg-[rgba(245,242,255,1)]' : ''
                             } `}
                           >
                             {/* RADIO */}
-                            <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--primary-light-grey)] p-[0rem] px-[1rem]">
+                            <td className="h-[28px] border-b-[1px] border-[rgba(57,37,121,0.15)] px-[16px]">
                               <input
                                 type="radio"
                                 checked={selectedMaterialId === row.id}
