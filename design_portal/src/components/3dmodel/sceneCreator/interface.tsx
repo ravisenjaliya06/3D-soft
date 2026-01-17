@@ -125,6 +125,16 @@ export interface Material {
   properties?: any;
 }
 
+export interface EdgeBandingState {
+  top?: boolean;
+  bottom?: boolean;
+  left?: boolean;
+  right?: boolean;
+  front?: boolean;
+  back?: boolean;
+  thickness?: number;
+}
+
 export interface MeshObjectData {
   // main properties
   id: string;
@@ -146,6 +156,7 @@ export interface MeshObjectData {
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  edgeBanding?: EdgeBandingState;
 }
 
 export interface userData {
@@ -196,4 +207,5 @@ export type MeshObjectPatch = Omit<
   dimensions?: Partial<Dimensions>;
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
+  edgeBanding?: EdgeBandingState;
 };

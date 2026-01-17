@@ -39,17 +39,23 @@ export class DesignBuilder {
     this.data.forEach((meshData) => {
       const isPlank = Object.values(PART_TYPES).includes(meshData.type);
 
-      if (!isPlank || !meshData.parent) return;
-
-      const parentData = this.data.find((d) => d.id === meshData.parent);
-      if (!parentData) return;
-
-      const parentBandingMaterial = this._findBandingMaterial(parentData.material);
-      if (!parentBandingMaterial) return;
+      if (!isPlank) return;
 
       const builder = this.builderMap.get(meshData.id);
-      if (builder) {
-        promises.push(builder.applyParentBandingMaterial(parentBandingMaterial));
+      if (!builder) return;
+
+      // If plank has its own banding state, use it
+      if (meshData.edgeBanding) {
+        promises.push(builder.applyBandingFromState());
+      } else if (meshData.parent) {
+        // Otherwise, check parent for banding material
+        const parentData = this.data.find((d) => d.id === meshData.parent);
+        if (!parentData) return;
+
+        const parentBandingMaterial = this._findBandingMaterial(parentData.material);
+        if (parentBandingMaterial) {
+          promises.push(builder.applyParentBandingMaterial(parentBandingMaterial));
+        }
       }
     });
     await Promise.all(promises);

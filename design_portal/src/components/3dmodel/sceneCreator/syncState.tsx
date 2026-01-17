@@ -6,7 +6,7 @@ import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
-import { FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES } from './interface';
+import { FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { MeshBuilder } from './meshBuilder';
 import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
 
@@ -129,7 +129,8 @@ export class SyncManager {
         }
         toUpdate.push(item);
       } else {
-        toAdd.push(item);
+        const itemWithBanding = this._detectBandingFromScene(item);
+        toAdd.push(itemWithBanding);
       }
     });
 
@@ -138,6 +139,42 @@ export class SyncManager {
     } else {
       toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
     }
+  }
+
+  /**
+   * Detect edgeBanding state from the 3D scene meshes
+   * This ensures banding data is stored when objects are initially added
+   */
+  private _detectBandingFromScene(meshData: MeshObjectData): MeshObjectData {
+    if (meshData.edgeBanding) {
+      return meshData;
+    }
+
+    const mesh = this._findMeshById(meshData.id);
+    if (!mesh) {
+      return meshData;
+    }
+
+    const detectedBanding: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean } = {};
+    
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
+        const edge = child.userData.edge;
+        if (edge && typeof edge === 'string') {
+          detectedBanding[edge as keyof typeof detectedBanding] = true;
+        }
+      }
+    });
+
+    // If we found any banding, add it to the meshData
+    if (Object.keys(detectedBanding).length > 0) {
+      return {
+        ...meshData,
+        edgeBanding: detectedBanding,
+      };
+    }
+
+    return meshData;
   }
 
   private _sync2D(list: MeshObjectData[]): void {
@@ -230,12 +267,29 @@ export class SyncManager {
   }
 
   // Updates the mesh
-  private _updateMesh(mesh: THREE.Mesh) {
+  private async _updateMesh(mesh: THREE.Mesh) {
     if (!this.oldData || !this.meshBuilder || this.isArray) return;
 
     const data = this.data as MeshObjectData;
     const changes = this._getMeshObjectPatch(this.oldData, data);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
+
+    // Update banding if dimensions changed or banding state changed
+    if (changes.dimensions || changes.edgeBanding) {
+      if (Object.values(PART_TYPES).includes(mesh.userData.type)) {
+        // This is a plank - update banding
+        if (changes.dimensions && data.dimensions) {
+          await this.meshBuilder.updateBanding(mesh, {
+            width: data.dimensions.width ?? 0,
+            height: data.dimensions.height ?? 0,
+            depth: data.dimensions.depth ?? 0,
+          });
+        } else if (changes.edgeBanding) {
+          // Banding state changed - recreate banding
+          await this.meshBuilder.applyBandingFromState();
+        }
+      }
+    }
 
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
@@ -276,6 +330,47 @@ export class SyncManager {
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
 
+      // Skip banding meshes - they will be updated separately
+      if (child.userData.type === 'banding') {
+        // Update banding mesh dimensions and position
+        const edge = child.userData.edge;
+        const bandingParams = child.geometry.parameters;
+        const bandingThickness = Math.min(bandingParams.width, bandingParams.height, bandingParams.depth);
+
+        let newBandingGeometry: THREE.BoxGeometry;
+        let newBandingPosition: THREE.Vector3;
+
+        if (edge === 'top' || edge === 'bottom') {
+          newBandingGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
+          newBandingPosition = new THREE.Vector3(
+            0,
+            edge === 'top' ? newHeight / 2 - bandingThickness / 2 : -newHeight / 2 + bandingThickness / 2,
+            0
+          );
+        } else if (edge === 'left' || edge === 'right') {
+          newBandingGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
+          newBandingPosition = new THREE.Vector3(
+            edge === 'left' ? -newWidth / 2 + bandingThickness / 2 : newWidth / 2 - bandingThickness / 2,
+            0,
+            0
+          );
+        } else if (edge === 'front' || edge === 'back') {
+          newBandingGeometry = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
+          newBandingPosition = new THREE.Vector3(
+            0,
+            0,
+            edge === 'front' ? newDepth / 2 - bandingThickness / 2 : -newDepth / 2 + bandingThickness / 2
+          );
+        } else {
+          return; // Unknown edge
+        }
+
+        child.geometry.dispose();
+        child.geometry = newBandingGeometry;
+        child.position.copy(newBandingPosition);
+        return;
+      }
+
       const childParams = child.geometry.parameters;
 
       /**
@@ -299,6 +394,51 @@ export class SyncManager {
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
 
       child.position.set(nextX, nextY, nextZ);
+
+      // Update banding for this child plank if it has any
+      if (child.userData.type && ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(child.userData.type)) {
+        // Update banding meshes for this child plank
+        child.children.forEach((bandingChild) => {
+          if (!(bandingChild instanceof THREE.Mesh) || bandingChild.userData.type !== 'banding') return;
+          if (!(bandingChild.geometry instanceof THREE.BoxGeometry)) return;
+
+          const bandingEdge = bandingChild.userData.edge;
+          const bandingParams = bandingChild.geometry.parameters;
+          const bandingThickness = Math.min(bandingParams.width, bandingParams.height, bandingParams.depth);
+
+          let newBandingGeometry: THREE.BoxGeometry;
+          let newBandingPosition: THREE.Vector3;
+
+          if (bandingEdge === 'top' || bandingEdge === 'bottom') {
+            newBandingGeometry = new THREE.BoxGeometry(nextWidth, bandingThickness, nextDepth);
+            newBandingPosition = new THREE.Vector3(
+              0,
+              bandingEdge === 'top' ? nextHeight / 2 - bandingThickness / 2 : -nextHeight / 2 + bandingThickness / 2,
+              0
+            );
+          } else if (bandingEdge === 'left' || bandingEdge === 'right') {
+            newBandingGeometry = new THREE.BoxGeometry(bandingThickness, nextHeight, nextDepth);
+            newBandingPosition = new THREE.Vector3(
+              bandingEdge === 'left' ? -nextWidth / 2 + bandingThickness / 2 : nextWidth / 2 - bandingThickness / 2,
+              0,
+              0
+            );
+          } else if (bandingEdge === 'front' || bandingEdge === 'back') {
+            newBandingGeometry = new THREE.BoxGeometry(nextWidth, nextHeight, bandingThickness);
+            newBandingPosition = new THREE.Vector3(
+              0,
+              0,
+              bandingEdge === 'front' ? nextDepth / 2 - bandingThickness / 2 : -nextDepth / 2 + bandingThickness / 2
+            );
+          } else {
+            return;
+          }
+
+          bandingChild.geometry.dispose();
+          bandingChild.geometry = newBandingGeometry;
+          bandingChild.position.copy(newBandingPosition);
+        });
+      }
 
       // Note: We don't update outline for children - only the selected parent should have an outline
 
@@ -345,17 +485,68 @@ export class SyncManager {
     if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
       this.scene.add(root);
       await this._applyDrag(root);
-      return;
+    } else {
+      this._attachToParentOrScene(root, rootItem?.parent);
     }
 
-    this._attachToParentOrScene(root, rootItem?.parent);
+    // After banding is applied, detect and sync banding state to Redux
+    this._syncBandingFromScene(list);
+  }
+
+  /**
+   * Detect banding from scene meshes and sync to Redux store
+   * This ensures banding data is stored when objects are initially added
+   */
+  private _syncBandingFromScene(list: MeshObjectData[]): void {
+    list.forEach((meshData) => {
+      // Only check planks for banding
+      if (!Object.values(PART_TYPES).includes(meshData.type)) {
+        return;
+      }
+
+      const mesh = this._findMeshById(meshData.id);
+      if (!mesh) return;
+
+      // Detect banding meshes from children
+      const detectedBanding: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean } = {};
+      
+      mesh.children.forEach((child) => {
+        if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
+          const edge = child.userData.edge;
+          if (edge && typeof edge === 'string') {
+            detectedBanding[edge as keyof typeof detectedBanding] = true;
+          }
+        }
+      });
+
+      // If we found banding and it's not already in Redux, update it
+      if (Object.keys(detectedBanding).length > 0) {
+        const existingObjects = store.getState().data.objects;
+        const existing = existingObjects.find((o) => o.id === meshData.id);
+        
+        // Only update if banding state is different or missing
+        if (existing) {
+          const existingBanding = existing.edgeBanding || {};
+          const hasChanges = Object.keys(detectedBanding).some(
+            (edge) => detectedBanding[edge as keyof typeof detectedBanding] !== existingBanding[edge as keyof typeof existingBanding]
+          );
+          
+          if (hasChanges || Object.keys(existingBanding).length === 0) {
+            store.dispatch(updateObject({
+              id: meshData.id,
+              edgeBanding: detectedBanding,
+            }));
+          }
+        }
+      }
+    });
   }
 
   private async _handleSingle(item: MeshObjectData) {
     const existingMesh = this._findMeshById(item.id);
 
     if (existingMesh) {
-      this._updateMesh(existingMesh);
+      await this._updateMesh(existingMesh);
       updateOrRefreshOutline(this.scene, existingMesh);
       if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
       return;

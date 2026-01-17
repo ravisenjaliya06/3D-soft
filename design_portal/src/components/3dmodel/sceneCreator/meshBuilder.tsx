@@ -360,6 +360,7 @@ export class MeshBuilder {
 
   /**
    * Helper function to create a banding mesh on a specific edge
+   * Banding sits ON the plank surface, not outside
    */
   private _createBandingMesh(
     mesh: THREE.Mesh,
@@ -375,11 +376,82 @@ export class MeshBuilder {
     banding.position.copy(position);
     banding.name = `Banding_${sideName}_${mesh.name}`;
     banding.userData.type = 'banding';
+    banding.userData.edge = edge;
     banding.userData.objectId = `${mesh.userData.objectId}_banding_${sideName.toLowerCase()}`;
     mesh.add(banding);
   }
 
-  private async _createBandingOnPlank(mesh: THREE.Mesh, materialData: Material) {
+  /**
+   * Remove all banding meshes from a plank
+   */
+  public removeAllBanding(mesh: THREE.Mesh): void {
+    const toRemove: THREE.Object3D[] = [];
+    mesh.children.forEach((child) => {
+      if (child.userData.type === 'banding') {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
+      }
+      mesh.remove(child);
+    });
+  }
+
+  /**
+   * Remove banding from a specific edge
+   */
+  public removeBandingOnEdge(mesh: THREE.Mesh, edge: string): void {
+    const toRemove: THREE.Object3D[] = [];
+    mesh.children.forEach((child) => {
+      if (child.userData.type === 'banding' && child.userData.edge === edge) {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
+      }
+      mesh.remove(child);
+    });
+  }
+
+  /**
+   * Update banding positions and sizes when plank dimensions change
+   */
+  public async updateBanding(mesh: THREE.Mesh, newDimensions: { width: number; height: number; depth: number }): Promise<void> {
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
+    
+    const bandingState = this.meshData.edgeBanding;
+    if (!bandingState) return;
+
+    // Remove all existing banding
+    this.removeAllBanding(mesh);
+
+    // Recreate banding with new dimensions
+    const materialData = this.meshData.material;
+    if (!materialData) return;
+
+    const materialArray = Array.isArray(materialData) ? materialData : [materialData];
+    const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+    
+    if (bandingMaterialData) {
+      await this._createBandingOnPlank(mesh, bandingMaterialData, bandingState);
+    }
+  }
+
+  private async _createBandingOnPlank(
+    mesh: THREE.Mesh, 
+    materialData: Material,
+    bandingState?: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean }
+  ) {
     // Check if this is a plank
     const isPlank = Object.values(PART_TYPES).includes(mesh.userData.type);
 
@@ -419,123 +491,165 @@ export class MeshBuilder {
       isVerticalPlank = true;
     }
 
-    // Create banding only on visible/exposed edges (not touching other planks)
+    // Use bandingState if provided, otherwise check all edges
+    const shouldCreateBanding = (edge: string): boolean => {
+      if (bandingState) {
+        const edgeMap: Record<string, keyof typeof bandingState> = {
+          [EDGES.TOP]: 'top',
+          [EDGES.BOTTOM]: 'bottom',
+          [EDGES.LEFT]: 'left',
+          [EDGES.RIGHT]: 'right',
+          [EDGES.FRONT]: 'front',
+          [EDGES.BACK]: 'back',
+        };
+        const stateKey = edgeMap[edge];
+        return stateKey ? (bandingState[stateKey] ?? false) : false;
+      }
+      // Default behavior: create banding if edge is not covered
+      return !this._isEdgeCovered(mesh, edge);
+    };
+
+    // Create banding only on specified edges (from bandingState) or visible/exposed edges
     // For vertical planks: create banding on left, right, front, back sides
     // where: front = top edge, back = bottom edge, right = front edge, left = back edge
     if (isVerticalPlank) {
-      // Front side (top edge): width x depth, banding extends in Y direction
-      this._createBandingMesh(
-        mesh,
-        EDGES.TOP,
-        new THREE.BoxGeometry(width, bandingThickness, depth),
-        new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0),
-        EDGES.FRONT,
-        bandingMaterial
-      );
+      // Top edge: banding sits ON the top surface (not outside)
+      if (shouldCreateBanding(EDGES.TOP)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.TOP,
+          new THREE.BoxGeometry(width, bandingThickness, depth),
+          new THREE.Vector3(0, height / 2 - bandingThickness / 2, 0),
+          EDGES.TOP,
+          bandingMaterial
+        );
+      }
 
-      // Back side (bottom edge): width x depth, banding extends in Y direction
-      this._createBandingMesh(
-        mesh,
-        EDGES.BOTTOM,
-        new THREE.BoxGeometry(width, bandingThickness, depth),
-        new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0),
-        EDGES.BACK,
-        bandingMaterial
-      );
+      // Bottom edge: banding sits ON the bottom surface
+      if (shouldCreateBanding(EDGES.BOTTOM)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.BOTTOM,
+          new THREE.BoxGeometry(width, bandingThickness, depth),
+          new THREE.Vector3(0, -height / 2 + bandingThickness / 2, 0),
+          EDGES.BOTTOM,
+          bandingMaterial
+        );
+      }
 
-      // Right side (front edge): height x width, banding extends in Z direction
-      this._createBandingMesh(
-        mesh,
-        EDGES.FRONT,
-        new THREE.BoxGeometry(width, height, bandingThickness),
-        new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2),
-        EDGES.RIGHT,
-        bandingMaterial
-      );
+      // Front edge: banding sits ON the front surface
+      if (shouldCreateBanding(EDGES.FRONT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.FRONT,
+          new THREE.BoxGeometry(width, height, bandingThickness),
+          new THREE.Vector3(0, 0, depth / 2 - bandingThickness / 2),
+          EDGES.FRONT,
+          bandingMaterial
+        );
+      }
 
-      // Left side (back edge): height x width, banding extends in Z direction
-      this._createBandingMesh(
-        mesh,
-        EDGES.BACK,
-        new THREE.BoxGeometry(width, height, bandingThickness),
-        new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2),
-        EDGES.LEFT,
-        bandingMaterial
-      );
+      // Back edge: banding sits ON the back surface
+      if (shouldCreateBanding(EDGES.BACK)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.BACK,
+          new THREE.BoxGeometry(width, height, bandingThickness),
+          new THREE.Vector3(0, 0, -depth / 2 + bandingThickness / 2),
+          EDGES.BACK,
+          bandingMaterial
+        );
+      }
     } else if (isHorizontalPlank) {
       // Horizontal plank: banding on Left, Right, Front, Back faces
-      this._createBandingMesh(
-        mesh,
-        EDGES.LEFT,
-        new THREE.BoxGeometry(bandingThickness, height, depth),
-        new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0),
-        EDGES.LEFT,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.LEFT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.LEFT,
+          new THREE.BoxGeometry(bandingThickness, height, depth),
+          new THREE.Vector3(-width / 2 + bandingThickness / 2, 0, 0),
+          EDGES.LEFT,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.RIGHT,
-        new THREE.BoxGeometry(bandingThickness, height, depth),
-        new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0),
-        EDGES.RIGHT,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.RIGHT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.RIGHT,
+          new THREE.BoxGeometry(bandingThickness, height, depth),
+          new THREE.Vector3(width / 2 - bandingThickness / 2, 0, 0),
+          EDGES.RIGHT,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.FRONT,
-        new THREE.BoxGeometry(width, height, bandingThickness),
-        new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2),
-        EDGES.FRONT,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.FRONT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.FRONT,
+          new THREE.BoxGeometry(width, height, bandingThickness),
+          new THREE.Vector3(0, 0, depth / 2 - bandingThickness / 2),
+          EDGES.FRONT,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.BACK,
-        new THREE.BoxGeometry(width, height, bandingThickness),
-        new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2),
-        EDGES.BACK,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.BACK)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.BACK,
+          new THREE.BoxGeometry(width, height, bandingThickness),
+          new THREE.Vector3(0, 0, -depth / 2 + bandingThickness / 2),
+          EDGES.BACK,
+          bandingMaterial
+        );
+      }
     } else if (isBackPlank) {
       // Back plank: banding on Top, Bottom, Left, Right faces
-      this._createBandingMesh(
-        mesh,
-        EDGES.TOP,
-        new THREE.BoxGeometry(width, bandingThickness, depth),
-        new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0),
-        EDGES.TOP,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.TOP)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.TOP,
+          new THREE.BoxGeometry(width, bandingThickness, depth),
+          new THREE.Vector3(0, height / 2 - bandingThickness / 2, 0),
+          EDGES.TOP,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.BOTTOM,
-        new THREE.BoxGeometry(width, bandingThickness, depth),
-        new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0),
-        EDGES.BOTTOM,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.BOTTOM)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.BOTTOM,
+          new THREE.BoxGeometry(width, bandingThickness, depth),
+          new THREE.Vector3(0, -height / 2 + bandingThickness / 2, 0),
+          EDGES.BOTTOM,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.LEFT,
-        new THREE.BoxGeometry(bandingThickness, height, depth),
-        new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0),
-        EDGES.LEFT,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.LEFT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.LEFT,
+          new THREE.BoxGeometry(bandingThickness, height, depth),
+          new THREE.Vector3(-width / 2 + bandingThickness / 2, 0, 0),
+          EDGES.LEFT,
+          bandingMaterial
+        );
+      }
 
-      this._createBandingMesh(
-        mesh,
-        EDGES.RIGHT,
-        new THREE.BoxGeometry(bandingThickness, height, depth),
-        new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0),
-        EDGES.RIGHT,
-        bandingMaterial
-      );
+      if (shouldCreateBanding(EDGES.RIGHT)) {
+        this._createBandingMesh(
+          mesh,
+          EDGES.RIGHT,
+          new THREE.BoxGeometry(bandingThickness, height, depth),
+          new THREE.Vector3(width / 2 - bandingThickness / 2, 0, 0),
+          EDGES.RIGHT,
+          bandingMaterial
+        );
+      }
     }
   }
 
@@ -546,7 +660,50 @@ export class MeshBuilder {
    */
   public async applyParentBandingMaterial(parentBandingMaterial: Material): Promise<void> {
     if (!this.mesh) return;
-    await this._createBandingOnPlank(this.mesh, parentBandingMaterial);
+    await this._createBandingOnPlank(this.mesh, parentBandingMaterial, this.meshData.edgeBanding);
+  }
+
+  /**
+   * Create or update banding based on edgeBanding state
+   */
+  public async applyBandingFromState(
+    mesh?: THREE.Mesh, 
+    bandingMaterial?: Material,
+    edgeBandingState?: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean }
+  ): Promise<void> {
+    const targetMesh = mesh || this.mesh;
+    if (!targetMesh) return;
+    
+    // Use provided banding material or find it from meshData
+    let bandingMaterialData = bandingMaterial;
+    
+    if (!bandingMaterialData) {
+      const materialArray = Array.isArray(this.meshData.material)
+        ? this.meshData.material
+        : this.meshData.material ? [this.meshData.material] : [];
+      
+      bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+    }
+    
+    // Use provided edgeBandingState or fall back to meshData
+    const bandingState = edgeBandingState || this.meshData.edgeBanding;
+    
+    // Check if we have banding material and at least one edge is enabled
+    if (bandingMaterialData && bandingState) {
+      const hasAnyBanding = bandingState.top || bandingState.bottom || 
+                           bandingState.left || bandingState.right || 
+                           bandingState.front || bandingState.back;
+      
+      if (hasAnyBanding) {
+        // Remove all existing banding first to avoid duplicates
+        this.removeAllBanding(targetMesh);
+        // Then recreate based on current state
+        await this._createBandingOnPlank(targetMesh, bandingMaterialData, bandingState);
+      } else {
+        // No edges enabled, remove all banding
+        this.removeAllBanding(targetMesh);
+      }
+    }
   }
 
   private _handleMaterial() {

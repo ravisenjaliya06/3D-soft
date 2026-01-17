@@ -45,7 +45,26 @@ const dataSlice = createSlice({
       const updatedObject = action.payload;
       const index = state.objects.findIndex((obj) => obj.id === updatedObject.id);
       if (index !== -1) {
-        state.objects[index] = { ...state.objects[index], ...updatedObject };
+        const existingObject = state.objects[index];
+        // Deep merge for nested objects like edgeBanding
+        const mergedObject: MeshObjectData = {
+          ...existingObject,
+          ...updatedObject,
+          // Merge nested properties properly
+          dimensions: updatedObject.dimensions
+            ? { ...existingObject.dimensions, ...updatedObject.dimensions }
+            : existingObject.dimensions,
+          position: updatedObject.position
+            ? { ...existingObject.position, ...updatedObject.position }
+            : existingObject.position,
+          rotation: updatedObject.rotation
+            ? { ...existingObject.rotation, ...updatedObject.rotation }
+            : existingObject.rotation,
+          edgeBanding: updatedObject.edgeBanding
+            ? { ...existingObject.edgeBanding, ...updatedObject.edgeBanding }
+            : existingObject.edgeBanding,
+        };
+        state.objects[index] = mergedObject;
       }
     },
     updateObjectId: (state, action: PayloadAction<{ oldId: string; newId: string }>) => {
