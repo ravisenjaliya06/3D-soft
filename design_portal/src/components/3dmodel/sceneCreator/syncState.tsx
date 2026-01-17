@@ -6,7 +6,7 @@ import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
-import { FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
+import { FLOOR_PLAN_TYPES, MATERIAL_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { MeshBuilder } from './meshBuilder';
 import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
 
@@ -560,6 +560,52 @@ export class SyncManager {
       if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
     } else {
       this._attachToParentOrScene(mesh, item.parent);
+    }
+
+    // For planks, check if parent has banding material and apply it
+    if (Object.values(PART_TYPES).includes(item.type) && item.parent && this.meshBuilder) {
+      await this._applyParentBandingIfNeeded(item, mesh);
+    }
+  }
+
+  /**
+   * Apply parent's banding material to a single plank if parent has banding
+   */
+  private async _applyParentBandingIfNeeded(item: MeshObjectData, mesh: THREE.Mesh): Promise<void> {
+    // If plank already has edgeBanding state, use it
+    if (item.edgeBanding) {
+      await this.meshBuilder?.applyBandingFromState();
+      return;
+    }
+
+    // Check parent for banding material
+    if (!item.parent) return;
+
+    const existingObjects = store.getState().data.objects;
+    const parentData = existingObjects.find((obj) => obj.id === item.parent);
+    if (!parentData) return;
+
+    // Find banding material in parent
+    const materialArray = Array.isArray(parentData.material)
+      ? parentData.material
+      : parentData.material ? [parentData.material] : [];
+    
+    const parentBandingMaterial = materialArray.find(
+      (mat) => mat?.type === MATERIAL_TYPES.BANDING
+    );
+
+    if (parentBandingMaterial && this.meshBuilder) {
+      // Find parent mesh to set it
+      const parentMesh = this._findParentMesh(item.parent);
+      if (parentMesh) {
+        this.meshBuilder.setParentMesh(parentMesh);
+      }
+      
+      // Apply parent banding material
+      await this.meshBuilder.applyParentBandingMaterial(parentBandingMaterial);
+      
+      // Detect and sync banding state to Redux
+      this._syncBandingFromScene([item]);
     }
   }
 
