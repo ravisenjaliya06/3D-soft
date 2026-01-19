@@ -1504,21 +1504,21 @@ const Sidebar: React.FC = () => {
                 {!collapsed.material && (
                   <>
                     {/* Color */}
-                    <div className="mb-[] ml-[1rem] flex items-center justify-between">
+                    <div className="mb-[0rem] ml-[1rem] flex items-center justify-between">
                       <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">Color</p>
 
-                      <div className="flex w-[9.5rem] items-center gap-[0.3rem] rounded-[0.4rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem] px-[0.3rem] py-[0.3rem]">
+                      <div className="flex h-[1rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] border-[0.1rem] border-[var(--primary-light-grey)] bg-[var(--primary-light-grey)] p-[0rem] px-[0.3rem] py-[0.3rem]">
                         <input
                           type="color"
                           value={selectedColor}
                           onChange={(e) => applyColorToSelected(e.target.value)}
-                          className="h-[1.6rem] w-[1.6rem] cursor-pointer border-[0rem] p-[0rem]"
+                          className="m-[0rem] h-[1.3rem] w-[1.3rem] cursor-pointer border-[0rem] bg-[var(--primary-light-grey)] p-[0rem]"
                         />
                         <input
                           type="text"
                           value={selectedColor.toUpperCase()}
                           onChange={(e) => applyColorToSelected(e.target.value)}
-                          className="w-[4rem] border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
+                          className="w-[5rem] border-[0rem] bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
                         />
                       </div>
                     </div>
@@ -1646,29 +1646,31 @@ const Sidebar: React.FC = () => {
                             Open/Close
                           </button>
                         </div>
-                        <div className="relative flex items-center justify-between pl-[1rem]">
-                          <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Drawer Type
-                          </p>
-                          <select
-                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--primary-color)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
-                            value={
-                              selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
-                                ? DRAWER_TYPES.OVERLAY
-                                : DRAWER_TYPES.INSET
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (selectedObject?.id) {
-                                updateDrawerType(scene, selectedObject.id, value);
+                        {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
+                          <div className="relative flex items-center justify-between pl-[1rem]">
+                            <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                              Drawer Type
+                            </p>
+                            <select
+                              className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--primary-color)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                              disabled={isQuickHideActive}
+                              value={
+                                selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
+                                  ? DRAWER_TYPES.OVERLAY
+                                  : DRAWER_TYPES.INSET
                               }
-                            }}
-                          >
-                            <option value={DRAWER_TYPES.INSET}>In to In</option>
-                            <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
-                          </select>
-                        </div>
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (selectedObject?.id) {
+                                  updateDrawerType(scene, selectedObject.id, value);
+                                }
+                              }}
+                            >
+                              <option value={DRAWER_TYPES.INSET}>In to In</option>
+                              <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
+                            </select>
+                          </div>
+                        )}
                         <>
                           <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
