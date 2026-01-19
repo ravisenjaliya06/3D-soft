@@ -88,7 +88,7 @@ export const EDGES = {
   RIGHT: 'right',
   FRONT: 'front',
   BACK: 'back',
-}
+};
 
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];

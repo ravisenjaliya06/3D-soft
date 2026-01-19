@@ -21,8 +21,8 @@ import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
-import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES } from '../sceneCreator/interface';
+import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
 //import style from './sidebar.module.css';
@@ -630,7 +630,7 @@ const Sidebar: React.FC = () => {
 
       // Load banding state - first check Redux, then check scene for existing banding
       let bandingState = selectedObject.edgeBanding;
-      
+
       // If no banding state in Redux, detect from scene meshes
       if (!bandingState && scene) {
         let foundMesh: THREE.Mesh | null = null;
@@ -642,8 +642,15 @@ const Sidebar: React.FC = () => {
 
         if (foundMesh) {
           // Detect existing banding meshes
-          const detectedBanding: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean } = {};
-          
+          const detectedBanding: {
+            top?: boolean;
+            bottom?: boolean;
+            left?: boolean;
+            right?: boolean;
+            front?: boolean;
+            back?: boolean;
+          } = {};
+
           // Iterate through children to find banding meshes
           const meshAsObject = foundMesh as THREE.Object3D;
           for (let i = 0; i < meshAsObject.children.length; i++) {
@@ -690,7 +697,7 @@ const Sidebar: React.FC = () => {
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
-  
+
   // Edge banding state for planks
   const [bandingTop, setBandingTop] = useState(false);
   const [bandingBottom, setBandingBottom] = useState(false);
@@ -828,7 +835,7 @@ const Sidebar: React.FC = () => {
     }
 
     const { width = 0, height = 0, depth = 0 } = selectedObject.dimensions;
-    
+
     // Find the smallest dimension (thickness)
     const dimensions = [
       { value: width, axis: 'x', disabledEdges: ['left', 'right'] },
@@ -839,14 +846,17 @@ const Sidebar: React.FC = () => {
     // The smallest dimension determines which edges should be disabled
     const disabledEdges = dimensions[0].disabledEdges;
     const validEdges = new Set(['top', 'bottom', 'left', 'right', 'front', 'back']);
-    disabledEdges.forEach(edge => validEdges.delete(edge));
-    
+    disabledEdges.forEach((edge) => validEdges.delete(edge));
+
     return validEdges;
   };
 
-  const handleBandingToggle = async (edge: 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back', enabled: boolean) => {
+  const handleBandingToggle = async (
+    edge: 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back',
+    enabled: boolean
+  ) => {
     if (!selectedObject || isDisabled || !isPlankSelected) return;
-    
+
     // Check if this edge is valid for banding based on plank dimensions
     const validEdges = getValidBandingEdges();
     if (!validEdges.has(edge)) {
@@ -891,7 +901,7 @@ const Sidebar: React.FC = () => {
       const { MeshBuilder } = await import('../sceneCreator/meshBuilder');
       const updatedObject = { ...selectedObject, edgeBanding: newBandingState };
       const builder = new MeshBuilder(updatedObject);
-      
+
       // Find parent mesh
       let parentMesh: THREE.Mesh | null = null;
       if (selectedObject.parent) {
@@ -906,14 +916,14 @@ const Sidebar: React.FC = () => {
       // Always recreate all banding based on the complete state
       // This ensures consistency whether adding or removing
       let bandingMaterial = null;
-      
+
       // First check if plank has banding material
       const materialArray = Array.isArray(selectedObject.material)
         ? selectedObject.material
-        : selectedObject.material ? [selectedObject.material] : [];
-      bandingMaterial = materialArray.find(
-        (mat) => mat?.type === SCENE_MATERIAL_TYPES.BANDING
-      );
+        : selectedObject.material
+          ? [selectedObject.material]
+          : [];
+      bandingMaterial = materialArray.find((mat) => mat?.type === SCENE_MATERIAL_TYPES.BANDING);
 
       // If plank doesn't have banding material, check parent
       if (!bandingMaterial && selectedObject.parent) {
@@ -921,7 +931,9 @@ const Sidebar: React.FC = () => {
         if (parentObject) {
           const parentMaterialArray = Array.isArray(parentObject.material)
             ? parentObject.material
-            : parentObject.material ? [parentObject.material] : [];
+            : parentObject.material
+              ? [parentObject.material]
+              : [];
           bandingMaterial = parentMaterialArray.find(
             (mat) => mat?.type === SCENE_MATERIAL_TYPES.BANDING
           );
@@ -980,15 +992,40 @@ const Sidebar: React.FC = () => {
   const edgeBandingOptions = [
     [
       { key: 'top', label: 'Top', checked: bandingTop, disabled: !validBandingEdges.has('top') },
-      { key: 'bottom', label: 'Bottom', checked: bandingBottom, disabled: !validBandingEdges.has('bottom') },
-      { key: 'left', label: 'Left', checked: bandingLeft, disabled: !validBandingEdges.has('left') },
+      {
+        key: 'bottom',
+        label: 'Bottom',
+        checked: bandingBottom,
+        disabled: !validBandingEdges.has('bottom'),
+      },
+      {
+        key: 'left',
+        label: 'Left',
+        checked: bandingLeft,
+        disabled: !validBandingEdges.has('left'),
+      },
     ],
     [
-      { key: 'right', label: 'Right', checked: bandingRight, disabled: !validBandingEdges.has('right') },
-      { key: 'front', label: 'Front', checked: bandingFront, disabled: !validBandingEdges.has('front') },
-      { key: 'back', label: 'Back', checked: bandingBack, disabled: !validBandingEdges.has('back') },
+      {
+        key: 'right',
+        label: 'Right',
+        checked: bandingRight,
+        disabled: !validBandingEdges.has('right'),
+      },
+      {
+        key: 'front',
+        label: 'Front',
+        checked: bandingFront,
+        disabled: !validBandingEdges.has('front'),
+      },
+      {
+        key: 'back',
+        label: 'Back',
+        checked: bandingBack,
+        disabled: !validBandingEdges.has('back'),
+      },
     ],
-  ]
+  ];
 
   const toggleSection = (key: string) => {
     setCollapsed((prev) => ({
@@ -1364,15 +1401,33 @@ const Sidebar: React.FC = () => {
                           {edgeBandingOptions.map((row, rowIndex) => (
                             <div key={rowIndex} className="flex items-center justify-between">
                               {row.map((item) => (
-                                <div key={item.key} className="w-[4rem] flex items-center gap-[0.1rem]">
+                                <div
+                                  key={item.key}
+                                  className="flex w-[4rem] items-center gap-[0.1rem]"
+                                >
                                   <input
                                     type="checkbox"
                                     checked={item.checked}
-                                    onChange={(e) => handleBandingToggle(item.key as 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back', e.target.checked)}
+                                    onChange={(e) =>
+                                      handleBandingToggle(
+                                        item.key as
+                                          | 'top'
+                                          | 'bottom'
+                                          | 'left'
+                                          | 'right'
+                                          | 'front'
+                                          | 'back',
+                                        e.target.checked
+                                      )
+                                    }
                                     disabled={isDisabled || item.disabled}
                                     className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
                                   />
-                                  <p className={`text-[0.6rem] font-[500] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}>{item.label}</p>
+                                  <p
+                                    className={`text-[0.6rem] font-[500] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                                  >
+                                    {item.label}
+                                  </p>
                                 </div>
                               ))}
                             </div>

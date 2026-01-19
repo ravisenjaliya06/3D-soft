@@ -6,7 +6,13 @@ import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
-import { FLOOR_PLAN_TYPES, MATERIAL_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
+import {
+  FLOOR_PLAN_TYPES,
+  MATERIAL_TYPES,
+  MeshObjectData,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from './interface';
 import { MeshBuilder } from './meshBuilder';
 import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
 
@@ -155,8 +161,15 @@ export class SyncManager {
       return meshData;
     }
 
-    const detectedBanding: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean } = {};
-    
+    const detectedBanding: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    } = {};
+
     mesh.children.forEach((child) => {
       if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
         const edge = child.userData.edge;
@@ -279,11 +292,7 @@ export class SyncManager {
       if (Object.values(PART_TYPES).includes(mesh.userData.type)) {
         // This is a plank - update banding
         if (changes.dimensions && data.dimensions) {
-          await this.meshBuilder.updateBanding(mesh, {
-            width: data.dimensions.width ?? 0,
-            height: data.dimensions.height ?? 0,
-            depth: data.dimensions.depth ?? 0,
-          });
+          await this.meshBuilder.updateBanding(mesh);
         } else if (changes.edgeBanding) {
           // Banding state changed - recreate banding
           await this.meshBuilder.applyBandingFromState();
@@ -335,7 +344,11 @@ export class SyncManager {
         // Update banding mesh dimensions and position
         const edge = child.userData.edge;
         const bandingParams = child.geometry.parameters;
-        const bandingThickness = Math.min(bandingParams.width, bandingParams.height, bandingParams.depth);
+        const bandingThickness = Math.min(
+          bandingParams.width,
+          bandingParams.height,
+          bandingParams.depth
+        );
 
         let newBandingGeometry: THREE.BoxGeometry;
         let newBandingPosition: THREE.Vector3;
@@ -344,13 +357,17 @@ export class SyncManager {
           newBandingGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
           newBandingPosition = new THREE.Vector3(
             0,
-            edge === 'top' ? newHeight / 2 - bandingThickness / 2 : -newHeight / 2 + bandingThickness / 2,
+            edge === 'top'
+              ? newHeight / 2 - bandingThickness / 2
+              : -newHeight / 2 + bandingThickness / 2,
             0
           );
         } else if (edge === 'left' || edge === 'right') {
           newBandingGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
           newBandingPosition = new THREE.Vector3(
-            edge === 'left' ? -newWidth / 2 + bandingThickness / 2 : newWidth / 2 - bandingThickness / 2,
+            edge === 'left'
+              ? -newWidth / 2 + bandingThickness / 2
+              : newWidth / 2 - bandingThickness / 2,
             0,
             0
           );
@@ -359,7 +376,9 @@ export class SyncManager {
           newBandingPosition = new THREE.Vector3(
             0,
             0,
-            edge === 'front' ? newDepth / 2 - bandingThickness / 2 : -newDepth / 2 + bandingThickness / 2
+            edge === 'front'
+              ? newDepth / 2 - bandingThickness / 2
+              : -newDepth / 2 + bandingThickness / 2
           );
         } else {
           return; // Unknown edge
@@ -396,15 +415,23 @@ export class SyncManager {
       child.position.set(nextX, nextY, nextZ);
 
       // Update banding for this child plank if it has any
-      if (child.userData.type && ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(child.userData.type)) {
+      if (
+        child.userData.type &&
+        ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(child.userData.type)
+      ) {
         // Update banding meshes for this child plank
         child.children.forEach((bandingChild) => {
-          if (!(bandingChild instanceof THREE.Mesh) || bandingChild.userData.type !== 'banding') return;
+          if (!(bandingChild instanceof THREE.Mesh) || bandingChild.userData.type !== 'banding')
+            return;
           if (!(bandingChild.geometry instanceof THREE.BoxGeometry)) return;
 
           const bandingEdge = bandingChild.userData.edge;
           const bandingParams = bandingChild.geometry.parameters;
-          const bandingThickness = Math.min(bandingParams.width, bandingParams.height, bandingParams.depth);
+          const bandingThickness = Math.min(
+            bandingParams.width,
+            bandingParams.height,
+            bandingParams.depth
+          );
 
           let newBandingGeometry: THREE.BoxGeometry;
           let newBandingPosition: THREE.Vector3;
@@ -413,13 +440,17 @@ export class SyncManager {
             newBandingGeometry = new THREE.BoxGeometry(nextWidth, bandingThickness, nextDepth);
             newBandingPosition = new THREE.Vector3(
               0,
-              bandingEdge === 'top' ? nextHeight / 2 - bandingThickness / 2 : -nextHeight / 2 + bandingThickness / 2,
+              bandingEdge === 'top'
+                ? nextHeight / 2 - bandingThickness / 2
+                : -nextHeight / 2 + bandingThickness / 2,
               0
             );
           } else if (bandingEdge === 'left' || bandingEdge === 'right') {
             newBandingGeometry = new THREE.BoxGeometry(bandingThickness, nextHeight, nextDepth);
             newBandingPosition = new THREE.Vector3(
-              bandingEdge === 'left' ? -nextWidth / 2 + bandingThickness / 2 : nextWidth / 2 - bandingThickness / 2,
+              bandingEdge === 'left'
+                ? -nextWidth / 2 + bandingThickness / 2
+                : nextWidth / 2 - bandingThickness / 2,
               0,
               0
             );
@@ -428,7 +459,9 @@ export class SyncManager {
             newBandingPosition = new THREE.Vector3(
               0,
               0,
-              bandingEdge === 'front' ? nextDepth / 2 - bandingThickness / 2 : -nextDepth / 2 + bandingThickness / 2
+              bandingEdge === 'front'
+                ? nextDepth / 2 - bandingThickness / 2
+                : -nextDepth / 2 + bandingThickness / 2
             );
           } else {
             return;
@@ -508,8 +541,15 @@ export class SyncManager {
       if (!mesh) return;
 
       // Detect banding meshes from children
-      const detectedBanding: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean } = {};
-      
+      const detectedBanding: {
+        top?: boolean;
+        bottom?: boolean;
+        left?: boolean;
+        right?: boolean;
+        front?: boolean;
+        back?: boolean;
+      } = {};
+
       mesh.children.forEach((child) => {
         if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
           const edge = child.userData.edge;
@@ -523,19 +563,23 @@ export class SyncManager {
       if (Object.keys(detectedBanding).length > 0) {
         const existingObjects = store.getState().data.objects;
         const existing = existingObjects.find((o) => o.id === meshData.id);
-        
+
         // Only update if banding state is different or missing
         if (existing) {
           const existingBanding = existing.edgeBanding || {};
           const hasChanges = Object.keys(detectedBanding).some(
-            (edge) => detectedBanding[edge as keyof typeof detectedBanding] !== existingBanding[edge as keyof typeof existingBanding]
+            (edge) =>
+              detectedBanding[edge as keyof typeof detectedBanding] !==
+              existingBanding[edge as keyof typeof existingBanding]
           );
-          
+
           if (hasChanges || Object.keys(existingBanding).length === 0) {
-            store.dispatch(updateObject({
-              id: meshData.id,
-              edgeBanding: detectedBanding,
-            }));
+            store.dispatch(
+              updateObject({
+                id: meshData.id,
+                edgeBanding: detectedBanding,
+              })
+            );
           }
         }
       }
@@ -564,14 +608,14 @@ export class SyncManager {
 
     // For planks, check if parent has banding material and apply it
     if (Object.values(PART_TYPES).includes(item.type) && item.parent && this.meshBuilder) {
-      await this._applyParentBandingIfNeeded(item, mesh);
+      await this._applyParentBandingIfNeeded(item);
     }
   }
 
   /**
    * Apply parent's banding material to a single plank if parent has banding
    */
-  private async _applyParentBandingIfNeeded(item: MeshObjectData, mesh: THREE.Mesh): Promise<void> {
+  private async _applyParentBandingIfNeeded(item: MeshObjectData): Promise<void> {
     // If plank already has edgeBanding state, use it
     if (item.edgeBanding) {
       await this.meshBuilder?.applyBandingFromState();
@@ -588,11 +632,11 @@ export class SyncManager {
     // Find banding material in parent
     const materialArray = Array.isArray(parentData.material)
       ? parentData.material
-      : parentData.material ? [parentData.material] : [];
-    
-    const parentBandingMaterial = materialArray.find(
-      (mat) => mat?.type === MATERIAL_TYPES.BANDING
-    );
+      : parentData.material
+        ? [parentData.material]
+        : [];
+
+    const parentBandingMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
 
     if (parentBandingMaterial && this.meshBuilder) {
       // Find parent mesh to set it
@@ -600,10 +644,10 @@ export class SyncManager {
       if (parentMesh) {
         this.meshBuilder.setParentMesh(parentMesh);
       }
-      
+
       // Apply parent banding material
       await this.meshBuilder.applyParentBandingMaterial(parentBandingMaterial);
-      
+
       // Detect and sync banding state to Redux
       this._syncBandingFromScene([item]);
     }

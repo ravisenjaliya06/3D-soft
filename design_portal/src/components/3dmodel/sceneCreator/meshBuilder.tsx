@@ -33,11 +33,7 @@ export class MeshBuilder {
    * Returns true if the edge is touching/covered by another plank
    * Uses dynamic geometry-based detection, not name-based
    */
-  private _isEdgeCovered(
-    mesh: THREE.Mesh,
-    edge: string,
-    threshold: number = 0.5
-  ): boolean {
+  private _isEdgeCovered(mesh: THREE.Mesh, edge: string, threshold: number = 0.5): boolean {
     if (!this.parentMesh || !(mesh.geometry instanceof THREE.BoxGeometry)) return false;
 
     // Get current plank's bounding box in world space
@@ -54,7 +50,7 @@ export class MeshBuilder {
       if (
         child !== mesh &&
         child instanceof THREE.Mesh &&
-        (Object.values(PART_TYPES).includes(child.userData.type))
+        Object.values(PART_TYPES).includes(child.userData.type)
       ) {
         siblings.push(child);
       }
@@ -63,7 +59,7 @@ export class MeshBuilder {
     // Check if any sibling plank covers this edge
     for (const sibling of siblings) {
       if (!(sibling.geometry instanceof THREE.BoxGeometry)) continue;
-      
+
       sibling.updateMatrixWorld(true);
       const siblingBox = new THREE.Box3().setFromObject(sibling);
       const siblingMin = siblingBox.min;
@@ -77,44 +73,62 @@ export class MeshBuilder {
 
       if (edge === EDGES.TOP) {
         // Top edge: check if sibling overlaps in X and Z, and touches from above
-        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingY = Math.abs(siblingMin.y - currentMax.y) < threshold && siblingMin.y <= currentMax.y;
+        const overlapX =
+          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapZ =
+          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingY =
+          Math.abs(siblingMin.y - currentMax.y) < threshold && siblingMin.y <= currentMax.y;
         edgeOverlap = overlapX && overlapZ;
         edgeTouching = touchingY;
       } else if (edge === EDGES.BOTTOM) {
         // Bottom edge: check if sibling overlaps in X and Z, and touches from below
-        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingY = Math.abs(siblingMax.y - currentMin.y) < threshold && siblingMax.y >= currentMin.y;
+        const overlapX =
+          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapZ =
+          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingY =
+          Math.abs(siblingMax.y - currentMin.y) < threshold && siblingMax.y >= currentMin.y;
         edgeOverlap = overlapX && overlapZ;
         edgeTouching = touchingY;
       } else if (edge === EDGES.LEFT) {
         // Left edge: check if sibling overlaps in Y and Z, and touches from left
-        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingX = Math.abs(siblingMax.x - currentMin.x) < threshold && siblingMax.x <= currentMin.x;
+        const overlapY =
+          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const overlapZ =
+          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingX =
+          Math.abs(siblingMax.x - currentMin.x) < threshold && siblingMax.x <= currentMin.x;
         edgeOverlap = overlapY && overlapZ;
         edgeTouching = touchingX;
       } else if (edge === EDGES.RIGHT) {
         // Right edge: check if sibling overlaps in Y and Z, and touches from right
-        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const overlapZ = siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingX = Math.abs(siblingMin.x - currentMax.x) < threshold && siblingMin.x >= currentMax.x;
+        const overlapY =
+          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const overlapZ =
+          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
+        const touchingX =
+          Math.abs(siblingMin.x - currentMax.x) < threshold && siblingMin.x >= currentMax.x;
         edgeOverlap = overlapY && overlapZ;
         edgeTouching = touchingX;
       } else if (edge === EDGES.FRONT) {
         // Front edge: check if sibling overlaps in X and Y, and touches from front
-        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const touchingZ = Math.abs(siblingMin.z - currentMax.z) < threshold && siblingMin.z <= currentMax.z;
+        const overlapX =
+          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapY =
+          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const touchingZ =
+          Math.abs(siblingMin.z - currentMax.z) < threshold && siblingMin.z <= currentMax.z;
         edgeOverlap = overlapX && overlapY;
         edgeTouching = touchingZ;
       } else if (edge === EDGES.BACK) {
         // Back edge: check if sibling overlaps in X and Y, and touches from back
-        const overlapX = siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapY = siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const touchingZ = Math.abs(siblingMax.z - currentMin.z) < threshold && siblingMax.z >= currentMin.z;
+        const overlapX =
+          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
+        const overlapY =
+          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
+        const touchingZ =
+          Math.abs(siblingMax.z - currentMin.z) < threshold && siblingMax.z >= currentMin.z;
         edgeOverlap = overlapX && overlapY;
         edgeTouching = touchingZ;
       }
@@ -317,11 +331,11 @@ export class MeshBuilder {
    */
   private _getPlankTextureUrl(): string | null {
     if (!this.meshData.material) return null;
-    
+
     const materialArray = Array.isArray(this.meshData.material)
       ? this.meshData.material
       : [this.meshData.material];
-    
+
     // Find Panel Stock material (plank texture)
     for (const materialData of materialArray) {
       if (materialData?.type === MATERIAL_TYPES.PANEL_STOCK) {
@@ -333,13 +347,13 @@ export class MeshBuilder {
         }
       }
     }
-    
+
     return null;
   }
 
   private async _createBandingMaterial(): Promise<THREE.MeshStandardMaterial> {
     const plankTextureUrl = this._getPlankTextureUrl();
-    
+
     if (plankTextureUrl) {
       try {
         const color = await extractColorFromImage(plankTextureUrl);
@@ -351,7 +365,7 @@ export class MeshBuilder {
         console.warn('Failed to extract color from plank texture, using default:', error);
       }
     }
-    
+
     return new THREE.MeshStandardMaterial({
       color: 0xffffff,
       wireframe: false,
@@ -426,9 +440,11 @@ export class MeshBuilder {
   /**
    * Update banding positions and sizes when plank dimensions change
    */
-  public async updateBanding(mesh: THREE.Mesh, newDimensions: { width: number; height: number; depth: number }): Promise<void> {
+  public async updateBanding(
+    mesh: THREE.Mesh
+  ): Promise<void> {
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-    
+
     const bandingState = this.meshData.edgeBanding;
     if (!bandingState) return;
 
@@ -441,45 +457,52 @@ export class MeshBuilder {
 
     const materialArray = Array.isArray(materialData) ? materialData : [materialData];
     const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
-    
+
     if (bandingMaterialData) {
       await this._createBandingOnPlank(mesh, bandingMaterialData, bandingState);
     }
   }
 
   private async _createBandingOnPlank(
-    mesh: THREE.Mesh, 
+    mesh: THREE.Mesh,
     materialData: Material,
-    bandingState?: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean }
+    bandingState?: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    }
   ) {
     // Check if this is a plank
     const isPlank = Object.values(PART_TYPES).includes(mesh.userData.type);
 
     if (!isPlank) return;
 
-    const bandingThickness = (materialData.properties?.thickness || 1.5);
+    const bandingThickness = materialData.properties?.thickness || 1.5;
 
     // Get plank dimensions
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-    
+
     const { width, height, depth } = mesh.geometry.parameters;
-    
+
     // Create banding material (async - extracts color from plank texture)
     const bandingMaterial = await this._createBandingMaterial();
 
     const dimensions = [
       { value: width, name: 'width', axis: 'x' },
       { value: height, name: 'height', axis: 'y' },
-      { value: depth, name: 'depth', axis: 'z' }
+      { value: depth, name: 'depth', axis: 'z' },
     ].sort((a, b) => a.value - b.value);
-    
+
     const thicknessAxis = dimensions[0].axis;
-    
+
     // Determine which faces are the main faces (with texture) vs edges dynamically
     let isVerticalPlank = false;
     let isHorizontalPlank = false;
     let isBackPlank = false;
-    
+
     // Dynamic detection: smallest dimension determines the textured faces
     if (thicknessAxis === 'x') {
       isVerticalPlank = true;
@@ -667,33 +690,46 @@ export class MeshBuilder {
    * Create or update banding based on edgeBanding state
    */
   public async applyBandingFromState(
-    mesh?: THREE.Mesh, 
+    mesh?: THREE.Mesh,
     bandingMaterial?: Material,
-    edgeBandingState?: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean; front?: boolean; back?: boolean }
+    edgeBandingState?: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    }
   ): Promise<void> {
     const targetMesh = mesh || this.mesh;
     if (!targetMesh) return;
-    
+
     // Use provided banding material or find it from meshData
     let bandingMaterialData = bandingMaterial;
-    
+
     if (!bandingMaterialData) {
       const materialArray = Array.isArray(this.meshData.material)
         ? this.meshData.material
-        : this.meshData.material ? [this.meshData.material] : [];
-      
+        : this.meshData.material
+          ? [this.meshData.material]
+          : [];
+
       bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
     }
-    
+
     // Use provided edgeBandingState or fall back to meshData
     const bandingState = edgeBandingState || this.meshData.edgeBanding;
-    
+
     // Check if we have banding material and at least one edge is enabled
     if (bandingMaterialData && bandingState) {
-      const hasAnyBanding = bandingState.top || bandingState.bottom || 
-                           bandingState.left || bandingState.right || 
-                           bandingState.front || bandingState.back;
-      
+      const hasAnyBanding =
+        bandingState.top ||
+        bandingState.bottom ||
+        bandingState.left ||
+        bandingState.right ||
+        bandingState.front ||
+        bandingState.back;
+
       if (hasAnyBanding) {
         // Remove all existing banding first to avoid duplicates
         this.removeAllBanding(targetMesh);

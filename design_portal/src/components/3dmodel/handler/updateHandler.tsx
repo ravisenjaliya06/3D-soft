@@ -79,7 +79,10 @@ export class UpdateObjectInScene {
     );
 
     // Update banding if this is a plank
-    if (mesh.userData.type && ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(mesh.userData.type)) {
+    if (
+      mesh.userData.type &&
+      ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(mesh.userData.type)
+    ) {
       // Use async IIFE to handle async update
       (async () => {
         await this.updateBandingForPlank(mesh, updateParams);
@@ -94,7 +97,10 @@ export class UpdateObjectInScene {
   }
 
   /** Update banding when plank dimensions change */
-  private async updateBandingForPlank(mesh: THREE.Mesh, params: UpdateDimensionsParams): Promise<void> {
+  private async updateBandingForPlank(
+    mesh: THREE.Mesh,
+    params: UpdateDimensionsParams
+  ): Promise<void> {
     // Find banding meshes and update their positions/sizes
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding') return;
@@ -102,7 +108,11 @@ export class UpdateObjectInScene {
 
       const edge = child.userData.edge;
       const bandingParams = child.geometry.parameters;
-      const bandingThickness = Math.min(bandingParams.width, bandingParams.height, bandingParams.depth);
+      const bandingThickness = Math.min(
+        bandingParams.width,
+        bandingParams.height,
+        bandingParams.depth
+      );
 
       // Update banding geometry and position based on edge
       let newGeometry: THREE.BoxGeometry;
@@ -112,13 +122,17 @@ export class UpdateObjectInScene {
         newGeometry = new THREE.BoxGeometry(params.newWidth, bandingThickness, params.newDepth);
         newPosition = new THREE.Vector3(
           0,
-          edge === 'top' ? params.newHeight / 2 - bandingThickness / 2 : -params.newHeight / 2 + bandingThickness / 2,
+          edge === 'top'
+            ? params.newHeight / 2 - bandingThickness / 2
+            : -params.newHeight / 2 + bandingThickness / 2,
           0
         );
       } else if (edge === 'left' || edge === 'right') {
         newGeometry = new THREE.BoxGeometry(bandingThickness, params.newHeight, params.newDepth);
         newPosition = new THREE.Vector3(
-          edge === 'left' ? -params.newWidth / 2 + bandingThickness / 2 : params.newWidth / 2 - bandingThickness / 2,
+          edge === 'left'
+            ? -params.newWidth / 2 + bandingThickness / 2
+            : params.newWidth / 2 - bandingThickness / 2,
           0,
           0
         );
@@ -127,7 +141,9 @@ export class UpdateObjectInScene {
         newPosition = new THREE.Vector3(
           0,
           0,
-          edge === 'front' ? params.newDepth / 2 - bandingThickness / 2 : -params.newDepth / 2 + bandingThickness / 2
+          edge === 'front'
+            ? params.newDepth / 2 - bandingThickness / 2
+            : -params.newDepth / 2 + bandingThickness / 2
         );
       } else {
         return; // Unknown edge

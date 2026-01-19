@@ -95,7 +95,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       return {
         ...item,
         id: newId,
-        parent: item.parent !== null ? idMap.get(item.parent ? item.parent : '') ?? item.parent : undefined,
+        parent:
+          item.parent !== null
+            ? (idMap.get(item.parent ? item.parent : '') ?? item.parent)
+            : undefined,
       };
     });
   };

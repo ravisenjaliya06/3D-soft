@@ -2,11 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
 import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
-import {
-  FLOOR_PLAN_TYPES,
-  GEOMETRY,
-  MeshObjectData,
-} from '../../sceneCreator/interface';
+import { FLOOR_PLAN_TYPES, GEOMETRY, MeshObjectData } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
 import { RootState } from '../../store';

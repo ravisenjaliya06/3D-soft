@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { generateCompartmentsFromMesh } from '../handler/items';
 import { store } from '../store';
-import { Material, MATERIAL_TYPES, PART_TYPES, MeshObjectData } from './interface';
+import { Material, MATERIAL_TYPES, MeshObjectData, PART_TYPES } from './interface';
 import { MeshBuilder } from './meshBuilder';
 
 export class DesignBuilder {
@@ -35,7 +35,7 @@ export class DesignBuilder {
    */
   private async _applyParentBandingToPlanks(): Promise<void> {
     const promises: Promise<void>[] = [];
-    
+
     this.data.forEach((meshData) => {
       const isPlank = Object.values(PART_TYPES).includes(meshData.type);
 
