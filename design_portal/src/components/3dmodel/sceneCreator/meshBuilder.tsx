@@ -5,12 +5,21 @@ import {
   EDGES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
+  GROOVE_TYPE,
   Material,
   MATERIAL_TYPES,
   MeshObjectData,
   PART_TYPES,
 } from './interface';
 import { convertKeysToCamel, extractColorFromImage } from './utils';
+import {
+  GROOVE_DEPTH,
+  GROOVE_WIDTH,
+  GROOVE_END_INSET,
+  GROOVE_START_INSET,
+  PROTRUSION_DEPTH,
+  PROTRUSION_WIDTH,
+} from './constants';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -463,6 +472,30 @@ export class MeshBuilder {
     }
   }
 
+  /**
+   * Update grooving positions and sizes when plank dimensions change
+   */
+  public updateGrooving(mesh: THREE.Mesh): void {
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
+
+    // Remove all existing grooving
+    this.removeAllGrooving(mesh);
+
+    // Update meshData dimensions from the actual mesh geometry
+    if (mesh.geometry instanceof THREE.BoxGeometry) {
+      const params = mesh.geometry.parameters;
+      this.meshData.dimensions = {
+        width: params.width,
+        height: params.height,
+        depth: params.depth,
+      };
+    }
+
+    // Recreate grooving with new dimensions
+    this.mesh = mesh;
+    this._createGrooving();
+  }
+
   private async _createBandingOnPlank(
     mesh: THREE.Mesh,
     materialData: Material,
@@ -771,12 +804,13 @@ export class MeshBuilder {
     );
     this.mesh = mesh;
 
-    this._handleMaterial();
     this._setName(mesh);
     this._setPosition(mesh);
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
+    this._handleMaterial();
+    this._createGrooving();
     return mesh;
   }
 
@@ -831,7 +865,222 @@ export class MeshBuilder {
     if (changes.dimensions) {
       mesh.geometry.dispose();
       mesh.geometry = this._getGeometry();
+      this.updateGrooving(mesh);
     }
+  }
+
+  /**
+   * Remove all grooving meshes from a plank
+   */
+  public removeAllGrooving(mesh: THREE.Mesh): void {
+    const toRemove: THREE.Object3D[] = [];
+    mesh.children.forEach((child) => {
+      if (child.userData.type === GROOVE_TYPE.GROOVE || child.userData.type === GROOVE_TYPE.PROTRUSION) {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
+      }
+      mesh.remove(child);
+    });
+  }
+
+  /**
+   * Create grooving system: grooves on side planks (female) and protrusions on back plank (male)
+   */
+  private _createGrooving(): void {
+    if (!this.mesh) return;
+
+    // Check if this is a plank
+    const isPlank = Object.values(PART_TYPES).includes(this.mesh.userData.type);
+    if (!isPlank) {
+      return;
+    }
+
+    if (!(this.mesh.geometry instanceof THREE.BoxGeometry)) {
+      console.log('[Grooving] Not a BoxGeometry');
+      return;
+    }
+
+    // Check both meshData.name and mesh.name (mesh.name is set after _setName)
+    const plankName = (this.meshData.name || this.mesh.name || '').toUpperCase();
+    const { width, height, depth } = this.mesh.geometry.parameters;
+
+    // Only create grooving for BACK_PLANK
+    if (plankName !== 'BACK_PLANK') {
+      return;
+    }
+
+    // Get plank material
+    const plankMaterial = this.mesh.material instanceof THREE.Material
+      ? this.mesh.material.clone()
+      : Array.isArray(this.mesh.material) && this.mesh.material.length > 0
+        ? this.mesh.material[0].clone()
+        : new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+    // Back plank: create both grooves (female) and protrusions (male)
+    console.log('[Grooving] Creating grooves and protrusions for back plank');
+    
+    // Create grooves (female parts) on back plank edges
+    // Groove begins 25mm inside and ends 6mm from the edge
+    const grooveMaterial = plankMaterial.clone();
+    // Make groove slightly darker to show depth
+    if (grooveMaterial instanceof THREE.MeshStandardMaterial) {
+      const color = new THREE.Color();
+      if (grooveMaterial.color) {
+        color.copy(grooveMaterial.color);
+        color.multiplyScalar(0.7); // Slightly darker for depth effect
+        grooveMaterial.color = color;
+      }
+    }
+    grooveMaterial.visible = true;
+    if (grooveMaterial instanceof THREE.MeshStandardMaterial) {
+      grooveMaterial.transparent = false;
+    }
+
+    // Calculate groove dimensions and positions
+    // Groove begins 25mm inside and ends 6mm from the edge
+    
+    // For top/bottom edges: groove runs horizontally along width
+    // Groove starts 25mm from left edge, ends 6mm from right edge
+    const topBottomGrooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET; // width - 25 - 6
+    const topBottomGrooveCenterX = ((-width / 2 + GROOVE_START_INSET) + (width / 2 - GROOVE_END_INSET)) / 2;
+    const topBottomGrooveCenterY_top = height / 2 - GROOVE_WIDTH / 2; // Slightly inside top edge
+    const topBottomGrooveCenterY_bottom = -height / 2 + GROOVE_WIDTH / 2; // Slightly inside bottom edge
+
+    // For left/right edges: groove runs vertically along height
+    // Groove starts 25mm from bottom edge, ends 6mm from top edge
+    const leftRightGrooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET; // height - 25 - 6
+    const leftRightGrooveCenterX_left = -width / 2 + GROOVE_WIDTH / 2; // Slightly inside left edge
+    const leftRightGrooveCenterX_right = width / 2 - GROOVE_WIDTH / 2; // Slightly inside right edge
+    const leftRightGrooveCenterY = ((-height / 2 + GROOVE_START_INSET) + (height / 2 - GROOVE_END_INSET)) / 2;
+
+    // Top groove - begins 25mm inside, ends 6mm from edge
+    this._createGrooveMesh(
+      this.mesh,
+      EDGES.TOP,
+      new THREE.BoxGeometry(topBottomGrooveLength, GROOVE_WIDTH, GROOVE_DEPTH),
+      new THREE.Vector3(topBottomGrooveCenterX, topBottomGrooveCenterY_top, 0),
+      grooveMaterial
+    );
+
+    // Bottom groove - begins 25mm inside, ends 6mm from edge
+    this._createGrooveMesh(
+      this.mesh,
+      EDGES.BOTTOM,
+      new THREE.BoxGeometry(topBottomGrooveLength, GROOVE_WIDTH, GROOVE_DEPTH),
+      new THREE.Vector3(topBottomGrooveCenterX, topBottomGrooveCenterY_bottom, 0),
+      grooveMaterial
+    );
+
+    // Left groove - begins 25mm inside, ends 6mm from edge
+    this._createGrooveMesh(
+      this.mesh,
+      EDGES.LEFT,
+      new THREE.BoxGeometry(GROOVE_WIDTH, leftRightGrooveLength, GROOVE_DEPTH),
+      new THREE.Vector3(leftRightGrooveCenterX_left, leftRightGrooveCenterY, 0),
+      grooveMaterial
+    );
+
+    // Right groove - begins 25mm inside, ends 6mm from edge
+    this._createGrooveMesh(
+      this.mesh,
+      EDGES.RIGHT,
+      new THREE.BoxGeometry(GROOVE_WIDTH, leftRightGrooveLength, GROOVE_DEPTH),
+      new THREE.Vector3(leftRightGrooveCenterX_right, leftRightGrooveCenterY, 0),
+      grooveMaterial
+    );
+    
+    // Create protrusions (male parts) on back plank edges - extending outward
+    const protrusionMaterial = plankMaterial.clone();
+    // Keep original material color for protrusions
+    protrusionMaterial.visible = true;
+    if (protrusionMaterial instanceof THREE.MeshStandardMaterial) {
+      protrusionMaterial.transparent = false;
+    }
+    
+    this._createProtrusionMesh(
+      this.mesh,
+      EDGES.TOP,
+      new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH),
+      new THREE.Vector3(0, height / 2 + PROTRUSION_WIDTH / 2, 0),
+      protrusionMaterial
+    );
+    this._createProtrusionMesh(
+      this.mesh,
+      EDGES.BOTTOM,
+      new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH),
+      new THREE.Vector3(0, -height / 2 - PROTRUSION_WIDTH / 2, 0),
+      protrusionMaterial
+    );
+    this._createProtrusionMesh(
+      this.mesh,
+      EDGES.LEFT,
+      new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH),
+      new THREE.Vector3(-width / 2 - PROTRUSION_WIDTH / 2, 0, 0),
+      protrusionMaterial
+    );
+    this._createProtrusionMesh(
+      this.mesh,
+      EDGES.RIGHT,
+      new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH),
+      new THREE.Vector3(width / 2 + PROTRUSION_WIDTH / 2, 0, 0),
+      protrusionMaterial
+    );
+  }
+
+  /**
+   * Helper function to create a groove mesh (female part) on a plank edge
+   */
+  private _createGrooveMesh(
+    mesh: THREE.Mesh,
+    edge: string,
+    geometry: THREE.BoxGeometry,
+    position: THREE.Vector3,
+    material: THREE.Material
+  ): void {
+    const groove = new THREE.Mesh(geometry, material);
+    groove.position.copy(position);
+    groove.name = `Groove_${edge}_${mesh.name}`;
+    groove.userData.type = GROOVE_TYPE.GROOVE;
+    groove.userData.edge = edge;
+    groove.userData.objectId = `${mesh.userData.objectId}_groove_${edge.toLowerCase()}`;
+    
+    // Ensure groove is visible
+    groove.visible = true;
+    groove.castShadow = true;
+    groove.receiveShadow = true;
+    
+    mesh.add(groove);
+  }
+
+  /**
+   * Helper function to create a protrusion mesh (male part) on back plank edge
+   */
+  private _createProtrusionMesh(
+    mesh: THREE.Mesh,
+    edge: string,
+    geometry: THREE.BoxGeometry,
+    position: THREE.Vector3,
+    material: THREE.Material
+  ): void {
+    const protrusion = new THREE.Mesh(geometry, material);
+    protrusion.position.copy(position);
+    protrusion.name = `Protrusion_${edge}_${mesh.name}`;
+    protrusion.userData.type = GROOVE_TYPE.PROTRUSION;
+    protrusion.userData.edge = edge;
+    protrusion.userData.objectId = `${mesh.userData.objectId}_protrusion_${edge.toLowerCase()}`;
+
+    protrusion.visible = true;
+    protrusion.castShadow = true;
+    protrusion.receiveShadow = true;
+    
+    mesh.add(protrusion);
   }
 
   private _updateTextureRotation(mesh: THREE.Mesh, rotationDegrees?: number): void {

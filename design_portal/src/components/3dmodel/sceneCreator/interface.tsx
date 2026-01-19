@@ -21,6 +21,7 @@ export const PART_TYPES = {
   DOOR: 'door',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
+  L_SHAPE_OBJECT: 'lShapeObject',
 };
 
 export const DRAWER_TYPES = {
@@ -88,6 +89,11 @@ export const EDGES = {
   RIGHT: 'right',
   FRONT: 'front',
   BACK: 'back',
+};
+
+export const GROOVE_TYPE = {
+  GROOVE: 'groove',
+  PROTRUSION: 'protrusion',
 };
 
 // type

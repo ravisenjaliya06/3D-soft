@@ -6,16 +6,10 @@ export class OutlineManager {
   private scene: THREE.Scene;
   private isQuickHideActive = false;
 
-  private originalMaterialsRef = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  private originalVisibilityRef = new Map<THREE.Mesh, boolean>();
   private childOutlineGroupsRef = new Map<THREE.Mesh, THREE.Group>();
-
-  private hiddenMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
+  private gridOriginalVisibility: boolean | null = null;
+  private gridObject: THREE.Object3D | null = null;
 
   constructor() {
     const state = store.getState().scene?.scene;
@@ -34,17 +28,19 @@ export class OutlineManager {
       console.error('OutlineManager: Scene is undefined. Toggle aborted.');
       return;
     }
-    this.scene.children.forEach((object) => {
-      if (!(object instanceof THREE.Mesh)) return;
-      if (this._shouldSkipMesh(object)) return;
-      const applyOutline = object.userData.isMain === true;
-
-      if (this.isQuickHideActive) {
+    
+    if (this.isQuickHideActive) {
+      // Apply quick hide to all meshes
+      this.scene.children.forEach((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        if (this._shouldSkipMesh(object)) return;
+        const applyOutline = object.userData.isMain === true;
         this._applyQuickHide(object, applyOutline);
-      } else {
-        this._restoreMesh();
-      }
-    });
+      });
+    } else {
+      // Restore all meshes
+      this._restoreMesh();
+    }
   }
 
   private _shouldSkipMesh(mesh: THREE.Mesh) {
@@ -58,22 +54,27 @@ export class OutlineManager {
   }
 
   private _applyQuickHide(mesh: THREE.Mesh, applyOutline: boolean) {
-    if (!this.originalMaterialsRef.has(mesh)) {
-      this.originalMaterialsRef.set(mesh, mesh.material);
+    // Store original visibility if not already stored
+    if (!this.originalVisibilityRef.has(mesh)) {
+      this.originalVisibilityRef.set(mesh, mesh.visible);
     }
 
-    mesh.material = this.hiddenMaterial;
-    this._markNeedsUpdate(mesh.material);
+    // Set mesh visibility to false (including all children)
+    mesh.visible = false;
+    mesh.traverse((child) => {
+      if (child instanceof THREE.Mesh && !child.userData.isInvisibleBox) {
+        if (!this.originalVisibilityRef.has(child)) {
+          this.originalVisibilityRef.set(child, child.visible);
+        }
+        child.visible = false;
+      }
+    });
 
     if (applyOutline) {
       this._generateOutline(mesh);
     }
   }
 
-  private _markNeedsUpdate(mat: THREE.Material | THREE.Material[]) {
-    if (Array.isArray(mat)) mat.forEach((m) => (m.needsUpdate = true));
-    else mat.needsUpdate = true;
-  }
 
   private _createOutlineGroup(mesh: THREE.Mesh): THREE.Group {
     const outlineGroup = new THREE.Group();
@@ -91,48 +92,131 @@ export class OutlineManager {
     const edges = new THREE.EdgesGeometry(finalGeometry, 1);
     const outlineMat = new THREE.LineBasicMaterial({
       color: 0x392579,
-      depthTest: false,
+      depthTest: true,
+      depthWrite: false,
     });
 
     const outline = new THREE.LineSegments(edges, outlineMat);
-    outline.renderOrder = 2;
+    outline.renderOrder = 999; // High render order to appear in front of grid
 
     return outline;
   }
 
+  private _createProtrusionOutline(mergedGeometries: THREE.BufferGeometry[]): THREE.LineSegments {
+    const finalGeometry = BufferGeometryUtils.mergeGeometries(mergedGeometries, false);
+
+    const edges = new THREE.EdgesGeometry(finalGeometry, 1);
+    const outlineMat = new THREE.LineBasicMaterial({
+      color: 0xff0000, // Red for male parts (protrusions)
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    const outline = new THREE.LineSegments(edges, outlineMat);
+    outline.renderOrder = 999; // High render order to appear in front of grid
+
+    return outline;
+  }
+
+  private _removeOutlineGroup(outlineGroup: THREE.Group) {
+    // Dispose of all geometries and materials in the outline group
+    outlineGroup.traverse((child) => {
+      if (child instanceof THREE.LineSegments) {
+        if (child.geometry) {
+          child.geometry.dispose();
+        }
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((mat) => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      }
+    });
+
+    // Remove from scene
+    if (outlineGroup.parent) {
+      outlineGroup.parent.remove(outlineGroup);
+    } else if (this.scene) {
+      this.scene.remove(outlineGroup);
+    }
+  }
+
   private _generateOutline(mainMesh: THREE.Mesh) {
     if (!mainMesh.userData.isMain) return;
+    
+    // Remove existing outline group if it exists to prevent duplicates
+    const existingOutline = this.childOutlineGroupsRef.get(mainMesh);
+    if (existingOutline) {
+      this._removeOutlineGroup(existingOutline);
+      this.childOutlineGroupsRef.delete(mainMesh);
+    }
+    
     const outlineGroup = this._createOutlineGroup(mainMesh);
 
     const mergedGeometries: THREE.BufferGeometry[] = [];
+    const protrusionGeometries: THREE.BufferGeometry[] = [];
 
     mainMesh.traverse((child) => {
       if (child instanceof THREE.Mesh && child.geometry && !child.userData.isInvisibleBox) {
         const clonedGeo = child.geometry.clone();
         clonedGeo.applyMatrix4(child.matrixWorld);
         clonedGeo.applyMatrix4(mainMesh.matrixWorld.clone().invert());
-        mergedGeometries.push(clonedGeo);
+        
+        // Separate protrusions (male) for different color, skip grooves
+        if (child.userData.type === 'protrusion') {
+          protrusionGeometries.push(clonedGeo);
+        } else if (child.userData.type !== 'groove') {
+          // Regular mesh parts (skip grooves to avoid green lines)
+          mergedGeometries.push(clonedGeo);
+        }
       }
     });
 
-    if (mergedGeometries.length === 0) return;
-    const outline = this._createOutlines(mergedGeometries);
-    outlineGroup.add(outline);
+    // Add regular outline (default color)
+    if (mergedGeometries.length > 0) {
+      const outline = this._createOutlines(mergedGeometries);
+      outlineGroup.add(outline);
+    }
 
+    // Add protrusion outline (red for male parts)
+    if (protrusionGeometries.length > 0) {
+      const protrusionOutline = this._createProtrusionOutline(protrusionGeometries);
+      outlineGroup.add(protrusionOutline);
+    }
+
+    if (mergedGeometries.length === 0 && protrusionGeometries.length === 0) return;
+    
     this.scene.add(outlineGroup);
     this.childOutlineGroupsRef.set(mainMesh, outlineGroup);
   }
 
   private _restoreMesh() {
-    this.originalMaterialsRef.forEach((originalMat, mesh) => {
-      mesh.material = originalMat;
-      this._markNeedsUpdate(mesh.material);
+    // Restore original visibility for all meshes
+    this.originalVisibilityRef.forEach((originalVisibility, mesh) => {
+      mesh.visible = originalVisibility;
     });
 
-    this.scene.children.forEach((object) => {
+    // Clear the visibility refs
+    this.originalVisibilityRef.clear();
+
+    // Remove all outline groups using the ref map
+    this.childOutlineGroupsRef.forEach((outlineGroup) => {
+      this._removeOutlineGroup(outlineGroup);
+    });
+    this.childOutlineGroupsRef.clear();
+
+    // Also traverse scene to find and remove any orphaned outline groups
+    const orphanedOutlines: THREE.Group[] = [];
+    this.scene.traverse((object) => {
       if (object instanceof THREE.Group && object.name.includes('outline_group')) {
-        this.scene.remove(object);
+        orphanedOutlines.push(object);
       }
+    });
+
+    orphanedOutlines.forEach((outlineGroup) => {
+      this._removeOutlineGroup(outlineGroup);
     });
   }
 }

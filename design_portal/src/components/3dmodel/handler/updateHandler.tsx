@@ -1,12 +1,14 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
-import { MeshObjectData } from '../sceneCreator/interface';
+import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
 import { MATERIAL_TYPES } from '../sidebar/interface';
+import { store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
+import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -86,6 +88,8 @@ export class UpdateObjectInScene {
       // Use async IIFE to handle async update
       (async () => {
         await this.updateBandingForPlank(mesh, updateParams);
+        // Also update grooving when dimensions change
+        this.updateGroovingForPlank(mesh, updateParams);
       })();
     }
 
@@ -155,6 +159,62 @@ export class UpdateObjectInScene {
     });
   }
 
+  /** Update grooving when plank dimensions change */
+  private updateGroovingForPlank(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
+    // Only update grooving for BACK_PLANK
+    const plankType = (mesh.userData.type || '').toUpperCase();
+    if (plankType !== PART_TYPES.BACK_PLANK) {
+      return;
+    }
+
+    // Remove all existing grooving
+    const toRemove: THREE.Object3D[] = [];
+    mesh.children.forEach((child) => {
+      if (child.userData.type === 'groove' || child.userData.type === 'protrusion') {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
+      }
+      mesh.remove(child);
+    });
+
+    // Recreate grooving using MeshBuilder with current mesh dimensions
+    // Get mesh data from Redux store
+    const state = store.getState();
+    let meshData: MeshObjectData | null = null;
+
+    if (state?.data?.objects) {
+      const found = state.data.objects.find(
+        (obj: MeshObjectData) => obj.id === mesh.userData.objectId
+      );
+      meshData = found || null;
+    }
+
+    if (meshData) {
+      // Update meshData dimensions from the actual mesh geometry (most up-to-date)
+      if (mesh.geometry instanceof THREE.BoxGeometry) {
+        const params = mesh.geometry.parameters;
+        meshData = {
+          ...meshData,
+          dimensions: {
+            width: params.width,
+            height: params.height,
+            depth: params.depth,
+          },
+        };
+      }
+      
+      const builder = new MeshBuilder(meshData);
+      builder.updateGrooving(mesh);
+    }
+  }
+
   //update main object with children(planks)
   private updateChildrenDynamic(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
     const { newWidth, newHeight, newDepth, oldWidth, oldHeight, oldDepth } = params;
@@ -195,6 +255,21 @@ export class UpdateObjectInScene {
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
 
       child.position.set(nextX, nextY, nextZ);
+
+      // Update grooving for child planks when their dimensions change
+      if (
+        child.userData.type &&
+        [PART_TYPES.PLANK, PART_TYPES.VERTICAL_PLANK, PART_TYPES.HORIZONTAL_PLANK, PART_TYPES.BACK_PLANK].includes(child.userData.type)
+      ) {
+        this.updateGroovingForPlank(child, {
+          newWidth: nextWidth,
+          newHeight: nextHeight,
+          newDepth: nextDepth,
+          oldWidth: childParams.width,
+          oldHeight: childParams.height,
+          oldDepth: childParams.depth,
+        });
+      }
 
       updateOrRefreshOutline(this.scene, child);
 
