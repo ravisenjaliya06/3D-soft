@@ -314,7 +314,6 @@ export const addDrawersOnInvisibleBox = async (
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const eachH = h / drawers;
   const thickness = 18;
   const drawerConstructionType = 'fivePlank';
 
@@ -322,8 +321,42 @@ export const addDrawersOnInvisibleBox = async (
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
+  // Update matrices once before calculating positions
+  boxMesh.updateMatrixWorld(true);
+  parent.updateMatrixWorld(true);
+
+  // Calculate boxMesh bounding box corners in parent's local space ONCE
+  const boxMinLocal = new THREE.Vector3(
+    geometryBoundingBox.min.x,
+    geometryBoundingBox.min.y,
+    geometryBoundingBox.min.z
+  );
+  const boxMaxLocal = new THREE.Vector3(
+    geometryBoundingBox.max.x,
+    geometryBoundingBox.max.y,
+    geometryBoundingBox.max.z
+  );
+  const boxCenterWorld = boxMesh.localToWorld(boxCenterLocal.clone());
+  const boxMinWorld = boxMesh.localToWorld(boxMinLocal.clone());
+  const boxMaxWorld = boxMesh.localToWorld(boxMaxLocal.clone());
+  
+  const boxCenterParent = parent.worldToLocal(boxCenterWorld.clone());
+  const boxMinParent = parent.worldToLocal(boxMinWorld.clone());
+  const boxMaxParent = parent.worldToLocal(boxMaxWorld.clone());
+  
+  // Calculate box dimensions in parent's local space
+  const boxSizeParent = new THREE.Vector3();
+  boxSizeParent.subVectors(boxMaxParent, boxMinParent);
+  const wParent = Math.abs(boxSizeParent.x);
+  const hParent = Math.abs(boxSizeParent.y);
+  const dParent = Math.abs(boxSizeParent.z);
+  
+  // Calculate drawer height in parent space
+  const eachH = hParent / drawers;
+
   for (let i = 0; i < drawers; i++) {
-    const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
+    // Calculate y position in parent's local space directly
+    const yParent = boxMinParent.y + eachH * (i + 0.5);
 
     // Inset: fits inside. Overlay: covers front.
     const isOverlay = drawerType === DRAWER_TYPES.OVERLAY;
@@ -344,11 +377,8 @@ export const addDrawersOnInvisibleBox = async (
     const drawerGroupId = crypto.randomUUID();
     const drawerGroupWithAllPlank: MeshObjectData[] = [];
 
-    // Calculate the group's position in parent's local space
-    const worldGroupPos = boxMesh.localToWorld(
-      new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z)
-    );
-    const parentGroupPos = parent.worldToLocal(worldGroupPos.clone());
+    // Calculate the group's position directly in parent's local space
+    const parentGroupPos = new THREE.Vector3(boxCenterParent.x, yParent, boxCenterParent.z);
 
     const drawerGroup: MeshObjectData = {
       id: drawerGroupId,
@@ -368,11 +398,10 @@ export const addDrawersOnInvisibleBox = async (
     drawerGroupWithAllPlank.push(drawerGroup);
 
     const faceZRel = boxFrontZRel + faceD / 2;
-
-    const localFacePos = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z + faceZRel);
-
-    const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
-    const parentFacePos = parent.worldToLocal(worldFacePos.clone());
+    
+    // Calculate face position in parent's local space
+    const faceZParent = boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
+    const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
 
     const facePlank = selectedCabinetItem.find((item) => item.name === 'DRAWER_FACE_PLANK');
     const face: MeshObjectData = {
@@ -409,13 +438,18 @@ export const addDrawersOnInvisibleBox = async (
       // Heights
       const innerH = Math.max(eachH - 50, 1);
 
-      // Vertical alignment (bottom aligned)
-      const baseY = yLocal;
-      const innerPartCenterY = baseY - (eachH - innerH) / 2;
+      // Vertical alignment (bottom aligned) - calculate in parent's local space
+      const baseYParent = yParent;
+      const innerPartCenterYParent = baseYParent - (eachH - innerH) / 2;
+      const boxFrontZRelParent = isOverlay ? dParent / 2 : dParent / 2 - faceD;
 
-      const createInnerPartData = (name: string, dims: Dimensions, pos: THREE.Vector3) => {
-        const worldPos = boxMesh.localToWorld(pos.clone());
-        const parentLocal = parent.worldToLocal(worldPos.clone());
+      const createInnerPartData = (name: string, dims: Dimensions, xOffset: number, yPos: number, zPos: number) => {
+        // Calculate position directly in parent's local space
+        const partPosParent = new THREE.Vector3(
+          boxCenterParent.x + xOffset,
+          yPos,
+          boxCenterParent.z + zPos
+        );
 
         const part: MeshObjectData = {
           id: crypto.randomUUID(),
@@ -425,9 +459,9 @@ export const addDrawersOnInvisibleBox = async (
           geometryType: GEOMETRY.BOX_GEOMETRY,
           dimensions: dims,
           position: {
-            x: parentLocal.x - parentGroupPos.x,
-            y: parentLocal.y - parentGroupPos.y,
-            z: parentLocal.z - parentGroupPos.z,
+            x: partPosParent.x - parentGroupPos.x,
+            y: partPosParent.y - parentGroupPos.y,
+            z: partPosParent.z - parentGroupPos.z,
           },
           rotation: { x: 0, y: 0, z: 0 },
           scale: { x: 1, y: 1, z: 1 },
@@ -436,100 +470,51 @@ export const addDrawersOnInvisibleBox = async (
         drawerGroupWithAllPlank.push(part);
       };
 
-      // LEFT plank position (12mm from left)
+      // LEFT plank position (12mm from left) - positions relative to box center in parent space
       createInnerPartData(
         'DRAWER_LEFT_PLANK',
         { width: thickness, height: innerH, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x - drawerOuterW / 2 + sideGap + thickness / 2,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        -wParent / 2 + sideGap + thickness / 2,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD / 2
       );
 
       // RIGHT plank position (12mm from right)
       createInnerPartData(
         'DRAWER_RIGHT_PLANK',
         { width: thickness, height: innerH, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x + drawerOuterW / 2 - sideGap - thickness / 2,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        wParent / 2 - sideGap - thickness / 2,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD / 2
       );
 
       // BACK plank
       createInnerPartData(
         'DRAWER_BACK_PLANK',
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD + thickness / 2
-        )
+        0,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD + thickness / 2
       );
 
       // FRONT plank
       createInnerPartData(
         'DRAWER_FRONT_PLANK',
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - thickness / 2
-        )
+        0,
+        innerPartCenterYParent,
+        boxFrontZRelParent - thickness / 2
       );
 
       // BOTTOM plank
       createInnerPartData(
         'DRAWER_BOTTOM_PLANK',
         { width: innerW, height: thickness, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          baseY - eachH / 2 + thickness / 2,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        0,
+        baseYParent - eachH / 2 + thickness / 2,
+        boxFrontZRelParent - innerD / 2
       );
     }
-
-    const railH = 20;
-    const railT = 5;
-    const railLen = Math.max(d - 60, 200);
-
-    const createRailData = (name: string, xOffset: number) => {
-      const localPos = new THREE.Vector3(xOffset, yLocal, boxCenterLocal.z);
-
-      const worldPos = boxMesh.localToWorld(localPos.clone());
-      const parentLocal = parent.worldToLocal(worldPos.clone());
-
-      const rail: MeshObjectData = {
-        id: crypto.randomUUID(),
-        name,
-        type: PART_TYPES.DRAWER,
-        parent: drawerGroupId,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: railT, height: railH, depth: railLen },
-        position: {
-          x: parentLocal.x - parentGroupPos.x,
-          y: parentLocal.y - parentGroupPos.y,
-          z: parentLocal.z - parentGroupPos.z,
-        },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-        material: [],
-      };
-      drawerGroupWithAllPlank.push(rail);
-    };
-
-    createRailData(
-      `DrawerRail_L_${i}_for_${boxMesh.name}`,
-      geometryBoundingBox.min.x + railT / 2 + 0.01
-    );
-
-    createRailData(
-      `DrawerRail_R_${i}_for_${boxMesh.name}`,
-      geometryBoundingBox.max.x - railT / 2 - 0.01
-    );
 
     await meshBuilder(drawerGroupWithAllPlank);
 

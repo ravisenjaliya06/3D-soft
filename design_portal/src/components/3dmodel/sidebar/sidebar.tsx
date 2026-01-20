@@ -138,7 +138,7 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const handleObject = objects.find((obj) => obj.parent === targetId);
+  const handleObject = objects.find((obj) => obj.id === targetId);
   useEffect(() => {
     if (!handleObject) return;
 
