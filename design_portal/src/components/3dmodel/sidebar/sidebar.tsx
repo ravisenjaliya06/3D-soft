@@ -24,6 +24,7 @@ import { RootState } from '../store';
 import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES } from '../sceneCreator/interface';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import { findMeshById } from '../sceneCreator/utils';
 
 //import style from './sidebar.module.css';
 
@@ -138,7 +139,8 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const handleObject = objects.find((obj) => obj.id === targetId);
+  // let handleObject = objects.find((obj) => obj.id === targetId);
+  const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -155,27 +157,29 @@ const Sidebar: React.FC = () => {
     });
   }, [handleObject]);
 
-  const updateHandlePosState = (axis: Axis, value: number) => {
+  const updateHandlePosState = (axis: Axis, value: number, isHandle?: boolean) => {
     const roundedValue = Math.round(value);
     setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
-        handleObject.id,
+        handleObject.userData.objectId,
         { position: { [axis]: roundedValue } },
+        undefined,
         handleObject
       );
     }
   };
 
-  const updateHandleRotState = (axis: Axis, value: number) => {
+  const updateHandleRotState = (axis: Axis, value: number, isHandle?: boolean) => {
     const roundedValue = Math.round(value);
     setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
     if (handleObject) {
       updateObjectRef.current?.update(
-        handleObject.id,
+        handleObject.userData.objectId,
         { rotation: { [axis]: roundedValue } },
+        undefined,
         handleObject
       );
     }
@@ -189,6 +193,7 @@ const Sidebar: React.FC = () => {
 
     const controller = new CabinetMotionController();
 
+    // Toggle only the selected object individually (doesn't affect global state)
     scene.traverse((node) => {
       if (!(node instanceof THREE.Mesh)) return;
 
@@ -196,12 +201,15 @@ const Sidebar: React.FC = () => {
       if (objectId !== targetId) return;
 
       if (type === PART_TYPES.DOOR) {
-        controller.toggleDoor(node);
+        const direction = node.userData.openDirection;
+        if (direction) {
+          controller.toggleDoorIndividual(node);
+        }
         return;
       }
 
       if (type === PART_TYPES.DRAWER) {
-        controller.toggleDrawer(node);
+        controller.toggleDrawerIndividual(node);
       }
     });
   };
@@ -515,7 +523,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value)),
+        updateHandlePosState('y', Number(e.target.value), true),
     },
 
     {
@@ -526,7 +534,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.x,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('x', Number(e.target.value)),
+        updateHandlePosState('x', Number(e.target.value), true),
     },
 
     {
@@ -534,10 +542,10 @@ const Sidebar: React.FC = () => {
       name: 'rotationZ',
       type: 'number',
       icon: _3DMODEL.rotateIcon,
-      value: handleRot.z,
+      value: handleRot.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandleRotState('z', Number(e.target.value)),
+        updateHandleRotState('y', Number(e.target.value), true),
     },
   ];
 

@@ -22,6 +22,7 @@ export const PART_TYPES = {
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
   L_SHAPE_OBJECT: 'lShapeObject',
+  HANDLE: 'handle',
 };
 
 export const DRAWER_TYPES = {

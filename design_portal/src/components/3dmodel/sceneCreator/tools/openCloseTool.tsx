@@ -6,6 +6,7 @@ export class CabinetMotionController {
   private ANIM_DURATION = 1;
   private child: THREE.Mesh | null = null;
   private type: string = '';
+  private static globalOpenState: boolean = false; // Global state: false = closed, true = open
 
   constructor() {}
 
@@ -53,21 +54,22 @@ export class CabinetMotionController {
     const isClosed = this.child?.userData.isClosed ?? true;
     const rotation = { x: 0, y: 0, z: 0 };
 
+    // isClosed: true = door closed (no rotation), false = door open (apply rotation)
     switch (this.type) {
       case DIRECTION_TYPES.LEFT:
-        rotation.y = isClosed ? -Math.PI / 2.5 : 0;
+        rotation.y = isClosed ? 0 : -Math.PI / 2.5;
         break;
 
       case DIRECTION_TYPES.RIGHT:
-        rotation.y = isClosed ? Math.PI / 2.5 : 0;
+        rotation.y = isClosed ? 0 : Math.PI / 2.5;
         break;
 
       case DIRECTION_TYPES.TOP:
-        rotation.x = isClosed ? -Math.PI / 3 : 0;
+        rotation.x = isClosed ? 0 : -Math.PI / 3;
         break;
 
       case DIRECTION_TYPES.BOTTOM:
-        rotation.x = isClosed ? Math.PI / 3 : 0;
+        rotation.x = isClosed ? 0 : Math.PI / 3;
         break;
     }
 
@@ -85,8 +87,23 @@ export class CabinetMotionController {
     });
   }
 
-  // Toggle door open or close
-  public toggleDoor(child: THREE.Mesh) {
+  // Toggle global state (call this once before processing all doors)
+  public static toggleGlobalState(): void {
+    CabinetMotionController.globalOpenState = !CabinetMotionController.globalOpenState;
+  }
+
+  // Get current global state
+  public static getGlobalState(): boolean {
+    return CabinetMotionController.globalOpenState;
+  }
+
+  // Reset global state to default (closed)
+  public static resetGlobalState(): void {
+    CabinetMotionController.globalOpenState = false;
+  }
+
+  // Toggle door individually (for sidebar - doesn't affect global state)
+  public toggleDoorIndividual(child: THREE.Mesh) {
     if (!child) return;
 
     this.child = child;
@@ -97,13 +114,61 @@ export class CabinetMotionController {
     // Make sure pivot group exists
     this._ensurePivotWrapper();
 
+    // Toggle individual door state
+    child.userData.isClosed = !isClosed;
+
     // Rotate pivot group instead of mesh
     const pivotGroup = child.parent;
     if (pivotGroup?.userData.isPivotGroup) {
       this._createGSAP(pivotGroup.rotation, this._getRotation());
     }
+  }
 
-    child.userData.isClosed = !isClosed;
+  // Toggle door open or close based on global state (for header)
+  public toggleDoor(child: THREE.Mesh, shouldToggleGlobal: boolean = false) {
+    if (!child) return;
+
+    // Toggle global state if this is the first door in the batch
+    if (shouldToggleGlobal) {
+      CabinetMotionController.toggleGlobalState();
+    }
+
+    this.child = child;
+    this.type = child.userData.openDirection;
+
+    const currentIsClosed = child.userData.isClosed ?? true;
+    const globalOpenState = CabinetMotionController.globalOpenState;
+
+    // If global state is true (open): only change closed items to open
+    // If global state is false (closed): only change open items to closed
+    if (globalOpenState) {
+      // Global state is open: only change closed items to open
+      if (currentIsClosed) {
+        // Item is closed, change it to open
+        child.userData.isClosed = false;
+      } else {
+        // Item is already open, don't change it
+        return;
+      }
+    } else {
+      // Global state is closed: only change open items to closed
+      if (!currentIsClosed) {
+        // Item is open, change it to closed
+        child.userData.isClosed = true;
+      } else {
+        // Item is already closed, don't change it
+        return;
+      }
+    }
+
+    // Make sure pivot group exists
+    this._ensurePivotWrapper();
+
+    // Rotate pivot group instead of mesh
+    const pivotGroup = child.parent;
+    if (pivotGroup?.userData.isPivotGroup) {
+      this._createGSAP(pivotGroup.rotation, this._getRotation());
+    }
   }
 
   // Ensure door is wrapped in correct pivot group
@@ -162,8 +227,8 @@ export class CabinetMotionController {
     pivotGroup.attach(this.child);
   }
 
-  // Toggle drawer slide animation
-  public toggleDrawer(mesh: THREE.Mesh, openDistanceMM = 250) {
+  // Toggle drawer individually (for sidebar - doesn't affect global state)
+  public toggleDrawerIndividual(mesh: THREE.Mesh, openDistanceMM = 250) {
     if (!mesh) return;
 
     const isClosed = mesh.userData.isClosed ?? true;
@@ -180,12 +245,68 @@ export class CabinetMotionController {
     const closedZ = mesh.userData.closedZ;
     const openZ = closedZ + openDistance;
 
+    // Toggle individual drawer state
+    mesh.userData.isClosed = !isClosed;
+
+    // Animate drawer based on new state (isClosed: true = closed, false = open)
     gsap.to(mesh.position, {
-      z: isClosed ? openZ : closedZ,
+      z: mesh.userData.isClosed ? closedZ : openZ,
       duration: this.ANIM_DURATION,
       ease: 'power2.inOut',
     });
+  }
 
-    mesh.userData.isClosed = !isClosed;
+  // Toggle drawer slide animation based on global state (for header)
+  public toggleDrawer(mesh: THREE.Mesh, shouldToggleGlobal: boolean = false, openDistanceMM = 250) {
+    if (!mesh) return;
+
+    // Toggle global state if this is the first drawer in the batch
+    if (shouldToggleGlobal) {
+      CabinetMotionController.toggleGlobalState();
+    }
+
+    const currentIsClosed = mesh.userData.isClosed ?? true;
+    const globalOpenState = CabinetMotionController.globalOpenState;
+
+    // If global state is true (open): only change closed items to open
+    // If global state is false (closed): only change open items to closed
+    if (globalOpenState) {
+      // Global state is open: only change closed items to open
+      if (currentIsClosed) {
+        // Item is closed, change it to open
+        mesh.userData.isClosed = false;
+      } else {
+        // Item is already open, don't change it
+        return;
+      }
+    } else {
+      // Global state is closed: only change open items to closed
+      if (!currentIsClosed) {
+        // Item is open, change it to closed
+        mesh.userData.isClosed = true;
+      } else {
+        // Item is already closed, don't change it
+        return;
+      }
+    }
+
+    // store CLOSED LOCAL Z once
+    if (mesh.userData.closedZ === undefined) {
+      mesh.userData.closedZ = mesh.position.z;
+    }
+
+    // convert mm → meters → parent scale
+    const parentScaleZ = mesh.parent?.scale.z ?? 1;
+    const openDistance = openDistanceMM / 1000 / parentScaleZ;
+
+    const closedZ = mesh.userData.closedZ;
+    const openZ = closedZ + openDistance;
+
+    // Animate drawer based on new state
+    gsap.to(mesh.position, {
+      z: mesh.userData.isClosed ? closedZ : openZ,
+      duration: this.ANIM_DURATION,
+      ease: 'power2.inOut',
+    });
   }
 }

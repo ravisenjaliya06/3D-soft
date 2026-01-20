@@ -20,8 +20,18 @@ export class UpdateObjectInScene {
   }
 
   /** Updates a 3D object in both the Three.js scene and the Redux store. */
-  public update(objectId: string, updates: UpdatePayload, currentObject?: MeshObjectData): void {
-    const mesh = this.findMeshById(objectId);
+  public update(
+    objectId: string,
+    updates: UpdatePayload,
+    currentObject?: MeshObjectData,
+    meshObject?: THREE.Mesh,
+  ): void {
+    let mesh: THREE.Mesh | null = null;
+    if (meshObject) {
+      mesh = meshObject;
+    } else {
+      mesh = this.findMeshById(objectId);
+    }
     if (!mesh) {
       console.warn(`[ObjectUpdater] Mesh with ID "${objectId}" not found in scene.`);
       return;
