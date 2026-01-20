@@ -4,7 +4,7 @@ import { FooterProps } from './interface';
 
 const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
   return (
-    <footer className="fixed right-0 right-[15.5rem] bottom-[1rem] z-50">
+    <footer className="fixed right-0 right-[15.5rem] bottom-[0.5rem] z-50">
       {/* temporary button created */}
       <div className="relative flex w-52 items-center justify-start gap-2 rounded-[0.4rem] bg-[#ffffff] p-[0.3rem]">
         <button

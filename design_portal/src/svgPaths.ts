@@ -41,6 +41,7 @@ export const _3DMODEL = {
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
   icon_2d: '/assets/3dmodel/footer/2d.svg',
   icon_3d: '/assets/3dmodel/footer/3d.svg',
+  close_white: '/assets/3dmodel/toolbar/close.svg',
 };
 
 export const ARROW_SVG = {
@@ -73,6 +74,7 @@ export const CATALOGMANAGER = {
   edit: '/assets/catalogmanager/noteEditOutline.svg',
   matariel: '/assets/catalogmanager/matireal.svg',
   trash: '/assets/catalogmanager/trash.svg',
+  menudown: '/assets/catalogmanager/menu_down.svg',
 };
 
 export const CREATEICON_SVG = {
