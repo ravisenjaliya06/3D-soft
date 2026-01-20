@@ -6,7 +6,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
-import { addSkirtingPlanks, removeSkirtingPlanks, updateDrawerType } from '../design/scene';
+import {
+  addLShapeToDrawersAndDoors,
+  addSkirtingPlanks,
+  removeLShapeObjects,
+  removeSkirtingPlanks,
+  updateDrawerDoorForHandleMode,
+  updateDrawerType,
+} from '../design/scene';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
@@ -45,6 +52,7 @@ const Sidebar: React.FC = () => {
   const [diameter, setDiameter] = useState(8);
   const [inside, setInside] = useState(25);
   const [edgeToEnd, setEdgeToEnd] = useState(6);
+  const [handleMode, setHandleMode] = useState<'handle' | 'handleless'>('handle');
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
@@ -276,6 +284,32 @@ const Sidebar: React.FC = () => {
         controller.toggleDrawerIndividual(node);
       }
     });
+  };
+
+  const handleHandleModeChange = async (mode: 'handle' | 'handleless') => {
+    if (!scene || !selectedObject) return;
+
+    setHandleMode(mode);
+
+    // Find the cupboard mesh
+    let cupboardMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        cupboardMesh = obj;
+      }
+    });
+
+    if (!cupboardMesh) return;
+
+    if (mode === 'handleless') {
+      // Handleless mode: add l-shape objects, reduce drawer/door height, hide handles
+      await addLShapeToDrawersAndDoors(scene, cupboardMesh);
+      await updateDrawerDoorForHandleMode(scene, cupboardMesh, true);
+    } else {
+      // Handle mode: remove l-shape objects, restore drawer/door size, show handles
+      removeLShapeObjects(cupboardMesh);
+      await updateDrawerDoorForHandleMode(scene, cupboardMesh, false);
+    }
   };
 
   function applyObjectUpdate(
@@ -1710,6 +1744,34 @@ const Sidebar: React.FC = () => {
                         </div>
                       </>
                     )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {/* ================= Handle/Handleless Selector ================= */}
+              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Handle Mode
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-[0.7rem]">
+                      <select
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        value={handleMode}
+                        onChange={(e) => {
+                          const value = e.target.value as 'handle' | 'handleless';
+                          handleHandleModeChange(value);
+                        }}
+                        disabled={isQuickHideActive}
+                      >
+                        <option value="handle">Handle</option>
+                        <option value="handleless">Handleless</option>
+                      </select>
+                    </div>
                   </div>
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>

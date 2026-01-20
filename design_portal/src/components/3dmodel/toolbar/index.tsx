@@ -12,6 +12,7 @@ import {
   addDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
+  addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { useAppDispatch } from '../hooks';
@@ -203,6 +204,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
+    } else if (itemType === PART_TYPES.L_SHAPE_OBJECT || (itemName || '').toLowerCase().includes('l-shape')) {
+      await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
     }
 
     setAddPartPopup(false);
@@ -325,6 +328,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     Cabinet: assets.cabinet,
     cupboard: assets.cabinet,
     Platform: assets.platform,
+    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
+    lShapeObject: assets.vertical,
   };
 
   return (
