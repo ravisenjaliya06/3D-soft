@@ -41,6 +41,7 @@ export const _3DMODEL = {
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
   icon_2d: '/assets/3dmodel/footer/2d.svg',
   icon_3d: '/assets/3dmodel/footer/3d.svg',
+  close_white: '/assets/3dmodel/toolbar/close.svg',
 };
 
 export const ARROW_SVG = {

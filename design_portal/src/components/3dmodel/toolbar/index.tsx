@@ -4,6 +4,8 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
 import {
@@ -21,7 +23,6 @@ import { store } from '../store';
 import {
   setHoverdMesh,
   setSelectedChildObject,
-  setobjectSelected,
   toggleMeasurement,
   toggleQuickHide,
   toggleWallDrawing,
@@ -52,6 +53,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
+  };
+
+  const CustomToast = ({ appearance, message, closeToast }: any) => {
+    const isError = appearance === 'error';
+
+    return (
+      <>
+        <div className="mr-[1rem] flex-shrink-0 gap-[0rem]">
+          <div
+            className={`${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'} ml-[1rem] flex h-[2rem] w-[2rem] items-center justify-center rounded-full`}
+          >
+            <span className="text-sm font-black text-white select-none">!</span>
+          </div>
+        </div>
+        <div className="ml-[0rem] flex-grow pr-[2rem]">
+          <p className="text-[1rem] font-normal tracking-wide text-[#FFFFFF]">{message}</p>
+        </div>
+        <button
+          onClick={closeToast}
+          className="absolute top-[1rem] right-[1rem] cursor-pointer border-[0rem] bg-[#121212] text-[#FFFFFF] transition-colors hover:text-white"
+        >
+          <img src={assets.close_white} alt="Close" className="h-[1rem] w-[1rem]" />
+        </button>
+      </>
+    );
   };
 
   /** Set popup position based on submenu button click */
@@ -147,7 +173,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const itemName = selectedCabinetItem.name;
 
     if (!targetBox) {
-      alert('❌ Target box not found!');
+      toast(
+        ({ closeToast }) => (
+          <CustomToast appearance="error" message="Target box not found!" closeToast={closeToast} />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !min-h-0 !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[4px] !top-auto !top-0 !left-0 !opacity-100',
+        }
+      );
       return;
     }
     if (['door', 'Sliding Door'].includes(itemType)) {
@@ -169,7 +208,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
-    dispatch(setobjectSelected(null));
     dispatch(setSelectedChildObject(null));
     dispatch(setHoverdMesh(null));
     removeExistingLines();
@@ -529,6 +567,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           </div>
         </div>
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        closeButton={false}
+        icon={false}
+        toastClassName="!relative !flex !p-0 !mb-2 !bg-transparent !shadow-none !overflow-visible"
+      />
     </>
   );
 };
