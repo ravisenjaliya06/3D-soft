@@ -35,7 +35,7 @@ const Sidebar: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [textureRotation, setTextureRotation] = useState(0);
-
+  const [wasLoadMoreClicked, setWasLoadMoreClicked] = useState(false);
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
@@ -50,6 +50,70 @@ const Sidebar: React.FC = () => {
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
 
   const materialModal = [
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
+    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
+    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
+    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
+    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
+    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
+    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
+    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
+    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
     { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
     { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
@@ -317,9 +381,11 @@ const Sidebar: React.FC = () => {
 
   const toggleTextureList = () => {
     /** Toggles the visibility of the texture selection list. */
-    setIsTextureListOpen((prev) => !prev);
+    setIsTextureListOpen((prev) => {
+      if (!prev) setWasLoadMoreClicked(false);
+      return !prev;
+    });
   };
-
   const handleDimensionChange = (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
 
@@ -1562,23 +1628,67 @@ const Sidebar: React.FC = () => {
 
                     {/* Texture List */}
                     {isTextureListOpen && (
-                      <div className="absolute left-[14%] z-[100] mt-[0.25rem] flex max-h-[7rem] max-w-[8.5rem] flex-wrap gap-[0.1rem] overflow-y-auto rounded-[0.375rem] border border-[var(--border-color)] bg-[var(--primary-white)] p-[0.3rem] shadow-[0_0.25rem_0.5rem_rgba(0,0,0,0.1)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
-                        {materialModal.map((m) => (
-                          <div
-                            key={m.option}
-                            className="flex cursor-pointer flex-col items-center rounded border-[0.1rem] border-transparent p-[0rem] transition-all duration-200 ease-in-out hover:border-[var(--primary-color)] hover:shadow-[0_0_6px_rgba(0,0,0,0.25)]"
-                            onClick={() => handleTextureSelect(m.image)}
-                            title={m.name}
-                          >
-                            <img
-                              src={m.image}
-                              className="h-[2.5rem] w-[2.5rem] rounded-[0.125rem] object-cover"
-                            />
+                      <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                        {/* Scrollable grid area */}
+                        <div
+                          className={`flex-1 ${wasLoadMoreClicked ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                        >
+                          <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
+                            {/* Add New Texture Button */}
+                            <div className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]">
+                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
+                                <span className="text-[10px] font-bold text-[white]">+</span>
+                              </div>
+                              <span className="px-[2px] text-center text-[5px] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                                Add New Texture
+                              </span>
+                            </div>
+
+                            {(wasLoadMoreClicked ? materialModal : materialModal.slice(0, 41)).map(
+                              (m, idx) => (
+                                <div
+                                  key={`${m.option}-${idx}`}
+                                  className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                  onClick={() => handleTextureSelect(m.image)}
+                                >
+                                  {/* Texture Image */}
+                                  <img
+                                    src={m.image}
+                                    alt={m.name}
+                                    className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
+                                  />
+
+                                  {/* Black Semi-Transparent Overlay */}
+                                  <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
+
+                                  {/* Texture Name Display */}
+                                  <div className="absolute inset-0 flex items-center items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 text-center opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                    <span className="items-center justify-center text-center text-[0.5rem] font-semibold text-[white]">
+                                      {m.name}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            )}
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Load More Button at bottom */}
+                        {!wasLoadMoreClicked && (
+                          <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.6rem]">
+                            <button
+                              className="flex cursor-pointer items-center gap-2 border-[0rem] border-[var(--primary-color)] bg-transparent text-[0.7rem] font-bold text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
+                              onClick={() => setWasLoadMoreClicked(true)}
+                            >
+                              Load More
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-[var(--primary-color)]">
+                                <span className="text-[10px] leading-none">↻</span>
+                              </div>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
-
                     {/* ================= Texture Grain ================= */}
                     <div className="flex items-center justify-between gap-[0rem]">
                       <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">

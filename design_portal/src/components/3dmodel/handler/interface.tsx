@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { Object3D, Position, Rotation } from '../store/interface';
 import { Material } from '../sceneCreator/interface';
+import { Object3D, Position, Rotation } from '../store/interface';
 
 export const ITEM = {
   DRAWER: 'DRAWER',
