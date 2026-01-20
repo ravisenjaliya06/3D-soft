@@ -924,11 +924,6 @@ const Sidebar: React.FC = () => {
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
           )}
 
-          {/* ================= INVISIBLE BOX SELECTED ================= */}
-          {isSettingOpen && selectedObject && (
-            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Properties Available</p>
-          )}
-
           {/* ================= SETTINGS ================= */}
           {isSettingOpen && selectedObject && (
             <>
