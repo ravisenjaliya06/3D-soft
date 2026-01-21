@@ -329,12 +329,25 @@ export class SelectObjectController {
   }
 
   private _applyPartSelectOutline(obj: THREE.Mesh) {
+    // Ensure the object's world matrix is updated before creating outline
+    // This is critical for child objects (like planks) that may have transforms from their parent
+    obj.updateWorldMatrix(true, false);
+
+    // Also update parent matrices to ensure accurate bounding box calculation
+    let parent = obj.parent;
+    while (parent && parent instanceof THREE.Mesh) {
+      parent.updateWorldMatrix(false, false);
+      parent = parent.parent;
+    }
+
     const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.partSelectOutline = outline;
   }
 
   private _applySmallCupboardSelectOutline(obj: THREE.Mesh) {
+    // Ensure the object's world matrix is updated before creating outline
+    obj.updateWorldMatrix(true, false);
     const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.objectSelectOutline = outline;

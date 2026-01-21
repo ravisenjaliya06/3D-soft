@@ -21,6 +21,7 @@ import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
+import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
@@ -126,6 +127,7 @@ const Sidebar: React.FC = () => {
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
+  const bandingToolRef = useRef<BandingTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
@@ -183,6 +185,13 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
   }, [scene, dispatch]);
+
+  /** banding tool ref */
+  useEffect(() => {
+    if (scene) {
+      bandingToolRef.current = new BandingTool(scene);
+    }
+  }, [scene]);
 
   useEffect(() => {
     if (selectedObject && scene) {
@@ -290,6 +299,10 @@ const Sidebar: React.FC = () => {
         : selectedObject.rotation,
 
       material: patch.material ?? selectedObject.material,
+
+      edgeBanding: patch.edgeBanding
+        ? { ...selectedObject.edgeBanding, ...patch.edgeBanding }
+        : selectedObject.edgeBanding,
     };
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
@@ -688,13 +701,65 @@ const Sidebar: React.FC = () => {
       } else {
         setShelvesInnerDistance(0);
       }
+
+      // Load banding state - first check Redux, then check scene for existing banding
+      let bandingState = selectedObject.edgeBanding;
+
+      // If no banding state in Redux, detect from scene meshes using BandingTool
+      if (!bandingState && scene && bandingToolRef.current) {
+        let foundMesh: THREE.Mesh | null = null;
+        scene.traverse((obj) => {
+          if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+            foundMesh = obj;
+          }
+        });
+
+        if (foundMesh) {
+          // Use BandingTool to detect existing banding
+          const detectedBanding = bandingToolRef.current.detectBandingState(foundMesh);
+
+          // If we found banding in scene, update Redux state
+          if (Object.keys(detectedBanding).length > 0) {
+            bandingState = detectedBanding;
+            // Update Redux to sync state
+            applyObjectUpdate(selectedObject, {
+              edgeBanding: detectedBanding,
+            });
+          }
+        }
+      }
+
+      // Set checkbox states
+      if (bandingState) {
+        setBandingTop(bandingState.top ?? false);
+        setBandingBottom(bandingState.bottom ?? false);
+        setBandingLeft(bandingState.left ?? false);
+        setBandingRight(bandingState.right ?? false);
+        setBandingFront(bandingState.front ?? false);
+        setBandingBack(bandingState.back ?? false);
+      } else {
+        setBandingTop(false);
+        setBandingBottom(false);
+        setBandingLeft(false);
+        setBandingRight(false);
+        setBandingFront(false);
+        setBandingBack(false);
+      }
     } else {
       previousPlankIdRef.current = null;
     }
-  }, [selectedObject?.id, isPlankSelected, objects]);
+  }, [selectedObject?.id, isPlankSelected, objects, scene]);
 
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
+
+  // Edge banding state for planks
+  const [bandingTop, setBandingTop] = useState(false);
+  const [bandingBottom, setBandingBottom] = useState(false);
+  const [bandingLeft, setBandingLeft] = useState(false);
+  const [bandingRight, setBandingRight] = useState(false);
+  const [bandingFront, setBandingFront] = useState(false);
+  const [bandingBack, setBandingBack] = useState(false);
   const [minifixEnabled, setMinifixEnabled] = useState(true);
   const [minifixDisabled, setMinifixDisabled] = useState(false);
   const [groovingEnabled, setGroovingEnabled] = useState(true);
@@ -817,6 +882,116 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // Determine which edges are valid for banding based on plank dimensions
+  const getValidBandingEdges = (): Set<string> => {
+    if (!selectedObject || !isPlankSelected || !scene || !bandingToolRef.current) {
+      return new Set(['top', 'bottom', 'left', 'right', 'front', 'back']); // All enabled if no dimensions
+    }
+
+    // Find the mesh in the scene
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      return bandingToolRef.current.getValidBandingEdges(targetMesh);
+    }
+
+    return new Set(['top', 'bottom', 'left', 'right', 'front', 'back']);
+  };
+
+  const handleBandingToggle = async (
+    edge: 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back',
+    enabled: boolean
+  ) => {
+    if (!selectedObject || isDisabled || !isPlankSelected || !scene || !bandingToolRef.current)
+      return;
+
+    // Check if this edge is valid for banding based on plank dimensions
+    const validEdges = getValidBandingEdges();
+    if (!validEdges.has(edge)) {
+      // Edge is not valid for this plank orientation, don't allow toggling
+      return;
+    }
+
+    // Update local state
+    const edgeStateSetters: Record<string, (val: boolean) => void> = {
+      top: setBandingTop,
+      bottom: setBandingBottom,
+      left: setBandingLeft,
+      right: setBandingRight,
+      front: setBandingFront,
+      back: setBandingBack,
+    };
+    edgeStateSetters[edge]?.(enabled);
+
+    // Update Redux state
+    const currentBanding = selectedObject.edgeBanding || {};
+    const newBandingState = {
+      ...currentBanding,
+      [edge]: enabled,
+    };
+
+    // Update object in Redux
+    applyObjectUpdate(selectedObject, {
+      edgeBanding: newBandingState,
+    });
+
+    // Update 3D scene
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      // Find parent mesh
+      let parentMesh: THREE.Mesh | null = null;
+      if (selectedObject.parent) {
+        scene.traverse((obj) => {
+          if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.parent) {
+            parentMesh = obj;
+          }
+        });
+      }
+
+      // Get banding material
+      const bandingMaterial = bandingToolRef.current.getBandingMaterial(
+        targetMesh,
+        { material: selectedObject.material, parent: selectedObject.parent },
+        objects.map((obj) => ({ id: obj.id, material: obj.material }))
+      );
+
+      if (bandingMaterial) {
+        // Use BandingTool to apply banding
+        await bandingToolRef.current.applyBandingFromState(
+          targetMesh,
+          newBandingState,
+          bandingMaterial,
+          parentMesh,
+          { material: selectedObject.material, id: selectedObject.id },
+          objects.map((obj) => ({ id: obj.id, material: obj.material }))
+        );
+      } else if (!enabled) {
+        // If no banding material but we're removing, just remove the edge
+        const bandingThickness = 1.5; // Default thickness
+        bandingToolRef.current.removeBandingOnEdge(
+          targetMesh,
+          edge,
+          bandingThickness,
+          selectedObject.id
+        );
+      } else {
+        // If enabling but no banding material found, log warning
+        console.warn('No banding material found for plank. Cannot add banding.');
+      }
+    }
+  };
+
   const handleControlClick = (fieldName: string, idx: number) => {
     // Helper to toggle state: if same side clicked, turn off (null); otherwise set new side.
     const toggle = <T,>(current: T | null, target: T): T | null => {
@@ -848,7 +1023,48 @@ const Sidebar: React.FC = () => {
     positionMove: false,
     topPlank: false,
     base: false,
+    plankBanding: false,
   });
+
+  const validBandingEdges = getValidBandingEdges();
+
+  const edgeBandingOptions = [
+    [
+      { key: 'top', label: 'Top', checked: bandingTop, disabled: !validBandingEdges.has('top') },
+      {
+        key: 'bottom',
+        label: 'Bottom',
+        checked: bandingBottom,
+        disabled: !validBandingEdges.has('bottom'),
+      },
+      {
+        key: 'left',
+        label: 'Left',
+        checked: bandingLeft,
+        disabled: !validBandingEdges.has('left'),
+      },
+    ],
+    [
+      {
+        key: 'right',
+        label: 'Right',
+        checked: bandingRight,
+        disabled: !validBandingEdges.has('right'),
+      },
+      {
+        key: 'front',
+        label: 'Front',
+        checked: bandingFront,
+        disabled: !validBandingEdges.has('front'),
+      },
+      {
+        key: 'back',
+        label: 'Back',
+        checked: bandingBack,
+        disabled: !validBandingEdges.has('back'),
+      },
+    ],
+  ];
 
   const toggleSection = (key: string) => {
     setCollapsed((prev) => ({
@@ -1190,6 +1406,66 @@ const Sidebar: React.FC = () => {
                               className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {/* Edge Banding Controls for Planks */}
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Edge Banding
+                      </p>
+                      <button
+                        onClick={() => toggleSection('plankBanding')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.plankBanding ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.plankBanding && (
+                      <>
+                        <div className="flex flex-col gap-[0.4rem]">
+                          {edgeBandingOptions.map((row, rowIndex) => (
+                            <div key={rowIndex} className="flex items-center justify-between">
+                              {row.map((item) => (
+                                <div
+                                  key={item.key}
+                                  className="flex w-[4rem] items-center gap-[0.1rem]"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={item.checked}
+                                    onChange={(e) =>
+                                      handleBandingToggle(
+                                        item.key as
+                                          | 'top'
+                                          | 'bottom'
+                                          | 'left'
+                                          | 'right'
+                                          | 'front'
+                                          | 'back',
+                                        e.target.checked
+                                      )
+                                    }
+                                    disabled={isDisabled || item.disabled}
+                                    className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
+                                  />
+                                  <p
+                                    className={`text-[0.6rem] font-[500] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                                  >
+                                    {item.label}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
                         </div>
                       </>
                     )}

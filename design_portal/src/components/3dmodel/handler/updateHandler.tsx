@@ -2,7 +2,8 @@ import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MeshObjectData } from '../sceneCreator/interface';
-import { MATERIAL_TYPES } from '../sidebar/interface';
+import { BandingTool } from '../sceneCreator/tools/bandingTool';
+import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
@@ -11,10 +12,12 @@ import { UpdateDimensionsParams, UpdatePayload } from './interface';
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
   private readonly dispatch: Dispatch;
+  private readonly bandingTool: BandingTool;
 
   constructor(scene: THREE.Scene, dispatch: Dispatch) {
     this.scene = scene;
     this.dispatch = dispatch;
+    this.bandingTool = new BandingTool(scene);
   }
 
   /** Updates a 3D object in both the Three.js scene and the Redux store. */
@@ -25,7 +28,7 @@ export class UpdateObjectInScene {
       return;
     }
 
-    this.updateMeshGeometry(mesh, updates);
+    this.updateMeshGeometry(mesh, updates, currentObject);
     this.updateMeshPosition(mesh, updates);
     this.updateMeshRotation(mesh, updates);
     this.updateMeshMaterial(mesh, updates);
@@ -49,7 +52,11 @@ export class UpdateObjectInScene {
   }
 
   /** Updates geometry width, height, depth */
-  private updateMeshGeometry(mesh: THREE.Mesh, updates: UpdatePayload): void {
+  private updateMeshGeometry(
+    mesh: THREE.Mesh,
+    updates: UpdatePayload,
+    currentObject?: MeshObjectData
+  ): void {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
@@ -78,11 +85,53 @@ export class UpdateObjectInScene {
       updateParams.newDepth
     );
 
+    // Update banding if this is a plank
+    if (this.bandingTool.isPlank(mesh)) {
+      // Use async IIFE to handle async update
+      (async () => {
+        await this.updateBandingForPlank(mesh, updateParams, currentObject);
+      })();
+    }
+
     if (mesh.userData.isMain) {
       this.updateChildrenDynamic(mesh, updateParams);
     }
 
     updateOrRefreshOutline(this.scene, mesh);
+  }
+
+  /** Update banding when plank dimensions change */
+  private async updateBandingForPlank(
+    mesh: THREE.Mesh,
+    params: UpdateDimensionsParams,
+    currentObject?: MeshObjectData
+  ): Promise<void> {
+    // Find parent mesh for edge detection
+    let parentMesh: THREE.Mesh | null = null;
+    if (currentObject?.parent) {
+      this.scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === currentObject.parent) {
+          parentMesh = obj;
+        }
+      });
+    }
+
+    // Use BandingTool to update banding
+    await this.bandingTool.updateBanding(
+      mesh,
+      {
+        width: params.newWidth,
+        height: params.newHeight,
+        depth: params.newDepth,
+      },
+      undefined, // Will be found from objectData
+      currentObject?.edgeBanding,
+      parentMesh,
+      {
+        material: currentObject?.material,
+        id: currentObject?.id,
+      }
+    );
   }
 
   //update main object with children(planks)
@@ -184,10 +233,10 @@ export class UpdateObjectInScene {
     const { type, value } = updates.material;
 
     const updateTarget = (targetMesh: THREE.Mesh) => {
-      if (type === MATERIAL_TYPES.COLOR) {
+      if (type === SIDEBAR_MATERIAL_TYPES.COLOR) {
         const color = new THREE.Color(value);
         this.applyColorMaterial(targetMesh, color);
-      } else if (type === MATERIAL_TYPES.TEXTURE) {
+      } else if (type === SIDEBAR_MATERIAL_TYPES.TEXTURE) {
         this.applyTextureMaterial(targetMesh, value);
       }
     };

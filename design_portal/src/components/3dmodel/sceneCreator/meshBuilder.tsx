@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
+import { store } from '../store';
 import {
   DRAWER_PLANK_TYPES,
   FLOOR_PLAN_TYPES,
@@ -9,14 +10,86 @@ import {
   MeshObjectData,
   PART_TYPES,
 } from './interface';
+import { BandingTool } from './tools/bandingTool';
 import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
   private mesh: THREE.Mesh | null = null;
+  private parentMesh: THREE.Mesh | null = null;
+  private bandingTool: BandingTool | null = null;
 
-  constructor(data: MeshObjectData) {
+  constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+    }
+  }
+
+  /**
+   * Set the parent mesh to enable checking for adjacent planks
+   */
+  public setParentMesh(parent: THREE.Mesh | null): void {
+    this.parentMesh = parent;
+  }
+
+  /**
+   * Set the scene for BandingTool initialization
+   */
+  public setScene(scene: THREE.Scene): void {
+    this.bandingTool = new BandingTool(scene);
+  }
+
+  /**
+   * Get or initialize BandingTool from mesh's scene
+   * This ensures banding works even when scene wasn't passed initially
+   */
+  private _getOrCreateBandingTool(): BandingTool | null {
+    if (this.bandingTool) {
+      return this.bandingTool;
+    }
+
+    let scene: THREE.Scene | null = null;
+
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
+      }
+      if (current instanceof THREE.Scene) {
+        scene = current;
+      }
+    }
+
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+      return this.bandingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if an edge of the current plank is covered by another plank
+   * Delegates to BandingTool if available
+   */
+  private _isEdgeCovered(mesh: THREE.Mesh, edge: string): boolean {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      return tool.isEdgeCovered(mesh, edge, this.parentMesh);
+    }
+    return false;
   }
 
   private _createTexture(materialData: Material): THREE.Texture | null {
@@ -204,6 +277,153 @@ export class MeshBuilder {
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
   }
 
+  /**
+   * Remove all banding meshes from a plank
+   */
+  public removeAllBanding(mesh: THREE.Mesh): void {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      tool.removeAllBanding(mesh, this.meshData.id);
+    }
+  }
+
+  /**
+   * Remove banding from a specific edge
+   */
+  public removeBandingOnEdge(mesh: THREE.Mesh, edge: string): void {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      // Get banding thickness from material
+      const materialData = this.meshData.material;
+      const materialArray = Array.isArray(materialData)
+        ? materialData
+        : materialData
+          ? [materialData]
+          : [];
+      const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+      const bandingThickness = bandingMaterialData?.properties?.thickness || 1.5;
+
+      tool.removeBandingOnEdge(mesh, edge, bandingThickness, this.meshData.id);
+    }
+  }
+
+  /**
+   * Update banding positions and sizes when plank dimensions change
+   */
+  public async updateBanding(mesh: THREE.Mesh): Promise<void> {
+    const tool = this._getOrCreateBandingTool();
+    if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
+
+    const bandingState = this.meshData.edgeBanding;
+    if (!bandingState) return;
+
+    const { width, height, depth } = mesh.geometry.parameters;
+
+    // Get banding material
+    const materialData = this.meshData.material;
+    if (!materialData) return;
+
+    const materialArray = Array.isArray(materialData) ? materialData : [materialData];
+    const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+
+    if (bandingMaterialData) {
+      await tool.updateBanding(
+        mesh,
+        { width, height, depth },
+        bandingMaterialData,
+        bandingState,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
+    }
+  }
+
+  private async _createBandingOnPlank(
+    mesh: THREE.Mesh,
+    materialData: Material,
+    bandingState?: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    }
+  ) {
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+
+    await tool.createBandingOnPlank(mesh, materialData, bandingState, this.parentMesh, {
+      material: this.meshData.material,
+      id: this.meshData.id,
+    });
+  }
+
+  /**
+   * Apply banding material from parent to this plank mesh
+   * This is used when the parent (e.g., cupboard) has banding material
+   * that should be applied to all child planks
+   */
+  public async applyParentBandingMaterial(parentBandingMaterial: Material): Promise<void> {
+    if (!this.mesh) return;
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+    await tool.createBandingOnPlank(
+      this.mesh,
+      parentBandingMaterial,
+      this.meshData.edgeBanding,
+      this.parentMesh,
+      { material: this.meshData.material, id: this.meshData.id }
+    );
+  }
+
+  /**
+   * Create or update banding based on edgeBanding state
+   */
+  public async applyBandingFromState(
+    mesh?: THREE.Mesh,
+    bandingMaterial?: Material,
+    edgeBandingState?: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    }
+  ): Promise<void> {
+    const targetMesh = mesh || this.mesh;
+    if (!targetMesh) return;
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+
+    // Use provided banding material or find it from meshData
+    let bandingMaterialData = bandingMaterial;
+
+    if (!bandingMaterialData) {
+      const materialArray = Array.isArray(this.meshData.material)
+        ? this.meshData.material
+        : this.meshData.material
+          ? [this.meshData.material]
+          : [];
+
+      bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+    }
+
+    // Use provided edgeBandingState or fall back to meshData
+    const bandingState = edgeBandingState || this.meshData.edgeBanding;
+
+    if (bandingMaterialData && bandingState) {
+      await tool.applyBandingFromState(
+        targetMesh,
+        bandingState,
+        bandingMaterialData,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
+    }
+  }
+
   private _handleMaterial() {
     if (!this.mesh) return;
 
@@ -215,6 +435,22 @@ export class MeshBuilder {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
         this._loadHandle(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
+        if (this.mesh) {
+          const tool = this._getOrCreateBandingTool();
+          if (tool) {
+            tool
+              .createBandingOnPlank(
+                this.mesh,
+                materialData,
+                this.meshData.edgeBanding,
+                this.parentMesh,
+                { material: this.meshData.material, id: this.meshData.id }
+              )
+              .catch((error) => {
+                console.warn('Failed to create banding:', error);
+              });
+          }
+        }
       } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
       }
     });

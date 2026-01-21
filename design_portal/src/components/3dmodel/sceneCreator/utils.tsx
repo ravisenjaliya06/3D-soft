@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
+import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setFloor, setWalls } from '../store/dataSlice';
-import { MeshObjectData } from './interface';
+import { EDGES, MeshObjectData } from './interface';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 
 /**
@@ -212,4 +213,113 @@ export function convertKeysToCamel<T>(obj: Object): T {
     ) as T;
   }
   return obj;
+}
+
+/**
+ * Extract dominant/average color from an image URL
+ * Returns a hex color value
+ */
+export async function extractColorFromImage(imageUrl: string): Promise<number> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          resolve(0x000000);
+          return;
+        }
+
+        const sampleSize = Math.min(100, Math.max(img.width, img.height));
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+
+        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+
+        const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+        const data = imageData.data;
+
+        let r = 0,
+          g = 0,
+          b = 0,
+          count = 0;
+
+        for (let i = 0; i < data.length; i += 16) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+
+        r = Math.floor(r / count);
+        g = Math.floor(g / count);
+        b = Math.floor(b / count);
+
+        const hexColor = (r << 16) | (g << 8) | b;
+        resolve(hexColor);
+      } catch (error) {
+        console.warn('Failed to extract color from image:', error);
+        resolve(0x000000);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(0x000000);
+    };
+
+    img.src = imageUrl;
+  });
+}
+
+function _createGeometry(width: number, height: number, depth: number): THREE.BoxGeometry {
+  return new THREE.BoxGeometry(width, height, depth);
+}
+
+function _createVector3(x: number, y: number, z: number): THREE.Vector3 {
+  return new THREE.Vector3(x, y, z);
+}
+
+export function getNew(
+  edge: string,
+  params: UpdateDimensionsParams,
+  bandingThickness: number
+): { newGeometry: THREE.BoxGeometry; newPosition: THREE.Vector3 } | null {
+  let newGeometry: THREE.BoxGeometry;
+  let newPosition: THREE.Vector3;
+  if (edge === EDGES.TOP || edge === EDGES.BOTTOM) {
+    newGeometry = _createGeometry(params.newWidth, bandingThickness, params.newDepth);
+    newPosition = _createVector3(
+      0,
+      edge === EDGES.TOP
+        ? params.newHeight / 2 - bandingThickness / 2
+        : -params.newHeight / 2 + bandingThickness / 2,
+      0
+    );
+  } else if (edge === EDGES.LEFT || edge === EDGES.RIGHT) {
+    newGeometry = _createGeometry(bandingThickness, params.newHeight, params.newDepth);
+    newPosition = _createVector3(
+      edge === EDGES.LEFT
+        ? -params.newWidth / 2 + bandingThickness / 2
+        : params.newWidth / 2 - bandingThickness / 2,
+      0,
+      0
+    );
+  } else if (edge === EDGES.FRONT || edge === EDGES.BACK) {
+    newGeometry = _createGeometry(params.newWidth, params.newHeight, bandingThickness);
+    newPosition = _createVector3(
+      0,
+      0,
+      edge === EDGES.FRONT
+        ? params.newDepth / 2 - bandingThickness / 2
+        : -params.newDepth / 2 + bandingThickness / 2
+    );
+  } else {
+    return null;
+  }
+
+  return { newGeometry, newPosition };
 }
