@@ -69,7 +69,7 @@ export class DesignBuilder {
     const meshList: THREE.Mesh[] = [];
 
     this.data.forEach((meshData) => {
-      const builder = new MeshBuilder(meshData);
+      const builder = new MeshBuilder(meshData, this.scene || undefined);
       const mesh = builder.createMesh();
       meshList.push(mesh);
       this.meshMap.set(meshData.id, mesh);
