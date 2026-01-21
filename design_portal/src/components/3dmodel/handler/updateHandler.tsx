@@ -70,23 +70,6 @@ export class UpdateObjectInScene {
       return;
     }
 
-    // Remove all existing grooving
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'groove' || child.userData.type === 'protrusion') {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
-
     // Recreate grooving using MeshBuilder with current mesh dimensions
     // Get mesh data from Redux store
     const state = store.getState();
@@ -113,7 +96,8 @@ export class UpdateObjectInScene {
         };
       }
 
-      const builder = new MeshBuilder(meshData);
+      // Pass scene to MeshBuilder so GroovingTool is properly initialized
+      const builder = new MeshBuilder(meshData, this.scene);
       builder.updateGrooving(mesh);
     }
   }

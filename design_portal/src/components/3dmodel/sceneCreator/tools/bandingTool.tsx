@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../../store';
 import { updateObject } from '../../store/dataSlice';
-import { EdgeBandingState, EDGES, Material, MATERIAL_TYPES, PART_TYPES } from '../interface';
+import { DRAWER_PLANK_TYPES, EdgeBandingState, EDGES, Material, MATERIAL_TYPES, PART_TYPES } from '../interface';
 import { extractColorFromImage } from '../utils';
 
 /**
@@ -19,15 +19,29 @@ export class BandingTool {
 
   /**
    * Check if a mesh is a plank that can have banding
+   * Excludes drawers, doors, handles, and other non-plank types
    */
   public isPlank(mesh: THREE.Mesh): boolean {
     const type = mesh.userData.type;
+    
+    // Explicitly exclude drawers, doors, and handles
+    if (
+      type === PART_TYPES.DRAWER ||
+      type === PART_TYPES.DOOR ||
+      type === PART_TYPES.HANDLE ||
+      type === PART_TYPES.L_SHAPE_OBJECT
+    ) {
+      return false;
+    }
+    
+    // Include all plank types (including any future plank types)
     return (
       type === PART_TYPES.PLANK ||
       type === PART_TYPES.VERTICAL_PLANK ||
       type === PART_TYPES.HORIZONTAL_PLANK ||
       type === PART_TYPES.BACK_PLANK ||
-      Object.values(PART_TYPES).includes(type)
+      Object.values(PART_TYPES).includes(type) ||
+      Object.values(DRAWER_PLANK_TYPES).includes(type)
     );
   }
 

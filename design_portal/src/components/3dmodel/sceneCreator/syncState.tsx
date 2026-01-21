@@ -7,6 +7,7 @@ import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
 import {
+  DRAWER_PLANK_TYPES,
   FLOOR_PLAN_TYPES,
   MATERIAL_TYPES,
   MeshObjectData,
@@ -289,14 +290,43 @@ export class SyncManager {
 
     // Update banding if dimensions changed or banding state changed
     if (changes.dimensions || changes.edgeBanding) {
-      if (Object.values(PART_TYPES).includes(mesh.userData.type)) {
-        // This is a plank - update banding
-        if (changes.dimensions && data.dimensions) {
-          await this.meshBuilder.updateBanding(mesh);
-        } else if (changes.edgeBanding) {
-          // Banding state changed - recreate banding
-          await this.meshBuilder.applyBandingFromState();
+      const name = mesh.name || '';
+      
+      // Check if this is a drawer plank by name (drawer planks should have banding)
+      const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+        (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+      );
+      
+      if (!isDrawerPlank) {
+        // Explicitly exclude drawer groups, doors, and handles
+        if (
+          mesh.userData.type === PART_TYPES.DRAWER ||
+          mesh.userData.type === PART_TYPES.DOOR ||
+          mesh.userData.type === PART_TYPES.HANDLE ||
+          mesh.userData.type === PART_TYPES.L_SHAPE_OBJECT
+        ) {
+          return;
         }
+        
+        // Include all plank types (including any future plank types)
+        const isPlank =
+          mesh.userData.type === PART_TYPES.PLANK ||
+          mesh.userData.type === PART_TYPES.VERTICAL_PLANK ||
+          mesh.userData.type === PART_TYPES.HORIZONTAL_PLANK ||
+          mesh.userData.type === PART_TYPES.BACK_PLANK ||
+          Object.values(PART_TYPES).includes(mesh.userData.type);
+        
+        if (!isPlank) {
+          return;
+        }
+      }
+      
+      // This is a plank (regular or drawer plank) - update banding
+      if (changes.dimensions && data.dimensions) {
+        await this.meshBuilder.updateBanding(mesh);
+      } else if (changes.edgeBanding) {
+        // Banding state changed - recreate banding
+        await this.meshBuilder.applyBandingFromState();
       }
     }
 
@@ -529,12 +559,40 @@ export class SyncManager {
   /**
    * Detect banding from scene meshes and sync to Redux store
    * This ensures banding data is stored when objects are initially added
+   * Includes drawer planks but excludes drawer groups, doors, handles, and other non-plank types
    */
   private _syncBandingFromScene(list: MeshObjectData[]): void {
     list.forEach((meshData) => {
-      // Only check planks for banding
-      if (!Object.values(PART_TYPES).includes(meshData.type)) {
-        return;
+      const name = meshData.name || '';
+      
+      // Check if this is a drawer plank by name (drawer planks should have banding)
+      const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+        (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+      );
+      
+      // If it's a drawer plank, continue to detect banding
+      if (!isDrawerPlank) {
+        // Explicitly exclude drawer groups, doors, and handles
+        if (
+          meshData.type === PART_TYPES.DRAWER ||
+          meshData.type === PART_TYPES.DOOR ||
+          meshData.type === PART_TYPES.HANDLE ||
+          meshData.type === PART_TYPES.L_SHAPE_OBJECT
+        ) {
+          return;
+        }
+        
+        // Include all plank types (including any future plank types)
+        const isPlank =
+          meshData.type === PART_TYPES.PLANK ||
+          meshData.type === PART_TYPES.VERTICAL_PLANK ||
+          meshData.type === PART_TYPES.HORIZONTAL_PLANK ||
+          meshData.type === PART_TYPES.BACK_PLANK ||
+          Object.values(PART_TYPES).includes(meshData.type);
+        
+        if (!isPlank) {
+          return;
+        }
       }
 
       const mesh = this._findMeshById(meshData.id);
@@ -606,8 +664,39 @@ export class SyncManager {
       this._attachToParentOrScene(mesh, item.parent);
     }
 
-    // For planks, check if parent has banding material and apply it
-    if (Object.values(PART_TYPES).includes(item.type) && item.parent && this.meshBuilder) {
+    const name = item.name || '';
+    
+    // Check if this is a drawer plank by name (drawer planks should have banding)
+    const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+      (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+    );
+    
+    if (!isDrawerPlank) {
+      // Explicitly exclude drawer groups, doors, and handles
+      if (
+        item.type === PART_TYPES.DRAWER ||
+        item.type === PART_TYPES.DOOR ||
+        item.type === PART_TYPES.HANDLE ||
+        item.type === PART_TYPES.L_SHAPE_OBJECT
+      ) {
+        return;
+      }
+      
+      // Include all plank types (including any future plank types)
+      const isPlank =
+        item.type === PART_TYPES.PLANK ||
+        item.type === PART_TYPES.VERTICAL_PLANK ||
+        item.type === PART_TYPES.HORIZONTAL_PLANK ||
+        item.type === PART_TYPES.BACK_PLANK ||
+        Object.values(PART_TYPES).includes(item.type);
+      
+      if (!isPlank) {
+        return;
+      }
+    }
+    
+    // This is a plank (regular or drawer plank) - apply parent banding if needed
+    if (item.parent && this.meshBuilder) {
       await this._applyParentBandingIfNeeded(item);
     }
   }

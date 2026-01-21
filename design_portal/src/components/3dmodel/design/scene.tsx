@@ -400,11 +400,11 @@ export const addDrawersOnInvisibleBox = async (
       boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
     const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
 
-    const facePlank = selectedCabinetItem.find((item) => item.name === 'DRAWER_FACE_PLANK');
+    const facePlank = selectedCabinetItem.find((item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE);
     const face: MeshObjectData = {
       id: crypto.randomUUID(),
-      name: 'DRAWER_FACE',
-      type: PART_TYPES.DRAWER,
+      name: DRAWER_PLANK_TYPES.DRAWER_FACE,
+      type: DRAWER_PLANK_TYPES.DRAWER_FACE || PART_TYPES.DRAWER,
       parent: drawerGroupId,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: { width: faceW, height: faceH, depth: faceD },
@@ -475,7 +475,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // LEFT plank position (12mm from left) - positions relative to box center in parent space
       createInnerPartData(
-        'DRAWER_LEFT_PLANK',
+        DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
         { width: thickness, height: innerH, depth: innerD },
         -wParent / 2 + sideGap + thickness / 2,
         innerPartCenterYParent,
@@ -484,7 +484,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // RIGHT plank position (12mm from right)
       createInnerPartData(
-        'DRAWER_RIGHT_PLANK',
+        DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
         { width: thickness, height: innerH, depth: innerD },
         wParent / 2 - sideGap - thickness / 2,
         innerPartCenterYParent,
@@ -493,7 +493,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // BACK plank
       createInnerPartData(
-        'DRAWER_BACK_PLANK',
+        DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
         { width: innerW, height: innerH, depth: thickness },
         0,
         innerPartCenterYParent,
@@ -502,7 +502,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // FRONT plank
       createInnerPartData(
-        'DRAWER_FRONT_PLANK',
+        DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
         { width: innerW, height: innerH, depth: thickness },
         0,
         innerPartCenterYParent,
@@ -511,7 +511,7 @@ export const addDrawersOnInvisibleBox = async (
 
       // BOTTOM plank
       createInnerPartData(
-        'DRAWER_BOTTOM_PLANK',
+        DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
         { width: innerW, height: thickness, depth: innerD },
         0,
         baseYParent - eachH / 2 + thickness / 2,
