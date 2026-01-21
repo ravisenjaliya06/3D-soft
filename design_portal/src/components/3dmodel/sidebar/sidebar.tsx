@@ -211,6 +211,7 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
+
   // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
@@ -311,6 +312,7 @@ const Sidebar: React.FC = () => {
       await updateDrawerDoorForHandleMode(scene, cupboardMesh, false);
     }
   };
+
 
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
@@ -669,6 +671,7 @@ const Sidebar: React.FC = () => {
     Object.values(DRAWER_PLANK_TYPES).includes(selectedObject?.type || '');
   selectedObject?.name?.toLowerCase().includes('planks');
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
 
   const getTopPlank = () => {
     if (!selectedObject) return undefined;
@@ -1760,7 +1763,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-[0.7rem]">
                       <select
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="flex h-[1.2rem] w-[13rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         value={handleMode}
                         onChange={(e) => {
                           const value = e.target.value as 'handle' | 'handleless';
@@ -1776,6 +1779,7 @@ const Sidebar: React.FC = () => {
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
               )}
+
 
               {/* ================= Top Plank ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
