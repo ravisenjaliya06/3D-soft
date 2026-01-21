@@ -39,9 +39,7 @@ export class GroovingTool {
    */
   public isBackPlank(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) return false;
-
-    const plankName = (mesh.name || '').toUpperCase();
-    return plankName === 'BACK_PLANK' || mesh.userData.type === PART_TYPES.BACK_PLANK;
+    return mesh.userData.type === PART_TYPES.BACK_PLANK;
   }
 
   /**
@@ -74,7 +72,7 @@ export class GroovingTool {
 
     const color = new THREE.Color();
     color.copy(grooveMaterial.color);
-    color.multiplyScalar(0.7); // Slightly darker for depth effect
+    color.multiplyScalar(0.7);
     grooveMaterial.color = color;
     grooveMaterial.transparent = false;
 
@@ -154,8 +152,6 @@ export class GroovingTool {
     height: number,
     edge: string
   ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    // Groove runs horizontally along width
-    // Groove starts GROOVE_START_INSET from left edge, ends GROOVE_END_INSET from right edge
     const grooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET;
     const grooveCenterX = (-width / 2 + GROOVE_START_INSET + (width / 2 - GROOVE_END_INSET)) / 2;
 
@@ -178,14 +174,12 @@ export class GroovingTool {
     height: number,
     edge: string
   ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    // Groove runs vertically along height
-    // Groove starts GROOVE_START_INSET from bottom edge, ends GROOVE_END_INSET from top edge
     const grooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET;
 
     const isLeft = edge === EDGES.LEFT;
     const grooveCenterX = isLeft
-      ? -width / 2 + GROOVE_WIDTH / 2 // Slightly inside left edge
-      : width / 2 - GROOVE_WIDTH / 2; // Slightly inside right edge
+      ? -width / 2 + GROOVE_WIDTH / 2
+      : width / 2 - GROOVE_WIDTH / 2;
 
     const grooveCenterY = (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
 
@@ -203,29 +197,22 @@ export class GroovingTool {
     height: number,
     edge: string
   ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    let geometry: THREE.BoxGeometry;
-    let position: THREE.Vector3;
+    const isHorizontal = edge === EDGES.TOP || edge === EDGES.BOTTOM;
+    const isVertical = edge === EDGES.LEFT || edge === EDGES.RIGHT;
 
-    switch (edge) {
-      case EDGES.TOP:
-        geometry = new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH);
-        position = new THREE.Vector3(0, height / 2 + PROTRUSION_WIDTH / 2, 0);
-        break;
-      case EDGES.BOTTOM:
-        geometry = new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH);
-        position = new THREE.Vector3(0, -height / 2 - PROTRUSION_WIDTH / 2, 0);
-        break;
-      case EDGES.LEFT:
-        geometry = new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH);
-        position = new THREE.Vector3(-width / 2 - PROTRUSION_WIDTH / 2, 0, 0);
-        break;
-      case EDGES.RIGHT:
-        geometry = new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH);
-        position = new THREE.Vector3(width / 2 + PROTRUSION_WIDTH / 2, 0, 0);
-        break;
-      default:
-        throw new Error(`Invalid edge for protrusion: ${edge}`);
+    if (!isHorizontal && !isVertical) {
+      throw new Error(`Invalid edge for protrusion: ${edge}`);
     }
+
+    const geometry = isHorizontal
+      ? new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH)
+      : new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH);
+
+    const position = new THREE.Vector3(
+      isVertical ? (edge === EDGES.LEFT ? -1 : 1) * (width / 2 + PROTRUSION_WIDTH / 2) : 0,
+      isHorizontal ? (edge === EDGES.BOTTOM ? -1 : 1) * (height / 2 + PROTRUSION_WIDTH / 2) : 0,
+      0
+    );
 
     return { geometry, position };
   }
@@ -450,21 +437,6 @@ export class GroovingTool {
    */
   public hasGroovingOnEdge(mesh: THREE.Mesh, edge: string): boolean {
     return this.getGroovingMeshForEdge(mesh, edge) !== null;
-  }
-
-  /**
-   * Validate if a plank can have grooving
-   */
-  public canHaveGrooving(mesh: THREE.Mesh): boolean {
-    if (!this.isPlank(mesh)) {
-      return false;
-    }
-
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      return false;
-    }
-
-    return this.isBackPlank(mesh);
   }
 
   /**
