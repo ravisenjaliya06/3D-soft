@@ -3,7 +3,6 @@ import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
 import {
   DRAWER_PLANK_TYPES,
-  EDGES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
   Material,
@@ -11,8 +10,8 @@ import {
   MeshObjectData,
   PART_TYPES,
 } from './interface';
-import { convertKeysToCamel } from './utils';
 import { BandingTool } from './tools/bandingTool';
+import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -69,7 +68,7 @@ export class MeshBuilder {
         const state = store.getState();
         scene = state.scene?.scene || null;
       } catch (error) {
-        // Store might not be available, ignore
+        console.error(error);
       }
     }
 
@@ -296,10 +295,14 @@ export class MeshBuilder {
     if (tool) {
       // Get banding thickness from material
       const materialData = this.meshData.material;
-      const materialArray = Array.isArray(materialData) ? materialData : materialData ? [materialData] : [];
+      const materialArray = Array.isArray(materialData)
+        ? materialData
+        : materialData
+          ? [materialData]
+          : [];
       const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
       const bandingThickness = bandingMaterialData?.properties?.thickness || 1.5;
-      
+
       tool.removeBandingOnEdge(mesh, edge, bandingThickness, this.meshData.id);
     }
   }
@@ -350,13 +353,10 @@ export class MeshBuilder {
     const tool = this._getOrCreateBandingTool();
     if (!tool) return;
 
-    await tool.createBandingOnPlank(
-      mesh,
-      materialData,
-      bandingState,
-      this.parentMesh,
-      { material: this.meshData.material, id: this.meshData.id }
-    );
+    await tool.createBandingOnPlank(mesh, materialData, bandingState, this.parentMesh, {
+      material: this.meshData.material,
+      id: this.meshData.id,
+    });
   }
 
   /**

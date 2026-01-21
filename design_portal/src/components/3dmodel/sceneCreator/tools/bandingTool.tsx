@@ -1,13 +1,7 @@
 import * as THREE from 'three';
 import { store } from '../../store';
 import { updateObject } from '../../store/dataSlice';
-import {
-  EDGES,
-  EdgeBandingState,
-  Material,
-  MATERIAL_TYPES,
-  PART_TYPES,
-} from '../interface';
+import { EdgeBandingState, EDGES, Material, MATERIAL_TYPES, PART_TYPES } from '../interface';
 import { extractColorFromImage } from '../utils';
 
 /**
@@ -64,14 +58,48 @@ export class BandingTool {
   }
 
   /**
+   * Check if two boxes overlap on a specific axis
+   */
+  private checkAxisOverlap(
+    siblingMin: number,
+    siblingMax: number,
+    currentMin: number,
+    currentMax: number
+  ): boolean {
+    return siblingMin < currentMax - this.threshold && siblingMax > currentMin + this.threshold;
+  }
+
+  /**
+   * Check if an edge is touching another box
+   * @param touchAxis - The axis along which to check touching ('x', 'y', or 'z')
+   * @param useSiblingMin - true if using siblingMin, false if using siblingMax
+   * @param useCurrentMax - true if comparing to currentMax, false if comparing to currentMin
+   * @param comparison - 'lessEqual' for <=, 'greaterEqual' for >=
+   */
+  private checkEdgeTouching(
+    siblingMin: THREE.Vector3,
+    siblingMax: THREE.Vector3,
+    currentMin: THREE.Vector3,
+    currentMax: THREE.Vector3,
+    touchAxis: 'x' | 'y' | 'z',
+    useSiblingMin: boolean,
+    useCurrentMax: boolean,
+    comparison: 'lessEqual' | 'greaterEqual'
+  ): boolean {
+    const siblingVal = useSiblingMin ? siblingMin[touchAxis] : siblingMax[touchAxis];
+    const currentVal = useCurrentMax ? currentMax[touchAxis] : currentMin[touchAxis];
+
+    const distance = Math.abs(siblingVal - currentVal);
+    if (distance >= this.threshold) return false;
+
+    return comparison === 'lessEqual' ? siblingVal <= currentVal : siblingVal >= currentVal;
+  }
+
+  /**
    * Check if an edge of the current plank is covered by another plank
    * Returns true if the edge is touching/covered by another plank
    */
-  public isEdgeCovered(
-    mesh: THREE.Mesh,
-    edge: string,
-    parentMesh?: THREE.Mesh | null
-  ): boolean {
+  public isEdgeCovered(mesh: THREE.Mesh, edge: string, parentMesh?: THREE.Mesh | null): boolean {
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return false;
 
     const targetParent = parentMesh || this.findParentMesh(mesh);
@@ -86,14 +114,68 @@ export class BandingTool {
     // Get all sibling planks
     const siblings: THREE.Mesh[] = [];
     targetParent.traverse((child) => {
-      if (
-        child !== mesh &&
-        child instanceof THREE.Mesh &&
-        this.isPlank(child)
-      ) {
+      if (child !== mesh && child instanceof THREE.Mesh && this.isPlank(child)) {
         siblings.push(child);
       }
     });
+
+    // Edge configuration: maps each edge to its overlap axes and touch parameters
+    const edgeConfig: Record<
+      string,
+      {
+        overlapAxes: Array<'x' | 'y' | 'z'>;
+        touchAxis: 'x' | 'y' | 'z';
+        useSiblingMin: boolean;
+        useCurrentMax: boolean;
+        comparison: 'lessEqual' | 'greaterEqual';
+      }
+    > = {
+      [EDGES.TOP]: {
+        overlapAxes: ['x', 'z'],
+        touchAxis: 'y',
+        useSiblingMin: true,
+        useCurrentMax: true,
+        comparison: 'lessEqual',
+      },
+      [EDGES.BOTTOM]: {
+        overlapAxes: ['x', 'z'],
+        touchAxis: 'y',
+        useSiblingMin: false,
+        useCurrentMax: false,
+        comparison: 'greaterEqual',
+      },
+      [EDGES.LEFT]: {
+        overlapAxes: ['y', 'z'],
+        touchAxis: 'x',
+        useSiblingMin: false,
+        useCurrentMax: false,
+        comparison: 'lessEqual',
+      },
+      [EDGES.RIGHT]: {
+        overlapAxes: ['y', 'z'],
+        touchAxis: 'x',
+        useSiblingMin: true,
+        useCurrentMax: true,
+        comparison: 'greaterEqual',
+      },
+      [EDGES.FRONT]: {
+        overlapAxes: ['x', 'y'],
+        touchAxis: 'z',
+        useSiblingMin: true,
+        useCurrentMax: true,
+        comparison: 'lessEqual',
+      },
+      [EDGES.BACK]: {
+        overlapAxes: ['x', 'y'],
+        touchAxis: 'z',
+        useSiblingMin: false,
+        useCurrentMax: false,
+        comparison: 'greaterEqual',
+      },
+    };
+
+    const config = edgeConfig[edge];
+    if (!config) return false;
 
     // Check if any sibling plank covers this edge
     for (const sibling of siblings) {
@@ -104,83 +186,28 @@ export class BandingTool {
       const siblingMin = siblingBox.min;
       const siblingMax = siblingBox.max;
 
-      // Determine which edge we're checking and calculate the edge area
-      let edgeOverlap = false;
-      let edgeTouching = false;
+      // Check overlap on both required axes
+      const overlaps = config.overlapAxes.map((axis) =>
+        this.checkAxisOverlap(
+          siblingMin[axis],
+          siblingMax[axis],
+          currentMin[axis],
+          currentMax[axis]
+        )
+      );
+      const edgeOverlap = overlaps.every((overlap) => overlap);
 
-      if (edge === EDGES.TOP) {
-        const overlapX =
-          siblingMin.x < currentMax.x - this.threshold &&
-          siblingMax.x > currentMin.x + this.threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - this.threshold &&
-          siblingMax.z > currentMin.z + this.threshold;
-        const touchingY =
-          Math.abs(siblingMin.y - currentMax.y) < this.threshold &&
-          siblingMin.y <= currentMax.y;
-        edgeOverlap = overlapX && overlapZ;
-        edgeTouching = touchingY;
-      } else if (edge === EDGES.BOTTOM) {
-        const overlapX =
-          siblingMin.x < currentMax.x - this.threshold &&
-          siblingMax.x > currentMin.x + this.threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - this.threshold &&
-          siblingMax.z > currentMin.z + this.threshold;
-        const touchingY =
-          Math.abs(siblingMax.y - currentMin.y) < this.threshold &&
-          siblingMax.y >= currentMin.y;
-        edgeOverlap = overlapX && overlapZ;
-        edgeTouching = touchingY;
-      } else if (edge === EDGES.LEFT) {
-        const overlapY =
-          siblingMin.y < currentMax.y - this.threshold &&
-          siblingMax.y > currentMin.y + this.threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - this.threshold &&
-          siblingMax.z > currentMin.z + this.threshold;
-        const touchingX =
-          Math.abs(siblingMax.x - currentMin.x) < this.threshold &&
-          siblingMax.x <= currentMin.x;
-        edgeOverlap = overlapY && overlapZ;
-        edgeTouching = touchingX;
-      } else if (edge === EDGES.RIGHT) {
-        const overlapY =
-          siblingMin.y < currentMax.y - this.threshold &&
-          siblingMax.y > currentMin.y + this.threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - this.threshold &&
-          siblingMax.z > currentMin.z + this.threshold;
-        const touchingX =
-          Math.abs(siblingMin.x - currentMax.x) < this.threshold &&
-          siblingMin.x >= currentMax.x;
-        edgeOverlap = overlapY && overlapZ;
-        edgeTouching = touchingX;
-      } else if (edge === EDGES.FRONT) {
-        const overlapX =
-          siblingMin.x < currentMax.x - this.threshold &&
-          siblingMax.x > currentMin.x + this.threshold;
-        const overlapY =
-          siblingMin.y < currentMax.y - this.threshold &&
-          siblingMax.y > currentMin.y + this.threshold;
-        const touchingZ =
-          Math.abs(siblingMin.z - currentMax.z) < this.threshold &&
-          siblingMin.z <= currentMax.z;
-        edgeOverlap = overlapX && overlapY;
-        edgeTouching = touchingZ;
-      } else if (edge === EDGES.BACK) {
-        const overlapX =
-          siblingMin.x < currentMax.x - this.threshold &&
-          siblingMax.x > currentMin.x + this.threshold;
-        const overlapY =
-          siblingMin.y < currentMax.y - this.threshold &&
-          siblingMax.y > currentMin.y + this.threshold;
-        const touchingZ =
-          Math.abs(siblingMax.z - currentMin.z) < this.threshold &&
-          siblingMax.z >= currentMin.z;
-        edgeOverlap = overlapX && overlapY;
-        edgeTouching = touchingZ;
-      }
+      // Check touching on the touch axis
+      const edgeTouching = this.checkEdgeTouching(
+        siblingMin,
+        siblingMax,
+        currentMin,
+        currentMax,
+        config.touchAxis,
+        config.useSiblingMin,
+        config.useCurrentMax,
+        config.comparison
+      );
 
       if (edgeOverlap && edgeTouching) {
         return true;
@@ -226,9 +253,7 @@ export class BandingTool {
         ? objectData.material
         : [objectData.material];
 
-      const bandingMaterial = materialArray.find(
-        (mat) => mat?.type === MATERIAL_TYPES.BANDING
-      );
+      const bandingMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
 
       if (bandingMaterial) {
         return bandingMaterial;
@@ -237,9 +262,7 @@ export class BandingTool {
 
     // If plank doesn't have banding material, check parent
     if (objectData?.parent && objectsData) {
-      const parentObject = objectsData.find(
-        (obj) => obj.id === objectData.parent
-      );
+      const parentObject = objectsData.find((obj) => obj.id === objectData.parent);
 
       if (parentObject?.material) {
         const parentMaterialArray = Array.isArray(parentObject.material)
@@ -262,9 +285,7 @@ export class BandingTool {
   /**
    * Get plank texture URL for color extraction
    */
-  private getPlankTextureUrl(
-    objectData?: { material?: Material | Material[] }
-  ): string | null {
+  private getPlankTextureUrl(objectData?: { material?: Material | Material[] }): string | null {
     if (!objectData?.material) return null;
 
     const materialArray = Array.isArray(objectData.material)
@@ -304,9 +325,9 @@ export class BandingTool {
   /**
    * Create banding material (extracts color from plank texture and darkens it)
    */
-  private async createBandingMaterial(
-    objectData?: { material?: Material | Material[] }
-  ): Promise<THREE.MeshStandardMaterial> {
+  private async createBandingMaterial(objectData?: {
+    material?: Material | Material[];
+  }): Promise<THREE.MeshStandardMaterial> {
     const plankTextureUrl = this.getPlankTextureUrl(objectData);
 
     if (plankTextureUrl) {
@@ -319,10 +340,7 @@ export class BandingTool {
           wireframe: false,
         });
       } catch (error) {
-        console.warn(
-          'Failed to extract color from plank texture, using default:',
-          error
-        );
+        console.warn('Failed to extract color from plank texture, using default:', error);
       }
     }
 
@@ -365,7 +383,7 @@ export class BandingTool {
     } else if (thicknessAxis === 'z') {
       isBackPlank = true;
     } else {
-      isVerticalPlank = true; // Default
+      isVerticalPlank = true;
     }
 
     return {
@@ -400,13 +418,17 @@ export class BandingTool {
   }
 
   /**
-   * Remove all banding meshes from a plank and restore original dimensions
+   * Remove and dispose banding meshes from a plank
+   * @param mesh - The plank mesh
+   * @param filter - Optional filter function to determine which banding children to remove
    */
-  public removeAllBanding(mesh: THREE.Mesh, objectId?: string): void {
+  private removeBandingMeshes(mesh: THREE.Mesh, filter?: (child: THREE.Object3D) => boolean): void {
     const toRemove: THREE.Object3D[] = [];
     mesh.children.forEach((child) => {
       if (child.userData.type === 'banding') {
-        toRemove.push(child);
+        if (!filter || filter(child)) {
+          toRemove.push(child);
+        }
       }
     });
     toRemove.forEach((child) => {
@@ -418,6 +440,13 @@ export class BandingTool {
       }
       mesh.remove(child);
     });
+  }
+
+  /**
+   * Remove all banding meshes from a plank and restore original dimensions
+   */
+  public removeAllBanding(mesh: THREE.Mesh, objectId?: string): void {
+    this.removeBandingMeshes(mesh);
 
     // Restore original dimensions
     if (mesh.userData.originalDimensions) {
@@ -434,63 +463,49 @@ export class BandingTool {
     bandingThickness?: number,
     objectId?: string
   ): void {
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'banding' && child.userData.edge === edge) {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
+    this.removeBandingMeshes(mesh, (child) => child.userData.edge === edge);
+    if (!bandingThickness || isNaN(bandingThickness)) return;
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
-    // Recalculate dimensions based on remaining banding
-    if (bandingThickness && mesh.geometry instanceof THREE.BoxGeometry) {
-      // Get current banding state (after removal)
-      const remainingBanding = this.detectBandingState(mesh);
-      
-      // Get original dimensions
-      const original = this.getOriginalDimensions(mesh);
-      
-      // Calculate new dimensions based on remaining banding
-      const adjustments = this.calculateDimensionAdjustments(remainingBanding, bandingThickness);
-      
-      const newWidth = Math.max(original.width + adjustments.width, 0.1);
-      const newHeight = Math.max(original.height + adjustments.height, 0.1);
-      const newDepth = Math.max(original.depth + adjustments.depth, 0.1);
+    const remainingBanding = this.detectBandingState(mesh);
 
-      const current = mesh.geometry.parameters;
-      
-      // Only update if dimensions actually changed
-      if (Math.abs(newWidth - current.width) > 0.01 || 
-          Math.abs(newHeight - current.height) > 0.01 || 
-          Math.abs(newDepth - current.depth) > 0.01) {
-        // Update geometry
-        mesh.geometry.dispose();
-        mesh.geometry = new THREE.BoxGeometry(newWidth, newHeight, newDepth);
+    // Get original dimensions
+    const original = this.getOriginalDimensions(mesh);
 
-        // Update Redux state
-        if (objectId) {
-          try {
-            store.dispatch(
-              updateObject({
-                id: objectId,
-                dimensions: {
-                  width: newWidth,
-                  height: newHeight,
-                  depth: newDepth,
-                },
-              })
-            );
-          } catch (error) {
-            console.warn('Failed to update Redux state for plank dimensions:', error);
-          }
+    // Calculate new dimensions based on remaining banding
+    const adjustments = this.calculateDimensionAdjustments(remainingBanding, bandingThickness);
+
+    const newWidth = Math.max(original.width + adjustments.width, 0.1);
+    const newHeight = Math.max(original.height + adjustments.height, 0.1);
+    const newDepth = Math.max(original.depth + adjustments.depth, 0.1);
+
+    const current = mesh.geometry.parameters;
+
+    // Only update if dimensions actually changed
+    if (
+      Math.abs(newWidth - current.width) > 0.01 ||
+      Math.abs(newHeight - current.height) > 0.01 ||
+      Math.abs(newDepth - current.depth) > 0.01
+    ) {
+      // Update geometry
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.BoxGeometry(newWidth, newHeight, newDepth);
+
+      // Update Redux state
+      if (objectId) {
+        try {
+          store.dispatch(
+            updateObject({
+              id: objectId,
+              dimensions: {
+                width: newWidth,
+                height: newHeight,
+                depth: newDepth,
+              },
+            })
+          );
+        } catch (error) {
+          console.warn('Failed to update Redux state for plank dimensions:', error);
         }
       }
     }
@@ -510,12 +525,11 @@ export class BandingTool {
 
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
-    const bandingThickness =
-      bandingMaterialData.properties?.thickness || this.defaultThickness;
+    const bandingThickness = bandingMaterialData.properties?.thickness || this.defaultThickness;
 
     // Store original dimensions before adjustments
     this.storeOriginalDimensions(mesh);
-    
+
     // Get original dimensions (before reduction)
     const original = this.getOriginalDimensions(mesh);
     const originalWidth = original.width;
@@ -536,7 +550,7 @@ export class BandingTool {
           [EDGES.BACK]: 'back',
         };
         const stateKey = edgeMap[edge];
-        return stateKey ? (bandingState[stateKey] ?? false) : false;
+        return stateKey ? Boolean(bandingState[stateKey] ?? false) : false;
       }
       // Default behavior: create banding if edge is not covered
       return !this.isEdgeCovered(mesh, edge, parentMesh);
@@ -584,7 +598,7 @@ export class BandingTool {
 
     // STEP 1: Create banding meshes on original plank size
     const bandingMeshes: Array<{ mesh: THREE.Mesh; edge: string }> = [];
-    
+
     if (orientation.isVertical) {
       if (shouldCreateBanding(EDGES.TOP)) {
         const bandingMesh = this.createBandingMesh(
@@ -748,14 +762,14 @@ export class BandingTool {
 
     // STEP 3: Get reduced dimensions and adjust banding positions
     const { width, height, depth } = mesh.geometry.parameters;
-    
+
     // Adjust banding mesh positions and sizes to match reduced plank
     for (const { mesh: bandingMesh, edge } of bandingMeshes) {
       if (!(bandingMesh.geometry instanceof THREE.BoxGeometry)) continue;
-      
+
       let newGeometry: THREE.BoxGeometry;
       let newPosition: THREE.Vector3;
-      
+
       if (orientation.isVertical) {
         if (edge === EDGES.TOP) {
           newGeometry = new THREE.BoxGeometry(width, bandingThickness, depth);
@@ -807,7 +821,7 @@ export class BandingTool {
       } else {
         continue;
       }
-      
+
       // Update banding mesh geometry and position
       bandingMesh.geometry.dispose();
       bandingMesh.geometry = newGeometry;
@@ -833,41 +847,25 @@ export class BandingTool {
     mesh.userData.originalDimensions = { ...newDimensions };
 
     // Remove all existing banding (without restoring dimensions since we're updating)
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'banding') {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
+    this.removeBandingMeshes(mesh);
 
     // Update geometry to new dimensions
     mesh.geometry.dispose();
-    mesh.geometry = new THREE.BoxGeometry(newDimensions.width, newDimensions.height, newDimensions.depth);
+    mesh.geometry = new THREE.BoxGeometry(
+      newDimensions.width,
+      newDimensions.height,
+      newDimensions.depth
+    );
 
     // Get banding material if not provided
     let materialData = bandingMaterialData;
     if (!materialData && objectData) {
-      materialData = this.getBandingMaterial(mesh, objectData);
+      materialData = this.getBandingMaterial(mesh, objectData) ?? undefined;
     }
 
     if (materialData && bandingState) {
       // Recreate banding with adjusted dimensions based on banding state
-      await this.createBandingOnPlank(
-        mesh,
-        materialData,
-        bandingState,
-        parentMesh,
-        objectData
-      );
+      await this.createBandingOnPlank(mesh, materialData, bandingState, parentMesh, objectData);
     }
   }
 
@@ -887,15 +885,13 @@ export class BandingTool {
     // Get banding material if not provided
     let materialData = bandingMaterialData;
     if (!materialData && objectData) {
-      materialData = this.getBandingMaterial(mesh, objectData, objectsData);
+      materialData = this.getBandingMaterial(mesh, objectData, objectsData) ?? undefined;
     }
 
     if (!materialData) {
       console.warn('No banding material found. Cannot apply banding.');
       return;
     }
-
-    const bandingThickness = materialData.properties?.thickness || this.defaultThickness;
 
     // Check if at least one edge is enabled
     const hasAnyBanding =
@@ -926,13 +922,7 @@ export class BandingTool {
       });
 
       // Update plank dimensions and recreate banding based on current state
-      await this.createBandingOnPlank(
-        mesh,
-        materialData,
-        bandingState,
-        parentMesh,
-        objectData
-      );
+      await this.createBandingOnPlank(mesh, materialData, bandingState, parentMesh, objectData);
     } else {
       // No edges enabled, remove all banding and restore original dimensions
       this.removeAllBanding(mesh, objectData?.id);
@@ -974,28 +964,28 @@ export class BandingTool {
    * Detect existing banding state from scene meshes
    */
   public detectBandingState(mesh: THREE.Mesh): EdgeBandingState {
-    const detectedBanding: EdgeBandingState = {};
+    const detectedBanding: Partial<Pick<EdgeBandingState, 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back'>> = {};
 
     mesh.children.forEach((child) => {
       if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
         const edge = child.userData.edge;
         if (edge && typeof edge === 'string') {
-          detectedBanding[edge as keyof EdgeBandingState] = true;
+          // Only assign to boolean properties (exclude thickness which is number)
+          const edgeKey = edge as 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back';
+          if (edge === 'top' || edge === 'bottom' || edge === 'left' || edge === 'right' || edge === 'front' || edge === 'back') {
+            detectedBanding[edgeKey] = true;
+          }
         }
       }
     });
 
-    return detectedBanding;
+    return detectedBanding as EdgeBandingState;
   }
 
   /**
    * Validate if an edge can have banding (not covered and valid for plank orientation)
    */
-  public canHaveBanding(
-    mesh: THREE.Mesh,
-    edge: string,
-    parentMesh?: THREE.Mesh | null
-  ): boolean {
+  public canHaveBanding(mesh: THREE.Mesh, edge: string, parentMesh?: THREE.Mesh | null): boolean {
     // Check if edge is valid for this plank orientation
     const validEdges = this.getValidBandingEdges(mesh);
     if (!validEdges.has(edge)) {
@@ -1028,10 +1018,7 @@ export class BandingTool {
   /**
    * Get banding mesh for a specific edge
    */
-  public getBandingMeshForEdge(
-    mesh: THREE.Mesh,
-    edge: string
-  ): THREE.Mesh | null {
+  public getBandingMeshForEdge(mesh: THREE.Mesh, edge: string): THREE.Mesh | null {
     for (const child of mesh.children) {
       if (
         child instanceof THREE.Mesh &&
@@ -1050,7 +1037,7 @@ export class BandingTool {
   private storeOriginalDimensions(mesh: THREE.Mesh): void {
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
     const { width, height, depth } = mesh.geometry.parameters;
-    
+
     // Store original dimensions if not already stored
     if (!mesh.userData.originalDimensions) {
       mesh.userData.originalDimensions = { width, height, depth };
@@ -1060,17 +1047,21 @@ export class BandingTool {
   /**
    * Get original dimensions (before banding adjustments)
    */
-  private getOriginalDimensions(mesh: THREE.Mesh): { width: number; height: number; depth: number } {
+  private getOriginalDimensions(mesh: THREE.Mesh): {
+    width: number;
+    height: number;
+    depth: number;
+  } {
     if (mesh.userData.originalDimensions) {
       return mesh.userData.originalDimensions;
     }
-    
+
     // If no original dimensions stored, use current dimensions
     if (mesh.geometry instanceof THREE.BoxGeometry) {
       const { width, height, depth } = mesh.geometry.parameters;
       return { width, height, depth };
     }
-    
+
     return { width: 0, height: 0, depth: 0 };
   }
 
@@ -1084,16 +1075,16 @@ export class BandingTool {
     const adjustments = { width: 0, height: 0, depth: 0 };
 
     // Top and bottom reduce height
-    if (bandingState.top) adjustments.height -= bandingThickness;
-    if (bandingState.bottom) adjustments.height -= bandingThickness;
+    adjustments.height -=
+      bandingThickness * ((bandingState.top ? 1 : 0) + (bandingState.bottom ? 1 : 0));
 
     // Left and right reduce width
-    if (bandingState.left) adjustments.width -= bandingThickness;
-    if (bandingState.right) adjustments.width -= bandingThickness;
+    adjustments.width -=
+      bandingThickness * ((bandingState.left ? 1 : 0) + (bandingState.right ? 1 : 0));
 
     // Front and back reduce depth
-    if (bandingState.front) adjustments.depth -= bandingThickness;
-    if (bandingState.back) adjustments.depth -= bandingThickness;
+    adjustments.depth -=
+      bandingThickness * ((bandingState.front ? 1 : 0) + (bandingState.back ? 1 : 0));
 
     return adjustments;
   }

@@ -1,7 +1,7 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
-import { MeshObjectData, MATERIAL_TYPES } from '../sceneCreator/interface';
+import { MeshObjectData } from '../sceneCreator/interface';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
 import { updateObject } from '../store/dataSlice';
@@ -52,7 +52,11 @@ export class UpdateObjectInScene {
   }
 
   /** Updates geometry width, height, depth */
-  private updateMeshGeometry(mesh: THREE.Mesh, updates: UpdatePayload, currentObject?: MeshObjectData): void {
+  private updateMeshGeometry(
+    mesh: THREE.Mesh,
+    updates: UpdatePayload,
+    currentObject?: MeshObjectData
+  ): void {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 

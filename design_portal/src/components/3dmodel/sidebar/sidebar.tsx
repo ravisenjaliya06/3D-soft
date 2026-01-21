@@ -21,7 +21,6 @@ import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
-import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES } from '../sceneCreator/interface';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
@@ -914,7 +913,12 @@ const Sidebar: React.FC = () => {
       } else if (!enabled) {
         // If no banding material but we're removing, just remove the edge
         const bandingThickness = 1.5; // Default thickness
-        bandingToolRef.current.removeBandingOnEdge(targetMesh, edge, bandingThickness, selectedObject.id);
+        bandingToolRef.current.removeBandingOnEdge(
+          targetMesh,
+          edge,
+          bandingThickness,
+          selectedObject.id
+        );
       } else {
         // If enabling but no banding material found, log warning
         console.warn('No banding material found for plank. Cannot add banding.');
