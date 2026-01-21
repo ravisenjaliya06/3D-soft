@@ -679,8 +679,6 @@ export class MeshBuilder {
               });
           }
         }
-      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
-        // this._loadDrawerGuide(this.mesh!, materialData.properties);
       }
     });
   }
