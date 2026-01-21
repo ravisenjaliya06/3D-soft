@@ -369,9 +369,13 @@ export const TOOLBAR = {
   light_wood: '/assets/toolbar/texture/light_wood.jpg',
   off_white: '/assets/toolbar/texture/off_white.jpg',
   wood: '/assets/toolbar/texture/wood.jpg',
+  platform_icon: '/assets/3dmodel/toolbar/platform.svg',
   tool_part_line: '/assets/toolbar/tool-part-line.svg',
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
+  kitchen: '/assets/3dmodel/toolbar/kitchen.svg',
+  part_icon: '/assets/3dmodel/toolbar/parts.svg',
+  sink_icon: '/assets/3dmodel/toolbar/sink.svg',
 };
 
 export const PROPERTY_IMG = {

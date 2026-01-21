@@ -964,7 +964,9 @@ export class BandingTool {
    * Detect existing banding state from scene meshes
    */
   public detectBandingState(mesh: THREE.Mesh): EdgeBandingState {
-    const detectedBanding: Partial<Pick<EdgeBandingState, 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back'>> = {};
+    const detectedBanding: Partial<
+      Pick<EdgeBandingState, 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back'>
+    > = {};
 
     mesh.children.forEach((child) => {
       if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
@@ -972,7 +974,14 @@ export class BandingTool {
         if (edge && typeof edge === 'string') {
           // Only assign to boolean properties (exclude thickness which is number)
           const edgeKey = edge as 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back';
-          if (edge === 'top' || edge === 'bottom' || edge === 'left' || edge === 'right' || edge === 'front' || edge === 'back') {
+          if (
+            edge === 'top' ||
+            edge === 'bottom' ||
+            edge === 'left' ||
+            edge === 'right' ||
+            edge === 'front' ||
+            edge === 'back'
+          ) {
             detectedBanding[edgeKey] = true;
           }
         }

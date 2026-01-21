@@ -8,6 +8,7 @@ import {
   Material,
   MATERIAL_TYPES,
   MeshObjectData,
+  OBJECT_TYPES,
   PART_TYPES,
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
@@ -131,6 +132,18 @@ export class MeshBuilder {
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.PLATFORM) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.SINK) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          visible: false,
         });
       }
     });
@@ -275,6 +288,21 @@ export class MeshBuilder {
     handleModel.userData.type = 'handle';
 
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
+  }
+
+  private async _loadSink(mesh: THREE.Mesh) {
+    const url = '/glb/kitchen_sink.glb';
+
+    const sinkModel = await GLBLoader(url, 'KitchenSink', {
+      width: this.meshData.dimensions.width,
+      height: this.meshData.dimensions.height,
+      depth: this.meshData.dimensions.depth,
+    });
+    sinkModel.name = `Sink_for_${mesh.name}`;
+    sinkModel.userData.type = OBJECT_TYPES.SINK;
+    sinkModel.userData.objectId = this.meshData.id;
+
+    mesh.add(sinkModel);
   }
 
   /**
@@ -454,6 +482,10 @@ export class MeshBuilder {
       } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
       }
     });
+
+    if (this.meshData.type === OBJECT_TYPES.SINK) {
+      this._loadSink(this.mesh!);
+    }
   }
 
   public createMesh(): THREE.Mesh {
