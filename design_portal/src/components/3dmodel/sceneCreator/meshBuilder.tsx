@@ -3,6 +3,7 @@ import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
 import {
   DRAWER_PLANK_TYPES,
+  EDGES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
   GROOVE_TYPE,
@@ -485,74 +486,6 @@ export class MeshBuilder {
   //   }
   // }
 
-  /**
-   * Get the plank's texture image URL from its material
-   */
-  private _getPlankTextureUrl(): string | null {
-    if (!this.meshData.material) return null;
-
-    const materialArray = Array.isArray(this.meshData.material)
-      ? this.meshData.material
-      : [this.meshData.material];
-
-    // Find Panel Stock material (plank texture)
-    for (const materialData of materialArray) {
-      if (materialData?.type === MATERIAL_TYPES.PANEL_STOCK) {
-        if (materialData.textures && materialData.textures.length > 0) {
-          const textureUrl = materialData.textures[0]?.textureDetail?.image;
-          if (textureUrl) {
-            return `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureUrl}`;
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private async _createBandingMaterial(): Promise<THREE.MeshStandardMaterial> {
-    const plankTextureUrl = this._getPlankTextureUrl();
-
-    if (plankTextureUrl) {
-      try {
-        const color = await extractColorFromImage(plankTextureUrl);
-        return new THREE.MeshStandardMaterial({
-          color: color,
-          wireframe: false,
-        });
-      } catch (error) {
-        console.warn('Failed to extract color from plank texture, using default:', error);
-      }
-    }
-
-    return new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      wireframe: false,
-    });
-  }
-
-  /**
-   * Helper function to create a banding mesh on a specific edge
-   * Banding sits ON the plank surface, not outside
-   */
-  private _createBandingMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    sideName: string,
-    bandingMaterial: THREE.MeshStandardMaterial
-  ): void {
-    if (this._isEdgeCovered(mesh, edge)) return;
-
-    const banding = new THREE.Mesh(geometry, bandingMaterial);
-    banding.position.copy(position);
-    banding.name = `Banding_${sideName}_${mesh.name}`;
-    banding.userData.type = 'banding';
-    banding.userData.edge = edge;
-    banding.userData.objectId = `${mesh.userData.objectId}_banding_${sideName.toLowerCase()}`;
-    mesh.add(banding);
-  }
 
   /**
    * Remove all banding meshes from a plank
@@ -637,51 +570,6 @@ export class MeshBuilder {
     // Recreate grooving with new dimensions
     this.mesh = mesh;
     this._createGrooving();
-  }
-
-  /**
-   * Update grooving positions and sizes when plank dimensions change
-   */
-  public updateGrooving(mesh: THREE.Mesh): void {
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-
-    // Remove all existing grooving
-    this.removeAllGrooving(mesh);
-
-    // Update meshData dimensions from the actual mesh geometry
-    if (mesh.geometry instanceof THREE.BoxGeometry) {
-      const params = mesh.geometry.parameters;
-      this.meshData.dimensions = {
-        width: params.width,
-        height: params.height,
-        depth: params.depth,
-      };
-    }
-
-    // Recreate grooving with new dimensions
-    this.mesh = mesh;
-    this._createGrooving();
-  }
-
-  private async _createBandingOnPlank(
-    mesh: THREE.Mesh,
-    materialData: Material,
-    bandingState?: {
-      top?: boolean;
-      bottom?: boolean;
-      left?: boolean;
-      right?: boolean;
-      front?: boolean;
-      back?: boolean;
-    }
-  ) {
-    const tool = this._getOrCreateBandingTool();
-    if (!tool) return;
-
-    await tool.createBandingOnPlank(mesh, materialData, bandingState, this.parentMesh, {
-      material: this.meshData.material,
-      id: this.meshData.id,
-    });
   }
 
   /**
