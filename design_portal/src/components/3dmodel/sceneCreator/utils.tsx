@@ -324,7 +324,11 @@ export function getNew(
   return { newGeometry, newPosition };
 }
 
-export function findMeshById(scene: THREE.Scene, objectId: string, isHandle?: boolean): THREE.Mesh | null {
+export function findMeshById(
+  scene: THREE.Scene,
+  objectId: string,
+  isHandle?: boolean
+): THREE.Mesh | null {
   let foundMesh: THREE.Mesh | null = null;
 
   scene.traverse((object) => {

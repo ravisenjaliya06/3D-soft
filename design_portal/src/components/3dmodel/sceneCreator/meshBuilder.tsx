@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
 import {
+  GROOVE_DEPTH,
+  GROOVE_END_INSET,
+  GROOVE_START_INSET,
+  GROOVE_WIDTH,
+  PROTRUSION_DEPTH,
+  PROTRUSION_WIDTH,
+} from './constants';
+import {
   DRAWER_PLANK_TYPES,
   EDGES,
   FLOOR_PLAN_TYPES,
@@ -14,18 +22,6 @@ import {
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { convertKeysToCamel } from './utils';
-import {
-  GROOVE_DEPTH,
-  GROOVE_WIDTH,
-  GROOVE_END_INSET,
-  GROOVE_START_INSET,
-  PROTRUSION_DEPTH,
-  PROTRUSION_WIDTH,
-  DRAWER_GUIDE_WIDTH,
-  DRAWER_GUIDE_HEIGHT,
-  DRAWER_GUIDE_MULTIPLIER,
-  DRAWER_GUIDE_Y_POSITION,
-} from './constants';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -369,7 +365,7 @@ export class MeshBuilder {
   //         // Get plank bounding boxes in drawer's local space for accurate positioning
   //         const leftPlankBoxLocal = new THREE.Box3();
   //         const rightPlankBoxLocal = new THREE.Box3();
-          
+
   //         (leftPlank as THREE.Mesh).traverse((child: THREE.Object3D) => {
   //           if (child instanceof THREE.Mesh && child.geometry) {
   //             child.geometry.computeBoundingBox();
@@ -402,10 +398,10 @@ export class MeshBuilder {
   //         // X: Position on inner side of planks with clearance
   //         leftGuideX = leftPlankLocalPos.x + sideClearance;
   //         rightGuideX = rightPlankLocalPos.x - sideClearance;
-          
+
   //         // Y: Center Y of planks
   //         guideY = (leftPlankBoxLocal.max.y + leftPlankBoxLocal.min.y) / 2;
-          
+
   //         // Z: Center Z of planks
   //         guideZ = (leftPlankBoxLocal.max.z + leftPlankBoxLocal.min.z) / 2;
   //       } else {
@@ -416,11 +412,11 @@ export class MeshBuilder {
   //         const drawerMaxWorld = drawerBox.max.clone();
   //         const drawerMinLocal = mesh.worldToLocal(drawerMinWorld);
   //         const drawerMaxLocal = mesh.worldToLocal(drawerMaxWorld);
-          
+
   //         const drawerCenterLocal = new THREE.Vector3();
   //         drawerCenterLocal.addVectors(drawerMinLocal, drawerMaxLocal);
   //         drawerCenterLocal.multiplyScalar(0.5);
-          
+
   //         leftGuideX = drawerMinLocal.x + sideClearance;
   //         rightGuideX = drawerMaxLocal.x - sideClearance;
   //         guideY = drawerCenterLocal.y;
@@ -459,7 +455,7 @@ export class MeshBuilder {
   //         guideMesh.userData.objectId = `${mesh.userData.objectId}_guide_${side}`;
   //         return guideMesh;
   //       };
-        
+
   //       const leftGuide = createGuideMesh('left');
   //       leftGuide.rotation.set(Math.PI / 2, 0, 0);
   //       leftGuide.position.set(leftGuideX, guideY, guideZ);
@@ -485,7 +481,6 @@ export class MeshBuilder {
   //     await placeGuide();
   //   }
   // }
-
 
   /**
    * Remove all banding meshes from a plank
@@ -751,7 +746,10 @@ export class MeshBuilder {
   public removeAllGrooving(mesh: THREE.Mesh): void {
     const toRemove: THREE.Object3D[] = [];
     mesh.children.forEach((child) => {
-      if (child.userData.type === GROOVE_TYPE.GROOVE || child.userData.type === GROOVE_TYPE.PROTRUSION) {
+      if (
+        child.userData.type === GROOVE_TYPE.GROOVE ||
+        child.userData.type === GROOVE_TYPE.PROTRUSION
+      ) {
         toRemove.push(child);
       }
     });
@@ -785,7 +783,7 @@ export class MeshBuilder {
 
     // Check both meshData.name and mesh.name (mesh.name is set after _setName)
     const plankName = (this.meshData.name || this.mesh.name || '').toUpperCase();
-    const { width, height, depth } = this.mesh.geometry.parameters;
+    const { width, height } = this.mesh.geometry.parameters;
 
     // Only create grooving for BACK_PLANK
     if (plankName !== 'BACK_PLANK') {
@@ -793,15 +791,16 @@ export class MeshBuilder {
     }
 
     // Get plank material
-    const plankMaterial = this.mesh.material instanceof THREE.Material
-      ? this.mesh.material.clone()
-      : Array.isArray(this.mesh.material) && this.mesh.material.length > 0
-        ? this.mesh.material[0].clone()
-        : new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const plankMaterial =
+      this.mesh.material instanceof THREE.Material
+        ? this.mesh.material.clone()
+        : Array.isArray(this.mesh.material) && this.mesh.material.length > 0
+          ? this.mesh.material[0].clone()
+          : new THREE.MeshStandardMaterial({ color: 0xffffff });
 
     // Back plank: create both grooves (female) and protrusions (male)
     console.log('[Grooving] Creating grooves and protrusions for back plank');
-    
+
     // Create grooves (female parts) on back plank edges
     // Groove begins 25mm inside and ends 6mm from the edge
     const grooveMaterial = plankMaterial.clone();
@@ -821,11 +820,12 @@ export class MeshBuilder {
 
     // Calculate groove dimensions and positions
     // Groove begins 25mm inside and ends 6mm from the edge
-    
+
     // For top/bottom edges: groove runs horizontally along width
     // Groove starts 25mm from left edge, ends 6mm from right edge
     const topBottomGrooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET; // width - 25 - 6
-    const topBottomGrooveCenterX = ((-width / 2 + GROOVE_START_INSET) + (width / 2 - GROOVE_END_INSET)) / 2;
+    const topBottomGrooveCenterX =
+      (-width / 2 + GROOVE_START_INSET + (width / 2 - GROOVE_END_INSET)) / 2;
     const topBottomGrooveCenterY_top = height / 2 - GROOVE_WIDTH / 2; // Slightly inside top edge
     const topBottomGrooveCenterY_bottom = -height / 2 + GROOVE_WIDTH / 2; // Slightly inside bottom edge
 
@@ -834,7 +834,8 @@ export class MeshBuilder {
     const leftRightGrooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET; // height - 25 - 6
     const leftRightGrooveCenterX_left = -width / 2 + GROOVE_WIDTH / 2; // Slightly inside left edge
     const leftRightGrooveCenterX_right = width / 2 - GROOVE_WIDTH / 2; // Slightly inside right edge
-    const leftRightGrooveCenterY = ((-height / 2 + GROOVE_START_INSET) + (height / 2 - GROOVE_END_INSET)) / 2;
+    const leftRightGrooveCenterY =
+      (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
 
     // Top groove - begins 25mm inside, ends 6mm from edge
     this._createGrooveMesh(
@@ -871,7 +872,7 @@ export class MeshBuilder {
       new THREE.Vector3(leftRightGrooveCenterX_right, leftRightGrooveCenterY, 0),
       grooveMaterial
     );
-    
+
     // Create protrusions (male parts) on back plank edges - extending outward
     const protrusionMaterial = plankMaterial.clone();
     // Keep original material color for protrusions
@@ -879,7 +880,7 @@ export class MeshBuilder {
     if (protrusionMaterial instanceof THREE.MeshStandardMaterial) {
       protrusionMaterial.transparent = false;
     }
-    
+
     this._createProtrusionMesh(
       this.mesh,
       EDGES.TOP,
@@ -926,12 +927,12 @@ export class MeshBuilder {
     groove.userData.type = GROOVE_TYPE.GROOVE;
     groove.userData.edge = edge;
     groove.userData.objectId = `${mesh.userData.objectId}_groove_${edge.toLowerCase()}`;
-    
+
     // Ensure groove is visible
     groove.visible = true;
     groove.castShadow = true;
     groove.receiveShadow = true;
-    
+
     mesh.add(groove);
   }
 
@@ -955,7 +956,7 @@ export class MeshBuilder {
     protrusion.visible = true;
     protrusion.castShadow = true;
     protrusion.receiveShadow = true;
-    
+
     mesh.add(protrusion);
   }
 

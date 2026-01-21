@@ -22,9 +22,9 @@ import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
+import { findMeshById } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import { findMeshById } from '../sceneCreator/utils';
 
 //import style from './sidebar.module.css';
 
@@ -229,7 +229,7 @@ const Sidebar: React.FC = () => {
     });
   }, [handleObject]);
 
-  const updateHandlePosState = (axis: Axis, value: number, isHandle?: boolean) => {
+  const updateHandlePosState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
     setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
@@ -243,7 +243,7 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const updateHandleRotState = (axis: Axis, value: number, isHandle?: boolean) => {
+  const updateHandleRotState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
     setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
@@ -597,7 +597,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value), true),
+        updateHandlePosState('y', Number(e.target.value)),
     },
 
     {
@@ -608,7 +608,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.x,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('x', Number(e.target.value), true),
+        updateHandlePosState('x', Number(e.target.value)),
     },
 
     {
@@ -619,7 +619,7 @@ const Sidebar: React.FC = () => {
       value: handleRot.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandleRotState('y', Number(e.target.value), true),
+        updateHandleRotState('y', Number(e.target.value)),
     },
   ];
 

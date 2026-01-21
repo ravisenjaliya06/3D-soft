@@ -2,6 +2,7 @@ import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
+import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
 import { store } from '../store';
@@ -9,7 +10,6 @@ import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
-import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -27,7 +27,7 @@ export class UpdateObjectInScene {
     objectId: string,
     updates: UpdatePayload,
     currentObject?: MeshObjectData,
-    meshObject?: THREE.Mesh,
+    meshObject?: THREE.Mesh
   ): void {
     let mesh: THREE.Mesh | null = null;
     if (meshObject) {
@@ -40,7 +40,7 @@ export class UpdateObjectInScene {
       return;
     }
 
-    this.updateMeshGeometry(mesh, updates, currentObject);
+    this.updateMeshGeometry(mesh, updates);
     this.updateMeshPosition(mesh, updates);
     this.updateMeshRotation(mesh, updates);
     this.updateMeshMaterial(mesh, updates);
@@ -63,7 +63,7 @@ export class UpdateObjectInScene {
     return foundMesh;
   }
 
-  private updateGroovingForPlank(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
+  private updateGroovingForPlank(mesh: THREE.Mesh): void {
     // Only update grooving for BACK_PLANK
     const plankType = (mesh.userData.type || '').toUpperCase();
     if (plankType !== PART_TYPES.BACK_PLANK) {
@@ -122,7 +122,6 @@ export class UpdateObjectInScene {
   private updateMeshGeometry(
     mesh: THREE.Mesh,
     updates: UpdatePayload,
-    currentObject?: MeshObjectData
   ): void {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
@@ -158,7 +157,7 @@ export class UpdateObjectInScene {
       (async () => {
         await this.updateBandingForPlank(mesh, updateParams);
         // Also update grooving when dimensions change
-        this.updateGroovingForPlank(mesh, updateParams);
+        this.updateGroovingForPlank(mesh);
       })();
     }
 
@@ -247,16 +246,14 @@ export class UpdateObjectInScene {
       // Update grooving for child planks when their dimensions change
       if (
         child.userData.type &&
-        [PART_TYPES.PLANK, PART_TYPES.VERTICAL_PLANK, PART_TYPES.HORIZONTAL_PLANK, PART_TYPES.BACK_PLANK].includes(child.userData.type)
+        [
+          PART_TYPES.PLANK,
+          PART_TYPES.VERTICAL_PLANK,
+          PART_TYPES.HORIZONTAL_PLANK,
+          PART_TYPES.BACK_PLANK,
+        ].includes(child.userData.type)
       ) {
-        this.updateGroovingForPlank(child, {
-          newWidth: nextWidth,
-          newHeight: nextHeight,
-          newDepth: nextDepth,
-          oldWidth: childParams.width,
-          oldHeight: childParams.height,
-          oldDepth: childParams.depth,
-        });
+        this.updateGroovingForPlank(child);
       }
 
       updateOrRefreshOutline(this.scene, child);

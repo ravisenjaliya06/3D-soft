@@ -309,7 +309,6 @@ export const addDrawersOnInvisibleBox = async (
   geometryBoundingBox.getSize(size);
 
   const w = size.x;
-  const h = size.y;
   const d = size.z;
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
@@ -339,18 +338,18 @@ export const addDrawersOnInvisibleBox = async (
   const boxCenterWorld = boxMesh.localToWorld(boxCenterLocal.clone());
   const boxMinWorld = boxMesh.localToWorld(boxMinLocal.clone());
   const boxMaxWorld = boxMesh.localToWorld(boxMaxLocal.clone());
-  
+
   const boxCenterParent = parent.worldToLocal(boxCenterWorld.clone());
   const boxMinParent = parent.worldToLocal(boxMinWorld.clone());
   const boxMaxParent = parent.worldToLocal(boxMaxWorld.clone());
-  
+
   // Calculate box dimensions in parent's local space
   const boxSizeParent = new THREE.Vector3();
   boxSizeParent.subVectors(boxMaxParent, boxMinParent);
   const wParent = Math.abs(boxSizeParent.x);
   const hParent = Math.abs(boxSizeParent.y);
   const dParent = Math.abs(boxSizeParent.z);
-  
+
   // Calculate drawer height in parent space
   const eachH = hParent / drawers;
 
@@ -366,7 +365,6 @@ export const addDrawersOnInvisibleBox = async (
     const faceW = isOverlay ? w + 30 : w - 10;
     const faceH = eachH - 5;
     const faceD = 20;
-    const boxFrontZRel = isOverlay ? d / 2 : d / 2 - faceD;
 
     const drawerDimensions = {
       width: w - 10,
@@ -397,10 +395,9 @@ export const addDrawersOnInvisibleBox = async (
 
     drawerGroupWithAllPlank.push(drawerGroup);
 
-    const faceZRel = boxFrontZRel + faceD / 2;
-    
     // Calculate face position in parent's local space
-    const faceZParent = boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
+    const faceZParent =
+      boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
     const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
 
     const facePlank = selectedCabinetItem.find((item) => item.name === 'DRAWER_FACE_PLANK');
@@ -443,7 +440,13 @@ export const addDrawersOnInvisibleBox = async (
       const innerPartCenterYParent = baseYParent - (eachH - innerH) / 2;
       const boxFrontZRelParent = isOverlay ? dParent / 2 : dParent / 2 - faceD;
 
-      const createInnerPartData = (name: string, dims: Dimensions, xOffset: number, yPos: number, zPos: number) => {
+      const createInnerPartData = (
+        name: string,
+        dims: Dimensions,
+        xOffset: number,
+        yPos: number,
+        zPos: number
+      ) => {
         // Calculate position directly in parent's local space
         const partPosParent = new THREE.Vector3(
           boxCenterParent.x + xOffset,

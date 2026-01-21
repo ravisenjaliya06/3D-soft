@@ -28,7 +28,7 @@ export class OutlineManager {
       console.error('OutlineManager: Scene is undefined. Toggle aborted.');
       return;
     }
-    
+
     if (this.isQuickHideActive) {
       // Apply quick hide to all meshes
       this.scene.children.forEach((object) => {
@@ -74,7 +74,6 @@ export class OutlineManager {
       this._generateOutline(mesh);
     }
   }
-
 
   private _createOutlineGroup(mesh: THREE.Mesh): THREE.Group {
     const outlineGroup = new THREE.Group();
@@ -145,14 +144,14 @@ export class OutlineManager {
 
   private _generateOutline(mainMesh: THREE.Mesh) {
     if (!mainMesh.userData.isMain) return;
-    
+
     // Remove existing outline group if it exists to prevent duplicates
     const existingOutline = this.childOutlineGroupsRef.get(mainMesh);
     if (existingOutline) {
       this._removeOutlineGroup(existingOutline);
       this.childOutlineGroupsRef.delete(mainMesh);
     }
-    
+
     const outlineGroup = this._createOutlineGroup(mainMesh);
 
     const mergedGeometries: THREE.BufferGeometry[] = [];
@@ -163,7 +162,7 @@ export class OutlineManager {
         const clonedGeo = child.geometry.clone();
         clonedGeo.applyMatrix4(child.matrixWorld);
         clonedGeo.applyMatrix4(mainMesh.matrixWorld.clone().invert());
-        
+
         // Separate protrusions (male) for different color, skip grooves
         if (child.userData.type === 'protrusion') {
           protrusionGeometries.push(clonedGeo);
@@ -187,7 +186,7 @@ export class OutlineManager {
     }
 
     if (mergedGeometries.length === 0 && protrusionGeometries.length === 0) return;
-    
+
     this.scene.add(outlineGroup);
     this.childOutlineGroupsRef.set(mainMesh, outlineGroup);
   }
