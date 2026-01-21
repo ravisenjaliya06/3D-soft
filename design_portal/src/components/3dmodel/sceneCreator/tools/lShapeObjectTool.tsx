@@ -14,6 +14,7 @@ import {
 import { SyncManager } from '../syncState';
 import { store } from '../../store';
 import { removeObject, updateObject } from '../../store/dataSlice';
+import { MeshBuilder } from '../meshBuilder';
 
 const meshBuilder = (data: MeshObjectData | MeshObjectData[]) => {
   const builder = new SyncManager(data);
@@ -628,8 +629,203 @@ export class LShapeObjectManager {
   }
 
   /**
+   * Update banding meshes when object dimensions change
+   */
+  private static updateBandingMeshes(
+    mesh: THREE.Mesh,
+    newWidth: number,
+    newHeight: number,
+    newDepth: number
+  ): void {
+    mesh.children.forEach((child) => {
+      if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding') return;
+      if (!(child.geometry instanceof THREE.BoxGeometry)) return;
+
+      const edge = child.userData.edge;
+      const bandingParams = child.geometry.parameters;
+      const bandingThickness = Math.min(
+        bandingParams.width,
+        bandingParams.height,
+        bandingParams.depth
+      );
+
+      // Update banding geometry and position based on edge
+      let newGeometry: THREE.BoxGeometry;
+      let newPosition: THREE.Vector3;
+
+      if (edge === 'top' || edge === 'bottom') {
+        newGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
+        newPosition = new THREE.Vector3(
+          0,
+          edge === 'top'
+            ? newHeight / 2 - bandingThickness / 2
+            : -newHeight / 2 + bandingThickness / 2,
+          0
+        );
+      } else if (edge === 'left' || edge === 'right') {
+        newGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
+        newPosition = new THREE.Vector3(
+          edge === 'left'
+            ? -newWidth / 2 + bandingThickness / 2
+            : newWidth / 2 - bandingThickness / 2,
+          0,
+          0
+        );
+      } else if (edge === 'front' || edge === 'back') {
+        newGeometry = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
+        newPosition = new THREE.Vector3(
+          0,
+          0,
+          edge === 'front'
+            ? newDepth / 2 - bandingThickness / 2
+            : -newDepth / 2 + bandingThickness / 2
+        );
+      } else {
+        return; // Unknown edge
+      }
+
+      child.geometry.dispose();
+      child.geometry = newGeometry;
+      child.position.copy(newPosition);
+    });
+  }
+
+  /**
+   * Adjust object height by reducing from top or bottom
+   * Updates both mesh geometry, banding, and Redux store
+   */
+  private static async adjustObjectHeight(
+    obj: THREE.Mesh,
+    reductionAmount: number,
+    reduceFrom: 'top' | 'bottom',
+    cupboardMesh: THREE.Mesh
+  ): Promise<void> {
+    const targetMesh = this.findTargetMesh(obj);
+    if (!targetMesh) return;
+
+    targetMesh.updateMatrixWorld(true);
+    targetMesh.geometry.computeBoundingBox();
+    const bbox = targetMesh.geometry.boundingBox;
+    if (!bbox) return;
+
+    const currentHeight = bbox.max.y - bbox.min.y;
+    if (currentHeight <= reductionAmount) {
+      console.warn('[LShape] Object height too small to reduce');
+      return;
+    }
+
+    // Store original height and position if not already stored (to allow restoration later)
+    if (!targetMesh.userData.originalHeight) {
+      targetMesh.userData.originalHeight = currentHeight;
+      const currentCenterLocal = bbox.getCenter(new THREE.Vector3());
+      const currentCenterWorld = targetMesh.localToWorld(currentCenterLocal.clone());
+      const currentCenterCupboard = cupboardMesh.worldToLocal(currentCenterWorld.clone());
+      targetMesh.userData.originalY = currentCenterCupboard.y;
+    }
+
+    const newHeight = currentHeight - reductionAmount;
+    const currentSize = new THREE.Vector3();
+    bbox.getSize(currentSize);
+
+    // Get current center position in target mesh local space
+    const currentCenterLocal = bbox.getCenter(new THREE.Vector3());
+    
+    // Convert to world space, then to cupboard local space for calculation
+    const currentCenterWorld = targetMesh.localToWorld(currentCenterLocal.clone());
+    const currentCenterCupboard = cupboardMesh.worldToLocal(currentCenterWorld.clone());
+
+    // Calculate new center position in cupboard local space
+    let newCenterCupboardY: number;
+    if (reduceFrom === 'bottom') {
+      // Reduce from bottom: move center up by half the reduction
+      newCenterCupboardY = currentCenterCupboard.y + reductionAmount / 2;
+    } else {
+      // Reduce from top: move center down by half the reduction
+      newCenterCupboardY = currentCenterCupboard.y - reductionAmount / 2;
+    }
+
+    // Update mesh geometry first
+    if (targetMesh.geometry instanceof THREE.BoxGeometry) {
+      targetMesh.geometry.dispose();
+      targetMesh.geometry = new THREE.BoxGeometry(
+        currentSize.x,
+        newHeight,
+        currentSize.z
+      );
+      targetMesh.geometry.computeBoundingBox();
+    }
+
+    // Update banding meshes to match new dimensions
+    this.updateBandingMeshes(targetMesh, currentSize.x, newHeight, currentSize.z);
+
+    // Calculate new position relative to target mesh's parent
+    const newCenterWorld = cupboardMesh.localToWorld(new THREE.Vector3(
+      currentCenterCupboard.x,
+      newCenterCupboardY,
+      currentCenterCupboard.z
+    ));
+    
+    const parentMesh = targetMesh.parent as THREE.Mesh;
+    const newCenterParentLocal = parentMesh 
+      ? parentMesh.worldToLocal(newCenterWorld.clone())
+      : targetMesh.worldToLocal(newCenterWorld.clone());
+
+    // Update mesh position
+    targetMesh.position.set(
+      newCenterParentLocal.x,
+      newCenterParentLocal.y,
+      newCenterParentLocal.z
+    );
+
+    // Update Redux store
+    const objectId = targetMesh.userData.objectId || obj.userData.objectId;
+    if (objectId) {
+      const existingObjects = store.getState().data.objects;
+      const objData = existingObjects.find((o) => o.id === objectId);
+      if (objData) {
+        // Find the actual parent object ID for Redux update
+        let parentObjectId = objData.parent;
+        if (parentMesh && parentMesh.userData.objectId) {
+          parentObjectId = parentMesh.userData.objectId;
+        }
+
+        // Get position relative to the parent object in Redux
+        let finalPosition = newCenterParentLocal;
+        if (parentObjectId && parentMesh) {
+          // Position is already in parent local space, use it directly
+          finalPosition = newCenterParentLocal;
+        }
+
+        const updatedMeshData = {
+          ...objData,
+          dimensions: {
+            ...objData.dimensions,
+            height: newHeight,
+          },
+          position: {
+            ...objData.position,
+            y: finalPosition.y,
+          },
+        };
+
+        store.dispatch(updateObject(updatedMeshData));
+
+        // Also update banding using MeshBuilder to ensure consistency
+        try {
+          const meshBuilder = new MeshBuilder(updatedMeshData);
+          meshBuilder.setParentMesh(parentMesh || cupboardMesh);
+          await meshBuilder.updateBanding(targetMesh);
+        } catch (error) {
+          console.warn('[LShape] Failed to update banding:', error);
+        }
+      }
+    }
+  }
+
+  /**
    * Add L-shape object at the center between two vertically attached objects
    * Vertical plank spans half into top object and half into bottom object, positioned behind for visualization
+   * Also reduces heights of top and bottom objects to accommodate the L-shape
    */
   private static async addLShapeAtCenter(
     topObj: THREE.Mesh,
@@ -638,13 +834,12 @@ export class LShapeObjectManager {
     material: Material[]
   ): Promise<void> {
     try {
+      // First calculate the initial center position and reduction amount
       const { 
-        centerY, 
-        centerX, 
-        centerZ, 
+        centerY: initialCenterY, 
+        centerX: initialCenterX, 
+        centerZ: initialCenterZ, 
         width,
-        verticalPlankStartY,
-        verticalPlankEndY,
         verticalPlankHeight
       } = this.calculateCenterPositionBetweenObjects(
         topObj,
@@ -655,6 +850,30 @@ export class LShapeObjectManager {
       const dimensions = this.getDefaultDimensions();
       const verticalWidth = width;
       const horizontalWidth = width;
+
+      // Fixed reduction amount: 50mm from top and bottom
+      const REDUCTION_AMOUNT = 25;
+
+      // Adjust heights of top and bottom objects before creating L-shape
+      await this.adjustObjectHeight(topObj, REDUCTION_AMOUNT, 'bottom', cupboardMesh);
+      await this.adjustObjectHeight(bottomObj, REDUCTION_AMOUNT, 'top', cupboardMesh);
+
+      // Update matrix world after height adjustments to ensure accurate recalculation
+      cupboardMesh.updateMatrixWorld(true);
+      topObj.updateMatrixWorld(true);
+      bottomObj.updateMatrixWorld(true);
+
+      // Recalculate center position after height adjustments
+      // The center should remain approximately the same, but we recalculate to be precise
+      const { 
+        centerY, 
+        centerX, 
+        centerZ
+      } = this.calculateCenterPositionBetweenObjects(
+        topObj,
+        bottomObj,
+        cupboardMesh
+      );
 
       cupboardMesh.geometry.computeBoundingBox();
       const cupboardBbox = cupboardMesh.geometry.boundingBox;
@@ -737,7 +956,7 @@ export class LShapeObjectManager {
     if (!cupboardMesh) return;
     showFullScreenLoader('Adding L-shape objects.');
 
-    this.removeLShapeObjects(cupboardMesh);
+    await this.removeLShapeObjects(cupboardMesh);
 
     const drawersAndDoors = this.findDrawersAndDoors(cupboardMesh);
     const material = this.getDefaultMaterial();
@@ -835,22 +1054,138 @@ export class LShapeObjectManager {
   }
 
   /**
-   * Remove all L-shape objects from a cupboard
+   * Restore original height of an object that was reduced for L-shape
    */
-  public static removeLShapeObjects(cupboardMesh: THREE.Mesh): void {
+  private static async restoreObjectHeight(
+    obj: THREE.Mesh,
+    cupboardMesh: THREE.Mesh
+  ): Promise<void> {
+    const targetMesh = this.findTargetMesh(obj);
+    if (!targetMesh) return;
+
+    const originalHeight = targetMesh.userData.originalHeight;
+    const originalY = targetMesh.userData.originalY;
+
+    if (!originalHeight) {
+      // No original height stored, nothing to restore
+      return;
+    }
+
+    targetMesh.updateMatrixWorld(true);
+    targetMesh.geometry.computeBoundingBox();
+    const bbox = targetMesh.geometry.boundingBox;
+    if (!bbox) return;
+
+    const currentHeight = bbox.max.y - bbox.min.y;
+    if (currentHeight === originalHeight) {
+      // Already at original height, nothing to restore
+      return;
+    }
+
+    const currentSize = new THREE.Vector3();
+    bbox.getSize(currentSize);
+
+    // Restore original height
+    if (targetMesh.geometry instanceof THREE.BoxGeometry) {
+      targetMesh.geometry.dispose();
+      targetMesh.geometry = new THREE.BoxGeometry(
+        currentSize.x,
+        originalHeight,
+        currentSize.z
+      );
+      targetMesh.geometry.computeBoundingBox();
+    }
+
+    // Update banding meshes to match restored dimensions
+    this.updateBandingMeshes(targetMesh, currentSize.x, originalHeight, currentSize.z);
+
+    // Restore original position
+    if (originalY !== undefined) {
+      const currentCenterLocal = bbox.getCenter(new THREE.Vector3());
+      const currentCenterWorld = targetMesh.localToWorld(currentCenterLocal.clone());
+      const currentCenterCupboard = cupboardMesh.worldToLocal(currentCenterWorld.clone());
+
+      // Calculate restored position
+      const restoredCupboardY = originalY;
+      const restoredWorld = cupboardMesh.localToWorld(new THREE.Vector3(
+        currentCenterCupboard.x,
+        restoredCupboardY,
+        currentCenterCupboard.z
+      ));
+
+      const parentMesh = targetMesh.parent as THREE.Mesh;
+      const restoredParentLocal = parentMesh
+        ? parentMesh.worldToLocal(restoredWorld.clone())
+        : targetMesh.worldToLocal(restoredWorld.clone());
+
+      targetMesh.position.set(
+        restoredParentLocal.x,
+        restoredParentLocal.y,
+        restoredParentLocal.z
+      );
+
+      // Update Redux store
+      const objectId = targetMesh.userData.objectId || obj.userData.objectId;
+      if (objectId) {
+        const existingObjects = store.getState().data.objects;
+        const objData = existingObjects.find((o) => o.id === objectId);
+        if (objData) {
+          const updatedMeshData = {
+            ...objData,
+            dimensions: {
+              ...objData.dimensions,
+              height: originalHeight,
+            },
+            position: {
+              ...objData.position,
+              y: restoredParentLocal.y,
+            },
+          };
+
+          store.dispatch(updateObject(updatedMeshData));
+
+          // Update banding using MeshBuilder
+          try {
+            const meshBuilder = new MeshBuilder(updatedMeshData);
+            meshBuilder.setParentMesh(parentMesh || cupboardMesh);
+            await meshBuilder.updateBanding(targetMesh);
+          } catch (error) {
+            console.warn('[LShape] Failed to update banding during restore:', error);
+          }
+        }
+      }
+    }
+
+    // Clear stored original values
+    delete targetMesh.userData.originalHeight;
+    delete targetMesh.userData.originalY;
+  }
+
+  /**
+   * Remove all L-shape objects from a cupboard and restore original heights
+   */
+  public static async removeLShapeObjects(cupboardMesh: THREE.Mesh): Promise<void> {
     if (!cupboardMesh) return;
 
-    const drawers: THREE.Mesh[] = [];
+    // First, find all drawers and doors that might have been reduced
+    const drawersAndDoors: THREE.Mesh[] = [];
     cupboardMesh.traverse((child) => {
-      if (
-        child instanceof THREE.Mesh &&
-        child.userData.type === PART_TYPES.DRAWER &&
-        child.userData.isMain
-      ) {
-        drawers.push(child);
+      if (child instanceof THREE.Mesh) {
+        const type = child.userData.type;
+        if (type === PART_TYPES.DRAWER || type === PART_TYPES.DOOR) {
+          if (child.userData.isMain || child.name?.includes('DRAWER') || child.name?.includes('DOOR')) {
+            drawersAndDoors.push(child);
+          }
+        }
       }
     });
 
+    // Restore original heights for all drawers and doors
+    for (const drawerOrDoor of drawersAndDoors) {
+      await this.restoreObjectHeight(drawerOrDoor, cupboardMesh);
+    }
+
+    // Now remove L-shape objects
     const toRemove: THREE.Object3D[] = [];
 
     cupboardMesh.traverse((obj) => {

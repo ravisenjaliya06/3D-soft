@@ -933,8 +933,8 @@ export const ensureHandleLoaded = async (model?: string) => {
 /**
  * Remove all L-shape objects from a cupboard (l-shape objects are children of cupboard)
  */
-export const removeLShapeObjects = (cupboardMesh: THREE.Mesh) => {
-  LShapeObjectManager.removeLShapeObjects(cupboardMesh);
+export const removeLShapeObjects = async (cupboardMesh: THREE.Mesh) => {
+  await LShapeObjectManager.removeLShapeObjects(cupboardMesh);
 };
 
 /**

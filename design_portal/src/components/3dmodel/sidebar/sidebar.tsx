@@ -316,8 +316,8 @@ const Sidebar: React.FC = () => {
         }
       });
     } else {
-      // Handle mode: remove l-shape objects, show handles
-      removeLShapeObjects(cupboardMesh);
+      // Handle mode: remove l-shape objects and restore original heights, show handles
+      await removeLShapeObjects(cupboardMesh);
       // Show handles
       scene.traverse((obj: THREE.Object3D) => {
         if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
