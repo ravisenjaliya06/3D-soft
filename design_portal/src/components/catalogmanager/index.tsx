@@ -321,6 +321,8 @@ const CatalogManager = () => {
     setActiveRuleType(types[0] || null);
   }, [selectedCatalog, catalogData]);
 
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
@@ -339,23 +341,25 @@ const CatalogManager = () => {
                     </span>
                     <div className="relative inline-flex items-center">
                       <select
+                        onFocus={() => setOpen(true)}
+                        onBlur={() => setOpen(false)}
                         className="h-[1.5rem] w-[8rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-white px-[0.4rem] pr-[1.8rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                         value={catalogType}
                         onChange={(e) => setCatalogType(e.target.value)}
                       >
                         {catalogTypes.map((opt) => (
                           <option key={opt.value} value={opt.value}>
-                            {opt.label}
+                            {formatEnumLabel(opt.label)}
                           </option>
                         ))}
                       </select>
                       <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
                         <img
-                          src={assets.menudown}
-                          alt="dropdown"
+                          src={open ? assets.menuup : assets.menudown}
                           className="h-[1.5rem] w-[1.5rem]"
                         />
                       </div>
+
                     </div>
                   </div>
                   <div className="h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
@@ -365,23 +369,26 @@ const CatalogManager = () => {
                     </span>
                     <div className="relative inline-flex items-center">
                       <select
-                        className="h-[1.5rem] w-[8rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-white px-[0.4rem] pr-[1.8rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
+                        onFocus={() => setOpen(true)}
+                        onBlur={() => setOpen(false)}
+                        className="rounded-md-[0.1rem] w-[8.2rem] appearance-none cursor-pointer rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                         value={selectedCatalog?.id || ''}
                         onChange={(e) => {
                           const catalog = catalogData.find((c) => c.id === e.target.value);
                           setSelectedCatalog(catalog || null);
                         }}
                       >
-                        {catalogData.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.name}
-                          </option>
-                        ))}
+                        {catalogData
+                          .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
+                          .map((opt) => (
+                            <option key={opt.id} value={opt.id}>
+                              {formatEnumLabel(opt.name)}
+                            </option>
+                          ))}
                       </select>
                       <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
                         <img
-                          src={assets.menudown}
-                          alt="dropdown"
+                          src={open ? assets.menuup : assets.menudown}
                           className="h-[1.5rem] w-[1.5rem]"
                         />
                       </div>
@@ -402,7 +409,7 @@ const CatalogManager = () => {
           </div>
 
           {/* MAIN CONTENT */}
-          <div className="flex h-[40rem] flex-row gap-[0.9rem] px-[0rem] pr-[7rem] pb-[1rem] pl-[7rem]">
+          <div className="flex h-[40rem] flex-row gap-[1rem] px-[0rem] pr-[6.5rem] pb-[1rem] pl-[7rem]">
             {/* LEFT SIDEBAR */}
             <div className="flex h-full max-h-[66vh] w-[14rem] flex-col justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[white] p-[0.2rem] p-[0rem]">
               {/* ================= RULE LIST ================= */}
@@ -412,9 +419,10 @@ const CatalogManager = () => {
                     <div
                       key={type}
                       onClick={() => setActiveRuleType(type)}
-                      className={`relative mt-[0.3125rem] ml-[1rem] flex h-[2rem] w-[11rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.5rem] px-[0.3rem] py-[0.2rem] transition-colors duration-150 ${
-                        activeRuleType === type ? 'bg-[#E6DEFF]' : 'hover:bg-[var(--primary-hover)]'
-                      } `}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${activeRuleType === type
+                        ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                        : 'text-gray-500 hover:bg-gray-100'
+                        }`}
                     >
                       <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
                       {type}
@@ -427,8 +435,8 @@ const CatalogManager = () => {
               <div className="border-t-[0.1rem] border-[var(--border-color)] p-[0rem] pt-[2]">
                 <div className="rounded-[0.2rem] bg-white p-[0.3rem]">
                   {/* HEADER */}
-                  <p className="mb-[1rem] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
-                    Door ID 45
+                  <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
+                    Part Details
                   </p>
 
                   {/* INPUTS */}
@@ -438,10 +446,10 @@ const CatalogManager = () => {
                       {isEditingName ? (
                         <input
                           type="text"
-                          value={selectedCatalog?.name}
+                          value={formatEnumLabel(selectedCatalog?.name || '')}
                           onBlur={handleBlur(setIsEditingName)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                          className="h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
+                          className="h-[1.5rem] w-[11rem] pointer-events-none rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
                         />
                       ) : (
                         <div
@@ -466,7 +474,7 @@ const CatalogManager = () => {
                           value={selectedCatalog?.description}
                           onBlur={handleBlur(setIsEditingDescription)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                          className="h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
+                          className="h-[1.5rem] w-[11rem] pointer-events-none rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
                         />
                       ) : (
                         <div
@@ -499,13 +507,13 @@ const CatalogManager = () => {
                         colSpan={3}
                         className="h-[3rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] bg-[var(--thbackground-color)] p-[0rem] px-[0.5rem] text-left font-[700] text-[#392579]"
                       >
-                        <div className="ml-[0.87rem] text-[0.85rem]">Material Properties</div>
+                        <div className="ml-[0rem] text-[0.85rem]">Material Properties</div>
                       </th>
                     </tr>
 
                     <tr>
                       <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-left text-[0.85rem] font-[700] text-[#392579]">
-                        <div className="ml-[0.87rem] flex items-center">
+                        <div className="ml-[0rem] flex items-center text-left">
                           Part
                           <img
                             src={assets.up_down_arrow}
@@ -526,14 +534,14 @@ const CatalogManager = () => {
                         </div>
                       </th>
 
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-left text-[0.85rem] font-[700] text-[#392579]">
+                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem]  text-[0.85rem] font-[700] text-[#392579]">
                         Action
                       </th>
                     </tr>
                   </thead>
 
                   {/* ================= TABLE BODY ================= */}
-                  <tbody>
+                  <tbody className="p-[0rem] m-[0rem]">
                     {ruleParts.length > 0 &&
                       ruleParts.map((part) => (
                         <tr
@@ -544,48 +552,78 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                            selectedPartId === part.id
-                              ? 'bg-[var(--primary-hover)]'
-                              : 'bg-[var(--primary-white)]'
-                          } `}
+                          className={`cursor-pointer transition-colors p-[0rem] duration-150 hover:bg-[var(--primary-hover)] ${selectedPartId === part.id
+                            ? 'bg-[var(--primary-hover)]'
+                            : 'bg-[var(--primary-white)]'
+                            } `}
                         >
-                          <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                            {part.name}
-                          </td>
-
-                          <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5] text-[0.72rem] text-[#3F3F46]">
-                            {part.material?.name || 'NO MATERIAL ASSIGNED'}
-                          </td>
-
-                          <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                className="flex items-center gap-1 rounded-md bg-transparent px-[0.2rem] py-[0.1rem] text-[0.6rem] text-[var(--delete-text-color)] hover:bg-[var(--delete-border-color)]"
-                                onClick={() => handleShowDeletePopup()}
-                              >
-                                <img src={assets.trash} alt="" className="h-[0.8rem] w-[0.8rem]" />
-                              </button>
-
-                              <button className="bg-transparent">
-                                <img src={assets.edit} alt="" className="h-[0.9rem] w-[0.9rem]" />
-                              </button>
+                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
+                            <div className="flex items-center text-left h-full text-[0.72rem] text-[#3F3F46]">
+                              {formatEnumLabel(part.name)}
                             </div>
                           </td>
+
+                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
+                            <div className="flex items-center h-full text-[0.72rem] text-[#3F3F46]">
+                              {part.material?.name || 'NO MATERIAL ASSIGNED'}
+                            </div>
+                          </td>
+
+                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
+                            <div className="flex items-center justify-center  h-full gap-[0.5rem]">
+
+                              {/* DELETE BUTTON */}
+                              <button
+                                disabled={true} //disable here (use condition if needed)
+                                onClick={() => handleShowDeletePopup()}
+                                className="
+                                  border-[0rem] gap-[1] rounded-md
+                                  bg-transparent px-[0.5] py-[2.5]
+                                  text-[0.6rem] p-[0rem] m-[0rem] text-[var(--delete-text-color)]
+                                  opacity-40 cursor-not-allowed
+                                "
+                              >
+                                <img
+                                  src={assets.trash}
+                                  alt="delete"
+                                  className="h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem] m-[0rem]"
+                                />
+                              </button>
+
+                              {/* EDIT BUTTON */}
+                              <button
+                                disabled={true} //disable here
+                                className="
+                                 border-[0rem] gap-[1] rounded-md
+                                  bg-transparent px-[0.5] py-[2.5]
+                                  text-[0.6rem] p-[0rem] m-[0rem] text-[var(--delete-text-color)]
+                                  opacity-40 cursor-not-allowed
+                                "
+                              >
+                                <img
+                                  src={assets.edit}
+                                  alt="edit"
+                                  className="h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem] m-[0rem]"
+                                />
+                              </button>
+
+                            </div>
+                          </td>
+
                         </tr>
                       ))}
                     {/* ===== EMPTY ROWS (Keep visual height) ===== */}
                     {Array.from({
                       length: Math.max(0, 18 - ruleParts.length),
                     }).map((_, idx) => (
-                      <tr key={`empty-${idx}`} className="bg-[var(--primary-white)]">
-                        <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
+                      <tr key={`empty-${idx}`} className="bg-[var(--primary-white)] p-[0rem]">
+                        <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
                           &nbsp;
                         </td>
-                        <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
+                        <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
                           &nbsp;
                         </td>
-                        <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
+                        <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
                           &nbsp;
                         </td>
                       </tr>
@@ -601,17 +639,27 @@ const CatalogManager = () => {
                 {/* ================= TOP BAR ================= */}
                 <div className="m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
                   {/* DROPDOWN */}
-                  <select
-                    value={selectedMaterialType}
-                    onChange={(e) => setSelectedMaterialType(e.target.value)}
-                    className="m-[0rem] h-[1.7rem] rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent"
-                  >
-                    {materialTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative inline-flex items-center">
+                    <select
+                      onFocus={() => setOpen(true)}
+                      onBlur={() => setOpen(false)}
+                      value={selectedMaterialType}
+                      onChange={(e) => setSelectedMaterialType(e.target.value)}
+                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none rounded-[0.3rem] rounded-md pr-[1.5rem] pl-[0.4rem] border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent"
+                    >
+                      {materialTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
+                      <img
+                        src={open ? assets.menuup : assets.menudown}
+                        className="h-[1.5rem] w-[1.5rem] p-[0rem] m-[0rem]"
+                      />
+                    </div>
+                  </div>
 
                   {/* SEARCH */}
                   <div className="relative flex items-center">
@@ -640,7 +688,7 @@ const CatalogManager = () => {
                   <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
                     {/* ================= TABLE HEADER ================= */}
                     <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
-                      <tr>
+                      <tr className="p-[0rem]">
                         <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem]"></th>
 
                         <th className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] py-[0.3rem] text-left text-[0.87rem] font-semibold text-[var(--primary-color)]">
@@ -677,29 +725,28 @@ const CatalogManager = () => {
                               draggable
                               onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                               onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                                selectedMaterialId === row.id
-                                  ? 'bg-[var(--primary-hover)]'
-                                  : 'bg-[var(--primary-white)]'
-                              } `}
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${selectedMaterialId === row.id
+                                ? 'bg-[var(--primary-hover)]'
+                                : 'bg-[var(--primary-white)]'
+                                } `}
                             >
                               {/* RADIO */}
-                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">
+                              <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] px-[1rem]">
                                 <input
                                   type="radio"
                                   checked={selectedMaterialId === row.id}
                                   onChange={() => setSelectedMaterialId(row.id)}
-                                  className="cursor-pointer p-[0rem]"
+                                  className="cursor-pointer p-[0rem] m-[0rem] h-[1.15rem] min-h-[1.15rem] w-[1.15rem] min-w-[1.15rem] border-[0.1rem]"
                                 />
                               </td>
 
                               {/* NAME */}
-                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
+                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
                                 {row.name}
                               </td>
 
                               {/* DESCRIPTION */}
-                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] text-left text-[0.65rem] text-[#3F3F46]">
+                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
                                 {row.description}
                               </td>
                             </tr>
