@@ -75,6 +75,7 @@ export const CATALOGMANAGER = {
   matariel: '/assets/catalogmanager/matireal.svg',
   trash: '/assets/catalogmanager/trash.svg',
   menudown: '/assets/catalogmanager/menu_down.svg',
+  menuup: '/assets/catalogmanager/menu-up.svg',
 };
 
 export const CREATEICON_SVG = {
