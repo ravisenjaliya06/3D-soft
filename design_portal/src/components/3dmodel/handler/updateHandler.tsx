@@ -2,7 +2,8 @@ import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
-import { MATERIAL_TYPES } from '../sidebar/interface';
+import { BandingTool } from '../sceneCreator/tools/bandingTool';
+import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
 import { store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
@@ -13,10 +14,12 @@ import { MeshBuilder } from '../sceneCreator/meshBuilder';
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
   private readonly dispatch: Dispatch;
+  private readonly bandingTool: BandingTool;
 
   constructor(scene: THREE.Scene, dispatch: Dispatch) {
     this.scene = scene;
     this.dispatch = dispatch;
+    this.bandingTool = new BandingTool(scene);
   }
 
   /** Updates a 3D object in both the Three.js scene and the Redux store. */
@@ -37,7 +40,7 @@ export class UpdateObjectInScene {
       return;
     }
 
-    this.updateMeshGeometry(mesh, updates);
+    this.updateMeshGeometry(mesh, updates, currentObject);
     this.updateMeshPosition(mesh, updates);
     this.updateMeshRotation(mesh, updates);
     this.updateMeshMaterial(mesh, updates);
@@ -61,7 +64,11 @@ export class UpdateObjectInScene {
   }
 
   /** Updates geometry width, height, depth */
-  private updateMeshGeometry(mesh: THREE.Mesh, updates: UpdatePayload): void {
+  private updateMeshGeometry(
+    mesh: THREE.Mesh,
+    updates: UpdatePayload,
+    currentObject?: MeshObjectData
+  ): void {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
@@ -91,10 +98,7 @@ export class UpdateObjectInScene {
     );
 
     // Update banding if this is a plank
-    if (
-      mesh.userData.type &&
-      ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(mesh.userData.type)
-    ) {
+    if (this.bandingTool.isPlank(mesh)) {
       // Use async IIFE to handle async update
       (async () => {
         await this.updateBandingForPlank(mesh, updateParams);
@@ -113,7 +117,8 @@ export class UpdateObjectInScene {
   /** Update banding when plank dimensions change */
   private async updateBandingForPlank(
     mesh: THREE.Mesh,
-    params: UpdateDimensionsParams
+    params: UpdateDimensionsParams,
+    currentObject?: MeshObjectData
   ): Promise<void> {
     // Find banding meshes and update their positions/sizes
     mesh.children.forEach((child) => {
@@ -167,62 +172,6 @@ export class UpdateObjectInScene {
       child.geometry = newGeometry;
       child.position.copy(newPosition);
     });
-  }
-
-  /** Update grooving when plank dimensions change */
-  private updateGroovingForPlank(mesh: THREE.Mesh, params: UpdateDimensionsParams): void {
-    // Only update grooving for BACK_PLANK
-    const plankType = (mesh.userData.type || '').toUpperCase();
-    if (plankType !== PART_TYPES.BACK_PLANK) {
-      return;
-    }
-
-    // Remove all existing grooving
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'groove' || child.userData.type === 'protrusion') {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
-
-    // Recreate grooving using MeshBuilder with current mesh dimensions
-    // Get mesh data from Redux store
-    const state = store.getState();
-    let meshData: MeshObjectData | null = null;
-
-    if (state?.data?.objects) {
-      const found = state.data.objects.find(
-        (obj: MeshObjectData) => obj.id === mesh.userData.objectId
-      );
-      meshData = found || null;
-    }
-
-    if (meshData) {
-      // Update meshData dimensions from the actual mesh geometry (most up-to-date)
-      if (mesh.geometry instanceof THREE.BoxGeometry) {
-        const params = mesh.geometry.parameters;
-        meshData = {
-          ...meshData,
-          dimensions: {
-            width: params.width,
-            height: params.height,
-            depth: params.depth,
-          },
-        };
-      }
-      
-      const builder = new MeshBuilder(meshData);
-      builder.updateGrooving(mesh);
-    }
   }
 
   //update main object with children(planks)
@@ -339,10 +288,10 @@ export class UpdateObjectInScene {
     const { type, value } = updates.material;
 
     const updateTarget = (targetMesh: THREE.Mesh) => {
-      if (type === MATERIAL_TYPES.COLOR) {
+      if (type === SIDEBAR_MATERIAL_TYPES.COLOR) {
         const color = new THREE.Color(value);
         this.applyColorMaterial(targetMesh, color);
-      } else if (type === MATERIAL_TYPES.TEXTURE) {
+      } else if (type === SIDEBAR_MATERIAL_TYPES.TEXTURE) {
         this.applyTextureMaterial(targetMesh, value);
       }
     };
