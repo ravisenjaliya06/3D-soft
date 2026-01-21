@@ -65,18 +65,23 @@ export class GroovingTool {
    */
   private createGrooveMaterial(plankMaterial: THREE.Material): THREE.Material {
     const grooveMaterial = plankMaterial.clone();
-    
-    if (grooveMaterial instanceof THREE.MeshStandardMaterial) {
-      const color = new THREE.Color();
-      if (grooveMaterial.color) {
-        color.copy(grooveMaterial.color);
-        color.multiplyScalar(0.7); // Slightly darker for depth effect
-        grooveMaterial.color = color;
-      }
-      grooveMaterial.transparent = false;
-    }
-    
     grooveMaterial.visible = true;
+    
+    if (!(grooveMaterial instanceof THREE.MeshStandardMaterial)) {
+      return grooveMaterial;
+    }
+
+    if (!grooveMaterial.color) {
+      grooveMaterial.transparent = false;
+      return grooveMaterial;
+    }
+
+    const color = new THREE.Color();
+    color.copy(grooveMaterial.color);
+    color.multiplyScalar(0.7); // Slightly darker for depth effect
+    grooveMaterial.color = color;
+    grooveMaterial.transparent = false;
+    
     return grooveMaterial;
   }
 
@@ -231,112 +236,101 @@ export class GroovingTool {
   }
 
   /**
+   * Check if child is a grooving mesh (groove or protrusion)
+   */
+  private isGroovingMesh(child: THREE.Object3D): boolean {
+    return (
+      child.userData.type === GROOVE_TYPE.GROOVE ||
+      child.userData.type === GROOVE_TYPE.PROTRUSION
+    );
+  }
+
+  /**
+   * Dispose of mesh geometry and materials properly
+   */
+  private disposeMesh(mesh: THREE.Mesh): void {
+    if (!(mesh instanceof THREE.Mesh)) {
+      return;
+    }
+
+    mesh.geometry.dispose();
+    
+    if (mesh.material instanceof THREE.Material) {
+      mesh.material.dispose();
+      return;
+    }
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach((mat) => {
+        if (mat instanceof THREE.Material) {
+          mat.dispose();
+        }
+      });
+    }
+  }
+
+  /**
+   * Get all grooving children from a mesh
+   */
+  private getGroovingChildren(mesh: THREE.Mesh, edge?: string): THREE.Object3D[] {
+    const children: THREE.Object3D[] = [];
+    
+    mesh.children.forEach((child) => {
+      if (!this.isGroovingMesh(child)) {
+        return;
+      }
+
+      if (edge && child.userData.edge !== edge) {
+        return;
+      }
+
+      children.push(child);
+    });
+
+    return children;
+  }
+
+  /**
    * Create grooving system: grooves (female) and protrusions (male) on back plank
    */
   public createGrooving(mesh: THREE.Mesh, objectId?: string): void {
-    if (!this.isPlank(mesh)) {
-      console.log('[Grooving] Not a plank');
+    if (!this.validateMeshForGrooving(mesh)) {
       return;
     }
 
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      console.log('[Grooving] Not a BoxGeometry');
-      return;
-    }
-
-    // Only create grooving for BACK_PLANK
-    if (!this.isBackPlank(mesh)) {
-      return;
-    }
-
-    const { width, height } = mesh.geometry.parameters;
+    // TypeScript type narrowing - we know it's BoxGeometry from validation
+    const geometry = mesh.geometry as THREE.BoxGeometry;
+    const { width, height } = geometry.parameters;
     const plankMaterial = this.getPlankMaterial(mesh);
-
-    // Create grooves (female parts) on back plank edges
     const grooveMaterial = this.createGrooveMaterial(plankMaterial);
-
-    // Top groove
-    const topGroove = this.calculateTopBottomGroove(width, height, EDGES.TOP);
-    this.createGrooveMesh(
-      mesh,
-      EDGES.TOP,
-      topGroove.geometry,
-      topGroove.position,
-      grooveMaterial
-    );
-
-    // Bottom groove
-    const bottomGroove = this.calculateTopBottomGroove(width, height, EDGES.BOTTOM);
-    this.createGrooveMesh(
-      mesh,
-      EDGES.BOTTOM,
-      bottomGroove.geometry,
-      bottomGroove.position,
-      grooveMaterial
-    );
-
-    // Left groove
-    const leftGroove = this.calculateLeftRightGroove(width, height, EDGES.LEFT);
-    this.createGrooveMesh(
-      mesh,
-      EDGES.LEFT,
-      leftGroove.geometry,
-      leftGroove.position,
-      grooveMaterial
-    );
-
-    // Right groove
-    const rightGroove = this.calculateLeftRightGroove(width, height, EDGES.RIGHT);
-    this.createGrooveMesh(
-      mesh,
-      EDGES.RIGHT,
-      rightGroove.geometry,
-      rightGroove.position,
-      grooveMaterial
-    );
-
-    // Create protrusions (male parts) on back plank edges - extending outward
     const protrusionMaterial = this.createProtrusionMaterial(plankMaterial);
 
-    // Top protrusion
-    const topProtrusion = this.calculateProtrusion(width, height, EDGES.TOP);
-    this.createProtrusionMesh(
-      mesh,
-      EDGES.TOP,
-      topProtrusion.geometry,
-      topProtrusion.position,
-      protrusionMaterial
-    );
+    // Create grooves (female parts) on all edges
+    const topBottomEdges = [EDGES.TOP, EDGES.BOTTOM];
+    const leftRightEdges = [EDGES.LEFT, EDGES.RIGHT];
 
-    // Bottom protrusion
-    const bottomProtrusion = this.calculateProtrusion(width, height, EDGES.BOTTOM);
-    this.createProtrusionMesh(
-      mesh,
-      EDGES.BOTTOM,
-      bottomProtrusion.geometry,
-      bottomProtrusion.position,
-      protrusionMaterial
-    );
+    topBottomEdges.forEach((edge) => {
+      const groove = this.calculateTopBottomGroove(width, height, edge);
+      this.createGrooveMesh(mesh, edge, groove.geometry, groove.position, grooveMaterial);
+    });
 
-    // Left protrusion
-    const leftProtrusion = this.calculateProtrusion(width, height, EDGES.LEFT);
-    this.createProtrusionMesh(
-      mesh,
-      EDGES.LEFT,
-      leftProtrusion.geometry,
-      leftProtrusion.position,
-      protrusionMaterial
-    );
+    leftRightEdges.forEach((edge) => {
+      const groove = this.calculateLeftRightGroove(width, height, edge);
+      this.createGrooveMesh(mesh, edge, groove.geometry, groove.position, grooveMaterial);
+    });
 
-    // Right protrusion
-    const rightProtrusion = this.calculateProtrusion(width, height, EDGES.RIGHT);
-    this.createProtrusionMesh(
-      mesh,
-      EDGES.RIGHT,
-      rightProtrusion.geometry,
-      rightProtrusion.position,
-      protrusionMaterial
-    );
+    // Create protrusions (male parts) on all edges
+    const allEdges = [EDGES.TOP, EDGES.BOTTOM, EDGES.LEFT, EDGES.RIGHT];
+    allEdges.forEach((edge) => {
+      const protrusion = this.calculateProtrusion(width, height, edge);
+      this.createProtrusionMesh(
+        mesh,
+        edge,
+        protrusion.geometry,
+        protrusion.position,
+        protrusionMaterial
+      );
+    });
   }
 
   /**
@@ -348,10 +342,7 @@ export class GroovingTool {
       return;
     }
 
-    // Remove all existing grooving
     this.removeAllGrooving(mesh);
-
-    // Recreate grooving with new dimensions
     this.createGrooving(mesh, objectId);
   }
 
@@ -359,29 +350,11 @@ export class GroovingTool {
    * Remove all grooving meshes from a plank
    */
   public removeAllGrooving(mesh: THREE.Mesh): void {
-    const toRemove: THREE.Object3D[] = [];
+    const toRemove = this.getGroovingChildren(mesh);
     
-    mesh.children.forEach((child) => {
-      if (
-        child.userData.type === GROOVE_TYPE.GROOVE ||
-        child.userData.type === GROOVE_TYPE.PROTRUSION
-      ) {
-        toRemove.push(child);
-      }
-    });
-
     toRemove.forEach((child) => {
       if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        } else if (Array.isArray(child.material)) {
-          child.material.forEach((mat) => {
-            if (mat instanceof THREE.Material) {
-              mat.dispose();
-            }
-          });
-        }
+        this.disposeMesh(child);
       }
       mesh.remove(child);
     });
@@ -391,30 +364,11 @@ export class GroovingTool {
    * Remove grooving from a specific edge
    */
   public removeGroovingOnEdge(mesh: THREE.Mesh, edge: string): void {
-    const toRemove: THREE.Object3D[] = [];
+    const toRemove = this.getGroovingChildren(mesh, edge);
     
-    mesh.children.forEach((child) => {
-      if (
-        (child.userData.type === GROOVE_TYPE.GROOVE ||
-          child.userData.type === GROOVE_TYPE.PROTRUSION) &&
-        child.userData.edge === edge
-      ) {
-        toRemove.push(child);
-      }
-    });
-
     toRemove.forEach((child) => {
       if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        } else if (Array.isArray(child.material)) {
-          child.material.forEach((mat) => {
-            if (mat instanceof THREE.Material) {
-              mat.dispose();
-            }
-          });
-        }
+        this.disposeMesh(child);
       }
       mesh.remove(child);
     });
@@ -425,13 +379,10 @@ export class GroovingTool {
    */
   public getGroovingMeshes(mesh: THREE.Mesh): THREE.Mesh[] {
     const groovingMeshes: THREE.Mesh[] = [];
+    const children = this.getGroovingChildren(mesh);
 
-    mesh.children.forEach((child) => {
-      if (
-        child instanceof THREE.Mesh &&
-        (child.userData.type === GROOVE_TYPE.GROOVE ||
-          child.userData.type === GROOVE_TYPE.PROTRUSION)
-      ) {
+    children.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
         groovingMeshes.push(child);
       }
     });
@@ -447,18 +398,23 @@ export class GroovingTool {
     edge: string,
     type?: 'groove' | 'protrusion'
   ): THREE.Mesh | null {
-    for (const child of mesh.children) {
-      if (
-        child instanceof THREE.Mesh &&
-        (child.userData.type === GROOVE_TYPE.GROOVE ||
-          child.userData.type === GROOVE_TYPE.PROTRUSION) &&
-        child.userData.edge === edge
-      ) {
-        if (!type || child.userData.type === GROOVE_TYPE[type.toUpperCase() as keyof typeof GROOVE_TYPE]) {
-          return child;
-        }
+    const children = this.getGroovingChildren(mesh, edge);
+
+    for (const child of children) {
+      if (!(child instanceof THREE.Mesh)) {
+        continue;
+      }
+
+      if (!type) {
+        return child;
+      }
+
+      const expectedType = GROOVE_TYPE[type.toUpperCase() as keyof typeof GROOVE_TYPE];
+      if (child.userData.type === expectedType) {
+        return child;
       }
     }
+
     return null;
   }
 
@@ -471,20 +427,25 @@ export class GroovingTool {
   } {
     const grooves: string[] = [];
     const protrusions: string[] = [];
+    const children = this.getGroovingChildren(mesh);
 
-    mesh.children.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        if (child.userData.type === GROOVE_TYPE.GROOVE) {
-          const edge = child.userData.edge;
-          if (edge && typeof edge === 'string' && !grooves.includes(edge)) {
-            grooves.push(edge);
-          }
-        } else if (child.userData.type === GROOVE_TYPE.PROTRUSION) {
-          const edge = child.userData.edge;
-          if (edge && typeof edge === 'string' && !protrusions.includes(edge)) {
-            protrusions.push(edge);
-          }
-        }
+    children.forEach((child) => {
+      if (!(child instanceof THREE.Mesh)) {
+        return;
+      }
+
+      const edge = child.userData.edge;
+      if (!edge || typeof edge !== 'string') {
+        return;
+      }
+
+      if (child.userData.type === GROOVE_TYPE.GROOVE && !grooves.includes(edge)) {
+        grooves.push(edge);
+        return;
+      }
+
+      if (child.userData.type === GROOVE_TYPE.PROTRUSION && !protrusions.includes(edge)) {
+        protrusions.push(edge);
       }
     });
 
@@ -511,5 +472,26 @@ export class GroovingTool {
     }
 
     return this.isBackPlank(mesh);
+  }
+
+  /**
+   * Validate mesh before grooving operations
+   */
+  private validateMeshForGrooving(mesh: THREE.Mesh): boolean {
+    if (!this.isPlank(mesh)) {
+      console.log('[Grooving] Not a plank');
+      return false;
+    }
+
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
+      console.log('[Grooving] Not a BoxGeometry');
+      return false;
+    }
+
+    if (!this.isBackPlank(mesh)) {
+      return false;
+    }
+
+    return true;
   }
 }
