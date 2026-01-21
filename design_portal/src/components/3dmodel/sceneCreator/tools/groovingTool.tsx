@@ -39,7 +39,7 @@ export class GroovingTool {
    */
   public isBackPlank(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) return false;
-    return mesh.userData.type === PART_TYPES.BACK_PLANK;
+    return mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.toUpperCase() === 'BACK_PLANK'
   }
 
   /**
