@@ -152,8 +152,7 @@ export class LShapeObjectManager {
     position: THREE.Vector3,
     parentId: string,
     material?: Material[],
-    drawerOrDoorId?: string,
-    lShapePosition?: 'top' | 'bottom'
+    drawerOrDoorId?: string
   ): MeshObjectData {
     const plankData: MeshObjectData = {
       ...baseData,
@@ -178,7 +177,6 @@ export class LShapeObjectManager {
       (plankData as any).userData = {
         ...(plankData as any).userData,
         drawerOrDoorId,
-        lShapePosition,
       };
     }
 
@@ -194,8 +192,7 @@ export class LShapeObjectManager {
     position: THREE.Vector3,
     parentId: string,
     material?: Material[],
-    drawerOrDoorId?: string,
-    lShapePosition?: 'top' | 'bottom'
+    drawerOrDoorId?: string
   ): MeshObjectData {
     const plankData: MeshObjectData = {
       ...baseData,
@@ -220,7 +217,6 @@ export class LShapeObjectManager {
       (plankData as any).userData = {
         ...(plankData as any).userData,
         drawerOrDoorId,
-        lShapePosition,
       };
     }
 
@@ -366,7 +362,8 @@ export class LShapeObjectManager {
           targetMesh = child;
         }
       });
-      return targetMesh;
+      // If drawer face not found, use the drawer mesh itself as fallback
+      return targetMesh || drawerOrDoor;
     } else {
       return drawerOrDoor;
     }
@@ -483,560 +480,403 @@ export class LShapeObjectManager {
   }
 
   /**
-   * Calculate plank positions for drawer/door (top position)
-   * Uses closed position to ensure correct placement regardless of open/close state
+   * Find all consecutive vertically attached drawers/doors (same type)
+   * Groups objects by type and horizontal alignment, sorts vertically, then creates pairs between consecutive objects
+   * Returns array of pairs where each pair contains [topObject, bottomObject]
+   * Example: 3 objects -> 2 pairs, 5 objects -> 4 pairs
    */
-  private static calculatePlankPositionsForDrawerDoorTop(
-    targetMesh: THREE.Mesh,
-    cupboardMesh: THREE.Mesh,
-    verticalHeight: number,
-    verticalDepth: number,
-    horizontalHeight: number,
-    horizontalDepth: number
-  ): { vertical: THREE.Vector3; horizontal: THREE.Vector3 } {
-    targetMesh.geometry.computeBoundingBox();
-    const bbox = targetMesh.geometry.boundingBox;
-    if (!bbox) {
-      throw new Error('Could not compute bounding box for target mesh');
-    }
+  private static findVerticallyAttachedPairs(
+    drawersAndDoors: THREE.Mesh[],
+    cupboardMesh: THREE.Mesh
+  ): Array<[THREE.Mesh, THREE.Mesh]> {
+    const pairs: Array<[THREE.Mesh, THREE.Mesh]> = [];
 
-    cupboardMesh.geometry.computeBoundingBox();
-    const cupboardBbox = cupboardMesh.geometry.boundingBox;
-    if (!cupboardBbox) {
-      throw new Error('Could not compute bounding box for cupboard');
-    }
-
-    // Get the closed position for drawers (stored in userData.closedZ)
-    // For doors, we need to handle pivot group rotation
-    let closedPosition = targetMesh.position.clone();
-    let pivotGroup: THREE.Object3D | null = null;
-    
-    // For drawers, use the closed Z position if available
-    if (targetMesh.userData.closedZ !== undefined) {
-      closedPosition.z = targetMesh.userData.closedZ;
-    }
-    
-    // For doors, check if there's a pivot group parent
-    if (targetMesh.userData.type === PART_TYPES.DOOR && targetMesh.parent?.userData.isPivotGroup) {
-      pivotGroup = targetMesh.parent;
-    }
-    
-    // Store original position/rotation to restore later
-    const originalPosition = targetMesh.position.clone();
-    const originalRotation = targetMesh.rotation.clone();
-    const originalQuaternion = targetMesh.quaternion.clone();
-    const originalPivotRotation = pivotGroup ? pivotGroup.rotation.clone() : null;
-    const originalPivotQuaternion = pivotGroup ? pivotGroup.quaternion.clone() : null;
-    
-    // Temporarily set to closed state for position calculation
-    targetMesh.position.copy(closedPosition);
-    
-    // For doors with pivot group, reset pivot group rotation to closed state (0 rotation)
-    if (pivotGroup) {
-      pivotGroup.rotation.set(0, 0, 0);
-      pivotGroup.quaternion.set(0, 0, 0, 1);
-    } else if (targetMesh.userData.type === PART_TYPES.DOOR) {
-      // Door without pivot group, reset door rotation
-      targetMesh.rotation.set(0, 0, 0);
-      targetMesh.quaternion.set(0, 0, 0, 1);
-    }
-    
-    // Update matrices with closed state
-    if (pivotGroup) {
-      pivotGroup.updateMatrixWorld(true);
-    }
-    targetMesh.updateMatrixWorld(true);
+    // Update world matrices for accurate position calculation
     cupboardMesh.updateMatrixWorld(true);
+    drawersAndDoors.forEach((obj) => {
+      obj.updateMatrixWorld(true);
+    });
+
+    // Group objects by type (doors and drawers separately)
+    const objectsByType = new Map<string, THREE.Mesh[]>();
+    drawersAndDoors.forEach((obj) => {
+      const type = obj.userData.type;
+      if (!objectsByType.has(type)) {
+        objectsByType.set(type, []);
+      }
+      objectsByType.get(type)!.push(obj);
+    });
+
+    // Process each type group
+    objectsByType.forEach((objects, type) => {
+      // Group objects by horizontal alignment (same X and Z position)
+      const alignedGroups: THREE.Mesh[][] = [];
+      const processed = new Set<THREE.Mesh>();
+
+      for (const obj1 of objects) {
+        if (processed.has(obj1)) continue;
+
+        const targetMesh1 = this.findTargetMesh(obj1);
+        if (!targetMesh1) continue;
+
+        targetMesh1.updateMatrixWorld(true);
+        targetMesh1.geometry.computeBoundingBox();
+        const bbox1 = targetMesh1.geometry.boundingBox;
+        if (!bbox1) continue;
+
+        const center1 = new THREE.Vector3();
+        bbox1.getCenter(center1);
+        const worldCenter1 = targetMesh1.localToWorld(center1.clone());
+        const cupboardLocal1 = cupboardMesh.worldToLocal(worldCenter1.clone());
+
+        const size1 = new THREE.Vector3();
+        bbox1.getSize(size1);
+        const alignmentThreshold = Math.max(size1.x, size1.z) * 0.15; // 15% tolerance
+
+        // Find all objects aligned horizontally with obj1
+        const alignedGroup: THREE.Mesh[] = [obj1];
+        processed.add(obj1);
+
+        for (const obj2 of objects) {
+          if (processed.has(obj2)) continue;
+
+          const targetMesh2 = this.findTargetMesh(obj2);
+          if (!targetMesh2) continue;
+
+          targetMesh2.updateMatrixWorld(true);
+          targetMesh2.geometry.computeBoundingBox();
+          const bbox2 = targetMesh2.geometry.boundingBox;
+          if (!bbox2) continue;
+
+          const center2 = new THREE.Vector3();
+          bbox2.getCenter(center2);
+          const worldCenter2 = targetMesh2.localToWorld(center2.clone());
+          const cupboardLocal2 = cupboardMesh.worldToLocal(worldCenter2.clone());
+
+          const xDiff = Math.abs(cupboardLocal1.x - cupboardLocal2.x);
+          const zDiff = Math.abs(cupboardLocal1.z - cupboardLocal2.z);
+
+          if (xDiff < alignmentThreshold && zDiff < alignmentThreshold) {
+            alignedGroup.push(obj2);
+            processed.add(obj2);
+          }
+        }
+
+        if (alignedGroup.length > 1) {
+          alignedGroups.push(alignedGroup);
+        }
+      }
+
+      // For each aligned group, sort by Y position (top to bottom) and create consecutive pairs
+      alignedGroups.forEach((group) => {
+        // Sort by Y position (top to bottom - higher Y first)
+        group.sort((a, b) => {
+          const targetMeshA = this.findTargetMesh(a);
+          const targetMeshB = this.findTargetMesh(b);
+          if (!targetMeshA || !targetMeshB) return 0;
+
+          targetMeshA.updateMatrixWorld(true);
+          targetMeshB.updateMatrixWorld(true);
+          targetMeshA.geometry.computeBoundingBox();
+          targetMeshB.geometry.computeBoundingBox();
+
+          const bboxA = targetMeshA.geometry.boundingBox;
+          const bboxB = targetMeshB.geometry.boundingBox;
+          if (!bboxA || !bboxB) return 0;
+
+          const centerA = new THREE.Vector3();
+          const centerB = new THREE.Vector3();
+          bboxA.getCenter(centerA);
+          bboxB.getCenter(centerB);
+
+          const worldCenterA = targetMeshA.localToWorld(centerA.clone());
+          const worldCenterB = targetMeshB.localToWorld(centerB.clone());
+
+          const cupboardLocalA = cupboardMesh.worldToLocal(worldCenterA.clone());
+          const cupboardLocalB = cupboardMesh.worldToLocal(worldCenterB.clone());
+
+          return cupboardLocalB.y - cupboardLocalA.y; // Higher Y first (top to bottom)
+        });
+
+        // Check if consecutive objects are vertically adjacent
+        for (let i = 0; i < group.length - 1; i++) {
+          const topObj = group[i];
+          const bottomObj = group[i + 1];
+
+          const targetMeshTop = this.findTargetMesh(topObj);
+          const targetMeshBottom = this.findTargetMesh(bottomObj);
+          if (!targetMeshTop || !targetMeshBottom) continue;
+
+          targetMeshTop.updateMatrixWorld(true);
+          targetMeshBottom.updateMatrixWorld(true);
+          targetMeshTop.geometry.computeBoundingBox();
+          targetMeshBottom.geometry.computeBoundingBox();
+
+          const bboxTop = targetMeshTop.geometry.boundingBox;
+          const bboxBottom = targetMeshBottom.geometry.boundingBox;
+          if (!bboxTop || !bboxBottom) continue;
+
+          // Check if objects are vertically adjacent
+          const topBottomLocal = new THREE.Vector3(
+            bboxTop.getCenter(new THREE.Vector3()).x,
+            bboxTop.min.y,
+            bboxTop.min.z
+          );
+          const bottomTopLocal = new THREE.Vector3(
+            bboxBottom.getCenter(new THREE.Vector3()).x,
+            bboxBottom.max.y,
+            bboxBottom.min.z
+          );
+
+          const topBottomWorld = targetMeshTop.localToWorld(topBottomLocal.clone());
+          const bottomTopWorld = targetMeshBottom.localToWorld(bottomTopLocal.clone());
+
+          const topBottomCupboard = cupboardMesh.worldToLocal(topBottomWorld.clone());
+          const bottomTopCupboard = cupboardMesh.worldToLocal(bottomTopWorld.clone());
+
+          const gapThreshold = 50; // Maximum gap in mm to consider them attached
+          const isAdjacent = topBottomCupboard.y <= bottomTopCupboard.y + gapThreshold &&
+                            topBottomCupboard.y >= bottomTopCupboard.y - gapThreshold;
+
+          if (isAdjacent) {
+            pairs.push([topObj, bottomObj]);
+          }
+        }
+      });
+    });
+
+    return pairs;
+  }
+
+  /**
+   * Calculate center position between two vertically attached objects
+   * Returns position info for placing l-shape so vertical plank spans half into top and half into bottom object
+   */
+  private static calculateCenterPositionBetweenObjects(
+    topObj: THREE.Mesh,
+    bottomObj: THREE.Mesh,
+    cupboardMesh: THREE.Mesh
+  ): { 
+    centerY: number; 
+    centerX: number; 
+    centerZ: number; 
+    width: number;
+    verticalPlankStartY: number; // Top edge of vertical plank (half into top object)
+    verticalPlankEndY: number; // Bottom edge of vertical plank (half into bottom object)
+    verticalPlankHeight: number; // Calculated height
+  } {
+    const targetMeshTop = this.findTargetMesh(topObj);
+    const targetMeshBottom = this.findTargetMesh(bottomObj);
     
-    // Calculate position in local space of target mesh (closed state)
-    const drawerDoorTopLocal = new THREE.Vector3(
-      bbox.getCenter(new THREE.Vector3()).x,
-      bbox.max.y, // Top edge instead of bottom
-      bbox.min.z
+    if (!targetMeshTop || !targetMeshBottom) {
+      throw new Error('Could not find target mesh for objects');
+    }
+
+    // Update matrices
+    cupboardMesh.updateMatrixWorld(true);
+    targetMeshTop.updateMatrixWorld(true);
+    targetMeshBottom.updateMatrixWorld(true);
+
+    // Get bounding boxes
+    targetMeshTop.geometry.computeBoundingBox();
+    targetMeshBottom.geometry.computeBoundingBox();
+    const bboxTop = targetMeshTop.geometry.boundingBox;
+    const bboxBottom = targetMeshBottom.geometry.boundingBox;
+
+    if (!bboxTop || !bboxBottom) {
+      throw new Error('Could not compute bounding boxes');
+    }
+
+    // Get sizes
+    const sizeTop = new THREE.Vector3();
+    const sizeBottom = new THREE.Vector3();
+    bboxTop.getSize(sizeTop);
+    bboxBottom.getSize(sizeBottom);
+
+    // Get center points for positioning
+    const topCenterLocal = new THREE.Vector3(
+      bboxTop.getCenter(new THREE.Vector3()).x,
+      bboxTop.getCenter(new THREE.Vector3()).y,
+      bboxTop.min.z // Use front Z (min.z) for positioning behind
     );
-    
-    // Convert to world space (using closed state)
-    const drawerDoorTopWorld = targetMesh.localToWorld(drawerDoorTopLocal.clone());
-    
+
+    const bottomCenterLocal = new THREE.Vector3(
+      bboxBottom.getCenter(new THREE.Vector3()).x,
+      bboxBottom.getCenter(new THREE.Vector3()).y,
+      bboxBottom.min.z // Use front Z (min.z) for positioning behind
+    );
+
+    // Get bottom edge of top object and top edge of bottom object
+    const topBottomLocal = new THREE.Vector3(
+      bboxTop.getCenter(new THREE.Vector3()).x,
+      bboxTop.min.y, // Bottom edge of top object
+      bboxTop.min.z
+    );
+
+    const bottomTopLocal = new THREE.Vector3(
+      bboxBottom.getCenter(new THREE.Vector3()).x,
+      bboxBottom.max.y, // Top edge of bottom object
+      bboxBottom.min.z
+    );
+
+    // Convert to world space
+    const topCenterWorld = targetMeshTop.localToWorld(topCenterLocal.clone());
+    const bottomCenterWorld = targetMeshBottom.localToWorld(bottomCenterLocal.clone());
+    const topBottomWorld = targetMeshTop.localToWorld(topBottomLocal.clone());
+    const bottomTopWorld = targetMeshBottom.localToWorld(bottomTopLocal.clone());
+
     // Convert to cupboard local space
-    const drawerDoorTopCupboardLocal = cupboardMesh.worldToLocal(
-      drawerDoorTopWorld.clone()
-    );
+    const topCenterCupboardLocal = cupboardMesh.worldToLocal(topCenterWorld.clone());
+    const bottomCenterCupboardLocal = cupboardMesh.worldToLocal(bottomCenterWorld.clone());
+    const topBottomCupboardLocal = cupboardMesh.worldToLocal(topBottomWorld.clone());
+    const bottomTopCupboardLocal = cupboardMesh.worldToLocal(bottomTopWorld.clone());
 
-    // Restore original position/rotation
-    targetMesh.position.copy(originalPosition);
-    targetMesh.rotation.copy(originalRotation);
-    targetMesh.quaternion.copy(originalQuaternion);
-    if (pivotGroup && originalPivotRotation && originalPivotQuaternion) {
-      pivotGroup.rotation.copy(originalPivotRotation);
-      pivotGroup.quaternion.copy(originalPivotQuaternion);
-      pivotGroup.updateMatrixWorld(true);
-    }
-    targetMesh.updateMatrixWorld(true);
+    // Calculate center Y position (midpoint between bottom of top and top of bottom)
+    const centerY = (topBottomCupboardLocal.y + bottomTopCupboardLocal.y) / 2;
+    const centerX = (topCenterCupboardLocal.x + bottomCenterCupboardLocal.x) / 2;
+    const centerZ = Math.min(topCenterCupboardLocal.z, bottomCenterCupboardLocal.z); // Use the frontmost Z
 
-    const cupboardFrontZ = cupboardBbox.max.z;
-    const horizontalPlankBackFaceZ = cupboardFrontZ - horizontalDepth;
+    // Calculate half heights
+    const topHalfHeight = sizeTop.y / 2;
+    const bottomHalfHeight = sizeBottom.y / 2;
 
-    // Horizontal plank at top - positioned above the drawer/door top edge
-    const horizontalPlankPos = new THREE.Vector3(
-      drawerDoorTopCupboardLocal.x,
-      drawerDoorTopCupboardLocal.y + horizontalHeight / 2, // Positioned above the top edge
-      cupboardFrontZ - horizontalDepth / 2
-    );
+    // Calculate vertical plank position: half into top object, half into bottom object
+    // Start Y: halfway into top object (from bottom of top object, go up by half of top object height)
+    const verticalPlankStartY = topBottomCupboardLocal.y + topHalfHeight;
+    // End Y: halfway into bottom object (from top of bottom object, go down by half of bottom object height)
+    const verticalPlankEndY = bottomTopCupboardLocal.y - bottomHalfHeight;
+    // Height is the difference
+    const verticalPlankHeight = verticalPlankStartY - verticalPlankEndY;
 
-    // Vertical plank positioned at the back of horizontal plank
-    // The vertical plank extends downward from the horizontal plank
-    const verticalPlankPos = new THREE.Vector3(
-      drawerDoorTopCupboardLocal.x,
-      drawerDoorTopCupboardLocal.y - verticalHeight / 2 + horizontalHeight, // Extends downward from horizontal plank
-      horizontalPlankBackFaceZ - verticalDepth / 2
-    );
+    // Use the width of both objects (should be similar, take average)
+    const width = (sizeTop.x + sizeBottom.x) / 2;
 
-    return { vertical: verticalPlankPos, horizontal: horizontalPlankPos };
+    return { 
+      centerY, 
+      centerX, 
+      centerZ, 
+      width,
+      verticalPlankStartY,
+      verticalPlankEndY,
+      verticalPlankHeight
+    };
   }
 
   /**
-   * Adjust drawer planks to accommodate L-shape vertical plank
-   * Reduces depth of all drawer planks by the L-shape vertical plank depth
-   * When L-shape is on top, also adjusts Y position downward
+   * Add L-shape object at the center between two vertically attached objects
+   * Vertical plank spans half into top object and half into bottom object, positioned behind for visualization
    */
-  private static adjustDrawerPlanksForLShape(
-    drawerMesh: THREE.Mesh,
-    position: 'top' | 'bottom' = 'bottom'
-  ): void {
-    if (drawerMesh.userData.type !== PART_TYPES.DRAWER || !drawerMesh.userData.isMain) {
-      return;
-    }
-
-    const dimensions = this.getDefaultDimensions();
-    const lShapeDepth = dimensions.vertical.depth; // 18mm
-    const lShapeHeight = dimensions.vertical.height; // Height of vertical plank
-    const currentObjects = store.getState().data.objects;
-
-    // List of drawer plank names that need adjustment
-    // Include both naming conventions and all drawer planks (except DRAWER_FACE which is handled separately)
-    const plankNames = [
-      DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
-      DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
-      DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
-      DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
-      DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
-      'DRAWER_LEFT_PLANK', // Alternative naming used in drawer creation
-      'DRAWER_RIGHT_PLANK',
-      'DRAWER_BACK_PLANK',
-      'DRAWER_FRONT_PLANK',
-      'DRAWER_BOTTOM_PLANK',
-      // Also check by type to catch any variations
-    ];
-
-    let adjustedCount = 0;
-
-    drawerMesh.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-      
-      // Skip DRAWER_FACE as it's handled separately
-      if (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE || child.name === 'DRAWER_FACE') {
-        return;
-      }
-      
-      // Check if it's a drawer plank by name or type
-      const isDrawerPlank = 
-        plankNames.includes(child.name) ||
-        child.name?.includes('DRAWER') && child.name?.includes('PLANK') ||
-        Object.values(DRAWER_PLANK_TYPES).includes(child.userData.type);
-      
-      if (!isDrawerPlank) return;
-      if (!(child.geometry instanceof THREE.BoxGeometry)) return;
-
-      const geo = child.geometry as THREE.BoxGeometry;
-      const currentDepth = geo.parameters.depth;
-      const currentWidth = geo.parameters.width;
-      const currentHeight = geo.parameters.height;
-
-      // Store original depth and position if not already stored
-      if (!child.userData.originalDepth) {
-        child.userData.originalDepth = currentDepth;
-        child.userData.originalZ = child.position.z;
-        child.userData.originalY = child.position.y;
-      }
-
-      // Reduce depth by L-shape vertical plank depth
-      const depthReduction = Math.min(lShapeDepth, currentDepth - 1); // Don't reduce below 1mm
-      const newDepth = Math.max(1, currentDepth - depthReduction);
-
-      // Adjust Z position to move plank backward (toward negative Z) by half the reduction
-      // This keeps the front edge aligned while reducing depth
-      const zAdjustment = depthReduction / 2;
-      const newZ = child.userData.originalZ - zAdjustment;
-
-      // Adjust Y position when L-shape is on top
-      // Move planks down by the L-shape vertical height to accommodate it
-      let newY = child.userData.originalY;
-      if (position === 'top') {
-        // Move planks down by the vertical plank height
-        newY = child.userData.originalY - lShapeHeight;
-      }
-
-      // Update geometry
-      child.geometry.dispose();
-      child.geometry = new THREE.BoxGeometry(currentWidth, currentHeight, newDepth);
-
-      // Update position
-      child.position.z = newZ;
-      child.position.y = newY;
-
-      // Update Redux store
-      const plankData = currentObjects.find((obj) => obj.id === child.userData.objectId);
-      if (plankData) {
-        store.dispatch(
-          updateObject({
-            ...plankData,
-            dimensions: {
-              ...plankData.dimensions,
-              depth: newDepth,
-            },
-            position: {
-              ...plankData.position,
-              z: newZ,
-              y: newY,
-            },
-          })
-        );
-        adjustedCount++;
-      } else {
-        console.warn(`[LShape] Could not find Redux data for plank ${child.name} with id ${child.userData.objectId}`);
-      }
-    });
-
-    console.log(`[LShape] Adjusted ${adjustedCount} drawer planks for drawer ${drawerMesh.name} (position: ${position})`);
-  }
-
-  /**
-   * Restore drawer planks to original dimensions when L-shape is removed
-   */
-  private static restoreDrawerPlanks(drawerMesh: THREE.Mesh): void {
-    if (drawerMesh.userData.type !== PART_TYPES.DRAWER || !drawerMesh.userData.isMain) {
-      return;
-    }
-
-    const currentObjects = store.getState().data.objects;
-    let restoredCount = 0;
-
-    drawerMesh.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-      if (!(child.geometry instanceof THREE.BoxGeometry)) return;
-      if (!child.userData.originalDepth) return;
-
-      const geo = child.geometry as THREE.BoxGeometry;
-      const currentWidth = geo.parameters.width;
-      const currentHeight = geo.parameters.height;
-      const originalDepth = child.userData.originalDepth;
-      const originalZ = child.userData.originalZ ?? child.position.z;
-      const originalY = child.userData.originalY ?? child.position.y;
-
-      // Restore original depth and position
-      child.geometry.dispose();
-      child.geometry = new THREE.BoxGeometry(currentWidth, currentHeight, originalDepth);
-      child.position.z = originalZ;
-      child.position.y = originalY;
-
-      // Update Redux store
-      const plankData = currentObjects.find((obj) => obj.id === child.userData.objectId);
-      if (plankData) {
-        store.dispatch(
-          updateObject({
-            ...plankData,
-            dimensions: {
-              ...plankData.dimensions,
-              depth: originalDepth,
-            },
-            position: {
-              ...plankData.position,
-              z: originalZ,
-              y: originalY,
-            },
-          })
-        );
-        restoredCount++;
-      }
-
-      // Clear stored original values
-      delete child.userData.originalDepth;
-      delete child.userData.originalZ;
-      delete child.userData.originalY;
-    });
-
-    console.log(`[LShape] Restored ${restoredCount} drawer planks for drawer ${drawerMesh.name}`);
-  }
-
-  /**
-   * Add L-shape to a single drawer or door
-   */
-  private static async addLShapeToDrawerOrDoor(
-    drawerOrDoor: THREE.Mesh,
+  private static async addLShapeAtCenter(
+    topObj: THREE.Mesh,
+    bottomObj: THREE.Mesh,
     cupboardMesh: THREE.Mesh,
     material: Material[]
   ): Promise<void> {
-    const targetMesh = this.findTargetMesh(drawerOrDoor);
-    if (!targetMesh) return;
+    try {
+      const { 
+        centerY, 
+        centerX, 
+        centerZ, 
+        width,
+        verticalPlankStartY,
+        verticalPlankEndY,
+        verticalPlankHeight
+      } = this.calculateCenterPositionBetweenObjects(
+        topObj,
+        bottomObj,
+        cupboardMesh
+      );
 
-    const targetSize = new THREE.Vector3();
-    targetMesh.geometry.computeBoundingBox();
-    const bbox = targetMesh.geometry.boundingBox;
-    if (!bbox) return;
-    bbox.getSize(targetSize);
+      const dimensions = this.getDefaultDimensions();
+      const verticalWidth = width;
+      const horizontalWidth = width;
 
-    const dimensions = this.getDefaultDimensions();
-    const verticalWidth = targetSize.x;
-    const horizontalWidth = targetSize.x;
+      // Get cupboard bounding box for Z positioning
+      cupboardMesh.geometry.computeBoundingBox();
+      const cupboardBbox = cupboardMesh.geometry.boundingBox;
+      if (!cupboardBbox) {
+        throw new Error('Could not compute cupboard bounding box');
+      }
 
-    const positions = this.calculatePlankPositionsForDrawerDoor(
-      targetMesh,
-      cupboardMesh,
-      dimensions.vertical.height,
-      dimensions.vertical.depth,
-      dimensions.horizontal.height,
-      dimensions.horizontal.depth
-    );
+      // Position behind the objects (use the front Z of objects, then go back)
+      const objectsFrontZ = centerZ;
+      const horizontalPlankBackFaceZ = objectsFrontZ - dimensions.horizontal.depth;
 
-    const verticalPlank = this.createVerticalPlankData(
-      {
-        id: '',
-        name: '',
-        type: PART_TYPES.L_SHAPE_OBJECT,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        isMain: false,
-      },
-      {
-        ...dimensions.vertical,
-        width: verticalWidth,
-      },
-      positions.vertical,
-      cupboardMesh.userData.objectId,
-      material
-    );
+      // Offset to move l-shape down
+      const yOffset = -50; // Move down by 50mm
 
-    const horizontalPlank = this.createHorizontalPlankData(
-      {
-        id: '',
-        name: '',
-        type: PART_TYPES.L_SHAPE_OBJECT,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        isMain: false,
-      },
-      {
-        ...dimensions.horizontal,
-        width: horizontalWidth,
-      },
-      positions.horizontal,
-      cupboardMesh.userData.objectId,
-      material
-    );
+      // Position horizontal plank at center Y (moved down), behind objects
+      const horizontalPlankPos = new THREE.Vector3(
+        centerX,
+        centerY + dimensions.horizontal.height / 2 + yOffset,
+        objectsFrontZ - dimensions.horizontal.depth / 2
+      );
 
-    await meshBuilder(verticalPlank);
-    await meshBuilder(horizontalPlank);
+      // Position vertical plank at center Y (moved down, between the two objects)
+      // Use original default dimensions - don't modify l-shape object dimensions
+      const verticalPlankPos = new THREE.Vector3(
+        centerX,
+        centerY + dimensions.vertical.height / 2 + yOffset,
+        horizontalPlankBackFaceZ - dimensions.vertical.depth / 2
+      );
 
-    // Adjust drawer planks if this is a drawer (works for both top and bottom positions)
-    // Use requestAnimationFrame to ensure drawer is fully rendered before adjusting
-    if (drawerOrDoor.userData.type === PART_TYPES.DRAWER) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.adjustDrawerPlanksForLShape(drawerOrDoor, 'bottom');
-        });
-      });
+      // Create plank data with original default dimensions (no modifications to l-shape object)
+      const verticalPlank = this.createVerticalPlankData(
+        {
+          id: '',
+          name: '',
+          type: PART_TYPES.L_SHAPE_OBJECT,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 0, height: 0, depth: 0 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          isMain: false,
+        },
+        {
+          ...dimensions.vertical,
+          width: verticalWidth, // Only adjust width to match object width
+        },
+        verticalPlankPos,
+        cupboardMesh.userData.objectId,
+        material
+      );
+
+      const horizontalPlank = this.createHorizontalPlankData(
+        {
+          id: '',
+          name: '',
+          type: PART_TYPES.L_SHAPE_OBJECT,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 0, height: 0, depth: 0 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          isMain: false,
+        },
+        {
+          ...dimensions.horizontal,
+          width: horizontalWidth,
+        },
+        horizontalPlankPos,
+        cupboardMesh.userData.objectId,
+        material
+      );
+
+      await meshBuilder(verticalPlank);
+      await meshBuilder(horizontalPlank);
+    } catch (error) {
+      console.error('[LShape] Error adding L-shape at center:', error);
     }
-  }
-
-  /**
-   * Add L-shape to a specific drawer or door at specified position (top or bottom)
-   */
-  public static async addLShapeToDrawerOrDoorAtPosition(
-    drawerOrDoor: THREE.Mesh,
-    cupboardMesh: THREE.Mesh,
-    position: 'top' | 'bottom'
-  ): Promise<void> {
-    const targetMesh = this.findTargetMesh(drawerOrDoor);
-    if (!targetMesh) return;
-
-    // Remove existing L-shape for this drawer/door first
-    this.removeLShapeForDrawerOrDoor(drawerOrDoor, cupboardMesh);
-
-    const targetSize = new THREE.Vector3();
-    targetMesh.geometry.computeBoundingBox();
-    const bbox = targetMesh.geometry.boundingBox;
-    if (!bbox) return;
-    bbox.getSize(targetSize);
-
-    const dimensions = this.getDefaultDimensions();
-    const verticalWidth = targetSize.x;
-    const horizontalWidth = targetSize.x;
-    const material = this.getDefaultMaterial();
-
-    const positions =
-      position === 'top'
-        ? this.calculatePlankPositionsForDrawerDoorTop(
-            targetMesh,
-            cupboardMesh,
-            dimensions.vertical.height,
-            dimensions.vertical.depth,
-            dimensions.horizontal.height,
-            dimensions.horizontal.depth
-          )
-        : this.calculatePlankPositionsForDrawerDoor(
-            targetMesh,
-            cupboardMesh,
-            dimensions.vertical.height,
-            dimensions.vertical.depth,
-            dimensions.horizontal.height,
-            dimensions.horizontal.depth
-          );
-
-    const drawerOrDoorId = drawerOrDoor.userData.objectId;
-
-    const verticalPlank = this.createVerticalPlankData(
-      {
-        id: '',
-        name: '',
-        type: PART_TYPES.L_SHAPE_OBJECT,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        isMain: false,
-      },
-      {
-        ...dimensions.vertical,
-        width: verticalWidth,
-      },
-      positions.vertical,
-      cupboardMesh.userData.objectId,
-      material,
-      drawerOrDoorId,
-      position
-    );
-
-    const horizontalPlank = this.createHorizontalPlankData(
-      {
-        id: '',
-        name: '',
-        type: PART_TYPES.L_SHAPE_OBJECT,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: 0, height: 0, depth: 0 },
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        isMain: false,
-      },
-      {
-        ...dimensions.horizontal,
-        width: horizontalWidth,
-      },
-      positions.horizontal,
-      cupboardMesh.userData.objectId,
-      material,
-      drawerOrDoorId,
-      position
-    );
-
-    // Store IDs before building so we can find the meshes after creation
-    const verticalPlankId = verticalPlank.id;
-    const horizontalPlankId = horizontalPlank.id;
-
-    await meshBuilder(verticalPlank);
-    await meshBuilder(horizontalPlank);
-
-    // Set userData on created meshes to store association with drawer/door
-    // Use requestAnimationFrame to ensure meshes are fully created and added to scene
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // Search in cupboardMesh children first (most common case)
-        let foundVertical = false;
-        let foundHorizontal = false;
-
-        cupboardMesh.children.forEach((child) => {
-          if (
-            child instanceof THREE.Mesh &&
-            child.userData.objectId === verticalPlankId &&
-            !foundVertical
-          ) {
-            child.userData.drawerOrDoorId = drawerOrDoorId;
-            child.userData.lShapePosition = position;
-            foundVertical = true;
-            console.log(
-              `[LShape] Set userData for vertical ${child.name}: drawerOrDoorId=${drawerOrDoorId}, position=${position}`
-            );
-          }
-          if (
-            child instanceof THREE.Mesh &&
-            child.userData.objectId === horizontalPlankId &&
-            !foundHorizontal
-          ) {
-            child.userData.drawerOrDoorId = drawerOrDoorId;
-            child.userData.lShapePosition = position;
-            foundHorizontal = true;
-            console.log(
-              `[LShape] Set userData for horizontal ${child.name}: drawerOrDoorId=${drawerOrDoorId}, position=${position}`
-            );
-          }
-        });
-
-        // If not found in children, search the entire scene (fallback)
-        if (!foundVertical || !foundHorizontal) {
-          const scene = cupboardMesh.parent as THREE.Scene;
-          if (scene && scene instanceof THREE.Scene) {
-            scene.traverse((obj) => {
-              if (
-                obj instanceof THREE.Mesh &&
-                obj.userData.objectId === verticalPlankId &&
-                !foundVertical
-              ) {
-                obj.userData.drawerOrDoorId = drawerOrDoorId;
-                obj.userData.lShapePosition = position;
-                foundVertical = true;
-                console.log(
-                  `[LShape] Set userData for vertical ${obj.name} (scene search): drawerOrDoorId=${drawerOrDoorId}, position=${position}`
-                );
-              }
-              if (
-                obj instanceof THREE.Mesh &&
-                obj.userData.objectId === horizontalPlankId &&
-                !foundHorizontal
-              ) {
-                obj.userData.drawerOrDoorId = drawerOrDoorId;
-                obj.userData.lShapePosition = position;
-                foundHorizontal = true;
-                console.log(
-                  `[LShape] Set userData for horizontal ${obj.name} (scene search): drawerOrDoorId=${drawerOrDoorId}, position=${position}`
-                );
-              }
-            });
-          }
-        }
-
-        // Adjust drawer planks if this is a drawer (works for both top and bottom positions)
-        // The planks are reduced in depth to accommodate the L-shape vertical plank
-        // When top, also adjust Y position downward
-        if (drawerOrDoor.userData.type === PART_TYPES.DRAWER) {
-          this.adjustDrawerPlanksForLShape(drawerOrDoor, position);
-        }
-      });
-    });
   }
 
   /**
    * Add L-shape objects to all drawers and doors in a cupboard
+   * Now only adds L-shapes between vertically attached pairs of same objects
    */
   public static async addLShapeToDrawersAndDoors(
     scene: THREE.Scene,
     cupboardMesh: THREE.Mesh
   ): Promise<void> {
     if (!cupboardMesh) return;
-
     showFullScreenLoader('Adding L-shape objects.');
 
     // Remove any existing L-shapes first to avoid duplicates
@@ -1045,79 +885,16 @@ export class LShapeObjectManager {
     const drawersAndDoors = this.findDrawersAndDoors(cupboardMesh);
     const material = this.getDefaultMaterial();
 
-    for (const drawerOrDoor of drawersAndDoors) {
-      await this.addLShapeToDrawerOrDoor(drawerOrDoor, cupboardMesh, material);
+    // Find pairs of vertically attached objects
+    const pairs = this.findVerticallyAttachedPairs(drawersAndDoors, cupboardMesh);
+
+    // Add L-shape at center of each pair
+    for (const [topObj, bottomObj] of pairs) {
+      await this.addLShapeAtCenter(topObj, bottomObj, cupboardMesh, material);
     }
 
     generateCompartmentsFromMesh(cupboardMesh);
     hideFullScreenLoader();
-  }
-
-  /**
-   * Get current L-shape position for a drawer or door
-   */
-  public static getLShapePositionForDrawerOrDoor(
-    drawerOrDoor: THREE.Mesh,
-    cupboardMesh: THREE.Mesh
-  ): 'top' | 'bottom' | 'remove' {
-    if (!drawerOrDoor || !cupboardMesh) return 'remove';
-
-    const drawerOrDoorId = drawerOrDoor.userData.objectId;
-    if (!drawerOrDoorId) return 'remove';
-
-    // Find L-shape objects that belong to this drawer/door
-    for (const child of cupboardMesh.children) {
-      if (
-        (child.userData.type === PART_TYPES.L_SHAPE_OBJECT ||
-          child.name?.includes('L_SHAPE')) &&
-        child instanceof THREE.Mesh
-      ) {
-        // Check if this L-shape is associated with the drawer/door
-        if (child.userData.drawerOrDoorId === drawerOrDoorId) {
-          return child.userData.lShapePosition || 'bottom';
-        }
-      }
-    }
-
-    // Fallback: check by proximity if userData is not set (for existing L-shapes)
-    const targetMesh = this.findTargetMesh(drawerOrDoor);
-    if (targetMesh) {
-      targetMesh.updateMatrixWorld(true);
-      const targetPos = new THREE.Vector3();
-      targetMesh.getWorldPosition(targetPos);
-
-      for (const child of cupboardMesh.children) {
-        if (
-          (child.userData.type === PART_TYPES.L_SHAPE_OBJECT ||
-            child.name?.includes('L_SHAPE')) &&
-          child instanceof THREE.Mesh
-        ) {
-          child.updateMatrixWorld(true);
-          const lShapePos = new THREE.Vector3();
-          child.getWorldPosition(lShapePos);
-
-          // Check if L-shape is near the drawer/door (within reasonable distance)
-          const distance = targetPos.distanceTo(lShapePos);
-          if (distance < 200 && Math.abs(targetPos.x - lShapePos.x) < 50) {
-            // Determine position based on Y coordinate
-            // If L-shape is above the drawer/door center, it's top, otherwise bottom
-            const targetCenterY = targetMesh.geometry.boundingBox
-              ? targetMesh.geometry.boundingBox.getCenter(new THREE.Vector3()).y
-              : 0;
-            const targetCenterWorld = targetMesh.localToWorld(new THREE.Vector3(0, targetCenterY, 0));
-            const lShapeWorldY = lShapePos.y;
-
-            // Store the association for future use
-            child.userData.drawerOrDoorId = drawerOrDoorId;
-            child.userData.lShapePosition = lShapeWorldY > targetCenterWorld.y ? 'top' : 'bottom';
-
-            return child.userData.lShapePosition;
-          }
-        }
-      }
-    }
-
-    return 'remove';
   }
 
   /**
@@ -1212,10 +989,7 @@ export class LShapeObjectManager {
       }
     });
 
-    // Restore drawer planks if this is a drawer
-    if (drawerOrDoor.userData.type === PART_TYPES.DRAWER) {
-      this.restoreDrawerPlanks(drawerOrDoor);
-    }
+    // Note: Not restoring drawer planks since we don't modify them when adding l-shapes
   }
 
   /**
@@ -1264,9 +1038,6 @@ export class LShapeObjectManager {
       }
     });
 
-    // Restore drawer planks after removing L-shape objects
-    drawers.forEach((drawer) => {
-      this.restoreDrawerPlanks(drawer);
-    });
+    // Note: Not restoring drawer planks since we don't modify them when adding l-shapes
   }
 }

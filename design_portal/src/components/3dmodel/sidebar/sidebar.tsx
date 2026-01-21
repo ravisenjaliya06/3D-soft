@@ -303,13 +303,31 @@ const Sidebar: React.FC = () => {
     if (!cupboardMesh) return;
 
     if (mode === 'handleless') {
-      // Handleless mode: add l-shape objects, reduce drawer/door height, hide handles
+      // Handleless mode: add l-shape objects for visualization only (no modifications to drawer/door sizes)
       await addLShapeToDrawersAndDoors(scene, cupboardMesh);
-      await updateDrawerDoorForHandleMode(scene, cupboardMesh, true);
+      // Hide handles
+      scene.traverse((obj: THREE.Object3D) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+          obj.traverse((child: THREE.Object3D) => {
+            if (child.userData.type === 'handle') {
+              child.visible = false;
+            }
+          });
+        }
+      });
     } else {
-      // Handle mode: remove l-shape objects, restore drawer/door size, show handles
+      // Handle mode: remove l-shape objects, show handles
       removeLShapeObjects(cupboardMesh);
-      await updateDrawerDoorForHandleMode(scene, cupboardMesh, false);
+      // Show handles
+      scene.traverse((obj: THREE.Object3D) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+          obj.traverse((child: THREE.Object3D) => {
+            if (child.userData.type === 'handle') {
+              child.visible = true;
+            }
+          });
+        }
+      });
     }
   };
 
