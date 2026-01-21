@@ -1,7 +1,13 @@
 import * as THREE from 'three';
 import { generateCompartmentsFromMesh } from '../handler/items';
 import { store } from '../store';
-import { DRAWER_PLANK_TYPES, Material, MATERIAL_TYPES, MeshObjectData, PART_TYPES } from './interface';
+import {
+  DRAWER_PLANK_TYPES,
+  Material,
+  MATERIAL_TYPES,
+  MeshObjectData,
+  PART_TYPES,
+} from './interface';
 import { MeshBuilder } from './meshBuilder';
 
 export class DesignBuilder {
@@ -39,12 +45,12 @@ export class DesignBuilder {
 
     this.data.forEach((meshData) => {
       const name = meshData.name || '';
-      
+
       // Check if this is a drawer plank by name (drawer planks should have banding)
       const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
         (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
       );
-      
+
       if (isDrawerPlank) {
         // This is a drawer plank - apply banding
         const builder = this.builderMap.get(meshData.id);
@@ -63,7 +69,7 @@ export class DesignBuilder {
         }
         return;
       }
-      
+
       // Explicitly exclude drawer groups, doors, and handles
       if (
         meshData.type === PART_TYPES.DRAWER ||
@@ -73,7 +79,7 @@ export class DesignBuilder {
       ) {
         return;
       }
-      
+
       // Include all plank types (including any future plank types)
       const isPlank =
         meshData.type === PART_TYPES.PLANK ||

@@ -583,7 +583,7 @@ export class MeshBuilder {
   public updateGrooving(mesh: THREE.Mesh): void {
     const tool = this._getOrCreateGroovingTool();
     if (tool) {
-      tool.updateGrooving(mesh, this.meshData.id);
+      tool.updateGrooving(mesh);
     }
   }
 
@@ -778,7 +778,7 @@ export class MeshBuilder {
 
     const tool = this._getOrCreateGroovingTool();
     if (tool) {
-      tool.createGrooving(this.mesh, this.meshData.id);
+      tool.createGrooving(this.mesh);
     }
   }
 

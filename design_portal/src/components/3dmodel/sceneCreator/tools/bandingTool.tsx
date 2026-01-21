@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { store } from '../../store';
 import { updateObject } from '../../store/dataSlice';
-import { DRAWER_PLANK_TYPES, EdgeBandingState, EDGES, Material, MATERIAL_TYPES, PART_TYPES } from '../interface';
+import {
+  DRAWER_PLANK_TYPES,
+  EdgeBandingState,
+  EDGES,
+  Material,
+  MATERIAL_TYPES,
+  PART_TYPES,
+} from '../interface';
 import { extractColorFromImage } from '../utils';
 
 /**
@@ -23,7 +30,7 @@ export class BandingTool {
    */
   public isPlank(mesh: THREE.Mesh): boolean {
     const type = mesh.userData.type;
-    
+
     // Explicitly exclude drawers, doors, and handles
     if (
       type === PART_TYPES.DRAWER ||
@@ -33,7 +40,7 @@ export class BandingTool {
     ) {
       return false;
     }
-    
+
     // Include all plank types (including any future plank types)
     return (
       type === PART_TYPES.PLANK ||

@@ -1,10 +1,5 @@
 import * as THREE from 'three';
 import {
-  EDGES,
-  GROOVE_TYPE,
-  PART_TYPES,
-} from '../interface';
-import {
   GROOVE_DEPTH,
   GROOVE_END_INSET,
   GROOVE_START_INSET,
@@ -12,6 +7,7 @@ import {
   PROTRUSION_DEPTH,
   PROTRUSION_WIDTH,
 } from '../constants';
+import { EDGES, GROOVE_TYPE, PART_TYPES } from '../interface';
 
 /**
  * Comprehensive GroovingTool class for managing grooving on planks
@@ -43,7 +39,7 @@ export class GroovingTool {
    */
   public isBackPlank(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) return false;
-    
+
     const plankName = (mesh.name || '').toUpperCase();
     return plankName === 'BACK_PLANK' || mesh.userData.type === PART_TYPES.BACK_PLANK;
   }
@@ -66,7 +62,7 @@ export class GroovingTool {
   private createGrooveMaterial(plankMaterial: THREE.Material): THREE.Material {
     const grooveMaterial = plankMaterial.clone();
     grooveMaterial.visible = true;
-    
+
     if (!(grooveMaterial instanceof THREE.MeshStandardMaterial)) {
       return grooveMaterial;
     }
@@ -81,7 +77,7 @@ export class GroovingTool {
     color.multiplyScalar(0.7); // Slightly darker for depth effect
     grooveMaterial.color = color;
     grooveMaterial.transparent = false;
-    
+
     return grooveMaterial;
   }
 
@@ -91,11 +87,11 @@ export class GroovingTool {
   private createProtrusionMaterial(plankMaterial: THREE.Material): THREE.Material {
     const protrusionMaterial = plankMaterial.clone();
     protrusionMaterial.visible = true;
-    
+
     if (protrusionMaterial instanceof THREE.MeshStandardMaterial) {
       protrusionMaterial.transparent = false;
     }
-    
+
     return protrusionMaterial;
   }
 
@@ -162,7 +158,7 @@ export class GroovingTool {
     // Groove starts GROOVE_START_INSET from left edge, ends GROOVE_END_INSET from right edge
     const grooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET;
     const grooveCenterX = (-width / 2 + GROOVE_START_INSET + (width / 2 - GROOVE_END_INSET)) / 2;
-    
+
     const isTop = edge === EDGES.TOP;
     const grooveCenterY = isTop
       ? height / 2 - GROOVE_WIDTH / 2 // Slightly inside top edge
@@ -185,14 +181,13 @@ export class GroovingTool {
     // Groove runs vertically along height
     // Groove starts GROOVE_START_INSET from bottom edge, ends GROOVE_END_INSET from top edge
     const grooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET;
-    
+
     const isLeft = edge === EDGES.LEFT;
     const grooveCenterX = isLeft
       ? -width / 2 + GROOVE_WIDTH / 2 // Slightly inside left edge
       : width / 2 - GROOVE_WIDTH / 2; // Slightly inside right edge
-    
-    const grooveCenterY =
-      (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
+
+    const grooveCenterY = (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
 
     const geometry = new THREE.BoxGeometry(GROOVE_WIDTH, grooveLength, GROOVE_DEPTH);
     const position = new THREE.Vector3(grooveCenterX, grooveCenterY, 0);
@@ -240,8 +235,7 @@ export class GroovingTool {
    */
   private isGroovingMesh(child: THREE.Object3D): boolean {
     return (
-      child.userData.type === GROOVE_TYPE.GROOVE ||
-      child.userData.type === GROOVE_TYPE.PROTRUSION
+      child.userData.type === GROOVE_TYPE.GROOVE || child.userData.type === GROOVE_TYPE.PROTRUSION
     );
   }
 
@@ -254,7 +248,7 @@ export class GroovingTool {
     }
 
     mesh.geometry.dispose();
-    
+
     if (mesh.material instanceof THREE.Material) {
       mesh.material.dispose();
       return;
@@ -274,7 +268,7 @@ export class GroovingTool {
    */
   private getGroovingChildren(mesh: THREE.Mesh, edge?: string): THREE.Object3D[] {
     const children: THREE.Object3D[] = [];
-    
+
     mesh.children.forEach((child) => {
       if (!this.isGroovingMesh(child)) {
         return;
@@ -293,7 +287,7 @@ export class GroovingTool {
   /**
    * Create grooving system: grooves (female) and protrusions (male) on back plank
    */
-  public createGrooving(mesh: THREE.Mesh, objectId?: string): void {
+  public createGrooving(mesh: THREE.Mesh): void {
     if (!this.validateMeshForGrooving(mesh)) {
       return;
     }
@@ -336,14 +330,13 @@ export class GroovingTool {
   /**
    * Update grooving positions and sizes when plank dimensions change
    */
-  public updateGrooving(mesh: THREE.Mesh, objectId?: string): void {
+  public updateGrooving(mesh: THREE.Mesh): void {
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      console.log('[Grooving] Cannot update grooving: Not a BoxGeometry');
       return;
     }
 
     this.removeAllGrooving(mesh);
-    this.createGrooving(mesh, objectId);
+    this.createGrooving(mesh);
   }
 
   /**
@@ -351,7 +344,7 @@ export class GroovingTool {
    */
   public removeAllGrooving(mesh: THREE.Mesh): void {
     const toRemove = this.getGroovingChildren(mesh);
-    
+
     toRemove.forEach((child) => {
       if (child instanceof THREE.Mesh) {
         this.disposeMesh(child);
@@ -365,7 +358,7 @@ export class GroovingTool {
    */
   public removeGroovingOnEdge(mesh: THREE.Mesh, edge: string): void {
     const toRemove = this.getGroovingChildren(mesh, edge);
-    
+
     toRemove.forEach((child) => {
       if (child instanceof THREE.Mesh) {
         this.disposeMesh(child);
@@ -479,12 +472,10 @@ export class GroovingTool {
    */
   private validateMeshForGrooving(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) {
-      console.log('[Grooving] Not a plank');
       return false;
     }
 
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      console.log('[Grooving] Not a BoxGeometry');
       return false;
     }
 

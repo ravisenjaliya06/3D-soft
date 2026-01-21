@@ -400,7 +400,9 @@ export const addDrawersOnInvisibleBox = async (
       boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
     const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
 
-    const facePlank = selectedCabinetItem.find((item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE);
+    const facePlank = selectedCabinetItem.find(
+      (item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+    );
     const face: MeshObjectData = {
       id: crypto.randomUUID(),
       name: DRAWER_PLANK_TYPES.DRAWER_FACE,

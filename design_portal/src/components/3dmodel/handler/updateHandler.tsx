@@ -103,10 +103,7 @@ export class UpdateObjectInScene {
   }
 
   /** Updates geometry width, height, depth */
-  private updateMeshGeometry(
-    mesh: THREE.Mesh,
-    updates: UpdatePayload,
-  ): void {
+  private updateMeshGeometry(mesh: THREE.Mesh, updates: UpdatePayload): void {
     if (!updates.dimensions) return;
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
