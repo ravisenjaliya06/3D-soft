@@ -1084,7 +1084,7 @@ const Sidebar: React.FC = () => {
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
         <p className="ml-[8] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
           Viewport Navigation
@@ -1105,7 +1105,7 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                 isSettingOpen
                   ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -1116,7 +1116,7 @@ const Sidebar: React.FC = () => {
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                 isNavOpen
                   ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -1181,14 +1181,14 @@ const Sidebar: React.FC = () => {
                                   }`}
                                 />
                               </div>
-                              <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Minifix
                               </p>
                             </div>
 
                             {/* Distance */}
                             <div className="mt-[0rem]">
-                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Distance
                               </p>
                               <input
@@ -1197,11 +1197,14 @@ const Sidebar: React.FC = () => {
                                 onChange={(e) => setDistance(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
+                              <p className="mt-[0.2rem] items-center text-center text-[0.5rem] font-[400] text-[var(--secondary-text-color)]">
+                                in multiple of 32
+                              </p>
                             </div>
 
                             {/* Diameter Hole */}
                             <div className="">
-                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Diameter Hole
                               </p>
                               <input
@@ -1233,14 +1236,14 @@ const Sidebar: React.FC = () => {
                                   }`}
                                 />
                               </div>
-                              <p className="mb-[1remrem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Grooving
                               </p>
                             </div>
 
                             {/* Inside */}
                             <div>
-                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Inside
                               </p>
                               <input
@@ -1253,7 +1256,7 @@ const Sidebar: React.FC = () => {
 
                             {/* Edge to End */}
                             <div>
-                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Edge to End
                               </p>
                               <input
@@ -1285,7 +1288,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.camlock && (
                       <>
-                        <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[500]">
+                        <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
                           <div>
                             <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
                               Diameter
@@ -1342,7 +1345,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.edgeBanding && (
                       <>
-                        <div className="flex items-center gap-[1rem]">
+                        <div className="flex items-center gap-[0em]">
                           <div
                             onClick={handleEdgeBandingToggle}
                             className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
@@ -1357,13 +1360,13 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Edge Banding
                           </p>
                           <div className="flex items-center gap-[2rem]">
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[1.2rem] h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1390,7 +1393,7 @@ const Sidebar: React.FC = () => {
                     {!collapsed.shelf && (
                       <>
                         <div className="flex items-center gap-[1.8rem]">
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Shelves Inner Distance
                           </p>
                           <div className="flex items-center gap-[2rem]">
@@ -1458,7 +1461,7 @@ const Sidebar: React.FC = () => {
                                     className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
                                   />
                                   <p
-                                    className={`text-[0.6rem] font-[500] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                                    className={`text-[0.6rem] font-[700] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
                                   >
                                     {item.label}
                                   </p>
@@ -1493,21 +1496,21 @@ const Sidebar: React.FC = () => {
                         </div>
                         {!collapsed.layout && (
                           <>
-                            {/* FIELDS */}
-                            <div className="flex flex-col gap-[0.6rem]">
-                              {menu.fields.map((field) => (
-                                <div
-                                  key={field.name}
-                                  className="flex flex-row items-start justify-between gap-[0rem]"
-                                >
-                                  {/* LEFT SIDE */}
-                                  <div className="flex items-center justify-between gap-[0rem]">
-                                    {/* LEFT: LABEL */}
-                                    <p className="w-[3.5rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                                      {field.label}
-                                    </p>
+                            {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
+                            {isPlankSelected && (
+                              <div className="flex flex-col gap-[0.6rem]">
+                                {menu.fields.map((field) => (
+                                  <div
+                                    key={field.name}
+                                    className="flex flex-row items-start justify-between gap-[0rem]"
+                                  >
+                                    {/* LEFT SIDE */}
+                                    <div className="flex items-center justify-between gap-[0rem]">
+                                      {/* LEFT: LABEL */}
+                                      <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                        {field.label}
+                                      </p>
 
-                                    {isPlankSelected && (
                                       <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
                                         {controlIconMap[field.name].map((icon, idx) => {
                                           let isActive = false;
@@ -1533,7 +1536,7 @@ const Sidebar: React.FC = () => {
                                               className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
                                                 isActive
                                                   ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[white]'
                                               } `}
                                             >
                                               <img
@@ -1545,22 +1548,81 @@ const Sidebar: React.FC = () => {
                                           );
                                         })}
                                       </div>
-                                    )}
-                                  </div>
+                                    </div>
 
-                                  {/* RIGHT SIDE INPUT */}
+                                    {/* RIGHT SIDE INPUT */}
+                                    <input
+                                      type="number"
+                                      min={field.min}
+                                      step="1"
+                                      value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      disabled={field.disabled}
+                                      className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* CUPBOARD LAYOUT - 2x2 GRID */}
+                            {!isPlankSelected && (
+                              <div className="mt-[0rem] mr-[1rem] grid grid-cols-2 gap-[0rem]">
+                                {/* Width */}
+                                <div className="flex flex-col gap-[0.2rem]">
+                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Width
+                                  </p>
                                   <input
                                     type="number"
-                                    min={field.min}
+                                    min={1}
                                     step="1"
-                                    value={field.value ?? ''}
-                                    onChange={field.onChange}
-                                    disabled={field.disabled}
-                                    className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    value={dimensionsUI.width ?? ''}
+                                    onChange={(e) =>
+                                      handleDimensionChange('width', Number(e.target.value))
+                                    }
+                                    disabled={isHorizontalPlank || isDisabled}
+                                    className="h-[1.5rem] w-[5.5rem] [appearance:textfield] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
-                              ))}
-                            </div>
+
+                                {/* Height */}
+                                <div className="flex flex-col gap-[0.2rem]">
+                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Height
+                                  </p>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    step="1"
+                                    value={dimensionsUI.height ?? ''}
+                                    onChange={(e) =>
+                                      handleDimensionChange('height', Number(e.target.value))
+                                    }
+                                    disabled={isVerticalPlank || isDisabled}
+                                    className="h-[1.5rem] w-[5.5rem] [appearance:textfield] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                </div>
+
+                                {/* Depth */}
+                                <div className="flex flex-col gap-[0.2rem]">
+                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Depth
+                                  </p>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    step="1"
+                                    value={dimensionsUI.depth ?? ''}
+                                    onChange={(e) =>
+                                      handleDimensionChange('depth', Number(e.target.value))
+                                    }
+                                    disabled={isQuickHideActive}
+                                    className="h-[1.5rem] w-[5.5rem] [appearance:textfield] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -1590,10 +1652,10 @@ const Sidebar: React.FC = () => {
                         <div className="grid grid-cols-2 gap-[0.4rem]">
                           {/* LEFT */}
                           <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Left
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img
                                 src={assets.directionIcon}
                                 className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
@@ -1612,10 +1674,10 @@ const Sidebar: React.FC = () => {
 
                           {/* RIGHT */}
                           <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Right
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img
                                 src={assets.directionIcon}
                                 className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
@@ -1634,10 +1696,10 @@ const Sidebar: React.FC = () => {
 
                           {/* TOP */}
                           <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Top
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
                               <img
                                 src={assets.vrLine}
@@ -1653,7 +1715,7 @@ const Sidebar: React.FC = () => {
 
                           {/* BOTTOM */}
                           <div className="flex flex-col items-start gap-[0rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Bottom
                             </p>
                             <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
@@ -1697,7 +1759,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.topPlank && (
                       <>
-                        <div className="flex items-center gap-[0.7rem]">
+                        <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleTopPlankToggle}
                             className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
@@ -1712,15 +1774,15 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Top Plank Depth
                           </p>
-                          <div className="flex items-center gap-[2rem]">
+                          <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
                               value={getTopPlank()?.dimensions?.depth ?? 0}
                               onChange={handleTopPlankDepthChange}
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[1.3rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1746,7 +1808,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.base && (
                       <>
-                        <div className="flex items-center gap-[1.29rem]">
+                        <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleBaseheightToggle}
                             className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
@@ -1761,17 +1823,17 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Base Height
                           </p>
-                          <div className="flex items-center gap-[2rem]">
+                          <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[2.4rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
-                        <div className="flex items-center gap-[0.35rem]">
+                        <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleFrontpanelToggle}
                             className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
@@ -1786,20 +1848,20 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Front & Back Panel
                           </p>
-                          <div className="flex items-center gap-[2rem]">
+                          <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[0.5rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
 
                         <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.5rem] pb-[0rem]">
                           <div className="mr-[1rem] px-3 py-2">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Back Panel
                             </p>
                             <input
@@ -1808,7 +1870,7 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
                           <div className="mr-[1rem] px-3 py-2">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[500] text-[var(--primary-color)]">
+                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Inward Size
                             </p>
                             <input
@@ -1821,6 +1883,122 @@ const Sidebar: React.FC = () => {
                     )}
                   </div>
 
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Door
+                      </p>
+                      <button
+                        onClick={() => toggleSection('shelf')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.shelf ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.shelf && (
+                      <>
+                        <div className={'relative flex items-center justify-between'}>
+                          <p className="m-0 pl-[0rem] font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Door Position
+                          </p>
+                          <select
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            value={doorPosition}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDoorPosition(value);
+                              handleDoorPositionChange(value);
+                            }}
+                            disabled={isQuickHideActive}
+                          >
+                            <option value="None">None</option>
+                            <option value="Left">Left</option>
+                            <option value="Right">Right</option>
+                            <option value="Top">Top</option>
+                            <option value="Bottom">Bottom</option>
+                          </select>
+                        </div>
+
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Open/Close
+                          </p>
+                          <button
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            onClick={handleOpenCloseChange}
+                          >
+                            Open/Close
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Drawer
+                      </p>
+                      <button
+                        onClick={() => toggleSection('shelf')}
+                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                      >
+                        {collapsed.shelf ? '+' : '−'}
+                      </button>
+                    </div>
+                    {!collapsed.shelf && (
+                      <>
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Drawer Type
+                          </p>
+                          <select
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            value={
+                              selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
+                                ? DRAWER_TYPES.OVERLAY
+                                : DRAWER_TYPES.INSET
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (selectedObject?.id) {
+                                updateDrawerType(scene, selectedObject.id, value);
+                              }
+                            }}
+                          >
+                            <option value={DRAWER_TYPES.INSET}>In to In</option>
+                            <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
+                          </select>
+                        </div>
+
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Open/Close
+                          </p>
+                          <button
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            onClick={handleOpenCloseChange}
+                          >
+                            Open/Close
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
               )}
@@ -1842,15 +2020,34 @@ const Sidebar: React.FC = () => {
                   <>
                     {/* Color */}
                     <div className="mb-[0rem] ml-[1rem] flex items-center justify-between">
-                      <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">Color</p>
+                      <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
-                      <div className="flex h-[1rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] border-[0.1rem] border-[var(--primary-light-grey)] bg-[var(--primary-light-grey)] p-[0rem] px-[0.3rem] py-[0.3rem]">
-                        <input
-                          type="color"
-                          value={selectedColor}
-                          onChange={(e) => applyColorToSelected(e.target.value)}
-                          className="m-[0rem] h-[1.3rem] w-[1.3rem] cursor-pointer border-[0rem] bg-[var(--primary-light-grey)] p-[0rem]"
-                        />
+                      <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] p-[0rem] px-[0.3rem] py-[0.3rem]">
+                        <div
+                          style={{
+                            position: 'relative',
+                            width: '1.3rem',
+                            height: '1.3rem',
+                            overflow: 'hidden',
+                            borderRadius: '0.1rem',
+                          }}
+                        >
+                          <input
+                            type="color"
+                            value={selectedColor}
+                            onChange={(e) => applyColorToSelected(e.target.value)}
+                            style={{
+                              position: 'absolute',
+                              width: '200%',
+                              height: '200%',
+                              border: 'none',
+                              padding: '0',
+                              cursor: 'pointer',
+                              left: '-25%',
+                              top: '-25%',
+                            }}
+                          />
+                        </div>
                         <input
                           type="text"
                           value={selectedColor.toUpperCase()}
@@ -1865,11 +2062,11 @@ const Sidebar: React.FC = () => {
                       onClick={handleMaterialChange}
                       className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
                     >
-                      <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                      <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                         Change Material
                       </p>
                       <button
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         disabled={isQuickHideActive}
                       >
                         Press to Change
@@ -1881,14 +2078,14 @@ const Sidebar: React.FC = () => {
 
                     {/* ================= Change Texture ================= */}
                     <div className="ml-[1rem] flex flex-row items-center justify-between gap-[0.25rem]">
-                      <p className="text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                      <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">
                         Change Texture
                       </p>
 
                       <button
                         onClick={toggleTextureList}
                         disabled={isTextureChangeDisabled}
-                        className={`flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                        className={`flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
                           isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
                         }`}
                       >
@@ -1910,7 +2107,7 @@ const Sidebar: React.FC = () => {
                               <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
                                 <span className="text-[10px] font-bold text-[white]">+</span>
                               </div>
-                              <span className="px-[2px] text-center text-[5px] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                              <span className="px-[0.13rem] text-center text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
                                 Add New Texture
                               </span>
                             </div>
@@ -1962,7 +2159,7 @@ const Sidebar: React.FC = () => {
                     )}
                     {/* ================= Texture Grain ================= */}
                     <div className="flex items-center justify-between gap-[0rem]">
-                      <p className="ml-[1rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                      <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                         Texture Grain
                       </p>
 
@@ -1984,7 +2181,7 @@ const Sidebar: React.FC = () => {
                             value={textureRotation}
                             onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
                             disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                         </div>
                       </div>
@@ -1992,113 +2189,52 @@ const Sidebar: React.FC = () => {
 
                     {/* Door Position */}
                     {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
-                      <div className={'ml-[0rem] flex flex-col gap-[0rem] py-[0rem] pr-[0rem]'}>
-                        <div className={'relative flex items-center justify-between'}>
-                          <p className="m-0 pl-[1rem] font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Door Position
+                      <>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                        <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
+                          <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Handle Position
                           </p>
-                          <select
-                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            value={doorPosition}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setDoorPosition(value);
-                              handleDoorPositionChange(value);
-                            }}
-                            disabled={isQuickHideActive}
-                          >
-                            <option value="None">None</option>
-                            <option value="Left">Left</option>
-                            <option value="Right">Right</option>
-                            <option value="Top">Top</option>
-                            <option value="Bottom">Bottom</option>
-                          </select>
-                        </div>
+                          <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
+                            {handlePositionInputFlid.map((field) => (
+                              <div key={field.name} className="mt-[0rem]">
+                                <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
+                                  {field.label}
+                                </p>
+                                <div
+                                  className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                >
+                                  {/* IMAGE ICON */}
+                                  <Image
+                                    src={field.icon}
+                                    alt={field.label}
+                                    width={19}
+                                    height={19}
+                                    className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
+                                  />
 
-                        <div className="relative flex items-center justify-between pl-[1rem]">
-                          <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Open/Close
-                          </p>
-                          <button
-                            className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
-                            onClick={handleOpenCloseChange}
-                          >
-                            Open/Close
-                          </button>
-                        </div>
-                        {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
-                          <div className="relative flex items-center justify-between pl-[1rem]">
-                            <p className="m-0 font-[poppins] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Drawer Type
-                            </p>
-                            <select
-                              className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-0 bg-[var(--primary-color)] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isQuickHideActive}
-                              value={
-                                selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
-                                  ? DRAWER_TYPES.OVERLAY
-                                  : DRAWER_TYPES.INSET
-                              }
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (selectedObject?.id) {
-                                  updateDrawerType(scene, selectedObject.id, value);
-                                }
-                              }}
-                            >
-                              <option value={DRAWER_TYPES.INSET}>In to In</option>
-                              <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
-                            </select>
-                          </div>
-                        )}
-                        <>
-                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                                  <img
+                                    src={assets.vrLine}
+                                    className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
+                                  />
 
-                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
-                            <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                              Handle Position
-                            </p>
-                            <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
-                              {handlePositionInputFlid.map((field) => (
-                                <div key={field.name} className="mt-[0rem]">
-                                  <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
-                                    {field.label}
-                                  </p>
-                                  <div
-                                    className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
-                                  >
-                                    {/* IMAGE ICON */}
-                                    <Image
-                                      src={field.icon}
-                                      alt={field.label}
-                                      width={19}
-                                      height={19}
-                                      className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
-                                    />
-
-                                    <img
-                                      src={assets.vrLine}
-                                      className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
-                                    />
-
-                                    {/* Input */}
-                                    <input
-                                      id={field.name}
-                                      name={field.name}
-                                      type={field.type}
-                                      value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
-                                  </div>
+                                  {/* Input */}
+                                  <input
+                                    id={field.name}
+                                    name={field.name}
+                                    type={field.type}
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            ))}
                           </div>
-                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                        </>
-                      </div>
+                        </div>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                      </>
                     )}
                   </>
                 )}

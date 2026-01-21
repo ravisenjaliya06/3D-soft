@@ -19,7 +19,7 @@
   --primary-green: #1c7222;
   --primary-light-green: #d7f8e0;
   --primary-light-black: #333333;
-  --primary-light-grey: #adb5bd;
+  --primary-light-grey: rgba(242, 242, 242, 1);
   --catalog-border-material-color: #e2e8f0;
   --primary-selected-color: #9078dd;
   --primary-light-blur: #ddf8ff;
@@ -29,7 +29,7 @@
   /* background colors */
   --background-color: #ebf3ff;
   --secondry-background-color: #dcdce5;
-  --sidebarhadding-background-color-20: rgba(57, 37, 121, 0.2);
+  --sidebarhadding-background-color-20: rgba(57, 37, 121, 1);
   --sidebartittle-background: #392579;
   --designpage-background-color: #f4f7fa;
   --hover-background-color: #e0e0e0;
