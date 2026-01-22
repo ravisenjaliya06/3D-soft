@@ -1098,9 +1098,9 @@ const Sidebar: React.FC = () => {
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
-        <p className="ml-[8] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
+        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
           {getSidebarTitle()}
         </p>
 
@@ -2128,34 +2128,35 @@ const Sidebar: React.FC = () => {
                         Change Material
                       </p>
                       <button
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         disabled={isQuickHideActive}
                       >
-                        Press to Change
-                        <img src={assets.swapHorizontalIcon} className="h-[0.8rem] w-[0.8rem]" />
+                        <p className="items-center text-center text-[0.55rem] font-[700]">
+                          Press to Change
+                        </p>
                       </button>
                     </div>
 
                     {/* Texture */}
 
                     {/* ================= Change Texture & Texture Grain ================= */}
-                    <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      {/* Labels Row */}
-                      <div className="flex gap-[1rem]">
+                    {/* Labels Row */}
+                    <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
+                      <div className="mt-[0rem] flex gap-[0rem]">
                         <div className="flex-1">
-                          <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                          <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                             Change Texture
                           </p>
                         </div>
                         <div className="flex-1">
-                          <p className="ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                          <p className="m-[0.5rem] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                             Texture Grain
                           </p>
                         </div>
                       </div>
 
                       {/* Controls Row */}
-                      <div className="flex gap-[0.5rem]">
+                      <div className="mt-[0rem] flex gap-[0.5rem]">
                         {/* Change Texture Button */}
                         <button
                           onClick={toggleTextureList}
@@ -2207,12 +2208,19 @@ const Sidebar: React.FC = () => {
                           <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                             {/* Add New Texture Button */}
                             <div className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]">
-                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
-                                <span className="text-[10px] font-bold text-[white]">+</span>
-                              </div>
-                              <span className="px-[0.13rem] text-center text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
-                                Add New Texture
-                              </span>
+                              <button className="flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
+                                <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
+                                  <img
+                                    src={assets.plusIcon}
+                                    alt="Add New Texture"
+                                    className="h-[0.8rem] w-[0.8rem] invert"
+                                  />
+                                </div>
+
+                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                                  Add New Texture
+                                </span>
+                              </button>
                             </div>
 
                             {(wasLoadMoreClicked ? materialModal : materialModal.slice(0, 41)).map(
@@ -2248,12 +2256,12 @@ const Sidebar: React.FC = () => {
                         {!wasLoadMoreClicked && (
                           <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.6rem]">
                             <button
-                              className="flex cursor-pointer items-center gap-2 border-[0rem] border-[var(--primary-color)] bg-transparent text-[0.7rem] font-bold text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
+                              className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
                               onClick={() => setWasLoadMoreClicked(true)}
                             >
                               Load More
-                              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-[var(--primary-color)]">
-                                <span className="text-[10px] leading-none">↻</span>
+                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded-full border-[0.1rem] border-[var(--primary-color)] p-[0rem]">
+                                <span className="text-[1rem] leading-none">↻</span>
                               </div>
                             </button>
                           </div>
