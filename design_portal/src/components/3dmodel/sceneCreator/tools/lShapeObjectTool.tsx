@@ -360,7 +360,7 @@ export class LShapeObjectManager {
       horizontal: { width: number; height: number; depth: number };
     }
   ): { vertical: THREE.Vector3; horizontal: THREE.Vector3 } {
-    const objectsFrontZ = centerZ;
+    const objectsFrontZ = centerZ + L_SHAPE_CONSTANTS.FRONT_Z_OFFSET;
     const horizontalPlankBackFaceZ =
       objectsFrontZ - dimensions.horizontal.depth;
 

@@ -119,28 +119,29 @@ export class PositionCalculator {
     bboxTop.getSize(sizeTop);
     bboxBottom.getSize(sizeBottom);
 
+    // Use max.z for front face (drawer face is at the front)
     const topCenterLocal = new THREE.Vector3(
       bboxTop.getCenter(new THREE.Vector3()).x,
       bboxTop.getCenter(new THREE.Vector3()).y,
-      bboxTop.min.z
+      bboxTop.max.z
     );
 
     const bottomCenterLocal = new THREE.Vector3(
       bboxBottom.getCenter(new THREE.Vector3()).x,
       bboxBottom.getCenter(new THREE.Vector3()).y,
-      bboxBottom.min.z
+      bboxBottom.max.z
     );
 
     const topBottomLocal = new THREE.Vector3(
       bboxTop.getCenter(new THREE.Vector3()).x,
       bboxTop.min.y,
-      bboxTop.min.z
+      bboxTop.max.z
     );
 
     const bottomTopLocal = new THREE.Vector3(
       bboxBottom.getCenter(new THREE.Vector3()).x,
       bboxBottom.max.y,
-      bboxBottom.min.z
+      bboxBottom.max.z
     );
 
     const topCenterWorld = targetMeshTop.localToWorld(topCenterLocal.clone());
@@ -168,7 +169,7 @@ export class PositionCalculator {
     const centerY = (topBottomCupboardLocal.y + bottomTopCupboardLocal.y) / 2;
     const centerX =
       (topCenterCupboardLocal.x + bottomCenterCupboardLocal.x) / 2;
-    const centerZ = Math.min(
+    const centerZ = Math.max(
       topCenterCupboardLocal.z,
       bottomCenterCupboardLocal.z
     );

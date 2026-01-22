@@ -15,6 +15,7 @@ export const L_SHAPE_CONSTANTS = {
   DISTANCE_THRESHOLD: 200,
   POSITION_TOLERANCE: 50,
   Y_OFFSET: -50,
+  FRONT_Z_OFFSET: -2, // Position 2mm behind the front face
 } as const;
 
 /**
