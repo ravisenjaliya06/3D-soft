@@ -69,8 +69,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-            }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -424,8 +425,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                    }`}
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -452,8 +454,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       title={disabled ? 'Coming Soon' : option}
                     >
                       <div
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                       >
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
@@ -497,14 +500,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       </div>
                       <span>{option}</span>
                       <img
-                        src={assets.down_arrow}
+                        src={assets.left_arrow}
                         alt=""
                         style={{
                           transform:
                             selectedFurnitureCategory === option
-                              ? 'rotate(90deg)'
-                              : 'rotate(270deg)',
+                              ? 'rotate(180deg)'
+                              : 'rotate(0deg)',
                           transition: 'transform 0.3s ease',
+                          height: '1.5rem',
                         }}
                       />
                     </div>
@@ -529,11 +533,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   onClick={() => setSelectedFurnitureCategory(null)}
                 />
               </div>
-              <img
-                src={assets.tool_part_line}
-                className={styles.active_tool_part_line}
-                alt="active group"
-              />
               <div className={styles.searchWrapper}>
                 <img src={assets.searchIcon} alt="search" className={styles.searchIcon} />
                 <input
@@ -545,6 +544,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   }}
                 />
               </div>
+              <img
+                src={assets.tool_part_line}
+                className={styles.active_tool_part_liness}
+                alt="active group"
+              />
             </div>
             <div className={styles.submenuContent}>
               {getFilteredCabinetItems(selectedFurnitureCategory).map((item) => (
@@ -560,7 +564,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <img
                     src={
                       iconMap[
-                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]
                     }
                     alt={item.name}

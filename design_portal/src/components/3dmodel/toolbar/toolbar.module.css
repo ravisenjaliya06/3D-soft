@@ -229,7 +229,13 @@
 .active_tool_part_line {
   max-width: 11rem;
   height: 0.5rem;
-  margin-top: 0.6rem;
+  margin-top: 1.1rem;
+}
+
+.active_tool_part_liness {
+  max-width: 11rem;
+  height: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .activegroup_tools_group {
@@ -353,6 +359,7 @@
   display: flex;
   align-items: center;
   opacity: 0.7;
+  padding-top: 0.8rem;
 }
 
 .searchIcon {
@@ -943,8 +950,8 @@
 
 .headerTitle {
   font-family: var(--font-family);
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--primary-color);
   margin: 0;
   flex-grow: 1;
@@ -992,11 +999,12 @@
 }
 
 .closeIcon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.8rem;
+  height: 0.8rem;
   cursor: pointer;
   position: absolute;
-  right: 0.75rem;
+  right: 0.45rem;
+  top: 0rem;
 }
 
 .submenuContent {
@@ -1052,10 +1060,16 @@
   padding-left: 3.5rem;
 }
 
+.activegroup_header p {
+  margin-top: 1rem;
+  font-weight: 700;
+}
+
 .activegroup_header img {
   width: 1.3rem;
   cursor: pointer;
   margin-right: 1rem;
+  margin-top: 1rem;
 }
 
 .noItems {

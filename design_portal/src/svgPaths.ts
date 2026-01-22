@@ -373,6 +373,7 @@ export const TOOLBAR = {
   tool_part_line: '/assets/toolbar/tool-part-line.svg',
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
+  left_arrow: '/assets/3dmodel/toolbar/arrow.svg',
   kitchen: '/assets/3dmodel/toolbar/kitchen.svg',
   part_icon: '/assets/3dmodel/toolbar/parts.svg',
   sink_icon: '/assets/3dmodel/toolbar/sink.svg',
