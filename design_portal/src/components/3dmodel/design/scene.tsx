@@ -11,7 +11,6 @@ import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   GEOMETRY,
-  Material,
   MeshObjectData,
   PART_TYPES,
 } from '../sceneCreator/interface';
@@ -945,13 +944,9 @@ export const removeLShapeObjects = async (cupboardMesh: THREE.Mesh) => {
 /**
  * Add L-shape objects to all drawers and doors in a cupboard
  */
-export const addLShapeToDrawersAndDoors = async (
-  scene: THREE.Scene,
-  cupboardMesh: THREE.Mesh
-) => {
+export const addLShapeToDrawersAndDoors = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh) => {
   await LShapeObjectManager.addLShapeToDrawersAndDoors(scene, cupboardMesh);
 };
-
 
 /**
  * Helper function to manually update banding mesh dimensions and positions
@@ -1032,7 +1027,11 @@ export const updateDrawerDoorForHandleMode = async (
     if (child instanceof THREE.Mesh) {
       const type = child.userData.type;
       if (type === PART_TYPES.DRAWER || type === PART_TYPES.DOOR) {
-        if (child.userData.isMain || child.name?.includes('DRAWER') || child.name?.includes('DOOR')) {
+        if (
+          child.userData.isMain ||
+          child.name?.includes('DRAWER') ||
+          child.name?.includes('DOOR')
+        ) {
           drawersAndDoors.push(child);
         }
       }
@@ -1049,15 +1048,9 @@ export const updateDrawerDoorForHandleMode = async (
       drawerOrDoor.traverse(async (child) => {
         if (
           child instanceof THREE.Mesh &&
-          (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE ||
-            child.name === 'DRAWER_FACE')
+          (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE || child.name === 'DRAWER_FACE')
         ) {
-          await updateMeshHeightAndBanding(
-            child,
-            currentObjects,
-            isHandleless,
-            REDUCTION_AMOUNT
-          );
+          await updateMeshHeightAndBanding(child, currentObjects, isHandleless, REDUCTION_AMOUNT);
         }
       });
     } else if (drawerOrDoor.userData.type === PART_TYPES.DOOR) {
@@ -1085,10 +1078,13 @@ export const updateDrawerDoorForHandleMode = async (
  */
 const findCupboardParent = (mesh: THREE.Mesh): THREE.Mesh | null => {
   let current: THREE.Object3D | null = mesh.parent;
-  
+
   while (current) {
     // Check if this is a cupboard (has isMain flag or is a main mesh)
-    if (current instanceof THREE.Mesh && (current.userData.isMain || current.userData.type === 'cupboard')) {
+    if (
+      current instanceof THREE.Mesh &&
+      (current.userData.isMain || current.userData.type === 'cupboard')
+    ) {
       return current;
     }
     // Also check if parent has objectId that matches a cupboard in Redux
@@ -1102,7 +1098,7 @@ const findCupboardParent = (mesh: THREE.Mesh): THREE.Mesh | null => {
     }
     current = current.parent;
   }
-  
+
   return null;
 };
 
@@ -1135,7 +1131,7 @@ const updateMeshHeightAndBanding = async (
     // This ensures we use the correct position even if door has been moved by pivot group
     const originalHeight = meshData?.dimensions?.height ?? currentHeight;
     const originalY = meshData?.position?.y ?? mesh.position.y;
-    
+
     // Store original height and position if not already stored
     if (!mesh.userData.originalHeight) {
       mesh.userData.originalHeight = originalHeight;
@@ -1144,33 +1140,33 @@ const updateMeshHeightAndBanding = async (
 
     // Reduce height by reductionAmount from bottom (top stays fixed)
     const newHeight = Math.max(50, originalHeight - reductionAmount);
-    const heightDifference = originalHeight - newHeight;
-
-    // Calculate new center Y position in cupboard's local space
-    // Original top edge Y: originalY + originalHeight / 2
-    // New center Y: originalTopEdgeY - newHeight / 2
-    // This keeps the top edge fixed while reducing from bottom
     const originalTopEdgeY = originalY + originalHeight / 2;
     const newCenterY = originalTopEdgeY - newHeight / 2;
-    
+
     // Calculate new Y position in cupboard's local space
     // Then convert to mesh's immediate parent local space (which might be a pivot group)
     mesh.updateMatrixWorld(true);
     cupboardParent.updateMatrixWorld(true);
-    
+
     // Create position vector in cupboard's local space with new Y
     const currentCupboardLocalX = meshData?.position?.x ?? 0;
     const currentCupboardLocalZ = meshData?.position?.z ?? 0;
-    const newCupboardLocalPos = new THREE.Vector3(currentCupboardLocalX, newCenterY, currentCupboardLocalZ);
-    
+    const newCupboardLocalPos = new THREE.Vector3(
+      currentCupboardLocalX,
+      newCenterY,
+      currentCupboardLocalZ
+    );
+
     // Convert to world space, then to mesh's parent local space
     const newWorldPos = cupboardParent.localToWorld(newCupboardLocalPos.clone());
-    const newParentLocalPos = mesh.parent ? mesh.parent.worldToLocal(newWorldPos.clone()) : newCupboardLocalPos;
+    const newParentLocalPos = mesh.parent
+      ? mesh.parent.worldToLocal(newWorldPos.clone())
+      : newCupboardLocalPos;
 
     // Update geometry
     mesh.geometry.dispose();
     mesh.geometry = new THREE.BoxGeometry(currentWidth, newHeight, currentDepth);
-    
+
     // Update position relative to immediate parent (preserving X and Z, updating Y)
     mesh.position.x = newParentLocalPos.x;
     mesh.position.y = newParentLocalPos.y;
@@ -1192,7 +1188,7 @@ const updateMeshHeightAndBanding = async (
           y: newCenterY,
         },
       };
-      
+
       store.dispatch(updateObject(updatedMeshData));
 
       // Also update banding using MeshBuilder to ensure consistency
@@ -1206,27 +1202,34 @@ const updateMeshHeightAndBanding = async (
     }
   } else {
     // Restore original height and position
-    const originalHeight = mesh.userData.originalHeight || (meshData?.dimensions?.height ?? currentHeight);
+    const originalHeight =
+      mesh.userData.originalHeight || (meshData?.dimensions?.height ?? currentHeight);
     const originalY = mesh.userData.originalY ?? meshData?.position?.y ?? mesh.position.y;
 
     if (originalHeight && originalHeight !== currentHeight) {
       // Convert original position from cupboard's local space to mesh's parent local space
       mesh.updateMatrixWorld(true);
       cupboardParent.updateMatrixWorld(true);
-      
+
       // Create position vector in cupboard's local space with original Y
       const currentCupboardLocalX = meshData?.position?.x ?? 0;
       const currentCupboardLocalZ = meshData?.position?.z ?? 0;
-      const originalCupboardLocalPos = new THREE.Vector3(currentCupboardLocalX, originalY, currentCupboardLocalZ);
-      
+      const originalCupboardLocalPos = new THREE.Vector3(
+        currentCupboardLocalX,
+        originalY,
+        currentCupboardLocalZ
+      );
+
       // Convert to world space, then to mesh's parent local space
       const originalWorldPos = cupboardParent.localToWorld(originalCupboardLocalPos.clone());
-      const originalParentLocalPos = mesh.parent ? mesh.parent.worldToLocal(originalWorldPos.clone()) : originalCupboardLocalPos;
-      
+      const originalParentLocalPos = mesh.parent
+        ? mesh.parent.worldToLocal(originalWorldPos.clone())
+        : originalCupboardLocalPos;
+
       // Update geometry
       mesh.geometry.dispose();
       mesh.geometry = new THREE.BoxGeometry(currentWidth, originalHeight, currentDepth);
-      
+
       // Update position relative to immediate parent
       mesh.position.x = originalParentLocalPos.x;
       mesh.position.y = originalParentLocalPos.y;

@@ -11,7 +11,6 @@ import {
   addSkirtingPlanks,
   removeLShapeObjects,
   removeSkirtingPlanks,
-  updateDrawerDoorForHandleMode,
   updateDrawerType,
 } from '../design/scene';
 import { UpdateObjectInScene } from '../handler/updateHandler';
@@ -219,7 +218,6 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-
   // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
@@ -334,7 +332,6 @@ const Sidebar: React.FC = () => {
       });
     }
   };
-
 
   function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
@@ -693,7 +690,6 @@ const Sidebar: React.FC = () => {
     Object.values(DRAWER_PLANK_TYPES).includes(selectedObject?.type || '');
   selectedObject?.name?.toLowerCase().includes('planks');
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
-
 
   const getTopPlank = () => {
     if (!selectedObject) return undefined;
@@ -1766,7 +1762,6 @@ const Sidebar: React.FC = () => {
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 </>
               )}
-
 
               {/* ================= Top Plank ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (

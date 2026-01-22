@@ -21,10 +21,7 @@ export class CoordinateUtils {
   /**
    * Get center position in cupboard local space
    */
-  static getCupboardLocalCenter(
-    mesh: THREE.Mesh,
-    cupboardMesh: THREE.Mesh
-  ): THREE.Vector3 {
+  static getCupboardLocalCenter(mesh: THREE.Mesh, cupboardMesh: THREE.Mesh): THREE.Vector3 {
     mesh.updateMatrixWorld(true);
     mesh.geometry.computeBoundingBox();
     const bbox = mesh.geometry.boundingBox;
@@ -57,9 +54,7 @@ export class MeshUtils {
    * Get parent mesh from box mesh
    */
   static getParentMesh(boxMesh: THREE.Mesh): THREE.Mesh {
-    return !boxMesh.parent?.userData.isMain
-      ? boxMesh
-      : (boxMesh.parent as THREE.Mesh);
+    return !boxMesh.parent?.userData.isMain ? boxMesh : (boxMesh.parent as THREE.Mesh);
   }
 
   /**
@@ -71,8 +66,7 @@ export class MeshUtils {
       drawerOrDoor.traverse((child) => {
         if (
           child instanceof THREE.Mesh &&
-          (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE ||
-            child.name === 'DRAWER_FACE')
+          (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE || child.name === 'DRAWER_FACE')
         ) {
           targetMesh = child;
         }
@@ -221,9 +215,7 @@ export class DrawerDoorUtils {
         const targetMesh2 = MeshUtils.findTargetMesh(obj2);
         if (!targetMesh2) continue;
 
-        if (
-          MeshUtils.areHorizontallyAligned(targetMesh1, targetMesh2, cupboardMesh)
-        ) {
+        if (MeshUtils.areHorizontallyAligned(targetMesh1, targetMesh2, cupboardMesh)) {
           alignedGroup.push(obj2);
           processed.add(obj2);
         }
@@ -240,23 +232,14 @@ export class DrawerDoorUtils {
   /**
    * Sort objects vertically (top to bottom)
    */
-  static sortVertically(
-    objects: THREE.Mesh[],
-    cupboardMesh: THREE.Mesh
-  ): THREE.Mesh[] {
+  static sortVertically(objects: THREE.Mesh[], cupboardMesh: THREE.Mesh): THREE.Mesh[] {
     return objects.sort((a, b) => {
       const targetMeshA = MeshUtils.findTargetMesh(a);
       const targetMeshB = MeshUtils.findTargetMesh(b);
       if (!targetMeshA || !targetMeshB) return 0;
 
-      const centerA = CoordinateUtils.getCupboardLocalCenter(
-        targetMeshA,
-        cupboardMesh
-      );
-      const centerB = CoordinateUtils.getCupboardLocalCenter(
-        targetMeshB,
-        cupboardMesh
-      );
+      const centerA = CoordinateUtils.getCupboardLocalCenter(targetMeshA, cupboardMesh);
+      const centerB = CoordinateUtils.getCupboardLocalCenter(targetMeshB, cupboardMesh);
 
       return centerB.y - centerA.y; // Higher Y first (top to bottom)
     });

@@ -359,7 +359,6 @@ const CatalogManager = () => {
                           className="h-[1.5rem] w-[1.5rem]"
                         />
                       </div>
-
                     </div>
                   </div>
                   <div className="h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
@@ -371,7 +370,7 @@ const CatalogManager = () => {
                       <select
                         onFocus={() => setOpen(true)}
                         onBlur={() => setOpen(false)}
-                        className="rounded-md-[0.1rem] w-[8.2rem] appearance-none cursor-pointer rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
+                        className="rounded-md-[0.1rem] w-[8.2rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                         value={selectedCatalog?.id || ''}
                         onChange={(e) => {
                           const catalog = catalogData.find((c) => c.id === e.target.value);
@@ -419,10 +418,11 @@ const CatalogManager = () => {
                     <div
                       key={type}
                       onClick={() => setActiveRuleType(type)}
-                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${activeRuleType === type
-                        ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
-                        : 'text-gray-500 hover:bg-gray-100'
-                        }`}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
+                        activeRuleType === type
+                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                          : 'text-gray-500 hover:bg-gray-100'
+                      }`}
                     >
                       <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
                       {type}
@@ -449,7 +449,7 @@ const CatalogManager = () => {
                           value={formatEnumLabel(selectedCatalog?.name || '')}
                           onBlur={handleBlur(setIsEditingName)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                          className="h-[1.5rem] w-[11rem] pointer-events-none rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
+                          className="pointer-events-none h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
                         />
                       ) : (
                         <div
@@ -474,7 +474,7 @@ const CatalogManager = () => {
                           value={selectedCatalog?.description}
                           onBlur={handleBlur(setIsEditingDescription)}
                           onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                          className="h-[1.5rem] w-[11rem] pointer-events-none rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
+                          className="pointer-events-none h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
                         />
                       ) : (
                         <div
@@ -534,14 +534,14 @@ const CatalogManager = () => {
                         </div>
                       </th>
 
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem]  text-[0.85rem] font-[700] text-[#392579]">
+                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-[0.85rem] font-[700] text-[#392579]">
                         Action
                       </th>
                     </tr>
                   </thead>
 
                   {/* ================= TABLE BODY ================= */}
-                  <tbody className="p-[0rem] m-[0rem]">
+                  <tbody className="m-[0rem] p-[0rem]">
                     {ruleParts.length > 0 &&
                       ruleParts.map((part) => (
                         <tr
@@ -552,64 +552,52 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer transition-colors p-[0rem] duration-150 hover:bg-[var(--primary-hover)] ${selectedPartId === part.id
-                            ? 'bg-[var(--primary-hover)]'
-                            : 'bg-[var(--primary-white)]'
-                            } `}
+                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
+                            selectedPartId === part.id
+                              ? 'bg-[var(--primary-hover)]'
+                              : 'bg-[var(--primary-white)]'
+                          } `}
                         >
                           <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex items-center text-left h-full text-[0.72rem] text-[#3F3F46]">
+                            <div className="flex h-full items-center text-left text-[0.72rem] text-[#3F3F46]">
                               {formatEnumLabel(part.name)}
                             </div>
                           </td>
 
                           <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex items-center h-full text-[0.72rem] text-[#3F3F46]">
+                            <div className="flex h-full items-center text-[0.72rem] text-[#3F3F46]">
                               {part.material?.name || 'NO MATERIAL ASSIGNED'}
                             </div>
                           </td>
 
                           <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex items-center justify-center  h-full gap-[0.5rem]">
-
+                            <div className="flex h-full items-center justify-center gap-[0.5rem]">
                               {/* DELETE BUTTON */}
                               <button
                                 disabled={true} //disable here (use condition if needed)
                                 onClick={() => handleShowDeletePopup()}
-                                className="
-                                  border-[0rem] gap-[1] rounded-md
-                                  bg-transparent px-[0.5] py-[2.5]
-                                  text-[0.6rem] p-[0rem] m-[0rem] text-[var(--delete-text-color)]
-                                  opacity-40 cursor-not-allowed
-                                "
+                                className="m-[0rem] cursor-not-allowed gap-[1] rounded-md border-[0rem] bg-transparent p-[0rem] px-[0.5] py-[2.5] text-[0.6rem] text-[var(--delete-text-color)] opacity-40"
                               >
                                 <img
                                   src={assets.trash}
                                   alt="delete"
-                                  className="h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem] m-[0rem]"
+                                  className="m-[0rem] h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem]"
                                 />
                               </button>
 
                               {/* EDIT BUTTON */}
                               <button
                                 disabled={true} //disable here
-                                className="
-                                 border-[0rem] gap-[1] rounded-md
-                                  bg-transparent px-[0.5] py-[2.5]
-                                  text-[0.6rem] p-[0rem] m-[0rem] text-[var(--delete-text-color)]
-                                  opacity-40 cursor-not-allowed
-                                "
+                                className="m-[0rem] cursor-not-allowed gap-[1] rounded-md border-[0rem] bg-transparent p-[0rem] px-[0.5] py-[2.5] text-[0.6rem] text-[var(--delete-text-color)] opacity-40"
                               >
                                 <img
                                   src={assets.edit}
                                   alt="edit"
-                                  className="h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem] m-[0rem]"
+                                  className="m-[0rem] h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem]"
                                 />
                               </button>
-
                             </div>
                           </td>
-
                         </tr>
                       ))}
                     {/* ===== EMPTY ROWS (Keep visual height) ===== */}
@@ -645,7 +633,7 @@ const CatalogManager = () => {
                       onBlur={() => setOpen(false)}
                       value={selectedMaterialType}
                       onChange={(e) => setSelectedMaterialType(e.target.value)}
-                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none rounded-[0.3rem] rounded-md pr-[1.5rem] pl-[0.4rem] border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent"
+                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] pr-[1.5rem] pl-[0.4rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent"
                     >
                       {materialTypes.map((type) => (
                         <option key={type} value={type}>
@@ -656,7 +644,7 @@ const CatalogManager = () => {
                     <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
                       <img
                         src={open ? assets.menuup : assets.menudown}
-                        className="h-[1.5rem] w-[1.5rem] p-[0rem] m-[0rem]"
+                        className="m-[0rem] h-[1.5rem] w-[1.5rem] p-[0rem]"
                       />
                     </div>
                   </div>
@@ -725,28 +713,29 @@ const CatalogManager = () => {
                               draggable
                               onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                               onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${selectedMaterialId === row.id
-                                ? 'bg-[var(--primary-hover)]'
-                                : 'bg-[var(--primary-white)]'
-                                } `}
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
+                                selectedMaterialId === row.id
+                                  ? 'bg-[var(--primary-hover)]'
+                                  : 'bg-[var(--primary-white)]'
+                              } `}
                             >
                               {/* RADIO */}
-                              <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] px-[1rem]">
+                              <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">
                                 <input
                                   type="radio"
                                   checked={selectedMaterialId === row.id}
                                   onChange={() => setSelectedMaterialId(row.id)}
-                                  className="cursor-pointer p-[0rem] m-[0rem] h-[1.15rem] min-h-[1.15rem] w-[1.15rem] min-w-[1.15rem] border-[0.1rem]"
+                                  className="m-[0rem] h-[1.15rem] min-h-[1.15rem] w-[1.15rem] min-w-[1.15rem] cursor-pointer border-[0.1rem] p-[0rem]"
                                 />
                               </td>
 
                               {/* NAME */}
-                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
+                              <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
                                 {row.name}
                               </td>
 
                               {/* DESCRIPTION */}
-                              <td className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] m-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
+                              <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
                                 {row.description}
                               </td>
                             </tr>

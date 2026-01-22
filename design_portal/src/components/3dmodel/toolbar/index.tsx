@@ -70,8 +70,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-            }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -228,7 +229,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
-    } else if (itemType === PART_TYPES.L_SHAPE_OBJECT || (itemName || '').toLowerCase().includes('l-shape')) {
+    } else if (
+      itemType === PART_TYPES.L_SHAPE_OBJECT ||
+      (itemName || '').toLowerCase().includes('l-shape')
+    ) {
       await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
     }
 
@@ -429,8 +433,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                    }`}
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -457,8 +462,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       title={disabled ? 'Coming Soon' : option}
                     >
                       <div
-                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
-                          }`}
+                        className={`${styles.activegroup_tools} ${
+                          isActive ? styles.activegroup_tools_selected : ''
+                        }`}
                       >
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
@@ -565,7 +571,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <img
                     src={
                       iconMap[
-                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]
                     }
                     alt={item.name}

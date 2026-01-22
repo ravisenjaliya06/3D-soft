@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { Material, MeshObjectData, PART_TYPES, GEOMETRY } from '../interface';
-import { L_SHAPE_CONSTANTS } from './lShapeObjectTool.constants';
-import { CoordinateUtils, MeshUtils } from './lShapeObjectTool.utils';
+import { GEOMETRY, Material, MeshObjectData, PART_TYPES } from '../interface';
+import { MeshUtils } from './lShapeObjectTool.utils';
 
 /**
  * Helper functions for creating plank data
@@ -22,10 +21,7 @@ export class PlankDataBuilder {
     const plankData: MeshObjectData = {
       ...baseData,
       id: crypto.randomUUID(),
-      name:
-        plankType === 'vertical'
-          ? 'L_SHAPE_VERTICAL_PLANK'
-          : 'L_SHAPE_HORIZONTAL_PLANK',
+      name: plankType === 'vertical' ? 'L_SHAPE_VERTICAL_PLANK' : 'L_SHAPE_HORIZONTAL_PLANK',
       type: PART_TYPES.L_SHAPE_OBJECT,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions,
@@ -145,42 +141,24 @@ export class PositionCalculator {
     );
 
     const topCenterWorld = targetMeshTop.localToWorld(topCenterLocal.clone());
-    const bottomCenterWorld = targetMeshBottom.localToWorld(
-      bottomCenterLocal.clone()
-    );
+    const bottomCenterWorld = targetMeshBottom.localToWorld(bottomCenterLocal.clone());
     const topBottomWorld = targetMeshTop.localToWorld(topBottomLocal.clone());
-    const bottomTopWorld = targetMeshBottom.localToWorld(
-      bottomTopLocal.clone()
-    );
+    const bottomTopWorld = targetMeshBottom.localToWorld(bottomTopLocal.clone());
 
-    const topCenterCupboardLocal = cupboardMesh.worldToLocal(
-      topCenterWorld.clone()
-    );
-    const bottomCenterCupboardLocal = cupboardMesh.worldToLocal(
-      bottomCenterWorld.clone()
-    );
-    const topBottomCupboardLocal = cupboardMesh.worldToLocal(
-      topBottomWorld.clone()
-    );
-    const bottomTopCupboardLocal = cupboardMesh.worldToLocal(
-      bottomTopWorld.clone()
-    );
+    const topCenterCupboardLocal = cupboardMesh.worldToLocal(topCenterWorld.clone());
+    const bottomCenterCupboardLocal = cupboardMesh.worldToLocal(bottomCenterWorld.clone());
+    const topBottomCupboardLocal = cupboardMesh.worldToLocal(topBottomWorld.clone());
+    const bottomTopCupboardLocal = cupboardMesh.worldToLocal(bottomTopWorld.clone());
 
     const centerY = (topBottomCupboardLocal.y + bottomTopCupboardLocal.y) / 2;
-    const centerX =
-      (topCenterCupboardLocal.x + bottomCenterCupboardLocal.x) / 2;
-    const centerZ = Math.max(
-      topCenterCupboardLocal.z,
-      bottomCenterCupboardLocal.z
-    );
+    const centerX = (topCenterCupboardLocal.x + bottomCenterCupboardLocal.x) / 2;
+    const centerZ = Math.max(topCenterCupboardLocal.z, bottomCenterCupboardLocal.z);
 
     const topHalfHeight = sizeTop.y / 2;
     const bottomHalfHeight = sizeBottom.y / 2;
 
-    const verticalPlankStartY =
-      topBottomCupboardLocal.y + topHalfHeight;
-    const verticalPlankEndY =
-      bottomTopCupboardLocal.y - bottomHalfHeight;
+    const verticalPlankStartY = topBottomCupboardLocal.y + topHalfHeight;
+    const verticalPlankEndY = bottomTopCupboardLocal.y - bottomHalfHeight;
     const verticalPlankHeight = verticalPlankStartY - verticalPlankEndY;
 
     const width = (sizeTop.x + sizeBottom.x) / 2;
@@ -211,8 +189,7 @@ export class HeightManager {
     newDepth: number
   ): void {
     mesh.children.forEach((child) => {
-      if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding')
-        return;
+      if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding') return;
       if (!(child.geometry instanceof THREE.BoxGeometry)) return;
 
       const edge = child.userData.edge;
@@ -295,10 +272,7 @@ export class HeightManager {
   /**
    * Store original height and position
    */
-  static storeOriginalDimensions(
-    targetMesh: THREE.Mesh,
-    cupboardMesh: THREE.Mesh
-  ): void {
+  static storeOriginalDimensions(targetMesh: THREE.Mesh, cupboardMesh: THREE.Mesh): void {
     if (targetMesh.userData.originalHeight) return;
 
     const bbox = MeshUtils.getBoundingBox(targetMesh);
@@ -306,12 +280,8 @@ export class HeightManager {
     targetMesh.userData.originalHeight = currentHeight;
 
     const currentCenterLocal = bbox.getCenter(new THREE.Vector3());
-    const currentCenterWorld = targetMesh.localToWorld(
-      currentCenterLocal.clone()
-    );
-    const currentCenterCupboard = cupboardMesh.worldToLocal(
-      currentCenterWorld.clone()
-    );
+    const currentCenterWorld = targetMesh.localToWorld(currentCenterLocal.clone());
+    const currentCenterCupboard = cupboardMesh.worldToLocal(currentCenterWorld.clone());
     targetMesh.userData.originalY = currentCenterCupboard.y;
   }
 
