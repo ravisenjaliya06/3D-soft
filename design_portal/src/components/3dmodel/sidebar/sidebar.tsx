@@ -265,7 +265,6 @@ const Sidebar: React.FC = () => {
 
     const controller = new CabinetMotionController();
 
-    // Toggle only the selected object individually (doesn't affect global state)
     scene.traverse((node) => {
       if (!(node instanceof THREE.Mesh)) return;
 
@@ -273,15 +272,12 @@ const Sidebar: React.FC = () => {
       if (objectId !== targetId) return;
 
       if (type === PART_TYPES.DOOR) {
-        const direction = node.userData.openDirection;
-        if (direction) {
-          controller.toggleDoorIndividual(node);
-        }
+        controller.toggleDoor(node);
         return;
       }
 
       if (type === PART_TYPES.DRAWER) {
-        controller.toggleDrawerIndividual(node);
+        controller.toggleDrawer(node);
       }
     });
   };

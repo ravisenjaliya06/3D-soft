@@ -39,7 +39,7 @@ export class GroovingTool {
    */
   public isBackPlank(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) return false;
-    return mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.toUpperCase() === 'BACK_PLANK'
+    return mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.toUpperCase() === 'BACK_PLANK';
   }
 
   /**
@@ -177,9 +177,7 @@ export class GroovingTool {
     const grooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET;
 
     const isLeft = edge === EDGES.LEFT;
-    const grooveCenterX = isLeft
-      ? -width / 2 + GROOVE_WIDTH / 2
-      : width / 2 - GROOVE_WIDTH / 2;
+    const grooveCenterX = isLeft ? -width / 2 + GROOVE_WIDTH / 2 : width / 2 - GROOVE_WIDTH / 2;
 
     const grooveCenterY = (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
 
