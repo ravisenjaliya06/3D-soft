@@ -290,6 +290,7 @@ export class SyncManager {
 
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
+      this.meshBuilder.updateGrooving(mesh);
     }
 
     // Update banding if dimensions changed or banding state changed
