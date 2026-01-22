@@ -22,6 +22,7 @@ import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
+import { findMeshById } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
@@ -210,7 +211,8 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const handleObject = objects.find((obj) => obj.parent === targetId);
+  // let handleObject = objects.find((obj) => obj.id === targetId);
+  const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -233,8 +235,9 @@ const Sidebar: React.FC = () => {
 
     if (handleObject) {
       updateObjectRef.current?.update(
-        handleObject.id,
+        handleObject.userData.objectId,
         { position: { [axis]: roundedValue } },
+        undefined,
         handleObject
       );
     }
@@ -246,8 +249,9 @@ const Sidebar: React.FC = () => {
 
     if (handleObject) {
       updateObjectRef.current?.update(
-        handleObject.id,
+        handleObject.userData.objectId,
         { rotation: { [axis]: roundedValue } },
+        undefined,
         handleObject
       );
     }
@@ -608,10 +612,10 @@ const Sidebar: React.FC = () => {
       name: 'rotationZ',
       type: 'number',
       icon: _3DMODEL.rotateIcon,
-      value: handleRot.z,
+      value: handleRot.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandleRotState('z', Number(e.target.value)),
+        updateHandleRotState('y', Number(e.target.value)),
     },
   ];
 

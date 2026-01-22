@@ -5,7 +5,7 @@ import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setFloor, setWalls } from '../store/dataSlice';
-import { EDGES, MeshObjectData } from './interface';
+import { EDGES, MeshObjectData, PART_TYPES } from './interface';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 
 /**
@@ -322,4 +322,27 @@ export function getNew(
   }
 
   return { newGeometry, newPosition };
+}
+
+export function findMeshById(
+  scene: THREE.Scene,
+  objectId: string,
+  isHandle?: boolean
+): THREE.Mesh | null {
+  let foundMesh: THREE.Mesh | null = null;
+
+  scene.traverse((object) => {
+    if (object instanceof THREE.Mesh && object.userData.objectId === objectId) {
+      foundMesh = object;
+      if (isHandle) {
+        foundMesh.children.forEach((child) => {
+          if (child.userData.type === PART_TYPES.HANDLE) {
+            foundMesh = child as THREE.Mesh;
+          }
+        });
+      }
+    }
+  });
+
+  return foundMesh;
 }
