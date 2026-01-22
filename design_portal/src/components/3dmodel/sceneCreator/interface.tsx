@@ -12,6 +12,8 @@ export const FLOOR_PLAN_TYPES = {
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
+  PLATFORM: 'platform',
+  SINK: 'sink',
 };
 
 export const PART_TYPES = {
@@ -81,6 +83,7 @@ export const MATERIAL_TYPES = {
   SLIDING_DOOR_RAIL: 'Sliding Door Rail',
   SLIDING_DOOR_ROLLER: 'Sliding Door Roller',
   WIRE_BASKET: 'Wire Basket',
+  WALL: 'Wall',
 };
 
 export const EDGES = {

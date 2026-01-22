@@ -1,15 +1,7 @@
 import { ITEM, PLANK } from '../handler/interface';
 import { DRAWER_PLANK_TYPES } from '../sceneCreator/interface';
 import type { PlankConnection, PlankData } from './types';
-
-interface Bounds {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-  minZ: number;
-  maxZ: number;
-}
+import { Bounds } from './types';
 
 export function detect90DegreeConnections(planks: PlankData[]): PlankConnection[] {
   const relevantPlanks = planks.filter((plank) => {
