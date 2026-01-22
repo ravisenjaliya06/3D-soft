@@ -132,6 +132,10 @@ export class UpdateObjectInScene {
       updateParams.newDepth
     );
 
+    if (mesh.userData.isMain === true) {
+      this.updateChildrenDynamic(mesh, updateParams);
+    }
+
     // Update banding if this is a plank
     if (this.bandingTool.isPlank(mesh)) {
       // Use async IIFE to handle async update
@@ -140,10 +144,6 @@ export class UpdateObjectInScene {
         // Also update grooving when dimensions change
         this.updateGroovingForPlank(mesh);
       })();
-    }
-
-    if (mesh.userData.isMain) {
-      this.updateChildrenDynamic(mesh, updateParams);
     }
 
     updateOrRefreshOutline(this.scene, mesh);
@@ -201,20 +201,10 @@ export class UpdateObjectInScene {
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
       const childParams = child.geometry.parameters;
-
-      /**
-       * New child dimensions after scaling.
-       * If the parent grows or shrinks, each child grows/shrinks proportionally.
-       */
       const nextWidth = Math.max(childParams.width * scaleX, MIN_DIM);
       const nextHeight = Math.max(childParams.height * scaleY, MIN_DIM);
       const nextDepth = Math.max(childParams.depth * scaleZ, MIN_DIM);
 
-      /**
-       * Update child position as well.
-       * If the parent gets bigger, children move farther away proportionally.
-       * If the parent gets smaller, children move closer proportionally.
-       */
       const nextX = child.position.x * scaleX;
       const nextY = child.position.y * scaleY;
       const nextZ = child.position.z * scaleZ;
@@ -224,7 +214,6 @@ export class UpdateObjectInScene {
 
       child.position.set(nextX, nextY, nextZ);
 
-      // Update grooving for child planks when their dimensions change
       if (
         child.userData.type &&
         [
