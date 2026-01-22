@@ -249,11 +249,8 @@ export class GroovingTool {
     const children: THREE.Object3D[] = [];
 
     mesh.children.forEach((child) => {
-      if (!this.isGroovingMesh(child)) {
-        return;
-      }
-
-      if (edge && child.userData.edge !== edge) {
+      if (!this.isGroovingMesh(child) ||
+        (edge && child.userData.edge !== edge)) {
         return;
       }
 
@@ -373,13 +370,8 @@ export class GroovingTool {
     const children = this.getGroovingChildren(mesh, edge);
 
     for (const child of children) {
-      if (!(child instanceof THREE.Mesh)) {
-        continue;
-      }
-
-      if (!type) {
-        return child;
-      }
+      if (!(child instanceof THREE.Mesh)) continue;
+      if (!type) return child;
 
       const expectedType = GROOVE_TYPE[type.toUpperCase() as keyof typeof GROOVE_TYPE];
       if (child.userData.type === expectedType) {
@@ -435,18 +427,10 @@ export class GroovingTool {
    * Validate mesh before grooving operations
    */
   private validateMeshForGrooving(mesh: THREE.Mesh): boolean {
-    if (!this.isPlank(mesh)) {
-      return false;
-    }
-
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      return false;
-    }
-
-    if (!this.isBackPlank(mesh)) {
-      return false;
-    }
-
-    return true;
+    return (
+      this.isPlank(mesh) &&
+      mesh.geometry instanceof THREE.BoxGeometry &&
+      this.isBackPlank(mesh)
+    );
   }
 }
