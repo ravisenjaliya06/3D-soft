@@ -25,13 +25,7 @@ export class GroovingTool {
    */
   public isPlank(mesh: THREE.Mesh): boolean {
     const type = mesh.userData.type;
-    return (
-      type === PART_TYPES.PLANK ||
-      type === PART_TYPES.VERTICAL_PLANK ||
-      type === PART_TYPES.HORIZONTAL_PLANK ||
-      type === PART_TYPES.BACK_PLANK ||
-      Object.values(PART_TYPES).includes(type)
-    );
+    return Object.values(PART_TYPES).includes(type)
   }
 
   /**
