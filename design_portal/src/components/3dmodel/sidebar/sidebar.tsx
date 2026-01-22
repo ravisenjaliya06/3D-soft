@@ -322,6 +322,20 @@ const Sidebar: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const getSidebarTitle = (): string => {
+    if (isFullCupboard && !isDisabled) {
+      return 'Adjustable carcass';
+    } else if (isDrawerSelected && !isDisabled) {
+      return 'Adjustable drawer';
+    } else if (isPlankSelected && !isDisabled) {
+      return 'Adjustable Self';
+    }else if (isDoorSelected && !isDisabled){
+      return 'Adjustable Door';
+    } else {
+      return 'Viewport Navigation';
+    }
+  };
+
   const handleNavigation = () => {
     /** Opens the navigation panel and closes settings if open. */
 
@@ -1077,8 +1091,8 @@ const Sidebar: React.FC = () => {
     <div
       className={
         isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
       }
     >
       {/* ================= TITLE ================= */}
@@ -1087,7 +1101,7 @@ const Sidebar: React.FC = () => {
         className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around justify-center gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
         <p className="ml-[8] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
-          Viewport Navigation
+          {getSidebarTitle()}
         </p>
 
         <img
@@ -1149,15 +1163,19 @@ const Sidebar: React.FC = () => {
                   {/* ================= Minifix & Grooving ================= */}
                   <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
                     {/* Header */}
-                    <div className="mb-[0rem] flex items-center justify-between">
-                      <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                    <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                      <p className="text-[0.7rem] font-[600] text-[var(--primary-color)] flex-1">
                         Minifix & Grooving
                       </p>
                       <button
                         onClick={() => toggleSection('minifix')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[1rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.minifix ? '+' : '−'}
+                        <img
+                          src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.minifix ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.minifix && (
@@ -1170,13 +1188,13 @@ const Sidebar: React.FC = () => {
                             <div className="ml-[0rem] flex items-center gap-[1rem]">
                               <div
                                 onClick={handleMinifixToggle}
-                                className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
                               >
                                 {/* Knob */}
                                 <div
                                   className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                     minifixEnabled
-                                      ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                       : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                   }`}
                                 />
@@ -1197,14 +1215,14 @@ const Sidebar: React.FC = () => {
                                 onChange={(e) => setDistance(Number(e.target.value))}
                                 className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
-                              <p className="mt-[0.2rem] items-center text-center text-[0.5rem] font-[400] text-[var(--secondary-text-color)]">
+                              <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
                                 in multiple of 32
                               </p>
                             </div>
 
                             {/* Diameter Hole */}
                             <div className="">
-                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Diameter Hole
                               </p>
                               <input
@@ -1217,7 +1235,7 @@ const Sidebar: React.FC = () => {
                           </div>
 
                           {/* -------- VERTICAL DIVIDER -------- */}
-                          <hr className="mr-[0.3rem] ml-[0.2rem] h-[8rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+                          <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
 
                           {/* -------- RIGHT PART -------- */}
                           <div className="mr-[0.7rem] flex w-[6rem] flex-col">
@@ -1225,13 +1243,13 @@ const Sidebar: React.FC = () => {
                             <div className="flex items-center gap-[0.5rem]">
                               <div
                                 onClick={handleGroovingToggle}
-                                className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
                               >
                                 {/* Knob */}
                                 <div
                                   className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                     groovingEnabled
-                                      ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                       : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                   }`}
                                 />
@@ -1275,15 +1293,19 @@ const Sidebar: React.FC = () => {
 
                   {/* ================= Camlock Screw Hole ================= */}
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Camlock Screw Hole
                       </p>
                       <button
                         onClick={() => toggleSection('camlock')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[1rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.camlock ? '+' : '−'}
+                        <img
+                          src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.camlock ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.camlock && (
@@ -1332,15 +1354,19 @@ const Sidebar: React.FC = () => {
                   <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Edge Banding
                       </p>
                       <button
                         onClick={() => toggleSection('edgeBanding')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[1rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.edgeBanding ? '+' : '−'}
+                        <img
+                          src={collapsed.edgeBanding ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.edgeBanding ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.edgeBanding && (
@@ -1348,13 +1374,13 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0em]">
                           <div
                             onClick={handleEdgeBandingToggle}
-                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 edgeBandingEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1379,15 +1405,19 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isPlankSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Shelf
                       </p>
                       <button
                         onClick={() => toggleSection('shelf')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.shelf ? '+' : '−'}
+                        <img
+                          src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.shelf && (
@@ -1396,7 +1426,7 @@ const Sidebar: React.FC = () => {
                           <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                             Shelves Inner Distance
                           </p>
-                          <div className="flex items-center gap-[2rem]">
+                          <div className="flex items-center gap-[1rem]">
                             <input
                               type="number"
                               min={0}
@@ -1406,7 +1436,7 @@ const Sidebar: React.FC = () => {
                                 handleShelvesInnerDistanceChange(Number(e.target.value))
                               }
                               disabled={isDisabled}
-                              className="h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[3.7rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1421,15 +1451,19 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isPlankSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Edge Banding
                       </p>
                       <button
                         onClick={() => toggleSection('plankBanding')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.plankBanding ? '+' : '−'}
+                        <img
+                          src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.plankBanding ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.plankBanding && (
@@ -1483,15 +1517,19 @@ const Sidebar: React.FC = () => {
                     <div key={menu.subMenu}>
                       {/* HEADER */}
                       <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                        <div className="mb-[0rem] flex items-center justify-between">
-                          <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                          <p className="text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                             {menu.title}
                           </p>
                           <button
                             onClick={() => toggleSection('layout')}
-                            className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                            className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                           >
-                            {collapsed.layout ? '+' : '−'}
+                            <img
+                              src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
                           </button>
                         </div>
                         {!collapsed.layout && (
@@ -1635,16 +1673,20 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isPlankSelected && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
                       {/* Title */}
-                      <p className="mt-[0rem] mb-[0rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      <p className="mt-[0rem] mb-[0rem] text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Position Move
                       </p>
                       <button
                         onClick={() => toggleSection('positionMove')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.positionMove ? '+' : '−'}
+                        <img
+                          src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.positionMove ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.positionMove && (
@@ -1746,15 +1788,19 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Top Plank
                       </p>
                       <button
                         onClick={() => toggleSection('topPlank')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.topPlank ? '+' : '−'}
+                        <img
+                          src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.topPlank ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.topPlank && (
@@ -1762,13 +1808,13 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleTopPlankToggle}
-                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 topPlankEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1795,15 +1841,19 @@ const Sidebar: React.FC = () => {
                   {/* ================= Base ================= */}
 
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Base
                       </p>
                       <button
                         onClick={() => toggleSection('base')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.base ? '+' : '−'}
+                        <img
+                          src={collapsed.base ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.base ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.base && (
@@ -1811,13 +1861,13 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleBaseheightToggle}
-                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 baseheightEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1836,13 +1886,13 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleFrontpanelToggle}
-                            className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 frontpanelEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1890,16 +1940,21 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isDoorSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Door
                       </p>
-                      <button
-                        onClick={() => toggleSection('shelf')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                      >
-                        {collapsed.shelf ? '+' : '−'}
-                      </button>
+<button
+  onClick={() => toggleSection('shelf')}
+  className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
+>
+  <img
+    src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+    alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+    className="h-[0.8rem] w-[0.8rem]"
+  />
+</button>
+
                     </div>
                     {!collapsed.shelf && (
                       <>
@@ -1947,15 +2002,19 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                         Drawer
                       </p>
                       <button
                         onClick={() => toggleSection('shelf')}
-                        className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                       >
-                        {collapsed.shelf ? '+' : '−'}
+                        <img
+                          src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
                       </button>
                     </div>
                     {!collapsed.shelf && (
@@ -2004,18 +2063,23 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= MATERIAL ================= */}
-              <div className="mr-[1rem] px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <p className="mb-2 ml-[1rem] text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                <div className="flex items-center justify-between gap-[0.5rem]">
+                  <p className="mb-2 ml-[1rem] text-[0.7rem] font-[700] text-[var(--primary-color)] flex-1">
                     Material
                   </p>
                   <button
                     onClick={() => toggleSection('material')}
-                    className="boredr-[0rem] mr-[0rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    className="mr-[0.75rem] border-0 bg-[var(--primary-white)] flex items-center justify-center p-0 h-[0.8rem] w-[0.8rem] flex-shrink-0"
                   >
-                    {collapsed.material ? '+' : '−'}
+                    <img
+                      src={collapsed.material ? assets.plusIcon : assets.minusIcon}
+                      alt={collapsed.material ? 'Expand' : 'Collapse'}
+                      className="h-[0.8rem] w-[0.8rem]"
+                    />
                   </button>
                 </div>
+              <div className="mr-[1rem] px-[3] py-[2]">
+
                 {!collapsed.material && (
                   <>
                     {/* Color */}
@@ -2076,22 +2140,61 @@ const Sidebar: React.FC = () => {
 
                     {/* Texture */}
 
-                    {/* ================= Change Texture ================= */}
-                    <div className="ml-[1rem] flex flex-row items-center justify-between gap-[0.25rem]">
-                      <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                        Change Texture
-                      </p>
+                    {/* ================= Change Texture & Texture Grain ================= */}
+                    <div className="ml-[1rem] mr-[0rem] flex flex-col gap-[0.5rem]">
+                      {/* Labels Row */}
+                      <div className="flex gap-[1rem]">
+                        <div className="flex-1">
+                          <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                            Change Texture
+                          </p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[0.6rem] ml-[0.5rem] font-[700] text-[var(--primary-color)]">
+                            Texture Grain
+                          </p>
+                        </div>
+                      </div>
 
-                      <button
-                        onClick={toggleTextureList}
-                        disabled={isTextureChangeDisabled}
-                        className={`flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                          isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                        }`}
-                      >
-                        Select Texture
-                        <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
-                      </button>
+                      {/* Controls Row */}
+                      <div className="flex gap-[0.5rem]">
+                        {/* Change Texture Button */}
+                        <button
+                          onClick={toggleTextureList}
+                          disabled={isTextureChangeDisabled}
+                          className={`flex flex-1 h-[1.2rem] cursor-pointer appearance-none items-center justify-between rounded-[0.2rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
+                        >
+                          Select Texture
+                          <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
+                        </button>
+
+                        {/* Texture Grain Input */}
+                        <div className="relative flex-1 h-[1.2rem] w-[4.5rem] appearance-none rounded-[0.2rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] p-[0rem] bg-[white] flex items-center">
+                          {/* Rotate Icon */}
+                          <div className="pl-[0.5rem]">
+                            <img
+                              src={assets.rotateIcon}
+                              alt="rotate"
+                              className="pointer-events-none h-[0.8rem] w-[0.8rem] opacity-70"
+                            />
+                          </div>
+                          <div className="flex h-[1rem] flex-1 items-center justify-center pl-[0.3rem]">
+                            {/* Input */}
+                            <input
+                              type="number"
+                              min={0}
+                              max={180}
+                              value={textureRotation}
+                              onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
+                              disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
+                              className="h-[1rem] w-[2.5rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                          <div className="pr-[0.5rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">°</div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Texture List */}
@@ -2157,35 +2260,6 @@ const Sidebar: React.FC = () => {
                         )}
                       </div>
                     )}
-                    {/* ================= Texture Grain ================= */}
-                    <div className="flex items-center justify-between gap-[0rem]">
-                      <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                        Texture Grain
-                      </p>
-
-                      <div className="relative mr-[0rem] h-[1.2rem] w-[6.8rem] appearance-none rounded-[0.35rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] p-[0rem]">
-                        {/* Rotate Icon */}
-                        <div>
-                          <img
-                            src={assets.rotateIcon}
-                            alt="rotate"
-                            className="pointer-events-none absolute top-[0.55rem] left-[0.35rem] h-[1rem] w-[1rem] -translate-y-[0.45rem] opacity-70"
-                          />
-                        </div>
-                        <div className="absolute top-0 left-[1.5rem] flex h-full w-[4.8rem] items-center justify-center">
-                          {/* Input */}
-                          <input
-                            type="number"
-                            min={0}
-                            max={180}
-                            value={textureRotation}
-                            onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                            disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                            className="h-[0.7rem] w-full border-[0rem] p-[0rem] pr-[0rem] pl-[0.3rem] pl-[0rem] text-[0.7rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
 
                     {/* Door Position */}
                     {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
