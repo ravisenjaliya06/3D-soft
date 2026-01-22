@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
+import {
+  PLATFORM_DEPTH,
+  PLATFORM_HEIGHT,
+  PLATFORM_RAYCAST_HEIGHT,
+  PLATFORM_THICKNESS,
+} from '../handler/constant';
+import { FLOOR_PLAN_TYPES, OBJECT_TYPES } from '../sceneCreator/interface';
+import { store } from '../store';
+import { removeObject, updateObject } from '../store/dataSlice';
 import { removeAllOutlines } from '../utils/outlineHelpers';
 import { MoveHandlerOptions } from './interface';
 import { MoveHandler as IMoveHandler } from './moveHandlerInterface';
@@ -20,6 +28,7 @@ export class MoveHandler implements IMoveHandler {
   private dragOffset: THREE.Vector3;
   private initialClickPosition: THREE.Vector3;
   private walls: THREE.Mesh[] = [];
+  private platforms: THREE.Mesh[] = [];
 
   constructor(options: MoveHandlerOptions) {
     this.raycaster = new THREE.Raycaster();
@@ -77,28 +86,178 @@ export class MoveHandler implements IMoveHandler {
     );
   };
 
+  private findSnapTarget(
+    _object: THREE.Mesh,
+    targets: THREE.Mesh[],
+    rayOrigin?: THREE.Vector3,
+    rayDirection?: THREE.Vector3
+  ): THREE.Intersection | null {
+    if (!targets.length) return null;
+
+    const raycaster =
+      rayOrigin && rayDirection ? new THREE.Raycaster(rayOrigin, rayDirection) : this.raycaster;
+
+    const intersects = raycaster.intersectObjects(targets, true);
+    return intersects.length ? intersects[0] : null;
+  }
+
+  /**
+   * Helper to extract standardized metrics from a mesh key for snapping logic
+   * Returns dimensions in METERS and rotation/direction vectors
+   */
+  private getSnapMetrics(mesh: THREE.Mesh) {
+    const rotation = mesh.rotation.y;
+    const direction = new THREE.Vector3(1, 0, 0).applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      rotation
+    );
+
+    let widthM = 0;
+    let heightM = 0;
+    let depthM = 0;
+
+    if (mesh.geometry instanceof THREE.BoxGeometry) {
+      // Geometry parameters are usually in CM in this app, convert to Meters
+      widthM = mesh.geometry.parameters.width * 0.01;
+      heightM = mesh.geometry.parameters.height * 0.01;
+      depthM = mesh.geometry.parameters.depth * 0.01;
+    } else {
+      const box = new THREE.Box3().setFromObject(mesh);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      // Box3 getSize returns World Units (Meters)
+      widthM = Math.max(size.x, size.z); // Assume local X/Z max is width
+      // Note: This matches original logic `Math.max(wallSize.x, wallSize.z)`
+      heightM = size.y;
+      depthM = Math.min(size.x, size.z); // Assume smaller is depth?
+      // Original logic for wall just took max for length.
+      // Original logic for platform also took max for width.
+    }
+
+    return {
+      rotation,
+      direction,
+      widthM,
+      heightM,
+      depthM,
+      position: mesh.position.clone(),
+      topY: mesh.position.y + heightM / 2,
+    };
+  }
+
   private applyWallSnapping(object: THREE.Mesh) {
     if (!this.walls.length) return;
 
-    const intersects = this.raycaster.intersectObjects(this.walls, true);
-    if (!intersects.length) return;
+    const hit = this.findSnapTarget(object, this.walls);
+    if (!hit) return;
 
-    const hit = intersects[0];
     const wall = hit.object as THREE.Mesh;
+    const wallNormal =
+      hit.face?.normal.clone().transformDirection(wall.matrixWorld).normalize() ??
+      new THREE.Vector3(0, 0, 1);
 
-    const wallNormal = hit.face?.normal.clone() || new THREE.Vector3(0, 0, 1);
-    wallNormal.transformDirection(wall.matrixWorld);
+    // ---------------- PLATFORM ----------------
+    if (object.userData.type === OBJECT_TYPES.PLATFORM) {
+      const m = this.getSnapMetrics(wall);
+      object.rotation.y = m.rotation;
 
+      const wallHalf = m.widthM / 2;
+      const start = m.position.clone().addScaledVector(m.direction, -wallHalf);
+      const end = m.position.clone().addScaledVector(m.direction, wallHalf);
+
+      const overlapThreshold = PLATFORM_DEPTH * 0.02;
+      const localX = new THREE.Vector3(1, 0, 0);
+      const up = new THREE.Vector3(0, 1, 0);
+
+      const isCornerOverlap = (p: THREE.Vector3, plat: THREE.Mesh) => {
+        if (plat.position.distanceTo(p) >= overlapThreshold) return false;
+        const dir = localX.clone().applyAxisAngle(up, plat.rotation.y);
+        return Math.abs(dir.dot(m.direction)) < 0.5;
+      };
+
+      const others = this.platforms.filter((p) => p !== object);
+      const startHit = others.some((p) => isCornerOverlap(start, p));
+      const endHit = others.some((p) => isCornerOverlap(end, p));
+
+      let widthCM =
+        m.widthM * 100 - (startHit ? PLATFORM_DEPTH : 0) - (endHit ? PLATFORM_DEPTH : 0);
+      const offset = (endHit ? -1 : startHit ? 1 : 0) * (PLATFORM_DEPTH * 0.005);
+
+      if (object.geometry instanceof THREE.BoxGeometry) {
+        const g = object.geometry.parameters;
+        if (Math.abs(g.width - widthCM) > 0.1) {
+          object.geometry.dispose();
+          object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+        }
+      }
+
+      const wallDepthM =
+        wall.geometry instanceof THREE.BoxGeometry ? wall.geometry.parameters.depth * 0.01 : 0.1;
+
+      const finalPos = m.position
+        .clone()
+        .addScaledVector(m.direction, offset)
+        .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+
+      finalPos.y = PLATFORM_HEIGHT;
+      object.position.copy(finalPos);
+
+      const wallForward = new THREE.Vector3(0, 0, 1).applyQuaternion(wall.quaternion);
+      if (wallNormal.dot(wallForward) < 0) object.rotation.y += Math.PI;
+
+      return;
+    }
+
+    // ---------------- GENERIC OBJECT ----------------
     const box = new THREE.Box3().setFromObject(object);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const objectDepth = size.z;
+    const size = box.getSize(new THREE.Vector3());
 
-    const attachPosition = hit.point.clone().add(wallNormal.multiplyScalar(objectDepth / 2));
-
-    object.position.copy(attachPosition);
-
+    object.position.copy(hit.point.clone().addScaledVector(wallNormal, size.z / 2));
     object.rotation.y = wall.rotation.y;
+  }
+
+  private applyPlatformSnapping(object: THREE.Mesh) {
+    if (object.userData.type !== OBJECT_TYPES.SINK) return;
+
+    const platforms = this.platforms;
+    if (!platforms.length) return;
+
+    // Raycast down from the sink's current position to find a platform
+    const rayOrigin = object.position.clone();
+    rayOrigin.y = PLATFORM_RAYCAST_HEIGHT; // Start high
+
+    const hit = this.findSnapTarget(object, platforms, rayOrigin, new THREE.Vector3(0, -1, 0));
+
+    if (!hit) {
+      object.visible = false;
+      return;
+    }
+
+    object.visible = true;
+    const platform = hit.object as THREE.Mesh;
+    const metrics = this.getSnapMetrics(platform);
+
+    // 1. Match Rotation
+    object.rotation.y = metrics.rotation;
+
+    // 2. Restrict movement to Platform's local X-axis
+    // Vector from platform center to sink intended position
+    const toSink = object.position.clone().sub(metrics.position);
+
+    // Project toSink onto platformDirection to get horizontal offset along platform
+    const xOffset = toSink.dot(metrics.direction);
+
+    // Clamp xOffset to platform width
+    const clampedXOffset = Math.max(-metrics.widthM / 2, Math.min(metrics.widthM / 2, xOffset));
+
+    // Calculate final position: Platform position + (platform direction * clamped offset)
+    const finalPos = metrics.position.clone().add(metrics.direction.multiplyScalar(clampedXOffset));
+
+    // 3. Snap Y to platform surface
+    // Position sink center exactly at platform top surface + offset
+    finalPos.y = metrics.topY + 0.2;
+
+    object.position.copy(finalPos);
   }
 
   private onMouseMove = (event: MouseEvent) => {
@@ -111,6 +270,7 @@ export class MoveHandler implements IMoveHandler {
       clampedPosition = this.clampToGrid(position);
       this.draggedObject.position.copy(clampedPosition);
       this.applyWallSnapping(this.draggedObject as THREE.Mesh);
+      this.applyPlatformSnapping(this.draggedObject as THREE.Mesh);
     }
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -120,12 +280,15 @@ export class MoveHandler implements IMoveHandler {
     this.renderer.render(this.scene, this.camera);
   };
 
-  private setWalls() {
-    this.scene.children.forEach((object) => {
-      if (object instanceof THREE.Mesh && object.userData.type === FLOOR_PLAN_TYPES.WALL) {
-        this.walls.push(object);
-      }
-    });
+  private setSnapTargets() {
+    this.walls = [];
+    this.platforms = [];
+
+    for (const o of this.scene.children) {
+      if (!(o instanceof THREE.Mesh)) continue;
+      o.userData.type === FLOOR_PLAN_TYPES.WALL && this.walls.push(o);
+      o.userData.type === OBJECT_TYPES.PLATFORM && this.platforms.push(o);
+    }
   }
 
   private onMouseDown = () => {
@@ -137,6 +300,39 @@ export class MoveHandler implements IMoveHandler {
   private onMouseUp = (): THREE.Vector3 | null => {
     if (this.draggedObject) {
       const finalPosition = this.draggedObject.position.clone();
+
+      if (this.draggedObject.userData.objectId) {
+        const mesh = this.draggedObject as THREE.Mesh;
+
+        if (mesh.userData.type === OBJECT_TYPES.SINK && !mesh.visible) {
+          store.dispatch(removeObject(mesh.userData.objectId));
+          this.scene.remove(mesh);
+          this.isDragging = false;
+          this.draggedObject = null;
+          return null;
+        }
+
+        let width = 0;
+        let height = 0;
+        let depth = 0;
+
+        if (mesh.geometry instanceof THREE.BoxGeometry) {
+          width = mesh.geometry.parameters.width;
+          height = mesh.geometry.parameters.height;
+          depth = mesh.geometry.parameters.depth;
+        }
+
+        store.dispatch(
+          updateObject({
+            id: this.draggedObject.userData.objectId,
+            position: { x: finalPosition.x, y: finalPosition.y, z: finalPosition.z },
+            rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+            dimensions: { width, height, depth },
+            scale: { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z },
+          })
+        );
+      }
+
       this.isDragging = false;
       this.draggedObject = null;
       window.removeEventListener('mousemove', this.onMouseMove);
@@ -194,7 +390,7 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public enableDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
-    this.setWalls();
+    this.setSnapTargets();
     this.cleanupEventListeners();
     this.isDragging = false;
     this.draggedObject = null;

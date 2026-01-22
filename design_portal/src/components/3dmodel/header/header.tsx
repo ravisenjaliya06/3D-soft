@@ -291,19 +291,16 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     /** Toggles open/close animations for doors and drawers in the 3D scene. */
     const controller = new CabinetMotionController();
 
-    // Toggle global state once before processing all doors and drawers
-    CabinetMotionController.toggleGlobalState();
-
     design3D?.scene.traverse((child) => {
       if (child.userData.type === PART_TYPES.DOOR && child instanceof THREE.Mesh) {
         const direction = child.userData.openDirection;
         if (direction) {
-          controller.toggleDoor(child, false); // Don't toggle global state again
+          controller.toggleDoor(child);
         }
       }
 
       if (child.userData.type === PART_TYPES.DRAWER && child instanceof THREE.Mesh) {
-        controller.toggleDrawer(child, false); // Don't toggle global state again
+        controller.toggleDrawer(child);
       }
     });
   };

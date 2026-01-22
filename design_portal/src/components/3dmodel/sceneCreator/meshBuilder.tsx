@@ -1,37 +1,33 @@
 import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
+import { store } from '../store';
 import {
   DRAWER_PLANK_TYPES,
-  EDGES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
-  GROOVE_TYPE,
   Material,
   MATERIAL_TYPES,
   MeshObjectData,
+  OBJECT_TYPES,
   PART_TYPES,
 } from './interface';
-import { convertKeysToCamel, extractColorFromImage } from './utils';
-import {
-  GROOVE_DEPTH,
-  GROOVE_WIDTH,
-  GROOVE_END_INSET,
-  GROOVE_START_INSET,
-  PROTRUSION_DEPTH,
-  PROTRUSION_WIDTH,
-  DRAWER_GUIDE_WIDTH,
-  DRAWER_GUIDE_HEIGHT,
-  DRAWER_GUIDE_MULTIPLIER,
-  DRAWER_GUIDE_Y_POSITION,
-} from './constants';
+import { BandingTool } from './tools/bandingTool';
+import { GroovingTool } from './tools/groovingTool';
+import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
   private mesh: THREE.Mesh | null = null;
   private parentMesh: THREE.Mesh | null = null;
+  private bandingTool: BandingTool | null = null;
+  private groovingTool: GroovingTool | null = null;
 
-  constructor(data: MeshObjectData) {
+  constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+      this.groovingTool = new GroovingTool(scene);
+    }
   }
 
   /**
@@ -42,115 +38,102 @@ export class MeshBuilder {
   }
 
   /**
-   * Check if an edge of the current plank is covered by another plank
-   * Returns true if the edge is touching/covered by another plank
-   * Uses dynamic geometry-based detection, not name-based
+   * Set the scene for BandingTool and GroovingTool initialization
    */
-  private _isEdgeCovered(mesh: THREE.Mesh, edge: string, threshold: number = 0.5): boolean {
-    if (!this.parentMesh || !(mesh.geometry instanceof THREE.BoxGeometry)) return false;
+  public setScene(scene: THREE.Scene): void {
+    this.bandingTool = new BandingTool(scene);
+    this.groovingTool = new GroovingTool(scene);
+  }
 
-    // Get current plank's bounding box in world space
-    mesh.updateMatrixWorld(true);
-    const currentBox = new THREE.Box3().setFromObject(mesh);
-    const currentMin = currentBox.min;
-    const currentMax = currentBox.max;
-    const currentSize = new THREE.Vector3();
-    currentBox.getSize(currentSize);
+  /**
+   * Get or initialize BandingTool from mesh's scene
+   * This ensures banding works even when scene wasn't passed initially
+   */
+  private _getOrCreateBandingTool(): BandingTool | null {
+    if (this.bandingTool) {
+      return this.bandingTool;
+    }
 
-    // Get all sibling planks
-    const siblings: THREE.Mesh[] = [];
-    this.parentMesh.traverse((child) => {
-      if (
-        child !== mesh &&
-        child instanceof THREE.Mesh &&
-        Object.values(PART_TYPES).includes(child.userData.type)
-      ) {
-        siblings.push(child);
+    let scene: THREE.Scene | null = null;
+
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
       }
-    });
-
-    // Check if any sibling plank covers this edge
-    for (const sibling of siblings) {
-      if (!(sibling.geometry instanceof THREE.BoxGeometry)) continue;
-
-      sibling.updateMatrixWorld(true);
-      const siblingBox = new THREE.Box3().setFromObject(sibling);
-      const siblingMin = siblingBox.min;
-      const siblingMax = siblingBox.max;
-      const siblingSize = new THREE.Vector3();
-      siblingBox.getSize(siblingSize);
-
-      // Determine which edge we're checking and calculate the edge area
-      let edgeOverlap = false;
-      let edgeTouching = false;
-
-      if (edge === EDGES.TOP) {
-        // Top edge: check if sibling overlaps in X and Z, and touches from above
-        const overlapX =
-          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingY =
-          Math.abs(siblingMin.y - currentMax.y) < threshold && siblingMin.y <= currentMax.y;
-        edgeOverlap = overlapX && overlapZ;
-        edgeTouching = touchingY;
-      } else if (edge === EDGES.BOTTOM) {
-        // Bottom edge: check if sibling overlaps in X and Z, and touches from below
-        const overlapX =
-          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingY =
-          Math.abs(siblingMax.y - currentMin.y) < threshold && siblingMax.y >= currentMin.y;
-        edgeOverlap = overlapX && overlapZ;
-        edgeTouching = touchingY;
-      } else if (edge === EDGES.LEFT) {
-        // Left edge: check if sibling overlaps in Y and Z, and touches from left
-        const overlapY =
-          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingX =
-          Math.abs(siblingMax.x - currentMin.x) < threshold && siblingMax.x <= currentMin.x;
-        edgeOverlap = overlapY && overlapZ;
-        edgeTouching = touchingX;
-      } else if (edge === EDGES.RIGHT) {
-        // Right edge: check if sibling overlaps in Y and Z, and touches from right
-        const overlapY =
-          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const overlapZ =
-          siblingMin.z < currentMax.z - threshold && siblingMax.z > currentMin.z + threshold;
-        const touchingX =
-          Math.abs(siblingMin.x - currentMax.x) < threshold && siblingMin.x >= currentMax.x;
-        edgeOverlap = overlapY && overlapZ;
-        edgeTouching = touchingX;
-      } else if (edge === EDGES.FRONT) {
-        // Front edge: check if sibling overlaps in X and Y, and touches from front
-        const overlapX =
-          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapY =
-          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const touchingZ =
-          Math.abs(siblingMin.z - currentMax.z) < threshold && siblingMin.z <= currentMax.z;
-        edgeOverlap = overlapX && overlapY;
-        edgeTouching = touchingZ;
-      } else if (edge === EDGES.BACK) {
-        // Back edge: check if sibling overlaps in X and Y, and touches from back
-        const overlapX =
-          siblingMin.x < currentMax.x - threshold && siblingMax.x > currentMin.x + threshold;
-        const overlapY =
-          siblingMin.y < currentMax.y - threshold && siblingMax.y > currentMin.y + threshold;
-        const touchingZ =
-          Math.abs(siblingMax.z - currentMin.z) < threshold && siblingMax.z >= currentMin.z;
-        edgeOverlap = overlapX && overlapY;
-        edgeTouching = touchingZ;
-      }
-
-      if (edgeOverlap && edgeTouching) {
-        return true;
+      if (current instanceof THREE.Scene) {
+        scene = current;
       }
     }
 
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+      return this.bandingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Get or initialize GroovingTool from mesh's scene
+   * This ensures grooving works even when scene wasn't passed initially
+   */
+  private _getOrCreateGroovingTool(): GroovingTool | null {
+    if (this.groovingTool) {
+      return this.groovingTool;
+    }
+
+    let scene: THREE.Scene | null = null;
+
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
+      }
+      if (current instanceof THREE.Scene) {
+        scene = current;
+      }
+    }
+
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.groovingTool = new GroovingTool(scene);
+      return this.groovingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if an edge of the current plank is covered by another plank
+   * Delegates to BandingTool if available
+   */
+  private _isEdgeCovered(mesh: THREE.Mesh, edge: string): boolean {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      return tool.isEdgeCovered(mesh, edge, this.parentMesh);
+    }
     return false;
   }
 
@@ -193,6 +176,18 @@ export class MeshBuilder {
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.PLATFORM) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.SINK) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          visible: false,
         });
       }
     });
@@ -340,326 +335,64 @@ export class MeshBuilder {
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
   }
 
-  // NOTE: This code use to load drawer guides
-  // private async _loadDrawerGuide(mesh: THREE.Mesh, materialProps: any) {
-  //   // Only load guides for drawer groups (isMain: true)
-  //   if (mesh.userData.type !== PART_TYPES.DRAWER || !mesh.userData.isMain) return;
+  private async _loadSink(mesh: THREE.Mesh) {
+    const url = '/glb/kitchen_sink.glb';
 
-  //   const placeGuide = async () => {
-  //     const url = materialProps.modelFile;
-  //     if (!url) return;
-
-  //     const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
-  //     const guideType = materialProps.guideType || materialProps.guide_type || 'Side Mount';
-  //     const sideClearance = (materialProps.sideClearance || materialProps.side_clearance || 12.7) / 1000;
-  //     const guideLength = (materialProps.length || 1);
-
-  //     if (guideType === 'Side Mount') {
-  //       mesh.updateMatrixWorld(true);
-
-  //       // Find left and right planks dynamically
-  //       let leftPlank: THREE.Mesh | null = null;
-  //       let rightPlank: THREE.Mesh | null = null;
-
-  //       mesh.traverse((child) => {
-  //         if (child instanceof THREE.Mesh) {
-  //           const plankName = child.name;
-  //           if (plankName === 'DRAWER_LEFT_PLANK' || plankName === DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK) {
-  //             leftPlank = child;
-  //           } else if (plankName === 'DRAWER_RIGHT_PLANK' || plankName === DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK) {
-  //             rightPlank = child;
-  //           }
-  //         }
-  //       });
-
-  //       // Calculate guide dimensions based on plank dimensions
-  //       let guideWidth = DRAWER_GUIDE_WIDTH; // Default width (thickness)
-  //       let guideHeight = DRAWER_GUIDE_HEIGHT; // Default height
-  //       let guideDepth = guideLength; // Default depth
-
-  //       // Calculate positions
-  //       let leftGuideX: number;
-  //       let rightGuideX: number;
-  //       let guideY: number;
-  //       let guideZ: number;
-
-  //       if (leftPlank !== null && rightPlank !== null) {
-  //         // Update matrices to get accurate bounding boxes
-  //         (leftPlank as THREE.Mesh).updateMatrixWorld(true);
-  //         (rightPlank as THREE.Mesh).updateMatrixWorld(true);
-
-  //         // Get bounding boxes of planks
-  //         const leftPlankBox = new THREE.Box3().setFromObject(leftPlank);
-  //         const rightPlankBox = new THREE.Box3().setFromObject(rightPlank);
-
-  //         const leftPlankSize = new THREE.Vector3();
-  //         const rightPlankSize = new THREE.Vector3();
-  //         leftPlankBox.getSize(leftPlankSize);
-  //         rightPlankBox.getSize(rightPlankSize);
-
-  //         // Calculate guide dimensions from plank dimensions
-  //         // Height: Match plank height
-  //         guideHeight = (leftPlankSize.y + rightPlankSize.y) / 2;
-  //         // Depth: Match plank depth (or use guideLength if specified)
-  //         guideDepth = (leftPlankSize.z + rightPlankSize.z) / 2;
-  //         // Width: Keep guide thickness (small width)
-  //         guideWidth = DRAWER_GUIDE_WIDTH;
-
-  //         // Get plank positions in drawer's local space
-  //         const leftPlankWorldPos = new THREE.Vector3();
-  //         const rightPlankWorldPos = new THREE.Vector3();
-  //         (leftPlank as THREE.Mesh).getWorldPosition(leftPlankWorldPos);
-  //         (rightPlank as THREE.Mesh).getWorldPosition(rightPlankWorldPos);
-
-  //         const leftPlankLocalPos = mesh.worldToLocal(leftPlankWorldPos.clone());
-  //         const rightPlankLocalPos = mesh.worldToLocal(rightPlankWorldPos.clone());
-
-  //         // Get plank bounding boxes in drawer's local space for accurate positioning
-  //         const leftPlankBoxLocal = new THREE.Box3();
-  //         const rightPlankBoxLocal = new THREE.Box3();
-          
-  //         (leftPlank as THREE.Mesh).traverse((child: THREE.Object3D) => {
-  //           if (child instanceof THREE.Mesh && child.geometry) {
-  //             child.geometry.computeBoundingBox();
-  //             if (child.geometry.boundingBox) {
-  //               const worldMin = child.localToWorld(child.geometry.boundingBox.min.clone());
-  //               const worldMax = child.localToWorld(child.geometry.boundingBox.max.clone());
-  //               const localMin = mesh.worldToLocal(worldMin);
-  //               const localMax = mesh.worldToLocal(worldMax);
-  //               leftPlankBoxLocal.expandByPoint(localMin);
-  //               leftPlankBoxLocal.expandByPoint(localMax);
-  //             }
-  //           }
-  //         });
-
-  //         (rightPlank as THREE.Mesh).traverse((child: THREE.Object3D) => {
-  //           if (child instanceof THREE.Mesh && child.geometry) {
-  //             child.geometry.computeBoundingBox();
-  //             if (child.geometry.boundingBox) {
-  //               const worldMin = child.localToWorld(child.geometry.boundingBox.min.clone());
-  //               const worldMax = child.localToWorld(child.geometry.boundingBox.max.clone());
-  //               const localMin = mesh.worldToLocal(worldMin);
-  //               const localMax = mesh.worldToLocal(worldMax);
-  //               rightPlankBoxLocal.expandByPoint(localMin);
-  //               rightPlankBoxLocal.expandByPoint(localMax);
-  //             }
-  //           }
-  //         });
-
-  //         // Position guides based on plank positions
-  //         // X: Position on inner side of planks with clearance
-  //         leftGuideX = leftPlankLocalPos.x + sideClearance;
-  //         rightGuideX = rightPlankLocalPos.x - sideClearance;
-          
-  //         // Y: Center Y of planks
-  //         guideY = (leftPlankBoxLocal.max.y + leftPlankBoxLocal.min.y) / 2;
-          
-  //         // Z: Center Z of planks
-  //         guideZ = (leftPlankBoxLocal.max.z + leftPlankBoxLocal.min.z) / 2;
-  //       } else {
-  //         // Fallback to drawer bounding box if planks not found
-  //         console.warn('Left or right plank not found, using drawer bounding box');
-  //         const drawerBox = new THREE.Box3().setFromObject(mesh);
-  //         const drawerMinWorld = drawerBox.min.clone();
-  //         const drawerMaxWorld = drawerBox.max.clone();
-  //         const drawerMinLocal = mesh.worldToLocal(drawerMinWorld);
-  //         const drawerMaxLocal = mesh.worldToLocal(drawerMaxWorld);
-          
-  //         const drawerCenterLocal = new THREE.Vector3();
-  //         drawerCenterLocal.addVectors(drawerMinLocal, drawerMaxLocal);
-  //         drawerCenterLocal.multiplyScalar(0.5);
-          
-  //         leftGuideX = drawerMinLocal.x + sideClearance;
-  //         rightGuideX = drawerMaxLocal.x - sideClearance;
-  //         guideY = drawerCenterLocal.y;
-  //         guideZ = (drawerMinLocal.z + drawerMaxLocal.z) * DRAWER_GUIDE_MULTIPLIER;
-  //       }
-
-  //       // Load GLB with calculated dimensions based on plank sizes
-  //       const guideModelGroup = await GLBLoader(backendUrl, `DrawerGuide_${mesh.name}`, {
-  //         width: 1,
-  //         height: 1,
-  //         depth: 1,
-  //       });
-
-  //       const extractMeshFromGroup = (object: THREE.Object3D): THREE.Mesh | null => {
-  //         if (object instanceof THREE.Mesh) {
-  //           return object;
-  //         }
-  //         for (const child of object.children) {
-  //           const mesh = extractMeshFromGroup(child);
-  //           if (mesh) return mesh;
-  //         }
-  //         return null;
-  //       };
-
-  //       const baseMesh = extractMeshFromGroup(guideModelGroup);
-  //       if (!baseMesh) {
-  //         console.warn('Could not extract mesh from drawer guide model');
-  //         return;
-  //       }
-
-  //       const createGuideMesh = (side: 'left' | 'right'): THREE.Mesh => {
-  //         const guideMesh = baseMesh.clone();
-  //         guideMesh.name = `DrawerGuide_${side}_${mesh.name}`;
-  //         guideMesh.userData.type = 'drawerGuide';
-  //         guideMesh.userData.side = side;
-  //         guideMesh.userData.objectId = `${mesh.userData.objectId}_guide_${side}`;
-  //         return guideMesh;
-  //       };
-        
-  //       const leftGuide = createGuideMesh('left');
-  //       leftGuide.rotation.set(Math.PI / 2, 0, 0);
-  //       leftGuide.position.set(leftGuideX, guideY, guideZ);
-  //       mesh.add(leftGuide);
-
-  //       const rightGuide = createGuideMesh('right');
-  //       rightGuide.rotation.set(Math.PI / 2, Math.PI, 0);
-  //       rightGuide.position.set(rightGuideX, guideY, guideZ);
-  //       mesh.add(rightGuide);
-  //     }
-  //   };
-
-  //   // Wait for drawer structure to be complete (similar to handles)
-  //   if (mesh.userData.type === PART_TYPES.DRAWER && mesh.userData.isMain) {
-  //     requestAnimationFrame(() => {
-  //       requestAnimationFrame(() => {
-  //         placeGuide().catch((error) => {
-  //           console.warn('Failed to load drawer guide:', error);
-  //         });
-  //       });
-  //     });
-  //   } else {
-  //     await placeGuide();
-  //   }
-  // }
-
-  /**
-   * Get the plank's texture image URL from its material
-   */
-  private _getPlankTextureUrl(): string | null {
-    if (!this.meshData.material) return null;
-
-    const materialArray = Array.isArray(this.meshData.material)
-      ? this.meshData.material
-      : [this.meshData.material];
-
-    // Find Panel Stock material (plank texture)
-    for (const materialData of materialArray) {
-      if (materialData?.type === MATERIAL_TYPES.PANEL_STOCK) {
-        if (materialData.textures && materialData.textures.length > 0) {
-          const textureUrl = materialData.textures[0]?.textureDetail?.image;
-          if (textureUrl) {
-            return `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureUrl}`;
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private async _createBandingMaterial(): Promise<THREE.MeshStandardMaterial> {
-    const plankTextureUrl = this._getPlankTextureUrl();
-
-    if (plankTextureUrl) {
-      try {
-        const color = await extractColorFromImage(plankTextureUrl);
-        return new THREE.MeshStandardMaterial({
-          color: color,
-          wireframe: false,
-        });
-      } catch (error) {
-        console.warn('Failed to extract color from plank texture, using default:', error);
-      }
-    }
-
-    return new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      wireframe: false,
+    const sinkModel = await GLBLoader(url, 'KitchenSink', {
+      width: this.meshData.dimensions.width,
+      height: this.meshData.dimensions.height,
+      depth: this.meshData.dimensions.depth,
     });
-  }
+    sinkModel.name = `Sink_for_${mesh.name}`;
+    sinkModel.userData.type = OBJECT_TYPES.SINK;
+    sinkModel.userData.objectId = this.meshData.id;
 
-  /**
-   * Helper function to create a banding mesh on a specific edge
-   * Banding sits ON the plank surface, not outside
-   */
-  private _createBandingMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    sideName: string,
-    bandingMaterial: THREE.MeshStandardMaterial
-  ): void {
-    if (this._isEdgeCovered(mesh, edge)) return;
-
-    const banding = new THREE.Mesh(geometry, bandingMaterial);
-    banding.position.copy(position);
-    banding.name = `Banding_${sideName}_${mesh.name}`;
-    banding.userData.type = 'banding';
-    banding.userData.edge = edge;
-    banding.userData.objectId = `${mesh.userData.objectId}_banding_${sideName.toLowerCase()}`;
-    mesh.add(banding);
+    mesh.add(sinkModel);
   }
 
   /**
    * Remove all banding meshes from a plank
    */
   public removeAllBanding(mesh: THREE.Mesh): void {
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'banding') {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      tool.removeAllBanding(mesh, this.meshData.id);
+    }
   }
 
   /**
    * Remove banding from a specific edge
    */
   public removeBandingOnEdge(mesh: THREE.Mesh, edge: string): void {
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === 'banding' && child.userData.edge === edge) {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      // Get banding thickness from material
+      const materialData = this.meshData.material;
+      const materialArray = Array.isArray(materialData)
+        ? materialData
+        : materialData
+          ? [materialData]
+          : [];
+      const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+      const bandingThickness = bandingMaterialData?.properties?.thickness || 1.5;
+
+      tool.removeBandingOnEdge(mesh, edge, bandingThickness, this.meshData.id);
+    }
   }
 
   /**
    * Update banding positions and sizes when plank dimensions change
    */
-  public async updateBanding(
-    mesh: THREE.Mesh
-  ): Promise<void> {
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
+  public async updateBanding(mesh: THREE.Mesh): Promise<void> {
+    const tool = this._getOrCreateBandingTool();
+    if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
     const bandingState = this.meshData.edgeBanding;
     if (!bandingState) return;
 
-    // Remove all existing banding
-    this.removeAllBanding(mesh);
+    const { width, height, depth } = mesh.geometry.parameters;
 
-    // Recreate banding with new dimensions
+    // Get banding material
     const materialData = this.meshData.material;
     if (!materialData) return;
 
@@ -667,7 +400,14 @@ export class MeshBuilder {
     const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
 
     if (bandingMaterialData) {
-      await this._createBandingOnPlank(mesh, bandingMaterialData, bandingState);
+      await tool.updateBanding(
+        mesh,
+        { width, height, depth },
+        bandingMaterialData,
+        bandingState,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
     }
   }
 
@@ -675,237 +415,9 @@ export class MeshBuilder {
    * Update grooving positions and sizes when plank dimensions change
    */
   public updateGrooving(mesh: THREE.Mesh): void {
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-
-    // Remove all existing grooving
-    this.removeAllGrooving(mesh);
-
-    // Update meshData dimensions from the actual mesh geometry
-    if (mesh.geometry instanceof THREE.BoxGeometry) {
-      const params = mesh.geometry.parameters;
-      this.meshData.dimensions = {
-        width: params.width,
-        height: params.height,
-        depth: params.depth,
-      };
-    }
-
-    // Recreate grooving with new dimensions
-    this.mesh = mesh;
-    this._createGrooving();
-  }
-
-  private async _createBandingOnPlank(
-    mesh: THREE.Mesh,
-    materialData: Material,
-    bandingState?: {
-      top?: boolean;
-      bottom?: boolean;
-      left?: boolean;
-      right?: boolean;
-      front?: boolean;
-      back?: boolean;
-    }
-  ) {
-    // Check if this is a plank
-    const isPlank = Object.values(PART_TYPES).includes(mesh.userData.type);
-
-    if (!isPlank) return;
-    if (mesh.userData.type === PART_TYPES.DRAWER && mesh.userData.isMain === true) return;
-
-    const bandingThickness = materialData.properties?.thickness || 1.5;
-
-    // Get plank dimensions
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-
-    const { width, height, depth } = mesh.geometry.parameters;
-
-    // Create banding material (async - extracts color from plank texture)
-    const bandingMaterial = await this._createBandingMaterial();
-
-    const dimensions = [
-      { value: width, name: 'width', axis: 'x' },
-      { value: height, name: 'height', axis: 'y' },
-      { value: depth, name: 'depth', axis: 'z' },
-    ].sort((a, b) => a.value - b.value);
-
-    const thicknessAxis = dimensions[0].axis;
-
-    // Determine which faces are the main faces (with texture) vs edges dynamically
-    let isVerticalPlank = false;
-    let isHorizontalPlank = false;
-    let isBackPlank = false;
-
-    // Dynamic detection: smallest dimension determines the textured faces
-    if (thicknessAxis === 'x') {
-      isVerticalPlank = true;
-    } else if (thicknessAxis === 'y') {
-      isHorizontalPlank = true;
-    } else if (thicknessAxis === 'z') {
-      isBackPlank = true;
-    } else {
-      isVerticalPlank = true;
-    }
-
-    // Use bandingState if provided, otherwise check all edges
-    const shouldCreateBanding = (edge: string): boolean => {
-      if (bandingState) {
-        const edgeMap: Record<string, keyof typeof bandingState> = {
-          [EDGES.TOP]: 'top',
-          [EDGES.BOTTOM]: 'bottom',
-          [EDGES.LEFT]: 'left',
-          [EDGES.RIGHT]: 'right',
-          [EDGES.FRONT]: 'front',
-          [EDGES.BACK]: 'back',
-        };
-        const stateKey = edgeMap[edge];
-        return stateKey ? (bandingState[stateKey] ?? false) : false;
-      }
-      // Default behavior: create banding if edge is not covered
-      return !this._isEdgeCovered(mesh, edge);
-    };
-
-    // Create banding only on specified edges (from bandingState) or visible/exposed edges
-    // For vertical planks: create banding on left, right, front, back sides
-    // where: front = top edge, back = bottom edge, right = front edge, left = back edge
-    if (isVerticalPlank) {
-      // Top edge: banding sits ON the top surface (not outside)
-      if (shouldCreateBanding(EDGES.TOP)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.TOP,
-          new THREE.BoxGeometry(width, bandingThickness, depth),
-          new THREE.Vector3(0, height / 2 - bandingThickness / 2, 0),
-          EDGES.TOP,
-          bandingMaterial
-        );
-      }
-
-      // Bottom edge: banding sits ON the bottom surface
-      if (shouldCreateBanding(EDGES.BOTTOM)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.BOTTOM,
-          new THREE.BoxGeometry(width, bandingThickness, depth),
-          new THREE.Vector3(0, -height / 2 + bandingThickness / 2, 0),
-          EDGES.BOTTOM,
-          bandingMaterial
-        );
-      }
-
-      // Front edge: banding sits ON the front surface
-      if (shouldCreateBanding(EDGES.FRONT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.FRONT,
-          new THREE.BoxGeometry(width, height, bandingThickness),
-          new THREE.Vector3(0, 0, depth / 2 - bandingThickness / 2),
-          EDGES.FRONT,
-          bandingMaterial
-        );
-      }
-
-      // Back edge: banding sits ON the back surface
-      if (shouldCreateBanding(EDGES.BACK)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.BACK,
-          new THREE.BoxGeometry(width, height, bandingThickness),
-          new THREE.Vector3(0, 0, -depth / 2 + bandingThickness / 2),
-          EDGES.BACK,
-          bandingMaterial
-        );
-      }
-    } else if (isHorizontalPlank) {
-      // Horizontal plank: banding on Left, Right, Front, Back faces
-      if (shouldCreateBanding(EDGES.LEFT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.LEFT,
-          new THREE.BoxGeometry(bandingThickness, height, depth),
-          new THREE.Vector3(-width / 2 + bandingThickness / 2, 0, 0),
-          EDGES.LEFT,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.RIGHT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.RIGHT,
-          new THREE.BoxGeometry(bandingThickness, height, depth),
-          new THREE.Vector3(width / 2 - bandingThickness / 2, 0, 0),
-          EDGES.RIGHT,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.FRONT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.FRONT,
-          new THREE.BoxGeometry(width, height, bandingThickness),
-          new THREE.Vector3(0, 0, depth / 2 - bandingThickness / 2),
-          EDGES.FRONT,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.BACK)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.BACK,
-          new THREE.BoxGeometry(width, height, bandingThickness),
-          new THREE.Vector3(0, 0, -depth / 2 + bandingThickness / 2),
-          EDGES.BACK,
-          bandingMaterial
-        );
-      }
-    } else if (isBackPlank) {
-      // Back plank: banding on Top, Bottom, Left, Right faces
-      if (shouldCreateBanding(EDGES.TOP)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.TOP,
-          new THREE.BoxGeometry(width, bandingThickness, depth),
-          new THREE.Vector3(0, height / 2 - bandingThickness / 2, 0),
-          EDGES.TOP,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.BOTTOM)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.BOTTOM,
-          new THREE.BoxGeometry(width, bandingThickness, depth),
-          new THREE.Vector3(0, -height / 2 + bandingThickness / 2, 0),
-          EDGES.BOTTOM,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.LEFT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.LEFT,
-          new THREE.BoxGeometry(bandingThickness, height, depth),
-          new THREE.Vector3(-width / 2 + bandingThickness / 2, 0, 0),
-          EDGES.LEFT,
-          bandingMaterial
-        );
-      }
-
-      if (shouldCreateBanding(EDGES.RIGHT)) {
-        this._createBandingMesh(
-          mesh,
-          EDGES.RIGHT,
-          new THREE.BoxGeometry(bandingThickness, height, depth),
-          new THREE.Vector3(width / 2 - bandingThickness / 2, 0, 0),
-          EDGES.RIGHT,
-          bandingMaterial
-        );
-      }
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.updateGrooving(mesh);
     }
   }
 
@@ -916,7 +428,15 @@ export class MeshBuilder {
    */
   public async applyParentBandingMaterial(parentBandingMaterial: Material): Promise<void> {
     if (!this.mesh) return;
-    await this._createBandingOnPlank(this.mesh, parentBandingMaterial, this.meshData.edgeBanding);
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+    await tool.createBandingOnPlank(
+      this.mesh,
+      parentBandingMaterial,
+      this.meshData.edgeBanding,
+      this.parentMesh,
+      { material: this.meshData.material, id: this.meshData.id }
+    );
   }
 
   /**
@@ -936,6 +456,8 @@ export class MeshBuilder {
   ): Promise<void> {
     const targetMesh = mesh || this.mesh;
     if (!targetMesh) return;
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
 
     // Use provided banding material or find it from meshData
     let bandingMaterialData = bandingMaterial;
@@ -953,25 +475,14 @@ export class MeshBuilder {
     // Use provided edgeBandingState or fall back to meshData
     const bandingState = edgeBandingState || this.meshData.edgeBanding;
 
-    // Check if we have banding material and at least one edge is enabled
     if (bandingMaterialData && bandingState) {
-      const hasAnyBanding =
-        bandingState.top ||
-        bandingState.bottom ||
-        bandingState.left ||
-        bandingState.right ||
-        bandingState.front ||
-        bandingState.back;
-
-      if (hasAnyBanding) {
-        // Remove all existing banding first to avoid duplicates
-        this.removeAllBanding(targetMesh);
-        // Then recreate based on current state
-        await this._createBandingOnPlank(targetMesh, bandingMaterialData, bandingState);
-      } else {
-        // No edges enabled, remove all banding
-        this.removeAllBanding(targetMesh);
-      }
+      await tool.applyBandingFromState(
+        targetMesh,
+        bandingState,
+        bandingMaterialData,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
     }
   }
 
@@ -986,13 +497,28 @@ export class MeshBuilder {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
         this._loadHandle(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
-        this._createBandingOnPlank(this.mesh!, materialData).catch((error) => {
-          console.warn('Failed to create banding:', error);
-        });
-      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
-        // this._loadDrawerGuide(this.mesh!, materialData.properties);
+        if (this.mesh) {
+          const tool = this._getOrCreateBandingTool();
+          if (tool) {
+            tool
+              .createBandingOnPlank(
+                this.mesh,
+                materialData,
+                this.meshData.edgeBanding,
+                this.parentMesh,
+                { material: this.meshData.material, id: this.meshData.id }
+              )
+              .catch((error) => {
+                console.warn('Failed to create banding:', error);
+              });
+          }
+        }
       }
     });
+
+    if (this.meshData.type === OBJECT_TYPES.SINK) {
+      this._loadSink(this.mesh!);
+    }
   }
 
   public createMesh(): THREE.Mesh {
@@ -1074,21 +600,10 @@ export class MeshBuilder {
    * Remove all grooving meshes from a plank
    */
   public removeAllGrooving(mesh: THREE.Mesh): void {
-    const toRemove: THREE.Object3D[] = [];
-    mesh.children.forEach((child) => {
-      if (child.userData.type === GROOVE_TYPE.GROOVE || child.userData.type === GROOVE_TYPE.PROTRUSION) {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) {
-          child.material.dispose();
-        }
-      }
-      mesh.remove(child);
-    });
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.removeAllGrooving(mesh);
+    }
   }
 
   /**
@@ -1097,191 +612,10 @@ export class MeshBuilder {
   private _createGrooving(): void {
     if (!this.mesh) return;
 
-    // Check if this is a plank
-    const isPlank = Object.values(PART_TYPES).includes(this.mesh.userData.type);
-    if (!isPlank) {
-      return;
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.createGrooving(this.mesh);
     }
-
-    if (!(this.mesh.geometry instanceof THREE.BoxGeometry)) {
-      console.log('[Grooving] Not a BoxGeometry');
-      return;
-    }
-
-    // Check both meshData.name and mesh.name (mesh.name is set after _setName)
-    const plankName = (this.meshData.name || this.mesh.name || '').toUpperCase();
-    const { width, height, depth } = this.mesh.geometry.parameters;
-
-    // Only create grooving for BACK_PLANK
-    if (plankName !== 'BACK_PLANK') {
-      return;
-    }
-
-    // Get plank material
-    const plankMaterial = this.mesh.material instanceof THREE.Material
-      ? this.mesh.material.clone()
-      : Array.isArray(this.mesh.material) && this.mesh.material.length > 0
-        ? this.mesh.material[0].clone()
-        : new THREE.MeshStandardMaterial({ color: 0xffffff });
-
-    // Back plank: create both grooves (female) and protrusions (male)
-    console.log('[Grooving] Creating grooves and protrusions for back plank');
-    
-    // Create grooves (female parts) on back plank edges
-    // Groove begins 25mm inside and ends 6mm from the edge
-    const grooveMaterial = plankMaterial.clone();
-    // Make groove slightly darker to show depth
-    if (grooveMaterial instanceof THREE.MeshStandardMaterial) {
-      const color = new THREE.Color();
-      if (grooveMaterial.color) {
-        color.copy(grooveMaterial.color);
-        color.multiplyScalar(0.7); // Slightly darker for depth effect
-        grooveMaterial.color = color;
-      }
-    }
-    grooveMaterial.visible = true;
-    if (grooveMaterial instanceof THREE.MeshStandardMaterial) {
-      grooveMaterial.transparent = false;
-    }
-
-    // Calculate groove dimensions and positions
-    // Groove begins 25mm inside and ends 6mm from the edge
-    
-    // For top/bottom edges: groove runs horizontally along width
-    // Groove starts 25mm from left edge, ends 6mm from right edge
-    const topBottomGrooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET; // width - 25 - 6
-    const topBottomGrooveCenterX = ((-width / 2 + GROOVE_START_INSET) + (width / 2 - GROOVE_END_INSET)) / 2;
-    const topBottomGrooveCenterY_top = height / 2 - GROOVE_WIDTH / 2; // Slightly inside top edge
-    const topBottomGrooveCenterY_bottom = -height / 2 + GROOVE_WIDTH / 2; // Slightly inside bottom edge
-
-    // For left/right edges: groove runs vertically along height
-    // Groove starts 25mm from bottom edge, ends 6mm from top edge
-    const leftRightGrooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET; // height - 25 - 6
-    const leftRightGrooveCenterX_left = -width / 2 + GROOVE_WIDTH / 2; // Slightly inside left edge
-    const leftRightGrooveCenterX_right = width / 2 - GROOVE_WIDTH / 2; // Slightly inside right edge
-    const leftRightGrooveCenterY = ((-height / 2 + GROOVE_START_INSET) + (height / 2 - GROOVE_END_INSET)) / 2;
-
-    // Top groove - begins 25mm inside, ends 6mm from edge
-    this._createGrooveMesh(
-      this.mesh,
-      EDGES.TOP,
-      new THREE.BoxGeometry(topBottomGrooveLength, GROOVE_WIDTH, GROOVE_DEPTH),
-      new THREE.Vector3(topBottomGrooveCenterX, topBottomGrooveCenterY_top, 0),
-      grooveMaterial
-    );
-
-    // Bottom groove - begins 25mm inside, ends 6mm from edge
-    this._createGrooveMesh(
-      this.mesh,
-      EDGES.BOTTOM,
-      new THREE.BoxGeometry(topBottomGrooveLength, GROOVE_WIDTH, GROOVE_DEPTH),
-      new THREE.Vector3(topBottomGrooveCenterX, topBottomGrooveCenterY_bottom, 0),
-      grooveMaterial
-    );
-
-    // Left groove - begins 25mm inside, ends 6mm from edge
-    this._createGrooveMesh(
-      this.mesh,
-      EDGES.LEFT,
-      new THREE.BoxGeometry(GROOVE_WIDTH, leftRightGrooveLength, GROOVE_DEPTH),
-      new THREE.Vector3(leftRightGrooveCenterX_left, leftRightGrooveCenterY, 0),
-      grooveMaterial
-    );
-
-    // Right groove - begins 25mm inside, ends 6mm from edge
-    this._createGrooveMesh(
-      this.mesh,
-      EDGES.RIGHT,
-      new THREE.BoxGeometry(GROOVE_WIDTH, leftRightGrooveLength, GROOVE_DEPTH),
-      new THREE.Vector3(leftRightGrooveCenterX_right, leftRightGrooveCenterY, 0),
-      grooveMaterial
-    );
-    
-    // Create protrusions (male parts) on back plank edges - extending outward
-    const protrusionMaterial = plankMaterial.clone();
-    // Keep original material color for protrusions
-    protrusionMaterial.visible = true;
-    if (protrusionMaterial instanceof THREE.MeshStandardMaterial) {
-      protrusionMaterial.transparent = false;
-    }
-    
-    this._createProtrusionMesh(
-      this.mesh,
-      EDGES.TOP,
-      new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH),
-      new THREE.Vector3(0, height / 2 + PROTRUSION_WIDTH / 2, 0),
-      protrusionMaterial
-    );
-    this._createProtrusionMesh(
-      this.mesh,
-      EDGES.BOTTOM,
-      new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH),
-      new THREE.Vector3(0, -height / 2 - PROTRUSION_WIDTH / 2, 0),
-      protrusionMaterial
-    );
-    this._createProtrusionMesh(
-      this.mesh,
-      EDGES.LEFT,
-      new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH),
-      new THREE.Vector3(-width / 2 - PROTRUSION_WIDTH / 2, 0, 0),
-      protrusionMaterial
-    );
-    this._createProtrusionMesh(
-      this.mesh,
-      EDGES.RIGHT,
-      new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH),
-      new THREE.Vector3(width / 2 + PROTRUSION_WIDTH / 2, 0, 0),
-      protrusionMaterial
-    );
-  }
-
-  /**
-   * Helper function to create a groove mesh (female part) on a plank edge
-   */
-  private _createGrooveMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    material: THREE.Material
-  ): void {
-    const groove = new THREE.Mesh(geometry, material);
-    groove.position.copy(position);
-    groove.name = `Groove_${edge}_${mesh.name}`;
-    groove.userData.type = GROOVE_TYPE.GROOVE;
-    groove.userData.edge = edge;
-    groove.userData.objectId = `${mesh.userData.objectId}_groove_${edge.toLowerCase()}`;
-    
-    // Ensure groove is visible
-    groove.visible = true;
-    groove.castShadow = true;
-    groove.receiveShadow = true;
-    
-    mesh.add(groove);
-  }
-
-  /**
-   * Helper function to create a protrusion mesh (male part) on back plank edge
-   */
-  private _createProtrusionMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    material: THREE.Material
-  ): void {
-    const protrusion = new THREE.Mesh(geometry, material);
-    protrusion.position.copy(position);
-    protrusion.name = `Protrusion_${edge}_${mesh.name}`;
-    protrusion.userData.type = GROOVE_TYPE.PROTRUSION;
-    protrusion.userData.edge = edge;
-    protrusion.userData.objectId = `${mesh.userData.objectId}_protrusion_${edge.toLowerCase()}`;
-
-    protrusion.visible = true;
-    protrusion.castShadow = true;
-    protrusion.receiveShadow = true;
-    
-    mesh.add(protrusion);
   }
 
   private _updateTextureRotation(mesh: THREE.Mesh, rotationDegrees?: number): void {

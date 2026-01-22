@@ -28,10 +28,10 @@ import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
-import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES } from '../sceneCreator/interface';
+import { BandingTool } from '../sceneCreator/tools/bandingTool';
+import { findMeshById } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import { findMeshById } from '../sceneCreator/utils';
 
 //import style from './sidebar.module.css';
 
@@ -136,6 +136,7 @@ const Sidebar: React.FC = () => {
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
+  const bandingToolRef = useRef<BandingTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
@@ -194,6 +195,13 @@ const Sidebar: React.FC = () => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
   }, [scene, dispatch]);
 
+  /** banding tool ref */
+  useEffect(() => {
+    if (scene) {
+      bandingToolRef.current = new BandingTool(scene);
+    }
+  }, [scene]);
+
   useEffect(() => {
     if (selectedObject && scene) {
       let targetMesh: THREE.Mesh | null = null;
@@ -230,7 +238,7 @@ const Sidebar: React.FC = () => {
     });
   }, [handleObject]);
 
-  const updateHandlePosState = (axis: Axis, value: number, isHandle?: boolean) => {
+  const updateHandlePosState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
     setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
@@ -244,7 +252,7 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const updateHandleRotState = (axis: Axis, value: number, isHandle?: boolean) => {
+  const updateHandleRotState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
     setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
@@ -266,7 +274,6 @@ const Sidebar: React.FC = () => {
 
     const controller = new CabinetMotionController();
 
-    // Toggle only the selected object individually (doesn't affect global state)
     scene.traverse((node) => {
       if (!(node instanceof THREE.Mesh)) return;
 
@@ -274,15 +281,12 @@ const Sidebar: React.FC = () => {
       if (objectId !== targetId) return;
 
       if (type === PART_TYPES.DOOR) {
-        const direction = node.userData.openDirection;
-        if (direction) {
-          controller.toggleDoorIndividual(node);
-        }
+        controller.toggleDoor(node);
         return;
       }
 
       if (type === PART_TYPES.DRAWER) {
-        controller.toggleDrawerIndividual(node);
+        controller.toggleDrawer(node);
       }
     });
   };
@@ -643,7 +647,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('y', Number(e.target.value), true),
+        updateHandlePosState('y', Number(e.target.value)),
     },
 
     {
@@ -654,7 +658,7 @@ const Sidebar: React.FC = () => {
       value: handlePos.x,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandlePosState('x', Number(e.target.value), true),
+        updateHandlePosState('x', Number(e.target.value)),
     },
 
     {
@@ -665,7 +669,7 @@ const Sidebar: React.FC = () => {
       value: handleRot.y,
       disabled: isQuickHideActive,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        updateHandleRotState('y', Number(e.target.value), true),
+        updateHandleRotState('y', Number(e.target.value)),
     },
   ];
 
@@ -760,8 +764,8 @@ const Sidebar: React.FC = () => {
       // Load banding state - first check Redux, then check scene for existing banding
       let bandingState = selectedObject.edgeBanding;
 
-      // If no banding state in Redux, detect from scene meshes
-      if (!bandingState && scene) {
+      // If no banding state in Redux, detect from scene meshes using BandingTool
+      if (!bandingState && scene && bandingToolRef.current) {
         let foundMesh: THREE.Mesh | null = null;
         scene.traverse((obj) => {
           if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
@@ -770,27 +774,8 @@ const Sidebar: React.FC = () => {
         });
 
         if (foundMesh) {
-          // Detect existing banding meshes
-          const detectedBanding: {
-            top?: boolean;
-            bottom?: boolean;
-            left?: boolean;
-            right?: boolean;
-            front?: boolean;
-            back?: boolean;
-          } = {};
-
-          // Iterate through children to find banding meshes
-          const meshAsObject = foundMesh as THREE.Object3D;
-          for (let i = 0; i < meshAsObject.children.length; i++) {
-            const child = meshAsObject.children[i];
-            if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
-              const edge = child.userData.edge;
-              if (edge && typeof edge === 'string') {
-                detectedBanding[edge as keyof typeof detectedBanding] = true;
-              }
-            }
-          }
+          // Use BandingTool to detect existing banding
+          const detectedBanding = bandingToolRef.current.detectBandingState(foundMesh);
 
           // If we found banding in scene, update Redux state
           if (Object.keys(detectedBanding).length > 0) {
@@ -957,34 +942,32 @@ const Sidebar: React.FC = () => {
   };
 
   // Determine which edges are valid for banding based on plank dimensions
-  // The smallest dimension determines which faces are the "thickness" faces (no banding on those)
   const getValidBandingEdges = (): Set<string> => {
-    if (!selectedObject || !isPlankSelected || !selectedObject.dimensions) {
+    if (!selectedObject || !isPlankSelected || !scene || !bandingToolRef.current) {
       return new Set(['top', 'bottom', 'left', 'right', 'front', 'back']); // All enabled if no dimensions
     }
 
-    const { width = 0, height = 0, depth = 0 } = selectedObject.dimensions;
+    // Find the mesh in the scene
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
 
-    // Find the smallest dimension (thickness)
-    const dimensions = [
-      { value: width, axis: 'x', disabledEdges: ['left', 'right'] },
-      { value: height, axis: 'y', disabledEdges: ['top', 'bottom'] },
-      { value: depth, axis: 'z', disabledEdges: ['front', 'back'] },
-    ].sort((a, b) => a.value - b.value);
+    if (targetMesh) {
+      return bandingToolRef.current.getValidBandingEdges(targetMesh);
+    }
 
-    // The smallest dimension determines which edges should be disabled
-    const disabledEdges = dimensions[0].disabledEdges;
-    const validEdges = new Set(['top', 'bottom', 'left', 'right', 'front', 'back']);
-    disabledEdges.forEach((edge) => validEdges.delete(edge));
-
-    return validEdges;
+    return new Set(['top', 'bottom', 'left', 'right', 'front', 'back']);
   };
 
   const handleBandingToggle = async (
     edge: 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back',
     enabled: boolean
   ) => {
-    if (!selectedObject || isDisabled || !isPlankSelected) return;
+    if (!selectedObject || isDisabled || !isPlankSelected || !scene || !bandingToolRef.current)
+      return;
 
     // Check if this edge is valid for banding based on plank dimensions
     const validEdges = getValidBandingEdges();
@@ -1017,8 +1000,6 @@ const Sidebar: React.FC = () => {
     });
 
     // Update 3D scene
-    if (!scene) return;
-
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
@@ -1027,10 +1008,6 @@ const Sidebar: React.FC = () => {
     });
 
     if (targetMesh) {
-      const { MeshBuilder } = await import('../sceneCreator/meshBuilder');
-      const updatedObject = { ...selectedObject, edgeBanding: newBandingState };
-      const builder = new MeshBuilder(updatedObject);
-
       // Find parent mesh
       let parentMesh: THREE.Mesh | null = null;
       if (selectedObject.parent) {
@@ -1040,41 +1017,33 @@ const Sidebar: React.FC = () => {
           }
         });
       }
-      builder.setParentMesh(parentMesh);
 
-      // Always recreate all banding based on the complete state
-      // This ensures consistency whether adding or removing
-      let bandingMaterial = null;
-
-      // First check if plank has banding material
-      const materialArray = Array.isArray(selectedObject.material)
-        ? selectedObject.material
-        : selectedObject.material
-          ? [selectedObject.material]
-          : [];
-      bandingMaterial = materialArray.find((mat) => mat?.type === SCENE_MATERIAL_TYPES.BANDING);
-
-      // If plank doesn't have banding material, check parent
-      if (!bandingMaterial && selectedObject.parent) {
-        const parentObject = objects.find((obj) => obj.id === selectedObject.parent);
-        if (parentObject) {
-          const parentMaterialArray = Array.isArray(parentObject.material)
-            ? parentObject.material
-            : parentObject.material
-              ? [parentObject.material]
-              : [];
-          bandingMaterial = parentMaterialArray.find(
-            (mat) => mat?.type === SCENE_MATERIAL_TYPES.BANDING
-          );
-        }
-      }
+      // Get banding material
+      const bandingMaterial = bandingToolRef.current.getBandingMaterial(
+        targetMesh,
+        { material: selectedObject.material, parent: selectedObject.parent },
+        objects.map((obj) => ({ id: obj.id, material: obj.material }))
+      );
 
       if (bandingMaterial) {
-        // Apply all banding based on the updated state, pass the banding material and state
-        await builder.applyBandingFromState(targetMesh, bandingMaterial, newBandingState);
+        // Use BandingTool to apply banding
+        await bandingToolRef.current.applyBandingFromState(
+          targetMesh,
+          newBandingState,
+          bandingMaterial,
+          parentMesh,
+          { material: selectedObject.material, id: selectedObject.id },
+          objects.map((obj) => ({ id: obj.id, material: obj.material }))
+        );
       } else if (!enabled) {
         // If no banding material but we're removing, just remove the edge
-        builder.removeBandingOnEdge(targetMesh, edge);
+        const bandingThickness = 1.5; // Default thickness
+        bandingToolRef.current.removeBandingOnEdge(
+          targetMesh,
+          edge,
+          bandingThickness,
+          selectedObject.id
+        );
       } else {
         // If enabling but no banding material found, log warning
         console.warn('No banding material found for plank. Cannot add banding.');
