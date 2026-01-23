@@ -84,10 +84,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   useEffect(() => {
     const selectedObject = state?.data?.selectedObject;
     const selectedChildObject = state?.data?.selectedChildObject;
-    // if (!selectedObject || !selectedChildObject) {
-    //   router.push(`/design/${designId}`);
-    //   return;
-    // }
 
     const scene = state?.scene?.scene;
     if (!threeCanvasRef.current || !scene) return;
@@ -114,25 +110,18 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       const { size, thicknessAxis } = plankInfo;
       const currentThickness = size[thicknessAxis];
 
-      // Reset rotation for correct calculation
-      // selectedChildMesh.rotation.set(0, 0, 0);
-
       if (thicknessAxis === 'y') {
-        // HORIZONTAL (Shelf/Top/Bottom): Width=X, Height=Z
         setpanelWidth(size.x);
         setpanelHeight(size.z);
       } else if (thicknessAxis === 'x') {
-        // VERTICAL (Side Panel): Width=Z, Height=Y
         setpanelWidth(size.z);
         setpanelHeight(size.y);
       } else {
-        // BACK/FRONT (thicknessAxis === 'z'): Width=X, Height=Y
         setpanelWidth(size.x);
         setpanelHeight(size.y);
       }
 
       const shape = new THREE.Shape();
-      // Points for the 2D shape (outline)
       let pW = 0;
       let pH = 0;
 
@@ -597,11 +586,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       return;
     }
 
-    // ✅ TODO: Save panel geometry / holes / shapePoints here
-    // Example:
-    // savePanelDesign({ shapePoints, holes, cornerRadius });
-
-    // Navigate back to design page
     router.push(`/design/${designId}`);
   };
 
