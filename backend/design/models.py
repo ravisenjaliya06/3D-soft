@@ -43,7 +43,7 @@ class CatalogTypeChoices(models.TextChoices):
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
 
-    UNKONWN = "unknown"
+    UNKNOWN = "unknown"
 
 
 class Design(models.Model):
@@ -167,46 +167,11 @@ class DesignCatalog(models.Model):
     )
     type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
     name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
+    materials = models.ManyToManyField(
+        "material.Material", related_name="design_catalog_material"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-
-class CatalogRules(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    catalog = models.ForeignKey(
-        DesignCatalog, on_delete=models.CASCADE, related_name="catalog_rule"
-    )
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        unique_together = ("catalog", "name")
-
-
-class CatalogRuleParts(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    type = models.CharField(
-        max_length=100,
-        choices=CatalogTypeChoices.choices,
-        default=CatalogTypeChoices.UNKONWN,
-    )
-    catalog_rule = models.ForeignKey(
-        CatalogRules,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="catalog_rule_parts",
-    )
-    material = models.ForeignKey(
-        "material.Material",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="catalog_rule_part_material",
-    )
-    data = models.JSONField(null=True, blank=True)
-    model_file = models.FileField(
-        upload_to="project/catalog_rules", null=True, blank=True
-    )

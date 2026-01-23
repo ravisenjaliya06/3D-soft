@@ -4,19 +4,21 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
 import {
   addDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
+  addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
-import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { DesignBuilder } from '../sceneCreator/designBuilder';
-import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, INVISIBLE_BOXES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
@@ -26,7 +28,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
-import { Datastate, IconMap, SelectedCabinetItem } from './interface';
+import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
@@ -42,11 +44,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
-  const [selectedCabinetItem, setSelectedCabinetItem] = useState<SelectedCabinetItem | null>(null);
+  const [selectedCabinetItem, setSelectedCabinetItem] = useState<MeshObjectData | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
-  const moveHandlerRef = React.useRef<MoveHandler | null>(null);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
@@ -55,6 +56,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setActiveOption(option);
   };
 
+  const CustomToast = ({
+    appearance,
+    message,
+  }: {
+    appearance: string;
+    message: string;
+    closeToast: () => void;
+  }) => {
+    const isError = appearance === 'error';
+
+    return (
+      <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
+        {/* Icon */}
+        <div
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
+        >
+          <span className="text-[0.85rem] font-bold text-white select-none">!</span>
+        </div>
+
+        {/* Message */}
+        <p className="flex-1 truncate font-[poppins] text-[0.9rem] leading-[1.2rem] text-white">
+          {message}
+        </p>
+      </div>
+    );
+  };
   /** Set popup position based on submenu button click */
   const handleSubmenuClick = (event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -86,29 +115,97 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (!threeDView) return;
+  const regenerateGroupIds = (group: MeshObjectData[]): MeshObjectData[] => {
+    const idMap = new Map<string, string>();
 
-    moveHandlerRef.current = new MoveHandler({
-      scene: threeDView.scene,
-      camera: threeDView.camera as THREE.PerspectiveCamera,
-      renderer: threeDView.renderer,
-      movableObjects: [],
+    return group.map((item) => {
+      const newId = crypto.randomUUID();
+      idMap.set(item.id, newId);
+
+      return {
+        ...item,
+        id: newId,
+        parent:
+          item.parent !== null
+            ? (idMap.get(item.parent ? item.parent : '') ?? item.parent)
+            : undefined,
+      };
     });
-  }, [threeDView]);
+  };
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
-      const designBuilder = new DesignBuilder(fullGroup ? fullGroup : [], threeDView!.scene);
-      const mesh = designBuilder.createDesign();
-      threeDView!.scene.add(mesh);
-      const finalPosition = await moveHandlerRef.current!.startDragging(mesh);
-      if (finalPosition) {
-        mesh.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
+      if (fullGroup) {
+        const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
+        const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
+        await syncManager.syncData();
+      } else if (item.type === OBJECT_TYPES.PLATFORM) {
+        const newId = crypto.randomUUID();
+        const platformItem: MeshObjectData = {
+          ...item,
+          id: newId,
+          position: { x: 0, y: 0.9144, z: 0 }, // Default height (3 feet)
+          dimensions: { width: 100, height: 5, depth: 60 }, // Default dimensions (CM)
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+        };
+        const syncManager = new SyncManager(platformItem, threeDView);
+        await syncManager.syncData();
+      } else if (item.type === OBJECT_TYPES.SINK) {
+        const newId = crypto.randomUUID();
+        const sinkItem: MeshObjectData = {
+          ...item,
+          id: newId,
+          position: { x: 0, y: 0.965, z: 0 }, // Slightly above default platform height
+          dimensions: { width: 60, height: 20, depth: 40 }, // Default dimensions (CM)
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+        };
+        const syncManager = new SyncManager(sinkItem, threeDView);
+        await syncManager.syncData();
       }
+    } else if (['door', 'Sliding Door'].includes(item.type)) {
+      // For doors, directly add without asking for quantity
+      setSelectedCabinetItem(item);
+      setQuantityValue(1);
+      // Directly call onAddItems without showing popup
+      const scene = threeDView!.scene;
+      let targetBox: THREE.Mesh | null = null;
+      const selectedChildObject = store.getState().data.selectedChildObject;
+
+      scene.traverse((obj) => {
+        if (obj.userData.objectId === selectedChildObject) {
+          targetBox = obj as THREE.Mesh;
+        }
+      });
+
+      if (!targetBox) {
+        toast(
+          ({ closeToast }) => (
+            <CustomToast
+              appearance="error"
+              message="Target box not found!"
+              closeToast={closeToast}
+            />
+          ),
+          {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeButton: false,
+            icon: false,
+            className: '!p-0 !bg-black !shadow-none !min-h-0 !mb-4',
+            progressClassName: '!bg-[#D32F2F] !h-[4px] !top-auto !top-0 !left-0 !opacity-100',
+          }
+        );
+        return;
+      }
+
+      await addDoorOnInvisibleBox(scene, targetBox, item);
+      dispatch(setSelectedChildObject(null));
+      dispatch(setHoverdMesh(null));
+      removeExistingLines();
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);
@@ -142,15 +239,40 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
 
-    if (!targetBox) {
-      alert('❌ Target box not found!');
+    const showErrorToast = (message: string) => {
+      toast(
+        ({ closeToast }) => (
+          <CustomToast appearance="error" message={message} closeToast={closeToast} />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+        }
+      );
+    };
+
+    if ((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) {
+      showErrorToast('Please select a blank box');
+      return;
+    }
+
+    if (!(targetBox)) {
+      showErrorToast('Target box not found!'); 
       return;
     }
 
     if (['door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox);
+      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
-      await addDrawersOnInvisibleBox(scene, targetBox, num);
+      const fullGroup = cabinetItems.find((group) =>
+        group.some((g) => g.id === selectedCabinetItem.id)
+      );
+      await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
@@ -158,6 +280,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
+    } else if (
+      itemType === PART_TYPES.L_SHAPE_OBJECT ||
+      (itemName || '').toLowerCase().includes('l-shape')
+    ) {
+      await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
     }
 
     setAddPartPopup(false);
@@ -207,7 +334,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
     {
       option: 'Wall',
-      icon: assets.mesurment,
+      icon: assets.wall,
       onClick: () => {
         dispatch(toggleWallDrawing(!isWallDrawingActive));
         if (onViewModeChange && !isWallDrawingActive) {
@@ -235,17 +362,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
   ];
   const furnitureTools = [
+    { option: 'Kitchen', icon: assets.kitchen },
     { option: 'Cabinet', icon: assets.cabinet_svg },
-    { option: 'Parts', icon: assets.cabinet_svg },
+    { option: 'Parts', icon: assets.part_icon },
   ];
 
   const getFilteredCabinetItems = (category: string) => {
     const categoryFilters: Record<string, string[]> = {
       Parts: Object.values(PART_TYPES),
       Cabinet: Object.values(OBJECT_TYPES),
+      Kitchen: [OBJECT_TYPES.PLATFORM],
     };
-
     const allowedTypes = categoryFilters[category] || [];
+    if (category === 'Kitchen') {
+      return [
+        {
+          id: 'platform-default',
+          name: 'Platform',
+          type: OBJECT_TYPES.PLATFORM,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 100, height: 5, depth: 60 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+          material: [
+            {
+              id: 'platform-mat',
+              name: 'Platform Material',
+              type: 'Panel Stock',
+            },
+          ],
+        },
+        {
+          id: 'sink-default',
+          name: 'Sink',
+          type: OBJECT_TYPES.SINK,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 60, height: 20, depth: 40 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+          material: [
+            {
+              id: 'sink-mat',
+              name: 'Sink Material',
+              type: 'Laminate',
+            },
+          ],
+        },
+      ];
+    }
     return cabinetItems
       .map((item: any) => item[0])
       .filter((item: any) => allowedTypes.includes(item.type));
@@ -279,7 +445,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     plank: assets.vertical,
     Cabinet: assets.cabinet,
     cupboard: assets.cabinet,
-    Platform: assets.platform,
+    platform: assets.platform_icon,
+    sink: assets.sink_icon,
+    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
+    lShapeObject: assets.vertical,
   };
 
   return (
@@ -522,6 +691,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           </div>
         </div>
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        closeButton={false}
+        icon={false}
+        toastClassName="!relative !flex !p-0 !mb-2 !bg-transparent !shadow-none !overflow-visible"
+      />
     </>
   );
 };

@@ -80,6 +80,7 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "default_tax_rate",
             "waste",
             "estimate",
+            "model_file",
         ]
         read_only_fields = ["id", "material"]
 
@@ -112,7 +113,11 @@ class ValidationMixin:
 class BandingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
-        fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness"]
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "length_trim",
+            "thickness",
+            "model_file",
+        ]
 
 
 class BoardStockSerializer(ValidationMixin, serializers.ModelSerializer):
@@ -473,7 +478,7 @@ class FinishesLibrarySerializerFactory:
 class FinishesLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = FinishesLibrary
-        fields = ["id", "name", "organization", "type"]
+        fields = ["id", "name", "organization", "type", "image"]
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary

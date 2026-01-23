@@ -2,12 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
-import {
-  createDashedLineObject,
-  createLineObjects,
-  getBoxCenter,
-} from '../../utils/outlineHelpers';
-import { OBJECT_TYPES, PART_TYPES } from '../interface';
+import { createLineObjects } from '../../utils/outlineHelpers';
+import { PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -52,6 +48,15 @@ export class SelectObjectController {
   }
 
   public update() {
+    // Auto-cleanup if objects were removed from scene outside of this controller
+    if (this.selectedMainObject && !this.selectedMainObject.parent) {
+      this.deselect();
+    }
+    if (this.hoveredObject && !this.hoveredObject.parent) {
+      this._removeHoverEffect();
+      this.hoveredObject = null;
+      if (this.onHover) this.onHover(null);
+    }
     this._handleHover();
   }
 
@@ -130,11 +135,7 @@ export class SelectObjectController {
 
     // If the part is also a 'Main' object (like a Drawer group),
     // we might want the big dotted outline on it.
-    if (object.userData.isMain) {
-      this._applyObjectBigOutline(object);
-    } else {
-      this._applyObjectBigOutline(this.selectedMainObject);
-    }
+    this._applyObjectBigOutline();
     return;
   }
 
@@ -237,7 +238,6 @@ export class SelectObjectController {
     this.scene.traverse((object) => {
       if (
         object instanceof THREE.Mesh &&
-        Object.values(OBJECT_TYPES).includes(object.userData.type) &&
         object.userData.objectId !== this.selectedMainObject?.userData.objectId
       ) {
         targets.push(object);
@@ -272,20 +272,25 @@ export class SelectObjectController {
     return newHover;
   }
 
-  // check if the mouse is hovering over a selectable object
   private _handleHover() {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // get all object behinds of the mouse cursor
     const targets = this._findTargetToHover();
 
-    // find the closest object to the mouse using raycasting
     const newHover = this._findHoverObject(targets);
 
-    if (newHover !== this.selectedMainObject) {
+    if (newHover !== this.hoveredObject) {
       this._removeHoverEffect();
       this.hoveredObject = newHover;
-      if (newHover) this._applyHoverEffect();
+
+      // Only apply hover effect if it's not the already selected object
+      if (newHover && newHover !== this.selectedMainObject && newHover !== this.selectedPart) {
+        this._applyHoverEffect();
+      }
+
+      if (this.onHover) {
+        this.onHover(newHover);
+      }
     }
   }
 
@@ -338,18 +343,31 @@ export class SelectObjectController {
   }
 
   private _applyPartSelectOutline(obj: THREE.Mesh) {
+    // Ensure the object's world matrix is updated before creating outline
+    // This is critical for child objects (like planks) that may have transforms from their parent
+    obj.updateWorldMatrix(true, false);
+
+    // Also update parent matrices to ensure accurate bounding box calculation
+    let parent = obj.parent;
+    while (parent && parent instanceof THREE.Mesh) {
+      parent.updateWorldMatrix(false, false);
+      parent = parent.parent;
+    }
+
     const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.partSelectOutline = outline;
   }
 
   private _applySmallCupboardSelectOutline(obj: THREE.Mesh) {
+    // Ensure the object's world matrix is updated before creating outline
+    obj.updateWorldMatrix(true, false);
     const outline = createLineObjects(obj, 0xffff00);
     this.scene.add(outline);
     this.objectSelectOutline = outline;
   }
 
-  private _applyObjectBigOutline(object: THREE.Mesh) {
+  private _applyObjectBigOutline() {
     if (this.selectedOutline) {
       this._removeOutline(this.selectedOutline);
       this.selectedOutline = null;
@@ -359,10 +377,5 @@ export class SelectObjectController {
       this._removeOutline(this.objectSelectOutline);
       this.objectSelectOutline = null;
     }
-
-    const center = getBoxCenter(object);
-    const outline = createDashedLineObject(object, 0x000000, center);
-    this.scene.add(outline);
-    this.selectedOutline = outline;
   }
 }

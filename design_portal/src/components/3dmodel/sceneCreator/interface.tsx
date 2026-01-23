@@ -12,6 +12,8 @@ export const FLOOR_PLAN_TYPES = {
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
+  PLATFORM: 'platform',
+  SINK: 'sink',
 };
 
 export const PART_TYPES = {
@@ -21,7 +23,13 @@ export const PART_TYPES = {
   DOOR: 'door',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
+  L_SHAPE_OBJECT: 'lShapeObject',
+  HANDLE: 'handle',
 };
+
+export const INVISIBLE_BOXES = {
+  INVISIBLE_BOX: 'invisibleBox',
+}
 
 export const DRAWER_TYPES = {
   INSET: 'inset',
@@ -29,12 +37,12 @@ export const DRAWER_TYPES = {
 };
 
 export const DRAWER_PLANK_TYPES = {
-  DRAWER_FACE: 'DRAWER_FACE',
-  FRONT_DRAWER_PLANK: 'FRONT_DRAWER_PLANK',
-  BACK_DRAWER_PLANK: 'BACK_DRAWER_PLANK',
-  BOTTOM_DRAWER_PLANK: 'BOTTOM_DRAWER_PLANK',
-  RIGHT_DRAWER_PLANK: 'RIGHT_DRAWER_PLANK',
-  LEFT_DRAWER_PLANK: 'LEFT_DRAWER_PLANK',
+  DRAWER_FACE: 'DRAWER_FACE_PLANK',
+  FRONT_DRAWER_PLANK: 'DRAWER_FRONT_PLANK',
+  BACK_DRAWER_PLANK: 'DRAWER_BACK_PLANK',
+  BOTTOM_DRAWER_PLANK: 'DRAWER_BOTTOM_PLANK',
+  RIGHT_DRAWER_PLANK: 'DRAWER_RIGHT_PLANK',
+  LEFT_DRAWER_PLANK: 'DRAWER_LEFT_PLANK',
 };
 
 export const GEOMETRY = {
@@ -60,18 +68,85 @@ export const TEXTURES = {
   WHITE_TEXTURE: '/Texture0004.jpg',
 };
 
+export const MATERIAL_TYPES = {
+  BANDING: 'Banding',
+  BOARD_STOCK: 'Board Stock',
+  CASTER: 'Caster',
+  CONNECTOR: 'Connector',
+  DRAWER_GUIDE: 'Drawer Guide',
+  HINGE: 'Hinge',
+  HINGE_PLATE: 'Hinge Plate',
+  LAMINATE: 'Laminate',
+  LEG: 'Leg',
+  LEG_LEVELER: 'Leg Leveler',
+  MISCELLANEOUS: 'Miscellaneous',
+  MOLDING: 'Molding',
+  PANEL_STOCK: 'Panel Stock',
+  PULL: 'Pull',
+  ROD: 'Rod',
+  SLIDING_DOOR_RAIL: 'Sliding Door Rail',
+  SLIDING_DOOR_ROLLER: 'Sliding Door Roller',
+  WIRE_BASKET: 'Wire Basket',
+  WALL: 'Wall',
+};
+
+export const EDGES = {
+  TOP: 'top',
+  BOTTOM: 'bottom',
+  LEFT: 'left',
+  RIGHT: 'right',
+  FRONT: 'front',
+  BACK: 'back',
+};
+
+export const GROOVE_TYPE = {
+  GROOVE: 'groove',
+  PROTRUSION: 'protrusion',
+};
+
 // type
 type GeometryType = (typeof GEOMETRY)[keyof typeof GEOMETRY];
-type MaterialType = (typeof MATERIAL_TYPE)[keyof typeof MATERIAL_TYPE];
 type DirectionType = (typeof DIRECTION_TYPES)[keyof typeof DIRECTION_TYPES];
 
-// interface
-interface Material {
-  type: MaterialType;
-  value: string;
-  repeatX?: number;
-  repeatY?: number;
-  rotation?: number; // Texture rotation in degrees
+interface Texture {
+  id: string;
+  name: string;
+  texture: string;
+  textureDetail: TextureDetails;
+}
+
+interface TextureDetails {
+  decal: number;
+  height: number;
+  id: string;
+  image: string;
+  name: string;
+  organization: string;
+  title: number;
+  type: string;
+  url: string;
+  width: number;
+}
+
+export interface Material {
+  id: string;
+  name: string;
+  type: string;
+  company?: string;
+  description?: string;
+  isDeleted?: boolean;
+  textures?: Texture[];
+  properties?: any;
+}
+
+export interface EdgeBandingState {
+  top?: boolean;
+  bottom?: boolean;
+  left?: boolean;
+  right?: boolean;
+  front?: boolean;
+  back?: boolean;
+  thickness?: number;
 }
 
 export interface MeshObjectData {
@@ -85,15 +160,18 @@ export interface MeshObjectData {
   rotation: Rotation;
 
   //optional properties
+  description?: string;
   parent?: string;
   scale?: Position;
-  material?: Material;
+  material?: Material[];
   isMain?: boolean;
   openDirection?: DirectionType;
   connectedTo?: string[];
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  edgeBanding?: EdgeBandingState;
+  handleMode?: 'handle' | 'handleless';
 }
 
 export interface userData {
@@ -144,4 +222,5 @@ export type MeshObjectPatch = Omit<
   dimensions?: Partial<Dimensions>;
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
+  edgeBanding?: EdgeBandingState;
 };

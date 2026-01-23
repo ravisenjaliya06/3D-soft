@@ -50,6 +50,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.6",
     "react-tabs": "^6.1.0",
+    "react-toastify": "^11.0.5",
     "redux": "^5.0.1",
     "sharp": "^0.34.5",
     "shortid": "^2.2.17",

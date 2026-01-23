@@ -1,78 +1,198 @@
 import * as THREE from 'three';
+import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
-import { addObjects } from '../store/dataSlice';
-import { FLOOR_PLAN_TYPES, GEOMETRY, MATERIAL_TYPE, MeshObjectData } from './interface';
+import {
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  GEOMETRY,
+  Material,
+  MATERIAL_TYPES,
+  MeshObjectData,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from './interface';
+import { BandingTool } from './tools/bandingTool';
+import { GroovingTool } from './tools/groovingTool';
 import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
+  private mesh: THREE.Mesh | null = null;
+  private parentMesh: THREE.Mesh | null = null;
+  private bandingTool: BandingTool | null = null;
+  private groovingTool: GroovingTool | null = null;
 
-  constructor(data: MeshObjectData) {
+  constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+      this.groovingTool = new GroovingTool(scene);
+    }
   }
 
-  private _createTexture(): THREE.Texture {
-    const texture = new THREE.TextureLoader().load(this.meshData.material?.value || '');
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(this.meshData.material?.repeatX || 1, this.meshData.material?.repeatY || 1);
+  /**
+   * Set the parent mesh to enable checking for adjacent planks
+   */
+  public setParentMesh(parent: THREE.Mesh | null): void {
+    this.parentMesh = parent;
+  }
 
-    // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
-    // This maintains the seamless pattern when texture repeats
-    texture.center.set(0, 0);
-    texture.offset.set(0, 0);
+  /**
+   * Set the scene for BandingTool and GroovingTool initialization
+   */
+  public setScene(scene: THREE.Scene): void {
+    this.bandingTool = new BandingTool(scene);
+    this.groovingTool = new GroovingTool(scene);
+  }
 
-    // Apply texture rotation if provided (convert degrees to radians)
-    if (this.meshData.material?.rotation !== undefined) {
-      const rotationRad = THREE.MathUtils.degToRad(this.meshData.material.rotation);
-      texture.rotation = rotationRad;
-
-      // Adjust offset to compensate for rotation and maintain seamless tiling
-      // This prevents the zigzag pattern by aligning the rotated texture properly
-      const cos = Math.cos(rotationRad);
-      const sin = Math.sin(rotationRad);
-      // Calculate offset to maintain seamless pattern
-      const offsetX = (1 - cos) * 0.5 - sin * 0.5;
-      const offsetY = (1 - cos) * 0.5 + sin * 0.5;
-      texture.offset.set(offsetX, offsetY);
+  /**
+   * Get or initialize BandingTool from mesh's scene
+   * This ensures banding works even when scene wasn't passed initially
+   */
+  private _getOrCreateBandingTool(): BandingTool | null {
+    if (this.bandingTool) {
+      return this.bandingTool;
     }
 
-    // Enable texture filtering for smoother appearance
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.generateMipmaps = true;
+    let scene: THREE.Scene | null = null;
 
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
+      }
+      if (current instanceof THREE.Scene) {
+        scene = current;
+      }
+    }
+
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.bandingTool = new BandingTool(scene);
+      return this.bandingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Get or initialize GroovingTool from mesh's scene
+   * This ensures grooving works even when scene wasn't passed initially
+   */
+  private _getOrCreateGroovingTool(): GroovingTool | null {
+    if (this.groovingTool) {
+      return this.groovingTool;
+    }
+
+    let scene: THREE.Scene | null = null;
+
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
+      }
+      if (current instanceof THREE.Scene) {
+        scene = current;
+      }
+    }
+
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.groovingTool = new GroovingTool(scene);
+      return this.groovingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if an edge of the current plank is covered by another plank
+   * Delegates to BandingTool if available
+   */
+  private _isEdgeCovered(mesh: THREE.Mesh, edge: string): boolean {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      return tool.isEdgeCovered(mesh, edge, this.parentMesh);
+    }
+    return false;
+  }
+
+  private _createTexture(materialData: Material): THREE.Texture | null {
+    let texture: THREE.Texture | null = null;
+    materialData?.textures?.forEach((textureData) => {
+      texture = new THREE.TextureLoader().load(
+        `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
+      );
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.repeat.set(2, 2);
+      texture.center.set(0, 0);
+      texture.offset.set(0, 0);
+    });
     return texture;
   }
 
-  private _createColorMaterial(): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({
-      color: this.meshData.material?.value,
-      wireframe: false,
-    });
-  }
-
-  private _createTextureMaterial(): THREE.MeshStandardMaterial {
-    const texture = this._createTexture();
-    texture.colorSpace = THREE.SRGBColorSpace;
+  private _createTextureMaterial(materialData: Material): THREE.MeshStandardMaterial {
+    const texture = this._createTexture(materialData);
+    if (!texture) return new THREE.MeshStandardMaterial({ visible: false });
     return new THREE.MeshStandardMaterial({
       map: texture,
       wireframe: false,
     });
   }
 
-  private _getMaterial(): THREE.Material | THREE.MeshStandardMaterial {
+  private _getMaterial(): THREE.Material {
+    let createdMaterial: THREE.Material | null = null;
+
     const material = this.meshData.material;
-    if (!material) {
-      return new THREE.MeshStandardMaterial({ visible: false });
-    }
-    if (material.type === MATERIAL_TYPE.COLOR && material.value) {
-      return this._createColorMaterial();
-    }
-    if (material.type === MATERIAL_TYPE.TEXTURE && material.value) {
-      return this._createTextureMaterial();
-    }
-    return new THREE.MeshStandardMaterial({ visible: false });
+    if (!material) return new THREE.MeshStandardMaterial({ visible: false });
+
+    const materialArray = Array.isArray(material) ? material : [material];
+
+    materialArray.forEach((materialData) => {
+      if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
+        createdMaterial = this._createTextureMaterial(materialData);
+      } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.PLATFORM) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+        });
+      }
+
+      if (this.meshData.type === OBJECT_TYPES.SINK) {
+        createdMaterial = new THREE.MeshStandardMaterial({
+          visible: false,
+        });
+      }
+    });
+
+    return createdMaterial || new THREE.MeshStandardMaterial({ visible: false });
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
@@ -147,8 +267,264 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
-  private _setDataInObjectsState() {
-    store.dispatch(addObjects([this.meshData]));
+  private _placeHandleOnMesh(handle: THREE.Object3D, createdMesh: THREE.Mesh, materialProps: any) {
+    const placeHandle = () => {
+      let targetMesh = createdMesh;
+      let attachParent = createdMesh;
+
+      if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
+        const drawerFace = createdMesh.children.find(
+          (child) => child instanceof THREE.Mesh && child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+        ) as THREE.Mesh | undefined;
+
+        if (drawerFace) {
+          targetMesh = drawerFace;
+          attachParent = createdMesh;
+        }
+      }
+
+      targetMesh.geometry.computeBoundingBox();
+      const bBox = targetMesh.geometry.boundingBox;
+      if (!bBox) return;
+
+      const size = new THREE.Vector3();
+      bBox.getSize(size);
+
+      const horizontalInset = materialProps.horizontalInset ?? 0;
+      const verticalInset = materialProps.verticalInset ?? 0;
+
+      const localPos = new THREE.Vector3(
+        bBox.min.x + horizontalInset,
+        bBox.max.y - verticalInset,
+        bBox.max.z
+      );
+
+      const worldPos = targetMesh.localToWorld(localPos.clone());
+      const attachParentLocal = attachParent.worldToLocal(worldPos.clone());
+
+      handle.position.copy(attachParentLocal);
+      handle.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+      attachParent.add(handle);
+    };
+
+    if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(placeHandle);
+      });
+    } else {
+      placeHandle();
+    }
+  }
+
+  private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
+    const url = materialProps.modelFile;
+    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      : '/glb/door_handle.glb';
+
+    const handleModel = await GLBLoader(backendUrl, mesh.name, {
+      width: materialProps.width ? materialProps.width : 5,
+      height: materialProps.height ? materialProps.height : 5,
+      depth: materialProps.depth ? materialProps.depth : 25,
+    });
+
+    handleModel.name = `Handle_for_${mesh.name}`;
+    handleModel.userData.type = 'handle';
+    handleModel.userData.objectId = crypto.randomUUID();
+
+    this._placeHandleOnMesh(handleModel, mesh, materialProps);
+  }
+
+  private async _loadSink(mesh: THREE.Mesh) {
+    const url = '/glb/kitchen_sink.glb';
+
+    const sinkModel = await GLBLoader(url, 'KitchenSink', {
+      width: this.meshData.dimensions.width,
+      height: this.meshData.dimensions.height,
+      depth: this.meshData.dimensions.depth,
+    });
+    sinkModel.name = `Sink_for_${mesh.name}`;
+    sinkModel.userData.type = OBJECT_TYPES.SINK;
+    sinkModel.userData.objectId = this.meshData.id;
+
+    mesh.add(sinkModel);
+  }
+
+  /**
+   * Remove all banding meshes from a plank
+   */
+  public removeAllBanding(mesh: THREE.Mesh): void {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      tool.removeAllBanding(mesh, this.meshData.id);
+    }
+  }
+
+  /**
+   * Remove banding from a specific edge
+   */
+  public removeBandingOnEdge(mesh: THREE.Mesh, edge: string): void {
+    const tool = this._getOrCreateBandingTool();
+    if (tool) {
+      // Get banding thickness from material
+      const materialData = this.meshData.material;
+      const materialArray = Array.isArray(materialData)
+        ? materialData
+        : materialData
+          ? [materialData]
+          : [];
+      const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+      const bandingThickness = bandingMaterialData?.properties?.thickness || 1.5;
+
+      tool.removeBandingOnEdge(mesh, edge, bandingThickness, this.meshData.id);
+    }
+  }
+
+  /**
+   * Update banding positions and sizes when plank dimensions change
+   */
+  public async updateBanding(mesh: THREE.Mesh): Promise<void> {
+    const tool = this._getOrCreateBandingTool();
+    if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
+
+    const bandingState = this.meshData.edgeBanding;
+    if (!bandingState) return;
+
+    const { width, height, depth } = mesh.geometry.parameters;
+
+    // Get banding material
+    const materialData = this.meshData.material;
+    if (!materialData) return;
+
+    const materialArray = Array.isArray(materialData) ? materialData : [materialData];
+    const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+
+    if (bandingMaterialData) {
+      await tool.updateBanding(
+        mesh,
+        { width, height, depth },
+        bandingMaterialData,
+        bandingState,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
+    }
+  }
+
+  /**
+   * Update grooving positions and sizes when plank dimensions change
+   */
+  public updateGrooving(mesh: THREE.Mesh): void {
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.name.includes('BACK_PLANK')) {
+        mesh = child;
+      }
+    });
+
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.updateGrooving(mesh);
+    }
+  }
+
+  /**
+   * Apply banding material from parent to this plank mesh
+   * This is used when the parent (e.g., cupboard) has banding material
+   * that should be applied to all child planks
+   */
+  public async applyParentBandingMaterial(parentBandingMaterial: Material): Promise<void> {
+    if (!this.mesh) return;
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+    await tool.createBandingOnPlank(
+      this.mesh,
+      parentBandingMaterial,
+      this.meshData.edgeBanding,
+      this.parentMesh,
+      { material: this.meshData.material, id: this.meshData.id }
+    );
+  }
+
+  /**
+   * Create or update banding based on edgeBanding state
+   */
+  public async applyBandingFromState(
+    mesh?: THREE.Mesh,
+    bandingMaterial?: Material,
+    edgeBandingState?: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    }
+  ): Promise<void> {
+    const targetMesh = mesh || this.mesh;
+    if (!targetMesh) return;
+    const tool = this._getOrCreateBandingTool();
+    if (!tool) return;
+
+    // Use provided banding material or find it from meshData
+    let bandingMaterialData = bandingMaterial;
+
+    if (!bandingMaterialData) {
+      const materialArray = Array.isArray(this.meshData.material)
+        ? this.meshData.material
+        : this.meshData.material
+          ? [this.meshData.material]
+          : [];
+
+      bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+    }
+
+    // Use provided edgeBandingState or fall back to meshData
+    const bandingState = edgeBandingState || this.meshData.edgeBanding;
+
+    if (bandingMaterialData && bandingState) {
+      await tool.applyBandingFromState(
+        targetMesh,
+        bandingState,
+        bandingMaterialData,
+        this.parentMesh,
+        { material: this.meshData.material, id: this.meshData.id }
+      );
+    }
+  }
+
+  private _handleMaterial() {
+    if (!this.mesh) return;
+
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : [this.meshData.material];
+
+    materialArray.forEach((materialData) => {
+      if (materialData?.type === MATERIAL_TYPES.PULL) {
+        this._loadHandle(this.mesh!, materialData.properties);
+      } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
+        if (this.mesh) {
+          const tool = this._getOrCreateBandingTool();
+          if (tool) {
+            tool
+              .createBandingOnPlank(
+                this.mesh,
+                materialData,
+                this.meshData.edgeBanding,
+                this.parentMesh,
+                { material: this.meshData.material, id: this.meshData.id }
+              )
+              .catch((error) => {
+                console.warn('Failed to create banding:', error);
+              });
+          }
+        }
+      }
+    });
+
+    if (this.meshData.type === OBJECT_TYPES.SINK) {
+      this._loadSink(this.mesh!);
+    }
   }
 
   public createMesh(): THREE.Mesh {
@@ -159,15 +535,15 @@ export class MeshBuilder {
       geometry,
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
+    this.mesh = mesh;
 
     this._setName(mesh);
     this._setPosition(mesh);
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-    if (!(this.meshData.type === FLOOR_PLAN_TYPES.WALL)) {
-      this._setDataInObjectsState();
-    }
+    this._handleMaterial();
+    this._createGrooving();
     return mesh;
   }
 
@@ -187,21 +563,34 @@ export class MeshBuilder {
       this._setScale(mesh);
     }
     if (changes.material) {
+      if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
       const newMaterial = changes.material;
+      const oldMaterialArray = Array.isArray(oldMaterial)
+        ? oldMaterial
+        : oldMaterial
+          ? [oldMaterial]
+          : [];
+      const newMaterialArray = Array.isArray(newMaterial)
+        ? newMaterial
+        : newMaterial
+          ? [newMaterial]
+          : [];
 
-      if (
-        oldMaterial &&
-        newMaterial &&
-        oldMaterial.type === MATERIAL_TYPE.TEXTURE &&
-        newMaterial.type === MATERIAL_TYPE.TEXTURE &&
-        oldMaterial.value === newMaterial.value &&
-        oldMaterial.repeatX === newMaterial.repeatX &&
-        oldMaterial.repeatY === newMaterial.repeatY &&
-        oldMaterial.rotation !== newMaterial.rotation
-      ) {
-        this._updateTextureRotation(mesh, newMaterial.rotation);
+      if (oldMaterialArray.length > 0 && newMaterialArray.length > 0) {
+        const oldMat = oldMaterialArray[0];
+        const newMat = newMaterialArray[0];
+        if (
+          oldMat.type === MATERIAL_TYPES.PANEL_STOCK &&
+          newMat.type === MATERIAL_TYPES.PANEL_STOCK &&
+          oldMat.textures?.[0]?.textureDetail?.image === newMat.textures?.[0]?.textureDetail?.image
+        ) {
+          mesh.material.dispose();
+          mesh.material = this._getMaterial();
+        } else {
+          mesh.material.dispose();
+          mesh.material = this._getMaterial();
+        }
       } else {
-        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
         mesh.material.dispose();
         mesh.material = this._getMaterial();
       }
@@ -209,6 +598,28 @@ export class MeshBuilder {
     if (changes.dimensions) {
       mesh.geometry.dispose();
       mesh.geometry = this._getGeometry();
+    }
+  }
+
+  /**
+   * Remove all grooving meshes from a plank
+   */
+  public removeAllGrooving(mesh: THREE.Mesh): void {
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.removeAllGrooving(mesh);
+    }
+  }
+
+  /**
+   * Create grooving system: grooves on side planks (female) and protrusions on back plank (male)
+   */
+  private _createGrooving(): void {
+    if (!this.mesh) return;
+
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.createGrooving(this.mesh);
     }
   }
 

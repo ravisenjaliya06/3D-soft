@@ -3,8 +3,6 @@ from django.contrib import admin
 
 # App imports
 from design.models import (
-    CatalogRuleParts,
-    CatalogRules,
     Design,
     DesignCatalog,
     DesignScreenshot,
@@ -66,5 +64,3 @@ admin.site.register(DesignSetting, DesignSettingsAdmin)
 admin.site.register(DesignScreenshot)
 admin.site.register(DesignVersion, DesignVersionAdmin)
 admin.site.register(DesignCatalog)
-admin.site.register(CatalogRules)
-admin.site.register(CatalogRuleParts)

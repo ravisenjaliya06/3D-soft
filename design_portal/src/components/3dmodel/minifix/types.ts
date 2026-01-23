@@ -19,6 +19,15 @@ export interface PlankData {
   depth: number;
 }
 
+export interface Bounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export interface PlankConnection {
   plankA: PlankData;
   plankB: PlankData;

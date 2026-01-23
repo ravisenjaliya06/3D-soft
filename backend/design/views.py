@@ -41,7 +41,7 @@ from design.serializers import (
     SceneGetSerializer,
     ScenePayloadSerializer,
 )
-from design.utils import parse_design_data
+from design.utils import group_catalogs_as_lists, parse_design_data
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -316,12 +316,18 @@ class DesignCatalogViewSet(ModelViewSet):
         if not design_id and not version_id:
             catalogs = (
                 self.get_queryset()
-                .filter(organization__isnull=True)
-                .prefetch_related("catalog_rule__catalog_rule_parts")
+                .filter(organization=request.user.selected_organization)
+                .prefetch_related(
+                    "materials__finishes",
+                    "materials__finish_types",
+                    "materials__textures__texture",
+                    "materials__properties",
+                )
             )
 
             serializer = SceneGetSerializer(catalogs, many=True)
-            return Response(serializer.data)
+            items = group_catalogs_as_lists(serializer.data)
+            return Response(items)
 
         version = (
             DesignVersion.objects.filter(design_id=design_id)
@@ -338,19 +344,14 @@ class DesignCatalogViewSet(ModelViewSet):
                 status=404,
             )
 
-        catalogs = (
-            self.get_queryset()
-            .filter(
-                version=version,
-                organization=request.user.selected_organization,
-            )
-            .prefetch_related("catalog_rule__catalog_rule_parts")
+        catalogs = self.get_queryset().filter(
+            version=version,
+            organization=request.user.selected_organization,
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)
-        return Response(
-            {"version": version.id, "catalogs": serializer.data}, status=HTTP_200_OK
-        )
+        items = group_catalogs_as_lists(serializer.data)
+        return Response({"version": version.id, "catalogs": items}, status=HTTP_200_OK)
 
     def create(
         self: "DesignCatalogViewSet", request: Request, *args, **kwargs
