@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GEOMETRY, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, INVISIBLE_BOXES, PART_TYPES } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 
 export function showFullScreenLoader(message = 'Loading...') {
@@ -165,6 +165,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const mesh = new THREE.Mesh(geo, invisibleMat);
     mesh.name = `INVISIBLE_FULL_COMPARTMENT_for_${boxMesh.name}`;
     mesh.userData.isInvisibleBox = true;
+    mesh.userData.type = INVISIBLE_BOXES.INVISIBLE_BOX;
     mesh.position.set(boxCenterLocal.x, boxCenterLocal.y, boxCenterLocal.z + depthOffset);
     boxMesh.add(mesh);
     return [mesh];
@@ -250,7 +251,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     const meshBuilder = new MeshBuilder({
       id: crypto.randomUUID(),
       name: `invisibleBox_${idx}_for_${boxMesh.name}`,
-      type: 'INVISIBLEBOX', // custom type or reuse known type
+      type: INVISIBLE_BOXES.INVISIBLE_BOX,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: c.width,

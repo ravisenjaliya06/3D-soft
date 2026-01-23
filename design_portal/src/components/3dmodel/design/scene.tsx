@@ -16,6 +16,7 @@ import {
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { SyncManager } from '../sceneCreator/syncState';
+import { LShapeObjectManager } from '../sceneCreator/tools/lShapeObjectTool';
 import { store } from '../store';
 import {
   removeObject,
@@ -219,6 +220,14 @@ export const addHorizontalPlanksInsideBox = async (
   hideFullScreenLoader();
 };
 
+export const addLShapeObjectToBox = async (
+  scene: THREE.Scene,
+  boxMesh: THREE.Mesh,
+  selectedCabinetItem: MeshObjectData | null = null
+) => {
+  await LShapeObjectManager.createLShapeInBox(scene, boxMesh, selectedCabinetItem);
+};
+
 export const addDoorOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -309,12 +318,10 @@ export const addDrawersOnInvisibleBox = async (
   geometryBoundingBox.getSize(size);
 
   const w = size.x;
-  const h = size.y;
   const d = size.z;
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const eachH = h / drawers;
   const thickness = 18;
   const drawerConstructionType = 'fivePlank';
 
@@ -322,8 +329,42 @@ export const addDrawersOnInvisibleBox = async (
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
 
+  // Update matrices once before calculating positions
+  boxMesh.updateMatrixWorld(true);
+  parent.updateMatrixWorld(true);
+
+  // Calculate boxMesh bounding box corners in parent's local space ONCE
+  const boxMinLocal = new THREE.Vector3(
+    geometryBoundingBox.min.x,
+    geometryBoundingBox.min.y,
+    geometryBoundingBox.min.z
+  );
+  const boxMaxLocal = new THREE.Vector3(
+    geometryBoundingBox.max.x,
+    geometryBoundingBox.max.y,
+    geometryBoundingBox.max.z
+  );
+  const boxCenterWorld = boxMesh.localToWorld(boxCenterLocal.clone());
+  const boxMinWorld = boxMesh.localToWorld(boxMinLocal.clone());
+  const boxMaxWorld = boxMesh.localToWorld(boxMaxLocal.clone());
+
+  const boxCenterParent = parent.worldToLocal(boxCenterWorld.clone());
+  const boxMinParent = parent.worldToLocal(boxMinWorld.clone());
+  const boxMaxParent = parent.worldToLocal(boxMaxWorld.clone());
+
+  // Calculate box dimensions in parent's local space
+  const boxSizeParent = new THREE.Vector3();
+  boxSizeParent.subVectors(boxMaxParent, boxMinParent);
+  const wParent = Math.abs(boxSizeParent.x);
+  const hParent = Math.abs(boxSizeParent.y);
+  const dParent = Math.abs(boxSizeParent.z);
+
+  // Calculate drawer height in parent space
+  const eachH = hParent / drawers;
+
   for (let i = 0; i < drawers; i++) {
-    const yLocal = geometryBoundingBox.min.y + eachH * (i + 0.5);
+    // Calculate y position in parent's local space directly
+    const yParent = boxMinParent.y + eachH * (i + 0.5);
 
     // Inset: fits inside. Overlay: covers front.
     const isOverlay = drawerType === DRAWER_TYPES.OVERLAY;
@@ -333,7 +374,6 @@ export const addDrawersOnInvisibleBox = async (
     const faceW = isOverlay ? w + 30 : w - 10;
     const faceH = eachH - 5;
     const faceD = 20;
-    const boxFrontZRel = isOverlay ? d / 2 : d / 2 - faceD;
 
     const drawerDimensions = {
       width: w - 10,
@@ -344,11 +384,8 @@ export const addDrawersOnInvisibleBox = async (
     const drawerGroupId = crypto.randomUUID();
     const drawerGroupWithAllPlank: MeshObjectData[] = [];
 
-    // Calculate the group's position in parent's local space
-    const worldGroupPos = boxMesh.localToWorld(
-      new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z)
-    );
-    const parentGroupPos = parent.worldToLocal(worldGroupPos.clone());
+    // Calculate the group's position directly in parent's local space
+    const parentGroupPos = new THREE.Vector3(boxCenterParent.x, yParent, boxCenterParent.z);
 
     const drawerGroup: MeshObjectData = {
       id: drawerGroupId,
@@ -367,18 +404,18 @@ export const addDrawersOnInvisibleBox = async (
 
     drawerGroupWithAllPlank.push(drawerGroup);
 
-    const faceZRel = boxFrontZRel + faceD / 2;
+    // Calculate face position in parent's local space
+    const faceZParent =
+      boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
+    const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
 
-    const localFacePos = new THREE.Vector3(boxCenterLocal.x, yLocal, boxCenterLocal.z + faceZRel);
-
-    const worldFacePos = boxMesh.localToWorld(localFacePos.clone());
-    const parentFacePos = parent.worldToLocal(worldFacePos.clone());
-
-    const facePlank = selectedCabinetItem.find((item) => item.name === 'DRAWER_FACE_PLANK');
+    const facePlank = selectedCabinetItem.find(
+      (item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+    );
     const face: MeshObjectData = {
       id: crypto.randomUUID(),
-      name: 'DRAWER_FACE',
-      type: PART_TYPES.DRAWER,
+      name: DRAWER_PLANK_TYPES.DRAWER_FACE,
+      type: DRAWER_PLANK_TYPES.DRAWER_FACE || PART_TYPES.DRAWER,
       parent: drawerGroupId,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: { width: faceW, height: faceH, depth: faceD },
@@ -409,13 +446,24 @@ export const addDrawersOnInvisibleBox = async (
       // Heights
       const innerH = Math.max(eachH - 50, 1);
 
-      // Vertical alignment (bottom aligned)
-      const baseY = yLocal;
-      const innerPartCenterY = baseY - (eachH - innerH) / 2;
+      // Vertical alignment (bottom aligned) - calculate in parent's local space
+      const baseYParent = yParent;
+      const innerPartCenterYParent = baseYParent - (eachH - innerH) / 2;
+      const boxFrontZRelParent = isOverlay ? dParent / 2 : dParent / 2 - faceD;
 
-      const createInnerPartData = (name: string, dims: Dimensions, pos: THREE.Vector3) => {
-        const worldPos = boxMesh.localToWorld(pos.clone());
-        const parentLocal = parent.worldToLocal(worldPos.clone());
+      const createInnerPartData = (
+        name: string,
+        dims: Dimensions,
+        xOffset: number,
+        yPos: number,
+        zPos: number
+      ) => {
+        // Calculate position directly in parent's local space
+        const partPosParent = new THREE.Vector3(
+          boxCenterParent.x + xOffset,
+          yPos,
+          boxCenterParent.z + zPos
+        );
 
         const part: MeshObjectData = {
           id: crypto.randomUUID(),
@@ -425,9 +473,9 @@ export const addDrawersOnInvisibleBox = async (
           geometryType: GEOMETRY.BOX_GEOMETRY,
           dimensions: dims,
           position: {
-            x: parentLocal.x - parentGroupPos.x,
-            y: parentLocal.y - parentGroupPos.y,
-            z: parentLocal.z - parentGroupPos.z,
+            x: partPosParent.x - parentGroupPos.x,
+            y: partPosParent.y - parentGroupPos.y,
+            z: partPosParent.z - parentGroupPos.z,
           },
           rotation: { x: 0, y: 0, z: 0 },
           scale: { x: 1, y: 1, z: 1 },
@@ -436,100 +484,51 @@ export const addDrawersOnInvisibleBox = async (
         drawerGroupWithAllPlank.push(part);
       };
 
-      // LEFT plank position (12mm from left)
+      // LEFT plank position (12mm from left) - positions relative to box center in parent space
       createInnerPartData(
-        'DRAWER_LEFT_PLANK',
+        DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
         { width: thickness, height: innerH, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x - drawerOuterW / 2 + sideGap + thickness / 2,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        -wParent / 2 + sideGap + thickness / 2,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD / 2
       );
 
       // RIGHT plank position (12mm from right)
       createInnerPartData(
-        'DRAWER_RIGHT_PLANK',
+        DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
         { width: thickness, height: innerH, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x + drawerOuterW / 2 - sideGap - thickness / 2,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        wParent / 2 - sideGap - thickness / 2,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD / 2
       );
 
       // BACK plank
       createInnerPartData(
-        'DRAWER_BACK_PLANK',
+        DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - innerD + thickness / 2
-        )
+        0,
+        innerPartCenterYParent,
+        boxFrontZRelParent - innerD + thickness / 2
       );
 
       // FRONT plank
       createInnerPartData(
-        'DRAWER_FRONT_PLANK',
+        DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
         { width: innerW, height: innerH, depth: thickness },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          innerPartCenterY,
-          boxCenterLocal.z + boxFrontZRel - thickness / 2
-        )
+        0,
+        innerPartCenterYParent,
+        boxFrontZRelParent - thickness / 2
       );
 
       // BOTTOM plank
       createInnerPartData(
-        'DRAWER_BOTTOM_PLANK',
+        DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
         { width: innerW, height: thickness, depth: innerD },
-        new THREE.Vector3(
-          boxCenterLocal.x,
-          baseY - eachH / 2 + thickness / 2,
-          boxCenterLocal.z + boxFrontZRel - innerD / 2
-        )
+        0,
+        baseYParent - eachH / 2 + thickness / 2,
+        boxFrontZRelParent - innerD / 2
       );
     }
-
-    const railH = 20;
-    const railT = 5;
-    const railLen = Math.max(d - 60, 200);
-
-    const createRailData = (name: string, xOffset: number) => {
-      const localPos = new THREE.Vector3(xOffset, yLocal, boxCenterLocal.z);
-
-      const worldPos = boxMesh.localToWorld(localPos.clone());
-      const parentLocal = parent.worldToLocal(worldPos.clone());
-
-      const rail: MeshObjectData = {
-        id: crypto.randomUUID(),
-        name,
-        type: PART_TYPES.DRAWER,
-        parent: drawerGroupId,
-        geometryType: GEOMETRY.BOX_GEOMETRY,
-        dimensions: { width: railT, height: railH, depth: railLen },
-        position: {
-          x: parentLocal.x - parentGroupPos.x,
-          y: parentLocal.y - parentGroupPos.y,
-          z: parentLocal.z - parentGroupPos.z,
-        },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-        material: [],
-      };
-      drawerGroupWithAllPlank.push(rail);
-    };
-
-    createRailData(
-      `DrawerRail_L_${i}_for_${boxMesh.name}`,
-      geometryBoundingBox.min.x + railT / 2 + 0.01
-    );
-
-    createRailData(
-      `DrawerRail_R_${i}_for_${boxMesh.name}`,
-      geometryBoundingBox.max.x - railT / 2 - 0.01
-    );
 
     await meshBuilder(drawerGroupWithAllPlank);
 
@@ -933,4 +932,364 @@ export const ensureHandleLoaded = async (model?: string) => {
     height: 30,
     depth: 100,
   });
+};
+
+/**
+ * Remove all L-shape objects from a cupboard (l-shape objects are children of cupboard)
+ */
+export const removeLShapeObjects = async (cupboardMesh: THREE.Mesh) => {
+  await LShapeObjectManager.removeLShapeObjects(cupboardMesh);
+};
+
+/**
+ * Add L-shape objects to all drawers and doors in a cupboard
+ */
+export const addLShapeToDrawersAndDoors = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh) => {
+  await LShapeObjectManager.addLShapeToDrawersAndDoors(scene, cupboardMesh);
+};
+
+/**
+ * Helper function to manually update banding mesh dimensions and positions
+ */
+const updateBandingMeshes = (
+  mesh: THREE.Mesh,
+  newWidth: number,
+  newHeight: number,
+  newDepth: number
+) => {
+  mesh.children.forEach((child) => {
+    if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding') return;
+    if (!(child.geometry instanceof THREE.BoxGeometry)) return;
+
+    const edge = child.userData.edge;
+    const bandingParams = child.geometry.parameters;
+    const bandingThickness = Math.min(
+      bandingParams.width,
+      bandingParams.height,
+      bandingParams.depth
+    );
+
+    // Update banding geometry and position based on edge
+    let newGeometry: THREE.BoxGeometry;
+    let newPosition: THREE.Vector3;
+
+    if (edge === 'top' || edge === 'bottom') {
+      newGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
+      newPosition = new THREE.Vector3(
+        0,
+        edge === 'top'
+          ? newHeight / 2 - bandingThickness / 2
+          : -newHeight / 2 + bandingThickness / 2,
+        0
+      );
+    } else if (edge === 'left' || edge === 'right') {
+      newGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
+      newPosition = new THREE.Vector3(
+        edge === 'left'
+          ? -newWidth / 2 + bandingThickness / 2
+          : newWidth / 2 - bandingThickness / 2,
+        0,
+        0
+      );
+    } else if (edge === 'front' || edge === 'back') {
+      newGeometry = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
+      newPosition = new THREE.Vector3(
+        0,
+        0,
+        edge === 'front'
+          ? newDepth / 2 - bandingThickness / 2
+          : -newDepth / 2 + bandingThickness / 2
+      );
+    } else {
+      return; // Unknown edge
+    }
+
+    child.geometry.dispose();
+    child.geometry = newGeometry;
+    child.position.copy(newPosition);
+  });
+};
+
+/**
+ * Update drawer/door height and handle visibility based on handle/handleless mode
+ * Reduces height by 25mm from bottom, updates banding, and adjusts position
+ */
+export const updateDrawerDoorForHandleMode = async (
+  scene: THREE.Scene,
+  cupboardMesh: THREE.Mesh,
+  isHandleless: boolean
+) => {
+  if (!cupboardMesh) return;
+
+  const drawersAndDoors: THREE.Mesh[] = [];
+
+  cupboardMesh.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+
+    const type = child.userData.type;
+    if (type !== PART_TYPES.DRAWER && type !== PART_TYPES.DOOR) return;
+
+    if (
+      child.userData.isMain ||
+      child.name?.includes('DRAWER') ||
+      child.name?.includes('DOOR')
+    ) {
+      drawersAndDoors.push(child);
+    }
+  });
+
+  const currentObjects = store.getState().data.objects;
+  // Reduction amount should match the vertical plank height (100mm)
+  const REDUCTION_AMOUNT = 50; // 100mm reduction to match vertical plank height
+
+  for (const drawerOrDoor of drawersAndDoors) {
+    if (drawerOrDoor.userData.type === PART_TYPES.DRAWER) {
+      // Find drawer face
+      drawerOrDoor.traverse(async (child) => {
+        if (
+          child instanceof THREE.Mesh &&
+          (child.name === DRAWER_PLANK_TYPES.DRAWER_FACE || child.name === 'DRAWER_FACE')
+        ) {
+          await updateMeshHeightAndBanding(child, currentObjects, isHandleless, REDUCTION_AMOUNT);
+        }
+      });
+    } else if (drawerOrDoor.userData.type === PART_TYPES.DOOR) {
+      // For doors, update the door mesh itself
+      await updateMeshHeightAndBanding(
+        drawerOrDoor,
+        currentObjects,
+        isHandleless,
+        REDUCTION_AMOUNT
+      );
+    }
+
+    // Update handle visibility
+    drawerOrDoor.traverse((child) => {
+      if (child.userData.type === 'handle') {
+        child.visible = !isHandleless;
+      }
+    });
+  }
+};
+
+/**
+ * Helper function to find the cupboard parent by traversing up the scene graph
+ * This handles cases where doors are wrapped in pivot groups
+ */
+const findCupboardParent = (mesh: THREE.Mesh): THREE.Mesh | null => {
+  let current: THREE.Object3D | null = mesh.parent;
+
+  while (current) {
+    // Check if this is a cupboard (has isMain flag or is a main mesh)
+    if (
+      current instanceof THREE.Mesh &&
+      (current.userData.isMain || current.userData.type === 'cupboard')
+    ) {
+      return current;
+    }
+    // Also check if parent has objectId that matches a cupboard in Redux
+    const objectId = current.userData.objectId;
+    if (objectId) {
+      const currentObjects = store.getState().data.objects;
+      const objData = currentObjects.find((obj: MeshObjectData) => obj.id === objectId);
+      if (objData && objData.isMain && current instanceof THREE.Mesh) {
+        return current;
+      }
+    }
+    current = current.parent;
+  }
+
+  return null;
+};
+
+/**
+ * Apply handleless height adjustment to a mesh
+ * Reduces height from bottom (top stays fixed) when handleless, or restores original height
+ */
+const applyHandlelessHeightAdjustment = async (
+  mesh: THREE.Mesh,
+  meshData: MeshObjectData | undefined,
+  cupboardParent: THREE.Mesh,
+  currentWidth: number,
+  currentHeight: number,
+  currentDepth: number,
+  isHandleless: boolean,
+  reductionAmount: number
+) => {
+  if (isHandleless) {
+    // Use Redux store data for original position (relative to cupboard) if available
+    // This ensures we use the correct position even if door has been moved by pivot group
+    const originalHeight = meshData?.dimensions?.height ?? currentHeight;
+    const originalY = meshData?.position?.y ?? mesh.position.y;
+
+    // Store original height and position if not already stored
+    if (!mesh.userData.originalHeight) {
+      mesh.userData.originalHeight = originalHeight;
+      mesh.userData.originalY = originalY;
+    }
+
+    // Reduce height by reductionAmount from bottom (top stays fixed)
+    const newHeight = Math.max(50, originalHeight - reductionAmount);
+    const originalTopEdgeY = originalY + originalHeight / 2;
+    const newCenterY = originalTopEdgeY - newHeight / 2;
+
+    // Calculate new Y position in cupboard's local space
+    // Then convert to mesh's immediate parent local space (which might be a pivot group)
+    mesh.updateMatrixWorld(true);
+    cupboardParent.updateMatrixWorld(true);
+
+    // Create position vector in cupboard's local space with new Y
+    const currentCupboardLocalX = meshData?.position?.x ?? 0;
+    const currentCupboardLocalZ = meshData?.position?.z ?? 0;
+    const newCupboardLocalPos = new THREE.Vector3(
+      currentCupboardLocalX,
+      newCenterY,
+      currentCupboardLocalZ
+    );
+
+    // Convert to world space, then to mesh's parent local space
+    const newWorldPos = cupboardParent.localToWorld(newCupboardLocalPos.clone());
+    const newParentLocalPos = mesh.parent
+      ? mesh.parent.worldToLocal(newWorldPos.clone())
+      : newCupboardLocalPos;
+
+    // Update geometry
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.BoxGeometry(currentWidth, newHeight, currentDepth);
+
+    // Update position relative to immediate parent (preserving X and Z, updating Y)
+    mesh.position.x = newParentLocalPos.x;
+    mesh.position.y = newParentLocalPos.y;
+    mesh.position.z = newParentLocalPos.z;
+
+    // Manually update banding meshes to match new dimensions
+    updateBandingMeshes(mesh, currentWidth, newHeight, currentDepth);
+
+    // Update Redux
+    if (meshData) {
+      const updatedMeshData = {
+        ...meshData,
+        dimensions: {
+          ...meshData.dimensions,
+          height: newHeight,
+        },
+        position: {
+          ...meshData.position,
+          y: newCenterY,
+        },
+      };
+
+      store.dispatch(updateObject(updatedMeshData));
+
+      // Also update banding using MeshBuilder to ensure consistency
+      try {
+        const meshBuilder = new MeshBuilder(updatedMeshData);
+        meshBuilder.setParentMesh(mesh.parent as THREE.Mesh);
+        await meshBuilder.updateBanding(mesh);
+      } catch (error) {
+        console.warn('Failed to update banding:', error);
+      }
+    }
+  } else {
+    // Restore original height and position
+    const originalHeight =
+      mesh.userData.originalHeight || (meshData?.dimensions?.height ?? currentHeight);
+    const originalY = mesh.userData.originalY ?? meshData?.position?.y ?? mesh.position.y;
+
+    if (originalHeight && originalHeight !== currentHeight) {
+      // Convert original position from cupboard's local space to mesh's parent local space
+      mesh.updateMatrixWorld(true);
+      cupboardParent.updateMatrixWorld(true);
+
+      // Create position vector in cupboard's local space with original Y
+      const currentCupboardLocalX = meshData?.position?.x ?? 0;
+      const currentCupboardLocalZ = meshData?.position?.z ?? 0;
+      const originalCupboardLocalPos = new THREE.Vector3(
+        currentCupboardLocalX,
+        originalY,
+        currentCupboardLocalZ
+      );
+
+      // Convert to world space, then to mesh's parent local space
+      const originalWorldPos = cupboardParent.localToWorld(originalCupboardLocalPos.clone());
+      const originalParentLocalPos = mesh.parent
+        ? mesh.parent.worldToLocal(originalWorldPos.clone())
+        : originalCupboardLocalPos;
+
+      // Update geometry
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.BoxGeometry(currentWidth, originalHeight, currentDepth);
+
+      // Update position relative to immediate parent
+      mesh.position.x = originalParentLocalPos.x;
+      mesh.position.y = originalParentLocalPos.y;
+      mesh.position.z = originalParentLocalPos.z;
+
+      // Manually update banding meshes to match restored dimensions
+      updateBandingMeshes(mesh, currentWidth, originalHeight, currentDepth);
+
+      // Update banding if mesh has banding
+      if (meshData) {
+        const meshBuilder = new MeshBuilder(meshData);
+        meshBuilder.setParentMesh(mesh.parent as THREE.Mesh);
+        await meshBuilder.updateBanding(mesh);
+      }
+
+      // Clear stored original values
+      delete mesh.userData.originalHeight;
+      delete mesh.userData.originalY;
+
+      if (meshData) {
+        store.dispatch(
+          updateObject({
+            ...meshData,
+            dimensions: {
+              ...meshData.dimensions,
+              height: originalHeight,
+            },
+            position: {
+              ...meshData.position,
+              y: originalY,
+            },
+          })
+        );
+      }
+    }
+  }
+};
+
+/**
+ * Helper function to update mesh height, position, and banding
+ * Reduces from bottom (top stays fixed, position moves down)
+ */
+const updateMeshHeightAndBanding = async (
+  mesh: THREE.Mesh,
+  currentObjects: MeshObjectData[],
+  isHandleless: boolean,
+  reductionAmount: number
+) => {
+  const geo = mesh.geometry as THREE.BoxGeometry;
+  const currentHeight = geo.parameters.height;
+  const currentWidth = geo.parameters.width;
+  const currentDepth = geo.parameters.depth;
+
+  const meshData = currentObjects.find((obj) => obj.id === mesh.userData.objectId);
+
+  // Find the actual cupboard parent (traverse up past pivot groups)
+  const cupboardParent = findCupboardParent(mesh);
+  if (!cupboardParent) {
+    console.warn('Could not find cupboard parent for mesh:', mesh.userData.objectId);
+    return;
+  }
+
+  await applyHandlelessHeightAdjustment(
+    mesh,
+    meshData,
+    cupboardParent,
+    currentWidth,
+    currentHeight,
+    currentDepth,
+    isHandleless,
+    reductionAmount
+  );
 };

@@ -12,6 +12,7 @@ import {
   PART_TYPES,
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
+import { GroovingTool } from './tools/groovingTool';
 import { convertKeysToCamel } from './utils';
 
 export class MeshBuilder {
@@ -19,11 +20,13 @@ export class MeshBuilder {
   private mesh: THREE.Mesh | null = null;
   private parentMesh: THREE.Mesh | null = null;
   private bandingTool: BandingTool | null = null;
+  private groovingTool: GroovingTool | null = null;
 
   constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
     if (scene) {
       this.bandingTool = new BandingTool(scene);
+      this.groovingTool = new GroovingTool(scene);
     }
   }
 
@@ -35,10 +38,11 @@ export class MeshBuilder {
   }
 
   /**
-   * Set the scene for BandingTool initialization
+   * Set the scene for BandingTool and GroovingTool initialization
    */
   public setScene(scene: THREE.Scene): void {
     this.bandingTool = new BandingTool(scene);
+    this.groovingTool = new GroovingTool(scene);
   }
 
   /**
@@ -76,6 +80,46 @@ export class MeshBuilder {
     if (scene) {
       this.bandingTool = new BandingTool(scene);
       return this.bandingTool;
+    }
+
+    return null;
+  }
+
+  /**
+   * Get or initialize GroovingTool from mesh's scene
+   * This ensures grooving works even when scene wasn't passed initially
+   */
+  private _getOrCreateGroovingTool(): GroovingTool | null {
+    if (this.groovingTool) {
+      return this.groovingTool;
+    }
+
+    let scene: THREE.Scene | null = null;
+
+    // Try to get scene from mesh's parent chain
+    if (this.mesh) {
+      let current: THREE.Object3D | null = this.mesh;
+      while (current && !(current instanceof THREE.Scene)) {
+        current = current.parent;
+      }
+      if (current instanceof THREE.Scene) {
+        scene = current;
+      }
+    }
+
+    // If not found from mesh, try to get from Redux store
+    if (!scene) {
+      try {
+        const state = store.getState();
+        scene = state.scene?.scene || null;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (scene) {
+      this.groovingTool = new GroovingTool(scene);
+      return this.groovingTool;
     }
 
     return null;
@@ -286,6 +330,7 @@ export class MeshBuilder {
 
     handleModel.name = `Handle_for_${mesh.name}`;
     handleModel.userData.type = 'handle';
+    handleModel.userData.objectId = crypto.randomUUID();
 
     this._placeHandleOnMesh(handleModel, mesh, materialProps);
   }
@@ -366,25 +411,20 @@ export class MeshBuilder {
     }
   }
 
-  private async _createBandingOnPlank(
-    mesh: THREE.Mesh,
-    materialData: Material,
-    bandingState?: {
-      top?: boolean;
-      bottom?: boolean;
-      left?: boolean;
-      right?: boolean;
-      front?: boolean;
-      back?: boolean;
-    }
-  ) {
-    const tool = this._getOrCreateBandingTool();
-    if (!tool) return;
-
-    await tool.createBandingOnPlank(mesh, materialData, bandingState, this.parentMesh, {
-      material: this.meshData.material,
-      id: this.meshData.id,
+  /**
+   * Update grooving positions and sizes when plank dimensions change
+   */
+  public updateGrooving(mesh: THREE.Mesh): void {
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.name.includes('BACK_PLANK')) {
+        mesh = child;
+      }
     });
+
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.updateGrooving(mesh);
+    }
   }
 
   /**
@@ -479,7 +519,6 @@ export class MeshBuilder {
               });
           }
         }
-      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
       }
     });
 
@@ -498,12 +537,13 @@ export class MeshBuilder {
     );
     this.mesh = mesh;
 
-    this._handleMaterial();
     this._setName(mesh);
     this._setPosition(mesh);
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
+    this._handleMaterial();
+    this._createGrooving();
     return mesh;
   }
 
@@ -558,6 +598,28 @@ export class MeshBuilder {
     if (changes.dimensions) {
       mesh.geometry.dispose();
       mesh.geometry = this._getGeometry();
+    }
+  }
+
+  /**
+   * Remove all grooving meshes from a plank
+   */
+  public removeAllGrooving(mesh: THREE.Mesh): void {
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.removeAllGrooving(mesh);
+    }
+  }
+
+  /**
+   * Create grooving system: grooves on side planks (female) and protrusions on back plank (male)
+   */
+  private _createGrooving(): void {
+    if (!this.mesh) return;
+
+    const tool = this._getOrCreateGroovingTool();
+    if (tool) {
+      tool.createGrooving(this.mesh);
     }
   }
 

@@ -23,7 +23,13 @@ export const PART_TYPES = {
   DOOR: 'door',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
+  L_SHAPE_OBJECT: 'lShapeObject',
+  HANDLE: 'handle',
 };
+
+export const INVISIBLE_BOXES = {
+  INVISIBLE_BOX: 'invisibleBox',
+}
 
 export const DRAWER_TYPES = {
   INSET: 'inset',
@@ -31,12 +37,12 @@ export const DRAWER_TYPES = {
 };
 
 export const DRAWER_PLANK_TYPES = {
-  DRAWER_FACE: 'DRAWER_FACE',
-  FRONT_DRAWER_PLANK: 'FRONT_DRAWER_PLANK',
-  BACK_DRAWER_PLANK: 'BACK_DRAWER_PLANK',
-  BOTTOM_DRAWER_PLANK: 'BOTTOM_DRAWER_PLANK',
-  RIGHT_DRAWER_PLANK: 'RIGHT_DRAWER_PLANK',
-  LEFT_DRAWER_PLANK: 'LEFT_DRAWER_PLANK',
+  DRAWER_FACE: 'DRAWER_FACE_PLANK',
+  FRONT_DRAWER_PLANK: 'DRAWER_FRONT_PLANK',
+  BACK_DRAWER_PLANK: 'DRAWER_BACK_PLANK',
+  BOTTOM_DRAWER_PLANK: 'DRAWER_BOTTOM_PLANK',
+  RIGHT_DRAWER_PLANK: 'DRAWER_RIGHT_PLANK',
+  LEFT_DRAWER_PLANK: 'DRAWER_LEFT_PLANK',
 };
 
 export const GEOMETRY = {
@@ -91,6 +97,11 @@ export const EDGES = {
   RIGHT: 'right',
   FRONT: 'front',
   BACK: 'back',
+};
+
+export const GROOVE_TYPE = {
+  GROOVE: 'groove',
+  PROTRUSION: 'protrusion',
 };
 
 // type
@@ -160,6 +171,7 @@ export interface MeshObjectData {
   selected?: boolean;
   drawerType?: string;
   edgeBanding?: EdgeBandingState;
+  handleMode?: 'handle' | 'handleless';
 }
 
 export interface userData {
