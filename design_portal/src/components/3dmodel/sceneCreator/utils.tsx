@@ -185,8 +185,9 @@ export const deleteObject = async (clearScene?: boolean) => {
   const objectRemover = new ObjectsRemoverFromScene();
   if (clearScene) {
     objectRemover.clearScene();
+  } else {
+    objectRemover.findSingleObjectToRemove();
   }
-  objectRemover.findSingleObjectToRemove();
 };
 
 export function formatEnumLabel(value: string): string {

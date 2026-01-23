@@ -528,7 +528,6 @@ const Sidebar: React.FC = () => {
 
   const handleTextureRotationChange = (value: number) => {
     if (!selectedObject || isDisabled) return;
-
     const clampedValue = Math.max(0, Math.min(180, value));
     if (isUpdatingTextureRotationRef.current) return;
     if (Math.abs(clampedValue - textureRotation) < 0.01) return;
@@ -541,11 +540,6 @@ const Sidebar: React.FC = () => {
       const texturePath = getTextureFromMaterial(selectedObject.material);
       if (texturePath && updateObjectRef.current) {
         updateObjectRef.current.update(selectedObject.id, {
-          material: {
-            type: MATERIAL_TYPES.TEXTURE,
-            //@ts-ignore
-            value: texturePath,
-          },
           textureRotation: clampedValue,
         });
       }

@@ -44,6 +44,9 @@ export class UpdateObjectInScene {
     this.updateMeshPosition(mesh, updates);
     this.updateMeshRotation(mesh, updates);
     this.updateMeshMaterial(mesh, updates);
+    if (updates.textureRotation !== undefined) {
+      this.updateTextureRotation(mesh, updates.textureRotation);
+    }
 
     if (currentObject) {
       this.updateRedux(objectId, updates, currentObject);
@@ -61,6 +64,25 @@ export class UpdateObjectInScene {
     });
 
     return foundMesh;
+  }
+
+  private updateTextureRotation(mesh: THREE.Mesh, rotationDeg: number): void {
+    const applyRotation = (material: THREE.Material) => {
+      if (!(material instanceof THREE.MeshStandardMaterial)) return material;
+      if (!material.map) return material;
+
+      material.map.center.set(0.5, 0.5);
+      material.map.rotation = THREE.MathUtils.degToRad(rotationDeg);
+      material.map.needsUpdate = true;
+
+      return material;
+    };
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map(applyRotation);
+    } else {
+      mesh.material = applyRotation(mesh.material);
+    }
   }
 
   private updateGroovingForPlank(mesh: THREE.Mesh): void {
