@@ -1024,17 +1024,17 @@ export const updateDrawerDoorForHandleMode = async (
   const drawersAndDoors: THREE.Mesh[] = [];
 
   cupboardMesh.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      const type = child.userData.type;
-      if (type === PART_TYPES.DRAWER || type === PART_TYPES.DOOR) {
-        if (
-          child.userData.isMain ||
-          child.name?.includes('DRAWER') ||
-          child.name?.includes('DOOR')
-        ) {
-          drawersAndDoors.push(child);
-        }
-      }
+    if (!(child instanceof THREE.Mesh)) return;
+
+    const type = child.userData.type;
+    if (type !== PART_TYPES.DRAWER && type !== PART_TYPES.DOOR) return;
+
+    if (
+      child.userData.isMain ||
+      child.name?.includes('DRAWER') ||
+      child.name?.includes('DOOR')
+    ) {
+      drawersAndDoors.push(child);
     }
   });
 
@@ -1103,29 +1103,19 @@ const findCupboardParent = (mesh: THREE.Mesh): THREE.Mesh | null => {
 };
 
 /**
- * Helper function to update mesh height, position, and banding
- * Reduces from bottom (top stays fixed, position moves down)
+ * Apply handleless height adjustment to a mesh
+ * Reduces height from bottom (top stays fixed) when handleless, or restores original height
  */
-const updateMeshHeightAndBanding = async (
+const applyHandlelessHeightAdjustment = async (
   mesh: THREE.Mesh,
-  currentObjects: MeshObjectData[],
+  meshData: MeshObjectData | undefined,
+  cupboardParent: THREE.Mesh,
+  currentWidth: number,
+  currentHeight: number,
+  currentDepth: number,
   isHandleless: boolean,
   reductionAmount: number
 ) => {
-  const geo = mesh.geometry as THREE.BoxGeometry;
-  const currentHeight = geo.parameters.height;
-  const currentWidth = geo.parameters.width;
-  const currentDepth = geo.parameters.depth;
-
-  const meshData = currentObjects.find((obj) => obj.id === mesh.userData.objectId);
-
-  // Find the actual cupboard parent (traverse up past pivot groups)
-  const cupboardParent = findCupboardParent(mesh);
-  if (!cupboardParent) {
-    console.warn('Could not find cupboard parent for mesh:', mesh.userData.objectId);
-    return;
-  }
-
   if (isHandleless) {
     // Use Redux store data for original position (relative to cupboard) if available
     // This ensures we use the correct position even if door has been moved by pivot group
@@ -1266,4 +1256,40 @@ const updateMeshHeightAndBanding = async (
       }
     }
   }
+};
+
+/**
+ * Helper function to update mesh height, position, and banding
+ * Reduces from bottom (top stays fixed, position moves down)
+ */
+const updateMeshHeightAndBanding = async (
+  mesh: THREE.Mesh,
+  currentObjects: MeshObjectData[],
+  isHandleless: boolean,
+  reductionAmount: number
+) => {
+  const geo = mesh.geometry as THREE.BoxGeometry;
+  const currentHeight = geo.parameters.height;
+  const currentWidth = geo.parameters.width;
+  const currentDepth = geo.parameters.depth;
+
+  const meshData = currentObjects.find((obj) => obj.id === mesh.userData.objectId);
+
+  // Find the actual cupboard parent (traverse up past pivot groups)
+  const cupboardParent = findCupboardParent(mesh);
+  if (!cupboardParent) {
+    console.warn('Could not find cupboard parent for mesh:', mesh.userData.objectId);
+    return;
+  }
+
+  await applyHandlelessHeightAdjustment(
+    mesh,
+    meshData,
+    cupboardParent,
+    currentWidth,
+    currentHeight,
+    currentDepth,
+    isHandleless,
+    reductionAmount
+  );
 };
