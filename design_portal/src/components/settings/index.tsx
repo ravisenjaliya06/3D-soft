@@ -1044,13 +1044,13 @@ const Settings = () => {
                     <p>Edge Banding</p>
                     <div
                       onClick={handleEdgeBandingToggle}
-                      className={`relative mb-[0.5rem] h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                      className={`relative mb-[0.5rem] h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
                     >
                       {/* Knob */}
                       <div
                         className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                           edgeBandingEnabled
-                            ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                            ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                             : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                         }`}
                       />

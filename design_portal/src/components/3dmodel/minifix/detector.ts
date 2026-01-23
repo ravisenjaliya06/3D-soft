@@ -1,4 +1,5 @@
 import { ITEM, PLANK } from '../handler/interface';
+import { DRAWER_PLANK_TYPES } from '../sceneCreator/interface';
 import type { PlankConnection, PlankData } from './types';
 import { Bounds } from './types';
 
@@ -7,11 +8,11 @@ export function detect90DegreeConnections(planks: PlankData[]): PlankConnection[
     const name = plank.name;
     const include =
       name.includes(ITEM.PLANK) ||
-      name.includes(PLANK.DRAWER_LEFT_SIDE) ||
-      name.includes(PLANK.DRAWER_RIGHT_SIDE) ||
-      name.includes(PLANK.DRAWER_BOTTOM_SIDE) ||
-      name.includes(PLANK.DRAWER_FRONT_SIDE) ||
-      name.includes(PLANK.DRAWER_BACK_SIDE);
+      name.includes(DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK) ||
+      name.includes(DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK) ||
+      name.includes(DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK) ||
+      name.includes(DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK) ||
+      name.includes(DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK);
 
     const exclude = name.includes(PLANK.BACK_SIDE) || name.includes(PLANK.FRONT_SIDE);
 

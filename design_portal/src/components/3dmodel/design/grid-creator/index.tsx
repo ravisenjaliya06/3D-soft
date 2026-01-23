@@ -9,5 +9,6 @@ export const createGrid = (size: number, divisions: number): THREE.GridHelper =>
   gridHelper.material.opacity = 0.9;
   gridHelper.material.depthWrite = false;
   gridHelper.material.transparent = true;
+  gridHelper.renderOrder = -1; // Lower render order so it appears behind outline lines
   return gridHelper;
 };

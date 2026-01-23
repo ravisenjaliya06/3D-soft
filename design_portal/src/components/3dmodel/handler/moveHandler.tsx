@@ -209,8 +209,15 @@ export class MoveHandler implements IMoveHandler {
     }
 
     // ---------------- GENERIC OBJECT ----------------
+    const originalQuaternion = object.quaternion.clone();
+    object.quaternion.set(0, 0, 0, 1);
+    object.updateMatrixWorld(true);
+
     const box = new THREE.Box3().setFromObject(object);
     const size = box.getSize(new THREE.Vector3());
+
+    object.quaternion.copy(originalQuaternion);
+    object.updateMatrixWorld(true);
 
     object.position.copy(hit.point.clone().addScaledVector(wallNormal, size.z / 2));
     object.rotation.y = wall.rotation.y;

@@ -48,6 +48,15 @@ export class SelectObjectController {
   }
 
   public update() {
+    // Auto-cleanup if objects were removed from scene outside of this controller
+    if (this.selectedMainObject && !this.selectedMainObject.parent) {
+      this.deselect();
+    }
+    if (this.hoveredObject && !this.hoveredObject.parent) {
+      this._removeHoverEffect();
+      this.hoveredObject = null;
+      if (this.onHover) this.onHover(null);
+    }
     this._handleHover();
   }
 
@@ -263,20 +272,25 @@ export class SelectObjectController {
     return newHover;
   }
 
-  // check if the mouse is hovering over a selectable object
   private _handleHover() {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // get all object behinds of the mouse cursor
     const targets = this._findTargetToHover();
 
-    // find the closest object to the mouse using raycasting
     const newHover = this._findHoverObject(targets);
 
-    if (newHover !== this.selectedMainObject) {
+    if (newHover !== this.hoveredObject) {
       this._removeHoverEffect();
       this.hoveredObject = newHover;
-      if (newHover) this._applyHoverEffect();
+
+      // Only apply hover effect if it's not the already selected object
+      if (newHover && newHover !== this.selectedMainObject && newHover !== this.selectedPart) {
+        this._applyHoverEffect();
+      }
+
+      if (this.onHover) {
+        this.onHover(newHover);
+      }
     }
   }
 

@@ -1,9 +1,16 @@
 import { generateCompartmentsFromMesh } from '@/components/3dmodel/handler/items';
 import { store } from '@/components/3dmodel/store';
 import * as THREE from 'three';
-import { removeObject } from '../../store/dataSlice';
+import {
+  clearWalls,
+  removeObject,
+  setFloor,
+  setHoverdMesh,
+  setobjectSelected,
+  setSelectedChildObject,
+} from '../../store/dataSlice';
 import { removeAllOutlines } from '../../utils/outlineHelpers';
-import { OBJECT_TYPES, PART_TYPES } from '../interface';
+import { FLOOR_PLAN_TYPES, OBJECT_TYPES, PART_TYPES } from '../interface';
 
 /**
  * Removes all objects from scene
@@ -13,6 +20,7 @@ export class ObjectsRemoverFromScene {
   private scene: THREE.Scene;
   private objectsToRemove: THREE.Mesh[] = [];
   private removedObjectParent: THREE.Mesh | null = null;
+  private readonly DISTANCE_GROUP_PREFIX = 'dist_group_';
 
   constructor() {
     this.scene = store.getState().scene?.scene;
@@ -34,11 +42,12 @@ export class ObjectsRemoverFromScene {
       }
       object.parent?.remove(object);
       store.dispatch(removeObject(object.userData.objectId));
-      this.objectsToRemove = [];
     });
+    this.objectsToRemove = [];
 
     this._reCreateCompartments();
     this._clearOutline();
+    this._clearDistances();
   }
 
   private _addRemovedObjectInList() {
@@ -46,7 +55,8 @@ export class ObjectsRemoverFromScene {
       if (
         object instanceof THREE.Mesh &&
         (Object.values(OBJECT_TYPES).includes(object.userData.type) ||
-          Object.values(PART_TYPES).includes(object.userData.type))
+          Object.values(PART_TYPES).includes(object.userData.type) ||
+          Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type))
       ) {
         this.objectsToRemove.push(object);
       }
@@ -79,6 +89,20 @@ export class ObjectsRemoverFromScene {
     removeAllOutlines(this.scene);
   }
 
+  private _clearDistances() {
+    const toRemove: THREE.Object3D[] = [];
+    this.scene.traverse((obj) => {
+      if (obj.name && obj.name.startsWith(this.DISTANCE_GROUP_PREFIX)) {
+        toRemove.push(obj);
+      }
+    });
+    toRemove.forEach((group) => {
+      this.scene.remove(group);
+      // We could dispose resources here but distance.tsx usually handles it if clearAllDistances is called.
+      // However, since we are doing manual removal, it's safer to just remove it.
+    });
+  }
+
   public findSingleObjectToRemove() {
     const selectedId =
       store.getState().data.selectedChildObject ?? store.getState().data.selectedObject;
@@ -93,9 +117,23 @@ export class ObjectsRemoverFromScene {
 
     this._removeObjects();
     this._clearOutline();
+
+    // Reset selection state in Redux
+    store.dispatch(setobjectSelected(null));
+    store.dispatch(setSelectedChildObject(null));
+    store.dispatch(setHoverdMesh(null));
   }
 
   public clearScene() {
+    // Clear selection state
+    store.dispatch(setobjectSelected(null));
+    store.dispatch(setSelectedChildObject(null));
+    store.dispatch(setHoverdMesh(null));
+
+    // Clear 2D data state
+    store.dispatch(clearWalls());
+    store.dispatch(setFloor([]));
+
     this._addRemovedObjectInList();
   }
 }

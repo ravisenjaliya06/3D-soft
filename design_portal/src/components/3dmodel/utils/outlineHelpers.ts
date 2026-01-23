@@ -71,12 +71,14 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     solid.geometry = tempSolid.geometry;
     solid.material = tempSolid.material;
 
-    // Update transforms to match createLineObjects logic
-    solid.position.copy(mesh.getWorldPosition(new THREE.Vector3()));
-    solid.quaternion.copy(mesh.getWorldQuaternion(new THREE.Quaternion()));
-    solid.scale.copy(mesh.getWorldScale(new THREE.Vector3()));
-  } else {
-    const newSolid = createLineObjects(mesh, 0xffff00);
-    scene.add(newSolid);
+    // Use the same center calculation as createLineObjects for consistency
+    const box = new THREE.Box3().setFromObject(mesh);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    solid.position.copy(center);
+    // Reset transforms since center is in world space
+    solid.quaternion.set(0, 0, 0, 1);
+    solid.scale.set(1, 1, 1);
   }
 };

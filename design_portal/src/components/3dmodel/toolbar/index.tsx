@@ -12,11 +12,12 @@ import {
   addDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
+  addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { GEOMETRY, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, INVISIBLE_BOXES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -163,6 +164,47 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         const syncManager = new SyncManager(sinkItem, threeDView);
         await syncManager.syncData();
       }
+    } else if (['door', 'Sliding Door'].includes(item.type)) {
+      // For doors, directly add without asking for quantity
+      setSelectedCabinetItem(item);
+      setQuantityValue(1);
+      // Directly call onAddItems without showing popup
+      const scene = threeDView!.scene;
+      let targetBox: THREE.Mesh | null = null;
+      const selectedChildObject = store.getState().data.selectedChildObject;
+
+      scene.traverse((obj) => {
+        if (obj.userData.objectId === selectedChildObject) {
+          targetBox = obj as THREE.Mesh;
+        }
+      });
+
+      if (!targetBox) {
+        toast(
+          ({ closeToast }) => (
+            <CustomToast
+              appearance="error"
+              message="Target box not found!"
+              closeToast={closeToast}
+            />
+          ),
+          {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeButton: false,
+            icon: false,
+            className: '!p-0 !bg-black !shadow-none !min-h-0 !mb-4',
+            progressClassName: '!bg-[#D32F2F] !h-[4px] !top-auto !top-0 !left-0 !opacity-100',
+          }
+        );
+        return;
+      }
+
+      await addDoorOnInvisibleBox(scene, targetBox, item);
+      dispatch(setSelectedChildObject(null));
+      dispatch(setHoverdMesh(null));
+      removeExistingLines();
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);
@@ -196,10 +238,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
 
-    if (!targetBox) {
+    const showErrorToast = (message: string) => {
       toast(
         ({ closeToast }) => (
-          <CustomToast appearance="error" message="Target box not found!" closeToast={closeToast} />
+          <CustomToast appearance="error" message={message} closeToast={closeToast} />
         ),
         {
           position: 'top-right',
@@ -211,8 +253,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           progressClassName: '!bg-[#D32F2F] !h-[3px]',
         }
       );
+    };
+
+    if ((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) {
+      showErrorToast('Please select a blank box');
       return;
     }
+
+    if (!(targetBox)) {
+      showErrorToast('Target box not found!'); 
+      return;
+    }
+
     if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
@@ -227,6 +279,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
+    } else if (
+      itemType === PART_TYPES.L_SHAPE_OBJECT ||
+      (itemName || '').toLowerCase().includes('l-shape')
+    ) {
+      await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
     }
 
     setAddPartPopup(false);
@@ -389,6 +446,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     cupboard: assets.cabinet,
     platform: assets.platform_icon,
     sink: assets.sink_icon,
+    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
+    lShapeObject: assets.vertical,
   };
 
   const [activeSubmenuItem, setActiveSubmenuItem] = useState(null);
