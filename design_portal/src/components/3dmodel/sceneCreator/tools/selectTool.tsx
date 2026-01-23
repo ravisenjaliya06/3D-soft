@@ -272,14 +272,11 @@ export class SelectObjectController {
     return newHover;
   }
 
-  // check if the mouse is hovering over a selectable object
   private _handleHover() {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // get all object behinds of the mouse cursor
     const targets = this._findTargetToHover();
 
-    // find the closest object to the mouse using raycasting
     const newHover = this._findHoverObject(targets);
 
     if (newHover !== this.hoveredObject) {
