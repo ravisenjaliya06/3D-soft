@@ -1,10 +1,9 @@
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
-import { assets } from '@/svgPaths';
 import type React from 'react';
 import { useEffect } from 'react';
 import AddMaterialPopup from './addItem';
-import { ContextMenus } from './components/ContextMenus';
+// import { ContextMenus } from './components/ContextMenus';
 import { CreateCompanyPopup } from './components/CreateCompanyPopup';
 import { MaterialSidebar } from './components/MaterialSidebar';
 import { MaterialTable } from './components/MaterialTable';
@@ -34,8 +33,7 @@ const Material: React.FC = () => {
     companyID,
     activeCategory,
     activeTab,
-    contextMenu,
-    contextMaterialMenu,
+
     createCompanyPopup,
     companyName,
     setExpandedCategory,
@@ -44,7 +42,7 @@ const Material: React.FC = () => {
     setSearchQuery,
     setSortColumn,
     setAddMaterialPopup,
-    setCompanyID,
+
     setActiveCategory,
     setActiveTab,
     setContextMenu,
@@ -111,11 +109,6 @@ const Material: React.FC = () => {
   };
 
   /** Open the popup to add a new material under a company */
-  const handleAddMaterial = (companyId: string) => {
-    setAddMaterialPopup(true);
-    setContextMaterialMenu(null);
-    setCompanyID(companyId);
-  };
 
   // Filter and sort materials
   const getFilteredMaterials = () => {
@@ -176,26 +169,12 @@ const Material: React.FC = () => {
               onContextMenu={handleContextMenu}
               onMaterialContextMenu={handleMaterialContextMenu}
               selectedSubItem={selectedSubItem}
+              onAddCompany={handleAddCompany}
+              setAddMaterialPopup={setAddMaterialPopup}
             />
 
-            <div className={styles.materialrightside}>
-              <MaterialToolbar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                actionButton={
-                  <button
-                    disabled={!selectedSubItem}
-                    className={`ml-[1rem] h-[1.5rem] rounded-[0.3rem] px-[0.75rem] py-2 font-[comfortaa] text-[0.65rem] font-bold text-[var(--primary-white)] ${selectedSubItem ? 'cursor-pointer bg-[var(--primary-color)]' : 'cursor-not-allowed bg-[var(--primary-light-grey)]'} `}
-                    onClick={() => {
-                      if (!selectedSubItem) return;
-                      handleAddMaterial(selectedSubItem);
-                    }}
-                  >
-                    <img src={assets.plus} alt="Plus icon" className="w-[0.70rem] pr-[0.25rem]" />
-                    Add New
-                  </button>
-                }
-              />
+            <div className={'flex flex-1 flex-col overflow-hidden'}>
+              <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
               <MaterialTable
                 materials={getFilteredMaterials()}
@@ -209,12 +188,12 @@ const Material: React.FC = () => {
         )}
       </div>
 
-      <ContextMenus
+      {/* <ContextMenus
         contextMenu={contextMenu}
         contextMaterialMenu={contextMaterialMenu}
         onAddCompany={handleAddCompany}
         onAddMaterial={handleAddMaterial}
-      />
+      /> */}
 
       {createCompanyPopup && (
         <CreateCompanyPopup

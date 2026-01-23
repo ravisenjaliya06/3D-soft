@@ -57,21 +57,21 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
   return (
     <div
-      className={`${styles.custom_scrollbar} h-full flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]`}
+      className={`${styles.custom_scrollbar} h-full flex-1 overflow-auto rounded-[0.63rem] border-[0.06rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[0.31rem]`}
     >
-      <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[7px]">
+      <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[0.44rem]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
+              className={`mr-[0.7rem] mb-[-0.13rem] ml-[0.7rem] cursor-pointer border-[0rem] border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
                 activeTab === tab.id
-                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
-                  : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
+                  ? `relative mr-[0.7rem] ml-[0.7rem] rounded-t-[0.199rem] border-b-[0.13rem] border-[black] bg-[var(--primary-white)] pr-[0rem] pl-[0rem] font-[700] text-[var(--primary-color)]`
+                  : `mr-[0.7rem] pr-[0rem] pl-[0rem] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
               } `}
               onClick={() => onTabChange(tab.id)}
             >
-              <p className="mb-[0px] pb-[5px] text-[0.85rem]">{tab.label}</p>
+              <p className="mb-[0rem] pb-[0.31rem] text-[0.85rem]">{tab.label}</p>
             </div>
           ))}
         </div>
@@ -82,7 +82,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`sticky top-0 z-10 border-t border-r border-l border-[#39257933] bg-white p-[0.75rem] py-[0px] pb-[5px] text-xs font-[600] whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
+                className={`sticky top-0 z-10 border-t-[0.06rem] border-r-[0.06rem] border-l-[0.06rem] border-[#39257933] bg-white p-[0.75rem] py-[0rem] pb-[0.31rem] text-xs font-[600] whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
                 onClick={() => column.sortable && onSort(column.key)}
               >
                 <div className="flex items-center justify-start">
@@ -92,12 +92,12 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                       <img
                         src={MENU_UP_SVG.menu_up}
                         alt="Sort icon"
-                        className="mb-[-6px] ml-[3px] w-[1rem]"
+                        className="mb-[-0.38rem] ml-[0.19rem] w-[1rem]"
                       />
                       <img
                         src={MENU_DOWN_SVG.menu_down}
                         alt="Sort icon"
-                        className="mt-[-2.5px] ml-[6px] w-[1rem]"
+                        className="mt-[-0.16rem] ml-[0.38rem] w-[1rem]"
                       />
                     </div>
                   )}
@@ -125,7 +125,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.65rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                    className={`h-[1.25rem] max-w-[15.63rem] min-w-[6.25rem] truncate border-r-[0.06rem] border-b-[0.06rem] border-l-[0.06rem] border-[#39257933] p-[0.75rem] text-[0.65rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
                   >
                     {getCellValue(row, column.key)}
                   </td>
@@ -139,7 +139,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
         <div className="flex justify-center p-4">
           <button
             onClick={() => setVisibleCount((prev) => prev + initVisibleCount)}
-            className="m-[1.5rem] space-x-[0.5rem] border-none bg-transparent px-6 py-2 text-[1.05rem] font-medium text-[var(--primary-color)] transition-colors"
+            className="m-[1.5rem] space-x-[0.5rem] border-[0rem] border-[#392579] bg-transparent px-6 py-2 text-[1.05rem] font-medium text-[var(--primary-color)] transition-colors"
           >
             <div className="flex items-center space-x-[0.5rem]">
               <span>Load More</span>

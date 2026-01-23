@@ -378,9 +378,9 @@ const Sidebar: React.FC = () => {
   };
 
   const getSidebarTitle = (): string =>
-  isDisabled
-    ? 'Viewport Navigation'
-    : `${'Adjustable ' + formatEnumLabel(selectedObject?.name || 'Settings')}`;
+    isDisabled
+      ? 'Viewport Navigation'
+      : `${'Adjustable ' + formatEnumLabel(selectedObject?.name || 'Settings')}`;
 
   const handleNavigation = () => {
     /** Opens the navigation panel and closes settings if open. */

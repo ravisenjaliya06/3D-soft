@@ -13,12 +13,12 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
   actionButton,
 }) => {
   return (
-    <div className="mb-[1rem] flex h-[7vh] items-center justify-between rounded-[0.600rem] border border-[rgba(57,37,121,0.3)] bg-gradient-to-r from-white to-[#f5e5ff] px-[1.5rem] py-[0rem]">
+    <div className="mb-[1rem] flex h-[7vh] items-center justify-between rounded-[0.600rem] border-[0.063rem] border-[rgba(57,37,121,0.3)] bg-gradient-to-r from-white to-[#f5e5ff] px-[1.5rem] py-[0rem]">
       <div className="flex items-center">{/* Dropdown can be added here if needed */}</div>
 
       <div className="flex items-center space-x-3">
-        <button className="flex items-center border-0 bg-transparent pr-[1rem]">
-          <img src={assets.filter || '/placeholder.svg'} alt="" />
+        <button className="flex items-center border-[0rem] bg-transparent pr-[1rem]">
+          <img src={assets.filter || '/placeholder.svg'} alt="" className="h-[1rem] w-[1rem]" />
         </button>
         <div className="relative flex items-center">
           {/* Search Icon */}

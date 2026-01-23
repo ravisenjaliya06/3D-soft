@@ -29,7 +29,7 @@ export const PART_TYPES = {
 
 export const INVISIBLE_BOXES = {
   INVISIBLE_BOX: 'invisibleBox',
-}
+};
 
 export const DRAWER_TYPES = {
   INSET: 'inset',
