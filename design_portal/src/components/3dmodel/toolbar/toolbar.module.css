@@ -1046,14 +1046,6 @@
   background: var(--toolbarhover-color);
 }
 
-.submenuItemActive {
-  background: var(--toolbarhover-color);
-}
-
-.submenuItemActive span {
-  font-weight: 600;
-}
-
 .submenuItem img {
   width: 2.5rem;
   height: 2.5rem;

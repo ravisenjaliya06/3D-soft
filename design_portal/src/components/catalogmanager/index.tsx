@@ -624,9 +624,7 @@ const CatalogManager = () => {
 
             {/* RIGHT BOX */}
             <div className="relative mb-[2rem] flex h-full flex-col gap-[1rem] rounded-[0.2rem] border-[0rem] bg-white p-[0rem]">
-              <div
-                style={{ scrollbarWidth: 'thin' }} // Firefox fallback
-                className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
+              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
                 {/* ================= TOP BAR ================= */}
                 <div className="m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] sticky top-[0rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
                   {/* DROPDOWN */}
@@ -675,10 +673,15 @@ const CatalogManager = () => {
                 </div>
 
                 {/* ================= TABLE ================= */}
-                <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] ">
+                <div
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'var(--scrollbar-color-2) transparent',
+                  }}
+                  className="h-full max-h-[59vh] w-full max-w-[31.05rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent ">
                   <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
                     {/* ================= TABLE HEADER ================= */}
-                    <thead className="sticky top-[3.05rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
+                    <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
                       <tr className="p-[0rem]">
                         <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem]"></th>
 

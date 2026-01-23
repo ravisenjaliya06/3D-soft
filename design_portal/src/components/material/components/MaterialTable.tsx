@@ -56,7 +56,10 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
   return (
     <div
-      style={{ scrollbarWidth: 'thin' }}
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'var(--scrollbar-color-2) transparent',
+      }}
       className="h-full flex-1 overflow-auto overflow-y-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px] [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
     >
       <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[7px]">

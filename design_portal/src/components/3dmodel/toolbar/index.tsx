@@ -261,7 +261,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     }
 
     if (!(targetBox)) {
-      showErrorToast('Target box not found!'); 
+      showErrorToast('Target box not found!');
       return;
     }
 
@@ -450,9 +450,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     lShapeObject: assets.vertical,
   };
 
-  const [activeSubmenuItem, setActiveSubmenuItem] = useState(null);
-
-
   return (
     <>
       {/* Toolbar Container */}
@@ -616,11 +613,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               {getFilteredCabinetItems(selectedFurnitureCategory).map((item) => (
                 <div
                   key={item.id}
-                  className={`${styles.submenuItem} 
-                   ${activeSubmenuItem === item.id ? styles.submenuItemActive : ''}`}
+                  className={styles.submenuItem}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveSubmenuItem(item.id);
                     handleCabinetItemSelect(e, item);
                   }}
                   title={item.description || item.name}
@@ -628,9 +623,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <img
                     src={
                       iconMap[
-                      item.type === PART_TYPES.PLANK
-                        ? formatEnumLabel(item.name)
-                        : item.type
+                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]
                     }
                     alt={item.name}
@@ -638,14 +631,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <span>{formatEnumLabel(item.name)}</span>
                 </div>
               ))}
-
               {getFilteredCabinetItems(selectedFurnitureCategory).length === 0 && (
                 <div className={styles.noItems}>
                   No items available for {selectedFurnitureCategory}
                 </div>
               )}
             </div>
-
           </div>
         )}
       </aside>
