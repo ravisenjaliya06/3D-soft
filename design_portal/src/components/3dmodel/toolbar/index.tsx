@@ -165,6 +165,47 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         const syncManager = new SyncManager(sinkItem, threeDView);
         await syncManager.syncData();
       }
+    } else if (['door', 'Sliding Door'].includes(item.type)) {
+      // For doors, directly add without asking for quantity
+      setSelectedCabinetItem(item);
+      setQuantityValue(1);
+      // Directly call onAddItems without showing popup
+      const scene = threeDView!.scene;
+      let targetBox: THREE.Mesh | null = null;
+      const selectedChildObject = store.getState().data.selectedChildObject;
+
+      scene.traverse((obj) => {
+        if (obj.userData.objectId === selectedChildObject) {
+          targetBox = obj as THREE.Mesh;
+        }
+      });
+
+      if (!targetBox) {
+        toast(
+          ({ closeToast }) => (
+            <CustomToast
+              appearance="error"
+              message="Target box not found!"
+              closeToast={closeToast}
+            />
+          ),
+          {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeButton: false,
+            icon: false,
+            className: '!p-0 !bg-black !shadow-none !min-h-0 !mb-4',
+            progressClassName: '!bg-[#D32F2F] !h-[4px] !top-auto !top-0 !left-0 !opacity-100',
+          }
+        );
+        return;
+      }
+
+      await addDoorOnInvisibleBox(scene, targetBox, item);
+      dispatch(setSelectedChildObject(null));
+      dispatch(setHoverdMesh(null));
+      removeExistingLines();
     } else {
       setSelectedCabinetItem(item);
       setQuantityValue(1);
