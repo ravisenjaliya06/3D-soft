@@ -12,6 +12,8 @@ export const FLOOR_PLAN_TYPES = {
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
+  PLATFORM: 'platform',
+  SINK: 'sink',
 };
 
 export const PART_TYPES = {
@@ -21,6 +23,8 @@ export const PART_TYPES = {
   DOOR: 'door',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
+  L_SHAPE_OBJECT: 'lShapeObject',
+  HANDLE: 'handle',
 };
 
 export const DRAWER_TYPES = {
@@ -29,12 +33,12 @@ export const DRAWER_TYPES = {
 };
 
 export const DRAWER_PLANK_TYPES = {
-  DRAWER_FACE: 'DRAWER_FACE',
-  FRONT_DRAWER_PLANK: 'FRONT_DRAWER_PLANK',
-  BACK_DRAWER_PLANK: 'BACK_DRAWER_PLANK',
-  BOTTOM_DRAWER_PLANK: 'BOTTOM_DRAWER_PLANK',
-  RIGHT_DRAWER_PLANK: 'RIGHT_DRAWER_PLANK',
-  LEFT_DRAWER_PLANK: 'LEFT_DRAWER_PLANK',
+  DRAWER_FACE: 'DRAWER_FACE_PLANK',
+  FRONT_DRAWER_PLANK: 'DRAWER_FRONT_PLANK',
+  BACK_DRAWER_PLANK: 'DRAWER_BACK_PLANK',
+  BOTTOM_DRAWER_PLANK: 'DRAWER_BOTTOM_PLANK',
+  RIGHT_DRAWER_PLANK: 'DRAWER_RIGHT_PLANK',
+  LEFT_DRAWER_PLANK: 'DRAWER_LEFT_PLANK',
 };
 
 export const GEOMETRY = {
@@ -79,6 +83,7 @@ export const MATERIAL_TYPES = {
   SLIDING_DOOR_RAIL: 'Sliding Door Rail',
   SLIDING_DOOR_ROLLER: 'Sliding Door Roller',
   WIRE_BASKET: 'Wire Basket',
+  WALL: 'Wall',
 };
 
 export const EDGES = {
@@ -88,6 +93,11 @@ export const EDGES = {
   RIGHT: 'right',
   FRONT: 'front',
   BACK: 'back',
+};
+
+export const GROOVE_TYPE = {
+  GROOVE: 'groove',
+  PROTRUSION: 'protrusion',
 };
 
 // type

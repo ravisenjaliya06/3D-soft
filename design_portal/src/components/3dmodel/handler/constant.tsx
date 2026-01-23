@@ -55,3 +55,9 @@ export const TEXTURE_NAME = {
   WOOD_6: 'wood_6',
   WOOD_7: 'wood_7',
 };
+
+//Platform standard dimensions
+export const PLATFORM_HEIGHT = 0.9144; // ~3 feet in METERS
+export const PLATFORM_DEPTH = 60; // Standard depth in CM
+export const PLATFORM_THICKNESS = 5; // CM
+export const PLATFORM_RAYCAST_HEIGHT = 5;

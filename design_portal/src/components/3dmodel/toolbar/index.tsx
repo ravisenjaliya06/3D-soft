@@ -12,11 +12,12 @@ import {
   addDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
+  addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -55,31 +56,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     setActiveOption(option);
   };
 
-  const CustomToast = ({ appearance, message, closeToast }: any) => {
+  const CustomToast = ({
+    appearance,
+    message,
+  }: {
+    appearance: string;
+    message: string;
+    closeToast: () => void;
+  }) => {
     const isError = appearance === 'error';
 
     return (
-      <>
-        <div className="mr-[1rem] flex-shrink-0 gap-[0rem]">
-          <div
-            className={`${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'} ml-[1rem] flex h-[2rem] w-[2rem] items-center justify-center rounded-full`}
-          >
-            <span className="text-sm font-black text-white select-none">!</span>
-          </div>
-        </div>
-        <div className="ml-[0rem] flex-grow pr-[2rem]">
-          <p className="text-[1rem] font-normal tracking-wide text-[#FFFFFF]">{message}</p>
-        </div>
-        <button
-          onClick={closeToast}
-          className="absolute top-[1rem] right-[1rem] cursor-pointer border-[0rem] bg-[#121212] text-[#FFFFFF] transition-colors hover:text-white"
+      <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
+        {/* Icon */}
+        <div
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
         >
-          <img src={assets.close_white} alt="Close" className="h-[1rem] w-[1rem]" />
-        </button>
-      </>
+          <span className="text-[0.85rem] font-bold text-white select-none">!</span>
+        </div>
+
+        {/* Message */}
+        <p className="flex-1 truncate font-[poppins] text-[0.9rem] leading-[1.2rem] text-white">
+          {message}
+        </p>
+      </div>
     );
   };
-
   /** Set popup position based on submenu button click */
   const handleSubmenuClick = (event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -137,6 +141,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       if (fullGroup) {
         const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
         const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
+        await syncManager.syncData();
+      } else if (item.type === OBJECT_TYPES.PLATFORM) {
+        const newId = crypto.randomUUID();
+        const platformItem: MeshObjectData = {
+          ...item,
+          id: newId,
+          position: { x: 0, y: 0.9144, z: 0 }, // Default height (3 feet)
+          dimensions: { width: 100, height: 5, depth: 60 }, // Default dimensions (CM)
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+        };
+        const syncManager = new SyncManager(platformItem, threeDView);
+        await syncManager.syncData();
+      } else if (item.type === OBJECT_TYPES.SINK) {
+        const newId = crypto.randomUUID();
+        const sinkItem: MeshObjectData = {
+          ...item,
+          id: newId,
+          position: { x: 0, y: 0.965, z: 0 }, // Slightly above default platform height
+          dimensions: { width: 60, height: 20, depth: 40 }, // Default dimensions (CM)
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+        };
+        const syncManager = new SyncManager(sinkItem, threeDView);
         await syncManager.syncData();
       }
     } else if (['door', 'Sliding Door'].includes(item.type)) {
@@ -224,8 +250,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           hideProgressBar: false,
           closeButton: false,
           icon: false,
-          className: '!p-0 !bg-black !shadow-none !min-h-0 !mb-4',
-          progressClassName: '!bg-[#D32F2F] !h-[4px] !top-auto !top-0 !left-0 !opacity-100',
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
         }
       );
       return;
@@ -244,6 +270,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       } else if (nameLower.includes('horizontal')) {
         await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
       }
+    } else if (
+      itemType === PART_TYPES.L_SHAPE_OBJECT ||
+      (itemName || '').toLowerCase().includes('l-shape')
+    ) {
+      await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
     }
 
     setAddPartPopup(false);
@@ -321,17 +352,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     },
   ];
   const furnitureTools = [
+    { option: 'Kitchen', icon: assets.kitchen },
     { option: 'Cabinet', icon: assets.cabinet_svg },
-    { option: 'Parts', icon: assets.cabinet_svg },
+    { option: 'Parts', icon: assets.part_icon },
   ];
 
   const getFilteredCabinetItems = (category: string) => {
     const categoryFilters: Record<string, string[]> = {
       Parts: Object.values(PART_TYPES),
       Cabinet: Object.values(OBJECT_TYPES),
+      Kitchen: [OBJECT_TYPES.PLATFORM],
     };
-
     const allowedTypes = categoryFilters[category] || [];
+    if (category === 'Kitchen') {
+      return [
+        {
+          id: 'platform-default',
+          name: 'Platform',
+          type: OBJECT_TYPES.PLATFORM,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 100, height: 5, depth: 60 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+          material: [
+            {
+              id: 'platform-mat',
+              name: 'Platform Material',
+              type: 'Panel Stock',
+            },
+          ],
+        },
+        {
+          id: 'sink-default',
+          name: 'Sink',
+          type: OBJECT_TYPES.SINK,
+          geometryType: GEOMETRY.BOX_GEOMETRY,
+          dimensions: { width: 60, height: 20, depth: 40 },
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 0.01, y: 0.01, z: 0.01 },
+          material: [
+            {
+              id: 'sink-mat',
+              name: 'Sink Material',
+              type: 'Laminate',
+            },
+          ],
+        },
+      ];
+    }
     return cabinetItems
       .map((item: any) => item[0])
       .filter((item: any) => allowedTypes.includes(item.type));
@@ -365,7 +435,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     plank: assets.vertical,
     Cabinet: assets.cabinet,
     cupboard: assets.cabinet,
-    Platform: assets.platform,
+    platform: assets.platform_icon,
+    sink: assets.sink_icon,
+    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
+    lShapeObject: assets.vertical,
   };
 
   return (
