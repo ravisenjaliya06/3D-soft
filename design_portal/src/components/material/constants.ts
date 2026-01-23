@@ -2,7 +2,8 @@ import { assets } from '@/svgPaths';
 import type { MaterialItem, TableColumn } from './types';
 
 export const STATIC_MATERIAL_TYPES: MaterialItem[] = [
-  { id: 'banding', name: 'Banding', icon: assets.banding },
+  { id: 'banding', name: 'Banding', icon: assets.banding, img: assets.addCompany },
+
   { id: 'board_stock', name: 'Board Stock', icon: assets.brandstok },
   { id: 'caster', name: 'Caster', icon: assets.caster },
   { id: 'connector', name: 'Connector', icon: assets.connector },

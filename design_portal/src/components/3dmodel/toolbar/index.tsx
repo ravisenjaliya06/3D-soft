@@ -17,7 +17,13 @@ import {
 } from '../design/scene';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { GEOMETRY, INVISIBLE_BOXES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import {
+  GEOMETRY,
+  INVISIBLE_BOXES,
+  MeshObjectData,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';

@@ -207,9 +207,9 @@ export const addHorizontalPlanksInsideBox = async (
       ...selectedCabinetItem,
       id: crypto.randomUUID(),
       geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: parent.userData.objectId, // Link to parent cupboard
       dimensions: dims,
       position: parentLocalPos,
-      parent: parent.userData.objectId,
     });
   }
   for (const plank of plankList) {
@@ -1029,11 +1029,7 @@ export const updateDrawerDoorForHandleMode = async (
     const type = child.userData.type;
     if (type !== PART_TYPES.DRAWER && type !== PART_TYPES.DOOR) return;
 
-    if (
-      child.userData.isMain ||
-      child.name?.includes('DRAWER') ||
-      child.name?.includes('DOOR')
-    ) {
+    if (child.userData.isMain || child.name?.includes('DRAWER') || child.name?.includes('DOOR')) {
       drawersAndDoors.push(child);
     }
   });

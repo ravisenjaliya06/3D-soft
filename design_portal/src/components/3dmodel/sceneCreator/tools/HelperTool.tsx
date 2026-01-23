@@ -1,4 +1,6 @@
 import { assets } from '@/svgPaths';
+import { useRouter } from 'next/navigation';
+
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
@@ -10,6 +12,7 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
   const helperToolRef = useRef<CSS2DObject | null>(null);
   const rendererRef = useRef<CSS2DRenderer | null>(null);
   const isMovingRef = useRef(false);
+  const router = useRouter();
 
   const initRenderer = useCallback(() => {
     if (rendererRef.current) return;
@@ -59,6 +62,12 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     removeTool();
   }, []);
 
+  const handlePanelDesign = useCallback(() => {
+    const designId = window.location.pathname.split('/')[2]; // or get from props / state
+
+    router.push(`/design/${designId}/paneldesign`);
+  }, [router, design3D]);
+
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
@@ -75,8 +84,15 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
         title: 'Delete',
         onClick: handleDelete,
       },
+      {
+        id: 'panel-design',
+        icon: assets.panel_design,
+
+        title: 'Panel Design',
+        onClick: handlePanelDesign,
+      },
     ];
-  }, [moveHandler, design3D]);
+  }, [handleMove, handleDelete, handlePanelDesign]);
 
   const createTool = useCallback(
     (object: THREE.Mesh) => {

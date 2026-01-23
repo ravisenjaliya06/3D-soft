@@ -4,6 +4,7 @@ export const _3DMODEL = {
   clear: '/assets/3dmodel/header/clear.svg',
   file: '/assets/3dmodel/header/file.svg',
   newclear: '/assets/3dmodel/header/newclear.svg',
+  panel_design: '/assets/3dmodel/header/panel_design.svg',
   newopenclose: '/assets/3dmodel/header/newopenclose.svg',
   newredu: '/assets/3dmodel/header/newredu.svg',
   newundo: '/assets/3dmodel/header/newundo.svg',
@@ -230,6 +231,8 @@ export const MATERIAL = {
   sliding_door_roller: '/assets/material/sliding_door_roller.svg',
   wire_basket: '/assets/material/wire_basket.svg',
   pull: '/assets/material/pull.svg',
+  addCompany: '/assets/material/addCompany.svg',
+  addMaterial: '/assets/material/addMaterial.svg',
 };
 
 export const MENU_DOWN_SVG = {

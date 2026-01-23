@@ -3,6 +3,7 @@ export interface MaterialItem {
   name: string;
   icon?: string;
   subItems?: MaterialItem[];
+  img?: string;
 }
 
 export interface TableColumn {
