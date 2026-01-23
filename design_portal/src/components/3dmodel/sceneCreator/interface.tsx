@@ -27,6 +27,10 @@ export const PART_TYPES = {
   HANDLE: 'handle',
 };
 
+export const INVISIBLE_BOXES = {
+  INVISIBLE_BOX: 'invisibleBox',
+}
+
 export const DRAWER_TYPES = {
   INSET: 'inset',
   OVERLAY: 'overlay',
@@ -167,6 +171,7 @@ export interface MeshObjectData {
   selected?: boolean;
   drawerType?: string;
   edgeBanding?: EdgeBandingState;
+  handleMode?: 'handle' | 'handleless';
 }
 
 export interface userData {
