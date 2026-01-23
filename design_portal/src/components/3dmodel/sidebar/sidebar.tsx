@@ -28,7 +28,7 @@ import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
 
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
-import { findMeshById } from '../sceneCreator/utils';
+import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
@@ -377,19 +377,10 @@ const Sidebar: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const getSidebarTitle = (): string => {
-    if (isFullCupboard && !isDisabled) {
-      return 'Adjustable carcass';
-    } else if (isDrawerSelected && !isDisabled) {
-      return 'Adjustable drawer';
-    } else if (isPlankSelected && !isDisabled) {
-      return 'Adjustable Self';
-    } else if (isDoorSelected && !isDisabled) {
-      return 'Adjustable Door';
-    } else {
-      return 'Viewport Navigation';
-    }
-  };
+  const getSidebarTitle = (): string =>
+  isDisabled
+    ? 'Viewport Navigation'
+    : `${'Adjustable ' + formatEnumLabel(selectedObject?.name || 'Settings')}`;
 
   const handleNavigation = () => {
     /** Opens the navigation panel and closes settings if open. */
