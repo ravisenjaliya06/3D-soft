@@ -17,7 +17,7 @@ import {
 } from '../design/scene';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
-import { GEOMETRY, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
+import { GEOMETRY, INVISIBLE_BOXES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -239,10 +239,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const itemType = selectedCabinetItem.type;
     const itemName = selectedCabinetItem.name;
 
-    if (!targetBox) {
+    const showErrorToast = (message: string) => {
       toast(
         ({ closeToast }) => (
-          <CustomToast appearance="error" message="Target box not found!" closeToast={closeToast} />
+          <CustomToast appearance="error" message={message} closeToast={closeToast} />
         ),
         {
           position: 'top-right',
@@ -254,8 +254,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           progressClassName: '!bg-[#D32F2F] !h-[3px]',
         }
       );
+    };
+
+    if ((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) {
+      showErrorToast('Please select a blank box');
       return;
     }
+
+    if (!(targetBox)) {
+      showErrorToast('Target box not found!'); 
+      return;
+    }
+
     if (['door', 'Sliding Door'].includes(itemType)) {
       await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
     } else if (itemType === 'drawer') {
