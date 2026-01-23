@@ -281,6 +281,18 @@
   background: var(--toolbarhover-color);
 }
 
+.activeItem {
+  background-color: var(--toolbarhover-color);
+}
+
+.activeItem span {
+  font-weight: 600;
+}
+
+.activeItem .activegroup_tools {
+  background-color: var(--toolbarhover-color);
+}
+
 .activegroup_tools,
 .activegroup_tools_selected {
   display: flex;
@@ -1032,6 +1044,14 @@
 
 .submenuItem:hover {
   background: var(--toolbarhover-color);
+}
+
+.submenuItemActive {
+  background: var(--toolbarhover-color);
+}
+
+.submenuItemActive span {
+  font-weight: 600;
 }
 
 .submenuItem img {

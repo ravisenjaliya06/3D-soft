@@ -69,9 +69,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
       <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
-            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-          }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+            }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -392,6 +391,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     sink: assets.sink_icon,
   };
 
+  const [activeSubmenuItem, setActiveSubmenuItem] = useState(null);
+
+
   return (
     <>
       {/* Toolbar Container */}
@@ -425,9 +427,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${
-                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                  }`}
+                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                    }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -454,9 +455,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                       title={disabled ? 'Coming Soon' : option}
                     >
                       <div
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
+                        className={`${styles.activegroup_tools} ${isActive ? styles.activegroup_tools_selected : ''
+                          }`}
                       >
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
@@ -491,29 +491,32 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   {furnitureTools.map(({ option, icon }) => (
                     <div
                       key={option}
-                      className={styles.furnitureItemslist}
+                      className={`${styles.furnitureItemslist} 
+                      ${selectedFurnitureCategory === option ? styles.activeItem : ''}`}
                       onClick={() => handleFurnitureCategoryClick(option)}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.activegroup_tools}>
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
+
                       <span>{option}</span>
+
                       <img
                         src={assets.left_arrow}
                         alt=""
+                        className={styles.arrow}
                         style={{
                           transform:
                             selectedFurnitureCategory === option
                               ? 'rotate(180deg)'
                               : 'rotate(0deg)',
-                          transition: 'transform 0.3s ease',
-                          height: '1.5rem',
                         }}
                       />
                     </div>
                   ))}
                 </div>
+
               )}
             </div>
           </div>
@@ -554,9 +557,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
               {getFilteredCabinetItems(selectedFurnitureCategory).map((item) => (
                 <div
                   key={item.id}
-                  className={styles.submenuItem}
+                  className={`${styles.submenuItem} 
+                   ${activeSubmenuItem === item.id ? styles.submenuItemActive : ''}`}
                   onClick={(e) => {
                     e.stopPropagation();
+                    setActiveSubmenuItem(item.id);
                     handleCabinetItemSelect(e, item);
                   }}
                   title={item.description || item.name}
@@ -564,7 +569,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <img
                     src={
                       iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                      item.type === PART_TYPES.PLANK
+                        ? formatEnumLabel(item.name)
+                        : item.type
                       ]
                     }
                     alt={item.name}
@@ -572,12 +579,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   <span>{formatEnumLabel(item.name)}</span>
                 </div>
               ))}
+
               {getFilteredCabinetItems(selectedFurnitureCategory).length === 0 && (
                 <div className={styles.noItems}>
                   No items available for {selectedFurnitureCategory}
                 </div>
               )}
             </div>
+
           </div>
         )}
       </aside>

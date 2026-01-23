@@ -64,11 +64,10 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
-                activeTab === tab.id
-                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
-                  : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
-              } `}
+              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${activeTab === tab.id
+                ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
+                : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
+                } `}
               onClick={() => onTabChange(tab.id)}
             >
               <p className="mb-[0px] pb-[5px] text-[0.85rem]">{tab.label}</p>

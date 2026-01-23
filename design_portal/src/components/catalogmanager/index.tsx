@@ -336,7 +336,7 @@ const CatalogManager = () => {
           {/* TOP TOOLBAR */}
           <div className="mx-auto w-[88rem]">
             <div className="mt-[3rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[7rem]">
-              <div className="mb-[1rem] flex items-center gap-[0.8rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
+              <div className="mb-[1rem] flex items-center gap-[0.5rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
                 <div className="flex items-center">
                   <div className="flex items-center gap-[0.75rem] pr-[1.4rem]">
                     <span className="text-[0.8rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
@@ -421,11 +421,10 @@ const CatalogManager = () => {
                     <div
                       key={type}
                       onClick={() => setActiveRuleType(type)}
-                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
-                        activeRuleType === type
-                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
-                          : 'text-gray-500 hover:bg-gray-100'
-                      }`}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${activeRuleType === type
+                        ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                        : 'text-gray-500 hover:bg-gray-100'
+                        }`}
                     >
                       <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
                       {type}
@@ -555,11 +554,10 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                            selectedPartId === part.id
-                              ? 'bg-[var(--primary-hover)]'
-                              : 'bg-[var(--primary-white)]'
-                          } `}
+                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${selectedPartId === part.id
+                            ? 'bg-[var(--primary-hover)]'
+                            : 'bg-[var(--primary-white)]'
+                            } `}
                         >
                           <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
                             <div className="flex h-full items-center text-left text-[0.72rem] text-[#3F3F46]">
@@ -626,11 +624,13 @@ const CatalogManager = () => {
 
             {/* RIGHT BOX */}
             <div className="relative mb-[2rem] flex h-full flex-col gap-[1rem] rounded-[0.2rem] border-[0rem] bg-white p-[0rem]">
-              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
+              <div
+                style={{ scrollbarWidth: 'thin' }} // Firefox fallback
+                className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
                 {/* ================= TOP BAR ================= */}
-                <div className="m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
+                <div className="m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] sticky top-[0rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
                   {/* DROPDOWN */}
-                  <div className="relative inline-flex items-center">
+                  <div className="relative inline-flex sticky top-[0rem] items-center">
                     <select
                       onFocus={() => setOpen(true)}
                       onBlur={() => setOpen(false)}
@@ -653,7 +653,7 @@ const CatalogManager = () => {
                   </div>
 
                   {/* SEARCH */}
-                  <div className="relative flex items-center">
+                  <div className="relative flex sticky top-[0rem] items-center">
                     <svg
                       className="pointer-events-none absolute right-3 h-[1.0625rem] p-[0rem] pb-[0.125rem] pl-[0.1875rem] text-[#392579]/50"
                       viewBox="0 0 24 24"
@@ -675,13 +675,10 @@ const CatalogManager = () => {
                 </div>
 
                 {/* ================= TABLE ================= */}
-                <div
-                  style={{ scrollbarWidth: 'thin' }} // Firefox fallback
-                  className="h-full w-full overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
-                >
+                <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] ">
                   <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
                     {/* ================= TABLE HEADER ================= */}
-                    <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
+                    <thead className="sticky top-[3.05rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
                       <tr className="p-[0rem]">
                         <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem]"></th>
 
@@ -719,11 +716,10 @@ const CatalogManager = () => {
                               draggable
                               onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                               onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                                selectedMaterialId === row.id
-                                  ? 'bg-[var(--primary-hover)]'
-                                  : 'bg-[var(--primary-white)]'
-                              } `}
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${selectedMaterialId === row.id
+                                ? 'bg-[var(--primary-hover)]'
+                                : 'bg-[var(--primary-white)]'
+                                } `}
                             >
                               {/* RADIO */}
                               <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">
