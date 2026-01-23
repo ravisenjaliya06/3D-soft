@@ -271,12 +271,7 @@ export class LShapeObjectManager {
 
     targetMesh.position.set(newCenterParentLocal.x, newCenterParentLocal.y, newCenterParentLocal.z);
 
-    this.updateReduxStore(
-      targetMesh,
-      obj,
-      newHeight,
-      newCenterParentLocal
-    );
+    this.updateReduxStore(targetMesh, obj, newHeight, newCenterParentLocal);
 
     // Update banding using MeshBuilder
     try {
