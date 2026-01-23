@@ -210,7 +210,6 @@ export const addHorizontalPlanksInsideBox = async (
       parent: parent.userData.objectId, // Link to parent cupboard
       dimensions: dims,
       position: parentLocalPos,
-      parent: parent.userData.objectId,
     });
   }
   for (const plank of plankList) {
