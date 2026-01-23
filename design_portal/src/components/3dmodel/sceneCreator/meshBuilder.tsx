@@ -415,6 +415,12 @@ export class MeshBuilder {
    * Update grooving positions and sizes when plank dimensions change
    */
   public updateGrooving(mesh: THREE.Mesh): void {
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.name.includes('BACK_PLANK')) {
+        mesh = child;
+      }
+    });
+
     const tool = this._getOrCreateGroovingTool();
     if (tool) {
       tool.updateGrooving(mesh);
@@ -592,7 +598,6 @@ export class MeshBuilder {
     if (changes.dimensions) {
       mesh.geometry.dispose();
       mesh.geometry = this._getGeometry();
-      this.updateGrooving(mesh);
     }
   }
 

@@ -288,6 +288,11 @@ export class SyncManager {
     const changes = this._getMeshObjectPatch(this.oldData, data);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
+    if (changes.dimensions && mesh.userData.isMain) {
+      this._updateChildrenDimensions(mesh, changes.dimensions);
+      this.meshBuilder.updateGrooving(mesh);
+    }
+
     // Update banding if dimensions changed or banding state changed
     if (changes.dimensions || changes.edgeBanding) {
       const name = mesh.name || '';
@@ -328,10 +333,6 @@ export class SyncManager {
         // Banding state changed - recreate banding
         await this.meshBuilder.applyBandingFromState();
       }
-    }
-
-    if (changes.dimensions && mesh.userData.isMain) {
-      this._updateChildrenDimensions(mesh, changes.dimensions);
     }
   }
 
