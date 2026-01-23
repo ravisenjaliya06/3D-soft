@@ -43,6 +43,8 @@ export const _3DMODEL = {
   icon_2d: '/assets/3dmodel/footer/2d.svg',
   icon_3d: '/assets/3dmodel/footer/3d.svg',
   close_white: '/assets/3dmodel/toolbar/close.svg',
+  delete_helper: '/assets/3dmodel/delete-helper.svg',
+  copy_helper: '/assets/3dmodel/copy-helper.svg',
   plusIcon: '/assets/3dmodel/sidebar/plus.svg',
   minusIcon: '/assets/3dmodel/sidebar/minus.svg',
 };
