@@ -122,7 +122,7 @@ export class SceneBuilder {
       cameraConfig.far || 1000
     );
 
-    const position = cameraConfig.position || new THREE.Vector3(0, 1, 4.5);
+    const position = cameraConfig.position || new THREE.Vector3(0, 3, 15);
     camera.position.copy(position);
     camera.lookAt(0, 0, 0);
 
@@ -233,13 +233,14 @@ export class SceneBuilder {
   private async setupScene(): Promise<void> {
     // Add grid
     this.scene.add(this.grid);
+    this.scene.add(new THREE.AxesHelper(0.4));
+
+    this.scene.background = new THREE.Color(0xa9a9a9);
 
     // Add lighting
     this.scene.add(this.ambientLight);
     this.scene.add(this.directionalLight);
     this.scene.add(this.hemiLight);
-
-    this.scene.add(this.daySky);
   }
 
   private setupEventListeners(): void {
@@ -268,16 +269,6 @@ export class SceneBuilder {
   }
 
   public toggleSky(): void {
-    if (this.isDay) {
-      this.scene.remove(this.daySky);
-      this.scene.add(this.nightSky);
-      this.scene.add(this.stars);
-    } else {
-      this.scene.remove(this.nightSky);
-      this.scene.remove(this.stars);
-      this.scene.add(this.daySky);
-    }
-    this.isDay = !this.isDay;
   }
 
   private initSelector() {
