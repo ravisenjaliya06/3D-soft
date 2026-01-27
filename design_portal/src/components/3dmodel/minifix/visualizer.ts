@@ -195,11 +195,15 @@ function createDowelVisualization(
   });
 
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(
-    connection.jointPosition.x,
-    connection.jointPosition.y,
-    connection.jointPosition.z + standards.dowelDistance
-  );
+
+  // Determine offset axis based on connection type
+  const offsetAxis = connection.connectionType === 'VERTICAL_TO_VERTICAL' ? 'y' : 'z';
+  const pos = {
+    x: connection.jointPosition.x,
+    y: connection.jointPosition.y + (offsetAxis === 'y' ? standards.dowelDistance : 0),
+    z: connection.jointPosition.z + (offsetAxis === 'z' ? standards.dowelDistance : 0),
+  };
+  mesh.position.set(pos.x, pos.y, pos.z);
 
   const direction = new THREE.Vector3(
     connection.dowel.direction.x,
