@@ -216,6 +216,34 @@ export function convertKeysToCamel<T>(obj: Object): T {
   return obj;
 }
 
+//deep update ids
+export function deepUpdateIds<T>(value: T, idMap: Map<string, string>): T {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return (value as unknown[]).map((item) => deepUpdateIds(item, idMap)) as unknown as T;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+
+  for (const key in obj) {
+    const v = obj[key];
+
+    if (typeof v === 'string' && idMap.has(v)) {
+      result[key] = idMap.get(v);
+    } else if (v !== null && typeof v === 'object') {
+      result[key] = deepUpdateIds(v, idMap);
+    } else {
+      result[key] = v;
+    }
+  }
+
+  return result as T;
+}
+
 /**
  * Extract dominant/average color from an image URL
  * Returns a hex color value
@@ -347,3 +375,85 @@ export function findMeshById(
 
   return foundMesh;
 }
+export const collectSceneObjectIds = (root: THREE.Object3D) => {
+  const ids = new Set<string>();
+
+  root.traverse((child) => {
+    const id = child.userData?.objectId;
+    if (typeof id === 'string' && !child.userData?.isInvisibleBox) {
+      ids.add(id);
+    }
+  });
+
+  return ids;
+};
+
+export const createIdMap = (ids: Set<string>) => {
+  const map = new Map<string, string>();
+  ids.forEach((id) => map.set(id, crypto.randomUUID()));
+  return map;
+};
+
+export const detachInvisibleBoxes = (root: THREE.Object3D) => {
+  const boxes: THREE.Object3D[] = [];
+
+  root.traverse((child) => {
+    if (child.userData?.isInvisibleBox) boxes.push(child);
+  });
+
+  boxes.forEach((b) => b.parent?.remove(b));
+  return boxes;
+};
+
+export const restoreInvisibleBoxes = (
+  root: THREE.Object3D,
+  boxes: THREE.Object3D[],
+  rootId: string
+) => {
+  boxes.forEach((box) => {
+    const parentId = box.userData.parentId || rootId;
+    const parent = root.getObjectByProperty('userData.objectId', parentId) ?? root;
+
+    parent.add(box);
+  });
+};
+
+export const updateCloneIds = (
+  clone: THREE.Object3D,
+  rootId: string,
+  idMap: Map<string, string>
+) => {
+  clone.userData.objectId = idMap.get(rootId);
+
+  clone.traverse((child) => {
+    if (!child.userData) return;
+
+    const id = child.userData.objectId;
+    if (id && idMap.has(id)) {
+      child.userData.objectId = idMap.get(id);
+    }
+
+    child.userData = deepUpdateIds(child.userData, idMap);
+  });
+};
+
+export const createCopiedStoreObjects = (
+  objects: any[],
+  rootId: string,
+  idMap: Map<string, string>,
+  position: THREE.Vector3
+) =>
+  objects.map((obj) => {
+    const copy = structuredClone(obj);
+    copy.id = idMap.get(obj.id);
+
+    if (obj.id === rootId) {
+      copy.position = { x: position.x, y: position.y, z: position.z };
+    }
+
+    if (copy.parent && idMap.has(copy.parent)) {
+      copy.parent = idMap.get(copy.parent);
+    }
+
+    return copy;
+  });
