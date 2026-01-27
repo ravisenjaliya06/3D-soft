@@ -130,57 +130,120 @@ export class DistanceTool {
     return hits.length ? (hits[0].object as THREE.Sprite) : null;
   }
 
+  private createFloatingInput(
+    sprite: THREE.Sprite,
+    view: ThreeDView,
+    initialValue: string,
+    onConfirm: (val: number) => void
+  ) {
+    // 1. Convert 3D position to 2D Screen Pixels
+    const vector = new THREE.Vector3();
+    sprite.getWorldPosition(vector);
+    vector.project(view.camera);
+
+    const canvas = view.renderer.domElement;
+    const x = (vector.x * 0.5 + 0.5) * canvas.clientWidth;
+    const y = (-(vector.y * 0.5) + 0.5) * canvas.clientHeight;
+
+    // 2. Create the HTML element
+    const input = document.createElement('input');
+    input.type = 'text'; // 'text' allows for easier clearing/selection than 'number'
+    input.value = initialValue;
+
+    // Style it to look clean
+    Object.assign(input.style, {
+      position: 'absolute',
+      left: `${canvas.offsetLeft + x - 40}px`,
+      top: `${canvas.offsetTop + y - 20}px`,
+      width: '80px',
+      height: '30px',
+      zIndex: '1000',
+      textAlign: 'center',
+      fontSize: '18px',
+      border: '2px solid black',
+      borderRadius: '4px',
+      outline: 'none',
+      boxShadow: '0px 2px 10px rgba(0,0,0,0.2)',
+    });
+
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+
+    // 3. Define how to "Submit"
+    const submit = () => {
+      const newVal = parseFloat(input.value);
+      if (!isNaN(newVal) && newVal >= 0) {
+        onConfirm(newVal);
+      }
+      cleanup();
+    };
+
+    const cleanup = () => {
+      input.removeEventListener('blur', submit); // prevent double trigger
+      input.remove();
+    };
+
+    // 4. Events
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submit();
+      if (e.key === 'Escape') cleanup();
+    });
+
+    // If user clicks anywhere else, save and close
+    input.addEventListener('blur', submit);
+  }
+
   private promptAndApplyDistance(
     sprite: THREE.Sprite,
     view: ThreeDView,
     onUpdate?: (selectedMesh: THREE.Mesh, newPosition: THREE.Vector3) => void
   ) {
-    // Gets dimension info from the sprite
     const meta = sprite.userData?.dimMeta as DimensionMeta | undefined;
     if (!meta) return;
 
-    // Finds the related mesh in the scene
     const target = view.scene.getObjectByProperty('uuid', meta.targetUuid) as THREE.Mesh | null;
     if (!target) return;
 
-    // Calculates the current distance
     const box = this.computeBoundingBox(target);
     const currentDistanceM = this.calculateDistance(box, meta);
-    const currentInUnit = currentDistanceM;
 
-    // Prompts the user to enter a new distance
     const unit = getActiveUnit();
-    const input = prompt(
-      `Enter new distance (${unit}):`,
-      metersToUnit(currentInUnit, unit).toFixed(0)
-    );
-    if (!input) return;
-    const newValUnit = parseFloat(input);
-    if (!Number.isFinite(newValUnit) || newValUnit < 0) return;
+    const initialValStr = metersToUnit(currentDistanceM, unit).toFixed(0);
 
-    // Calculates the movement delta for the target mesh based on the new distance
-    const newM = unitToMeters(newValUnit, unit);
-    const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
-    const currentFace = this.getCurrentFacePosition(box, meta);
-    const delta = desiredFace - currentFace;
+    // Instead of prompt(), we use our floating input
+    this.createFloatingInput(sprite, view, initialValStr, (newValUnit) => {
+      // --- EVERYTHING INSIDE THIS BLOCK RUNS AFTER THE USER HITS ENTER ---
 
-    // Moves the target mesh based on the movement delta
-    this.applyPositionDelta(target, meta.axis, delta);
-    generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+      const newM = unitToMeters(newValUnit, unit);
 
-    if (onUpdate) {
-      onUpdate(target, target.position.clone());
-    }
+      // Calculate delta
+      const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
+      const currentFace = this.getCurrentFacePosition(box, meta);
+      const delta = desiredFace - currentFace;
 
-    // Clear selection (which removes outlines and dimensions)
-    if (view.selector) {
-      view.selector.deselect();
-    } else {
-      // Fallback if selector not available
-      this.clearAllDistances();
-    }
+      // Apply movement
+      this.applyPositionDelta(target, meta.axis, delta);
 
-    view.renderer.render(view.scene, view.camera);
+      // Regenerate internal logic
+      if (typeof generateCompartmentsFromMesh === 'function') {
+        generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+      }
+
+      if (onUpdate) {
+        onUpdate(target, target.position.clone());
+      }
+
+      // Cleanup visuals
+      if (view.selector) {
+        view.selector.deselect();
+      } else {
+        this.clearAllDistances();
+      }
+
+      // Re-render the scene to show changes
+      view.renderer.render(view.scene, view.camera);
+    });
   }
 
   // create bounding box
@@ -220,7 +283,7 @@ export class DistanceTool {
   private createLine(group: THREE.Group, start: THREE.Vector3, end: THREE.Vector3): THREE.Line {
     const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
     const material = new THREE.LineBasicMaterial({
-      color: 0x111111,
+      color: 0xffffff,
       depthTest: false,
     });
 
@@ -240,19 +303,24 @@ export class DistanceTool {
     meta = null,
   }: CreateDistanceLineParams) {
     const offset = 0.03;
+
+    // 1. Calculate main line points
     const startOffset = start.clone().addScaledVector(viewOffsetDir, offset);
     const endOffset = end.clone().addScaledVector(viewOffsetDir, offset);
 
+    // 2. Draw the main connector line
     this.createLine(group, startOffset, endOffset);
 
     // Extension ticks
     const axis = endOffset.clone().sub(startOffset).normalize();
-    const tickDir = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0));
-    if (tickDir.lengthSq() < 1e-6) tickDir.set(1, 0, 0);
-    tickDir.normalize();
 
-    this.addTick(group, startOffset, tickDir);
-    this.addTick(group, endOffset, tickDir);
+    const tickDir = viewOffsetDir.clone().normalize();
+
+    // Create Left Arrow (<--) at startOffset
+    this.createArrowHead(startOffset, axis, tickDir, group);
+
+    // Create Right Arrow (-->) at endOffset (negate axis to point backwards)
+    this.createArrowHead(endOffset, axis.clone().negate(), tickDir, group);
 
     // Label
     const mid = startOffset.clone().lerp(endOffset, 0.5);
@@ -265,17 +333,33 @@ export class DistanceTool {
     return sprite;
   }
 
-  private addTick(group: THREE.Group, point: THREE.Vector3, direction: THREE.Vector3, size = 0.02) {
-    const point1 = point.clone().addScaledVector(direction, size / 2);
-    const point2 = point.clone().addScaledVector(direction, -size / 2);
-    const geo = new THREE.BufferGeometry().setFromPoints([point1, point2]);
-    const mat = new THREE.LineBasicMaterial({
-      color: 0x222222,
-      depthTest: false,
-    });
-    const line = new THREE.Line(geo, mat);
-    group.add(line);
-  }
+  // Helper to draw a "V" shape
+  private createArrowHead = (
+    tipPos: THREE.Vector3,
+    directionBack: THREE.Vector3,
+    tickDir: THREE.Vector3,
+    group: THREE.Group
+  ) => {
+    // Configuration for arrow size
+    const arrowLength = 0.02; // Length of the arrow "wings" along the line
+    const arrowWidth = 0.02; // Width of the arrow "wings" outwards
+
+    // Wing 1: Go back along line, then out to the side
+    const wing1 = tipPos
+      .clone()
+      .addScaledVector(directionBack, arrowLength) // Move back
+      .addScaledVector(tickDir, arrowWidth); // Move right
+
+    // Wing 2: Go back along line, then out to the other side
+    const wing2 = tipPos
+      .clone()
+      .addScaledVector(directionBack, arrowLength) // Move back
+      .addScaledVector(tickDir, -arrowWidth); // Move left
+
+    // Draw lines from Tip to Wing 1, and Tip to Wing 2
+    this.createLine(group, tipPos, wing1);
+    this.createLine(group, tipPos, wing2);
+  };
 
   private createTextSprite(label: string): THREE.Sprite {
     const canvas = document.createElement('canvas');
@@ -298,11 +382,27 @@ export class DistanceTool {
     height: number,
     label: string
   ): void {
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    // ADD border radius
+    const borderRadius = 100; // Adjust this for more or less "roundness"
+    const borderWidth = 35;
+
+    // Clear the canvas area
+    ctx.clearRect(0, 0, width, height);
+
+    // We inset the path by half the borderWidth to ensure the stroke stays inside the canvas
+    const offset = borderWidth / 2;
+    const rectW = width - borderWidth;
+    const rectH = height - borderWidth;
+
+    ctx.beginPath();
+    ctx.roundRect(offset, offset, rectW, rectH, borderRadius);
+
+    ctx.fillStyle = 'rgba(255,255,255,1)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = borderWidth; // border width
+    ctx.lineJoin = 'round'; // Makes the outer corner of the stroke smooth
     ctx.strokeRect(0, 0, width, height);
 
     ctx.fillStyle = 'black';

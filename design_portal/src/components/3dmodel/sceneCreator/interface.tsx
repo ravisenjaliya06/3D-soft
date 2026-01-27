@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
+import { MinifixConnection, MinifixHole } from '../minifix/types';
 import { Position, Rotation } from '../store/interface';
 
 // type const
@@ -170,7 +171,16 @@ export interface MeshObjectData {
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  minifixHoles?: MinifixHole[];
+  minifixConnections?: MinifixConnection[];
   edgeBanding?: EdgeBandingState;
+
+  // Per-cupboard minifix settings (stored when cupboard is created)
+  minifixDistance?: number;
+  minifixDiameterHole?: number;
+  camDepth?: number;
+  camDiameter?: number;
+  camHeight?: number;
   handleMode?: 'handle' | 'handleless';
 }
 
