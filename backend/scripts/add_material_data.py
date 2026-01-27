@@ -3195,7 +3195,12 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "5/8 1s Poplar Ply", "4in Bar Pull", "120 Degree Euro"],
+        "material": [
+            "Alder Ven EB",
+            "5/8 1s Poplar Ply",
+            "4in Bar Pull",
+            "120 Degree Euro",
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",

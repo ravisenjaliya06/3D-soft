@@ -194,7 +194,7 @@ export const deleteObject = async (clearScene?: boolean) => {
 export const saveObject = async () => {
   const objectSaver = new ObjectsSaver();
   objectSaver.saveObject();
-}
+};
 
 export function formatEnumLabel(value: string): string {
   if (!value) return '';
@@ -468,11 +468,9 @@ export const createCopiedStoreObjects = (
 export const CustomToast = ({
   appearance,
   message,
-  closeToast,
 }: {
   appearance: string;
   message: string;
-  closeToast: () => void;
 }) => {
   const isError = appearance === 'error';
 
@@ -484,7 +482,7 @@ export const CustomToast = ({
           isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
         }`}
       >
-        <span className="select-none text-[0.85rem] font-bold text-white">!</span>
+        <span className="text-[0.85rem] font-bold text-white select-none">!</span>
       </div>
 
       {/* Message */}

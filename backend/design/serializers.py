@@ -1,5 +1,6 @@
 # Python imports
 from typing import Any, Dict
+from urllib.request import Request
 from uuid import uuid4
 
 # Django imports
@@ -109,11 +110,11 @@ class ScenePayloadSerializer(serializers.Serializer):
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
     ) -> Design:
         return Design.objects.get(id=design_id, organization=organization)
-    
+
     def _get_or_create_material(
         self: "ScenePayloadSerializer",
         material_payload: dict,
-        request,
+        request: Request,
     ) -> Material:
         """
         Create material via MaterialSerializer if not exists,
@@ -143,7 +144,7 @@ class ScenePayloadSerializer(serializers.Serializer):
         self: "ScenePayloadSerializer",
         catalog: DesignCatalog,
         item: dict,
-        request,
+        request: Request,
     ) -> None:
         """
         Attach material using MaterialSerializer (create if missing).
