@@ -561,7 +561,7 @@ const Sidebar: React.FC = () => {
   };
 
   const dimensionsUI: Dimensions = {
-    width: Math.round(selectedObject?.dimensions?.width ?? 11),
+    width: Math.round(selectedObject?.dimensions?.width ?? 0),
     height: Math.round(selectedObject?.dimensions?.height ?? 0),
     depth: Math.round(selectedObject?.dimensions?.depth ?? 0),
   };
@@ -1792,7 +1792,7 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.width ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('width', Number(e.target.value))
+                                      handleDimensionChange('width', Math.max(1, Number(e.target.value)))
                                     }
                                     disabled={isHorizontalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -1810,7 +1810,7 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.height ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('height', Number(e.target.value))
+                                      handleDimensionChange('height', Math.max(1, Number(e.target.value)))
                                     }
                                     disabled={isVerticalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -1828,7 +1828,7 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.depth ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('depth', Number(e.target.value))
+                                      handleDimensionChange('depth',  Math.max(1, Number(e.target.value)))
                                     }
                                     disabled={isQuickHideActive}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
