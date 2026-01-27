@@ -1,7 +1,6 @@
 import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
@@ -13,6 +12,7 @@ import {
   removeSkirtingPlanks,
   updateDrawerType,
 } from '../design/scene';
+import { updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
@@ -26,13 +26,27 @@ import {
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
+import {
+  clearActiveItemOverrides,
+  setActiveItemCamDepth,
+  setActiveItemCamDiameter,
+  setActiveItemCamHeight,
+  setActiveItemMinifixDiameterHole,
+  setActiveItemMinifixDistance,
+} from '../store/activeItemSlice';
+import { updateObject } from '../store/dataSlice';
+import {
+  selectResolvedCamDepth,
+  selectResolvedCamDiameter,
+  selectResolvedCamHeight,
+  selectResolvedMinifixDiameterHole,
+  selectResolvedMinifixDistance,
+} from '../store/selectors';
 
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-
-//import style from './sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -47,10 +61,6 @@ const Sidebar: React.FC = () => {
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
-  const [distance, setDistance] = useState(128);
-  const [diameter, setDiameter] = useState(8);
-  const [inside, setInside] = useState(25);
-  const [edgeToEnd, setEdgeToEnd] = useState(6);
   const [handleMode, setHandleMode] = useState<'handle' | 'handleless'>('handle');
 
   // Anchor States for Directional Scaling
@@ -59,54 +69,6 @@ const Sidebar: React.FC = () => {
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
 
   const materialModal = [
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
     { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
     { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
     { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
@@ -147,6 +109,14 @@ const Sidebar: React.FC = () => {
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
+
+  // Get resolved values from Redux (with three-layer fallback)
+  const resolvedMinifixDistance = useSelector(selectResolvedMinifixDistance);
+  const resolvedMinifixDiameterHole = useSelector(selectResolvedMinifixDiameterHole);
+  const resolvedCamDepth = useSelector(selectResolvedCamDepth);
+  const resolvedCamDiameter = useSelector(selectResolvedCamDiameter);
+  const resolvedCamHeight = useSelector(selectResolvedCamHeight);
+
   const isDisabled = isQuickHideActive;
 
   let selectedObject: MeshObjectData | null | undefined;
@@ -512,6 +482,16 @@ const Sidebar: React.FC = () => {
         z: currentPos.z + positionShift.z,
       },
     });
+
+    // Regenerate minifixes if this is a full cupboard
+    if (isFullCupboard && scene) {
+      requestAnimationFrame(() => {
+        const cupboardMesh = findMeshById(scene, selectedObject.id);
+        if (cupboardMesh?.userData.isMain) {
+          updateMinifixesForCupboard(cupboardMesh);
+        }
+      });
+    }
   };
 
   const handleTextureSelect = (texturePath: string) => {
@@ -804,6 +784,7 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject?.id, isPlankSelected, objects, scene]);
 
+  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
 
@@ -824,7 +805,15 @@ const Sidebar: React.FC = () => {
   const [baseheightDisabled, setBaseheightDisabled] = useState(false);
   const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
   const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
+
+  // Local state for minifix settings inputs
+  const [minifixDistanceInput, setMinifixDistanceInput] = useState(resolvedMinifixDistance);
+  const [minifixDiameterHoleInput, setMinifixDiameterHoleInput] = useState(
+    resolvedMinifixDiameterHole
+  );
+  const [camDepthInput, setCamDepthInput] = useState(resolvedCamDepth);
+  const [camDiameterInput, setCamDiameterInput] = useState(resolvedCamDiameter);
+  const [camHeightInput, setCamHeightInput] = useState(resolvedCamHeight);
 
   const handleEdgeBandingToggle = () => {
     if (edgeBandingDisabled) return;
@@ -852,6 +841,98 @@ const Sidebar: React.FC = () => {
     setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
   }, []);
+
+  // Load cupboard-specific minifix values when object is selected
+  useEffect(() => {
+    if (selectedObject && isFullCupboard) {
+      // Load from cupboard's own stored values, or fall back to resolved values
+      setMinifixDistanceInput(selectedObject.minifixDistance ?? resolvedMinifixDistance);
+      setMinifixDiameterHoleInput(
+        selectedObject.minifixDiameterHole ?? resolvedMinifixDiameterHole
+      );
+      setCamDepthInput(selectedObject.camDepth ?? resolvedCamDepth);
+      setCamDiameterInput(selectedObject.camDiameter ?? resolvedCamDiameter);
+      setCamHeightInput(selectedObject.camHeight ?? resolvedCamHeight);
+    } else {
+      // For non-cupboards, use resolved values
+      setMinifixDistanceInput(resolvedMinifixDistance);
+      setMinifixDiameterHoleInput(resolvedMinifixDiameterHole);
+      setCamDepthInput(resolvedCamDepth);
+      setCamDiameterInput(resolvedCamDiameter);
+      setCamHeightInput(resolvedCamHeight);
+    }
+  }, [
+    selectedObject,
+    isFullCupboard,
+    resolvedMinifixDistance,
+    resolvedMinifixDiameterHole,
+    resolvedCamDepth,
+    resolvedCamDiameter,
+    resolvedCamHeight,
+  ]);
+
+  // Clear activeItem overrides when object is deselected
+  useEffect(() => {
+    if (!selectedObjectId && !selectedChildObjectId) {
+      dispatch(clearActiveItemOverrides());
+    }
+  }, [selectedObjectId, selectedChildObjectId, dispatch]);
+
+  // Track previous inputs to prevent infinite loops
+  const previousInputsRef = useRef({
+    distance: resolvedMinifixDistance,
+    diameterHole: resolvedMinifixDiameterHole,
+    camDepth: resolvedCamDepth,
+    camDiameter: resolvedCamDiameter,
+    camHeight: resolvedCamHeight,
+  });
+
+  // Update minifix in 3D scene when minifix settings change (debounced)
+  useEffect(() => {
+    if (!scene || !selectedObject) return;
+
+    // Only regenerate for full cupboards
+    if (!isFullCupboard) return;
+
+    // Prevent infinite loop: only update if value actually changed
+    const prev = previousInputsRef.current;
+    if (
+      prev.distance === minifixDistanceInput &&
+      prev.diameterHole === minifixDiameterHoleInput &&
+      prev.camDepth === camDepthInput &&
+      prev.camDiameter === camDiameterInput &&
+      prev.camHeight === camHeightInput
+    ) {
+      console.log('Minifix settings unchanged');
+      return;
+    }
+
+    // Update the ref
+    previousInputsRef.current = {
+      distance: minifixDistanceInput,
+      diameterHole: minifixDiameterHoleInput,
+      camDepth: camDepthInput,
+      camDiameter: camDiameterInput,
+      camHeight: camHeightInput,
+    };
+
+    // Find the cupboard mesh using utility function
+    const cupboardMesh = findMeshById(scene, selectedObject.id);
+
+    // Regenerate minifixes with the new settings
+    if (cupboardMesh && cupboardMesh.userData.isMain) {
+      updateMinifixesForCupboard(cupboardMesh);
+    }
+  }, [
+    minifixDistanceInput,
+    minifixDiameterHoleInput,
+    camDepthInput,
+    camDiameterInput,
+    camHeightInput,
+    scene,
+    selectedObject,
+    isFullCupboard,
+  ]);
 
   useEffect(() => {
     if (isFullCupboard && !isQuickHideActive) {
@@ -1170,7 +1251,8 @@ const Sidebar: React.FC = () => {
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                
                 isNavOpen
                   ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -1197,248 +1279,302 @@ const Sidebar: React.FC = () => {
           {/* ================= SETTINGS ================= */}
           {isSettingOpen && selectedObject && (
             <>
-              <div className="structure-only pointer-events-none opacity-50 blur-[0.01rem] select-none">
-                {/* your existing code – NO CHANGES inside */}
-                <div className="w-[15rem] bg-white p-3 shadow-sm">
-                  {/* ================= Minifix & Grooving ================= */}
-                  <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                    {/* Header */}
-                    <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
-                      <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
-                        Minifix & Grooving
-                      </p>
-                      <button
-                        onClick={() => toggleSection('minifix')}
-                        className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.minifix ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.minifix && (
-                      <>
-                        {/* ================= Split Inputs ================= */}
-                        <div className="flex gap-[0.75rem]">
-                          {/* -------- LEFT PART -------- */}
-                          <div className="flex w-[6rem] flex-col">
-                            {/* Toggle */}
-                            <div className="ml-[0rem] flex items-center gap-[1rem]">
-                              <div
-                                onClick={handleMinifixToggle}
-                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                              >
-                                {/* Knob */}
-                                <div
-                                  className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                    minifixEnabled
-                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                  }`}
-                                />
-                              </div>
-                              <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Minifix
-                              </p>
-                            </div>
-
-                            {/* Distance */}
-                            <div className="mt-[0rem]">
-                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Distance
-                              </p>
-                              <input
-                                type="number"
-                                value={distance}
-                                onChange={(e) => setDistance(Number(e.target.value))}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                              <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
-                                in multiple of 32
-                              </p>
-                            </div>
-
-                            {/* Diameter Hole */}
-                            <div className="">
-                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Diameter Hole
-                              </p>
-                              <input
-                                type="number"
-                                value={diameter}
-                                onChange={(e) => setDiameter(Number(e.target.value))}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* -------- VERTICAL DIVIDER -------- */}
-                          <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
-
-                          {/* -------- RIGHT PART -------- */}
-                          <div className="mr-[0.7rem] flex w-[6rem] flex-col">
-                            {/* Toggle */}
-                            <div className="flex items-center gap-[0.5rem]">
-                              <div
-                                onClick={handleGroovingToggle}
-                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                              >
-                                {/* Knob */}
-                                <div
-                                  className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                    groovingEnabled
-                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                  }`}
-                                />
-                              </div>
-                              <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Grooving
-                              </p>
-                            </div>
-
-                            {/* Inside */}
-                            <div>
-                              <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Inside
-                              </p>
-                              <input
-                                type="number"
-                                value={inside}
-                                onChange={(e) => setInside(Number(e.target.value))}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-
-                            {/* Edge to End */}
-                            <div>
-                              <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Edge to End
-                              </p>
-                              <input
-                                type="number"
-                                value={edgeToEnd}
-                                onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
+              {/* your existing code – NO CHANGES inside */}
+              <div className="w-[15rem] bg-white p-3 shadow-sm">
+                {/* ================= Minifix & Grooving ================= */}
+                <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                  {/* Header */}
+                  <div className="mb-[0rem] flex items-center justify-between">
+                    <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                      Minifix & Grooving
+                    </p>
+                    <button
+                      onClick={() => toggleSection('minifix')}
+                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    >
+                      {collapsed.minifix ? '+' : '−'}
+                    </button>
                   </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                  {/* ================= Camlock Screw Hole ================= */}
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Camlock Screw Hole
-                      </p>
-                      <button
-                        onClick={() => toggleSection('camlock')}
-                        className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.camlock ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.camlock && (
-                      <>
-                        <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
-                          <div>
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                              Diameter
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                              Depth
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                              Height
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Edge Banding
-                      </p>
-                      <button
-                        onClick={() => toggleSection('edgeBanding')}
-                        className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.edgeBanding ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.edgeBanding ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.edgeBanding && (
-                      <>
-                        <div className="flex items-center gap-[0em]">
-                          <div
-                            onClick={handleEdgeBandingToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
+                  {!collapsed.minifix && (
+                    <>
+                      {/* ================= Split Inputs ================= */}
+                      <div className="flex gap-[0.75rem]">
+                        {/* -------- LEFT PART -------- */}
+                        <div className="flex w-[6rem] flex-col">
+                          {/* Toggle */}
+                          <div className="ml-[0rem] flex items-center gap-[1rem]">
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                edgeBandingEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
-                            />
+                              onClick={handleMinifixToggle}
+                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            >
+                              {/* Knob */}
+                              <div
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  minifixEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                }`}
+                              />
+                            </div>
+                            <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Minifix
+                            </p>
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Edge Banding
-                          </p>
-                          <div className="flex items-center gap-[2rem]">
+                          {/* Distance */}
+                          <div className="mt-[0rem]">
+                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Distance
+                            </p>
                             <input
                               type="number"
-                              className="ml-[1.2rem] h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              value={minifixDistanceInput}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setMinifixDistanceInput(value);
+                                // Save to cupboard object if it's a full cupboard
+                                if (selectedObject && isFullCupboard) {
+                                  dispatch(
+                                    updateObject({ id: selectedObject.id, minifixDistance: value })
+                                  );
+                                } else {
+                                  dispatch(setActiveItemMinifixDistance(value));
+                                }
+                              }}
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                            <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
+                              in multiple of 32
+                            </p>
+                          </div>
+
+                          {/* Diameter Hole */}
+                          <div className="">
+                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Diameter Hole
+                            </p>
+                            <input
+                              type="number"
+                              value={minifixDiameterHoleInput}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setMinifixDiameterHoleInput(value);
+                                // Save to cupboard object if it's a full cupboard
+                                if (selectedObject && isFullCupboard) {
+                                  dispatch(
+                                    updateObject({
+                                      id: selectedObject.id,
+                                      minifixDiameterHole: value,
+                                    })
+                                  );
+                                } else {
+                                  dispatch(setActiveItemMinifixDiameterHole(value));
+                                }
+                              }}
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
-                      </>
-                    )}
+
+                        {/* -------- VERTICAL DIVIDER -------- */}
+                        <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+
+                        {/* -------- RIGHT PART -------- */}
+                        <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                          {/* Toggle */}
+                          <div className="flex items-center gap-[0.5rem]">
+                            <div
+                              onClick={handleGroovingToggle}
+                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            >
+                              {/* Knob */}
+                              <div
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  groovingEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                }`}
+                              />
+                            </div>
+                            <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Grooving
+                            </p>
+                          </div>
+
+                          {/* Inside */}
+                          <div>
+                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Inside
+                            </p>
+                            <input
+                              type="number"
+                              // value={inside}
+                              // onChange={(e) => setInside(Number(e.target.value))}
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+
+                          {/* Edge to End */}
+                          <div>
+                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                              Edge to End
+                            </p>
+                            <input
+                              type="number"
+                              // value={edgeToEnd}
+                              // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                {/* ================= Camlock Screw Hole ================= */}
+                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                  <div className="flex items-center justify-between gap-[0.5rem]">
+                    <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      Camlock Screw Hole
+                    </p>
+                    <button
+                      onClick={() => toggleSection('camlock')}
+                      className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                    >
+                      <img
+                        src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
+                        alt={collapsed.camlock ? 'Expand' : 'Collapse'}
+                        className="h-[0.8rem] w-[0.8rem]"
+                      />
+                    </button>
                   </div>
+                  {!collapsed.camlock && (
+                    <>
+                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Diameter
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={camDiameterInput}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setCamDiameterInput(value);
+                                // Save to cupboard object if it's a full cupboard
+                                if (selectedObject && isFullCupboard) {
+                                  dispatch(
+                                    updateObject({ id: selectedObject.id, camDiameter: value })
+                                  );
+                                } else {
+                                  dispatch(setActiveItemCamDiameter(value));
+                                }
+                              }}
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Depth
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={camDepthInput}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setCamDepthInput(value);
+                                // Save to cupboard object if it's a full cupboard
+                                if (selectedObject && isFullCupboard) {
+                                  dispatch(
+                                    updateObject({ id: selectedObject.id, camDepth: value })
+                                  );
+                                } else {
+                                  dispatch(setActiveItemCamDepth(value));
+                                }
+                              }}
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                            Height
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={camHeightInput}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setCamHeightInput(value);
+                                // Save to cupboard object if it's a full cupboard
+                                if (selectedObject && isFullCupboard) {
+                                  dispatch(
+                                    updateObject({ id: selectedObject.id, camHeight: value })
+                                  );
+                                } else {
+                                  dispatch(setActiveItemCamHeight(value));
+                                }
+                              }}
+                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                  <div className="flex items-center justify-between">
+                    <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      Edge Banding
+                    </p>
+                    <button
+                      onClick={() => toggleSection('edgeBanding')}
+                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                    >
+                      {collapsed.edgeBanding ? '+' : '−'}
+                    </button>
+                  </div>
+                  {!collapsed.edgeBanding && (
+                    <>
+                      <div className="flex items-center gap-[1rem]">
+                        <div
+                          onClick={handleEdgeBandingToggle}
+                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                        >
+                          {/* Knob */}
+                          <div
+                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                              edgeBandingEnabled
+                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                            }`}
+                          />
+                        </div>
+
+                        <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                          Edge Banding
+                        </p>
+                        <div className="flex items-center gap-[2rem]">
+                          <input
+                            type="number"
+                            className="ml-[1.2rem] h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
@@ -1612,9 +1748,10 @@ const Sidebar: React.FC = () => {
                                               type="button"
                                               onClick={() => handleControlClick(field.name, idx)}
                                               className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                
                                                 isActive
                                                   ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[white]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
                                               } `}
                                             >
                                               <img
@@ -1880,9 +2017,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                
                                 topPlankEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1934,8 +2072,9 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                
                                 baseheightEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -1959,8 +2098,9 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                
                                 frontpanelEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -2207,8 +2347,7 @@ const Sidebar: React.FC = () => {
 
                     {/* Texture */}
 
-                    {/* ================= Change Texture & Texture Grain ================= */}
-                    {/* Labels Row */}
+                    {/* ================= Change Texture ================= */}
                     <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
                       <div className="mt-[0rem] flex gap-[0rem]">
                         <div className="flex-1">

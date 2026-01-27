@@ -1,13 +1,18 @@
 import { Position } from '../store/interface';
 
 export interface MinifixStandards {
-  SCREW_DIAMETER: number;
-  SCREW_LENGTH: number;
-  CAM_DIAMETER: number;
-  CAM_DEPTH: number;
-  DOWEL_DIAMETER: number;
-  DOWEL_LENGTH: number;
-  SPACING: number;
+  minifixDistance: number;
+  minifixDiameterHole: number;
+  camDepth: number;
+  camHeight: number;
+  edgeBandingDistance: number;
+  screwDiameter: number;
+  screwLength: number;
+  camDiameter: number;
+  dowelDiameter: number;
+  dowelLength: number;
+  dowelDistance: number;
+  SPACING?: number; // Keep for backward compatibility or remove if unused
 }
 
 export interface PlankData {
@@ -32,7 +37,8 @@ export interface PlankConnection {
   plankA: PlankData;
   plankB: PlankData;
   jointPosition: Position;
-  connectionType: 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL';
+  touchingFaceNormal: Position; // Normal of the face on plankA that touches plankB
+  connectionType: 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL' | 'VERTICAL_TO_VERTICAL';
 }
 
 export interface MinifixHole {
@@ -43,6 +49,7 @@ export interface MinifixHole {
   diameter?: number;
   length?: number;
   depth?: number;
+  height?: number;
   localPosition2D: { x: number; y: number };
 }
 
@@ -52,7 +59,7 @@ export interface MinifixConnection {
   plankAId: string;
   plankBId: string;
   jointPosition: Position;
-  connectionType: 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL';
+  connectionType: 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL' | 'VERTICAL_TO_VERTICAL';
   screw: {
     position: Position;
     direction: Position;
@@ -82,3 +89,5 @@ export interface MinifixConnection {
     localPosition2D: { x: number; y: number }; // Now mandatory
   };
 }
+
+export type Axis = 'x' | 'y' | 'z';

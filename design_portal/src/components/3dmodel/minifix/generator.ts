@@ -1,11 +1,11 @@
 import { calculateMinifixPositions } from './calculator';
 import { detect90DegreeConnections } from './detector';
-import type { MinifixConnection, MinifixHole, PlankData } from './types';
+import type { MinifixConnection, MinifixHole, MinifixStandards, PlankData } from './types';
 
 export function generateMinifixSystem(
   cupboardId: string,
   planks: PlankData[],
-  spacing?: number
+  spacing?: number | MinifixStandards
 ): {
   connections: MinifixConnection[];
   planksWithHoles: (PlankData & { minifixHoles: MinifixHole[] })[];

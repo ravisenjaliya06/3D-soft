@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { store } from '../store';
 import {
   DRAWER_PLANK_TYPES,
@@ -152,6 +152,7 @@ export class DesignBuilder {
     }
 
     this._createInitialCompartments(rootMesh);
+    updateMinifixesForCupboard(rootMesh);
     return rootMesh;
   }
 }

@@ -3,6 +3,7 @@ import {
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
   showFullScreenLoader,
+  updateMinifixesForCupboard,
 } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
@@ -133,6 +134,7 @@ export const addVerticalPlanksToBox = async (
   }
 
   generateCompartmentsFromMesh(parent);
+  updateMinifixesForCupboard(parent);
   hideFullScreenLoader();
 };
 
@@ -217,6 +219,7 @@ export const addHorizontalPlanksInsideBox = async (
   }
 
   generateCompartmentsFromMesh(parent);
+  updateMinifixesForCupboard(parent);
   hideFullScreenLoader();
 };
 
@@ -534,10 +537,22 @@ export const addDrawersOnInvisibleBox = async (
 
     await meshBuilder(drawerGroupWithAllPlank);
 
-    // Select the first drawer (or each as they are added, but usually just the last/main one)
     store.dispatch(setobjectSelected(parent.userData.objectId));
     store.dispatch(setSelectedChildObject(drawerGroupId));
+
+    // Find the drawer mesh we just created to update its own minifixes
+    let createdDrawerMesh: THREE.Mesh | undefined;
+    if (parent.children) {
+      createdDrawerMesh = parent.children.find(
+        (child) => child.userData.objectId === drawerGroupId && child instanceof THREE.Mesh
+      ) as THREE.Mesh | undefined;
+    }
+
+    if (createdDrawerMesh) {
+      updateMinifixesForCupboard(createdDrawerMesh);
+    }
   }
+  updateMinifixesForCupboard(parent);
 };
 
 export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newType: string) => {
@@ -554,6 +569,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
   const drawerMesh = findDrawerMesh();
 
   if (!drawerMesh || !drawerMesh.parent) return;
+
+  // Update minifixes for the drawer itself (its internal structure changed)
+  if (drawerMesh instanceof THREE.Mesh) {
+    updateMinifixesForCupboard(drawerMesh);
+  }
 
   const parentBox = drawerMesh.parent as THREE.Mesh;
   const geometry = parentBox.geometry as THREE.BufferGeometry;
@@ -845,6 +865,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       }
     }
   });
+
+  const root: THREE.Mesh = !parentBox.parent?.userData.isMain
+    ? parentBox
+    : (parentBox.parent as THREE.Mesh);
+  updateMinifixesForCupboard(root);
 };
 
 export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {

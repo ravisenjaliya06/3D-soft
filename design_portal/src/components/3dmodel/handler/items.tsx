@@ -1,6 +1,16 @@
 import * as THREE from 'three';
-import { GEOMETRY, INVISIBLE_BOXES, PART_TYPES } from '../sceneCreator/interface';
+import { generateMinifixSystem, visualizeMinifixConnections } from '../minifix';
+import { PlankData } from '../minifix/types';
+import {
+  DRAWER_PLANK_TYPES,
+  GEOMETRY,
+  INVISIBLE_BOXES,
+  PART_TYPES,
+} from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
+import { store } from '../store';
+import { updateObject } from '../store/dataSlice';
+import { selectMinifixStandards } from '../store/selectors';
 
 export function showFullScreenLoader(message = 'Loading...') {
   /**
@@ -277,4 +287,95 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   });
 
   return meshes;
+}
+
+export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
+  if (!cupboardMesh) return;
+  const planks: PlankData[] = [];
+
+  cupboardMesh.traverse((child) => {
+    const isPlank = child.userData.type === PART_TYPES.PLANK;
+    const isDrawerPart = Object.values(DRAWER_PLANK_TYPES).includes(child.userData.type);
+
+    if (child instanceof THREE.Mesh && (isPlank || isDrawerPart)) {
+      // Check if this plank belongs to a nested sub-assembly (like a drawer)
+      // If the immediate parent is 'isMain' and is NOT the mesh we are currently updating,
+      // it means this plank belongs to a child assembly and should be handled by that assembly's own update.
+      const parent = child.parent;
+      if (parent && parent.userData.isMain && parent !== cupboardMesh) {
+        return;
+      }
+
+      const geom = child.geometry as THREE.BoxGeometry;
+      const { width, height, depth } = geom.parameters
+        ? geom.parameters
+        : {
+            width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
+            height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
+            depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
+          };
+      planks.push({
+        id: child.userData.objectId || child.uuid,
+        name: child.name,
+        position: { x: child.position.x, y: child.position.y, z: child.position.z },
+        width: width,
+        height: height,
+        depth: depth,
+      });
+    }
+  });
+
+  // Get cupboard object from Redux to check for stored minifix settings
+  const state = store.getState();
+  const cupboardId = cupboardMesh.userData.objectId;
+  const cupboardObject = state.data.objects.find((obj) => obj.id === cupboardId);
+
+  // Use cupboard's own minifix settings if available, otherwise fall back to global settings
+  let standards;
+  if (cupboardObject && cupboardObject.minifixDistance !== undefined) {
+    // Cupboard has its own stored settings
+    standards = {
+      minifixDistance: cupboardObject.minifixDistance,
+      minifixDiameterHole:
+        cupboardObject.minifixDiameterHole ?? state.designSettings.minifixDiameterHole,
+      camDepth: cupboardObject.camDepth ?? state.designSettings.camDepth,
+      camHeight: cupboardObject.camHeight ?? state.designSettings.camHeight,
+      edgeBandingDistance: state.designSettings.edgeBandingDistance,
+      screwDiameter: state.designSettings.screwDiameter,
+      screwLength: state.designSettings.screwLength,
+      camDiameter: cupboardObject.camDiameter ?? state.designSettings.camDiameter,
+      dowelDiameter: state.designSettings.dowelDiameter,
+      dowelLength: state.designSettings.dowelLength,
+      dowelDistance: state.designSettings.dowelDistance,
+    };
+  } else {
+    // Legacy cupboard without stored settings - use global selectors
+    standards = selectMinifixStandards(state);
+  }
+
+  const { connections, planksWithHoles } = generateMinifixSystem(
+    cupboardMesh.userData.objectId || cupboardMesh.uuid,
+    planks,
+    standards
+  );
+  visualizeMinifixConnections(connections, cupboardMesh, standards);
+
+  // Update Redux state
+  if (cupboardId) {
+    store.dispatch(updateObject({ id: cupboardId, minifixConnections: connections }));
+  }
+
+  planksWithHoles.forEach((plank) => {
+    store.dispatch(updateObject({ id: plank.id, minifixHoles: plank.minifixHoles }));
+  });
+}
+
+export function updateAllMinifixesInScene(scene: THREE.Scene) {
+  if (!scene) return;
+  scene.traverse((obj) => {
+    // Check if it's a cupboard/container (has objectId and is not a plank or other partial type)
+    if (obj instanceof THREE.Mesh && obj.userData.objectId && obj.userData.isMain) {
+      updateMinifixesForCupboard(obj);
+    }
+  });
 }

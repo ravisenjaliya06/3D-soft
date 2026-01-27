@@ -10,6 +10,7 @@ import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
+import { updateMinifixesForCupboard } from './items';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -166,6 +167,11 @@ export class UpdateObjectInScene {
         // Also update grooving when dimensions change
         this.updateGroovingForPlank(mesh);
       })();
+    }
+
+    if (mesh.userData.isMain) {
+      this.updateChildrenDynamic(mesh, updateParams);
+      updateMinifixesForCupboard(mesh);
     }
 
     updateOrRefreshOutline(this.scene, mesh);
