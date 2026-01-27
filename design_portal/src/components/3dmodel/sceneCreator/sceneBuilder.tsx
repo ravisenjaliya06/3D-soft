@@ -268,8 +268,7 @@ export class SceneBuilder {
     animate();
   }
 
-  public toggleSky(): void {
-  }
+  public toggleSky(): void {}
 
   private initSelector() {
     this.selector = new SelectObjectController(

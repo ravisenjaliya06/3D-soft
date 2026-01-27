@@ -892,8 +892,9 @@ const Settings = () => {
 
                   <input
                     type="text"
-                    className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
-                      }`}
+                    className={`${styles.organizationInputfild} ${
+                      organizationNameError ? styles.errorInput : ''
+                    }`}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       setOrganizationName(e.target.value);
                       setOrganizationNameError(null);
@@ -1047,10 +1048,11 @@ const Settings = () => {
                     >
                       {/* Knob */}
                       <div
-                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${edgeBandingEnabled
+                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                          edgeBandingEnabled
                             ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                             : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                          }`}
+                        }`}
                       />
                     </div>
                   </div>

@@ -1180,5 +1180,6 @@
 }
 
 .activeDropdownItem .dropdownStatusIcon {
-  filter: brightness(0) saturate(100%) invert(42%) sepia(70%) saturate(361%) hue-rotate(81deg) brightness(91%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(42%) sepia(70%) saturate(361%) hue-rotate(81deg)
+    brightness(91%) contrast(95%);
 }
