@@ -960,6 +960,11 @@
   margin-right: 0.5rem;
 }
 
+.arrow {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 .headerTitle {
   font-family: var(--font-family);
   font-size: 0.8rem;
