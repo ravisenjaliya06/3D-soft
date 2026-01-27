@@ -562,7 +562,8 @@
   font-weight: 200;
   margin-left: 2rem;
   font-size: 0.8rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 0rem;
 }
 
 .rediogroup {
@@ -607,7 +608,7 @@
   transition: border-color 0.3s ease-in-out;
 }
 
-.option:checked + .customRadio {
+.option:checked+.customRadio {
   border-color: #392579;
   background: #392579;
 }
@@ -867,12 +868,10 @@
   padding: 0.3rem;
   text-align: start;
   border-bottom: 0.1rem solid black;
-  border-image: linear-gradient(
-    0.25turn,
-    rgb(255, 255, 255),
-    rgb(191, 126, 216),
-    rgba(56, 2, 155, 0)
-  );
+  border-image: linear-gradient(0.25turn,
+      rgb(255, 255, 255),
+      rgb(191, 126, 216),
+      rgba(56, 2, 155, 0));
   border-image-slice: 1;
   color: var(--primary-color);
   font-weight: 400;
@@ -1004,7 +1003,7 @@
   background-color: var(--primary-color);
 }
 
-.checkboxgroup input:checked + label {
+.checkboxgroup input:checked+label {
   color: var(--primary-color);
 }
 

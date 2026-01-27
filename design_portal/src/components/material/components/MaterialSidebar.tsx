@@ -136,24 +136,9 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         scrollbarWidth: 'thin',
         scrollbarColor: 'var(--scrollbar-color-2) transparent',
       }}
-      className="
-        h-[42rem] w-[14rem]
-        overflow-x-hidden overflow-y-auto
-        rounded-[0.625rem]
-        border border-[0.063rem] border-[var(--primary-color-grey-2)]
-        bg-[var(--primary-white)]
-        py-[0.7rem]
-
-        [&::-webkit-scrollbar]:w-[0.35rem]
-        [&::-webkit-scrollbar-track]:bg-black
-        [&::-webkit-scrollbar-track]:rounded-full
-        [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)]
-        [&::-webkit-scrollbar-thumb]:rounded-full
-      "
+      className="h-[42rem] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.625rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] py-[0.7rem]"
     >
-      <div>
-        {materialCategories.map((category) => renderMenuItem(category))}
-      </div>
+      <div>{materialCategories.map((category) => renderMenuItem(category))}</div>
     </div>
   );
 };
