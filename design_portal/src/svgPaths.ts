@@ -11,7 +11,7 @@ export const _3DMODEL = {
   newzoom: '/assets/3dmodel/header/newzoom.svg',
   redo: '/assets/3dmodel/header/redo.svg',
   save: '/assets/3dmodel/header/save.svg',
-  Setting: '/assets/3dmodel/header/Setting.svg',
+  setting_svg: '/assets/3dmodel/header/Setting.svg',
   tool_part_line: '/assets/3dmodel/header/tool-part-line.svg',
   tool_toggle_open: '/assets/3dmodel/header/tool-toggle-open.svg',
   tool_toggle: '/assets/3dmodel/header/tool-toggle.svg',

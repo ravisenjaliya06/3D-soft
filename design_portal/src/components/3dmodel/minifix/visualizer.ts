@@ -1,13 +1,11 @@
 import * as THREE from 'three';
-import type { MinifixConnection } from './types';
-
-const STATIC_SCREW_SIZE = { diameter: 1, length: 5 };
-const STATIC_CAM_SIZE = { diameter: 1, depth: 3 };
-const STATIC_DOWEL_SIZE = { diameter: 1, length: 7 };
+import { MINIFIX_STANDARDS } from './constant';
+import type { MinifixConnection, MinifixStandards } from './types';
 
 export function visualizeMinifixConnections(
   connections: MinifixConnection[],
-  cupboardObject: THREE.Object3D
+  cupboardObject: THREE.Object3D,
+  standards: MinifixStandards = MINIFIX_STANDARDS
 ): void {
   removeExistingMinifix(cupboardObject);
 
@@ -22,7 +20,7 @@ export function visualizeMinifixConnections(
     camMesh.visible = true;
     cupboardObject.add(camMesh);
 
-    const dowelMesh = createDowelVisualization(connection, index);
+    const dowelMesh = createDowelVisualization(connection, index, standards);
     dowelMesh.name = `Minifix_Dowel_${connection.id}`;
     dowelMesh.visible = true;
     cupboardObject.add(dowelMesh);
@@ -36,9 +34,9 @@ export function visualizeMinifixConnections(
 
 function createScrewVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
   const geometry = new THREE.CylinderGeometry(
-    STATIC_SCREW_SIZE.diameter / 2,
-    STATIC_SCREW_SIZE.diameter / 2,
-    STATIC_SCREW_SIZE.length,
+    connection.screw.diameter / 2,
+    connection.screw.diameter / 2,
+    connection.screw.length,
     16
   );
 
@@ -74,9 +72,9 @@ function createScrewVisualization(connection: MinifixConnection, index: number):
 
 function createCamVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
   const geometry = new THREE.CylinderGeometry(
-    STATIC_CAM_SIZE.diameter / 2,
-    STATIC_CAM_SIZE.diameter / 2,
-    STATIC_CAM_SIZE.depth / 3,
+    connection.cam.diameter / 2,
+    connection.cam.diameter / 2,
+    connection.cam.depth / 3,
     16
   );
 
@@ -99,15 +97,15 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
 
   if (isVertical) {
     mesh.position.set(
-      connection.jointPosition.x - STATIC_SCREW_SIZE.diameter / 2,
-      connection.jointPosition.y - STATIC_SCREW_SIZE.length / 2,
+      connection.jointPosition.x - connection.screw.diameter / 2,
+      connection.jointPosition.y - connection.screw.length / 2,
       connection.jointPosition.z
     );
     mesh.rotation.z = Math.PI / 2;
   } else {
     mesh.position.set(
-      connection.jointPosition.x + STATIC_SCREW_SIZE.length / 2,
-      connection.jointPosition.y + STATIC_SCREW_SIZE.diameter / 2,
+      connection.jointPosition.x + connection.screw.length / 2,
+      connection.jointPosition.y + connection.screw.diameter / 2,
       connection.jointPosition.z
     );
     mesh.rotation.y = Math.PI / 2;
@@ -124,9 +122,9 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
 
 function createBoltDrillVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
   const geometry = new THREE.CylinderGeometry(
-    STATIC_SCREW_SIZE.diameter / 2,
-    STATIC_SCREW_SIZE.diameter / 2,
-    STATIC_SCREW_SIZE.length / 2,
+    (connection.boltDrill.diameter ?? connection.screw.diameter) / 2,
+    (connection.boltDrill.diameter ?? connection.screw.diameter) / 2,
+    connection.boltDrill.length ?? connection.screw.length / 2,
     16
   );
 
@@ -151,12 +149,12 @@ function createBoltDrillVisualization(connection: MinifixConnection, index: numb
   if (isVertical) {
     mesh.position.set(
       connection.jointPosition.x,
-      connection.jointPosition.y - STATIC_SCREW_SIZE.length / 4,
+      connection.jointPosition.y - connection.screw.length / 4,
       connection.jointPosition.z
     );
   } else {
     mesh.position.set(
-      connection.jointPosition.x + STATIC_SCREW_SIZE.length / 4,
+      connection.jointPosition.x + connection.screw.length / 4,
       connection.jointPosition.y,
       connection.jointPosition.z
     );
@@ -178,11 +176,15 @@ function createBoltDrillVisualization(connection: MinifixConnection, index: numb
 
   return mesh;
 }
-function createDowelVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
+function createDowelVisualization(
+  connection: MinifixConnection,
+  index: number,
+  standards: MinifixStandards
+): THREE.Mesh {
   const geometry = new THREE.CylinderGeometry(
-    STATIC_DOWEL_SIZE.diameter / 2,
-    STATIC_DOWEL_SIZE.diameter / 2,
-    STATIC_DOWEL_SIZE.length / 2,
+    connection.dowel.diameter / 2,
+    connection.dowel.diameter / 2,
+    connection.dowel.length / 2,
     16
   );
 
@@ -196,7 +198,7 @@ function createDowelVisualization(connection: MinifixConnection, index: number):
   mesh.position.set(
     connection.jointPosition.x,
     connection.jointPosition.y,
-    connection.jointPosition.z + 3
+    connection.jointPosition.z + standards.dowelDistance
   );
 
   const direction = new THREE.Vector3(
@@ -251,7 +253,8 @@ export function toggleMinifixVisibility(visible: boolean, scene: THREE.Scene): v
 
 export function updateMinifixVisualization(
   connections: MinifixConnection[],
-  cupboardObject: THREE.Object3D
+  cupboardObject: THREE.Object3D,
+  standards: MinifixStandards = MINIFIX_STANDARDS
 ): void {
-  visualizeMinifixConnections(connections, cupboardObject);
+  visualizeMinifixConnections(connections, cupboardObject, standards);
 }

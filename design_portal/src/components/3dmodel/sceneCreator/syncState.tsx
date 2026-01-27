@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ThreeDView } from '../design/interface';
-import { generateCompartmentsFromMesh } from '../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
@@ -136,7 +136,32 @@ export class SyncManager {
         }
         toUpdate.push(item);
       } else {
-        const itemWithBanding = this._detectBandingFromScene(item);
+        // For new objects, capture current minifix settings if it's a cupboard
+        let itemToAdd = item;
+
+        if (this._isObjectType(item.type) && item.isMain) {
+          // Get current resolved minifix settings from Redux
+          const state = store.getState();
+          const minifixDistance =
+            state.activeDesign.minifixDistance ?? state.designSettings.minifixDistance;
+          const minifixDiameterHole =
+            state.activeDesign.minifixDiameterHole ?? state.designSettings.minifixDiameterHole;
+          const camDepth = state.activeDesign.camDepth ?? state.designSettings.camDepth;
+          const camDiameter = state.activeDesign.camDiameter ?? state.designSettings.camDiameter;
+          const camHeight = state.activeDesign.camHeight ?? state.designSettings.camHeight;
+
+          // Store minifix settings in the cupboard object
+          itemToAdd = {
+            ...item,
+            minifixDistance,
+            minifixDiameterHole,
+            camDepth,
+            camDiameter,
+            camHeight,
+          };
+        }
+
+        const itemWithBanding = this._detectBandingFromScene(itemToAdd);
         toAdd.push(itemWithBanding);
       }
     });
@@ -333,6 +358,7 @@ export class SyncManager {
         // Banding state changed - recreate banding
         await this.meshBuilder.applyBandingFromState();
       }
+      updateMinifixesForCupboard(mesh);
     }
   }
 

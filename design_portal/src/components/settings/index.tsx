@@ -1,3 +1,5 @@
+import { RootState } from '@/components/3dmodel/store';
+import { updateDesignSettings } from '@/components/3dmodel/store/designSettingsSlice';
 import Header from '@/components/header/header';
 import styles from '@/components/settings/setting.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
@@ -5,8 +7,9 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import InputField from '../inputfields/InputField';
-import { Member, Organization, SettingConfigs, TeamRole, User, addmember } from './interface';
+import { Member, Organization, TeamRole, User, addmember } from './interface';
 
 const Settings = () => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -54,14 +57,24 @@ const Settings = () => {
 
   const [addMemberEmail, setAddMemberEmail] = useState('');
 
+  const dispatch = useDispatch();
+  const designSettings = useSelector((state: RootState) => state.designSettings);
+
   const [height, setHeight] = useState<number | null>();
   const [width, setWidth] = useState<number | null>();
   const [nestHeight, setNestHeight] = useState<number | null>();
   const [nestWidth, setNestWidth] = useState<number | null>();
   const [designUnit, setDesignUnit] = useState<string | null>();
-  const [minifixDistance, setMinifixDistance] = useState<number | null>();
-  const [grooveGap, setGrooveGap] = useState<number | null>();
-  const [grooveDig, setGrooveDig] = useState<number | null>();
+  const [minifixDistance, setMinifixDistance] = useState<number>(designSettings.minifixDistance);
+  const [minifixDiameterHole, setMinifixDiameterHole] = useState<number>(
+    designSettings.minifixDiameterHole
+  );
+  const [camDepth, setCamDepth] = useState<number>(designSettings.camDepth);
+  const [camDiameter, setCamDiameter] = useState<number>(designSettings.camDiameter);
+  const [camHeight, setCamHeight] = useState<number>(designSettings.camHeight);
+  const [edgeBandingDistance, setEdgeBandingDistance] = useState<number>(
+    designSettings.edgeBandingDistance
+  );
 
   const rolesList = ['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
 
@@ -397,56 +410,57 @@ const Settings = () => {
       minField: true,
       value: minifixDistance,
     },
-
     {
       label: 'Diameter Hole',
       type: 'number',
       placeholder: 'Diameter Hole',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        setMinifixDiameterHole(parseInt(e.target.value)),
       error: '',
       minField: true,
-      value: minifixDistance,
+      value: minifixDiameterHole,
     },
   ];
-  const designGroovingInputFields = [
+  const designCamlockInputFields = [
     {
       label: 'Diameter',
       type: 'number',
       placeholder: 'Diameter',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveGap(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCamDiameter(parseInt(e.target.value)),
       error: '',
       minField: true,
-      value: grooveGap,
+      value: camDiameter,
     },
     {
       label: 'Height',
       type: 'number',
       placeholder: 'Height',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveDig(parseInt(e.target.value)),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCamHeight(parseInt(e.target.value)),
       error: '',
       minField: true,
-      value: grooveDig,
+      value: camHeight,
     },
     {
-      label: 'Width',
+      label: 'Depth',
       type: 'number',
-      placeholder: 'Width',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setGrooveDig(parseInt(e.target.value)),
+      placeholder: 'Depth',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCamDepth(parseInt(e.target.value)),
       error: '',
       minField: true,
-      value: grooveDig,
+      value: camDepth,
     },
   ];
 
   const EdgeBandingInputFields = [
     {
-      label: 'Distance',
+      label: 'Edge Banding',
       type: 'number',
-      placeholder: 'Distance',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setMinifixDistance(parseInt(e.target.value)),
+      placeholder: 'Edge Banding',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        setEdgeBandingDistance(parseInt(e.target.value)),
       error: '',
       minField: true,
-      value: minifixDistance,
+      value: edgeBandingDistance,
     },
   ];
 
@@ -501,6 +515,7 @@ const Settings = () => {
       mediumField: true,
     },
   ];
+
   //smit|Harsh only for design not add function
   const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
   const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
@@ -636,6 +651,31 @@ const Settings = () => {
     handalSetOrganization();
   }, []);
 
+  // Initialize design settings from Redux
+  useEffect(() => {
+    setMinifixDistance(designSettings.minifixDistance);
+    setMinifixDiameterHole(designSettings.minifixDiameterHole);
+    setCamDepth(designSettings.camDepth);
+    setCamDiameter(designSettings.camDiameter);
+    setEdgeBandingDistance(designSettings.edgeBandingDistance);
+  }, [designSettings]);
+
+  const handleSaveDesignSettings = () => {
+    dispatch(
+      updateDesignSettings({
+        minifixDistance,
+        minifixDiameterHole,
+        camDepth,
+        camDiameter,
+        edgeBandingDistance,
+      })
+    );
+    setSuccessMessage('Design settings saved successfully!');
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 3000);
+  };
+
   const handalInputOrganization = async () => {
     if (!organizationName?.trim()) {
       setOrganizationNameError('Organization name is required');
@@ -674,59 +714,6 @@ const Settings = () => {
     }
   };
 
-  const handleSettingsSubmit = async () => {
-    const formData = new FormData();
-    formData.append('sheet_height', String(height ?? 0));
-    formData.append('sheet_width', String(width ?? 0));
-    formData.append('nest_width', String(nestWidth ?? 0));
-    formData.append('nest_height', String(nestHeight ?? 0));
-    formData.append('unit', String(designUnit));
-
-    formData.append('minifix_distance', String(minifixDistance ?? 0));
-    formData.append('groove_gap', String(grooveGap ?? 0));
-    formData.append('groove_dig', String(grooveDig ?? 0));
-
-    try {
-      const response = await CommonService.put(API_ENDPOINT.UPDATE_DESIGN_SETTING, formData);
-
-      if (response.status === 200) {
-        setSuccessMessage('Settings updated successfully!');
-        fetchSettingsConfig(); // Optional: reload settings after save
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        console.error('Failed to update settings:', response.status);
-        setErrorMessage('Failed to update settings');
-      }
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      setErrorMessage('An error occurred while updating settings');
-    }
-  };
-
-  useEffect(() => {
-    fetchSettingsConfig();
-  }, []);
-
-  const fetchSettingsConfig = async () => {
-    const response: { status: number; data: SettingConfigs } = await CommonService.get(
-      API_ENDPOINT.GET_DESIGN_SETTING
-    );
-
-    if (response.status === 200) {
-      const data = response.data;
-
-      setHeight(data.height);
-      setWidth(data.width);
-      setNestWidth(data.sheet_width);
-      setNestHeight(data.sheet_height);
-      setDesignUnit(data.unit);
-      setMinifixDistance(data.minifix_distance);
-      setGrooveGap(data.groove_gap);
-      setGrooveDig(data.groove_dig);
-    }
-  };
   return (
     <div className={styles.container}>
       <Sidebar />
@@ -1026,9 +1013,9 @@ const Settings = () => {
                   </div>
                   <img src={assets.design_line} alt="design" className={styles.designline} />
                   <div className={styles.firstbox}>
-                    <p>Grooving Settings</p>
+                    <p>Camlock Screw Hole</p>
                     <div className={styles.minifixfieldsgroupdesign}>
-                      {designGroovingInputFields.map((field, index) => (
+                      {designCamlockInputFields.map((field, index) => (
                         <InputField
                           key={index}
                           {...field}
@@ -1068,7 +1055,7 @@ const Settings = () => {
                     </div>
                     <button
                       className={styles.design_profile_save_button}
-                      onClick={handleSettingsSubmit}
+                      onClick={handleSaveDesignSettings}
                     >
                       save
                     </button>
