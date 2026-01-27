@@ -109,25 +109,53 @@ class ScenePayloadSerializer(serializers.Serializer):
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
     ) -> Design:
         return Design.objects.get(id=design_id, organization=organization)
+    
+    def _get_or_create_material(
+        self: "ScenePayloadSerializer",
+        material_payload: dict,
+        request,
+    ) -> Material:
+        """
+        Create material via MaterialSerializer if not exists,
+        otherwise return existing one.
+        """
+        name = material_payload.get("name")
+        if not name:
+            return None
 
-    def _attach_material_by_name(
-        self: "ScenePayloadSerializer", catalog: DesignCatalog, item: dict
+        material = Material.objects.filter(
+            name=name,
+            organization=request.user.selected_organization,
+            is_deleted=False,
+        ).first()
+
+        if material:
+            return material
+
+        serializer = MaterialSerializer(
+            data=material_payload,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
+
+    def _attach_material(
+        self: "ScenePayloadSerializer",
+        catalog: DesignCatalog,
+        item: dict,
+        request,
     ) -> None:
         """
-        Attach material using material.name instead of file path.
+        Attach material using MaterialSerializer (create if missing).
         """
         material_data = item.get("material")
         if not material_data:
             return
 
-        for material_name in material_data:
-            if not material_name:
-                continue
-            material = Material.objects.filter(name=material_name).first()
-
-            if not material:
-                continue
-            catalog.materials.add(material)
+        for material_payload in material_data:
+            material = self._get_or_create_material(material_payload, request)
+            if material:
+                catalog.materials.add(material)
 
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
@@ -156,7 +184,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                 catalog.data["id"] = str(catalog.id)
                 catalog.save(update_fields=["data"])
 
-                self._attach_material_by_name(catalog, item)
+                self._attach_material(catalog, item, request)
 
                 temp_key_to_catalog[temp_key] = catalog
 

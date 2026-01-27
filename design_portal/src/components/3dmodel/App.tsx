@@ -12,6 +12,7 @@ import { useAppDispatch } from './hooks';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { AppProps, CatalogApiResponse } from './interface';
 import { setSettings } from './store/designSettingsSlice';
+import { ToastContainer } from 'react-toastify';
 
 const App: React.FC<AppProps> = ({ router }) => {
   const dispatch = useAppDispatch();
@@ -43,6 +44,11 @@ const App: React.FC<AppProps> = ({ router }) => {
       <Toolbar threeDView={design3D as ThreeDView} onViewModeChange={handleViewModeChange} />
       <Sidebar />
       <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+      <ToastContainer
+        position="top-right"
+        theme="dark"
+        style={{ marginTop: '60px' }}
+      />
     </div>
   );
 };
