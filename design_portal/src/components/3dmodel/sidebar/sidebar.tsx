@@ -784,10 +784,6 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject?.id, isPlankSelected, objects, scene]);
 
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
-  const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
-  const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
-
   // Edge banding state for planks
   const [bandingTop, setBandingTop] = useState(false);
   const [bandingBottom, setBandingBottom] = useState(false);
@@ -815,10 +811,6 @@ const Sidebar: React.FC = () => {
   const [camDiameterInput, setCamDiameterInput] = useState(resolvedCamDiameter);
   const [camHeightInput, setCamHeightInput] = useState(resolvedCamHeight);
 
-  const handleEdgeBandingToggle = () => {
-    if (edgeBandingDisabled) return;
-    setEdgeBandingEnabled((prev) => !prev);
-  };
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleMinifixToggle = () => {
@@ -836,7 +828,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setGroovingDisabled(false);
-    setEdgeBandingDisabled(false);
     setTopPlankDisabled(false);
     setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
@@ -1526,50 +1517,6 @@ const Sidebar: React.FC = () => {
                     </>
                   )}
                 </div>
-
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                  <div className="flex items-center justify-between">
-                    <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                      Edge Banding
-                    </p>
-                    <button
-                      onClick={() => toggleSection('edgeBanding')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.edgeBanding ? '+' : '−'}
-                    </button>
-                  </div>
-                  {!collapsed.edgeBanding && (
-                    <>
-                      <div className="flex items-center gap-[1rem]">
-                        <div
-                          onClick={handleEdgeBandingToggle}
-                          className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                        >
-                          {/* Knob */}
-                          <div
-                            className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${edgeBandingEnabled
-                              ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                              : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
-                          />
-                        </div>
-
-                        <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                          Edge Banding
-                        </p>
-                        <div className="flex items-center gap-[2rem]">
-                          <input
-                            type="number"
-                            className="ml-[1.2rem] h-[1.2rem] w-[4.2rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
               <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
               {!isQuickHideActive && isSettingOpen && isPlankSelected && (
@@ -1822,7 +1769,7 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.depth ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('depth',  Math.max(1, Number(e.target.value)))
+                                      handleDimensionChange('depth', Math.max(1, Number(e.target.value)))
                                     }
                                     disabled={isQuickHideActive}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -2022,7 +1969,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              value={getTopPlank()?.dimensions?.depth ?? 0}
+                              value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
                               onChange={handleTopPlankDepthChange}
                               className="ml-[1.3rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
