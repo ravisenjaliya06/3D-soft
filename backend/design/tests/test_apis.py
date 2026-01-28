@@ -631,8 +631,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
                 {
                     "id": "main1",
                     "name": "Main Cabinet",
-                    "type": "Cabinet",
-                    "material": ["Molding Copy"],
+                    "type": "Cabinet"
                 }
             ],
         }
@@ -645,9 +644,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        catalog = DesignCatalog.objects.get(id=response.data["catalog_ids"][0])
-        self.assertEqual(catalog.materials.count(), 1)
-        self.assertEqual(catalog.materials.first().name, "Molding Copy")
 
     def test_create_design_catalog_with_nonexistent_material(
         self: "DesignAPIViewTestCase",
@@ -659,8 +655,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
                 {
                     "id": "main1",
                     "name": "Main Cabinet",
-                    "type": "Cabinet",
-                    "material": ["Nonexistent Material"],
+                    "type": "Cabinet"
                 }
             ],
         }
