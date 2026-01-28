@@ -30,6 +30,7 @@ import {
   selectHeaderMinifixDistance,
 } from '../store/selectors';
 import styles from './header.module.css';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useDispatch();
@@ -285,6 +286,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }, 2000);
   };
 
+  const handleSave = () => {
+    const objectSaver = new ObjectsSaver();
+    objectSaver.saveAllObjects();
+  };
+
   const headerTools = [
     // {
     //   option: 'undo',
@@ -313,6 +319,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       icon: assets.newzoom,
       disabled: false,
       onClick: handleZoomModeToggle,
+    },
+    {
+      option: 'save',
+      name: 'Save Design',
+      icon: assets.save,
+      disabled: false,
+      onClick: handleSave,
     },
     {
       option: 'screenshot',

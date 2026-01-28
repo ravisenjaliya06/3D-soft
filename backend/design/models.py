@@ -42,6 +42,7 @@ class CatalogTypeChoices(models.TextChoices):
     CUPBOARD = "cupboard"
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
+    WALL = "wall"
 
     UNKNOWN = "unknown"
 
