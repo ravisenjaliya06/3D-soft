@@ -784,10 +784,6 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject?.id, isPlankSelected, objects, scene]);
 
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
-  const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
-  const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
-
   // Edge banding state for planks
   const [bandingTop, setBandingTop] = useState(false);
   const [bandingBottom, setBandingBottom] = useState(false);
@@ -815,10 +811,6 @@ const Sidebar: React.FC = () => {
   const [camDiameterInput, setCamDiameterInput] = useState(resolvedCamDiameter);
   const [camHeightInput, setCamHeightInput] = useState(resolvedCamHeight);
 
-  const handleEdgeBandingToggle = () => {
-    if (edgeBandingDisabled) return;
-    setEdgeBandingEnabled((prev) => !prev);
-  };
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleMinifixToggle = () => {
@@ -836,7 +828,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setGroovingDisabled(false);
-    setEdgeBandingDisabled(false);
     setTopPlankDisabled(false);
     setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
