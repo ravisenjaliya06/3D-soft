@@ -162,10 +162,13 @@ class ScenePayloadSerializer(serializers.Serializer):
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
+        is_library = request.query_params.get("is_library", False)
 
         with transaction.atomic():
             design = self._get_design(validated_data["design_id"], organization)
-            version = DesignVersion.objects.create(design=design)
+            version = None
+            if not is_library:
+                version = DesignVersion.objects.create(design=design)
 
             temp_key_to_catalog: dict[str, DesignCatalog] = {}
             frontend_id_to_temp_keys: dict[str, list[str]] = {}
@@ -216,6 +219,6 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         return {
             "message": "Design saved successfully",
-            "version_id": version.id,
+            "version_id": version.id if version else None,
             "catalog_ids": [c.id for c in temp_key_to_catalog.values()],
         }

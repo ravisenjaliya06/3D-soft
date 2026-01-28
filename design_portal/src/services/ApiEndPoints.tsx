@@ -30,7 +30,7 @@ export const API_ENDPOINT = {
   CREATE_COMPANY: 'material/company/',
   CREATE_WORKORDER: 'mes_portal/work_order/',
   CREATE_MATERIAL_WITHOUT_CATALOG: 'material/catalog/design/',
-  CREATE_CATALOGS: 'design/catalogs/',
+  CREATE_LIBRARY_CATALOGS: (is_library: boolean) => 'design/catalogs/?is_library=' + is_library,
   CREATE_COMPANY_MATERIAL: (companyID: string) => `material/company/${companyID}/material/`,
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
