@@ -321,7 +321,31 @@ const CatalogManager = () => {
     setActiveRuleType(types[0] || null);
   }, [selectedCatalog, catalogData]);
 
+  /* Drop Down Arrow */
+  const [openpart, setOpenpart] = useState(false);
+  const [opentype, setOpentype] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const iconList: { [key: string]: string } = {
+    Banding: assets.banding,
+    'Board Stock': assets.brandstok,
+    Caster: assets.caster,
+    Connector: assets.connector,
+    'Drawer Guide': assets.drawerguid,
+    Hinge: assets.pull,
+    'Hinge Plate': assets.hing,
+    Laminate: assets.brandstok,
+    Leg: assets.leg,
+    'Leg Leveler': assets.leg_leveler,
+    Miscellaneous: assets.mis,
+    Molding: assets.molding,
+    'Panel Stock': assets.panel_stock,
+    Pull: assets.pull,
+    Rod: assets.rod,
+    'Sliding Door Rail': assets.door_rail,
+    'Sliding Door Roller': assets.sliding_door_roller,
+    'Wire Basket': assets.wire_basket,
+  };
 
   return (
     <div className="flex h-screen flex-row overflow-hidden">
@@ -331,9 +355,9 @@ const CatalogManager = () => {
 
         <div className="justify-between">
           {/* TOP TOOLBAR */}
-          <div className="mx-auto w-[88rem]">
+          <div className="mx-auto w-[90rem] max-w-[90rem]">
             <div className="mt-[3rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[7rem]">
-              <div className="mb-[1rem] flex items-center gap-[0.8rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
+              <div className="mb-[1rem] flex items-center gap-[0.5rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
                 <div className="flex items-center">
                   <div className="flex items-center gap-[0.75rem] pr-[1.4rem]">
                     <span className="text-[0.8rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
@@ -341,8 +365,8 @@ const CatalogManager = () => {
                     </span>
                     <div className="relative inline-flex items-center">
                       <select
-                        onFocus={() => setOpen(true)}
-                        onBlur={() => setOpen(false)}
+                        onFocus={() => setOpenpart(true)}
+                        onBlur={() => setOpenpart(false)}
                         className="h-[1.5rem] w-[8rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-white px-[0.4rem] pr-[1.8rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                         value={catalogType}
                         onChange={(e) => setCatalogType(e.target.value)}
@@ -355,7 +379,7 @@ const CatalogManager = () => {
                       </select>
                       <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
                         <img
-                          src={open ? assets.menuup : assets.menudown}
+                          src={openpart ? assets.menuup : assets.menudown}
                           className="h-[1.5rem] w-[1.5rem]"
                         />
                       </div>
@@ -368,9 +392,9 @@ const CatalogManager = () => {
                     </span>
                     <div className="relative inline-flex items-center">
                       <select
-                        onFocus={() => setOpen(true)}
-                        onBlur={() => setOpen(false)}
-                        className="rounded-md-[0.1rem] w-[8.2rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
+                        onFocus={() => setOpentype(true)}
+                        onBlur={() => setOpentype(false)}
+                        className="rounded-md-[0.1rem] h-[1.5rem] w-[8.2rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
                         value={selectedCatalog?.id || ''}
                         onChange={(e) => {
                           const catalog = catalogData.find((c) => c.id === e.target.value);
@@ -387,7 +411,7 @@ const CatalogManager = () => {
                       </select>
                       <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
                         <img
-                          src={open ? assets.menuup : assets.menudown}
+                          src={opentype ? assets.menuup : assets.menudown}
                           className="h-[1.5rem] w-[1.5rem]"
                         />
                       </div>
@@ -424,7 +448,7 @@ const CatalogManager = () => {
                           : 'text-gray-500 hover:bg-gray-100'
                       }`}
                     >
-                      <img src={assets.banding} alt="" className="h-[0.8rem] w-[0.8rem]" />
+                      <img src={iconList[type]} alt="" className="h-[1rem] w-[1rem]" />
                       {type}
                     </div>
                   ))}
@@ -442,53 +466,55 @@ const CatalogManager = () => {
                   {/* INPUTS */}
                   <div className="mr-[1rem] ml-[0.5rem] flex flex-col justify-center gap-[0.1rem]">
                     {/* NAME */}
-                    <div className="relative mb-[0.5rem]">
-                      {isEditingName ? (
-                        <input
-                          type="text"
-                          value={formatEnumLabel(selectedCatalog?.name || '')}
-                          onBlur={handleBlur(setIsEditingName)}
-                          onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                          className="pointer-events-none h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--border-color)]"
-                        />
-                      ) : (
-                        <div
-                          onClick={() => setIsEditingName(true)}
-                          className="flex h-[1.5rem] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
-                        >
-                          {formatEnumLabel(selectedCatalog?.name ? selectedCatalog.name : '')}
-                        </div>
-                      )}
+                    <div className="relative mb-[0.5rem] w-[11rem]">
+                      <fieldset className="h-[1.5rem] rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-white px-[0.7rem] focus-within:border-[var(--primary-color)]">
+                        <legend className="px-[0.3rem] text-[0.55rem] text-[var(--border-color)]">
+                          Name
+                        </legend>
 
-                      {/* FLOATING LABEL */}
-                      <span className="absolute top-[0.125rem] left-3 pt-[0.3rem] pl-[1rem] text-[0.55rem] text-[var(--border-color)]">
-                        name
-                      </span>
+                        {isEditingName ? (
+                          <input
+                            type="text"
+                            value={formatEnumLabel(selectedCatalog?.name || '')}
+                            onBlur={handleBlur(setIsEditingName)}
+                            onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
+                            className="mt-[0.1rem] w-full border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] outline-none"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => setIsEditingName(true)}
+                            className="mt-[0.1rem] w-full cursor-pointer text-[0.65rem] text-[var(--primary-color)]"
+                          >
+                            {formatEnumLabel(selectedCatalog?.name || '')}
+                          </div>
+                        )}
+                      </fieldset>
                     </div>
 
                     {/* DESCRIPTION */}
-                    <div className="relative mb-[0.5rem]">
-                      {isEditingDescription ? (
-                        <input
-                          type="text"
-                          value={selectedCatalog?.description}
-                          onBlur={handleBlur(setIsEditingDescription)}
-                          onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                          className="pointer-events-none h-[1.5rem] w-[11rem] rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[0.875rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)] outline-[0rem] focus:border-[var(--primary-color)]"
-                        />
-                      ) : (
-                        <div
-                          onClick={() => setIsEditingDescription(true)}
-                          className="flex h-[1.5rem] w-[11rem] cursor-pointer items-start rounded-[0.8rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] px-[0.3rem] pt-[1.125rem] pl-[1rem] text-[0.65rem] text-[var(--primary-color)]"
-                        >
-                          {selectedCatalog?.description}
-                        </div>
-                      )}
+                    <div className="relative mb-[0.5rem] w-[11rem]">
+                      <fieldset className="h-[1.5rem] rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-white px-[0.7rem] focus-within:border-[var(--primary-color)]">
+                        <legend className="px-[0.3rem] text-[0.55rem] text-[var(--border-color)]">
+                          Description
+                        </legend>
 
-                      {/* FLOATING LABEL */}
-                      <span className="absolute top-[0.125rem] left-3 pt-[0.3rem] pl-[1rem] text-[0.55rem] text-[var(--border-color)]">
-                        Description
-                      </span>
+                        {isEditingDescription ? (
+                          <input
+                            type="text"
+                            value={selectedCatalog?.description}
+                            onBlur={handleBlur(setIsEditingDescription)}
+                            onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
+                            className="mt-[0.1rem] w-full border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] outline-none"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => setIsEditingDescription(true)}
+                            className="mt-[0.1rem] w-full cursor-pointer text-[0.65rem] text-[var(--primary-color)]"
+                          >
+                            {selectedCatalog?.description}
+                          </div>
+                        )}
+                      </fieldset>
                     </div>
                   </div>
                 </div>
@@ -496,7 +522,7 @@ const CatalogManager = () => {
             </div>
 
             {/* Middle Table */}
-            <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.2rem] border-[0.1rem] border-[var(--primary-light-grey)] bg-white p-[0rem]">
+            <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem]">
               {/* ================= TABLE SCROLL CONTAINER ================= */}
               <div className="overflow-y-auto pb-[0.75rem]">
                 <table className="w-full border-collapse border-spacing-0 p-[0rem]">
@@ -623,17 +649,17 @@ const CatalogManager = () => {
 
             {/* RIGHT BOX */}
             <div className="relative mb-[2rem] flex h-full flex-col gap-[1rem] rounded-[0.2rem] border-[0rem] bg-white p-[0rem]">
-              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
+              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
                 {/* ================= TOP BAR ================= */}
-                <div className="m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
+                <div className="sticky top-[0rem] m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
                   {/* DROPDOWN */}
-                  <div className="relative inline-flex items-center">
+                  <div className="relative sticky top-[0rem] inline-flex items-center">
                     <select
                       onFocus={() => setOpen(true)}
                       onBlur={() => setOpen(false)}
                       value={selectedMaterialType}
                       onChange={(e) => setSelectedMaterialType(e.target.value)}
-                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] pr-[1.5rem] pl-[0.4rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent"
+                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none overflow-y-auto rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] pr-[1.5rem] pl-[0.4rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.45rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] [&::-webkit-scrollbar-track]:bg-transparent"
                     >
                       {materialTypes.map((type) => (
                         <option key={type} value={type}>
@@ -650,7 +676,7 @@ const CatalogManager = () => {
                   </div>
 
                   {/* SEARCH */}
-                  <div className="relative flex items-center">
+                  <div className="relative sticky top-[0rem] flex items-center">
                     <svg
                       className="pointer-events-none absolute right-3 h-[1.0625rem] p-[0rem] pb-[0.125rem] pl-[0.1875rem] text-[#392579]/50"
                       viewBox="0 0 24 24"
@@ -672,7 +698,13 @@ const CatalogManager = () => {
                 </div>
 
                 {/* ================= TABLE ================= */}
-                <div className="h-full w-full overflow-y-auto bg-transparent p-[0rem] pb-[0.75rem] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--table-title-border-color)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--toggle-button-border-color)] [&::-webkit-scrollbar-track]:bg-transparent">
+                <div
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'var(--scrollbar-color-2) transparent',
+                  }}
+                  className="h-full max-h-[59vh] w-full max-w-[31.05rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
+                >
                   <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
                     {/* ================= TABLE HEADER ================= */}
                     <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
@@ -713,7 +745,7 @@ const CatalogManager = () => {
                               draggable
                               onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                               onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-table-hover)] ${
                                 selectedMaterialId === row.id
                                   ? 'bg-[var(--primary-hover)]'
                                   : 'bg-[var(--primary-white)]'

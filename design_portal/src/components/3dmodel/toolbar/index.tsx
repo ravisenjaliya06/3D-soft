@@ -515,23 +515,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   {furnitureTools.map(({ option, icon }) => (
                     <div
                       key={option}
-                      className={styles.furnitureItemslist}
+                      className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''}`}
                       onClick={() => handleFurnitureCategoryClick(option)}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.activegroup_tools}>
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
+
                       <span>{option}</span>
+
                       <img
-                        src={assets.down_arrow}
+                        src={assets.left_arrow}
                         alt=""
+                        className={styles.arrow}
                         style={{
                           transform:
                             selectedFurnitureCategory === option
-                              ? 'rotate(90deg)'
-                              : 'rotate(270deg)',
-                          transition: 'transform 0.3s ease',
+                              ? 'rotate(180deg)'
+                              : 'rotate(0deg)',
                         }}
                       />
                     </div>
@@ -556,11 +558,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   onClick={() => setSelectedFurnitureCategory(null)}
                 />
               </div>
-              <img
-                src={assets.tool_part_line}
-                className={styles.active_tool_part_line}
-                alt="active group"
-              />
               <div className={styles.searchWrapper}>
                 <img src={assets.searchIcon} alt="search" className={styles.searchIcon} />
                 <input
@@ -572,6 +569,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
                   }}
                 />
               </div>
+              <img
+                src={assets.tool_part_line}
+                className={styles.active_tool_part_liness}
+                alt="active group"
+              />
             </div>
             <div className={styles.submenuContent}>
               {getFilteredCabinetItems(selectedFurnitureCategory).map((item) => (
