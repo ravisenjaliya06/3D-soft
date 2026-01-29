@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import commonService from '@/services/CommonService';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import { Design } from './interface';
+import { set } from 'immutable';
 
 interface NestingSheet {
   id: string;
@@ -69,6 +70,21 @@ const Mes = () => {
       setError(null);
       setSelectedDesign(design);
       
+      // First, trigger nesting API call
+      try {
+        const nestingResponse: { status: number } = await commonService.post(
+          API_ENDPOINT.CREATE_DESIGN_NESTING(design.id),
+          {}
+        );
+        
+        if (nestingResponse.status !== 200) {
+          console.warn('Nesting API returned non-200 status:', nestingResponse.status);
+        }
+      } catch (nestingErr) {
+        console.error('Error triggering nesting:', nestingErr);
+      }
+      
+      // Then fetch the sheets
       const response: { status: number; data: NestingSheet[] } = await commonService.get(
         API_ENDPOINT.GET_NESTING_SHEETS(design.id)
       );
@@ -131,7 +147,8 @@ const Mes = () => {
   };
 
   const handleFileDownload = (file: NestingFile) => {
-    const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${file.file_path}`;
+    const filePath = file.file_path.replace('umaboy', '');
+    const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${filePath}`;
     const a = document.createElement('a');
     a.href = fileUrl;
     a.download = file.file_name;
