@@ -168,7 +168,7 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
       },
       {
         id: 'save',
-        icon: assets.save,
+        icon: assets.saveHelper,
         title: 'Save to library',
         onClick: handleSave,
       },
