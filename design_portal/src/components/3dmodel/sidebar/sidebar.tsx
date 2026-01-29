@@ -131,12 +131,6 @@ const Sidebar: React.FC = () => {
     }
   }, [isQuickHideActive]);
 
-  useEffect(() => {
-    if (colorInputRef.current) {
-      colorInputRef.current.style.backgroundColor = selectedColor;
-    }
-  }, []);
-
   /** object updater ref */
   useEffect(() => {
     updateObjectRef.current = new UpdateObjectInScene(scene, dispatch);
@@ -2315,7 +2309,6 @@ const Sidebar: React.FC = () => {
                         >
                           <input
                             type="color"
-                            value={selectedColor}
                             disabled
                             style={{
                               position: 'absolute',
