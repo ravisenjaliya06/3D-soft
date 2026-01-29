@@ -70,6 +70,7 @@ const Sidebar: React.FC = () => {
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
   const [textureData, setTextureData] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(40);
+  const [textureSearchQuery, setTextureSearchQuery] = useState('');
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
@@ -207,15 +208,30 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // Filter textures based on search query
+  const filteredTextures = textureData.filter((texture) => {
+    if (!textureSearchQuery.trim()) return true;
+    const query = textureSearchQuery.toLowerCase();
+    return (
+      texture.name?.toLowerCase().includes(query) ||
+      texture.option?.toLowerCase().includes(query)
+    );
+  });
+
   const handleLoadMore = () => {
     setVisibleCount((prev) => {
       const newCount = prev + LOAD_MORE_INCREMENT;
-      return Math.min(newCount, textureData.length);
+      return Math.min(newCount, filteredTextures.length);
     });
   };
 
   // Check if there are more textures to load
-  const hasMoreTextures = visibleCount < textureData.length;
+  const hasMoreTextures = visibleCount < filteredTextures.length;
+
+  // Reset visible count when search query changes
+  useEffect(() => {
+    setVisibleCount(LOAD_MORE_INCREMENT);
+  }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
@@ -2358,6 +2374,21 @@ const Sidebar: React.FC = () => {
                     {/* Texture List */}
                     {isTextureListOpen && (
                       <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                        {/* Search Field */}
+                        <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
+                          <input
+                            type="text"
+                            placeholder="Search textures..."
+                            value={textureSearchQuery}
+                            onChange={(e) => setTextureSearchQuery(e.target.value)}
+                            className="w-[9.2rem] font-[comfortaa] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                          />
+                          {textureSearchQuery && (
+                            <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                              {filteredTextures.length} result{filteredTextures.length !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
                         {/* Scrollable grid area */}
                         <div
                           className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
@@ -2374,33 +2405,44 @@ const Sidebar: React.FC = () => {
                                   />
                                 </div>
 
-                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
                                   Add New Texture
                                 </span>
                               </button>
                             </div>
 
-                            {textureData.slice(0, visibleCount).map((m, idx) => (
-                              <div
-                                key={`${m.option}-${idx}`}
-                                className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                onClick={() => handleTextureSelect(m.image)}
-                              >
-                                <img
-                                  src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
-                                  alt={m.name}
-                                  className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
-                                />
-
-                                <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
-
-                                <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                  <span className="text-[0.5rem] font-semibold text-white">
-                                    {m.name}
-                                  </span>
-                                </div>
+                            {filteredTextures.length === 0 ? (
+                              <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
+                                <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                  No textures found
+                                </span>
+                                <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
+                                  Try a different search term
+                                </span>
                               </div>
-                            ))}
+                            ) : (
+                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
+                                <div
+                                  key={`${m.option}-${idx}`}
+                                  className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                  onClick={() => handleTextureSelect(m.image)}
+                                >
+                                  <img
+                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
+                                    alt={m.name}
+                                    className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
+                                  />
+
+                                  <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
+
+                                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                    <span className="text-[0.5rem] font-semibold text-white">
+                                      {m.name}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
 
@@ -2411,7 +2453,7 @@ const Sidebar: React.FC = () => {
                               className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
                               onClick={handleLoadMore}
                             >
-                              Load More
+                              Load More ({filteredTextures.length - visibleCount} remaining)
                               <div className="flex h-[1rem] w-[1rem] items-center justify-center p-[0rem]">
                                 <img src={assets.loadMore} alt="Load More" />
                               </div>
