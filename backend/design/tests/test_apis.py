@@ -627,13 +627,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         """Test POST /catalogs/ attaches materials to catalogs"""
         payload = {
             "design_id": str(self.design.id),
-            "items": [
-                {
-                    "id": "main1",
-                    "name": "Main Cabinet",
-                    "type": "Cabinet"
-                }
-            ],
+            "items": [{"id": "main1", "name": "Main Cabinet", "type": "Cabinet"}],
         }
 
         response = self.client.post(
@@ -651,13 +645,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         """Test POST /catalogs/ handles nonexistent materials gracefully"""
         payload = {
             "design_id": str(self.design.id),
-            "items": [
-                {
-                    "id": "main1",
-                    "name": "Main Cabinet",
-                    "type": "Cabinet"
-                }
-            ],
+            "items": [{"id": "main1", "name": "Main Cabinet", "type": "Cabinet"}],
         }
 
         response = self.client.post(

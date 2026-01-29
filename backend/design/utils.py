@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 
 # App imports
 from design.constant import IS_MAIN
-from design.models import Design, DesignSetting, DesignCatalog, CatalogTypeChoices
+from design.models import CatalogTypeChoices, Design, DesignCatalog, DesignSetting
 from umaboy.models import Organization
 
 

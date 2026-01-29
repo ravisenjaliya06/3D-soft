@@ -1,6 +1,8 @@
 # Python imports
 import json
+import logging
 import os
+import traceback
 from typing import Any, Dict
 
 # Django imports
@@ -26,27 +28,26 @@ from rest_framework.viewsets import ModelViewSet
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import (
+    CatalogTypeChoices,
     Design,
     DesignCatalog,
     DesignSetting,
     DesignVersion,
-    Organization,
-    CatalogTypeChoices,
-    NestingSheet,
     NestingFile,
+    NestingSheet,
+    Organization,
 )
 from design.nest import nest
 from design.serializers import (
     DesignSerializer,
     DesignSettingSerializer,
     DesignVersionSerializer,
-    NestingItemSerializer,
+    NestingFileSerializer,
+    NestingSheetSerializer,
     SceneGetSerializer,
     ScenePayloadSerializer,
-    NestingSheetSerializer,
-    NestingFileSerializer,
 )
-from design.utils import group_catalogs_as_lists, parse_design_data, parse_catalog_data
+from design.utils import group_catalogs_as_lists, parse_catalog_data
 from umaboy.constant import DELETE, GET, POST, PUT
 from user.permissions import Designer
 
@@ -214,19 +215,21 @@ def create_excel_for_nesting(nesting_data: dict, excel_file_path: str) -> str:
     for item_id, item in nesting_data.items():
         grooves_count = len(item.get("grooves", []))
         minifix_holes_count = len(item.get("minifix_holes", []))
-        
-        rows.append({
-            "ID": item_id,
-            "Object": json.dumps(item, default=str),
-            "Name": item.get("name", ""),
-            "Type": item.get("type", ""),
-            "Width (mm)": item.get("width", 0),
-            "Height (mm)": item.get("height", 0),
-            "Depth (mm)": item.get("depth", 0),
-            "Grooves Count": grooves_count,
-            "Minifix Holes Count": minifix_holes_count,
-        })
-    
+
+        rows.append(
+            {
+                "ID": item_id,
+                "Object": json.dumps(item, default=str),
+                "Name": item.get("name", ""),
+                "Type": item.get("type", ""),
+                "Width (mm)": item.get("width", 0),
+                "Height (mm)": item.get("height", 0),
+                "Depth (mm)": item.get("depth", 0),
+                "Grooves Count": grooves_count,
+                "Minifix Holes Count": minifix_holes_count,
+            }
+        )
+
     df = pd.DataFrame(rows)
     df.to_excel(excel_file_path, index=False)
     return excel_file_path
@@ -245,17 +248,13 @@ class NestAPIViewset(ModelViewSet):
             id=design_id, organization=request.user.selected_organization
         ).first()
         if not design:
-            return Response(
-                {"error": "Design not found"}, status=HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
 
         # Get version_id from query params if provided
         version_id = request.query_params.get("version_id")
         version = None
         if version_id:
-            version = DesignVersion.objects.filter(
-                id=version_id, design=design
-            ).first()
+            version = DesignVersion.objects.filter(id=version_id, design=design).first()
         else:
             # Get latest version
             version = (
@@ -296,11 +295,15 @@ class NestAPIViewset(ModelViewSet):
 
         if not design_setting:
             design_setting = DesignSetting.objects.filter(
-            design=None, organization=request.user.selected_organization
-        ).first()
+                design=None, organization=request.user.selected_organization
+            ).first()
 
-        main_sheet_width = design_setting.sheet_width if design_setting else NESTING_SHEET_WIDTH
-        main_sheet_height = design_setting.sheet_height if design_setting else NESTING_SHEET_HEIGHT
+        main_sheet_width = (
+            design_setting.sheet_width if design_setting else NESTING_SHEET_WIDTH
+        )
+        main_sheet_height = (
+            design_setting.sheet_height if design_setting else NESTING_SHEET_HEIGHT
+        )
 
         # Normalize data for nesting
         normalized = {}
@@ -328,7 +331,7 @@ class NestAPIViewset(ModelViewSet):
 
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")
         create_excel_for_nesting(parsed_data, excel_file_path)
-        
+
         # Save Excel file to database
         if os.path.exists(excel_file_path):
             NestingFile.objects.create(
@@ -354,7 +357,7 @@ class NestAPIViewset(ModelViewSet):
         sheet_number = data.get("sheet_number", 1)
 
         base_path = f"umaboy/media/output/{design_id}"
-        
+
         if format_type == "pdf":
             file_path = f"{base_path}/nesting.pdf"
         elif format_type == "xlsx":
@@ -462,6 +465,7 @@ class NestingSheetViewSet(ModelViewSet):
     """
     API ViewSet for retrieving nesting sheets and their files.
     """
+
     permission_classes = [IsAuthenticated]
     serializer_class = NestingSheetSerializer
     http_method_names = [GET]
@@ -489,12 +493,10 @@ class NestingSheetViewSet(ModelViewSet):
         ).first()
 
         if not design:
-            return Response(
-                {"error": "Design not found"}, status=HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
 
         sheets = self.get_queryset().filter(design=design)
-        
+
         # If no sheets exist, trigger nesting automatically
         if not sheets.exists():
             try:
@@ -502,30 +504,31 @@ class NestingSheetViewSet(ModelViewSet):
                 nesting_viewset = NestAPIViewset()
                 nesting_viewset.request = request
                 nesting_response = nesting_viewset.nesting(request, design_id)
-                
+
                 # If nesting was successful, fetch sheets again
                 if nesting_response.status_code == HTTP_200_OK:
                     sheets = self.get_queryset().filter(design=design)
                 else:
                     # If nesting failed, return the error
                     return nesting_response
-            except Exception as e:
+            except (ValueError, AttributeError, KeyError, TypeError, OSError) as e:
                 # If nesting fails, still try to return existing sheets (might be empty)
-                import traceback
-                print(f"Error triggering nesting: {e}")
                 traceback.print_exc()
-        
+                logging.error("Nesting failed: %s", e)
+
         serializer = self.serializer_class(sheets, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
 
-    def retrieve(self: "NestingSheetViewSet", request: Request, design_id: str) -> Response:
+    def retrieve(
+        self: "NestingSheetViewSet", request: Request, design_id: str
+    ) -> Response:
         """
         Get a specific sheet by design_id and sheet_number.
         Query params: sheet_number (required)
         """
         if not design_id:
             design_id = request.query_params.get("design_id")
-        
+
         sheet_number = request.query_params.get("sheet_number")
         if not sheet_number:
             return Response(
@@ -546,18 +549,14 @@ class NestingSheetViewSet(ModelViewSet):
         ).first()
 
         if not design:
-            return Response(
-                {"error": "Design not found"}, status=HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
 
-        sheet = self.get_queryset().filter(
-            design=design, sheet_number=sheet_number
-        ).first()
+        sheet = (
+            self.get_queryset().filter(design=design, sheet_number=sheet_number).first()
+        )
 
         if not sheet:
-            return Response(
-                {"error": "Sheet not found"}, status=HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Sheet not found"}, status=HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(sheet)
         return Response(serializer.data, status=HTTP_200_OK)
@@ -567,6 +566,7 @@ class NestingFileViewSet(ModelViewSet):
     """
     API ViewSet for retrieving nesting files.
     """
+
     permission_classes = [IsAuthenticated]
     serializer_class = NestingFileSerializer
     http_method_names = [GET]
@@ -593,9 +593,7 @@ class NestingFileViewSet(ModelViewSet):
         ).first()
 
         if not design:
-            return Response(
-                {"error": "Design not found"}, status=HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
 
         files = self.get_queryset().filter(design=design)
 

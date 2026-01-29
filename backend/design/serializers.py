@@ -10,7 +10,14 @@ from django.db import transaction
 from rest_framework import serializers
 
 # App imports
-from design.models import Design, DesignCatalog, DesignSetting, DesignVersion, NestingSheet, NestingFile
+from design.models import (
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+    NestingFile,
+    NestingSheet,
+)
 from design.utils import create_design_settings
 from material.models import Material
 from material.serializers import MaterialSerializer
@@ -87,7 +94,7 @@ class SceneGetSerializer(serializers.Serializer):
     data = serializers.DictField(required=False)
 
     def _serialize_materials_without_cnc(
-        self: "SceneGetSerializer", materials
+        self: "SceneGetSerializer", materials: Material
     ) -> list:
         """
         Serialize materials excluding CNC-related fields from properties.
@@ -269,7 +276,7 @@ class NestingFileSerializer(serializers.ModelSerializer):
 
 class NestingSheetSerializer(serializers.ModelSerializer):
     files = NestingFileSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = NestingSheet
         fields = [

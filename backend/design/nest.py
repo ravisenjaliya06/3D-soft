@@ -1,11 +1,12 @@
 # Python imports
+import contextlib
+import logging
 import os
 import secrets
-import zipfile
-import xml.etree.ElementTree as ET
 import shutil
+import zipfile
 from typing import Dict, List, Tuple
-from decimal import Decimal
+from xml.etree import ElementTree
 
 # Django imports
 from django.db import transaction
@@ -18,14 +19,16 @@ from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from svglib.svglib import svg2rlg
 from svgwrite import Drawing
-from svgwrite.shapes import Circle, Rect
+from svgwrite.shapes import Rect
 from svgwrite.text import Text
 
 # App imports
-from design.models import DesignSetting, NestingSheet, NestingFile
+from design.models import DesignSetting, NestingFile, NestingSheet
 
 try:
+    # External imports
     import ezdxf
+
     EZDXF_AVAILABLE = True
 except ImportError:
     EZDXF_AVAILABLE = False
@@ -63,7 +66,7 @@ def generate_gcode(
         else:
             _, x, y, w, h, rid = rect
             is_rotated = False
-        
+
         # Ensure w and h are numeric (defensive check)
         try:
             if not isinstance(w, (int, float)):
@@ -75,7 +78,7 @@ def generate_gcode(
             h = max(0.1, float(h))
         except (ValueError, TypeError, AttributeError):
             continue  # Skip this rectangle if dimensions are invalid
-        
+
         item = files[rid]
 
         if item["type"] == "circle":
@@ -99,7 +102,6 @@ def generate_gcode(
             # Process grooves
             grooves = item.get("grooves", [])
             for groove in grooves:
-                groove_gap = groove.get("groove_gap", 2)
                 groove_dig = groove.get("groove_dig", 1)
                 orientation = groove.get("orientation", "horizontal")
                 groove_x = groove.get("x", 0)
@@ -109,16 +111,24 @@ def generate_gcode(
                     start_x = x + groove_x if groove_x >= 0 else x
                     end_x = x + w + groove_x if groove_x < 0 else x + w
                     groove_y_pos = y + groove_y if groove_y >= 0 else y + h
-                    gcode.append(f"G0 X{start_x:.3f} Y{groove_y_pos:.3f} ; Move to groove start")
-                    gcode.append(f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove")
+                    gcode.append(
+                        f"G0 X{start_x:.3f} Y{groove_y_pos:.3f} ; Move to groove start"
+                    )
+                    gcode.append(
+                        f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove"
+                    )
                     gcode.append(f"G1 X{end_x:.3f} Y{groove_y_pos:.3f} ; Cut groove")
                     gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
                 else:  # vertical
                     start_y = y + groove_y if groove_y >= 0 else y
                     end_y = y + h + groove_y if groove_y < 0 else y + h
                     groove_x_pos = x + groove_x if groove_x >= 0 else x + w
-                    gcode.append(f"G0 X{groove_x_pos:.3f} Y{start_y:.3f} ; Move to groove start")
-                    gcode.append(f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove")
+                    gcode.append(
+                        f"G0 X{groove_x_pos:.3f} Y{start_y:.3f} ; Move to groove start"
+                    )
+                    gcode.append(
+                        f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove"
+                    )
                     gcode.append(f"G1 X{groove_x_pos:.3f} Y{end_y:.3f} ; Cut groove")
                     gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
 
@@ -126,7 +136,7 @@ def generate_gcode(
             minifix_holes = item.get("minifix_holes", [])
             if not minifix_holes:
                 continue  # Skip if no holes
-            
+
             # Process ALL drill holes (DOWEL, SCREW, BOLT_DRILL)
             # Make sure we get ALL holes, not just some
             # IMPORTANT: Use 'hole_item' instead of 'h' to avoid overwriting rectangle height variable
@@ -135,24 +145,24 @@ def generate_gcode(
                 hole_type = hole_item.get("type", "").upper()
                 if hole_type in ["DOWEL", "SCREW", "BOLT_DRILL"]:
                     drill_holes.append(hole_item)
-            
+
             if not drill_holes:
                 continue  # Skip if no drill holes
-            
+
             # Get plank thickness from item data
             # Thickness is the depth dimension (perpendicular to the sheet surface)
             # IMPORTANT: Preserve rectangle dimensions (w, h) before processing holes
             rect_width = float(w)
             rect_height = float(h)
-            
+
             depth_value = item.get("depth", None)
-            
+
             # Calculate fallback thickness (use preserved rectangle dimensions)
             try:
                 fallback_thickness = min(rect_width, rect_height)
             except (ValueError, TypeError):
                 fallback_thickness = 18.0  # Default thickness
-            
+
             # Safely convert to float, handling dict, None, or invalid values
             plank_thickness = None
             try:
@@ -167,7 +177,7 @@ def generate_gcode(
                             if isinstance(val, (int, float)):
                                 plank_thickness = float(val)
                                 break
-                            elif isinstance(val, str):
+                            if isinstance(val, str):
                                 try:
                                     plank_thickness = float(val)
                                     break
@@ -176,30 +186,31 @@ def generate_gcode(
                     # If no numeric value found in dict, use fallback
                     if plank_thickness is None:
                         plank_thickness = fallback_thickness
-                elif isinstance(depth_value, (int, float)):
-                    plank_thickness = float(depth_value)
-                elif isinstance(depth_value, str):
+                elif isinstance(depth_value, (int, float, str)):
                     plank_thickness = float(depth_value)
                 else:
                     # Unknown type, use fallback
                     plank_thickness = fallback_thickness
-            except (ValueError, TypeError, AttributeError) as e:
+            except (ValueError, TypeError, AttributeError):
                 plank_thickness = fallback_thickness  # Fallback to min dimension
-            
+
             # Ensure thickness is positive and valid (final check)
             try:
-                if not isinstance(plank_thickness, (int, float)) or plank_thickness <= 0:
+                if (
+                    not isinstance(plank_thickness, (int, float))
+                    or plank_thickness <= 0
+                ):
                     plank_thickness = fallback_thickness
             except TypeError:
                 plank_thickness = fallback_thickness
-            
-            # Z position for edge drilling: 
+
+            # Z position for edge drilling:
             # When drilling horizontally INTO the edge, the hole center should be at the middle of the thickness
             # For horizontal edge drilling, Z=0 represents the center of the thickness (where holes align)
             # This ensures holes on connecting planks align perfectly with each other
             drill_z_position = 0.0  # Center of thickness (Z=0)
             hole_center_z = 0.0  # Hole center is at middle of thickness (Z=0)
-            
+
             for hole in drill_holes:
                 hole_type = hole.get("type", "")
                 diameter = hole.get("diameter", 0)
@@ -213,11 +224,11 @@ def generate_gcode(
                 # Use preserved rectangle dimensions
                 plank_center_x = x + (rect_width / 2)
                 plank_center_y = y + (rect_height / 2)
-                
+
                 # Get local position (relative to center)
                 local_x_raw = local_pos.get("x", 0)
                 local_y_raw = local_pos.get("y", 0)
-                
+
                 # Account for plank rotation on the sheet
                 # If rotated, swap the local coordinates to match sheet orientation
                 if is_rotated:
@@ -227,7 +238,7 @@ def generate_gcode(
                 else:
                     local_x_on_sheet = local_x_raw
                     local_y_on_sheet = local_y_raw
-                
+
                 # Calculate initial hole position (relative to center)
                 hole_x_center = plank_center_x + local_x_on_sheet
                 hole_y_center = plank_center_y + local_y_on_sheet
@@ -237,8 +248,7 @@ def generate_gcode(
                 # Holes are drilled horizontally INTO the edge/thickness of the panel
                 dir_x_raw = direction.get("x", 0)
                 dir_y_raw = direction.get("y", 0)
-                dir_z_raw = direction.get("z", 0)
-                
+
                 # Account for plank rotation when interpreting direction
                 # Direction vector is in plank's local coordinate system
                 if is_rotated:
@@ -263,77 +273,125 @@ def generate_gcode(
                 # The direction vector tells us which edge and which way to drill
                 # Z position is at the middle of the thickness (where we drill into the edge)
                 # Use comparison to determine dominant direction
-                
+
                 abs_dir_x = abs(dir_x)
                 abs_dir_y = abs(dir_y)
-                
-                if abs_dir_x >= abs_dir_y and abs_dir_x > 0.1:  # Hole on left or right edge (X direction dominant or equal)
+
+                if (
+                    abs_dir_x >= abs_dir_y and abs_dir_x > 0.1
+                ):  # Hole on left or right edge (X direction dominant or equal)
                     # Determine which edge based on direction
                     # Position hole Y coordinate on the edge (use the Y position from localPosition2D)
                     hole_y = hole_y_center  # Y position along the edge
                     # Clamp Y to be within plank bounds
                     hole_y = max(y, min(y + rect_height, hole_y))
-                    
-                    if dir_x < 0:  # Left edge - drill from left edge moving right (+X) into panel
+
+                    if (
+                        dir_x < 0
+                    ):  # Left edge - drill from left edge moving right (+X) into panel
                         edge_x = x
                         drill_start_x = edge_x
                         drill_end_x = edge_x + actual_depth
                         # Position at left edge, at hole Y position, at center of thickness
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} hole")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} hole"
+                        )
                         # Drill straight in (move in +X direction into the panel) at hole center Z
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel")
+                        gcode.append(
+                            f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel"
+                        )
                         # Select YZ plane (G19) for circular interpolation perpendicular to drill direction
-                        gcode.append(f"G19 ; Select YZ plane for circular interpolation")
+                        gcode.append("G19 ; Select YZ plane for circular interpolation")
                         # Cut circle in YZ plane (perpendicular to drill direction) at hole center Z
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
+                        gcode.append(
+                            f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
                         # Cut full circle using G2 in YZ plane (J=radius in Y, K=0 in Z)
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     else:  # Right edge - drill from right edge moving left (-X) into panel
                         edge_x = x + rect_width
                         drill_start_x = edge_x
                         drill_end_x = edge_x - actual_depth
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} hole")
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G19 ; Select YZ plane")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} hole"
+                        )
+                        gcode.append(
+                            f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G19 ; Select YZ plane")
+                        gcode.append(
+                            f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     gcode.append(f"G0 Z{safe_height:.3f} ; Retract to safe height")
-                    
-                elif abs_dir_y > abs_dir_x and abs_dir_y > 0.1:  # Hole on top or bottom edge (Y direction dominant)
+
+                elif (
+                    abs_dir_y > abs_dir_x and abs_dir_y > 0.1
+                ):  # Hole on top or bottom edge (Y direction dominant)
                     # Determine which edge
                     # Position hole X coordinate on the edge (use the X position from localPosition2D)
                     hole_x = hole_x_center  # X position along the edge
                     # Clamp X to be within plank bounds
                     hole_x = max(x, min(x + rect_width, hole_x))
-                    
-                    if dir_y < 0:  # Bottom edge - drill from bottom edge moving up (+Y) into panel
+
+                    if (
+                        dir_y < 0
+                    ):  # Bottom edge - drill from bottom edge moving up (+Y) into panel
                         edge_y = y
                         drill_start_y = edge_y
                         drill_end_y = edge_y + actual_depth
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} hole")
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} hole"
+                        )
+                        gcode.append(
+                            f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel"
+                        )
                         # Select XZ plane (G18) for circular interpolation
-                        gcode.append(f"G18 ; Select XZ plane for circular interpolation")
+                        gcode.append("G18 ; Select XZ plane for circular interpolation")
                         # Cut circle in XZ plane at hole center Z
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     else:  # Top edge - drill from top edge moving down (-Y) into panel
                         edge_y = y + rect_height
                         drill_start_y = edge_y
                         drill_end_y = edge_y - actual_depth
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} hole")
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G18 ; Select XZ plane")
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} hole"
+                        )
+                        gcode.append(
+                            f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G18 ; Select XZ plane")
+                        gcode.append(
+                            f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     gcode.append(f"G0 Z{safe_height:.3f} ; Retract to safe height")
                 else:
                     # Fallback: if direction unclear, try to determine from position
@@ -343,9 +401,11 @@ def generate_gcode(
                     dist_to_right = abs(hole_x_center - (x + rect_width))
                     dist_to_bottom = abs(hole_y_center - y)
                     dist_to_top = abs(hole_y_center - (y + rect_height))
-                    
-                    min_dist = min(dist_to_left, dist_to_right, dist_to_bottom, dist_to_top)
-                    
+
+                    min_dist = min(
+                        dist_to_left, dist_to_right, dist_to_bottom, dist_to_top
+                    )
+
                     # Determine closest edge and drill from there
                     if min_dist == dist_to_left:
                         # Left edge
@@ -355,13 +415,23 @@ def generate_gcode(
                         # Position hole Y coordinate on the edge
                         hole_y = hole_y_center
                         hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} hole (auto-detected)")
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G19 ; Select YZ plane")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} hole (auto-detected)"
+                        )
+                        gcode.append(
+                            f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G19 ; Select YZ plane")
+                        gcode.append(
+                            f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     elif min_dist == dist_to_right:
                         # Right edge
                         edge_x = x + rect_width
@@ -370,13 +440,23 @@ def generate_gcode(
                         # Position hole Y coordinate on the edge
                         hole_y = hole_y_center
                         hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} hole (auto-detected)")
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G19 ; Select YZ plane")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} hole (auto-detected)"
+                        )
+                        gcode.append(
+                            f"G1 X{drill_end_x:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G19 ; Select YZ plane")
+                        gcode.append(
+                            f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     elif min_dist == dist_to_bottom:
                         # Bottom edge
                         edge_y = y
@@ -385,13 +465,23 @@ def generate_gcode(
                         # Position hole X coordinate on the edge
                         hole_x = hole_x_center
                         hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} hole (auto-detected)")
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G18 ; Select XZ plane")
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} hole (auto-detected)"
+                        )
+                        gcode.append(
+                            f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G18 ; Select XZ plane")
+                        gcode.append(
+                            f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     else:  # Top edge
                         edge_y = y + rect_height
                         drill_start_y = edge_y
@@ -399,13 +489,23 @@ def generate_gcode(
                         # Position hole X coordinate on the edge
                         hole_x = hole_x_center
                         hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} hole (auto-detected)")
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel")
-                        gcode.append(f"G18 ; Select XZ plane")
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle")
-                        gcode.append(f"G17 ; Restore XY plane")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} hole (auto-detected)"
+                        )
+                        gcode.append(
+                            f"G1 Y{drill_end_y:.3f} F{plunge_rate} ; Drill into panel"
+                        )
+                        gcode.append("G18 ; Select XZ plane")
+                        gcode.append(
+                            f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f} ; Move to circle start"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate} ; Cut half circle"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate} ; Complete circle"
+                        )
+                        gcode.append("G17 ; Restore XY plane")
                     gcode.append(f"G0 Z{safe_height:.3f} ; Retract to safe height")
 
     gcode += [
@@ -482,7 +582,7 @@ def generate_dwg_file(
             else:
                 _, x, y, w, h, rid = rect
                 is_rotated = False
-            
+
             item = files[rid]
 
             # Draw rectangle
@@ -500,16 +600,15 @@ def generate_dwg_file(
             # Draw minifix holes (exclude CAM)
             minifix_holes = item.get("minifix_holes", [])
             drill_holes = [h for h in minifix_holes if h.get("type") != "CAM"]
-            
+
             for hole in drill_holes:
                 diameter = hole.get("diameter", 0)
                 local_pos = hole.get("localPosition2D", {"x": 0, "y": 0})
-                direction = hole.get("direction", {"x": 0, "y": 0, "z": 0})
 
                 # localPosition2D is relative to plank CENTER
                 plank_center_x = x + (w / 2)
                 plank_center_y = y + (h / 2)
-                
+
                 # Account for rotation
                 if is_rotated:
                     local_x = local_pos.get("y", 0)
@@ -517,7 +616,7 @@ def generate_dwg_file(
                 else:
                     local_x = local_pos.get("x", 0)
                     local_y = local_pos.get("y", 0)
-                
+
                 hole_x = plank_center_x + local_x
                 hole_y = plank_center_y + local_y
                 radius = diameter / 2
@@ -526,8 +625,8 @@ def generate_dwg_file(
                 msp.add_circle((hole_x, hole_y), radius)
 
         doc.saveas(output_file)
-    except Exception:
-        pass  # Skip if error occurs
+    except (IOError, OSError, ValueError, AttributeError) as e:
+        logging.warning("Failed to generate DWG file: %s", e)
 
 
 def generate_xml_file(
@@ -540,35 +639,34 @@ def generate_xml_file(
     """
     Generate XML file for nesting data.
     """
-    root = ET.Element("nesting")
+    root = ElementTree.Element("nesting")
     root.set("sheet_number", str(sheet_number))
 
-    sheet_elem = ET.SubElement(root, "sheet")
+    sheet_elem = ElementTree.SubElement(root, "sheet")
     sheet_elem.set("width", str(sheet_dims[0]))
     sheet_elem.set("height", str(sheet_dims[1]))
 
-    parts_elem = ET.SubElement(root, "parts")
+    parts_elem = ElementTree.SubElement(root, "parts")
 
     for i, rect in enumerate(rectangles):
         # Handle both formats
         if len(rect) == 7:
-            _, x, y, w, h, rid, is_rotated = rect
+            _, x, y, w, h, rid, _ = rect
         else:
             _, x, y, w, h, rid = rect
-            is_rotated = False
-        
+
         item = files[rid]
 
-        part_elem = ET.SubElement(parts_elem, "part")
+        part_elem = ElementTree.SubElement(parts_elem, "part")
         part_elem.set("id", str(i + 1))
         part_elem.set("name", item.get("name", ""))
         part_elem.set("type", item.get("type", "rectangle"))
 
-        position_elem = ET.SubElement(part_elem, "position")
+        position_elem = ElementTree.SubElement(part_elem, "position")
         position_elem.set("x", str(x))
         position_elem.set("y", str(y))
 
-        dimensions_elem = ET.SubElement(part_elem, "dimensions")
+        dimensions_elem = ElementTree.SubElement(part_elem, "dimensions")
         dimensions_elem.set("width", str(w))
         dimensions_elem.set("height", str(h))
         dimensions_elem.set("depth", str(item.get("depth", 0)))
@@ -576,9 +674,9 @@ def generate_xml_file(
         # Add grooves
         grooves = item.get("grooves", [])
         if grooves:
-            grooves_elem = ET.SubElement(part_elem, "grooves")
+            grooves_elem = ElementTree.SubElement(part_elem, "grooves")
             for groove in grooves:
-                groove_elem = ET.SubElement(grooves_elem, "groove")
+                groove_elem = ElementTree.SubElement(grooves_elem, "groove")
                 groove_elem.set("type", str(groove.get("type", "")))
                 groove_elem.set("orientation", str(groove.get("orientation", "")))
                 groove_elem.set("x", str(groove.get("x", 0)))
@@ -587,9 +685,9 @@ def generate_xml_file(
         # Add minifix holes
         minifix_holes = item.get("minifix_holes", [])
         if minifix_holes:
-            holes_elem = ET.SubElement(part_elem, "minifix_holes")
+            holes_elem = ElementTree.SubElement(part_elem, "minifix_holes")
             for hole in minifix_holes:
-                hole_elem = ET.SubElement(holes_elem, "hole")
+                hole_elem = ElementTree.SubElement(holes_elem, "hole")
                 hole_elem.set("type", str(hole.get("type", "")))
                 hole_elem.set("diameter", str(hole.get("diameter", 0)))
                 hole_elem.set("depth", str(hole.get("depth", 0)))
@@ -597,12 +695,10 @@ def generate_xml_file(
                 hole_elem.set("local_x", str(local_pos.get("x", 0)))
                 hole_elem.set("local_y", str(local_pos.get("y", 0)))
 
-    tree = ET.ElementTree(root)
-    # Indent is available in Python 3.9+, use try-except for compatibility
-    try:
-        ET.indent(tree, space="  ")
-    except AttributeError:
-        pass  # Python < 3.9 doesn't have indent
+    tree = ElementTree.ElementTree(root)
+    # Indent is available in Python 3.9+, use contextlib.suppress for compatibility
+    with contextlib.suppress(AttributeError):
+        ElementTree.indent(tree, space="  ")  # Python < 3.9 doesn't have indent
     tree.write(output_file, encoding="utf-8", xml_declaration=True)
 
 
@@ -641,13 +737,13 @@ def try_packing(
         original_item = remaining_files.get(rid, {})
         original_w = original_item.get("width", w)
         original_h = original_item.get("height", h)
-        
+
         # Determine if rotated (dimensions swapped)
-        is_rotated = (abs(w - original_h) < 0.1 and abs(h - original_w) < 0.1)
-        
+        is_rotated = abs(w - original_h) < 0.1 and abs(h - original_w) < 0.1
+
         # Store rotation info in extended tuple: (bin, x, y, w, h, rid, rotated)
         processed_rectangles.append((bin_id, x, y, w, h, rid, is_rotated))
-    
+
     packed_ids = {rect[5] for rect in processed_rectangles}
     unplaced = {
         file_id: file_data
@@ -746,14 +842,22 @@ def draw_sheet_to_svg(
         else:
             _, x, y, w, h, rid = rect
             is_rotated = False
-        
+
         item = files[rid]
 
         grooves = item.get("grooves", [])
         minifix_holes = item.get("minifix_holes", [])
         # Process ALL drill holes (DOWEL, SCREW, BOLT_DRILL), exclude CAM
-        drill_holes = [h for h in minifix_holes if h.get("type") in ["DOWEL", "SCREW", "BOLT_DRILL"]] if minifix_holes else []
-        
+        drill_holes = (
+            [
+                h
+                for h in minifix_holes
+                if h.get("type") in ["DOWEL", "SCREW", "BOLT_DRILL"]
+            ]
+            if minifix_holes
+            else []
+        )
+
         color = "lightblue" if item["type"] == "rectangle" else "lightgrey"
         x_scaled = x * scale + margin_left
         y_scaled = y * scale + margin_top
@@ -902,15 +1006,15 @@ def draw_sheet_to_svg(
         for hole in drill_holes:
             local_pos = hole.get("localPosition2D", {"x": 0, "y": 0})
             direction = hole.get("direction", {"x": 0, "y": 0, "z": 0})
-            
+
             # localPosition2D is relative to plank CENTER
             plank_center_x_scaled = x_scaled + (w_scaled / 2)
             plank_center_y_scaled = y_scaled + (h_scaled / 2)
-            
+
             # Get local position (relative to center)
             local_x_raw = local_pos.get("x", 0)
             local_y_raw = local_pos.get("y", 0)
-            
+
             # Account for plank rotation on sheet (same logic as G-code)
             if is_rotated:
                 local_x_on_sheet = local_y_raw
@@ -918,7 +1022,7 @@ def draw_sheet_to_svg(
             else:
                 local_x_on_sheet = local_x_raw
                 local_y_on_sheet = local_y_raw
-            
+
             # Calculate absolute hole position on sheet (scaled) - relative to center
             hole_x_center_scaled = plank_center_x_scaled + (local_x_on_sheet * scale)
             hole_y_center_scaled = plank_center_y_scaled + (local_y_on_sheet * scale)
@@ -926,7 +1030,7 @@ def draw_sheet_to_svg(
             # Determine which edge the hole is on based on direction
             dir_x_raw = direction.get("x", 0)
             dir_y_raw = direction.get("y", 0)
-            
+
             # Account for rotation when determining edge (same logic as G-code)
             if is_rotated:
                 dir_x = dir_y_raw
@@ -934,20 +1038,26 @@ def draw_sheet_to_svg(
             else:
                 dir_x = dir_x_raw
                 dir_y = dir_y_raw
-            
+
             abs_dir_x = abs(dir_x)
             abs_dir_y = abs(dir_y)
-            
+
             # Determine edge position and draw "L" shape
             l_size = 2 * scale  # Size of L shape
-            hole_color = "blue" if hole.get("type") == "SCREW" else "orange" if hole.get("type") == "DOWEL" else "red"
-            
-            if abs_dir_x >= abs_dir_y and abs_dir_x > 0.1:  # Left or right edge (X direction dominant or equal)
+            hole_color = (
+                "blue"
+                if hole.get("type") == "SCREW"
+                else "orange" if hole.get("type") == "DOWEL" else "red"
+            )
+
+            if (
+                abs_dir_x >= abs_dir_y and abs_dir_x > 0.1
+            ):  # Left or right edge (X direction dominant or equal)
                 # Position hole Y coordinate on the edge (use Y position from localPosition2D)
                 edge_y = hole_y_center_scaled
                 # Clamp Y to be within plank bounds
                 edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-                
+
                 if dir_x < 0:  # Left edge
                     edge_x = x_scaled
                 else:  # Right edge
@@ -969,12 +1079,14 @@ def draw_sheet_to_svg(
                         stroke_width=1.0,
                     )
                 )
-            elif abs_dir_y > abs_dir_x and abs_dir_y > 0.1:  # Top or bottom edge (Y direction dominant)
+            elif (
+                abs_dir_y > abs_dir_x and abs_dir_y > 0.1
+            ):  # Top or bottom edge (Y direction dominant)
                 # Position hole X coordinate on the edge (use X position from localPosition2D)
                 edge_x = hole_x_center_scaled
                 # Clamp X to be within plank bounds
                 edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
-                
+
                 if dir_y < 0:  # Bottom edge
                     edge_y = y_scaled
                 else:  # Top edge
@@ -1002,33 +1114,89 @@ def draw_sheet_to_svg(
                 dist_to_right = abs(hole_x_center_scaled - (x_scaled + w_scaled))
                 dist_to_bottom = abs(hole_y_center_scaled - y_scaled)
                 dist_to_top = abs(hole_y_center_scaled - (y_scaled + h_scaled))
-                
+
                 min_dist = min(dist_to_left, dist_to_right, dist_to_bottom, dist_to_top)
-                
+
                 if min_dist == dist_to_left:
                     edge_x = x_scaled
                     edge_y = hole_y_center_scaled
                     edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-                    dwg.add(dwg.line((edge_x, edge_y - l_size), (edge_x, edge_y + l_size), stroke=hole_color, stroke_width=1.0))
-                    dwg.add(dwg.line((edge_x, edge_y), (edge_x - l_size, edge_y), stroke=hole_color, stroke_width=1.0))
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y - l_size),
+                            (edge_x, edge_y + l_size),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y),
+                            (edge_x - l_size, edge_y),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
                 elif min_dist == dist_to_right:
                     edge_x = x_scaled + w_scaled
                     edge_y = hole_y_center_scaled
                     edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-                    dwg.add(dwg.line((edge_x, edge_y - l_size), (edge_x, edge_y + l_size), stroke=hole_color, stroke_width=1.0))
-                    dwg.add(dwg.line((edge_x, edge_y), (edge_x + l_size, edge_y), stroke=hole_color, stroke_width=1.0))
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y - l_size),
+                            (edge_x, edge_y + l_size),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y),
+                            (edge_x + l_size, edge_y),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
                 elif min_dist == dist_to_bottom:
                     edge_x = hole_x_center_scaled
                     edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
                     edge_y = y_scaled
-                    dwg.add(dwg.line((edge_x - l_size, edge_y), (edge_x + l_size, edge_y), stroke=hole_color, stroke_width=1.0))
-                    dwg.add(dwg.line((edge_x, edge_y), (edge_x, edge_y - l_size), stroke=hole_color, stroke_width=1.0))
+                    dwg.add(
+                        dwg.line(
+                            (edge_x - l_size, edge_y),
+                            (edge_x + l_size, edge_y),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y),
+                            (edge_x, edge_y - l_size),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
                 else:  # Top edge
                     edge_x = hole_x_center_scaled
                     edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
                     edge_y = y_scaled + h_scaled
-                    dwg.add(dwg.line((edge_x - l_size, edge_y), (edge_x + l_size, edge_y), stroke=hole_color, stroke_width=1.0))
-                    dwg.add(dwg.line((edge_x, edge_y), (edge_x, edge_y + l_size), stroke=hole_color, stroke_width=1.0))
+                    dwg.add(
+                        dwg.line(
+                            (edge_x - l_size, edge_y),
+                            (edge_x + l_size, edge_y),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
+                    dwg.add(
+                        dwg.line(
+                            (edge_x, edge_y),
+                            (edge_x, edge_y + l_size),
+                            stroke=hole_color,
+                            stroke_width=1.0,
+                        )
+                    )
 
     # === Table (Right Column) ===
     table_x = 151 - margin_right
@@ -1137,10 +1305,10 @@ def cleanup_output_folder(output_folder: str) -> None:
                         os.unlink(file_path)
                     elif os.path.isdir(file_path):
                         shutil.rmtree(file_path)
-                except Exception as e:
-                    print(f"Failed to delete {file_path}. Reason: {e}")
-        except Exception as e:
-            print(f"Error cleaning up output folder {output_folder}: {e}")
+                except (OSError, PermissionError) as e:
+                    logging.warning("Failed to delete %s. Reason: %s", file_path, e)
+        except (OSError, PermissionError) as e:
+            logging.error("Error cleaning up output folder %s: %s", output_folder, e)
 
 
 def nest(
@@ -1157,7 +1325,7 @@ def nest(
     output_folder = os.path.dirname(output)
     if output_folder:
         cleanup_output_folder(output_folder)
-    
+
     sort_algorithms = [SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE]
     remaining_files = dict(files)
     sheet_number = 1
@@ -1205,7 +1373,7 @@ def nest(
             enclosing_rectangle,
             best_efficiency=best_eff,
         )
-        
+
         # Generate G-code
         gcode_path = f"{os.path.splitext(svg_name)[0]}.gcode"
         generate_gcode(best_rectangles, gcode_path, files)
@@ -1239,19 +1407,21 @@ def nest(
             # Save sheet_data to design_setting
             design_setting.sheet_data = sheet_mapping
             design_setting.save(update_fields=["sheet_data"])
-            
+
             # Delete existing sheets and files for this design to avoid duplicates
             NestingSheet.objects.filter(design=design).delete()
-            
+
             # Create sheets and files in database
             for idx, sheet_info in enumerate(sheet_mapping):
                 sheet_key = list(sheet_info.keys())[0]  # e.g., "sheet1"
                 sheet_num = idx + 1
                 rids = sheet_info[sheet_key]
-                
+
                 # Get efficiency for this sheet
-                efficiency = sheet_efficiencies[idx] if idx < len(sheet_efficiencies) else None
-                
+                efficiency = (
+                    sheet_efficiencies[idx] if idx < len(sheet_efficiencies) else None
+                )
+
                 # Create NestingSheet
                 nesting_sheet = NestingSheet.objects.create(
                     design=design,
@@ -1262,13 +1432,13 @@ def nest(
                     efficiency=efficiency,
                     file_ids=rids,
                 )
-                
+
                 # Create file records for this sheet
                 svg_file = svg_files[idx] if idx < len(svg_files) else None
                 gcode_file = gcode_files[idx] if idx < len(gcode_files) else None
                 dwg_file = f"{os.path.splitext(svg_file)[0]}.dwg" if svg_file else None
                 xml_file = f"{os.path.splitext(svg_file)[0]}.xml" if svg_file else None
-                
+
                 # SVG file
                 if svg_file and os.path.exists(svg_file):
                     NestingFile.objects.create(
@@ -1279,7 +1449,7 @@ def nest(
                         file_name=os.path.basename(svg_file),
                         is_sheet_specific=True,
                     )
-                
+
                 # GCODE file
                 if gcode_file and os.path.exists(gcode_file):
                     NestingFile.objects.create(
@@ -1290,7 +1460,7 @@ def nest(
                         file_name=os.path.basename(gcode_file),
                         is_sheet_specific=True,
                     )
-                
+
                 # DWG file
                 if dwg_file and os.path.exists(dwg_file):
                     NestingFile.objects.create(
@@ -1301,7 +1471,7 @@ def nest(
                         file_name=os.path.basename(dwg_file),
                         is_sheet_specific=True,
                     )
-                
+
                 # XML file
                 if xml_file and os.path.exists(xml_file):
                     NestingFile.objects.create(
@@ -1312,7 +1482,7 @@ def nest(
                         file_name=os.path.basename(xml_file),
                         is_sheet_specific=True,
                     )
-            
+
             # Create PDF and ZIP files (not sheet-specific)
             if pdf_output and os.path.exists(pdf_output):
                 NestingFile.objects.create(
@@ -1323,7 +1493,7 @@ def nest(
                     file_name=os.path.basename(pdf_output),
                     is_sheet_specific=False,
                 )
-            
+
             if zip_output and os.path.exists(zip_output):
                 NestingFile.objects.create(
                     design=design,

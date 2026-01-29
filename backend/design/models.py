@@ -182,6 +182,7 @@ class NestingSheet(models.Model):
     """
     Model to store nesting sheet information.
     """
+
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, primary_key=True, unique=True
     )
@@ -189,13 +190,19 @@ class NestingSheet(models.Model):
         Design, on_delete=models.CASCADE, related_name="nesting_sheets"
     )
     design_setting = models.ForeignKey(
-        DesignSetting, on_delete=models.CASCADE, related_name="nesting_sheets", null=True, blank=True
+        DesignSetting,
+        on_delete=models.CASCADE,
+        related_name="nesting_sheets",
+        null=True,
+        blank=True,
     )
     sheet_number = models.IntegerField()
     width = models.FloatField()
     height = models.FloatField()
     efficiency = models.FloatField(null=True, blank=True)
-    file_ids = models.JSONField(default=list)  # List of catalog IDs (rids) on this sheet
+    file_ids = models.JSONField(
+        default=list
+    )  # List of catalog IDs (rids) on this sheet
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -211,6 +218,7 @@ class NestingFile(models.Model):
     """
     Model to store nesting output files (SVG, GCODE, DWG, XML, PDF, XLSX).
     """
+
     FILE_TYPE_CHOICES = [
         ("svg", "SVG"),
         ("gcode", "GCODE"),
@@ -228,13 +236,18 @@ class NestingFile(models.Model):
         Design, on_delete=models.CASCADE, related_name="nesting_files"
     )
     sheet = models.ForeignKey(
-        NestingSheet, on_delete=models.CASCADE, related_name="files", null=True, blank=True
+        NestingSheet,
+        on_delete=models.CASCADE,
+        related_name="files",
+        null=True,
+        blank=True,
     )
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
     file_path = models.CharField(max_length=500)
     file_name = models.CharField(max_length=255)
     is_sheet_specific = models.BooleanField(
-        default=False, help_text="True if file is specific to a sheet, False if it's for all sheets"
+        default=False,
+        help_text="True if file is specific to a sheet, False if it's for all sheets",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
