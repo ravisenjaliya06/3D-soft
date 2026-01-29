@@ -47,6 +47,9 @@ import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import commonService from '@/services/CommonService';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -57,7 +60,6 @@ const Sidebar: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [textureRotation, setTextureRotation] = useState(0);
-  const [wasLoadMoreClicked, setWasLoadMoreClicked] = useState(false);
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
@@ -67,33 +69,8 @@ const Sidebar: React.FC = () => {
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
-
-  const materialModal = [
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-  ];
+  const [textureData, setTextureData] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(40);
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
@@ -188,6 +165,17 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
+  const getTextures = async () => {
+    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
+    if (response.status === 200) {
+      setTextureData(response.data);
+    }
+  }
+
+  useEffect( () => {
+    getTextures();
+  }, [])
+
   // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
@@ -219,6 +207,16 @@ const Sidebar: React.FC = () => {
       );
     }
   };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => {
+      const newCount = prev + LOAD_MORE_INCREMENT;
+      return Math.min(newCount, textureData.length);
+    });
+  };
+
+  // Check if there are more textures to load
+  const hasMoreTextures = visibleCount < textureData.length;
 
   const updateHandleRotState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
@@ -425,7 +423,10 @@ const Sidebar: React.FC = () => {
   const toggleTextureList = () => {
     /** Toggles the visibility of the texture selection list. */
     setIsTextureListOpen((prev) => {
-      if (!prev) setWasLoadMoreClicked(false);
+      if (!prev) {
+        // Reset visible count when opening texture list
+        setVisibleCount(LOAD_MORE_INCREMENT);
+      }
       return !prev;
     });
   };
@@ -2342,7 +2343,7 @@ const Sidebar: React.FC = () => {
                       <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
                         {/* Scrollable grid area */}
                         <div
-                          className={`flex-1 ${wasLoadMoreClicked ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                          className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
                         >
                           <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                             {/* Add New Texture Button */}
@@ -2362,45 +2363,43 @@ const Sidebar: React.FC = () => {
                               </button>
                             </div>
 
-                            {(wasLoadMoreClicked ? materialModal : materialModal.slice(0, 41)).map(
-                              (m, idx) => (
-                                <div
-                                  key={`${m.option}-${idx}`}
-                                  className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                  onClick={() => handleTextureSelect(m.image)}
-                                >
-                                  {/* Texture Image */}
-                                  <img
-                                    src={m.image}
-                                    alt={m.name}
-                                    className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
-                                  />
+                            {textureData.slice(0, visibleCount).map((m, idx) => (
+                              <div
+                                key={`${m.option}-${idx}`}
+                                className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                onClick={() => handleTextureSelect(m.image)}
+                              >
+                                <img
+                                  src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
+                                  alt={m.name}
+                                  className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
+                                />
 
-                                  {/* Black Semi-Transparent Overlay */}
-                                  <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
+                                <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
 
-                                  {/* Texture Name Display */}
-                                  <div className="absolute inset-0 flex items-center items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 text-center opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                    <span className="items-center justify-center text-center text-[0.5rem] font-semibold text-[white]">
-                                      {m.name}
-                                    </span>
-                                  </div>
+                                <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                  <span className="text-[0.5rem] font-semibold text-white">
+                                    {m.name}
+                                  </span>
                                 </div>
-                              )
-                            )}
+                              </div>
+                            ))}
                           </div>
                         </div>
 
                         {/* Load More Button at bottom */}
-                        {!wasLoadMoreClicked && (
+                        {hasMoreTextures && (
                           <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.6rem]">
                             <button
                               className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                              onClick={() => setWasLoadMoreClicked(true)}
+                              onClick={handleLoadMore}
                             >
                               Load More
-                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded-full border-[0.1rem] border-[var(--primary-color)] p-[0rem]">
-                                <span className="text-[1rem] leading-none">↻</span>
+                              <div className="flex h-[1rem] w-[1rem] items-center justify-center p-[0rem]">
+                                <img
+                                  src={assets.loadMore}
+                                  alt="Load More"
+                                />
                               </div>
                             </button>
                           </div>

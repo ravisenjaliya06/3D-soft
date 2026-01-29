@@ -22,3 +22,5 @@ celerybeat**
 /output.pdf
 /output_sheet_1.svg
 /output_sheet_1.gcode
+/output_sheet**
+

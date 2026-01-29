@@ -96,7 +96,7 @@ const Mes = () => {
         setError('No sheets found for this design');
       }
     } catch (err) {
-      setError('Failed to fetch sheets');
+      setError('No any designs for nesting.');
       console.error('Error fetching sheets:', err);
     } finally {
       setLoading(false);

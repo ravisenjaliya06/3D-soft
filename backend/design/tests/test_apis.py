@@ -1,4 +1,6 @@
 # Python imports
+import os
+import tempfile
 import uuid
 
 # Django imports
@@ -9,8 +11,9 @@ import pytest
 from rest_framework import status
 
 # App imports
-from design.models import DesignCatalog, DesignSetting, DesignVersion
-from tests.model_factory import new_design_version
+from design.models import CatalogTypeChoices, DesignCatalog, DesignSetting, DesignVersion
+from design.views import create_excel_for_nesting
+from tests.model_factory import new_design_catalog, new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -817,3 +820,489 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(catalog.data["depth"], 50)
         self.assertEqual(catalog.data["custom_field"], "custom_value")
         self.assertEqual(catalog.data["id"], str(catalog.id))
+
+    # Nesting API Test Cases
+    def test_nesting_api_no_planks(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting API when no planks exist"""
+        DesignCatalog.objects.filter(
+            organization=self.organization, type="plank"
+        ).delete()
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertIn("No planks found", response.data["error"])
+
+    def test_nesting_api_design_not_found(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting API with non-existent design"""
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": str(uuid.uuid4())}),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    def test_download_nesting_file_pdf(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for PDF format"""
+        data = {"format": "pdf"}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_xlsx(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for XLSX format"""
+        data = {"format": "xlsx"}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_gcode(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for GCODE format"""
+        data = {"format": "gcode"}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_dwg(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for DWG format"""
+        data = {"format": "dwg", "sheet_number": 1}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_xml(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for XML format"""
+        data = {"format": "xml", "sheet_number": 1}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_svg(self: "DesignAPIViewTestCase") -> None:
+        """Test download_nesting_file for SVG format"""
+        data = {"format": "svg", "sheet_number": 1}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("file", response.data)
+
+    def test_download_nesting_file_invalid_format(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test download_nesting_file with invalid format"""
+        data = {"format": "invalid"}
+        response = self.client.put(
+            reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
+            data=data,
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Error", response.data)
+
+    # NestingSheetViewSet Test Cases
+    def test_nesting_sheets_list_no_design_id(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting_sheets list without design_id"""
+        response = self.client.get(
+            reverse("nesting_sheets"),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_nesting_sheets_list_design_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_sheets list with non-existent design"""
+        response = self.client.get(
+            reverse("nesting_sheets"),
+            {"design_id": str(uuid.uuid4())},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    def test_nesting_sheets_retrieve_no_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_sheets retrieve without sheet_number"""
+        response = self.client.get(
+            reverse("nesting_sheet_detail", kwargs={"design_id": self.design.id}),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_nesting_sheets_retrieve_invalid_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_sheets retrieve with invalid sheet_number"""
+        response = self.client.get(
+            reverse("nesting_sheet_detail", kwargs={"design_id": self.design.id}),
+            {"sheet_number": "invalid"},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_nesting_sheets_retrieve_sheet_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_sheets retrieve with non-existent sheet"""
+        response = self.client.get(
+            reverse("nesting_sheet_detail", kwargs={"design_id": self.design.id}),
+            {"sheet_number": 999},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    # NestingFileViewSet Test Cases
+    def test_nesting_files_list_no_design_id(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting_files list without design_id"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_nesting_files_list_design_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_files list with non-existent design"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            {"design_id": str(uuid.uuid4())},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    def test_nesting_files_list_with_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_files list with sheet_number filter"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            {"design_id": str(self.design.id), "sheet_number": 1},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        # May return 404 if sheet doesn't exist, or 200 with empty list
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
+
+    def test_nesting_files_list_with_file_type(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting_files list with file_type filter"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            {"design_id": str(self.design.id), "file_type": "pdf"},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+
+    def test_nesting_files_list_invalid_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_files list with invalid sheet_number"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            {"design_id": str(self.design.id), "sheet_number": "invalid"},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_nesting_files_list_sheet_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting_files list with non-existent sheet_number"""
+        response = self.client.get(
+            reverse("nesting_files"),
+            {"design_id": str(self.design.id), "sheet_number": 999},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    def test_create_excel_for_nesting(self: "DesignAPIViewTestCase") -> None:
+        """Test create_excel_for_nesting function"""
+        nesting_data = {
+            "plank1": {
+                "name": "Test Plank",
+                "type": "rectangle",
+                "width": 100,
+                "height": 50,
+                "depth": 18,
+                "grooves": [{"type": "groove", "orientation": "horizontal"}],
+                "minifix_holes": [{"type": "DOWEL", "diameter": 8}],
+            }
+        }
+
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            result_path = create_excel_for_nesting(nesting_data, tmp_path)
+
+            self.assertEqual(result_path, tmp_path)
+            self.assertTrue(os.path.exists(tmp_path))
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    def test_create_excel_for_nesting_empty_data(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test create_excel_for_nesting with empty data"""
+        nesting_data = {}
+
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            result_path = create_excel_for_nesting(nesting_data, tmp_path)
+
+            self.assertEqual(result_path, tmp_path)
+            self.assertTrue(os.path.exists(tmp_path))
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    def test_nesting_api_with_planks(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting API with actual planks"""
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        # Create planks
+        plank1 = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="LEFT_PLANK",
+            data={
+                "dimensions": {"width": 18, "height": 2000, "depth": 600},
+                "grooves": [],
+                "minifixHoles": [],
+            },
+        )
+
+        plank2 = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="RIGHT_PLANK",
+            data={
+                "dimensions": {"width": 18, "height": 2000, "depth": 600},
+                "grooves": [],
+                "minifixHoles": [],
+            },
+        )
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            {"version_id": str(version.id)},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        # Nesting might succeed or fail depending on sheet size, but should not crash
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+
+    def test_nesting_api_with_planks_and_grooves(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting API with planks that have grooves"""
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        plank = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="TOP_PLANK",
+            data={
+                "dimensions": {"width": 100, "height": 50, "depth": 18},
+                "grooves": [
+                    {
+                        "type": "groove",
+                        "orientation": "horizontal",
+                        "groove_gap": 2.0,
+                        "groove_dig": 1.0,
+                        "x": 0,
+                        "y": 0,
+                    }
+                ],
+                "minifixHoles": [],
+            },
+        )
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            {"version_id": str(version.id)},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+
+    def test_nesting_api_with_planks_and_holes(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        """Test nesting API with planks that have minifix holes"""
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        plank = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="LEFT_PLANK",
+            data={
+                "dimensions": {"width": 18, "height": 2000, "depth": 600},
+                "grooves": [],
+                "minifixHoles": [
+                    {
+                        "type": "DOWEL",
+                        "diameter": 8.0,
+                        "length": 24.0,
+                        "localPosition2D": {"x": 0, "y": 0},
+                        "direction": {"x": -1, "y": 0, "z": 0},
+                    }
+                ],
+            },
+        )
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            {"version_id": str(version.id)},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+
+    def test_nesting_api_with_version_id(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting API with specific version_id"""
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        plank = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="BOTTOM_PLANK",
+            data={
+                "dimensions": {"width": 100, "height": 50, "depth": 18},
+                "grooves": [],
+                "minifixHoles": [],
+            },
+        )
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            {"version_id": str(version.id)},
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+
+    def test_nesting_api_with_design_setting(self: "DesignAPIViewTestCase") -> None:
+        """Test nesting API with design_setting"""
+        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
+
+        # Create design setting
+        DesignSetting.objects.create(
+            design=self.design,
+            organization=self.organization,
+            unit="mm",
+            sheet_width=500,
+            sheet_height=300,
+        )
+
+        plank = new_design_catalog(
+            database=DEFAULT_DATABASE,
+            organization=self.organization,
+            version=version,
+            type=CatalogTypeChoices.PLANK,
+            name="TOP_PLANK",
+            data={
+                "dimensions": {"width": 100, "height": 50, "depth": 18},
+                "grooves": [],
+                "minifixHoles": [],
+            },
+        )
+
+        response = self.client.post(
+            reverse("nesting", kwargs={"design_id": self.design.id}),
+            format="json",
+            headers=self.get_headers,
+        )
+
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
