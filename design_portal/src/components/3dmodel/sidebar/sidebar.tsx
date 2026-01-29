@@ -73,7 +73,6 @@ const Sidebar: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(40);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
 
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
