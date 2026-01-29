@@ -2903,7 +2903,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2916,7 +2916,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2929,7 +2929,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2942,7 +2942,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2955,7 +2955,7 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
