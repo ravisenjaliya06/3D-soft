@@ -58,7 +58,6 @@ const Sidebar: React.FC = () => {
   const [isSettingOpen, setSettingOpen] = useState(false);
   const [doorPosition, setDoorPosition] = useState('None');
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [textureRotation, setTextureRotation] = useState(0);
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
@@ -74,7 +73,6 @@ const Sidebar: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(40);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
 
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
@@ -131,12 +129,6 @@ const Sidebar: React.FC = () => {
       setNavOpen(true);
     }
   }, [isQuickHideActive]);
-
-  useEffect(() => {
-    if (colorInputRef.current) {
-      colorInputRef.current.style.backgroundColor = selectedColor;
-    }
-  }, []);
 
   /** object updater ref */
   useEffect(() => {
@@ -408,32 +400,6 @@ const Sidebar: React.FC = () => {
     if (!materialArray || !Array.isArray(materialArray)) return false;
     const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
     return !!(panelStock?.textures && panelStock.textures.length > 0);
-  };
-
-  const applyColorToSelected = (value: string) => {
-    setSelectedColor(value);
-    if (colorInputRef.current) colorInputRef.current.style.backgroundColor = value;
-
-    const targetId = selectedChildObjectId || selectedObjectId;
-    if (!targetId || !scene) return;
-
-    const obj = objects.find((o) => o.id === targetId);
-    if (!obj) return;
-
-    const name = obj.name?.toLowerCase() ?? '';
-    if (name.includes(PART_TYPES.DOOR) || name.includes(PART_TYPES.DRAWER)) return;
-
-    // For color updates, we keep the existing Material array structure
-    // The UpdateHandler will handle the color application
-    applyObjectUpdate(obj, { material: obj.material });
-
-    // Also update via UpdateHandler for immediate visual feedback
-    if (updateObjectRef.current) {
-      updateObjectRef.current.update(obj.id, {
-        //@ts-ignore
-        material: { type: MATERIAL_TYPES.COLOR, value },
-      });
-    }
   };
 
   const toggleTextureList = () => {
@@ -1236,22 +1202,22 @@ const Sidebar: React.FC = () => {
     <div
       className={
         isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
       }
     >
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
-        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
+        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-color)]">
           {getSidebarTitle()}
         </p>
 
         <img
-          src={assets.up_arrow}
-          className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
+          src={assets.menuup}
+          className={`h-[1.5rem] w-[1.5rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
           alt="Toggle sidebar"
         />
       </div>
@@ -1477,7 +1443,7 @@ const Sidebar: React.FC = () => {
                               disabled={true}
                               // value={edgeToEnd}
                               // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1624,7 +1590,7 @@ const Sidebar: React.FC = () => {
                                 handleShelvesInnerDistanceChange(Number(e.target.value))
                               }
                               disabled={isDisabled}
-                              className="h-[1.2rem] w-[3.7rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[4rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1814,7 +1780,7 @@ const Sidebar: React.FC = () => {
 
                             {/* CUPBOARD LAYOUT - 2x2 GRID */}
                             {!isPlankSelected && (
-                              <div className="mt-[0rem] mr-[1rem] grid grid-cols-2 gap-[0rem]">
+                              <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
                                 {/* Width */}
                                 <div className="flex flex-col gap-[0.2rem]">
                                   <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1915,7 +1881,7 @@ const Sidebar: React.FC = () => {
                             <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Left
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img
                                 src={assets.directionIcon}
                                 className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
@@ -1927,7 +1893,7 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
@@ -1937,7 +1903,7 @@ const Sidebar: React.FC = () => {
                             <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Right
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img
                                 src={assets.directionIcon}
                                 className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
@@ -1949,7 +1915,7 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
@@ -1959,7 +1925,7 @@ const Sidebar: React.FC = () => {
                             <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Top
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
                               <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
                               <img
                                 src={assets.vrLine}
@@ -1968,7 +1934,7 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
@@ -1978,7 +1944,7 @@ const Sidebar: React.FC = () => {
                             <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
                               Bottom
                             </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
+                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
                               <img
                                 src={assets.directionIcon}
                                 className="h-[0.5rem] w-[0.5rem] rotate-[180deg]"
@@ -1990,7 +1956,7 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
@@ -2005,15 +1971,15 @@ const Sidebar: React.FC = () => {
               {/* ================= Handle/Handleless Selector ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[0.5rem]">
                     <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Handle Mode
                       </p>
                     </div>
-                    <div className="flex items-center gap-[0.7rem]">
+                    <div className="flex items-center gap-[0.5rem]">
                       <select
-                        className="flex h-[1.2rem] w-[13rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="mt-[0.5rem] flex h-[1.3rem] w-[7.4rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         value={handleMode}
                         onChange={(e) => {
                           const value = e.target.value as 'handle' | 'handleless';
@@ -2074,7 +2040,7 @@ const Sidebar: React.FC = () => {
                               type="number"
                               value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
                               onChange={handleTopPlankDepthChange}
-                              className="ml-[1.3rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[1.3rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2125,7 +2091,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2150,7 +2116,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="ml-[0.5rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2162,7 +2128,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5.3rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                           <div className="mr-[1rem] px-3 py-2">
@@ -2171,7 +2137,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5.3rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2327,10 +2293,10 @@ const Sidebar: React.FC = () => {
                 {!collapsed.material && (
                   <>
                     {/* Color */}
-                    <div className="mb-[0rem] ml-[1rem] flex items-center justify-between">
+                    <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
                       <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
-                      <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] p-[0rem] px-[0.3rem] py-[0.3rem]">
+                      <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] px-[0.3rem] py-[0.3rem]">
                         <div
                           style={{
                             position: 'relative',
@@ -2342,25 +2308,24 @@ const Sidebar: React.FC = () => {
                         >
                           <input
                             type="color"
-                            value={selectedColor}
-                            onChange={(e) => applyColorToSelected(e.target.value)}
+                            disabled
                             style={{
                               position: 'absolute',
                               width: '200%',
                               height: '200%',
                               border: 'none',
                               padding: '0',
-                              cursor: 'pointer',
+                              cursor: 'not-allowed',
                               left: '-25%',
                               top: '-25%',
                             }}
                           />
                         </div>
+
                         <input
                           type="text"
-                          value={selectedColor.toUpperCase()}
-                          onChange={(e) => applyColorToSelected(e.target.value)}
-                          className="w-[5rem] border-[0rem] bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
+                          disabled
+                          className="w-[5rem] cursor-not-allowed bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
                         />
                       </div>
                     </div>
@@ -2424,7 +2389,7 @@ const Sidebar: React.FC = () => {
                               className="pointer-events-none h-[0.8rem] w-[0.8rem] opacity-70"
                             />
                           </div>
-                          <div className="flex h-[1rem] flex-1 items-center justify-center pl-[0.3rem]">
+                          <div className="flex h-[1.2rem] flex-1 items-center justify-center pl-[0.3rem]">
                             {/* Input */}
                             <input
                               type="number"
@@ -2433,10 +2398,10 @@ const Sidebar: React.FC = () => {
                               value={textureRotation}
                               onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
                               disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                              className="h-[1rem] w-[2.5rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1rem] w-[2.8rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
-                          <div className="pr-[0.5rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
+                          <div className="pr-[0.2rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
                             °
                           </div>
                         </div>

@@ -3325,7 +3325,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                   ) : (
                     <span
                       className={`text-sm font-semibold ${
-                        isCompleted ? 'text-white' : 'text-[#4b2aad]'
+                        isCompleted ? 'text-[var(--primary-white)]' : 'text-[var(--primary-color)]'
                       }`}
                     >
                       {index + 1}
@@ -3336,7 +3336,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* LABEL */}
                 <span
                   className={`text-sm font-medium ${
-                    isCurrent || isCompleted ? 'text-[#4b2aad]' : 'text-[#7b70c9]'
+                    isCurrent || isCompleted
+                      ? 'text-[var(--primary-color)]'
+                      : 'text-[var(--primary-color)]'
                   }`}
                 >
                   {label}
