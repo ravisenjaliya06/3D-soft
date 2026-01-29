@@ -38,7 +38,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-[1.5rem] w-[8.625rem] rounded-[0.5rem] border-[0.1rem] border-[#392579] bg-[#F6F1FF] pr-3 pl-[2.25rem] text-[0.75rem] text-[#392579] outline-none focus:border-[#392579]"
+            className="h-[1.5rem] w-[8.625rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-transparent pr-3 pl-[2.25rem] text-[0.75rem] text-[var(--text-color)] outline-none focus:border-[var(--border-color)]"
           />
         </div>
 
