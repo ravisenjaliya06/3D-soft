@@ -1202,22 +1202,22 @@ const Sidebar: React.FC = () => {
     <div
       className={
         isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent pb-[0.5rem]`
           : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
       }
     >
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`cursor-pointer fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
-        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-color)]">
+        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
           {getSidebarTitle()}
         </p>
 
         <img
-          src={assets.menuup}
-          className={`h-[1.5rem] w-[1.5rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
+          src={assets.up_arrow}
+          className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
           alt="Toggle sidebar"
         />
       </div>
@@ -2293,7 +2293,7 @@ const Sidebar: React.FC = () => {
                 {!collapsed.material && (
                   <>
                     {/* Color */}
-                    <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
+                    {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
                       <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
                       <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] px-[0.3rem] py-[0.3rem]">
@@ -2328,7 +2328,7 @@ const Sidebar: React.FC = () => {
                           className="w-[5rem] cursor-not-allowed bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
                         />
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Change Material */}
                     <div
