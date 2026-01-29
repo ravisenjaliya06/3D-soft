@@ -21,18 +21,18 @@ export class ObjectsSaver {
   }
 
   private _showError(message: string) {
-    toast(() => (
-      <CustomToast appearance="error" message={message} />
-    ));
+    toast(() => <CustomToast appearance="error" message={message} />);
   }
 
   private _showSuccess(message: string) {
-    toast(() => (
-      <CustomToast appearance="success" message={message} />
-    ));
+    toast(() => <CustomToast appearance="success" message={message} />);
   }
 
-  private _findAllChildObjects(parentId: string, objects: MeshObjectData[], visited = new Set<string>()) {
+  private _findAllChildObjects(
+    parentId: string,
+    objects: MeshObjectData[],
+    visited = new Set<string>()
+  ) {
     if (visited.has(parentId)) return;
     visited.add(parentId);
 
@@ -46,7 +46,7 @@ export class ObjectsSaver {
 
   private _getAllObjectsData() {
     const objects = store.getState().data.objects;
-    
+
     if (objects.length === 0) {
       this._showError('No objects found in the scene');
       return false;
@@ -68,12 +68,12 @@ export class ObjectsSaver {
   private _getSelectedObjectData() {
     const objects = store.getState().data.objects;
     const selectedObjectData = objects.find((o) => o.id === this.selectedObjectId);
-    
+
     if (!selectedObjectData) {
       this._showError('No object selected');
       return false;
     }
-    
+
     this.payloadData.push({ ...selectedObjectData, isMain: true });
     this._findAllChildObjects(this.selectedObjectId, objects);
     return true;

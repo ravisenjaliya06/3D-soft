@@ -1,10 +1,13 @@
 # Python imports
 import sys
 from os.path import abspath, dirname
-from textures import TEXTURE
+
 # Django imports
 import django
 from django.db.models import QuerySet
+
+# External imports
+from textures import TEXTURE
 
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)

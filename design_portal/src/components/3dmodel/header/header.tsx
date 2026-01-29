@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { Design, HeaderProps } from '../interface';
 import { PART_TYPES } from '../sceneCreator/interface';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -30,7 +31,6 @@ import {
   selectHeaderMinifixDistance,
 } from '../store/selectors';
 import styles from './header.module.css';
-import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useDispatch();

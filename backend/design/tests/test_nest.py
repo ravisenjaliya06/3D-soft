@@ -9,6 +9,7 @@ from django.http import HttpResponse
 
 # External imports
 import pytest
+from rectpack import SORT_AREA, SORT_PERI
 from rest_framework import status
 
 # App imports
@@ -24,7 +25,6 @@ from design.nest import (
     nest,
     try_packing,
 )
-from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -80,7 +80,9 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertEqual(actual_efficiency, expected_efficiency)
 
     @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_rectangle(self: "NestModuleTestCase", mock_file: MagicMock) -> None:
+    def test_generate_gcode_rectangle(
+        self: "NestModuleTestCase", mock_file: MagicMock
+    ) -> None:
         """Test generate_gcode for rectangle"""
         rectangles = [(0, 10, 20, 100, 50, "rect1")]
 
@@ -97,7 +99,9 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertIn("G0 X10.000", written_gcode)
 
     @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_circle(self: "NestModuleTestCase", mock_file: MagicMock) -> None:
+    def test_generate_gcode_circle(
+        self: "NestModuleTestCase", mock_file: MagicMock
+    ) -> None:
         """Test generate_gcode for circle"""
         rectangles = [(0, 150, 30, 80, 60, "circle1")]
 
@@ -111,7 +115,9 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertIn("G2 I", written_gcode)
 
     @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_with_grooves(self: "NestModuleTestCase", mock_file: MagicMock) -> None:
+    def test_generate_gcode_with_grooves(
+        self: "NestModuleTestCase", mock_file: MagicMock
+    ) -> None:
         """Test generate_gcode with grooves"""
         rectangles = [(0, 10, 20, 100, 50, "rect1")]
 
@@ -487,7 +493,9 @@ class NestModuleTestCase(APIBaseTestCase):
             result = nest(output_file, files, 500, 300)
 
             self.assertEqual(result.status_code, status.HTTP_200_OK)
+            # Python imports
             import json
+
             result_data = json.loads(result.content)
             self.assertIn("output_file", result_data)
             self.assertIn("sheets", result_data)
@@ -544,7 +552,9 @@ class NestModuleTestCase(APIBaseTestCase):
             result = nest(output_file, files, 500, 300)
 
             self.assertEqual(result.status_code, status.HTTP_200_OK)
+            # Python imports
             import json
+
             result_data = json.loads(result.content)
             self.assertGreaterEqual(result_data["sheets"], 1)
 
@@ -598,9 +608,7 @@ class NestModuleTestCase(APIBaseTestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(
-                output_file, files, 500, 300, enclosing_rectangle=True
-            )
+            result = nest(output_file, files, 500, 300, enclosing_rectangle=True)
 
             self.assertEqual(result.status_code, status.HTTP_200_OK)
 
@@ -618,9 +626,7 @@ class NestModuleTestCase(APIBaseTestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(
-                output_file, files, 500, 300, target_efficiency=80.0
-            )
+            result = nest(output_file, files, 500, 300, target_efficiency=80.0)
 
             self.assertEqual(result.status_code, status.HTTP_200_OK)
 

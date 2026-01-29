@@ -1,11 +1,10 @@
+import Header from '@/components/header/header';
 import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
-import Header from '@/components/header/header';
-import { useEffect, useState } from 'react';
-import commonService from '@/services/CommonService';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
+import { useEffect, useState } from 'react';
 import { Design } from './interface';
-import { set } from 'immutable';
 
 interface NestingSheet {
   id: string;
@@ -69,26 +68,26 @@ const Mes = () => {
       setLoading(true);
       setError(null);
       setSelectedDesign(design);
-      
+
       // First, trigger nesting API call
       try {
         const nestingResponse: { status: number } = await commonService.post(
           API_ENDPOINT.CREATE_DESIGN_NESTING(design.id),
           {}
         );
-        
+
         if (nestingResponse.status !== 200) {
           console.warn('Nesting API returned non-200 status:', nestingResponse.status);
         }
       } catch (nestingErr) {
         console.error('Error triggering nesting:', nestingErr);
       }
-      
+
       // Then fetch the sheets
       const response: { status: number; data: NestingSheet[] } = await commonService.get(
         API_ENDPOINT.GET_NESTING_SHEETS(design.id)
       );
-      
+
       if (response.status === 200) {
         setSheets(response.data);
         setViewMode('sheets');
@@ -113,11 +112,11 @@ const Mes = () => {
       setLoading(true);
       setError(null);
       setSelectedSheet(sheet);
-      
+
       const response: { status: number; data: NestingFile[] } = await commonService.get(
         API_ENDPOINT.GET_NESTING_FILES_BY_SHEET(selectedDesign.id, sheet.sheet_number)
       );
-      
+
       if (response.status === 200) {
         setFiles(response.data);
         setViewMode('files');
@@ -171,7 +170,7 @@ const Mes = () => {
       <Sidebar />
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="MES" />
-        
+
         <div className={styles.maincontent}>
           <div className={styles.designs}>
             <div className={styles.mesdesigncontent}>
@@ -340,7 +339,9 @@ const Mes = () => {
                               <tr key={file.id}>
                                 <td>{file.file_name}</td>
                                 <td>
-                                  <span className={styles.fileType}>{file.file_type.toUpperCase()}</span>
+                                  <span className={styles.fileType}>
+                                    {file.file_type.toUpperCase()}
+                                  </span>
                                 </td>
                                 <td>{file.is_sheet_specific ? 'Yes' : 'No'}</td>
                                 <td>{formatDate(file.created_at)}</td>

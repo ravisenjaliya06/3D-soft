@@ -20,9 +20,11 @@ export const API_ENDPOINT = {
   GET_CATALOG_USING_TYPE: (type: string) => `material/catalog/?type=${type}`,
   GET_CATALOG_RULES_PARTS: (ruleID: string) => `material/catalog_rules/${ruleID}/parts/`,
   GET_NESTING_SHEETS: (designID: string) => `design/sheets/?design_id=${designID}`,
-  GET_NESTING_SHEET_DETAIL: (designID: string, sheetNumber: number) => `design/${designID}/sheets/?sheet_number=${sheetNumber}`,
+  GET_NESTING_SHEET_DETAIL: (designID: string, sheetNumber: number) =>
+    `design/${designID}/sheets/?sheet_number=${sheetNumber}`,
   GET_NESTING_FILES: (designID: string) => `design/files/?design_id=${designID}`,
-  GET_NESTING_FILES_BY_SHEET: (designID: string, sheetNumber: number) => `design/files/?design_id=${designID}&sheet_number=${sheetNumber}`,
+  GET_NESTING_FILES_BY_SHEET: (designID: string, sheetNumber: number) =>
+    `design/files/?design_id=${designID}&sheet_number=${sheetNumber}`,
 
   //POST
   LOGIN: 'user/login/',

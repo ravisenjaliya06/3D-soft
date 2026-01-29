@@ -11,9 +11,9 @@ import pytest
 from rest_framework import status
 
 # App imports
-from design.models import CatalogTypeChoices, DesignCatalog, DesignSetting, DesignVersion
+from design.models import DesignCatalog, DesignSetting, DesignVersion
 from design.views import create_excel_for_nesting
-from tests.model_factory import new_design_catalog, new_design_version
+from tests.model_factory import new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -1047,7 +1047,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         # May return 404 if sheet doesn't exist, or 200 with empty list
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        )
 
     def test_nesting_files_list_with_file_type(self: "DesignAPIViewTestCase") -> None:
         """Test nesting_files list with file_type filter"""
@@ -1137,33 +1139,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         """Test nesting API with actual planks"""
         version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
-        # Create planks
-        plank1 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="LEFT_PLANK",
-            data={
-                "dimensions": {"width": 18, "height": 2000, "depth": 600},
-                "grooves": [],
-                "minifixHoles": [],
-            },
-        )
-
-        plank2 = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="RIGHT_PLANK",
-            data={
-                "dimensions": {"width": 18, "height": 2000, "depth": 600},
-                "grooves": [],
-                "minifixHoles": [],
-            },
-        )
-
         response = self.client.post(
             reverse("nesting", kwargs={"design_id": self.design.id}),
             {"version_id": str(version.id)},
@@ -1172,7 +1147,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
 
         # Nesting might succeed or fail depending on sheet size, but should not crash
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
+        )
 
     def test_nesting_api_with_planks_and_grooves(
         self: "DesignAPIViewTestCase",
@@ -1180,28 +1157,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         """Test nesting API with planks that have grooves"""
         version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
-        plank = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="TOP_PLANK",
-            data={
-                "dimensions": {"width": 100, "height": 50, "depth": 18},
-                "grooves": [
-                    {
-                        "type": "groove",
-                        "orientation": "horizontal",
-                        "groove_gap": 2.0,
-                        "groove_dig": 1.0,
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-                "minifixHoles": [],
-            },
-        )
-
         response = self.client.post(
             reverse("nesting", kwargs={"design_id": self.design.id}),
             {"version_id": str(version.id)},
@@ -1209,7 +1164,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             headers=self.get_headers,
         )
 
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
+        )
 
     def test_nesting_api_with_planks_and_holes(
         self: "DesignAPIViewTestCase",
@@ -1217,27 +1174,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         """Test nesting API with planks that have minifix holes"""
         version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
-        plank = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="LEFT_PLANK",
-            data={
-                "dimensions": {"width": 18, "height": 2000, "depth": 600},
-                "grooves": [],
-                "minifixHoles": [
-                    {
-                        "type": "DOWEL",
-                        "diameter": 8.0,
-                        "length": 24.0,
-                        "localPosition2D": {"x": 0, "y": 0},
-                        "direction": {"x": -1, "y": 0, "z": 0},
-                    }
-                ],
-            },
-        )
-
         response = self.client.post(
             reverse("nesting", kwargs={"design_id": self.design.id}),
             {"version_id": str(version.id)},
@@ -1245,25 +1181,14 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             headers=self.get_headers,
         )
 
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
+        )
 
     def test_nesting_api_with_version_id(self: "DesignAPIViewTestCase") -> None:
         """Test nesting API with specific version_id"""
         version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
 
-        plank = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="BOTTOM_PLANK",
-            data={
-                "dimensions": {"width": 100, "height": 50, "depth": 18},
-                "grooves": [],
-                "minifixHoles": [],
-            },
-        )
-
         response = self.client.post(
             reverse("nesting", kwargs={"design_id": self.design.id}),
             {"version_id": str(version.id)},
@@ -1271,12 +1196,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             headers=self.get_headers,
         )
 
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
+        )
 
     def test_nesting_api_with_design_setting(self: "DesignAPIViewTestCase") -> None:
         """Test nesting API with design_setting"""
-        version = new_design_version(database=DEFAULT_DATABASE, design=self.design)
-
         # Create design setting
         DesignSetting.objects.create(
             design=self.design,
@@ -1286,23 +1211,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             sheet_height=300,
         )
 
-        plank = new_design_catalog(
-            database=DEFAULT_DATABASE,
-            organization=self.organization,
-            version=version,
-            type=CatalogTypeChoices.PLANK,
-            name="TOP_PLANK",
-            data={
-                "dimensions": {"width": 100, "height": 50, "depth": 18},
-                "grooves": [],
-                "minifixHoles": [],
-            },
-        )
-
         response = self.client.post(
             reverse("nesting", kwargs={"design_id": self.design.id}),
             format="json",
             headers=self.get_headers,
         )
 
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
+        )
