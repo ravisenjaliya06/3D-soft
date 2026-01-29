@@ -14,6 +14,7 @@ interface MaterialSidebarProps {
   onMaterialContextMenu: (e: React.MouseEvent, companyId: string) => void;
   onAddCompany: () => void;
   setAddMaterialPopup: (show: boolean) => void;
+  setCompanyID: (id: string) => void;
 }
 
 export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
@@ -27,6 +28,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   onMaterialContextMenu,
   onAddCompany,
   setAddMaterialPopup,
+  setCompanyID,
 }) => {
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id;
@@ -88,6 +90,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     onSubItemClick(item.id);
+                    setCompanyID(item.id);
                     setAddMaterialPopup(true);
                   }}
                 >

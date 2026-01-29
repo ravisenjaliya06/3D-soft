@@ -85,6 +85,7 @@ export class ObjectsSaver {
 
   private async _createAPICall() {
     const payload = {
+      design_id: window.location.pathname.split('/')[2],
       items: this.payloadData,
     };
     const response = await CommonService.post(API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true), payload);
