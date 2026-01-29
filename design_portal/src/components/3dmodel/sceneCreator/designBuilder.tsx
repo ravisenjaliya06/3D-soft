@@ -129,7 +129,7 @@ export class DesignBuilder {
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
 
-      if (meshData.parent) {
+      if (meshData.parent && meshData.isMain !== true) {
         const parentMesh = this.meshMap.get(meshData.parent);
 
         if (parentMesh) {

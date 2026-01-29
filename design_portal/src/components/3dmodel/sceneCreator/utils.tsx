@@ -1,13 +1,32 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
+import { gettingDesignID } from '../design';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setFloor, setWalls } from '../store/dataSlice';
 import { EDGES, MeshObjectData, PART_TYPES } from './interface';
+import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
+import { ObjectsSaver } from './tools/objectSaver';
 
+export const getDesignCatalogs = async () => {
+  const response: { status: number; data: { catalogs: MeshObjectData[] } } =
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+  if (response.status !== 200) {
+    console.error('Error fetching catalogs');
+    return;
+  }
+  console.log(response.data.catalogs, 'catalogs');
+  console.log(JSON.stringify(response.data.catalogs), 'catalogs');
+  response.data.catalogs.forEach((catalog: MeshObjectData) => {
+    const builder = new SyncManager(catalog);
+    builder.syncData();
+  });
+};
 /**
  * Get the X and Y positions whenever a mouse event is called.
  */
@@ -188,6 +207,11 @@ export const deleteObject = async (clearScene?: boolean) => {
   } else {
     objectRemover.findSingleObjectToRemove();
   }
+};
+
+export const saveObject = async () => {
+  const objectSaver = new ObjectsSaver();
+  objectSaver.saveObject();
 };
 
 export function formatEnumLabel(value: string): string {
@@ -457,3 +481,26 @@ export const createCopiedStoreObjects = (
 
     return copy;
   });
+
+// NOTE: For showing any warning, error and other message to the user please use this component
+export const CustomToast = ({ appearance, message }: { appearance: string; message: string }) => {
+  const isError = appearance === 'error';
+
+  return (
+    <div className="relative flex items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
+      {/* Icon */}
+      <div
+        className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+          isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+        }`}
+      >
+        <span className="text-[0.85rem] font-bold text-white select-none">!</span>
+      </div>
+
+      {/* Message */}
+      <p className="flex-1 truncate font-[poppins] text-[0.9rem] leading-[1.2rem] text-white">
+        {message}
+      </p>
+    </div>
+  );
+};

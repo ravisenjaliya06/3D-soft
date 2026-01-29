@@ -1,4 +1,3 @@
-import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
@@ -45,6 +44,9 @@ import {
   selectResolvedMinifixDistance,
 } from '../store/selectors';
 
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
+import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
@@ -59,7 +61,6 @@ const Sidebar: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [textureRotation, setTextureRotation] = useState(0);
-  const [wasLoadMoreClicked, setWasLoadMoreClicked] = useState(false);
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
@@ -69,33 +70,9 @@ const Sidebar: React.FC = () => {
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
-
-  const materialModal = [
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-  ];
+  const [textureData, setTextureData] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(40);
+  const [textureSearchQuery, setTextureSearchQuery] = useState('');
 
   const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
@@ -190,6 +167,17 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
+  const getTextures = async () => {
+    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
+    if (response.status === 200) {
+      setTextureData(response.data);
+    }
+  };
+
+  useEffect(() => {
+    getTextures();
+  }, []);
+
   // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMeshById(scene, targetId ? targetId : '', true);
   useEffect(() => {
@@ -221,6 +209,31 @@ const Sidebar: React.FC = () => {
       );
     }
   };
+
+  // Filter textures based on search query
+  const filteredTextures = textureData.filter((texture) => {
+    if (!textureSearchQuery.trim()) return true;
+    const query = textureSearchQuery.toLowerCase();
+    return (
+      texture.name?.toLowerCase().includes(query) ||
+      texture.option?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => {
+      const newCount = prev + LOAD_MORE_INCREMENT;
+      return Math.min(newCount, filteredTextures.length);
+    });
+  };
+
+  // Check if there are more textures to load
+  const hasMoreTextures = visibleCount < filteredTextures.length;
+
+  // Reset visible count when search query changes
+  useEffect(() => {
+    setVisibleCount(LOAD_MORE_INCREMENT);
+  }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
     const roundedValue = Math.round(value);
@@ -427,7 +440,10 @@ const Sidebar: React.FC = () => {
   const toggleTextureList = () => {
     /** Toggles the visibility of the texture selection list. */
     setIsTextureListOpen((prev) => {
-      if (!prev) setWasLoadMoreClicked(false);
+      if (!prev) {
+        // Reset visible count when opening texture list
+        setVisibleCount(LOAD_MORE_INCREMENT);
+      }
       return !prev;
     });
   };
@@ -1254,20 +1270,22 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isSettingOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isNavOpen
+                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Navigation
             </button>
@@ -1320,10 +1338,11 @@ const Sidebar: React.FC = () => {
                             >
                               {/* Knob */}
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                  ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                  }`}
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  minifixEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                }`}
                               />
                             </div>
                             <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1434,10 +1453,11 @@ const Sidebar: React.FC = () => {
                             >
                               {/* Knob */}
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${groovingEnabled
-                                  ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                  }`}
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  groovingEnabled
+                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                }`}
                               />
                             </div>
                             <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1609,7 +1629,7 @@ const Sidebar: React.FC = () => {
                               type="number"
                               min={0}
                               max={25}
-                              value={shelvesInnerDistance}
+                              value={shelvesInnerDistance.toFixed(2)}
                               onChange={(e) =>
                                 handleShelvesInnerDistanceChange(Number(e.target.value))
                               }
@@ -1660,12 +1680,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                        | 'top'
-                                        | 'bottom'
-                                        | 'left'
-                                        | 'right'
-                                        | 'front'
-                                        | 'back',
+                                          | 'top'
+                                          | 'bottom'
+                                          | 'left'
+                                          | 'right'
+                                          | 'front'
+                                          | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -1750,10 +1770,11 @@ const Sidebar: React.FC = () => {
                                                 key={idx}
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
-                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                  } `}
+                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                isActive
+                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                } `}
                                               >
                                                 <img
                                                   src={icon}
@@ -1811,7 +1832,10 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.width ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('width', Math.max(1, Number(e.target.value)))
+                                      handleDimensionChange(
+                                        'width',
+                                        Math.max(1, Number(e.target.value))
+                                      )
                                     }
                                     disabled={isHorizontalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -1829,7 +1853,10 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.height ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('height', Math.max(1, Number(e.target.value)))
+                                      handleDimensionChange(
+                                        'height',
+                                        Math.max(1, Number(e.target.value))
+                                      )
                                     }
                                     disabled={isVerticalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -1847,7 +1874,10 @@ const Sidebar: React.FC = () => {
                                     step="1"
                                     value={dimensionsUI.depth ?? ''}
                                     onChange={(e) =>
-                                      handleDimensionChange('depth', Math.max(1, Number(e.target.value)))
+                                      handleDimensionChange(
+                                        'depth',
+                                        Math.max(1, Number(e.target.value))
+                                      )
                                     }
                                     disabled={isQuickHideActive}
                                     className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -2034,10 +2064,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                topPlankEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2086,10 +2117,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
-                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                baseheightEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2110,10 +2142,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
-                                ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                frontpanelEnabled
+                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2379,8 +2412,9 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.2rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
+                          className={`flex h-[1.2rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -2418,9 +2452,24 @@ const Sidebar: React.FC = () => {
                     {/* Texture List */}
                     {isTextureListOpen && (
                       <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                        {/* Search Field */}
+                        <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
+                          <input
+                            type="text"
+                            placeholder="Search textures..."
+                            value={textureSearchQuery}
+                            onChange={(e) => setTextureSearchQuery(e.target.value)}
+                            className="w-[9.2rem] font-[comfortaa] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                          />
+                          {textureSearchQuery && (
+                            <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                              {filteredTextures.length} result{filteredTextures.length !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
                         {/* Scrollable grid area */}
                         <div
-                          className={`flex-1 ${wasLoadMoreClicked ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                          className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
                         >
                           <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                             {/* Add New Texture Button */}
@@ -2434,51 +2483,57 @@ const Sidebar: React.FC = () => {
                                   />
                                 </div>
 
-                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
                                   Add New Texture
                                 </span>
                               </button>
                             </div>
 
-                            {(wasLoadMoreClicked ? materialModal : materialModal.slice(0, 41)).map(
-                              (m, idx) => (
+                            {filteredTextures.length === 0 ? (
+                              <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
+                                <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                  No textures found
+                                </span>
+                                <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
+                                  Try a different search term
+                                </span>
+                              </div>
+                            ) : (
+                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
                                 <div
                                   key={`${m.option}-${idx}`}
                                   className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
                                   onClick={() => handleTextureSelect(m.image)}
                                 >
-                                  {/* Texture Image */}
                                   <img
-                                    src={m.image}
+                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
                                     alt={m.name}
                                     className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
                                   />
 
-                                  {/* Black Semi-Transparent Overlay */}
                                   <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
 
-                                  {/* Texture Name Display */}
-                                  <div className="absolute inset-0 flex items-center items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 text-center opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                    <span className="items-center justify-center text-center text-[0.5rem] font-semibold text-[white]">
+                                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                    <span className="text-[0.5rem] font-semibold text-white">
                                       {m.name}
                                     </span>
                                   </div>
                                 </div>
-                              )
+                              ))
                             )}
                           </div>
                         </div>
 
                         {/* Load More Button at bottom */}
-                        {!wasLoadMoreClicked && (
+                        {hasMoreTextures && (
                           <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.6rem]">
                             <button
                               className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                              onClick={() => setWasLoadMoreClicked(true)}
+                              onClick={handleLoadMore}
                             >
-                              Load More
-                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded-full border-[0.1rem] border-[var(--primary-color)] p-[0rem]">
-                                <span className="text-[1rem] leading-none">↻</span>
+                              Load More ({filteredTextures.length - visibleCount} remaining)
+                              <div className="flex h-[1rem] w-[1rem] items-center justify-center p-[0rem]">
+                                <img src={assets.loadMore} alt="Load More" />
                               </div>
                             </button>
                           </div>

@@ -15,6 +15,7 @@ import {
   deleteObject,
   detachInvisibleBoxes,
   restoreInvisibleBoxes,
+  saveObject,
   updateCloneIds,
 } from '../utils';
 import styles from './helpertool.module.css';
@@ -133,6 +134,10 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     router.push(`/design/${designId}/paneldesign`);
   }, [router, design3D]);
 
+  const handleSave = useCallback(() => {
+    saveObject();
+  }, []);
+
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
@@ -162,11 +167,11 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
         onClick: handleCopy,
       },
       {
-        id: 'Save',
-        icon: assets.saveHelper,
-        title: 'Save',
-        onClick: () => { },
-      }
+        id: 'save',
+        icon: assets.save,
+        title: 'Save to library',
+        onClick: handleSave,
+      },
     ];
   }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);
 

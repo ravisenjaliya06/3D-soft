@@ -1,10 +1,13 @@
 # Python imports
 import sys
 from os.path import abspath, dirname
-from textures import TEXTURE
+
 # Django imports
 import django
 from django.db.models import QuerySet
+
+# External imports
+from textures import TEXTURE
 
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)
@@ -2900,7 +2903,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2913,7 +2916,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2926,7 +2929,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2939,7 +2942,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2952,7 +2955,7 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2989,7 +2992,12 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "5/8 1s Poplar Ply", "4in Bar Pull", "120 Degree Euro"],
+        "material": [
+            "Alder Ven EB",
+            "5/8 1s Poplar Ply",
+            "4in Bar Pull",
+            "120 Degree Euro",
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",

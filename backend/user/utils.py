@@ -201,7 +201,7 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
         clone.data["id"] = str(clone.id)
         clone.save(update_fields=["data"])
 
-        clone.material.set(catalog.material.all())
+        clone.materials.set(catalog.materials.all())
 
         old_to_new[catalog.id] = clone
 

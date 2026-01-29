@@ -13,3 +13,5 @@ export const DRAWER_GUIDE_HEIGHT = 10;
 export const DRAWER_GUIDE_MULTIPLIER = 5;
 
 export const DRAWER_GUIDE_Y_POSITION = 0;
+
+export const LOAD_MORE_INCREMENT = 40;

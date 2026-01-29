@@ -1,5 +1,6 @@
 # Python imports
 from typing import Any, Dict
+from urllib.request import Request
 from uuid import uuid4
 
 # Django imports
@@ -9,7 +10,14 @@ from django.db import transaction
 from rest_framework import serializers
 
 # App imports
-from design.models import Design, DesignCatalog, DesignSetting, DesignVersion
+from design.models import (
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+    NestingFile,
+    NestingSheet,
+)
 from design.utils import create_design_settings
 from material.models import Material
 from material.serializers import MaterialSerializer
@@ -85,6 +93,34 @@ class SceneGetSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     data = serializers.DictField(required=False)
 
+    def _serialize_materials_without_cnc(
+        self: "SceneGetSerializer", materials: Material
+    ) -> list:
+        """
+        Serialize materials excluding CNC-related fields from properties.
+        """
+        cnc_fields = {
+            "cnc_optimize",
+            "cnc_grain_dependent",
+            "cnc_drop_width",
+            "cnc_drop_length",
+            "cnc_feed_rate_percent",
+            "cnc_spindle_speed_percent",
+            "cnc_minimize_face_chip",
+            "cnc_minimize_back_chip",
+            "cnc_climb_cut",
+            "cnc_maximum_depth_per_pass",
+        }
+
+        material_data = MaterialSerializer(materials, many=True).data
+        for material in material_data:
+            if "properties" in material and isinstance(material["properties"], dict):
+                # Remove CNC fields from properties
+                for cnc_field in cnc_fields:
+                    material["properties"].pop(cnc_field, None)
+
+        return material_data
+
     def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
         Serialize a single DesignCatalog into a scene item.
@@ -97,7 +133,7 @@ class SceneGetSerializer(serializers.Serializer):
             "name": catalog.name,
             "type": catalog.type,
             "parent": str(catalog.parent.id) if catalog.parent else None,
-            "material": MaterialSerializer(catalog.materials.all(), many=True).data,
+            "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
 
 
@@ -110,33 +146,64 @@ class ScenePayloadSerializer(serializers.Serializer):
     ) -> Design:
         return Design.objects.get(id=design_id, organization=organization)
 
-    def _attach_material_by_name(
-        self: "ScenePayloadSerializer", catalog: DesignCatalog, item: dict
+    def _get_or_create_material(
+        self: "ScenePayloadSerializer",
+        material_payload: dict,
+        request: Request,
+    ) -> Material:
+        """
+        Create material via MaterialSerializer if not exists,
+        otherwise return existing one.
+        """
+        name = material_payload.get("name")
+        if not name:
+            return None
+
+        material = Material.objects.filter(
+            name=name,
+            organization=request.user.selected_organization,
+            is_deleted=False,
+        ).first()
+
+        if material:
+            return material
+
+        serializer = MaterialSerializer(
+            data=material_payload,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
+
+    def _attach_material(
+        self: "ScenePayloadSerializer",
+        catalog: DesignCatalog,
+        item: dict,
+        request: Request,
     ) -> None:
         """
-        Attach material using material.name instead of file path.
+        Attach material using MaterialSerializer (create if missing).
         """
         material_data = item.get("material")
         if not material_data:
             return
 
-        for material_name in material_data:
-            if not material_name:
-                continue
-            material = Material.objects.filter(name=material_name).first()
-
-            if not material:
-                continue
-            catalog.materials.add(material)
+        for material_payload in material_data:
+            material = self._get_or_create_material(material_payload, request)
+            if material:
+                catalog.materials.add(material)
 
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
+        is_library = request.query_params.get("is_library", False)
 
         with transaction.atomic():
             design = self._get_design(validated_data["design_id"], organization)
-            version = DesignVersion.objects.create(design=design)
+            version = None
+            if not is_library:
+                version = DesignVersion.objects.create(design=design)
 
             temp_key_to_catalog: dict[str, DesignCatalog] = {}
             frontend_id_to_temp_keys: dict[str, list[str]] = {}
@@ -156,7 +223,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                 catalog.data["id"] = str(catalog.id)
                 catalog.save(update_fields=["data"])
 
-                self._attach_material_by_name(catalog, item)
+                self._attach_material(catalog, item, request)
 
                 temp_key_to_catalog[temp_key] = catalog
 
@@ -187,6 +254,40 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         return {
             "message": "Design saved successfully",
-            "version_id": version.id,
+            "version_id": version.id if version else None,
             "catalog_ids": [c.id for c in temp_key_to_catalog.values()],
         }
+
+
+class NestingFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NestingFile
+        fields = [
+            "id",
+            "file_type",
+            "file_path",
+            "file_name",
+            "is_sheet_specific",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class NestingSheetSerializer(serializers.ModelSerializer):
+    files = NestingFileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NestingSheet
+        fields = [
+            "id",
+            "sheet_number",
+            "width",
+            "height",
+            "efficiency",
+            "file_ids",
+            "files",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

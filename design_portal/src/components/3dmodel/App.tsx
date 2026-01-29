@@ -6,6 +6,7 @@ import Header from '@/components/3dmodel/header/header';
 import Sidebar from '@/components/3dmodel/sidebar/sidebar';
 import Toolbar from '@/components/3dmodel/toolbar';
 import React, { useState } from 'react';
+import { ToastContainer } from 'react-toastify';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { AppProps } from './interface';
 
@@ -26,6 +27,7 @@ const App: React.FC<AppProps> = ({ router }) => {
       <Toolbar threeDView={design3D as ThreeDView} onViewModeChange={handleViewModeChange} />
       <Sidebar />
       <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+      <ToastContainer position="top-right" theme="dark" style={{ marginTop: '60px' }} />
     </div>
   );
 };

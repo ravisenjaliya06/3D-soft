@@ -338,7 +338,7 @@ class FinishesLibrary(models.Model):
     light = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )
-    name = models.CharField(max_length=100)
+    name = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
     shader = models.CharField(
@@ -354,8 +354,10 @@ class FinishesLibrary(models.Model):
     height = models.IntegerField(null=True, blank=True)
     decal = models.IntegerField(null=True, blank=True)
     tile = models.IntegerField(null=True, blank=True)
-    url = models.CharField(max_length=100, null=True, blank=True)
-    image = models.ImageField(null=True, blank=True, upload_to="upload_textures")
+    url = models.TextField(null=True, blank=True)
+    image = models.ImageField(
+        max_length=255, null=True, blank=True, upload_to="upload_textures"
+    )
     is_deleted = models.BooleanField(default=False)
 
 

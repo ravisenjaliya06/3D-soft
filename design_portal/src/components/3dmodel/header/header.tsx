@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { Design, HeaderProps } from '../interface';
 import { PART_TYPES } from '../sceneCreator/interface';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -285,6 +286,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }, 2000);
   };
 
+  const handleSave = () => {
+    const objectSaver = new ObjectsSaver();
+    objectSaver.saveAllObjects();
+  };
+
   const headerTools = [
     // {
     //   option: 'undo',
@@ -313,6 +319,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       icon: assets.newzoom,
       disabled: false,
       onClick: handleZoomModeToggle,
+    },
+    {
+      option: 'save',
+      name: 'Save Design',
+      icon: assets.save,
+      disabled: false,
+      onClick: handleSave,
     },
     {
       option: 'screenshot',

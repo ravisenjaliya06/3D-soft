@@ -1,4 +1,5 @@
 import { SceneBuilder } from '../sceneCreator/sceneBuilder';
+import { getDesignCatalogs } from '../sceneCreator/utils';
 import { ThreeDView } from './interface';
 
 let globalThreeDView: ThreeDView | null = null;
@@ -13,5 +14,6 @@ export function getOrCreateThreeDView(mount: HTMLDivElement) {
 
   const builder = new SceneBuilder({ mount });
   globalThreeDView = builder.build();
+  getDesignCatalogs();
   return globalThreeDView;
 }
