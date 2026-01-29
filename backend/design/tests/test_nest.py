@@ -41,7 +41,7 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertEqual(actual_efficiency, expected_efficiency)
 
     @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode(self, mock_file: MagicMock) -> None:
+    def test_generate_gcode(self: "NestModuleTestCase", mock_file: MagicMock) -> None:
         rectangles = [
             (0, 10, 20, 100, 50, "rect1"),
             (0, 150, 30, 80, 60, "circle1"),
