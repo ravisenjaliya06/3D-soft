@@ -547,6 +547,10 @@ export class MeshBuilder {
     return mesh;
   }
 
+  public getMaterial() {
+    this._getMaterial();
+  }
+
   public updateMesh(
     mesh: THREE.Mesh,
     changes: Partial<MeshObjectData>,
@@ -620,56 +624,6 @@ export class MeshBuilder {
     const tool = this._getOrCreateGroovingTool();
     if (tool) {
       tool.createGrooving(this.mesh);
-    }
-  }
-
-  private _updateTextureRotation(mesh: THREE.Mesh, rotationDegrees?: number): void {
-    const updateTextureRotation = (material: THREE.Material) => {
-      if (material instanceof THREE.MeshStandardMaterial && material.map) {
-        // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
-        material.map.center.set(0, 0);
-
-        // Ensure proper wrapping
-        material.map.wrapS = THREE.RepeatWrapping;
-        material.map.wrapT = THREE.RepeatWrapping;
-
-        if (rotationDegrees !== undefined) {
-          const rotationRad = THREE.MathUtils.degToRad(rotationDegrees);
-          material.map.rotation = rotationRad;
-
-          // Adjust offset to compensate for rotation and maintain seamless tiling
-          // This prevents the zigzag pattern by aligning the rotated texture properly
-          const cos = Math.cos(rotationRad);
-          const sin = Math.sin(rotationRad);
-          const offsetX = (1 - cos) * 0.5 - sin * 0.5;
-          const offsetY = (1 - cos) * 0.5 + sin * 0.5;
-          material.map.offset.set(offsetX, offsetY);
-        } else {
-          material.map.rotation = 0;
-          material.map.offset.set(0, 0);
-        }
-        material.map.needsUpdate = true;
-        material.needsUpdate = true;
-      }
-    };
-
-    if (Array.isArray(mesh.material)) {
-      mesh.material.forEach(updateTextureRotation);
-    } else {
-      updateTextureRotation(mesh.material);
-    }
-
-    // Also update children if this is a main mesh
-    if (mesh.userData.isMain) {
-      mesh.children.forEach((child) => {
-        if (child instanceof THREE.Mesh) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(updateTextureRotation);
-          } else {
-            updateTextureRotation(child.material);
-          }
-        }
-      });
     }
   }
 }
