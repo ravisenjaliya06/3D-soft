@@ -216,9 +216,9 @@ function calculateHolePositions(
   // Cam Depth usually refers to hole depth.
   // We place the Cam Center at `Joint + BoltDir * ScrewLength`.
   const camPos = {
-    x: jointPosition.x + boltDir.x * screwLength,
-    y: jointPosition.y + boltDir.y * screwLength,
-    z: jointPosition.z + boltDir.z * screwLength,
+    x: jointPosition.x + direction.x * screwLength,
+    y: jointPosition.y + direction.y * screwLength,
+    z: jointPosition.z + direction.z * screwLength,
   };
 
   const boltDrillPos = {

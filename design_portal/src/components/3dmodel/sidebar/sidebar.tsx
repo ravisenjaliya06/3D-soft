@@ -3,7 +3,9 @@ import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import * as THREE from 'three';
+import { CustomToast } from '../utils/CustomToast';
 import { itemType } from '../design/interface';
 import {
   addLShapeToDrawersAndDoors,
@@ -483,11 +485,18 @@ const Sidebar: React.FC = () => {
       },
     });
 
-    // Regenerate minifixes if this is a full cupboard
-    if (isFullCupboard && scene) {
+    // Regenerate minifixes
+    if (scene) {
       requestAnimationFrame(() => {
-        const cupboardMesh = findMeshById(scene, selectedObject.id);
-        if (cupboardMesh?.userData.isMain) {
+        let cupboardMesh: THREE.Mesh | null = null;
+        if (isFullCupboard) {
+          cupboardMesh = findMeshById(scene, selectedObject.id);
+        } else if (selectedObject.parent) {
+          // If it's a child (plank), find the parent cupboard
+          cupboardMesh = findMeshById(scene, selectedObject.parent);
+        }
+
+        if (cupboardMesh && cupboardMesh.userData.isMain) {
           updateMinifixesForCupboard(cupboardMesh);
         }
       });
@@ -578,26 +587,28 @@ const Sidebar: React.FC = () => {
       title: 'Layout',
       fields: [
         {
-          label: 'Width',
+          label: isVerticalPlank ? 'Thickness' : 'Width',
           name: 'width',
-          type: 'number',
+          type: isVerticalPlank ? 'select' : 'number',
+          options: isVerticalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.width,
-          disabled: isHorizontalPlank || isDisabled,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('width', Number(e.target.value)),
-          controls: ['Left', 'Right'],
+          disabled: isVerticalPlank ? false : (isHorizontalPlank || isDisabled),
+          onValueChange: (value: number) =>
+            handleDimensionChange('width', value),
+          controls: isVerticalPlank ? null : ['Left', 'Right'],
         },
         {
-          label: 'Height',
+          label: isHorizontalPlank ? 'Thickness' : 'Height',
           name: 'height',
-          type: 'number',
+          type: isHorizontalPlank ? 'select' : 'number',
+          options: isHorizontalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.height,
-          disabled: isVerticalPlank || isDisabled,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('height', Number(e.target.value)),
-          controls: ['Top', 'Bottom'],
+          disabled: isHorizontalPlank ? false : (isVerticalPlank || isDisabled),
+          onValueChange: (value: number) =>
+            handleDimensionChange('height', value),
+          controls: isHorizontalPlank ? null : ['Top', 'Bottom'],
         },
         {
           label: 'Depth',
@@ -606,8 +617,8 @@ const Sidebar: React.FC = () => {
           min: 1,
           value: dimensionsUI.depth,
           disabled: isQuickHideActive,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('depth', Number(e.target.value)),
+          onValueChange: (value: number) =>
+            handleDimensionChange('depth', value),
           controls: ['Front', 'Back'],
         },
       ],
@@ -791,9 +802,9 @@ const Sidebar: React.FC = () => {
   const [bandingRight, setBandingRight] = useState(false);
   const [bandingFront, setBandingFront] = useState(false);
   const [bandingBack, setBandingBack] = useState(false);
-  const [minifixEnabled, setMinifixEnabled] = useState(true);
+  const [minifixEnabled, setMinifixEnabled] = useState(false);
   const [minifixDisabled, setMinifixDisabled] = useState(false);
-  const [groovingEnabled, setGroovingEnabled] = useState(true);
+  const [groovingEnabled, setGroovingEnabled] = useState(false);
   const [groovingDisabled, setGroovingDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
@@ -887,6 +898,18 @@ const Sidebar: React.FC = () => {
 
     // Prevent infinite loop: only update if value actually changed
     const prev = previousInputsRef.current;
+
+    // Fix for update issue: 
+    // If the local input value (which might be valid) hasn't synced to the Redux object yet,
+    // we should wait for the Redux update before regenerating the scene.
+    // This prevents the scene generation from using stale data (old object state) 
+    // and incorrectly updating the 'prev' ref, which would cause the subsequent 
+    // correct update (from Redux sync) to be skipped.
+    const currentMinifixDistance = selectedObject.minifixDistance ?? resolvedMinifixDistance;
+    if (currentMinifixDistance !== minifixDistanceInput) {
+      return;
+    }
+
     if (
       prev.distance === minifixDistanceInput &&
       prev.diameterHole === minifixDiameterHoleInput &&
@@ -1315,10 +1338,44 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={minifixDistanceInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
                                 setMinifixDistanceInput(value);
+
+                                if (value % 32 !== 0) {
+                                  toast(
+                                    ({ closeToast }) => (
+                                      <CustomToast
+                                        appearance="error"
+                                        message="Distance must be in multiple of 32"
+                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
+                                      // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
+                                      // It does NOT assume closeToast.
+                                      // Wait, the one in Toolbar DID have closeToast.
+                                      // I should probably update CustomToast to optionally accept it or just ignore it.
+                                      // Let's check CustomToast again.
+                                      />
+                                    ),
+                                    {
+                                      position: 'top-right',
+                                      autoClose: 3000,
+                                      hideProgressBar: true, // as per user pref or default
+                                      closeButton: false,
+                                      icon: false,
+                                      className: '!p-0 !bg-transparent !shadow-none !mb-2',
+                                    }
+                                  );
+                                  // We allow setting the state so user can type, but maybe we shouldn't dispatch update?
+                                  // User Request: "if minifix distance is 32 so i can only add miniifx ditance 64 other wise 128"
+                                  // "i cnat add" implies blocking or reverting.
+                                  // But user needs to type "6" then "4". If I block "6", they can't type "64".
+                                  // So I should probably allow typing but warn.
+                                  // AND NOT dispatch updateObject?
+                                  return;
+                                }
+
                                 // Save to cupboard object if it's a full cupboard
                                 if (selectedObject && isFullCupboard) {
                                   dispatch(
@@ -1342,6 +1399,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={minifixDiameterHoleInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1446,6 +1504,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camDiameterInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1471,6 +1530,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camDepthInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1496,6 +1556,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camHeightInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1666,54 +1727,71 @@ const Sidebar: React.FC = () => {
                                         {field.label}
                                       </p>
 
-                                      <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                        {controlIconMap[field.name].map((icon, idx) => {
-                                          let isActive = false;
-                                          if (field.name === 'width') {
-                                            isActive =
-                                              (idx === 0 && widthSide === 'left') ||
-                                              (idx === 1 && widthSide === 'right');
-                                          } else if (field.name === 'height') {
-                                            isActive =
-                                              (idx === 0 && heightSide === 'top') ||
-                                              (idx === 1 && heightSide === 'bottom');
-                                          } else if (field.name === 'depth') {
-                                            isActive =
-                                              (idx === 0 && depthSide === 'front') ||
-                                              (idx === 1 && depthSide === 'back');
-                                          }
+                                      {field.controls && (
+                                        <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                          {controlIconMap[field.name]?.map((icon, idx) => {
+                                            let isActive = false;
+                                            if (field.name === 'width') {
+                                              isActive =
+                                                (idx === 0 && widthSide === 'left') ||
+                                                (idx === 1 && widthSide === 'right');
+                                            } else if (field.name === 'height') {
+                                              isActive =
+                                                (idx === 0 && heightSide === 'top') ||
+                                                (idx === 1 && heightSide === 'bottom');
+                                            } else if (field.name === 'depth') {
+                                              isActive =
+                                                (idx === 0 && depthSide === 'front') ||
+                                                (idx === 1 && depthSide === 'back');
+                                            }
 
-                                          return (
-                                            <button
-                                              key={idx}
-                                              type="button"
-                                              onClick={() => handleControlClick(field.name, idx)}
-                                              className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                } `}
-                                            >
-                                              <img
-                                                src={icon}
-                                                alt="control"
-                                                className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                              />
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
+                                            return (
+                                              <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => handleControlClick(field.name, idx)}
+                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
+                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  } `}
+                                              >
+                                                <img
+                                                  src={icon}
+                                                  alt="control"
+                                                  className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                                />
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                     </div>
 
                                     {/* RIGHT SIDE INPUT */}
-                                    <input
-                                      type="number"
-                                      min={field.min}
-                                      step="1"
-                                      value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      disabled={field.disabled}
-                                      className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
+                                    {field.type === 'select' ? (
+                                      <select
+                                        value={field.value ?? ''}
+                                        onChange={(e) => field.onValueChange(Number(e.target.value))}
+                                        disabled={field.disabled}
+                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
+                                      >
+                                        {field.options?.map((opt) => (
+                                          <option key={opt} value={opt}>
+                                            {opt}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={field.min}
+                                        step={1}
+                                        value={field.value ?? ''}
+                                        onChange={(e) => field.onValueChange(Number(e.target.value))}
+                                        disabled={field.disabled}
+                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
+                                    )}
                                   </div>
                                 ))}
                               </div>

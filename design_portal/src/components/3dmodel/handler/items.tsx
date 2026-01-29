@@ -310,10 +310,10 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
       const { width, height, depth } = geom.parameters
         ? geom.parameters
         : {
-            width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
-            height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
-            depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
-          };
+          width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
+          height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
+          depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
+        };
       planks.push({
         id: child.userData.objectId || child.uuid,
         name: child.name,
