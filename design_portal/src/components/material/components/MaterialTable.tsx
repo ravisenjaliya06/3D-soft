@@ -68,16 +68,14 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
             <div
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="mr-[0.7rem] pb-[0.5rem] cursor-pointer px-[0.1rem]"
+              className="mr-[0.7rem] cursor-pointer px-[0.1rem] pb-[0.5rem]"
             >
               <p
-                className={`
-                  m-[0] py-[0.3rem] pt-[0.8rem] inline-block text-[0.85rem] transition-all duration-200
-                  ${activeTab === tab.id
-                          ? 'border-b border-black font-[700] text-[var(--primary-color)]'
-                          : 'border-b border-transparent text-[var(--primary-color-grey-2)] hover:border-black hover:text-[var(--primary-color)]'
-                        }
-                `}
+                className={`m-[0] inline-block py-[0.3rem] pt-[0.8rem] text-[0.85rem] transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'border-b border-black font-[700] text-[var(--primary-color)]'
+                    : 'border-b border-transparent text-[var(--primary-color-grey-2)] hover:border-black hover:text-[var(--primary-color)]'
+                } `}
               >
                 {tab.label}
               </p>
