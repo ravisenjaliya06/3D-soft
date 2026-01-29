@@ -87,10 +87,7 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   );
   // Rotate cam face to look towards screw
   // Cylinder default axis = Y
-  mesh.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 0, 0),
-    boltDir
-  );
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 0), boltDir);
   // If the direction is negative in its primary axis, rotate 180 degrees around the perpendicular axis to flip the face
   const primaryAxis = Math.max(Math.abs(boltDir.x), Math.abs(boltDir.y), Math.abs(boltDir.z));
   if (primaryAxis === Math.abs(boltDir.x) && boltDir.x < 0) {
