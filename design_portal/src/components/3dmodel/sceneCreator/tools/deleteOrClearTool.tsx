@@ -1,4 +1,7 @@
-import { generateCompartmentsFromMesh } from '@/components/3dmodel/handler/items';
+import {
+  generateCompartmentsFromMesh,
+  updateMinifixesForCupboard,
+} from '@/components/3dmodel/handler/items';
 import { store } from '@/components/3dmodel/store';
 import * as THREE from 'three';
 import {
@@ -48,6 +51,10 @@ export class ObjectsRemoverFromScene {
     this._reCreateCompartments();
     this._clearOutline();
     this._clearDistances();
+
+    if (this.removedObjectParent) {
+      updateMinifixesForCupboard(this.removedObjectParent);
+    }
   }
 
   private _addRemovedObjectInList() {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../../handler/items';
 import { getActiveUnit, metersToUnit, unitToMeters } from '../../handler/unitConversion';
 import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
@@ -228,6 +228,10 @@ export class DistanceTool {
       // Regenerate internal logic
       if (typeof generateCompartmentsFromMesh === 'function') {
         generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+      }
+
+      if (target.parent instanceof THREE.Mesh) {
+        updateMinifixesForCupboard(target.parent);
       }
 
       if (onUpdate) {

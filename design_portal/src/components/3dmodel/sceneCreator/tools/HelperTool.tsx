@@ -157,7 +157,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
       {
         id: 'panel-design',
         icon: assets.panel_design,
-
         title: 'Panel Design',
         onClick: handlePanelDesign,
       },
@@ -186,6 +185,7 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
       actions().forEach((action) => {
         const btn = document.createElement('button');
         btn.className = styles.helperToolBtn;
+        btn.dataset.action = action.id;
         btn.innerHTML = `<img src="${action.icon}" alt="${action.title}" />`;
         btn.title = action.title;
 
