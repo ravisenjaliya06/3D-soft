@@ -139,7 +139,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         scrollbarWidth: 'thin',
         scrollbarColor: 'var(--scrollbar-color-2) transparent',
       }}
-      className="h-[80vh] w-[14rem] min-h-[80vh] overflow-x-hidden overflow-y-auto rounded-[0.625rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] py-[0.7rem]"
+      className="h-[80vh] min-h-[80vh] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.625rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] py-[0.7rem]"
     >
       <div>{materialCategories.map((category) => renderMenuItem(category))}</div>
     </div>
