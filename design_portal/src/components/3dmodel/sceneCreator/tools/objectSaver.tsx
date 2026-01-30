@@ -74,7 +74,11 @@ export class ObjectsSaver {
       return false;
     }
 
-    this.payloadData.push({ ...selectedObjectData, name: name || selectedObjectData.name, isMain: true });
+    this.payloadData.push({
+      ...selectedObjectData,
+      name: name || selectedObjectData.name,
+      isMain: true,
+    });
     this._findAllChildObjects(this.selectedObjectId, objects);
     return true;
   }

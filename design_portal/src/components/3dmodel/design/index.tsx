@@ -3,7 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
+import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { resetStoreForNewDesign, store } from '../store';
@@ -14,8 +16,6 @@ import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
-import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
-import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */

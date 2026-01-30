@@ -15,12 +15,18 @@ import {
   deleteObject,
   detachInvisibleBoxes,
   restoreInvisibleBoxes,
-  saveObject,
   updateCloneIds,
 } from '../utils';
 import styles from './helpertool.module.css';
 
-const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveHandler, setShowSavePopup, setCatalogName, setError }) => {
+const HelperTool: React.FC<HelperToolProps> = ({
+  design3D,
+  selectedObject,
+  moveHandler,
+  setShowSavePopup,
+  setCatalogName,
+  setError,
+}) => {
   const helperToolRef = useRef<CSS2DObject | null>(null);
   const rendererRef = useRef<CSS2DRenderer | null>(null);
   const isMovingRef = useRef(false);

@@ -21,11 +21,7 @@ export const SaveToLibraryPopup: React.FC<SaveToLibraryPopupProps> = ({
   return (
     <div className={styles.createpopupOverlay}>
       <div className={styles.createpopup}>
-        <img
-          src={assets.save || '/placeholder.svg'}
-          className={styles.createicon}
-          alt="save"
-        />
+        <img src={assets.save || '/placeholder.svg'} className={styles.createicon} alt="save" />
 
         <img
           src={assets.close || '/placeholder.svg'}
