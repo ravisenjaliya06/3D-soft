@@ -160,9 +160,13 @@ class ConnectorSerializer(ValidationMixin, serializers.ModelSerializer):
 
 
 class DrawerGuideSerializer(ValidationMixin, serializers.ModelSerializer):
-    front_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
+    front_mount_holes = MountHolesSerializer(
+        many=True, read_only=False, allow_null=True
+    )
     back_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
-    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
+    bottom_mount_holes = MountHolesSerializer(
+        many=True, read_only=False, allow_null=True
+    )
 
     class Meta:
         model = Properties

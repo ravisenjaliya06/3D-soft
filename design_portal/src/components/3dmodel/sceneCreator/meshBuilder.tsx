@@ -268,20 +268,14 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
-  private _placeHandleOnMesh(
-    handle: THREE.Object3D,
-    createdMesh: THREE.Mesh,
-    materialProps: any
-  ) {
+  private _placeHandleOnMesh(handle: THREE.Object3D, createdMesh: THREE.Mesh, materialProps: any) {
     const placeHandle = () => {
       let targetMesh = createdMesh;
       let attachParent = createdMesh;
 
       if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
         const drawerFace = createdMesh.children.find(
-          (child) =>
-            child instanceof THREE.Mesh &&
-            child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+          (child) => child instanceof THREE.Mesh && child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
         ) as THREE.Mesh | undefined;
 
         if (drawerFace) {
@@ -319,15 +313,9 @@ export class MeshBuilder {
       handle.position.copy(attachParentLocal);
 
       const rotationDeg = materialProps.rotation ?? 90;
-      const rotationRad = THREE.MathUtils.degToRad(
-        THREE.MathUtils.clamp(rotationDeg, 0, 180)
-      );
+      const rotationRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(rotationDeg, 0, 180));
 
-      handle.rotation.set(
-        Math.PI / 2,
-        rotationRad,
-        0
-      );
+      handle.rotation.set(Math.PI / 2, rotationRad, 0);
 
       attachParent.add(handle);
     };
