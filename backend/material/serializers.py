@@ -5,8 +5,6 @@ from typing import Any, Dict
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-# App imports
-
 # Local imports
 from .models import (
     Company,

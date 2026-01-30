@@ -226,20 +226,22 @@ def generate_gcode(
                 # (e.g. defined for horizontal X-axis but plank is vertical)
                 # We use a safety margin to avoid false positives on square-ish planks
                 # Logic: If coordinate exceeds dimension/2 but fits within the OTHER dimension, swap.
-                
+
                 half_orig_w = orig_w / 2.0
                 half_orig_h = orig_h / 2.0
-                safety_margin = 1.0 # 1mm tolerance
+                safety_margin = 1.0  # 1mm tolerance
 
                 # Check X vs Original Width
                 x_out_of_bounds = abs(local_x_raw) > (half_orig_w + safety_margin)
                 x_fits_in_height = abs(local_x_raw) <= (half_orig_h + safety_margin)
-                
+
                 # Check Y vs Original Height
                 y_out_of_bounds = abs(local_y_raw) > (half_orig_h + safety_margin)
                 y_fits_in_width = abs(local_y_raw) <= (half_orig_w + safety_margin)
 
-                if (x_out_of_bounds and x_fits_in_height) or (y_out_of_bounds and y_fits_in_width):
+                if (x_out_of_bounds and x_fits_in_height) or (
+                    y_out_of_bounds and y_fits_in_width
+                ):
                     # Swap Position Coordinates
                     local_x_raw, local_y_raw = local_y_raw, local_x_raw
                     # Swap Direction Vector
@@ -271,7 +273,7 @@ def generate_gcode(
                     # CAM holes are drilled on the face (Top surface)
                     # Drill Depth
                     actual_depth = depth if depth > 0 else 12.0
-                    
+
                     gcode.append(
                         f"G0 X{hole_x_center:.3f} Y{hole_y_center:.3f} ; Move to CAM hole center"
                     )
@@ -279,19 +281,19 @@ def generate_gcode(
                     gcode.append(
                         f"G1 Z-{actual_depth:.3f} F{plunge_rate} ; Drill CAM hole"
                     )
-                    
+
                     # If hole is large (like 15mm CAM), we might need to mill it as a pocket
-                    # Assuming the cutter is smaller than the hole. 
+                    # Assuming the cutter is smaller than the hole.
                     # If cutter == hole diameter (e.g. 15mm bit), plunge is enough.
                     # As a safe default for CAMs (usually 15mm), we do a circle cut (assuming standard endmill e.g. 6mm or 3mm)
                     # If the cutter > diameter, this would be bad, but usually cutter <= 8mm.
-                    
-                    # We simply cut a circle contour at the bottom. 
+
+                    # We simply cut a circle contour at the bottom.
                     # Note: Ideally we should pocket, but contour is standard fallback.
                     gcode.append(f"G2 I{radius:.3f} ; Cut CAM circle")
-                    
+
                     gcode.append(f"G0 Z{safe_height:.3f} ; Retract")
-                    continue # Done with CAM, skip edge logic
+                    continue  # Done with CAM, skip edge logic
 
                 # --- 3. EDGE DRILLING (DOWEL, SCREW, BOLT_DRILL) ---
                 # Determine hole depth
@@ -308,61 +310,85 @@ def generate_gcode(
                 abs_dir_x = abs(dir_x)
                 abs_dir_y = abs(dir_y)
 
-                if (abs_dir_x >= abs_dir_y and abs_dir_x > 0.1): 
+                if abs_dir_x >= abs_dir_y and abs_dir_x > 0.1:
                     # Hole on left or right edge
                     hole_y = hole_y_center
                     hole_y = max(y, min(y + rect_height, hole_y))
 
-                    if dir_x < 0: # Left edge
+                    if dir_x < 0:  # Left edge
                         edge_x = x
                         drill_start_x = edge_x
                         drill_end_x = edge_x + actual_depth
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type}")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type}"
+                        )
                         gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
-                        gcode.append("G19") # YZ plane
+                        gcode.append("G19")  # YZ plane
                         gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
-                    else: # Right edge
+                    else:  # Right edge
                         edge_x = x + rect_width
                         drill_start_x = edge_x
                         drill_end_x = edge_x - actual_depth
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type}")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type}"
+                        )
                         gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
                         gcode.append("G19")
                         gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
                     gcode.append(f"G0 Z{safe_height:.3f}")
 
-                elif (abs_dir_y > abs_dir_x and abs_dir_y > 0.1):
+                elif abs_dir_y > abs_dir_x and abs_dir_y > 0.1:
                     # Hole on top or bottom edge
                     hole_x = hole_x_center
                     hole_x = max(x, min(x + rect_width, hole_x))
 
-                    if dir_y < 0: # Bottom edge
+                    if dir_y < 0:  # Bottom edge
                         edge_y = y
                         drill_start_y = edge_y
                         drill_end_y = edge_y + actual_depth
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type}")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type}"
+                        )
                         gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18") # XZ plane
+                        gcode.append("G18")  # XZ plane
                         gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
-                    else: # Top edge
+                    else:  # Top edge
                         edge_y = y + rect_height
                         drill_start_y = edge_y
                         drill_end_y = edge_y - actual_depth
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type}")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type}"
+                        )
                         gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18") # XZ plane
+                        gcode.append("G18")  # XZ plane
                         gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
                     gcode.append(f"G0 Z{safe_height:.3f}")
 
@@ -373,7 +399,9 @@ def generate_gcode(
                     dist_to_bottom = abs(hole_y_center - y)
                     dist_to_top = abs(hole_y_center - (y + rect_height))
 
-                    min_dist = min(dist_to_left, dist_to_right, dist_to_bottom, dist_to_top)
+                    min_dist = min(
+                        dist_to_left, dist_to_right, dist_to_bottom, dist_to_top
+                    )
 
                     if min_dist == dist_to_left:
                         edge_x = x
@@ -381,12 +409,18 @@ def generate_gcode(
                         drill_end_x = edge_x + actual_depth
                         hole_y = hole_y_center
                         hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} (auto)")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} (auto)"
+                        )
                         gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
                         gcode.append("G19")
                         gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
                     elif min_dist == dist_to_right:
                         edge_x = x + rect_width
@@ -394,12 +428,18 @@ def generate_gcode(
                         drill_end_x = edge_x - actual_depth
                         hole_y = hole_y_center
                         hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} (auto)")
+                        gcode.append(
+                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} (auto)"
+                        )
                         gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
                         gcode.append("G19")
                         gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
                     elif min_dist == dist_to_bottom:
                         edge_y = y
@@ -407,25 +447,37 @@ def generate_gcode(
                         drill_end_y = edge_y + actual_depth
                         hole_x = hole_x_center
                         hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} (auto)")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} (auto)"
+                        )
                         gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
                         gcode.append("G18")
                         gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
-                    else: # top
+                    else:  # top
                         edge_y = y + rect_height
                         drill_start_y = edge_y
                         drill_end_y = edge_y - actual_depth
                         hole_x = hole_x_center
                         hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} (auto)")
+                        gcode.append(
+                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} (auto)"
+                        )
                         gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
                         gcode.append("G18")
                         gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}")
-                        gcode.append(f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}")
+                        gcode.append(
+                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
+                        )
+                        gcode.append(
+                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
+                        )
                         gcode.append("G17")
                     gcode.append(f"G0 Z{safe_height:.3f}")
 
@@ -1242,7 +1294,6 @@ def nest(
     allow_rotation: bool = True,
     design_setting: DesignSetting = None,
 ) -> JsonResponse:
-    print(files)
     # Get output folder and clean up existing files
     output_folder = os.path.dirname(output)
     if output_folder:
