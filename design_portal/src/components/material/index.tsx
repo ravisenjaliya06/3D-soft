@@ -172,6 +172,7 @@ const Material: React.FC = () => {
               onAddCompany={handleAddCompany}
               setAddMaterialPopup={setAddMaterialPopup}
               setCompanyID={setCompanyID}
+              setMaterialType={setSelectedType}
             />
 
             <div className={'flex flex-1 flex-col overflow-hidden'}>

@@ -15,6 +15,7 @@ interface MaterialSidebarProps {
   onAddCompany: () => void;
   setAddMaterialPopup: (show: boolean) => void;
   setCompanyID: (id: string) => void;
+  setMaterialType: (type: string) => void;
 }
 
 export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
@@ -29,6 +30,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   onAddCompany,
   setAddMaterialPopup,
   setCompanyID,
+  setMaterialType,
 }) => {
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id;
@@ -78,6 +80,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   onAddCompany();
+                  setMaterialType(item.name);
                 }}
               >
                 <img src={assets.addCompany} className="h-[1rem] w-[1rem]" />
