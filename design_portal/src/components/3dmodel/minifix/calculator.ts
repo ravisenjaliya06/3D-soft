@@ -15,9 +15,10 @@ export function calculateMinifixPositions(
     activeStandards = spacing;
   }
 
-  const effectiveSpacing =
+  const baseSpacing =
     (typeof spacing === 'number' ? spacing : activeStandards.minifixDistance) ||
     MINIFIX_STANDARDS.minifixDistance;
+  const effectiveSpacing = Number(baseSpacing.toFixed(2));
 
   // Safety check to prevent infinite loop
   if (effectiveSpacing <= 0) {
@@ -47,7 +48,8 @@ export function calculateMinifixPositions(
     // Since the dowel is at +32mm, we need to ensure we have at least 32mm + margin at the positive end.
     // Margin of 40 (32 + 8) provides safety.
     const dowelDistance = activeStandards.dowelDistance || MINIFIX_STANDARDS.dowelDistance;
-    const limit = limitDimension / 2 - (dowelDistance + 8);
+    const rawLimit = limitDimension / 2 - (dowelDistance + 8);
+    const limit = Number(rawLimit.toFixed(2));
 
     // Additional safety: max iterations and NaN check
     let iterations = 0;

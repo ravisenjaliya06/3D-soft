@@ -291,83 +291,149 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
 
 export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
   if (!cupboardMesh) return;
-  const planks: PlankData[] = [];
 
-  cupboardMesh.traverse((child) => {
-    const isPlank = child.userData.type === PART_TYPES.PLANK;
-    const isDrawerPart = Object.values(DRAWER_PLANK_TYPES).includes(child.userData.type);
+  // DELAY MINIFIX CALCULATION: Wait for next tick to ensure scene graph & geometry are stable
+  setTimeout(() => {
+    const planks: PlankData[] = [];
 
-    if (child instanceof THREE.Mesh && (isPlank || isDrawerPart)) {
-      // Check if this plank belongs to a nested sub-assembly (like a drawer)
-      // If the immediate parent is 'isMain' and is NOT the mesh we are currently updating,
-      // it means this plank belongs to a child assembly and should be handled by that assembly's own update.
-      const parent = child.parent;
-      if (parent && parent.userData.isMain && parent !== cupboardMesh) {
-        return;
+    cupboardMesh.traverse((child) => {
+      const isPlank = child.userData.type === PART_TYPES.PLANK;
+      const isDrawerPart = Object.values(DRAWER_PLANK_TYPES).includes(child.userData.type);
+
+      if (child instanceof THREE.Mesh && (isPlank || isDrawerPart)) {
+        // Check if this plank belongs to a nested sub-assembly (like a drawer)
+        const parent = child.parent;
+        if (parent && parent.userData.isMain && parent !== cupboardMesh) {
+          return;
+        }
+
+        // 1. ALWAYS derive plank size from bounding box (NOT parameters)
+        // AND Apply Scale & Center Offset (Vital for live envs where scaling/offsets occur)
+        const { width, height, depth, center } = getPlankScaleCorrectedDimensions(child);
+
+        // 2. LOG FOR VERIFICATION
+        console.log('PLANK DIMS (SCALED)', child.name, width, height, depth, center);
+
+        // 3. Guard against invalid dimensions
+        if (
+          !Number.isFinite(width) ||
+          !Number.isFinite(height) ||
+          !Number.isFinite(depth) ||
+          width <= 0 ||
+          height <= 0 ||
+          depth <= 0
+        ) {
+          console.warn('Invalid plank dimensions, skipping minifix', child.name);
+          return;
+        }
+
+        // 4. Detect old saved designs / legacy planks
+        if (!depth || depth < 10) {
+          console.warn('Legacy plank detected, skipping minifix', child.name);
+          return;
+        }
+
+        // Apply visual center correction to position
+        const correctedPos = {
+          x: child.position.x + center.x,
+          y: child.position.y + center.y,
+          z: child.position.z + center.z,
+        };
+
+        planks.push({
+          id: child.userData.objectId || child.uuid,
+          name: child.name,
+          position: correctedPos,
+          width: width,
+          height: height,
+          depth: depth,
+        });
       }
+    });
 
-      const geom = child.geometry as THREE.BoxGeometry;
-      const { width, height, depth } = geom.parameters
-        ? geom.parameters
-        : {
-            width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
-            height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
-            depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
-          };
-      planks.push({
-        id: child.userData.objectId || child.uuid,
-        name: child.name,
-        position: { x: child.position.x, y: child.position.y, z: child.position.z },
-        width: width,
-        height: height,
-        depth: depth,
-      });
+    // Get cupboard object from Redux to check for stored minifix settings
+    const state = store.getState();
+    const cupboardId = cupboardMesh.userData.objectId;
+    const cupboardObject = state.data.objects.find((obj) => obj.id === cupboardId);
+
+    // Use cupboard's own minifix settings if available, otherwise fall back to global settings
+    let standards;
+    if (cupboardObject && cupboardObject.minifixDistance !== undefined) {
+      // Cupboard has its own stored settings
+      standards = {
+        minifixDistance: cupboardObject.minifixDistance,
+        minifixDiameterHole:
+          cupboardObject.minifixDiameterHole ?? state.designSettings.minifixDiameterHole,
+        camDepth: cupboardObject.camDepth ?? state.designSettings.camDepth,
+        camHeight: cupboardObject.camHeight ?? state.designSettings.camHeight,
+        edgeBandingDistance: state.designSettings.edgeBandingDistance,
+        screwDiameter: state.designSettings.screwDiameter,
+        screwLength: state.designSettings.screwLength,
+        camDiameter: cupboardObject.camDiameter ?? state.designSettings.camDiameter,
+        dowelDiameter: state.designSettings.dowelDiameter,
+        dowelLength: state.designSettings.dowelLength,
+        dowelDistance: state.designSettings.dowelDistance,
+      };
+    } else {
+      // Legacy cupboard without stored settings - use global selectors
+      standards = selectMinifixStandards(state);
     }
-  });
 
-  // Get cupboard object from Redux to check for stored minifix settings
-  const state = store.getState();
-  const cupboardId = cupboardMesh.userData.objectId;
-  const cupboardObject = state.data.objects.find((obj) => obj.id === cupboardId);
+    const { connections, planksWithHoles } = generateMinifixSystem(
+      cupboardMesh.userData.objectId || cupboardMesh.uuid,
+      planks,
+      standards
+    );
+    visualizeMinifixConnections(connections, cupboardMesh, standards);
 
-  // Use cupboard's own minifix settings if available, otherwise fall back to global settings
-  let standards;
-  if (cupboardObject && cupboardObject.minifixDistance !== undefined) {
-    // Cupboard has its own stored settings
-    standards = {
-      minifixDistance: cupboardObject.minifixDistance,
-      minifixDiameterHole:
-        cupboardObject.minifixDiameterHole ?? state.designSettings.minifixDiameterHole,
-      camDepth: cupboardObject.camDepth ?? state.designSettings.camDepth,
-      camHeight: cupboardObject.camHeight ?? state.designSettings.camHeight,
-      edgeBandingDistance: state.designSettings.edgeBandingDistance,
-      screwDiameter: state.designSettings.screwDiameter,
-      screwLength: state.designSettings.screwLength,
-      camDiameter: cupboardObject.camDiameter ?? state.designSettings.camDiameter,
-      dowelDiameter: state.designSettings.dowelDiameter,
-      dowelLength: state.designSettings.dowelLength,
-      dowelDistance: state.designSettings.dowelDistance,
-    };
-  } else {
-    // Legacy cupboard without stored settings - use global selectors
-    standards = selectMinifixStandards(state);
+    // Update Redux state
+    if (cupboardId) {
+      store.dispatch(updateObject({ id: cupboardId, minifixConnections: connections }));
+    }
+
+    planksWithHoles.forEach((plank) => {
+      store.dispatch(updateObject({ id: plank.id, minifixHoles: plank.minifixHoles }));
+    });
+  }, 0);
+}
+
+function getPlankScaleCorrectedDimensions(mesh: THREE.Mesh) {
+  const geom = mesh.geometry as THREE.BufferGeometry;
+  geom.computeBoundingBox();
+
+  const box = geom.boundingBox;
+  if (!box) {
+    return { width: 0, height: 0, depth: 0, center: { x: 0, y: 0, z: 0 } };
   }
 
-  const { connections, planksWithHoles } = generateMinifixSystem(
-    cupboardMesh.userData.objectId || cupboardMesh.uuid,
-    planks,
-    standards
-  );
-  visualizeMinifixConnections(connections, cupboardMesh, standards);
+  // Get raw size
+  const rawW = Math.abs(box.max.x - box.min.x);
+  const rawH = Math.abs(box.max.y - box.min.y);
+  const rawD = Math.abs(box.max.z - box.min.z);
 
-  // Update Redux state
-  if (cupboardId) {
-    store.dispatch(updateObject({ id: cupboardId, minifixConnections: connections }));
-  }
+  // Get raw center offset
+  const center = new THREE.Vector3();
+  box.getCenter(center);
 
-  planksWithHoles.forEach((plank) => {
-    store.dispatch(updateObject({ id: plank.id, minifixHoles: plank.minifixHoles }));
-  });
+  // Apply Scale
+  const width = rawW * mesh.scale.x;
+  const height = rawH * mesh.scale.y;
+  const depth = rawD * mesh.scale.z;
+
+  // Apply Scale to Center Offset (Local space scaling)
+  // If mesh is scaled, the geometry center offset also scales relative to mesh origin
+  const scaledCenter = {
+    x: center.x * mesh.scale.x,
+    y: center.y * mesh.scale.y,
+    z: center.z * mesh.scale.z,
+  };
+
+  return {
+    width,
+    height,
+    depth,
+    center: scaledCenter,
+  };
 }
 
 export function updateAllMinifixesInScene(scene: THREE.Scene) {
