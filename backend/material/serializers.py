@@ -1,5 +1,5 @@
 # Python imports
-from typing import Any, Dict
+from typing import Dict
 
 # External imports
 from rest_framework import serializers
@@ -86,7 +86,9 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
 
 
 class ValidationMixin:
-    def to_internal_value(self, data):
+    def to_internal_value(
+        self: "ValidationMixin", data: Dict[str, str]
+    ) -> Dict[str, str]:
         allowed_fields = set(self.fields.keys())
         received_fields = set(data.keys())
 
@@ -158,9 +160,9 @@ class ConnectorSerializer(ValidationMixin, serializers.ModelSerializer):
 
 
 class DrawerGuideSerializer(ValidationMixin, serializers.ModelSerializer):
-    front_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    back_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False)
+    front_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
+    back_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
+    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
 
     class Meta:
         model = Properties
@@ -308,6 +310,7 @@ class PullSerializer(ValidationMixin, serializers.ModelSerializer):
             "depth",
             "horizontal_inset",
             "vertical_inset",
+            "rotation",
             "mounting_holes_holes_diameter",
         ]
 

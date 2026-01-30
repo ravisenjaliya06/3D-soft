@@ -268,14 +268,20 @@ export class MeshBuilder {
     mesh.name = this.meshData.name;
   }
 
-  private _placeHandleOnMesh(handle: THREE.Object3D, createdMesh: THREE.Mesh, materialProps: any) {
+  private _placeHandleOnMesh(
+    handle: THREE.Object3D,
+    createdMesh: THREE.Mesh,
+    materialProps: any
+  ) {
     const placeHandle = () => {
       let targetMesh = createdMesh;
       let attachParent = createdMesh;
 
       if (createdMesh.userData.type === PART_TYPES.DRAWER && createdMesh.userData.isMain) {
         const drawerFace = createdMesh.children.find(
-          (child) => child instanceof THREE.Mesh && child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+          (child) =>
+            child instanceof THREE.Mesh &&
+            child.name === DRAWER_PLANK_TYPES.DRAWER_FACE
         ) as THREE.Mesh | undefined;
 
         if (drawerFace) {
@@ -291,12 +297,19 @@ export class MeshBuilder {
       const size = new THREE.Vector3();
       bBox.getSize(size);
 
-      const horizontalInset = materialProps.horizontalInset ?? 0;
-      const verticalInset = materialProps.verticalInset ?? 0;
+      // Offsets as 0–100 (center = 50)
+      const h = THREE.MathUtils.clamp(materialProps.horizontalInset ?? 50, 0, 100);
+      const v = THREE.MathUtils.clamp(materialProps.verticalInset ?? 50, 0, 100);
+
+      const xFactor = (h - 50) / 100;
+      const yFactor = (v - 50) / 100;
+
+      const center = new THREE.Vector3();
+      bBox.getCenter(center);
 
       const localPos = new THREE.Vector3(
-        bBox.min.x + horizontalInset,
-        bBox.max.y - verticalInset,
+        center.x + xFactor * size.x,
+        center.y - yFactor * size.y,
         bBox.max.z
       );
 
@@ -304,7 +317,18 @@ export class MeshBuilder {
       const attachParentLocal = attachParent.worldToLocal(worldPos.clone());
 
       handle.position.copy(attachParentLocal);
-      handle.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+
+      const rotationDeg = materialProps.rotation ?? 90;
+      const rotationRad = THREE.MathUtils.degToRad(
+        THREE.MathUtils.clamp(rotationDeg, 0, 180)
+      );
+
+      handle.rotation.set(
+        Math.PI / 2,
+        rotationRad,
+        0
+      );
+
       attachParent.add(handle);
     };
 
