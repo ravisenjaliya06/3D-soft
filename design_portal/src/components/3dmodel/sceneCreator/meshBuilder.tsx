@@ -196,6 +196,7 @@ export class MeshBuilder {
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
+    console.log(this.meshData.dimensions);
     return new THREE.BoxGeometry(
       this.meshData.dimensions?.width || 0,
       this.meshData.dimensions?.height || 0,
@@ -382,8 +383,13 @@ export class MeshBuilder {
 
   /**
    * Update banding positions and sizes when plank dimensions change
+   * @param options.isDimensionUpdate - When true, only the changed side's banding is updated
+   *   (resize/reposition existing banding); plank is not reduced, so other dimensions stay as set
    */
-  public async updateBanding(mesh: THREE.Mesh): Promise<void> {
+  public async updateBanding(
+    mesh: THREE.Mesh,
+    options?: { isDimensionUpdate?: boolean }
+  ): Promise<void> {
     const tool = this._getOrCreateBandingTool();
     if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
@@ -392,7 +398,6 @@ export class MeshBuilder {
 
     const { width, height, depth } = mesh.geometry.parameters;
 
-    // Get banding material
     const materialData = this.meshData.material;
     if (!materialData) return;
 
@@ -406,7 +411,8 @@ export class MeshBuilder {
         bandingMaterialData,
         bandingState,
         this.parentMesh,
-        { material: this.meshData.material, id: this.meshData.id }
+        { material: this.meshData.material, id: this.meshData.id },
+        { isDimensionUpdate: options?.isDimensionUpdate }
       );
     }
   }

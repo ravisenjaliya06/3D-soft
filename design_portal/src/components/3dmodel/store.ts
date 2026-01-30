@@ -1,11 +1,15 @@
-import activeDesignReducer from '@/components/3dmodel/store/activeDesignSlice';
-import activeItemReducer from '@/components/3dmodel/store/activeItemSlice';
-import catalogReducer from '@/components/3dmodel/store/catalogSlice';
-import dataReducer from '@/components/3dmodel/store/dataSlice';
+import activeDesignReducer, {
+  clearActiveDesignOverrides,
+} from '@/components/3dmodel/store/activeDesignSlice';
+import activeItemReducer, {
+  clearActiveItemOverrides,
+} from '@/components/3dmodel/store/activeItemSlice';
+import catalogReducer, { resetCatalog } from '@/components/3dmodel/store/catalogSlice';
+import dataReducer, { resetData } from '@/components/3dmodel/store/dataSlice';
 import designSettingsReducer from '@/components/3dmodel/store/designSettingsSlice';
-import historyReducer from '@/components/3dmodel/store/historySlice';
-import measurementReducer from '@/components/3dmodel/store/measurementSlice';
-import sceneReducer from '@/components/3dmodel/store/sceneSlice';
+import historyReducer, { clearHistory } from '@/components/3dmodel/store/historySlice';
+import measurementReducer, { resetMeasurement } from '@/components/3dmodel/store/measurementSlice';
+import sceneReducer, { resetScene } from '@/components/3dmodel/store/sceneSlice';
 import { Action, configureStore } from '@reduxjs/toolkit';
 import { setAutoFreeze } from 'immer';
 import { ThunkAction } from 'redux-thunk';
@@ -43,3 +47,14 @@ store.subscribe(() => {
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 export type AppThunk = ThunkAction<void, RootState, unknown, Action<string>>;
+
+/** Resets all design-specific store state when switching to a new design. */
+export const resetStoreForNewDesign = (): AppThunk => (dispatch) => {
+  dispatch(resetScene());
+  dispatch(resetData());
+  dispatch(resetCatalog());
+  dispatch(clearHistory());
+  dispatch(resetMeasurement());
+  dispatch(clearActiveDesignOverrides());
+  dispatch(clearActiveItemOverrides());
+};

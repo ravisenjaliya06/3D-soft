@@ -851,7 +851,94 @@ export class BandingTool {
   }
 
   /**
+   * Resize and reposition existing banding meshes to match new plank dimensions.
+   * Used when user changes dimensions in UI: only update banding meshes, do not reduce plank.
+   */
+  private resizeBandingMeshesToPlankDimensions(
+    mesh: THREE.Mesh,
+    width: number,
+    height: number,
+    depth: number,
+    bandingThickness: number
+  ): void {
+    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
+
+    const orientation = this.getPlankOrientation(mesh);
+
+    mesh.children.forEach((child) => {
+      if (!(child instanceof THREE.Mesh) || child.userData.type !== 'banding') return;
+
+      const edge = child.userData.edge as string;
+      if (!edge) return;
+
+      let newGeometry: THREE.BoxGeometry;
+      let newPosition: THREE.Vector3;
+
+      if (orientation.isVertical) {
+        if (edge === EDGES.TOP) {
+          newGeometry = new THREE.BoxGeometry(width, bandingThickness, depth);
+          newPosition = new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0);
+        } else if (edge === EDGES.BOTTOM) {
+          newGeometry = new THREE.BoxGeometry(width, bandingThickness, depth);
+          newPosition = new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0);
+        } else if (edge === EDGES.FRONT) {
+          newGeometry = new THREE.BoxGeometry(width, height, bandingThickness);
+          newPosition = new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2);
+        } else if (edge === EDGES.BACK) {
+          newGeometry = new THREE.BoxGeometry(width, height, bandingThickness);
+          newPosition = new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2);
+        } else {
+          return;
+        }
+      } else if (orientation.isHorizontal) {
+        if (edge === EDGES.LEFT) {
+          newGeometry = new THREE.BoxGeometry(bandingThickness, height, depth);
+          newPosition = new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0);
+        } else if (edge === EDGES.RIGHT) {
+          newGeometry = new THREE.BoxGeometry(bandingThickness, height, depth);
+          newPosition = new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0);
+        } else if (edge === EDGES.FRONT) {
+          newGeometry = new THREE.BoxGeometry(width, height, bandingThickness);
+          newPosition = new THREE.Vector3(0, 0, depth / 2 + bandingThickness / 2);
+        } else if (edge === EDGES.BACK) {
+          newGeometry = new THREE.BoxGeometry(width, height, bandingThickness);
+          newPosition = new THREE.Vector3(0, 0, -depth / 2 - bandingThickness / 2);
+        } else {
+          return;
+        }
+      } else if (orientation.isBack) {
+        if (edge === EDGES.TOP) {
+          newGeometry = new THREE.BoxGeometry(width, bandingThickness, depth);
+          newPosition = new THREE.Vector3(0, height / 2 + bandingThickness / 2, 0);
+        } else if (edge === EDGES.BOTTOM) {
+          newGeometry = new THREE.BoxGeometry(width, bandingThickness, depth);
+          newPosition = new THREE.Vector3(0, -height / 2 - bandingThickness / 2, 0);
+        } else if (edge === EDGES.LEFT) {
+          newGeometry = new THREE.BoxGeometry(bandingThickness, height, depth);
+          newPosition = new THREE.Vector3(-width / 2 - bandingThickness / 2, 0, 0);
+        } else if (edge === EDGES.RIGHT) {
+          newGeometry = new THREE.BoxGeometry(bandingThickness, height, depth);
+          newPosition = new THREE.Vector3(width / 2 + bandingThickness / 2, 0, 0);
+        } else {
+          return;
+        }
+      } else {
+        return;
+      }
+
+      if (child.geometry instanceof THREE.BoxGeometry) {
+        child.geometry.dispose();
+        child.geometry = newGeometry;
+        child.position.copy(newPosition);
+      }
+    });
+  }
+
+  /**
    * Update banding positions and sizes when plank dimensions change
+   * @param options.isDimensionUpdate - When true (user changed dimensions in UI), only resize/reposition
+   *   existing banding meshes to the new plank size. Do not remove banding or run updatePlankDimensions,
+   *   so the other side dimensions (height/depth) are not changed.
    */
   public async updateBanding(
     mesh: THREE.Mesh,
@@ -859,18 +946,40 @@ export class BandingTool {
     bandingMaterialData?: Material,
     bandingState?: EdgeBandingState,
     parentMesh?: THREE.Mesh | null,
-    objectData?: { material?: Material | Material[]; id?: string }
+    objectData?: { material?: Material | Material[]; id?: string },
+    options?: { isDimensionUpdate?: boolean }
   ): Promise<void> {
     if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
+    const isDimensionUpdate = options?.isDimensionUpdate === true;
+
     // If dimensions are being updated externally, update original dimensions
-    // This handles the case where user manually changes dimensions
     mesh.userData.originalDimensions = { ...newDimensions };
 
-    // Remove all existing banding (without restoring dimensions since we're updating)
+    if (isDimensionUpdate) {
+      // User changed dimensions in UI: only resize/reposition existing banding meshes.
+      // Do not remove banding or run updatePlankDimensions (so other dimensions stay unchanged).
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.BoxGeometry(
+        newDimensions.width,
+        newDimensions.height,
+        newDimensions.depth
+      );
+
+      const bandingThickness = bandingMaterialData?.properties?.thickness ?? this.defaultThickness;
+      this.resizeBandingMeshesToPlankDimensions(
+        mesh,
+        newDimensions.width,
+        newDimensions.height,
+        newDimensions.depth,
+        bandingThickness
+      );
+      return;
+    }
+
+    // Full update: remove banding and recreate (e.g. when banding state changed)
     this.removeBandingMeshes(mesh);
 
-    // Update geometry to new dimensions
     mesh.geometry.dispose();
     mesh.geometry = new THREE.BoxGeometry(
       newDimensions.width,
@@ -878,14 +987,12 @@ export class BandingTool {
       newDimensions.depth
     );
 
-    // Get banding material if not provided
     let materialData = bandingMaterialData;
     if (!materialData && objectData) {
       materialData = this.getBandingMaterial(mesh, objectData) ?? undefined;
     }
 
     if (materialData && bandingState) {
-      // Recreate banding with adjusted dimensions based on banding state
       await this.createBandingOnPlank(mesh, materialData, bandingState, parentMesh, objectData);
     }
   }
