@@ -134,6 +134,7 @@ class PullTypesChoices(models.TextChoices):
     Pull Types
     """
 
+    PULL = "Pull"
     CUP_1 = "Cup #1"
     KNOB_1 = "Knob #1"
     KNOB_2 = "Knob #2"

@@ -65,6 +65,9 @@ class MountPlateHolesSerializer(serializers.ModelSerializer):
 
 
 class BasePropertiesSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=False)
+    model_file = serializers.FileField(required=False, allow_null=True)
+
     class Meta:
         model = Properties
         fields = [
@@ -79,25 +82,28 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "estimate",
             "model_file",
         ]
-        read_only_fields = ["id", "material"]
+        read_only_fields = ["material"]
 
 
 class ValidationMixin:
-    def to_internal_value(
-        self: "ValidationMixin", data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def to_internal_value(self, data):
         allowed_fields = set(self.fields.keys())
         received_fields = set(data.keys())
-        required_fields = allowed_fields - {"id"}
 
-        # Check for missing required fields
+        has_id = "id" in data
+        optional_fields = {"id", "model_file"}
+
+        if has_id:
+            required_fields = allowed_fields - optional_fields
+        else:
+            required_fields = allowed_fields - {"id"}
+
         missing_fields = required_fields - received_fields
         if missing_fields:
             raise serializers.ValidationError(
                 {field: "This field is required." for field in missing_fields}
             )
 
-        # Check for unexpected fields
         extra_fields = received_fields - allowed_fields
         if extra_fields:
             raise serializers.ValidationError(
@@ -568,12 +574,15 @@ class MaterialSerializer(serializers.ModelSerializer):
 
     def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
         self._validate_properties(attrs)
-
         return attrs
 
     def _validate_properties(self: "MaterialSerializer", attrs: Dict[str, str]) -> None:
         """Validate the dynamic 'properties' field based on material type."""
         properties_data = attrs.get("properties")
+        properties_id = properties_data.get("id", None)
+        if properties_id:
+            properties_data.pop("model_file", None)
+
         material_type = attrs.get("type")
         if not properties_data:
             return
@@ -583,6 +592,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         )
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data["id"] = properties_id
         attrs["properties"] = serializer.validated_data
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
@@ -634,24 +644,37 @@ class MaterialSerializer(serializers.ModelSerializer):
         )
 
         if properties_data:
-            Properties.objects.create(material=material, **properties_data)
+            properties_id = properties_data.pop("id", None)
+
+            if properties_id:
+                properties = Properties.objects.get(id=properties_id)
+                Properties.objects.create(
+                    material=material,
+                    model_file=properties.model_file,
+                    **properties_data,
+                )
+            else:
+                Properties.objects.create(material=material, **properties_data)
 
         for f in finishes_data:
-            finish = f.pop("finish")
             MaterialFinish.objects.create(
-                material=material, name=f.get("name", ""), finish=finish
+                material=material,
+                name=f.get("name", ""),
+                finish=f["finish"],
             )
 
         for ft in finish_types_data:
-            finish_type = ft.pop("finish_type")
             MaterialFinishType.objects.create(
-                material=material, name=ft.get("name", ""), finish_type=finish_type
+                material=material,
+                name=ft.get("name", ""),
+                finish_type=ft["finish_type"],
             )
 
         for t in textures_data:
-            texture = t.pop("texture")
             MaterialTexture.objects.create(
-                material=material, name=t.get("name", ""), texture=texture
+                material=material,
+                name=t.get("name", ""),
+                texture=t["texture"],
             )
 
         material.refresh_from_db()
