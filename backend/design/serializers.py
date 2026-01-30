@@ -99,9 +99,7 @@ class SceneGetSerializer(serializers.Serializer):
         """
         Serialize materials excluding CNC-related fields from properties.
         """
-
-        material_data = MaterialSerializer(materials, many=True).data
-        return material_data
+        return MaterialSerializer(materials, many=True).data
 
     def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
@@ -170,7 +168,7 @@ class ScenePayloadSerializer(serializers.Serializer):
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
-        is_library = request.query_params.get("is_library", 'false').lower() == "true"
+        is_library = request.query_params.get("is_library", "false").lower() == "true"
 
         design = self._get_design(validated_data["design_id"], organization)
         version = None
@@ -199,7 +197,6 @@ class ScenePayloadSerializer(serializers.Serializer):
                 )
 
                 catalog.data["id"] = str(catalog.id)
-                print(catalog.data)
                 catalog.save(update_fields=["data"])
 
                 self._attach_material(catalog, item, request)

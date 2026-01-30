@@ -251,5 +251,4 @@ def group_catalogs_as_lists(items: list[dict]) -> list[list[dict]]:
 
         root_id = current["id"]
         groups.setdefault(root_id, []).append(item)
-    print(groups)
     return list(groups.values())

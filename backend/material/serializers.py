@@ -1,12 +1,11 @@
 # Python imports
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 # External imports
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 # App imports
-from umaboy.models import Organization
 
 # Local imports
 from .models import (
@@ -587,43 +586,6 @@ class MaterialSerializer(serializers.ModelSerializer):
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
         attrs["properties"] = serializer.validated_data
-
-    def _validate_unique_name(
-        self: "MaterialSerializer", attrs: Dict[str, str], organization: Organization
-    ) -> None:
-        """Ensure the material name is unique within the organization and company."""
-        company = attrs.get("company") or getattr(self.instance, "company", None)
-        name = attrs.get("name") or getattr(self.instance, "name", None)
-
-        qs = Material.objects.filter(
-            name=name,
-            organization=organization,
-            is_deleted=False,
-        )
-        qs = qs.filter(company=company) if company else qs.filter(company__isnull=True)
-        if self.instance:
-            qs = qs.exclude(id=self.instance.id)
-
-        if qs.exists():
-            raise serializers.ValidationError(
-                {"name": "A material with this name already exists."}
-            )
-
-    def _find_duplicates(
-        self: "MaterialSerializer", items: List[Dict[str, str]]
-    ) -> List[str]:
-        """Return a list of duplicate names from a list of dicts."""
-        seen, duplicates = set(), set()
-        for item in items:
-            name = item.get("name")
-            if not name:
-                continue
-            if name in seen:
-                duplicates.add(name)
-            else:
-                seen.add(name)
-
-        return list(duplicates)
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
         data = super().to_representation(instance)

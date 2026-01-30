@@ -25,9 +25,8 @@ export function calculateMinifixPositions(
     return [];
   }
 
-  connections.sort((a, b) =>
-    a.plankA.id.localeCompare(b.plankA.id) ||
-    a.plankB.id.localeCompare(b.plankB.id)
+  connections.sort(
+    (a, b) => a.plankA.id.localeCompare(b.plankA.id) || a.plankB.id.localeCompare(b.plankB.id)
   );
 
   connections.forEach((connection, index) => {
@@ -250,7 +249,7 @@ function calculateHolePositions(
   const centerDiff = {
     x: screwPlank.position.x - camPlank.position.x,
     y: screwPlank.position.y - camPlank.position.y,
-    z: screwPlank.position.z - camPlank.position.z
+    z: screwPlank.position.z - camPlank.position.z,
   };
 
   let camDir = { x: 0, y: 0, z: 0 };

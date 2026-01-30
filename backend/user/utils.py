@@ -8,6 +8,7 @@ from typing import List
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.forms.models import model_to_dict
 from django.utils import timezone
 
 # App imports
@@ -16,7 +17,6 @@ from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
-from django.forms.models import model_to_dict
 
 
 def send_email(email_data: EmailData) -> bool:
@@ -183,10 +183,7 @@ def duplicate_default_textures(organization: Organization) -> None:
 
     for finish in default_finishes:
         data = model_to_dict(finish, exclude=["id", "organization"])
-        FinishesLibrary.objects.create(
-            organization=organization,
-            **data
-        )
+        FinishesLibrary.objects.create(organization=organization, **data)
 
 
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:

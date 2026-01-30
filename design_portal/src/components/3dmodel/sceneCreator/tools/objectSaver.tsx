@@ -96,7 +96,10 @@ export class ObjectsSaver {
       design_id: window.location.pathname.split('/')[2],
       items: convertKeysToSnake(this.payloadData),
     };
-    const response = await CommonService.post(API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true, true), payload);
+    const response = await CommonService.post(
+      API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true, true),
+      payload
+    );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
@@ -109,7 +112,10 @@ export class ObjectsSaver {
       design_id: window.location.pathname.split('/')[2],
       items: convertKeysToSnake(this.payloadData),
     };
-    const response = await CommonService.post(API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true), payload);
+    const response = await CommonService.post(
+      API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true),
+      payload
+    );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
