@@ -152,7 +152,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         elif name in ["TOP_PLANK", "BOTTOM_PLANK", "HORIZONTAL_PLANK"]:
             plank_data.update({"width": width, "height": depth, "depth": height})
         elif name == "BACK_PLANK":
-            plank_data.update({"width": width - 250, "height": height, "depth": depth})
+            plank_data.update({"width": width, "height": height, "depth": depth})
 
         # Extract grooves
         grooves = catalog_data.get("grooves", [])

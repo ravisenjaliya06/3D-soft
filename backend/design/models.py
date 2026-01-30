@@ -170,6 +170,8 @@ class DesignCatalog(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
+    script_parent = models.UUIDField(null=True, blank=True)
+    is_script = models.BooleanField(default=False)
     data = models.JSONField(null=True, blank=True)
     materials = models.ManyToManyField(
         "material.Material", related_name="design_catalog_material"

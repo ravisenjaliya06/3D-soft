@@ -12,7 +12,7 @@ from django.utils import timezone
 
 # App imports
 from design.models import DesignCatalog
-from material.models import Company, Material, Properties
+from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
@@ -177,6 +177,13 @@ def default_material_data(organization: Organization) -> bool:
     return True
 
 
+def duplicate_default_textures(organization: Organization) -> None:
+    default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
+
+    for finish in default_finishes:
+        FinishesLibrary.objects.create(organization=organization, **finish.__dict__)
+
+
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:
     """
     Clone all default catalogs (organization IS NULL) into the given organization.
@@ -191,6 +198,8 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
     for catalog in default_catalogs:
         clone = DesignCatalog.objects.create(
             organization=organization,
+            script_parent=catalog.id,
+            is_script=True,
             version=None,
             type=catalog.type,
             name=catalog.name,
