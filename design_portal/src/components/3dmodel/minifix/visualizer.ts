@@ -58,6 +58,7 @@ function createScrewVisualization(connection: MinifixConnection, index: number):
     connectionId: connection.id,
     index: index,
   };
+  console.log('screw');
   return mesh;
 }
 
@@ -108,6 +109,7 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
     connectionId: connection.id,
     index,
   };
+  console.log('cam');
   return mesh;
 }
 
@@ -141,6 +143,7 @@ function createBoltDrillVisualization(connection: MinifixConnection, index: numb
     connectionId: connection.id,
     index: index,
   };
+  console.log('bolt drill');
   return mesh;
 }
 
@@ -180,6 +183,7 @@ function createDowelVisualization(
     connectionId: connection.id,
     index: index,
   };
+  console.log('dowel');
   return mesh;
 }
 
