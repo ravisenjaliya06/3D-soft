@@ -63,6 +63,10 @@ export interface HeaderProps {
 
 export interface ToolbarProps {
   threeDView?: ThreeDView;
+  /** Current view mode from parent (3d | 2d) */
+  viewMode?: '3d' | '2d';
+  /** Callback to request a view mode change */
+  onViewModeChange?: (mode: '3d' | '2d') => void;
 }
 
 export interface ComponentData {
