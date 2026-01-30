@@ -48,8 +48,8 @@ export class ObjectsSaver {
     const objects = store.getState().data.objects;
 
     if (objects.length === 0) {
-      this._showError('No objects found in the scene');
-      return false;
+      this.payloadData = [];
+      return true;
     }
 
     // Find all root objects (objects without a parent or with parent not in the objects list)

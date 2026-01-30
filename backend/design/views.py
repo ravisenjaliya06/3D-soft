@@ -276,6 +276,8 @@ class NestAPIViewset(ModelViewSet):
         catalogs = catalogs_query.prefetch_related("materials__properties")
 
         if not catalogs.exists():
+            NestingSheet.objects.filter(design=design).delete()
+            NestingFile.objects.filter(design=design).delete()
             return Response(
                 {"error": "No planks found for nesting"}, status=HTTP_400_BAD_REQUEST
             )

@@ -140,7 +140,7 @@ class SceneGetSerializer(serializers.Serializer):
 
 class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
-    items = serializers.ListField()
+    items = serializers.ListField(required=False)
 
     def _get_design(
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
@@ -194,48 +194,21 @@ class ScenePayloadSerializer(serializers.Serializer):
             if material:
                 catalog.materials.add(material)
 
-    def _get_unique_catalog_name(
-        self: "ScenePayloadSerializer",
-        base_name: str,
-        organization: Organization,
-        catalog_type: str,
-    ) -> str:
-        existing_names = (
-            DesignCatalog.objects.filter(
-                organization=organization,
-                type=catalog_type,
-                name__startswith=base_name,
-            )
-            .values_list("name", flat=True)
-        )
-
-        if base_name not in existing_names:
-            return base_name
-
-        # Match: "Name", "Name 1", "Name 2", ...
-        suffix_regex = re.compile(rf"^{re.escape(base_name)}(?: (\d+))?$")
-
-        max_index = 0
-        for name in existing_names:
-            match = suffix_regex.match(name)
-            if match:
-                number = match.group(1)
-                if number:
-                    max_index = max(max_index, int(number))
-
-        return f"{base_name} {max_index + 1}"
-
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
         is_library = request.query_params.get("is_library", False)
 
+        design = self._get_design(validated_data["design_id"], organization)
+        version = None
+        if not is_library:
+            version = DesignVersion.objects.create(design=design)
+        
+        if items is None:
+            return {}
+
         with transaction.atomic():
-            design = self._get_design(validated_data["design_id"], organization)
-            version = None
-            if not is_library:
-                version = DesignVersion.objects.create(design=design)
 
             temp_key_to_catalog: dict[str, DesignCatalog] = {}
             frontend_id_to_temp_keys: dict[str, list[str]] = {}
@@ -243,19 +216,11 @@ class ScenePayloadSerializer(serializers.Serializer):
             for index, item in enumerate(items):
                 temp_key = f"{index}_{uuid4()}"
 
-                original_name = item.get("name")
-
-                unique_name = self._get_unique_catalog_name(
-                    base_name=original_name,
-                    organization=organization,
-                    catalog_type=item.get("type"),
-                )
-
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
                     version=version,
                     type=item.get("type"),
-                    name=unique_name,
+                    name=item.get("name"),
                     parent=None,
                     data=item.copy(),
                 )
