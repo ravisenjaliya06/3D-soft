@@ -16,5 +16,4 @@ export const DRAWER_GUIDE_Y_POSITION = 0;
 
 export const LOAD_MORE_INCREMENT = 40;
 
-
 export const MIN_THICKNESS = 0.005;

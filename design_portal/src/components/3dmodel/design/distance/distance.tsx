@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../../handler/items';
 import { getActiveUnit, metersToUnit, unitToMeters } from '../../handler/unitConversion';
+import { MIN_THICKNESS } from '../../sceneCreator/constants';
+import { GROOVE_TYPE } from '../../sceneCreator/interface';
 import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
 import { isPlankObjectFindByName, isWallObject } from '../../utils/objectTypes';
@@ -14,8 +16,6 @@ import {
   ReferenceParam,
   ThreeDView,
 } from '../interface';
-import { GROOVE_TYPE } from '../../sceneCreator/interface';
-import { MIN_THICKNESS } from '../../sceneCreator/constants';
 
 export class DistanceTool {
   private scene: THREE.Scene;
@@ -523,7 +523,7 @@ export class DistanceTool {
       type === GROOVE_TYPE.PROTRUSION ||
       obj.name?.toLowerCase().includes('groove')
     );
-  };
+  }
 
   // Find nearest plank and wall to the given object
   public findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
@@ -548,11 +548,7 @@ export class DistanceTool {
     };
 
     this.scene.traverse((obj) => {
-      if (
-        obj === this.selectedMesh ||
-        !(obj instanceof THREE.Mesh) ||
-        this.isGrooveObject(obj)
-      ) {
+      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh) || this.isGrooveObject(obj)) {
         return;
       }
       const priority = getPriority(obj);

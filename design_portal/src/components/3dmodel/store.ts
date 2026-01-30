@@ -1,21 +1,18 @@
-import activeDesignReducer from '@/components/3dmodel/store/activeDesignSlice';
-import activeItemReducer from '@/components/3dmodel/store/activeItemSlice';
-import catalogReducer from '@/components/3dmodel/store/catalogSlice';
-import dataReducer from '@/components/3dmodel/store/dataSlice';
+import activeDesignReducer, {
+  clearActiveDesignOverrides,
+} from '@/components/3dmodel/store/activeDesignSlice';
+import activeItemReducer, {
+  clearActiveItemOverrides,
+} from '@/components/3dmodel/store/activeItemSlice';
+import catalogReducer, { resetCatalog } from '@/components/3dmodel/store/catalogSlice';
+import dataReducer, { resetData } from '@/components/3dmodel/store/dataSlice';
 import designSettingsReducer from '@/components/3dmodel/store/designSettingsSlice';
-import historyReducer from '@/components/3dmodel/store/historySlice';
-import measurementReducer from '@/components/3dmodel/store/measurementSlice';
-import sceneReducer from '@/components/3dmodel/store/sceneSlice';
+import historyReducer, { clearHistory } from '@/components/3dmodel/store/historySlice';
+import measurementReducer, { resetMeasurement } from '@/components/3dmodel/store/measurementSlice';
+import sceneReducer, { resetScene } from '@/components/3dmodel/store/sceneSlice';
 import { Action, configureStore } from '@reduxjs/toolkit';
 import { setAutoFreeze } from 'immer';
 import { ThunkAction } from 'redux-thunk';
-import { clearActiveDesignOverrides } from '@/components/3dmodel/store/activeDesignSlice';
-import { clearActiveItemOverrides } from '@/components/3dmodel/store/activeItemSlice';
-import { resetCatalog } from '@/components/3dmodel/store/catalogSlice';
-import { resetData } from '@/components/3dmodel/store/dataSlice';
-import { clearHistory } from '@/components/3dmodel/store/historySlice';
-import { resetMeasurement } from '@/components/3dmodel/store/measurementSlice';
-import { resetScene } from '@/components/3dmodel/store/sceneSlice';
 
 // 🔥Important: Disable Immer auto-freeze or Three.js will crash at runtime.
 // Do NOT remove or modify this — freezing breaks Three.js objects.

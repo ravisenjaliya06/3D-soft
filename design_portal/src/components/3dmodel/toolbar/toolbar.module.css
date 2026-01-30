@@ -1034,7 +1034,7 @@
   max-height: 78vh;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.35) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
 }
 
 .submenuContent::-webkit-scrollbar {

@@ -966,8 +966,7 @@ export class BandingTool {
         newDimensions.depth
       );
 
-      const bandingThickness =
-        bandingMaterialData?.properties?.thickness ?? this.defaultThickness;
+      const bandingThickness = bandingMaterialData?.properties?.thickness ?? this.defaultThickness;
       this.resizeBandingMeshesToPlankDimensions(
         mesh,
         newDimensions.width,

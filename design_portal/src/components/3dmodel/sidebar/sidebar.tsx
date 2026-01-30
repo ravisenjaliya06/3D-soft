@@ -46,13 +46,13 @@ import { CustomToast } from '../utils/CustomToast';
 
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
+import { DistanceTool } from '../design/distance/distance';
+import { getActiveUnit, metersToUnit, unitToMeters } from '../handler/unitConversion';
 import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import { DistanceTool } from '../design/distance/distance';
-import { getActiveUnit, metersToUnit, unitToMeters } from '../handler/unitConversion';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -174,7 +174,7 @@ const Sidebar: React.FC = () => {
         setFrontpanelEnabled(hasSkirting);
 
         // Calculate distances for position fields
-        if (distanceToolRef.current && targetMesh instanceof THREE.Mesh) {
+        if (distanceToolRef.current) {
           const distances = distanceToolRef.current.getDistances(targetMesh);
           setPositionDistances(distances);
         }
@@ -463,9 +463,9 @@ const Sidebar: React.FC = () => {
 
       // Update Redux store
       const newPosition = {
-        x: targetMesh.position.x,
-        y: targetMesh.position.y,
-        z: targetMesh.position.z,
+        x: (targetMesh as THREE.Mesh).position.x,
+        y: (targetMesh as THREE.Mesh).position.y,
+        z: (targetMesh as THREE.Mesh).position.z,
       };
 
       dispatch(
@@ -533,9 +533,9 @@ const Sidebar: React.FC = () => {
     });
   };
   const handleDimensionChange = (field: Field, value: number) => {
-    console.log(field, value, "field, value");
+    console.log(field, value, 'field, value');
     if (!selectedObject || isDisabled) return;
-    console.log(selectedObject, "selectedObject");
+    console.log(selectedObject, 'selectedObject');
 
     // Round the value to ensure it's a whole number
     const roundedValue = Math.round(value);
@@ -568,7 +568,7 @@ const Sidebar: React.FC = () => {
     } as const;
 
     const config = axisConfig[field];
-    console.log(config, "config");
+    console.log(config, 'config');
 
     if (config) {
       if (config.side === config.negative) {
@@ -579,8 +579,8 @@ const Sidebar: React.FC = () => {
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
-    console.log(currentPos, "currentPos");
-    console.log(roundedValue, "roundedValue");
+    console.log(currentPos, 'currentPos');
+    console.log(roundedValue, 'roundedValue');
     applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
@@ -1327,14 +1327,14 @@ const Sidebar: React.FC = () => {
     <div
       className={
         isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent pb-[0.5rem]`
+          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
           : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
       }
     >
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`cursor-pointer fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
         <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
           {getSidebarTitle()}
@@ -2020,7 +2020,9 @@ const Sidebar: React.FC = () => {
                                 type="number"
                                 value={
                                   positionDistances.left !== null
-                                    ? metersToUnit(positionDistances.left, getActiveUnit()).toFixed(0)
+                                    ? metersToUnit(positionDistances.left, getActiveUnit()).toFixed(
+                                        0
+                                      )
                                     : ''
                                 }
                                 onChange={(e) => {
@@ -2054,7 +2056,10 @@ const Sidebar: React.FC = () => {
                                 type="number"
                                 value={
                                   positionDistances.right !== null
-                                    ? metersToUnit(positionDistances.right, getActiveUnit()).toFixed(0)
+                                    ? metersToUnit(
+                                        positionDistances.right,
+                                        getActiveUnit()
+                                      ).toFixed(0)
                                     : ''
                                 }
                                 onChange={(e) => {
@@ -2085,7 +2090,9 @@ const Sidebar: React.FC = () => {
                                 type="number"
                                 value={
                                   positionDistances.top !== null
-                                    ? metersToUnit(positionDistances.top, getActiveUnit()).toFixed(0)
+                                    ? metersToUnit(positionDistances.top, getActiveUnit()).toFixed(
+                                        0
+                                      )
                                     : ''
                                 }
                                 onChange={(e) => {
@@ -2119,7 +2126,10 @@ const Sidebar: React.FC = () => {
                                 type="number"
                                 value={
                                   positionDistances.bottom !== null
-                                    ? metersToUnit(positionDistances.bottom, getActiveUnit()).toFixed(0)
+                                    ? metersToUnit(
+                                        positionDistances.bottom,
+                                        getActiveUnit()
+                                      ).toFixed(0)
                                     : ''
                                 }
                                 onChange={(e) => {
