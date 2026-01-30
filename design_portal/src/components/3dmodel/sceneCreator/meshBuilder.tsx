@@ -146,7 +146,7 @@ export class MeshBuilder {
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.repeat.set(2, 2);
+      texture.repeat.set(1, 1);
       texture.center.set(0, 0);
       texture.offset.set(0, 0);
     });
