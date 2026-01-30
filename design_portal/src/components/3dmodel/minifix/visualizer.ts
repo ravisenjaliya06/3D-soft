@@ -88,22 +88,8 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   );
   // Rotate cam face to look towards screw
   // Cylinder default axis = Y
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 0), boltDir);
-  // If the direction is negative in its primary axis, rotate 180 degrees around the perpendicular axis to flip the face
-  const primaryAxis = Math.max(Math.abs(boltDir.x), Math.abs(boltDir.y), Math.abs(boltDir.z));
-  if (primaryAxis === Math.abs(boltDir.x) && boltDir.x < 0) {
-    const rotationAxis = new THREE.Vector3(0, 1, 0); // Flip around Y if X negative
-    const additionalRotation = new THREE.Quaternion().setFromAxisAngle(rotationAxis, Math.PI);
-    mesh.quaternion.multiply(additionalRotation);
-  } else if (primaryAxis === Math.abs(boltDir.y) && boltDir.y < 0) {
-    const rotationAxis = new THREE.Vector3(1, 0, 0);
-    const additionalRotation = new THREE.Quaternion().setFromAxisAngle(rotationAxis, Math.PI);
-    mesh.quaternion.multiply(additionalRotation);
-  } else if (primaryAxis === Math.abs(boltDir.z) && boltDir.z < 0) {
-    const rotationAxis = new THREE.Vector3(1, 0, 0);
-    const additionalRotation = new THREE.Quaternion().setFromAxisAngle(rotationAxis, Math.PI);
-    mesh.quaternion.multiply(additionalRotation);
-  }
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), boltDir);
+  // Flip logic removed. We rely on the calculator to provide correct "Inward" direction normals.
   mesh.userData = {
     minifixType: 'CAM',
     connectionId: connection.id,
