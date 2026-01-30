@@ -1349,10 +1349,11 @@ def nest(
             attempts += 1
 
         if best_rectangles is None:
-            return JsonResponse(
-                {"error": "No suitable nesting found. Try increasing sheet size."},
-                status=HTTP_400_BAD_REQUEST,
+            logging.warning(
+                "No suitable nesting found for remaining files on sheet %s. Stopping nesting.",
+                sheet_number,
             )
+            break
 
         # Extract rid from rectangles (handle both formats)
         rids = []
