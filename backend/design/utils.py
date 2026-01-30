@@ -171,7 +171,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
             plank_data["grooves"] = processed_grooves
 
         # Extract minifix holes
-        minifix_holes = catalog_data.get("minifixHoles", [])
+        minifix_holes = catalog_data.get("minifix_holes", [])
         if minifix_holes:
             processed_holes = []
             for hole in minifix_holes:
@@ -180,7 +180,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                     "diameter": float(hole.get("diameter", 0)),
                     "depth": float(hole.get("depth", 0)),
                     "length": float(hole.get("length", 0)),  # For dowels
-                    "localPosition2D": hole.get("localPosition2D", {"x": 0, "y": 0}),
+                    "localPosition2D": hole.get("local_position2_d", {"x": 0, "y": 0}),
                     "direction": hole.get("direction", {"x": 0, "y": 0, "z": 0}),
                 }
                 processed_holes.append(processed_hole)
