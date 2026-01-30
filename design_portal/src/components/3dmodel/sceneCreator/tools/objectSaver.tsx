@@ -21,11 +21,15 @@ export class ObjectsSaver {
   }
 
   private _showError(message: string) {
-    toast(() => <CustomToast appearance="error" message={message} />);
+    toast(<CustomToast appearance="error" message={message} />, {
+      style: { background: 'transparent', boxShadow: 'none', padding: 0 },
+    });
   }
 
   private _showSuccess(message: string) {
-    toast(() => <CustomToast appearance="success" message={message} />);
+    toast(<CustomToast appearance="success" message={message} />, {
+      style: { background: 'transparent', boxShadow: 'none', padding: 0 },
+    });
   }
 
   private _findAllChildObjects(
