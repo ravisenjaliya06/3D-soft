@@ -3466,11 +3466,7 @@ def _duplicate_default_catalogs_for_org(
             script_parent=old.id,
             is_script=True,
             version=None,
-            defaults={
-                "name": old.name,
-                "type": old.type,
-                "data": old.data
-            },
+            defaults={"name": old.name, "type": old.type, "data": old.data},
         )
 
         _attach_material_by_name(clone, old, organization)

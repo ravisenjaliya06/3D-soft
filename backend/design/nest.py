@@ -16,7 +16,7 @@ from django.http import JsonResponse
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
 from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK
 from svglib.svglib import svg2rlg
 from svgwrite import Drawing
 from svgwrite.shapes import Rect

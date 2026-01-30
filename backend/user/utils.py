@@ -12,7 +12,7 @@ from django.utils import timezone
 
 # App imports
 from design.models import DesignCatalog
-from material.models import Company, Material, Properties, FinishesLibrary
+from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
@@ -181,10 +181,7 @@ def duplicate_default_textures(organization: Organization) -> None:
     default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
 
     for finish in default_finishes:
-        FinishesLibrary.objects.create(
-            organization=organization,
-            **finish.__dict__
-        )
+        FinishesLibrary.objects.create(organization=organization, **finish.__dict__)
 
 
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:

@@ -2,7 +2,6 @@
 from typing import Any, Dict
 from urllib.request import Request
 from uuid import uuid4
-import re
 
 # Django imports
 from django.db import transaction
@@ -204,7 +203,7 @@ class ScenePayloadSerializer(serializers.Serializer):
         version = None
         if not is_library:
             version = DesignVersion.objects.create(design=design)
-        
+
         if items is None:
             return {}
 

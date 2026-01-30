@@ -127,7 +127,6 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         catalog_id = str(catalog.id)
         catalog_data = catalog.data or {}
         name = catalog.name or catalog_data.get("name", "")
-        print(name, "name")
 
         dims = catalog_data.get("dimensions", {})
         width = float(dims.get("width", 0))
