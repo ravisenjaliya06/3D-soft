@@ -14,6 +14,8 @@ import {
   ReferenceParam,
   ThreeDView,
 } from '../interface';
+import { GROOVE_TYPE } from '../../sceneCreator/interface';
+import { MIN_THICKNESS } from '../../sceneCreator/constants';
 
 export class DistanceTool {
   private scene: THREE.Scene;
@@ -26,6 +28,86 @@ export class DistanceTool {
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
+  }
+
+  /**
+   * Get distances for all four sides (left, right, top, bottom) without showing visual labels
+   * Returns distances in meters
+   */
+  public getDistances(mesh: THREE.Mesh): {
+    left: number | null;
+    right: number | null;
+    top: number | null;
+    bottom: number | null;
+  } {
+    this.selectedMesh = mesh;
+    this.selectedBox = this.computeBoundingBox(mesh);
+    const geometryInfo = this.analyzePlankGeometry();
+
+    let mainAxis: Axis | null = null;
+
+    if (geometryInfo.isHorizontal) {
+      // horizontal plank → measure Y (top/bottom)
+      mainAxis = 'y';
+    } else if (geometryInfo.isThinX) {
+      // vertical plank facing X → measure X (left/right)
+      mainAxis = 'x';
+    } else if (geometryInfo.isThinZ) {
+      // vertical plank facing Z → measure Z (front/back, but we'll use X/Y for left/right/top/bottom)
+      // For Z-facing planks, left/right are along X axis, top/bottom are along Y axis
+      mainAxis = 'z';
+    }
+
+    const result = {
+      left: null as number | null,
+      right: null as number | null,
+      top: null as number | null,
+      bottom: null as number | null,
+    };
+
+    if (!mainAxis || !this.selectedBox) return result;
+
+    // For horizontal planks: measure Y (top/bottom)
+    if (mainAxis === 'y') {
+      const { minPos, maxPos } = this.findNearestReferences('y', ['x', 'z']);
+      if (minPos !== null) {
+        result.bottom = Math.abs(this.selectedBox.min.y - minPos);
+      }
+      if (maxPos !== null) {
+        result.top = Math.abs(maxPos - this.selectedBox.max.y);
+      }
+    }
+    // For vertical planks facing X: measure X (left/right)
+    else if (mainAxis === 'x') {
+      const { minPos, maxPos } = this.findNearestReferences('x', ['y', 'z']);
+      if (minPos !== null) {
+        result.left = Math.abs(this.selectedBox.min.x - minPos);
+      }
+      if (maxPos !== null) {
+        result.right = Math.abs(maxPos - this.selectedBox.max.x);
+      }
+    }
+    // For vertical planks facing Z: measure both X (left/right) and Y (top/bottom)
+    else if (mainAxis === 'z') {
+      // Left/Right along X axis
+      const xRefs = this.findNearestReferences('x', ['y', 'z']);
+      if (xRefs.minPos !== null) {
+        result.left = Math.abs(this.selectedBox.min.x - xRefs.minPos);
+      }
+      if (xRefs.maxPos !== null) {
+        result.right = Math.abs(xRefs.maxPos - this.selectedBox.max.x);
+      }
+      // Top/Bottom along Y axis
+      const yRefs = this.findNearestReferences('y', ['x', 'z']);
+      if (yRefs.minPos !== null) {
+        result.bottom = Math.abs(this.selectedBox.min.y - yRefs.minPos);
+      }
+      if (yRefs.maxPos !== null) {
+        result.top = Math.abs(yRefs.maxPos - this.selectedBox.max.y);
+      }
+    }
+
+    return result;
   }
 
   public showDistances(mesh: THREE.Mesh): void {
@@ -203,6 +285,7 @@ export class DistanceTool {
     if (!meta) return;
 
     const target = view.scene.getObjectByProperty('uuid', meta.targetUuid) as THREE.Mesh | null;
+    console.log(target, 'target');
     if (!target) return;
 
     const box = this.computeBoundingBox(target);
@@ -433,8 +516,17 @@ export class DistanceTool {
     return true;
   }
 
+  private isGrooveObject(obj: THREE.Object3D): boolean {
+    const type = obj.userData?.type;
+    return (
+      type === GROOVE_TYPE.GROOVE ||
+      type === GROOVE_TYPE.PROTRUSION ||
+      obj.name?.toLowerCase().includes('groove')
+    );
+  };
+
   // Find nearest plank and wall to the given object
-  private findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
+  public findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
     if (!this.selectedMesh || !this.selectedBox)
       return { minPos: null, maxPos: null, minBox: null, maxBox: null };
 
@@ -447,18 +539,31 @@ export class DistanceTool {
     const selfMax = this.selectedBox.max[axis];
 
     const getPriority = (obj: THREE.Object3D): Priority => {
-      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+      if (this.isGrooveObject(obj)) return Priority.NONE;
+
       if (isWallObject(obj)) return Priority.WALL;
+      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+
       return Priority.NONE;
     };
 
     this.scene.traverse((obj) => {
-      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh)) return;
-
+      if (
+        obj === this.selectedMesh ||
+        !(obj instanceof THREE.Mesh) ||
+        this.isGrooveObject(obj)
+      ) {
+        return;
+      }
       const priority = getPriority(obj);
       if (priority === Priority.NONE) return;
 
       const box = this.computeBoundingBox(obj);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      if (size.x < MIN_THICKNESS || size.y < MIN_THICKNESS || size.z < MIN_THICKNESS) {
+        return;
+      }
       if (!this.overlapsOnAxes(this.selectedBox!, box, overlapAxes)) return;
 
       // Negative direction (find max pos < selfMin)
@@ -651,7 +756,7 @@ export class DistanceTool {
     return side === 'min' ? box.min.z : box.max.z;
   }
 
-  private applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
+  public applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
     const worldPos = new THREE.Vector3();
     target.getWorldPosition(worldPos);
     if (axis === 'x') worldPos.x += delta;

@@ -51,6 +51,8 @@ import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
 import { Axis, Field, MATERIAL_TYPES } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import { DistanceTool } from '../design/distance/distance';
+import { getActiveUnit, metersToUnit, unitToMeters } from '../handler/unitConversion';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -64,6 +66,12 @@ const Sidebar: React.FC = () => {
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
   const [handleMode, setHandleMode] = useState<'handle' | 'handleless'>('handle');
+  const [positionDistances, setPositionDistances] = useState({
+    left: null as number | null,
+    right: null as number | null,
+    top: null as number | null,
+    bottom: null as number | null,
+  });
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
@@ -75,9 +83,11 @@ const Sidebar: React.FC = () => {
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
+  const distanceToolRef = useRef<DistanceTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
+  const isUpdatingPositionRef = useRef(false);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
@@ -142,6 +152,13 @@ const Sidebar: React.FC = () => {
     }
   }, [scene]);
 
+  /** distance tool ref */
+  useEffect(() => {
+    if (scene) {
+      distanceToolRef.current = new DistanceTool(scene);
+    }
+  }, [scene]);
+
   useEffect(() => {
     if (selectedObject && scene) {
       let targetMesh: THREE.Mesh | null = null;
@@ -155,7 +172,17 @@ const Sidebar: React.FC = () => {
           (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
         );
         setFrontpanelEnabled(hasSkirting);
+
+        // Calculate distances for position fields
+        if (distanceToolRef.current && targetMesh instanceof THREE.Mesh) {
+          const distances = distanceToolRef.current.getDistances(targetMesh);
+          setPositionDistances(distances);
+        }
+      } else {
+        setPositionDistances({ left: null, right: null, top: null, bottom: null });
       }
+    } else {
+      setPositionDistances({ left: null, right: null, top: null, bottom: null });
     }
   }, [selectedObject, scene]);
 
@@ -313,6 +340,7 @@ const Sidebar: React.FC = () => {
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
   ): void {
+    console.log(selectedObject, patch);
     if (!selectedObject) return;
     const updatedObject: MeshObjectData = {
       ...selectedObject,
@@ -335,6 +363,7 @@ const Sidebar: React.FC = () => {
         ? { ...selectedObject.edgeBanding, ...patch.edgeBanding }
         : selectedObject.edgeBanding,
     };
+    console.log(updatedObject);
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -376,6 +405,97 @@ const Sidebar: React.FC = () => {
     });
   };
 
+  const handlePositionDistanceChange = async (
+    side: 'left' | 'right' | 'top' | 'bottom',
+    value: number
+  ) => {
+    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current)
+      return;
+
+    isUpdatingPositionRef.current = true;
+
+    try {
+      let targetMesh: THREE.Mesh | null = null;
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+          targetMesh = obj;
+        }
+      });
+
+      if (!targetMesh) {
+        isUpdatingPositionRef.current = false;
+        return;
+      }
+
+      // Get current distances
+      const currentDistances = distanceToolRef.current.getDistances(targetMesh);
+      const unit = getActiveUnit();
+
+      // Convert new value to meters
+      const newDistanceM = unitToMeters(value, unit);
+
+      // Get current distance for this side
+      let currentDistanceM = 0;
+      let axis: 'x' | 'y' | 'z' = 'x';
+
+      if (side === 'left' && currentDistances.left !== null) {
+        currentDistanceM = currentDistances.left;
+        axis = 'x';
+      } else if (side === 'right' && currentDistances.right !== null) {
+        currentDistanceM = currentDistances.right;
+        axis = 'x';
+      } else if (side === 'top' && currentDistances.top !== null) {
+        currentDistanceM = currentDistances.top;
+        axis = 'y';
+      } else if (side === 'bottom' && currentDistances.bottom !== null) {
+        currentDistanceM = currentDistances.bottom;
+        axis = 'y';
+      } else {
+        isUpdatingPositionRef.current = false;
+        return;
+      }
+
+      // Calculate delta (how much to move)
+      const delta = newDistanceM - currentDistanceM;
+
+      // Apply position change using DistanceTool's method
+      distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+
+      // Update Redux store
+      const newPosition = {
+        x: targetMesh.position.x,
+        y: targetMesh.position.y,
+        z: targetMesh.position.z,
+      };
+
+      dispatch(
+        updateObject({
+          id: selectedObject.id,
+          position: newPosition,
+        })
+      );
+
+      // Recalculate distances after position change
+      const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
+      setPositionDistances(updatedDistances);
+
+      // Sync to scene
+      if (updateObjectRef.current) {
+        await new SyncManager(
+          {
+            ...selectedObject,
+            position: newPosition,
+          },
+          undefined
+        ).syncData();
+      }
+    } catch (error) {
+      console.error('Error updating position:', error);
+    } finally {
+      isUpdatingPositionRef.current = false;
+    }
+  };
+
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
 
@@ -413,7 +533,9 @@ const Sidebar: React.FC = () => {
     });
   };
   const handleDimensionChange = (field: Field, value: number) => {
+    console.log(field, value, "field, value");
     if (!selectedObject || isDisabled) return;
+    console.log(selectedObject, "selectedObject");
 
     // Round the value to ensure it's a whole number
     const roundedValue = Math.round(value);
@@ -446,6 +568,7 @@ const Sidebar: React.FC = () => {
     } as const;
 
     const config = axisConfig[field];
+    console.log(config, "config");
 
     if (config) {
       if (config.side === config.negative) {
@@ -456,7 +579,8 @@ const Sidebar: React.FC = () => {
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
-
+    console.log(currentPos, "currentPos");
+    console.log(roundedValue, "roundedValue");
     applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
@@ -1118,11 +1242,12 @@ const Sidebar: React.FC = () => {
   };
 
   const handleControlClick = (fieldName: string, idx: number) => {
+    console.log(fieldName, idx);
     // Helper to toggle state: if same side clicked, turn off (null); otherwise set new side.
     const toggle = <T,>(current: T | null, target: T): T | null => {
+      console.log(current, target);
       return current === target ? null : target;
     };
-
     if (fieldName === 'width') {
       // Index 0 -> 'left', Index 1 -> 'right'
       const target = idx === 0 ? 'left' : 'right';
@@ -1893,6 +2018,18 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
+                                value={
+                                  positionDistances.left !== null
+                                    ? metersToUnit(positionDistances.left, getActiveUnit()).toFixed(0)
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val >= 0) {
+                                    handlePositionDistanceChange('left', val);
+                                  }
+                                }}
+                                disabled={isQuickHideActive || positionDistances.left === null}
                                 className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -1915,6 +2052,18 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
+                                value={
+                                  positionDistances.right !== null
+                                    ? metersToUnit(positionDistances.right, getActiveUnit()).toFixed(0)
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val >= 0) {
+                                    handlePositionDistanceChange('right', val);
+                                  }
+                                }}
+                                disabled={isQuickHideActive || positionDistances.right === null}
                                 className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -1934,6 +2083,18 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
+                                value={
+                                  positionDistances.top !== null
+                                    ? metersToUnit(positionDistances.top, getActiveUnit()).toFixed(0)
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val >= 0) {
+                                    handlePositionDistanceChange('top', val);
+                                  }
+                                }}
+                                disabled={isQuickHideActive || positionDistances.top === null}
                                 className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
@@ -1956,6 +2117,18 @@ const Sidebar: React.FC = () => {
 
                               <input
                                 type="number"
+                                value={
+                                  positionDistances.bottom !== null
+                                    ? metersToUnit(positionDistances.bottom, getActiveUnit()).toFixed(0)
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val >= 0) {
+                                    handlePositionDistanceChange('bottom', val);
+                                  }
+                                }}
+                                disabled={isQuickHideActive || positionDistances.bottom === null}
                                 className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>

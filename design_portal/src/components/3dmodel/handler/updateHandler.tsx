@@ -193,7 +193,7 @@ export class UpdateObjectInScene {
       });
     }
 
-    // Use BandingTool to update banding
+    // Use BandingTool to update banding (dimension change: only resize banding, do not reduce plank)
     await this.bandingTool.updateBanding(
       mesh,
       {
@@ -207,7 +207,8 @@ export class UpdateObjectInScene {
       {
         material: currentObject?.material,
         id: currentObject?.id,
-      }
+      },
+      { isDimensionUpdate: true }
     );
   }
 
