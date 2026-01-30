@@ -65,7 +65,7 @@ export class ObjectsSaver {
     return true;
   }
 
-  private _getSelectedObjectData() {
+  private _getSelectedObjectData(name?: string) {
     const objects = store.getState().data.objects;
     const selectedObjectData = objects.find((o) => o.id === this.selectedObjectId);
 
@@ -74,7 +74,7 @@ export class ObjectsSaver {
       return false;
     }
 
-    this.payloadData.push({ ...selectedObjectData, isMain: true });
+    this.payloadData.push({ ...selectedObjectData, name: name || selectedObjectData.name, isMain: true });
     this._findAllChildObjects(this.selectedObjectId, objects);
     return true;
   }
@@ -122,9 +122,9 @@ export class ObjectsSaver {
   /**
    * Saves the selected object and its children
    */
-  public saveObject() {
+  public saveObject(name?: string) {
     this._clearPayloadData();
-    if (this._getSelectedObjectData()) {
+    if (this._getSelectedObjectData(name ? name : undefined)) {
       this._createAPICall();
     }
   }

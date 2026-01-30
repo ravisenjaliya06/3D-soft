@@ -14,6 +14,8 @@ import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
+import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -92,6 +94,9 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
   const dimToolRef = useRef<DistanceTool | null>(null);
+  const [showSavePopup, setShowSavePopup] = React.useState(false);
+  const [catalogName, setCatalogName] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (!mountRef.current || !designId) return;
@@ -278,6 +283,17 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
   }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
 
+  const handleConfirmSave = () => {
+    if (!catalogName.trim()) {
+      setError('Library name is required');
+      return;
+    }
+
+    const saver = new ObjectsSaver();
+    saver.saveObject(catalogName.trim());
+    setShowSavePopup(false);
+  };
+
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
       <div ref={mountRef} style={{ width: '100%', height: '100%' }}></div>
@@ -293,8 +309,23 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             design3D={design3D}
             selectedObject={helperToolObject}
             moveHandler={moveHandler}
+            setShowSavePopup={setShowSavePopup}
+            setCatalogName={setCatalogName}
+            setError={setError}
           />
         </>
+      )}
+      {showSavePopup && (
+        <SaveToLibraryPopup
+          catalogName={catalogName}
+          error={error}
+          onCatalogNameChange={(name) => {
+            setCatalogName(name);
+            setError(null);
+          }}
+          onSave={handleConfirmSave}
+          onClose={() => setShowSavePopup(false)}
+        />
       )}
     </div>
   );

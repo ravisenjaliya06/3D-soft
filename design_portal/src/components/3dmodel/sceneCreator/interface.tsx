@@ -222,6 +222,9 @@ export interface HelperToolProps {
   design3D: ThreeDView;
   selectedObject: THREE.Mesh | null;
   moveHandler: MoveHandler | null;
+  setShowSavePopup: React.Dispatch<React.SetStateAction<boolean>>;
+  setCatalogName: React.Dispatch<React.SetStateAction<string>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 // TODO (HARSH): Created for temporary patching. Will update later when using SyncManager for lists.
