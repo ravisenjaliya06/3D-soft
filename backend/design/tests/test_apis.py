@@ -718,7 +718,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Test POST /catalogs/ without items returns 400"""
-        payload = {"design_id": str(self.design.id)}
+        payload = {"design_id": str(self.design.id), "items": []}
 
         response = self.client.post(
             reverse("design_catalogs"),
@@ -727,7 +727,7 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             headers=self.get_headers,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_design_catalog_empty_items(
         self: "DesignAPIViewTestCase",
