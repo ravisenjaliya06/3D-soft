@@ -3260,6 +3260,7 @@ def create_materials(
             type=material_type,
             company=company,
             organization=None,
+            is_catalog=False,
             defaults={"description": material_data.get("description", "")},
         )
 
@@ -3333,6 +3334,7 @@ def create_materials(
                 type=material_type,
                 company=org_company,
                 organization=org,
+                is_catalog=False,
                 defaults={"description": material_data.get("description", "")},
             )
 
@@ -3412,6 +3414,7 @@ def create_catalog(catalog_list: list[dict]) -> None:
                 "name": item["name"],
                 "type": item["type"],
                 "organization": None,
+                "is_library": True,
                 "version": None,
                 "parent": None,
                 "data": item,
@@ -3439,6 +3442,7 @@ def create_catalog(catalog_list: list[dict]) -> None:
                 "name": item["name"],
                 "type": item["type"],
                 "organization": None,
+                "is_library": True,
                 "version": None,
                 "parent": parent,
                 "data": item,
@@ -3466,7 +3470,7 @@ def _duplicate_default_catalogs_for_org(
             script_parent=old.id,
             is_script=True,
             version=None,
-            defaults={"name": old.name, "type": old.type, "data": old.data},
+            defaults={"name": old.name, "type": old.type, "data": old.data, "is_library": True},
         )
 
         _attach_material_by_name(clone, old, organization)

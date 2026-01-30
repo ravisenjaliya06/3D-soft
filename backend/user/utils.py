@@ -16,6 +16,7 @@ from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
+from django.forms.models import model_to_dict
 
 
 def send_email(email_data: EmailData) -> bool:
@@ -181,7 +182,11 @@ def duplicate_default_textures(organization: Organization) -> None:
     default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
 
     for finish in default_finishes:
-        FinishesLibrary.objects.create(organization=organization, **finish.__dict__)
+        data = model_to_dict(finish, exclude=["id", "organization"])
+        FinishesLibrary.objects.create(
+            organization=organization,
+            **data
+        )
 
 
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:

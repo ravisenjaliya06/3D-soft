@@ -570,13 +570,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
-        request = self.context.get("request")
-        organization = getattr(request.user, "selected_organization", None)
-
         self._validate_properties(attrs)
-        self._validate_unique_name(attrs, organization)
-        self._validate_duplicate_entries(attrs)
-        self._validate_name_consistency(attrs)
 
         return attrs
 
@@ -631,41 +625,6 @@ class MaterialSerializer(serializers.ModelSerializer):
 
         return list(duplicates)
 
-    def _validate_duplicate_entries(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Check for duplicate names in finishes, finish_types, and textures."""
-        errors = {}
-
-        for key in ["finishes", "finish_types", "textures"]:
-            duplicates = self._find_duplicates(attrs.get(key, []))
-            if duplicates:
-                errors[key] = f"Duplicate names not allowed: {', '.join(duplicates)}"
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-    def _validate_name_consistency(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Ensure that finishes, finish_types, and textures have matching name sets."""
-
-        def extract_names(key: str) -> set:
-            return {i["name"] for i in attrs.get(key, []) if i.get("name")}
-
-        finish_set = extract_names("finishes")
-        finish_type_set = extract_names("finish_types")
-        texture_set = extract_names("textures")
-
-        if not (finish_set == finish_type_set == texture_set):
-            raise serializers.ValidationError(
-                {
-                    "errors": (
-                        "finishes, finish_types, and textures must contain the same set of names."
-                    )
-                }
-            )
-
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
         data = super().to_representation(instance)
         data.pop("properties", None)
@@ -702,12 +661,17 @@ class MaterialSerializer(serializers.ModelSerializer):
         return None
 
     def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
+        request = self.context["request"]
+        is_catalog = request.query_params.get("is_catalog", "false").lower() == "true"
         properties_data = validated_data.pop("properties", None)
         finishes_data = validated_data.pop("finishes", [])
         finish_types_data = validated_data.pop("finish_types", [])
         textures_data = validated_data.pop("textures", [])
 
-        material = Material.objects.create(**validated_data)
+        material = Material.objects.create(
+            **validated_data,
+            is_catalog=is_catalog,
+        )
 
         if properties_data:
             Properties.objects.create(material=material, **properties_data)

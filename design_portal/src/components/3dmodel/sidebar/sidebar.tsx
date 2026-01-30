@@ -22,6 +22,8 @@ import {
   MeshObjectData,
   MeshObjectPatch,
   PART_TYPES,
+  MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
+  TextureDetails,
 } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -629,19 +631,33 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const handleTextureSelect = (texturePath: string) => {
+  const handleTextureSelect = (textureData: TextureDetails) => {
     if (!selectedObject) return;
 
-    // Update via UpdateHandler for immediate visual feedback
-    if (updateObjectRef.current) {
-      updateObjectRef.current.update(selectedObject.id, {
-        //@ts-ignore
-        material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
-      });
-    }
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
 
-    // Keep existing Material array structure
-    applyObjectUpdate(selectedObject, { material: selectedObject.material });
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK) {
+        return {
+          ...mat,
+          textures: [
+            {
+              id: mat?.textures?.[0].id,
+              name: mat?.textures?.[0].name,
+              texture: textureData.id,
+              textureDetail: textureData,
+            },
+          ],
+        };
+      }
+      return mat;
+    });
+
+    // Preserve original structure (array vs single object)
+    applyObjectUpdate(selectedObject, {
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
 
     setIsTextureListOpen(false);
   };
@@ -2660,7 +2676,7 @@ const Sidebar: React.FC = () => {
                                 <div
                                   key={`${m.option}-${idx}`}
                                   className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                  onClick={() => handleTextureSelect(m.image)}
+                                  onClick={() => handleTextureSelect(m)}
                                 >
                                   <img
                                     src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}

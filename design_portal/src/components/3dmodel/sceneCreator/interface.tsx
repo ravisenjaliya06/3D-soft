@@ -116,7 +116,7 @@ interface Texture {
   textureDetail: TextureDetails;
 }
 
-interface TextureDetails {
+export interface TextureDetails {
   decal: number;
   height: number;
   id: string;
@@ -236,4 +236,5 @@ export type MeshObjectPatch = Omit<
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
   edgeBanding?: EdgeBandingState;
+  material?: Material[];
 };

@@ -241,6 +241,30 @@ export function convertKeysToCamel<T>(obj: Object): T {
   return obj;
 }
 
+function camelToSnake(key: string): string {
+  return key
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase();
+}
+
+export function convertKeysToSnake<T>(obj: any): T {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToSnake) as any;
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [
+        camelToSnake(k),
+        convertKeysToSnake(v),
+      ])
+    ) as T;
+  }
+
+  return obj;
+}
+
+
 //deep update ids
 export function deepUpdateIds<T>(value: T, idMap: Map<string, string>): T {
   if (value === null || typeof value !== 'object') {

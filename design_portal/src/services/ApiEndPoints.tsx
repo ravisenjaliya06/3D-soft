@@ -39,7 +39,17 @@ export const API_ENDPOINT = {
   CREATE_WORKORDER: 'mes_portal/work_order/',
   CREATE_MATERIAL_WITHOUT_CATALOG: 'material/catalog/design/',
   CREATE_CATALOGS: 'design/catalogs/',
-  CREATE_LIBRARY_CATALOGS: (is_library: boolean) => 'design/catalogs/?is_library=' + is_library,
+  CREATE_LIBRARY_CATALOGS: (is_library: boolean, is_catalog?: boolean) => {
+    const params = new URLSearchParams({
+      is_library: String(is_library),
+    });
+
+    if (is_catalog !== undefined) {
+      params.append('is_catalog', String(is_catalog));
+    }
+
+    return `design/catalogs/?${params.toString()}`;
+  },
   CREATE_COMPANY_MATERIAL: (companyID: string) => `material/company/${companyID}/material/`,
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
