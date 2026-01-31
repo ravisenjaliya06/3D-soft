@@ -11,19 +11,19 @@ export function visualizeMinifixConnections(
   connections.forEach((connection, index) => {
     const screwMesh = createScrewVisualization(connection, index);
     screwMesh.name = `Minifix_Screw_${connection.id}`;
-    screwMesh.visible = true;
+    screwMesh.visible = false;
     cupboardObject.add(screwMesh);
     const camMesh = createCamVisualization(connection, index);
     camMesh.name = `Minifix_Cam_${connection.id}`;
-    camMesh.visible = true;
+    camMesh.visible = false;
     cupboardObject.add(camMesh);
     const dowelMesh = createDowelVisualization(connection, index, standards);
     dowelMesh.name = `Minifix_Dowel_${connection.id}`;
-    dowelMesh.visible = true;
+    dowelMesh.visible = false;
     cupboardObject.add(dowelMesh);
     const boltDrillMesh = createBoltDrillVisualization(connection, index);
     boltDrillMesh.name = `Minifix_BoltDrill_${connection.id}`;
-    boltDrillMesh.visible = true;
+    boltDrillMesh.visible = false;
     cupboardObject.add(boltDrillMesh);
   });
 }
@@ -58,7 +58,6 @@ function createScrewVisualization(connection: MinifixConnection, index: number):
     connectionId: connection.id,
     index: index,
   };
-  console.log('screw');
   return mesh;
 }
 
@@ -88,14 +87,17 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   );
   // Rotate cam face to look towards screw
   // Cylinder default axis = Y
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), boltDir);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 0), boltDir);
+  if (connection.connectionType == 'HORIZONTAL_TO_VERTICAL') {
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), boltDir);
+  }
+
   // Flip logic removed. We rely on the calculator to provide correct "Inward" direction normals.
   mesh.userData = {
     minifixType: 'CAM',
     connectionId: connection.id,
     index,
   };
-  console.log('cam');
   return mesh;
 }
 

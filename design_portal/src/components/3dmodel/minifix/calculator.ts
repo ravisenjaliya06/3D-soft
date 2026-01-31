@@ -113,11 +113,17 @@ function calculateSingleConnection(
   let camPlank = plankB;
 
   if (connectionType === 'VERTICAL_TO_HORIZONTAL') {
-    // Standard Cabinet: Bolt in Side (Vertical), Cam in Shelf (Horizontal)
-    // plankA is Vertical (Side) based on detector.ts
-    // plankB is Horizontal (Shelf)
-    screwPlank = plankA;
-    camPlank = plankB;
+    // Check if Vertical plank (plankA) is touching with its Y-normal face (Edge) -> Divider
+    // Or with its X/Z-normal face (Face) -> Side Panel
+    if (Math.abs(connection.touchingFaceNormal.y) > 0.5) {
+      // Divider: Bolt in Horizontal (Top/Bottom), Cam in Vertical (Divider)
+      screwPlank = plankB;
+      camPlank = plankA;
+    } else {
+      // Side Panel: Bolt in Vertical (Side), Cam in Horizontal (Shelf)
+      screwPlank = plankA;
+      camPlank = plankB;
+    }
   } else if (connectionType === 'VERTICAL_TO_VERTICAL') {
     // Drawers: Bolt in Front/Back, Cam in Side Plank?
     // User says: "Drawer Back plank receives the cam".
@@ -217,11 +223,6 @@ function calculateHolePositions(
 ) {
   const { screwLength, dowelDistance } = standards;
 
-  const norm = (v: { x: number; y: number; z: number }) => {
-    const len = Math.hypot(v.x, v.y, v.z) || 1;
-    return { x: v.x / len, y: v.y / len, z: v.z / len };
-  };
-
   // Use passed direction directly
   // const boltDir = direction;
   const screwDir = { x: -direction.x, y: -direction.y, z: -direction.z }; // Into screw plank
@@ -281,22 +282,31 @@ function calculateHolePositions(
   if (camAxis === 'y') invDiff.y = 0;
   if (camAxis === 'z') invDiff.z = 0;
 
-  const inPlaneDir = norm(invDiff);
   const depthOffset = standards.camDepth / 2;
 
   // Position = Joint + (Distance from Edge along In-Plane Dir) + (Sink into Face along Inward Normal)
   // Position = Joint + (Distance from Edge along In-Plane Dir) - (Sink into Face because camDir is Outward Normal)
   // We subtract `camDir` * depthOffset to sink it into the plank.
+  // const camPos = {
+  //   x: jointPosition.x + inPlaneDir.x * screwLength - camDir.x * depthOffset,
+  //   y: jointPosition.y + inPlaneDir.y * screwLength - camDir.y * depthOffset,
+  //   z: jointPosition.z + inPlaneDir.z * screwLength - camDir.z * depthOffset,
+  // };
+
+  const surfaceOffset = minDim / 2;
+  const sinkOffset = surfaceOffset - depthOffset;
+
   const camPos = {
-    x: jointPosition.x + inPlaneDir.x * screwLength - camDir.x * depthOffset,
-    y: jointPosition.y + inPlaneDir.y * screwLength - camDir.y * depthOffset,
-    z: jointPosition.z + inPlaneDir.z * screwLength - camDir.z * depthOffset,
+    x: jointPosition.x + direction.x * screwLength + camDir.x * sinkOffset,
+    y: jointPosition.y + direction.y * screwLength + camDir.y * sinkOffset,
+    z: jointPosition.z + direction.z * screwLength + camDir.z * sinkOffset,
   };
 
+
   const boltDrillPos = {
-    x: jointPosition.x + inPlaneDir.x * (screwLength / 2),
-    y: jointPosition.y + inPlaneDir.y * (screwLength / 2),
-    z: jointPosition.z + inPlaneDir.z * (screwLength / 2),
+    x: jointPosition.x + direction.x * (screwLength / 2),
+    y: jointPosition.y + direction.y * (screwLength / 2),
+    z: jointPosition.z + direction.z * (screwLength / 2),
   };
 
   const dowelOffsetVector = { x: 0, y: 0, z: 0 };
