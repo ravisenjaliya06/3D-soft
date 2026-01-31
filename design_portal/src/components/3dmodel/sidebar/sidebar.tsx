@@ -239,17 +239,53 @@ const Sidebar: React.FC = () => {
   }, [handleObject]);
 
   const updateHandlePosState = (axis: Axis, value: number) => {
+    if (!selectedObject || !handleObject) return;
+
     const roundedValue = Math.round(value);
+
+    // 1️⃣ Update local UI state
     setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.userData.objectId,
-        { position: { [axis]: roundedValue } },
-        undefined,
-        handleObject
-      );
+    // 2️⃣ Update handle mesh position in scene
+    updateObjectRef.current?.update(
+      handleObject.userData.objectId,
+      { position: { [axis]: roundedValue } },
+      undefined,
+      handleObject
+    );
+
+    // 3️⃣ Map axis → material inset
+    let materialPatch: Record<string, number> = {};
+
+    if (axis === 'x') {
+      materialPatch.horizontalInset = roundedValue;
     }
+
+    if (axis === 'y') {
+      materialPatch.verticalInset = roundedValue;
+    }
+
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
+
+    //@ts-ignore
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+      return {
+        ...mat,
+        properties: {
+          ...mat.properties,
+          ...materialPatch,
+        },
+      };
+    });
+
+    // 5️⃣ Sync object data
+    applyObjectUpdate(selectedObject, {
+      //@ts-ignore
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
   };
 
   // Filter textures based on search query
@@ -277,17 +313,41 @@ const Sidebar: React.FC = () => {
   }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
+    if (!selectedObject || !handleObject) return;
+
     const roundedValue = Math.round(value);
+
     setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.userData.objectId,
-        { rotation: { [axis]: roundedValue } },
-        undefined,
-        handleObject
-      );
-    }
+    // Update mesh rotation
+    updateObjectRef.current?.update(
+      handleObject.userData.objectId,
+      { rotation: { [axis]: roundedValue } },
+      undefined,
+      handleObject
+    );
+
+    // Update material rotation
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
+
+    //@ts-ignore
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+      return {
+        ...mat,
+        properties: {
+          ...mat.properties,
+          rotation: roundedValue,
+        },
+      };
+    });
+
+    applyObjectUpdate(selectedObject, {
+      //@ts-ignore
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
   };
 
   const handleOpenCloseChange = () => {

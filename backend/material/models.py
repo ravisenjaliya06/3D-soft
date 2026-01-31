@@ -134,6 +134,7 @@ class PullTypesChoices(models.TextChoices):
     Pull Types
     """
 
+    PULL = "Pull"
     CUP_1 = "Cup #1"
     KNOB_1 = "Knob #1"
     KNOB_2 = "Knob #2"
@@ -557,6 +558,7 @@ class Properties(models.Model):
         max_length=100, choices=PullTypesChoices.choices, blank=True, null=True
     )
     center_to_center = models.FloatField(default=0.00)
+    rotation = models.FloatField(default=0.00)
     horizontal_inset = models.FloatField(default=0.00)
     vertical_inset = models.FloatField(default=0.00)
     mounting_holes_holes_diameter = models.FloatField(default=0.00)

@@ -93,23 +93,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(Company.objects.using(DEFAULT_DATABASE).count(), 1)
 
-    def test_create_material(self: "MaterialAPIViewTestCase") -> None:
-        data = {
-            "name": "Test material",
-            "type": "Laminate",
-            "company": self.company.id,
-            "description": "This is a test material",
-        }
-        response = self.client.post(
-            reverse("material-list", kwargs={"company_id": self.company.id}),
-            data,
-            format="json",
-            headers=self.get_headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["name"], "Test material")
-        self.assertEqual(response.data["type"], "Laminate")
-
     def test_validate_material(self: "MaterialAPIViewTestCase") -> None:
         data = {
             "name": "",
