@@ -126,40 +126,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["name"][0], "This field may not be blank.")
 
-    def test_duplicate_material_name_is_duplicate(
-        self: "MaterialAPIViewTestCase",
-    ) -> None:
-        headers = self.get_headers
-        data1 = {
-            "name": "Duplicate Material",
-            "type": "Laminate",
-            "company": self.company.id,
-            "description": "Test duplicate name",
-        }
-        createduplicate = self.client.post(
-            reverse("material-list", kwargs={"company_id": self.company.id}),
-            data=data1,
-            format="json",
-            headers=headers,
-        )
-        self.assertEqual(createduplicate.status_code, status.HTTP_201_CREATED)
-        data_dup = {
-            "name": "Duplicate Material",
-            "type": "Laminate",
-            "company": self.company.id,
-            "description": "Test duplicate name",
-        }
-        response = self.client.post(
-            reverse("material-list", kwargs={"company_id": self.company.id}),
-            data=data_dup,
-            format="json",
-            headers=headers,
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            response.data["name"][0], "A material with this name already exists."
-        )
-
     def test_get_material(self: "MaterialAPIViewTestCase") -> None:
         response = self.client.get(
             reverse("material-list", kwargs={"company_id": self.company.id}),

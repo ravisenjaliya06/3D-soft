@@ -1,12 +1,9 @@
 # Python imports
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 # External imports
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
-# App imports
-from umaboy.models import Organization
 
 # Local imports
 from .models import (
@@ -570,13 +567,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
-        request = self.context.get("request")
-        organization = getattr(request.user, "selected_organization", None)
-
         self._validate_properties(attrs)
-        self._validate_unique_name(attrs, organization)
-        self._validate_duplicate_entries(attrs)
-        self._validate_name_consistency(attrs)
 
         return attrs
 
@@ -593,78 +584,6 @@ class MaterialSerializer(serializers.ModelSerializer):
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
         attrs["properties"] = serializer.validated_data
-
-    def _validate_unique_name(
-        self: "MaterialSerializer", attrs: Dict[str, str], organization: Organization
-    ) -> None:
-        """Ensure the material name is unique within the organization and company."""
-        company = attrs.get("company") or getattr(self.instance, "company", None)
-        name = attrs.get("name") or getattr(self.instance, "name", None)
-
-        qs = Material.objects.filter(
-            name=name,
-            organization=organization,
-            is_deleted=False,
-        )
-        qs = qs.filter(company=company) if company else qs.filter(company__isnull=True)
-        if self.instance:
-            qs = qs.exclude(id=self.instance.id)
-
-        if qs.exists():
-            raise serializers.ValidationError(
-                {"name": "A material with this name already exists."}
-            )
-
-    def _find_duplicates(
-        self: "MaterialSerializer", items: List[Dict[str, str]]
-    ) -> List[str]:
-        """Return a list of duplicate names from a list of dicts."""
-        seen, duplicates = set(), set()
-        for item in items:
-            name = item.get("name")
-            if not name:
-                continue
-            if name in seen:
-                duplicates.add(name)
-            else:
-                seen.add(name)
-
-        return list(duplicates)
-
-    def _validate_duplicate_entries(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Check for duplicate names in finishes, finish_types, and textures."""
-        errors = {}
-
-        for key in ["finishes", "finish_types", "textures"]:
-            duplicates = self._find_duplicates(attrs.get(key, []))
-            if duplicates:
-                errors[key] = f"Duplicate names not allowed: {', '.join(duplicates)}"
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-    def _validate_name_consistency(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Ensure that finishes, finish_types, and textures have matching name sets."""
-
-        def extract_names(key: str) -> set:
-            return {i["name"] for i in attrs.get(key, []) if i.get("name")}
-
-        finish_set = extract_names("finishes")
-        finish_type_set = extract_names("finish_types")
-        texture_set = extract_names("textures")
-
-        if not (finish_set == finish_type_set == texture_set):
-            raise serializers.ValidationError(
-                {
-                    "errors": (
-                        "finishes, finish_types, and textures must contain the same set of names."
-                    )
-                }
-            )
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
         data = super().to_representation(instance)
@@ -702,12 +621,17 @@ class MaterialSerializer(serializers.ModelSerializer):
         return None
 
     def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
+        request = self.context["request"]
+        is_catalog = request.query_params.get("is_catalog", "false").lower() == "true"
         properties_data = validated_data.pop("properties", None)
         finishes_data = validated_data.pop("finishes", [])
         finish_types_data = validated_data.pop("finish_types", [])
         textures_data = validated_data.pop("textures", [])
 
-        material = Material.objects.create(**validated_data)
+        material = Material.objects.create(
+            **validated_data,
+            is_catalog=is_catalog,
+        )
 
         if properties_data:
             Properties.objects.create(material=material, **properties_data)

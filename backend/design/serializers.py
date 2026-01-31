@@ -99,27 +99,7 @@ class SceneGetSerializer(serializers.Serializer):
         """
         Serialize materials excluding CNC-related fields from properties.
         """
-        cnc_fields = {
-            "cnc_optimize",
-            "cnc_grain_dependent",
-            "cnc_drop_width",
-            "cnc_drop_length",
-            "cnc_feed_rate_percent",
-            "cnc_spindle_speed_percent",
-            "cnc_minimize_face_chip",
-            "cnc_minimize_back_chip",
-            "cnc_climb_cut",
-            "cnc_maximum_depth_per_pass",
-        }
-
-        material_data = MaterialSerializer(materials, many=True).data
-        for material in material_data:
-            if "properties" in material and isinstance(material["properties"], dict):
-                # Remove CNC fields from properties
-                for cnc_field in cnc_fields:
-                    material["properties"].pop(cnc_field, None)
-
-        return material_data
+        return MaterialSerializer(materials, many=True).data
 
     def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
@@ -159,15 +139,6 @@ class ScenePayloadSerializer(serializers.Serializer):
         if not name:
             return None
 
-        material = Material.objects.filter(
-            name=name,
-            organization=request.user.selected_organization,
-            is_deleted=False,
-        ).first()
-
-        if material:
-            return material
-
         serializer = MaterialSerializer(
             data=material_payload,
             context={"request": request},
@@ -197,7 +168,7 @@ class ScenePayloadSerializer(serializers.Serializer):
         request = self.context["request"]
         organization = request.user.selected_organization
         items = validated_data["items"]
-        is_library = request.query_params.get("is_library", False)
+        is_library = request.query_params.get("is_library", "false").lower() == "true"
 
         design = self._get_design(validated_data["design_id"], organization)
         version = None
@@ -221,6 +192,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                     type=item.get("type"),
                     name=item.get("name"),
                     parent=None,
+                    is_library=is_library,
                     data=item.copy(),
                 )
 

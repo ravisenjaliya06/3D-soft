@@ -4,7 +4,7 @@ import CommonService from '@/services/CommonService';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { MeshObjectData } from '../interface';
-import { CustomToast } from '../utils';
+import { convertKeysToSnake, CustomToast } from '../utils';
 
 /**
  * Saves objects from scene to catalog
@@ -94,9 +94,12 @@ export class ObjectsSaver {
   private async _createAPICall() {
     const payload = {
       design_id: window.location.pathname.split('/')[2],
-      items: this.payloadData,
+      items: convertKeysToSnake(this.payloadData),
     };
-    const response = await CommonService.post(API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true), payload);
+    const response = await CommonService.post(
+      API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true, true),
+      payload
+    );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
@@ -107,9 +110,12 @@ export class ObjectsSaver {
   private async _createAPICallForDesign() {
     const payload = {
       design_id: window.location.pathname.split('/')[2],
-      items: this.payloadData,
+      items: convertKeysToSnake(this.payloadData),
     };
-    const response = await CommonService.post(API_ENDPOINT.CREATE_CATALOGS, payload);
+    const response = await CommonService.post(
+      API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true),
+      payload
+    );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {

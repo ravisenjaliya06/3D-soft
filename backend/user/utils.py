@@ -8,6 +8,7 @@ from typing import List
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.forms.models import model_to_dict
 from django.utils import timezone
 
 # App imports
@@ -181,7 +182,8 @@ def duplicate_default_textures(organization: Organization) -> None:
     default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
 
     for finish in default_finishes:
-        FinishesLibrary.objects.create(organization=organization, **finish.__dict__)
+        data = model_to_dict(finish, exclude=["id", "organization"])
+        FinishesLibrary.objects.create(organization=organization, **data)
 
 
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:

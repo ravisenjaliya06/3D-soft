@@ -110,7 +110,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         <img
           src={assets.close_white}
           alt="close"
-          className="right-[0rem] top-[0rem] absolute h-[1.25rem] w-[1.25rem] cursor-pointer"
+          className="absolute top-[0rem] right-[0rem] h-[1.25rem] w-[1.25rem] cursor-pointer"
           onClick={() => closeToast && closeToast()}
           aria-label="close notification"
         />
@@ -685,7 +685,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           </div>
         </div>
       )}
-
     </>
   );
 };
