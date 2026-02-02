@@ -7,10 +7,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # App imports
 from user.views import (
     AddUserInOrganizationViewset,
-    # AdminDashboardView,
-    # AdminLoginView,
-    # AdminLogoutView,
-    # AdminUsersView,
     ApproveUserView,
     UserAuthViewset,
     AdminView,

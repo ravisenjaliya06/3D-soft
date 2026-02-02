@@ -696,94 +696,11 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.is_superuser
 
 
-# class AdminLoginView(View):
-#     def get(self: "AdminLoginView", request: Request) -> render:
-#         if request.user.is_authenticated and request.user.is_superuser:
-#             return HttpResponseRedirect(reverse("admin_dashboard"))
-#         return render(request, "custom_admin/index.html")
-
-#     @csrf_exempt
-#     def post(self, request):
-#         try:
-#             data = json.loads(request.body)
-#         except json.JSONDecodeError:
-#             return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-#         serializer = AdminLoginSerializer(data=data)
-#         serializer.is_valid(raise_exception=True)
-
-#         user = serializer.validated_data["user"]
-
-#         if not user.is_superuser:
-#             return JsonResponse({"error": "Admin access only"}, status=403)
-
-#         access_token = AccessToken.for_user(user)
-
-#         response = JsonResponse({"message": "Login successful"}, status=200)
-
-#         response.set_cookie(
-#             key=settings.ADMIN_JWT_COOKIE_NAME,
-#             value=str(access_token),
-#             httponly=True,
-#             secure=not settings.DEBUG,
-#             samesite="Lax",
-#             max_age=settings.ADMIN_SESSION_TIMEOUT_MINUTES * 60,
-#         )
-
-#         Logger.info(
-#             {
-#                 "message": "Admin logged in via JWT",
-#                 "user_id": user.id,
-#             }
-#         )
-
-#         return response
-
-
-# class AdminLogoutView(View):
-#     def get(self: "AdminLogoutView", request: Request) -> HttpResponseRedirect:
-#         logout(request)
-
-#         response = HttpResponseRedirect(reverse("admin_login"))
-#         response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
-
-#         Logger.info(
-#             {
-#                 "message": "Admin logged out successfully",
-#                 "function": "AdminLogoutView.get",
-#             }
-#         )
-
-#         return response
-
-
-# class AdminDashboardView(AdminRequiredMixin, View):
-#     def get(self: "AdminDashboardView", request: Request) -> render:
-#         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
-#         return render(
-#             request,
-#             "custom_admin/dashboard.html",
-#             {"pending_users": pending_users},
-#         )
-
-
-# class AdminUsersView(AdminRequiredMixin, View):
-#     def get(self: "AdminUsersView", request: Request) -> render:
-#         approved_users = User.objects.filter(
-#             is_verified=True, is_superuser=False
-#         ).order_by("-date_joined")
-
-#         return render(
-#             request,
-#             "custom_admin/users.html",
-#             {"approved_users": approved_users},
-#         )
-
 class AdminView(viewsets.ViewSet):
     authentication_classes = [SessionAuthentication]
     permission_classes = [AllowAny]
     renderer_classes = [TemplateHTMLRenderer]
-    
+
     def login_get(self, request):
         if request.user.is_authenticated and request.user.is_superuser:
             return HttpResponseRedirect(reverse("admin_dashboard"))
@@ -823,7 +740,6 @@ class AdminView(viewsets.ViewSet):
         )
 
         return response
-
 
     def logout(self, request):
         logout(request)
