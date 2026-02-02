@@ -1,12 +1,9 @@
 # Python imports
-from typing import Any, Dict, List
+from typing import Dict
 
 # External imports
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
-# App imports
-from umaboy.models import Organization
 
 # Local imports
 from .models import (
@@ -68,6 +65,9 @@ class MountPlateHolesSerializer(serializers.ModelSerializer):
 
 
 class BasePropertiesSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=False)
+    model_file = serializers.FileField(required=False, allow_null=True)
+
     class Meta:
         model = Properties
         fields = [
@@ -80,26 +80,32 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "default_tax_rate",
             "waste",
             "estimate",
+            "model_file",
         ]
-        read_only_fields = ["id", "material"]
+        read_only_fields = ["material"]
 
 
 class ValidationMixin:
     def to_internal_value(
-        self: "ValidationMixin", data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self: "ValidationMixin", data: Dict[str, str]
+    ) -> Dict[str, str]:
         allowed_fields = set(self.fields.keys())
         received_fields = set(data.keys())
-        required_fields = allowed_fields - {"id"}
 
-        # Check for missing required fields
+        has_id = "id" in data
+        optional_fields = {"id", "model_file"}
+
+        if has_id:
+            required_fields = allowed_fields - optional_fields
+        else:
+            required_fields = allowed_fields - {"id"}
+
         missing_fields = required_fields - received_fields
         if missing_fields:
             raise serializers.ValidationError(
                 {field: "This field is required." for field in missing_fields}
             )
 
-        # Check for unexpected fields
         extra_fields = received_fields - allowed_fields
         if extra_fields:
             raise serializers.ValidationError(
@@ -112,7 +118,11 @@ class ValidationMixin:
 class BandingSerializer(ValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Properties
-        fields = BasePropertiesSerializer.Meta.fields + ["length_trim", "thickness"]
+        fields = BasePropertiesSerializer.Meta.fields + [
+            "length_trim",
+            "thickness",
+            "model_file",
+        ]
 
 
 class BoardStockSerializer(ValidationMixin, serializers.ModelSerializer):
@@ -150,9 +160,13 @@ class ConnectorSerializer(ValidationMixin, serializers.ModelSerializer):
 
 
 class DrawerGuideSerializer(ValidationMixin, serializers.ModelSerializer):
-    front_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    back_mount_holes = MountHolesSerializer(many=True, read_only=False)
-    bottom_mount_holes = MountHolesSerializer(many=True, read_only=False)
+    front_mount_holes = MountHolesSerializer(
+        many=True, read_only=False, allow_null=True
+    )
+    back_mount_holes = MountHolesSerializer(many=True, read_only=False, allow_null=True)
+    bottom_mount_holes = MountHolesSerializer(
+        many=True, read_only=False, allow_null=True
+    )
 
     class Meta:
         model = Properties
@@ -300,6 +314,7 @@ class PullSerializer(ValidationMixin, serializers.ModelSerializer):
             "depth",
             "horizontal_inset",
             "vertical_inset",
+            "rotation",
             "mounting_holes_holes_diameter",
         ]
 
@@ -473,7 +488,7 @@ class FinishesLibrarySerializerFactory:
 class FinishesLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = FinishesLibrary
-        fields = ["id", "name", "organization", "type"]
+        fields = ["id", "name", "organization", "type", "image"]
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
@@ -565,19 +580,16 @@ class MaterialSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self: "MaterialSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
-        request = self.context.get("request")
-        organization = getattr(request.user, "selected_organization", None)
-
         self._validate_properties(attrs)
-        self._validate_unique_name(attrs, organization)
-        self._validate_duplicate_entries(attrs)
-        self._validate_name_consistency(attrs)
-
         return attrs
 
     def _validate_properties(self: "MaterialSerializer", attrs: Dict[str, str]) -> None:
         """Validate the dynamic 'properties' field based on material type."""
         properties_data = attrs.get("properties")
+        properties_id = properties_data.get("id", None)
+        if properties_id:
+            properties_data.pop("model_file", None)
+
         material_type = attrs.get("type")
         if not properties_data:
             return
@@ -587,79 +599,8 @@ class MaterialSerializer(serializers.ModelSerializer):
         )
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data["id"] = properties_id
         attrs["properties"] = serializer.validated_data
-
-    def _validate_unique_name(
-        self: "MaterialSerializer", attrs: Dict[str, str], organization: Organization
-    ) -> None:
-        """Ensure the material name is unique within the organization and company."""
-        company = attrs.get("company") or getattr(self.instance, "company", None)
-        name = attrs.get("name") or getattr(self.instance, "name", None)
-
-        qs = Material.objects.filter(
-            name=name,
-            organization=organization,
-            is_deleted=False,
-        )
-        qs = qs.filter(company=company) if company else qs.filter(company__isnull=True)
-        if self.instance:
-            qs = qs.exclude(id=self.instance.id)
-
-        if qs.exists():
-            raise serializers.ValidationError(
-                {"name": "A material with this name already exists."}
-            )
-
-    def _find_duplicates(
-        self: "MaterialSerializer", items: List[Dict[str, str]]
-    ) -> List[str]:
-        """Return a list of duplicate names from a list of dicts."""
-        seen, duplicates = set(), set()
-        for item in items:
-            name = item.get("name")
-            if not name:
-                continue
-            if name in seen:
-                duplicates.add(name)
-            else:
-                seen.add(name)
-
-        return list(duplicates)
-
-    def _validate_duplicate_entries(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Check for duplicate names in finishes, finish_types, and textures."""
-        errors = {}
-
-        for key in ["finishes", "finish_types", "textures"]:
-            duplicates = self._find_duplicates(attrs.get(key, []))
-            if duplicates:
-                errors[key] = f"Duplicate names not allowed: {', '.join(duplicates)}"
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-    def _validate_name_consistency(
-        self: "MaterialSerializer", attrs: Dict[str, str]
-    ) -> None:
-        """Ensure that finishes, finish_types, and textures have matching name sets."""
-
-        def extract_names(key: str) -> set:
-            return {i["name"] for i in attrs.get(key, []) if i.get("name")}
-
-        finish_set = extract_names("finishes")
-        finish_type_set = extract_names("finish_types")
-        texture_set = extract_names("textures")
-
-        if not (finish_set == finish_type_set == texture_set):
-            raise serializers.ValidationError(
-                {
-                    "errors": (
-                        "finishes, finish_types, and textures must contain the same set of names."
-                    )
-                }
-            )
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
         data = super().to_representation(instance)
@@ -697,32 +638,50 @@ class MaterialSerializer(serializers.ModelSerializer):
         return None
 
     def create(self: "MaterialSerializer", validated_data: Dict[str, str]) -> Material:
+        request = self.context["request"]
+        is_catalog = request.query_params.get("is_catalog", "false").lower() == "true"
         properties_data = validated_data.pop("properties", None)
         finishes_data = validated_data.pop("finishes", [])
         finish_types_data = validated_data.pop("finish_types", [])
         textures_data = validated_data.pop("textures", [])
 
-        material = Material.objects.create(**validated_data)
+        material = Material.objects.create(
+            **validated_data,
+            is_catalog=is_catalog,
+        )
 
         if properties_data:
-            Properties.objects.create(material=material, **properties_data)
+            properties_id = properties_data.pop("id", None)
+
+            if properties_id:
+                properties = Properties.objects.get(id=properties_id)
+                Properties.objects.create(
+                    material=material,
+                    model_file=properties.model_file,
+                    **properties_data,
+                )
+            else:
+                Properties.objects.create(material=material, **properties_data)
 
         for f in finishes_data:
-            finish = f.pop("finish")
             MaterialFinish.objects.create(
-                material=material, name=f.get("name", ""), finish=finish
+                material=material,
+                name=f.get("name", ""),
+                finish=f["finish"],
             )
 
         for ft in finish_types_data:
-            finish_type = ft.pop("finish_type")
             MaterialFinishType.objects.create(
-                material=material, name=ft.get("name", ""), finish_type=finish_type
+                material=material,
+                name=ft.get("name", ""),
+                finish_type=ft["finish_type"],
             )
 
         for t in textures_data:
-            texture = t.pop("texture")
             MaterialTexture.objects.create(
-                material=material, name=t.get("name", ""), texture=texture
+                material=material,
+                name=t.get("name", ""),
+                texture=t["texture"],
             )
 
         material.refresh_from_db()

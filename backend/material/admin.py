@@ -25,10 +25,6 @@ class CatalogAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "type", "organization")
 
 
-class CatalogRulesAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "catalog")
-
-
 class CatalogRulesPartsAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "catalog_rule")
 

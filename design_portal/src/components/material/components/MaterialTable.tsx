@@ -2,7 +2,6 @@ import { assets, MENU_DOWN_SVG, MENU_UP_SVG } from '@/svgPaths';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { CATEGORY_TABS } from '../constants';
-import styles from '../material.module.css';
 import type { TableRow } from '../types';
 
 interface MaterialTableProps {
@@ -57,21 +56,29 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
   return (
     <div
-      className={`${styles.custom_scrollbar} h-full flex-1 overflow-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]`}
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'var(--scrollbar-color-2) transparent',
+      }}
+      className="h-full flex-1 overflow-auto overflow-y-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px] [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
     >
-      <div className="sticky top-0 z-20 mb-[0.75rem] ml-[0.2rem] bg-[var(--primary-white)] pb-[7px]">
+      <div className="sticky top-0 z-20 ml-[1rem] bg-[var(--primary-white)]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
-              className={`mb-[-2px] cursor-pointer border-b border-[#EAEAEA] px-[1rem] text-[0.85rem] whitespace-nowrap transition-all duration-200 ease-in-out ${
-                activeTab === tab.id
-                  ? `relative z-30 mr-[0.7rem] -mb-px ml-[0.7rem] rounded-t-[0.199rem] border-b border-[black] bg-[var(--primary-white)] pr-[0px] pl-[0px] font-[700] text-[var(--primary-color)]`
-                  : `mr-[0.7rem] pr-[0px] pl-[0px] text-[var(--primary-color-grey-2)] hover:border-b hover:border-[black] hover:text-[var(--primary-color)]`
-              } `}
               onClick={() => onTabChange(tab.id)}
+              className="mr-[0.7rem] cursor-pointer px-[0.1rem] pb-[0.5rem]"
             >
-              <p className="mb-[0px] pb-[5px] text-[0.85rem]">{tab.label}</p>
+              <p
+                className={`m-[0] inline-block py-[0.3rem] pt-[0.8rem] text-[0.85rem] transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'border-b border-black font-[700] text-[var(--primary-color)]'
+                    : 'border-b border-transparent text-[var(--primary-color-grey-2)] hover:border-black hover:text-[var(--primary-color)]'
+                } `}
+              >
+                {tab.label}
+              </p>
             </div>
           ))}
         </div>

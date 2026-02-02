@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../../handler/items';
 import { getActiveUnit, metersToUnit, unitToMeters } from '../../handler/unitConversion';
+import { MIN_THICKNESS } from '../../sceneCreator/constants';
+import { GROOVE_TYPE } from '../../sceneCreator/interface';
 import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
 import { isPlankObjectFindByName, isWallObject } from '../../utils/objectTypes';
@@ -26,6 +28,86 @@ export class DistanceTool {
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
+  }
+
+  /**
+   * Get distances for all four sides (left, right, top, bottom) without showing visual labels
+   * Returns distances in meters
+   */
+  public getDistances(mesh: THREE.Mesh): {
+    left: number | null;
+    right: number | null;
+    top: number | null;
+    bottom: number | null;
+  } {
+    this.selectedMesh = mesh;
+    this.selectedBox = this.computeBoundingBox(mesh);
+    const geometryInfo = this.analyzePlankGeometry();
+
+    let mainAxis: Axis | null = null;
+
+    if (geometryInfo.isHorizontal) {
+      // horizontal plank → measure Y (top/bottom)
+      mainAxis = 'y';
+    } else if (geometryInfo.isThinX) {
+      // vertical plank facing X → measure X (left/right)
+      mainAxis = 'x';
+    } else if (geometryInfo.isThinZ) {
+      // vertical plank facing Z → measure Z (front/back, but we'll use X/Y for left/right/top/bottom)
+      // For Z-facing planks, left/right are along X axis, top/bottom are along Y axis
+      mainAxis = 'z';
+    }
+
+    const result = {
+      left: null as number | null,
+      right: null as number | null,
+      top: null as number | null,
+      bottom: null as number | null,
+    };
+
+    if (!mainAxis || !this.selectedBox) return result;
+
+    // For horizontal planks: measure Y (top/bottom)
+    if (mainAxis === 'y') {
+      const { minPos, maxPos } = this.findNearestReferences('y', ['x', 'z']);
+      if (minPos !== null) {
+        result.bottom = Math.abs(this.selectedBox.min.y - minPos);
+      }
+      if (maxPos !== null) {
+        result.top = Math.abs(maxPos - this.selectedBox.max.y);
+      }
+    }
+    // For vertical planks facing X: measure X (left/right)
+    else if (mainAxis === 'x') {
+      const { minPos, maxPos } = this.findNearestReferences('x', ['y', 'z']);
+      if (minPos !== null) {
+        result.left = Math.abs(this.selectedBox.min.x - minPos);
+      }
+      if (maxPos !== null) {
+        result.right = Math.abs(maxPos - this.selectedBox.max.x);
+      }
+    }
+    // For vertical planks facing Z: measure both X (left/right) and Y (top/bottom)
+    else if (mainAxis === 'z') {
+      // Left/Right along X axis
+      const xRefs = this.findNearestReferences('x', ['y', 'z']);
+      if (xRefs.minPos !== null) {
+        result.left = Math.abs(this.selectedBox.min.x - xRefs.minPos);
+      }
+      if (xRefs.maxPos !== null) {
+        result.right = Math.abs(xRefs.maxPos - this.selectedBox.max.x);
+      }
+      // Top/Bottom along Y axis
+      const yRefs = this.findNearestReferences('y', ['x', 'z']);
+      if (yRefs.minPos !== null) {
+        result.bottom = Math.abs(this.selectedBox.min.y - yRefs.minPos);
+      }
+      if (yRefs.maxPos !== null) {
+        result.top = Math.abs(yRefs.maxPos - this.selectedBox.max.y);
+      }
+    }
+
+    return result;
   }
 
   public showDistances(mesh: THREE.Mesh): void {
@@ -130,57 +212,125 @@ export class DistanceTool {
     return hits.length ? (hits[0].object as THREE.Sprite) : null;
   }
 
+  private createFloatingInput(
+    sprite: THREE.Sprite,
+    view: ThreeDView,
+    initialValue: string,
+    onConfirm: (val: number) => void
+  ) {
+    // 1. Convert 3D position to 2D Screen Pixels
+    const vector = new THREE.Vector3();
+    sprite.getWorldPosition(vector);
+    vector.project(view.camera);
+
+    const canvas = view.renderer.domElement;
+    const x = (vector.x * 0.5 + 0.5) * canvas.clientWidth;
+    const y = (-(vector.y * 0.5) + 0.5) * canvas.clientHeight;
+
+    // 2. Create the HTML element
+    const input = document.createElement('input');
+    input.type = 'text'; // 'text' allows for easier clearing/selection than 'number'
+    input.value = initialValue;
+
+    // Style it to look clean
+    Object.assign(input.style, {
+      position: 'absolute',
+      left: `${canvas.offsetLeft + x - 40}px`,
+      top: `${canvas.offsetTop + y - 20}px`,
+      width: '80px',
+      height: '30px',
+      zIndex: '1000',
+      textAlign: 'center',
+      fontSize: '18px',
+      border: '2px solid black',
+      borderRadius: '4px',
+      outline: 'none',
+      boxShadow: '0px 2px 10px rgba(0,0,0,0.2)',
+    });
+
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+
+    // 3. Define how to "Submit"
+    const submit = () => {
+      const newVal = parseFloat(input.value);
+      if (!isNaN(newVal) && newVal >= 0) {
+        onConfirm(newVal);
+      }
+      cleanup();
+    };
+
+    const cleanup = () => {
+      input.removeEventListener('blur', submit); // prevent double trigger
+      input.remove();
+    };
+
+    // 4. Events
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submit();
+      if (e.key === 'Escape') cleanup();
+    });
+
+    // If user clicks anywhere else, save and close
+    input.addEventListener('blur', submit);
+  }
+
   private promptAndApplyDistance(
     sprite: THREE.Sprite,
     view: ThreeDView,
     onUpdate?: (selectedMesh: THREE.Mesh, newPosition: THREE.Vector3) => void
   ) {
-    // Gets dimension info from the sprite
     const meta = sprite.userData?.dimMeta as DimensionMeta | undefined;
     if (!meta) return;
 
-    // Finds the related mesh in the scene
     const target = view.scene.getObjectByProperty('uuid', meta.targetUuid) as THREE.Mesh | null;
+    console.log(target, 'target');
     if (!target) return;
 
-    // Calculates the current distance
     const box = this.computeBoundingBox(target);
     const currentDistanceM = this.calculateDistance(box, meta);
-    const currentInUnit = currentDistanceM;
 
-    // Prompts the user to enter a new distance
     const unit = getActiveUnit();
-    const input = prompt(
-      `Enter new distance (${unit}):`,
-      metersToUnit(currentInUnit, unit).toFixed(0)
-    );
-    if (!input) return;
-    const newValUnit = parseFloat(input);
-    if (!Number.isFinite(newValUnit) || newValUnit < 0) return;
+    const initialValStr = metersToUnit(currentDistanceM, unit).toFixed(0);
 
-    // Calculates the movement delta for the target mesh based on the new distance
-    const newM = unitToMeters(newValUnit, unit);
-    const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
-    const currentFace = this.getCurrentFacePosition(box, meta);
-    const delta = desiredFace - currentFace;
+    // Instead of prompt(), we use our floating input
+    this.createFloatingInput(sprite, view, initialValStr, (newValUnit) => {
+      // --- EVERYTHING INSIDE THIS BLOCK RUNS AFTER THE USER HITS ENTER ---
 
-    // Moves the target mesh based on the movement delta
-    this.applyPositionDelta(target, meta.axis, delta);
-    generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+      const newM = unitToMeters(newValUnit, unit);
 
-    if (onUpdate) {
-      onUpdate(target, target.position.clone());
-    }
+      // Calculate delta
+      const desiredFace = meta.ref + (meta.side === 'min' ? newM : -newM);
+      const currentFace = this.getCurrentFacePosition(box, meta);
+      const delta = desiredFace - currentFace;
 
-    // Clear selection (which removes outlines and dimensions)
-    if (view.selector) {
-      view.selector.deselect();
-    } else {
-      // Fallback if selector not available
-      this.clearAllDistances();
-    }
+      // Apply movement
+      this.applyPositionDelta(target, meta.axis, delta);
 
-    view.renderer.render(view.scene, view.camera);
+      // Regenerate internal logic
+      if (typeof generateCompartmentsFromMesh === 'function') {
+        generateCompartmentsFromMesh(target.parent as THREE.Mesh);
+      }
+
+      if (target.parent instanceof THREE.Mesh) {
+        updateMinifixesForCupboard(target.parent);
+      }
+
+      if (onUpdate) {
+        onUpdate(target, target.position.clone());
+      }
+
+      // Cleanup visuals
+      if (view.selector) {
+        view.selector.deselect();
+      } else {
+        this.clearAllDistances();
+      }
+
+      // Re-render the scene to show changes
+      view.renderer.render(view.scene, view.camera);
+    });
   }
 
   // create bounding box
@@ -220,7 +370,7 @@ export class DistanceTool {
   private createLine(group: THREE.Group, start: THREE.Vector3, end: THREE.Vector3): THREE.Line {
     const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
     const material = new THREE.LineBasicMaterial({
-      color: 0x111111,
+      color: 0xffffff,
       depthTest: false,
     });
 
@@ -240,19 +390,24 @@ export class DistanceTool {
     meta = null,
   }: CreateDistanceLineParams) {
     const offset = 0.03;
+
+    // 1. Calculate main line points
     const startOffset = start.clone().addScaledVector(viewOffsetDir, offset);
     const endOffset = end.clone().addScaledVector(viewOffsetDir, offset);
 
+    // 2. Draw the main connector line
     this.createLine(group, startOffset, endOffset);
 
     // Extension ticks
     const axis = endOffset.clone().sub(startOffset).normalize();
-    const tickDir = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0));
-    if (tickDir.lengthSq() < 1e-6) tickDir.set(1, 0, 0);
-    tickDir.normalize();
 
-    this.addTick(group, startOffset, tickDir);
-    this.addTick(group, endOffset, tickDir);
+    const tickDir = viewOffsetDir.clone().normalize();
+
+    // Create Left Arrow (<--) at startOffset
+    this.createArrowHead(startOffset, axis, tickDir, group);
+
+    // Create Right Arrow (-->) at endOffset (negate axis to point backwards)
+    this.createArrowHead(endOffset, axis.clone().negate(), tickDir, group);
 
     // Label
     const mid = startOffset.clone().lerp(endOffset, 0.5);
@@ -265,17 +420,33 @@ export class DistanceTool {
     return sprite;
   }
 
-  private addTick(group: THREE.Group, point: THREE.Vector3, direction: THREE.Vector3, size = 0.02) {
-    const point1 = point.clone().addScaledVector(direction, size / 2);
-    const point2 = point.clone().addScaledVector(direction, -size / 2);
-    const geo = new THREE.BufferGeometry().setFromPoints([point1, point2]);
-    const mat = new THREE.LineBasicMaterial({
-      color: 0x222222,
-      depthTest: false,
-    });
-    const line = new THREE.Line(geo, mat);
-    group.add(line);
-  }
+  // Helper to draw a "V" shape
+  private createArrowHead = (
+    tipPos: THREE.Vector3,
+    directionBack: THREE.Vector3,
+    tickDir: THREE.Vector3,
+    group: THREE.Group
+  ) => {
+    // Configuration for arrow size
+    const arrowLength = 0.02; // Length of the arrow "wings" along the line
+    const arrowWidth = 0.02; // Width of the arrow "wings" outwards
+
+    // Wing 1: Go back along line, then out to the side
+    const wing1 = tipPos
+      .clone()
+      .addScaledVector(directionBack, arrowLength) // Move back
+      .addScaledVector(tickDir, arrowWidth); // Move right
+
+    // Wing 2: Go back along line, then out to the other side
+    const wing2 = tipPos
+      .clone()
+      .addScaledVector(directionBack, arrowLength) // Move back
+      .addScaledVector(tickDir, -arrowWidth); // Move left
+
+    // Draw lines from Tip to Wing 1, and Tip to Wing 2
+    this.createLine(group, tipPos, wing1);
+    this.createLine(group, tipPos, wing2);
+  };
 
   private createTextSprite(label: string): THREE.Sprite {
     const canvas = document.createElement('canvas');
@@ -298,11 +469,27 @@ export class DistanceTool {
     height: number,
     label: string
   ): void {
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    // ADD border radius
+    const borderRadius = 100; // Adjust this for more or less "roundness"
+    const borderWidth = 35;
+
+    // Clear the canvas area
+    ctx.clearRect(0, 0, width, height);
+
+    // We inset the path by half the borderWidth to ensure the stroke stays inside the canvas
+    const offset = borderWidth / 2;
+    const rectW = width - borderWidth;
+    const rectH = height - borderWidth;
+
+    ctx.beginPath();
+    ctx.roundRect(offset, offset, rectW, rectH, borderRadius);
+
+    ctx.fillStyle = 'rgba(255,255,255,1)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = borderWidth; // border width
+    ctx.lineJoin = 'round'; // Makes the outer corner of the stroke smooth
     ctx.strokeRect(0, 0, width, height);
 
     ctx.fillStyle = 'black';
@@ -329,8 +516,17 @@ export class DistanceTool {
     return true;
   }
 
+  private isGrooveObject(obj: THREE.Object3D): boolean {
+    const type = obj.userData?.type;
+    return (
+      type === GROOVE_TYPE.GROOVE ||
+      type === GROOVE_TYPE.PROTRUSION ||
+      obj.name?.toLowerCase().includes('groove')
+    );
+  }
+
   // Find nearest plank and wall to the given object
-  private findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
+  public findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
     if (!this.selectedMesh || !this.selectedBox)
       return { minPos: null, maxPos: null, minBox: null, maxBox: null };
 
@@ -343,18 +539,27 @@ export class DistanceTool {
     const selfMax = this.selectedBox.max[axis];
 
     const getPriority = (obj: THREE.Object3D): Priority => {
-      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+      if (this.isGrooveObject(obj)) return Priority.NONE;
+
       if (isWallObject(obj)) return Priority.WALL;
+      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+
       return Priority.NONE;
     };
 
     this.scene.traverse((obj) => {
-      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh)) return;
-
+      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh) || this.isGrooveObject(obj)) {
+        return;
+      }
       const priority = getPriority(obj);
       if (priority === Priority.NONE) return;
 
       const box = this.computeBoundingBox(obj);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      if (size.x < MIN_THICKNESS || size.y < MIN_THICKNESS || size.z < MIN_THICKNESS) {
+        return;
+      }
       if (!this.overlapsOnAxes(this.selectedBox!, box, overlapAxes)) return;
 
       // Negative direction (find max pos < selfMin)
@@ -547,7 +752,7 @@ export class DistanceTool {
     return side === 'min' ? box.min.z : box.max.z;
   }
 
-  private applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
+  public applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
     const worldPos = new THREE.Vector3();
     target.getWorldPosition(worldPos);
     if (axis === 'x') worldPos.x += delta;

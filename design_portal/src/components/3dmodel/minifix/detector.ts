@@ -1,42 +1,43 @@
 import { ITEM, PLANK } from '../handler/interface';
-import type { PlankConnection, PlankData } from './types';
-
-interface Bounds {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-  minZ: number;
-  maxZ: number;
-}
+import { DRAWER_PLANK_TYPES } from '../sceneCreator/interface';
+import { JOINER_THRESHOLD } from './constant';
+import type { Axis, PlankConnection, PlankData } from './types';
+import { Bounds } from './types';
 
 export function detect90DegreeConnections(planks: PlankData[]): PlankConnection[] {
+  const drawerTypes = [
+    DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
+    DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
+    DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
+    DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
+    DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
+  ];
+
   const relevantPlanks = planks.filter((plank) => {
     const name = plank.name;
-    const include =
-      name.includes(ITEM.PLANK) ||
-      name.includes(PLANK.DRAWER_LEFT_SIDE) ||
-      name.includes(PLANK.DRAWER_RIGHT_SIDE) ||
-      name.includes(PLANK.DRAWER_BOTTOM_SIDE) ||
-      name.includes(PLANK.DRAWER_FRONT_SIDE) ||
-      name.includes(PLANK.DRAWER_BACK_SIDE);
 
-    const exclude = name.includes(PLANK.BACK_SIDE) || name.includes(PLANK.FRONT_SIDE);
+    const isDrawer = name.includes('DRAWER') || drawerTypes.some((t) => name.includes(t));
 
-    return include && !exclude;
+    const isIncluded = name.includes(ITEM.PLANK) || drawerTypes.some((t) => name.includes(t));
+
+    if (!isIncluded) return false;
+
+    if (
+      (!isDrawer && (name.includes(PLANK.BACK_SIDE) || name.includes(PLANK.FRONT_SIDE))) ||
+      name.includes(DRAWER_PLANK_TYPES.DRAWER_FACE)
+    ) {
+      return false;
+    }
+
+    return true;
   });
 
   const connections: PlankConnection[] = [];
 
-  // Check every pair of planks
   for (let i = 0; i < relevantPlanks.length; i++) {
     for (let j = i + 1; j < relevantPlanks.length; j++) {
-      const plankA = relevantPlanks[i];
-      const plankB = relevantPlanks[j];
-      const connection = analyzeConnection(plankA, plankB);
-      if (connection) {
-        connections.push(connection);
-      }
+      const connection = analyzeConnection(relevantPlanks[i], relevantPlanks[j]);
+      if (connection) connections.push(connection);
     }
   }
 
@@ -44,35 +45,25 @@ export function detect90DegreeConnections(planks: PlankData[]): PlankConnection[
 }
 
 function analyzeConnection(plankA: PlankData, plankB: PlankData): PlankConnection | null {
-  // Get plank bounds
   const boundsA = getPlankBounds(plankA);
   const boundsB = getPlankBounds(plankB);
 
-  // Check if planks form a 90-degree connection
-  const jointPosition = findJointPosition(boundsA, boundsB);
+  const joint = findJointPosition(boundsA, boundsB);
+  if (!joint) return null;
 
-  if (!jointPosition) {
-    return null;
-  }
-
-  // Determine plank orientations dynamically
   const orientationA = determinePlankOrientation(plankA);
   const orientationB = determinePlankOrientation(plankB);
 
-  // Check if they form a 90-degree connection
   const connectionType = determine90DegreeConnection(orientationA, orientationB);
-  if (!connectionType) {
-    return null;
-  }
+  if (!connectionType) return null;
 
-  // Determine bolt and cam plank based on orientation
-  const boltPlank = orientationA === 'HORIZONTAL' ? plankB : plankA;
-  const camPlank = orientationA === 'HORIZONTAL' ? plankA : plankB;
+  const isAHorizontal = orientationA === 'HORIZONTAL';
 
   return {
-    plankA: boltPlank,
-    plankB: camPlank,
-    jointPosition,
+    plankA: isAHorizontal ? plankB : plankA, // bolt plank
+    plankB: isAHorizontal ? plankA : plankB, // cam plank
+    jointPosition: joint,
+    touchingFaceNormal: joint.normal,
     connectionType,
   };
 }
@@ -92,63 +83,81 @@ function getPlankBounds(plank: PlankData) {
 }
 
 function findJointPosition(
-  boundsA: Bounds,
-  boundsB: Bounds
-): { x: number; y: number; z: number } | null {
-  const threshold = 1; // For floating-point precision
+  a: Bounds,
+  b: Bounds
+): { x: number; y: number; z: number; normal: { x: number; y: number; z: number } } | null {
+  const t = JOINER_THRESHOLD;
 
-  // Check touching conditions
-  const touchingX =
-    Math.abs(boundsA.maxX - boundsB.minX) < threshold ||
-    Math.abs(boundsB.maxX - boundsA.minX) < threshold;
-  const touchingY =
-    Math.abs(boundsA.maxY - boundsB.minY) < threshold ||
-    Math.abs(boundsB.maxY - boundsA.minY) < threshold;
-  const touchingZ =
-    Math.abs(boundsA.maxZ - boundsB.minZ) < threshold ||
-    Math.abs(boundsB.maxZ - boundsA.minZ) < threshold;
+  const axes: Axis[] = ['x', 'y', 'z'];
 
-  // Check overlap conditions
-  const overlapX = boundsA.minX < boundsB.maxX && boundsA.maxX > boundsB.minX;
-  const overlapY = boundsA.minY < boundsB.maxY && boundsA.maxY > boundsB.minY;
-  const overlapZ = boundsA.minZ < boundsB.maxZ && boundsA.maxZ > boundsB.minZ;
+  const min = (obj: Bounds, axis: Axis) => obj[`min${axis.toUpperCase() as 'X' | 'Y' | 'Z'}`];
+  const max = (obj: Bounds, axis: Axis) => obj[`max${axis.toUpperCase() as 'X' | 'Y' | 'Z'}`];
 
-  // A 90-degree connection requires touching on one axis and overlapping on the other two
-  const is90Connection =
-    (touchingX && overlapY && overlapZ) ||
-    (touchingY && overlapX && overlapZ) ||
-    (touchingZ && overlapX && overlapY);
+  const overlapsOn = (axis1: Axis, axis2: Axis) =>
+    min(a, axis1) < max(b, axis1) &&
+    max(a, axis1) > min(b, axis1) &&
+    min(a, axis2) < max(b, axis2) &&
+    max(a, axis2) > min(b, axis2);
 
-  if (!is90Connection) {
-    return null;
-  }
+  for (const axis of axes) {
+    const otherAxes = axes.filter((ax) => ax !== axis);
 
-  // Calculate joint position based on touching axis
-  if (touchingX) {
-    return {
-      x: Math.abs(boundsA.maxX - boundsB.minX) < threshold ? boundsA.maxX : boundsB.maxX,
-      y: (Math.max(boundsA.minY, boundsB.minY) + Math.min(boundsA.maxY, boundsB.maxY)) / 2,
-      z: (Math.max(boundsA.minZ, boundsB.minZ) + Math.min(boundsA.maxZ, boundsB.maxZ)) / 2,
-    };
-  } else if (touchingY) {
-    return {
-      x: (Math.max(boundsA.minX, boundsB.minX) + Math.min(boundsA.maxX, boundsB.maxX)) / 2,
-      y: Math.abs(boundsA.maxY - boundsB.minY) < threshold ? boundsA.maxY : boundsB.maxY,
-      z: (Math.max(boundsA.minZ, boundsB.minZ) + Math.min(boundsA.maxZ, boundsB.maxZ)) / 2,
-    };
-  } else if (touchingZ) {
-    return {
-      x: (Math.max(boundsA.minX, boundsB.minX) + Math.min(boundsA.maxX, boundsB.maxX)) / 2,
-      y: (Math.max(boundsA.minY, boundsB.minY) + Math.min(boundsA.maxY, boundsB.maxY)) / 2,
-      z: Math.abs(boundsA.maxZ - boundsB.minZ) < threshold ? boundsA.maxZ : boundsB.maxZ,
-    };
+    // A.max touches B.min
+    if (Math.abs(max(a, axis) - min(b, axis)) < t && overlapsOn(otherAxes[0], otherAxes[1])) {
+      return {
+        ...centerPosition(a, b, axis, max(a, axis)),
+        normal: axisNormal(axis, +1),
+      };
+    }
+
+    // B.max touches A.min
+    if (Math.abs(max(b, axis) - min(a, axis)) < t && overlapsOn(otherAxes[0], otherAxes[1])) {
+      return {
+        ...centerPosition(a, b, axis, max(b, axis)),
+        normal: axisNormal(axis, -1),
+      };
+    }
   }
 
   return null;
 }
 
+function centerPosition(
+  a: Bounds,
+  b: Bounds,
+  fixedAxis: Axis,
+  fixedValue: number
+): { x: number; y: number; z: number } {
+  const center = (minA: number, maxA: number, minB: number, maxB: number) =>
+    (Math.max(minA, minB) + Math.min(maxA, maxB)) / 2;
+
+  return {
+    x: fixedAxis === 'x' ? fixedValue : center(a.minX, a.maxX, b.minX, b.maxX),
+    y: fixedAxis === 'y' ? fixedValue : center(a.minY, a.maxY, b.minY, b.maxY),
+    z: fixedAxis === 'z' ? fixedValue : center(a.minZ, a.maxZ, b.minZ, b.maxZ),
+  };
+}
+
+function axisNormal(axis: Axis, dir: 1 | -1): { x: number; y: number; z: number } {
+  return {
+    x: axis === 'x' ? dir : 0,
+    y: axis === 'y' ? dir : 0,
+    z: axis === 'z' ? dir : 0,
+  };
+}
+
 function determinePlankOrientation(plank: PlankData): 'HORIZONTAL' | 'VERTICAL' {
-  const { width, height } = plank;
+  const { width, height, name } = plank;
+
+  // Drawer planks (Front/Back/Sides) are semantically Vertical for V-V joints
+  if (
+    name.includes(DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK) ||
+    name.includes(DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK) ||
+    name.includes(DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK) ||
+    name.includes(DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK)
+  ) {
+    return 'VERTICAL';
+  }
 
   // If height is larger than width, it's vertical
   return height > width ? 'VERTICAL' : 'HORIZONTAL';
@@ -157,13 +166,17 @@ function determinePlankOrientation(plank: PlankData): 'HORIZONTAL' | 'VERTICAL' 
 function determine90DegreeConnection(
   orientationA: string,
   orientationB: string
-): 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL' | null {
+): 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL' | 'VERTICAL_TO_VERTICAL' | null {
   if (orientationA === 'HORIZONTAL' && orientationB === 'VERTICAL') {
     return 'HORIZONTAL_TO_VERTICAL';
   }
 
   if (orientationA === 'VERTICAL' && orientationB === 'HORIZONTAL') {
     return 'VERTICAL_TO_HORIZONTAL';
+  }
+
+  if (orientationA === 'VERTICAL' && orientationB === 'VERTICAL') {
+    return 'VERTICAL_TO_VERTICAL';
   }
 
   return null;

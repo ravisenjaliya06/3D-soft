@@ -1,11 +1,14 @@
+import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
+import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { store } from '../store';
+import { resetStoreForNewDesign, store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
@@ -73,6 +76,8 @@ export function createOutlineForObject(mesh: THREE.Mesh): THREE.LineSegments | n
 }
 
 const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
+  const router = useRouter();
+  const designId = (router.query.designid as string) ?? gettingDesignID() ?? '';
   const dispatch = useAppDispatch();
   const sceneFromState = useAppSelector((state) => state.scene.scene);
   const isQuickHideActive = useAppSelector((state) => state.data.isQuickHideActive);
@@ -89,66 +94,76 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
   const dimToolRef = useRef<DistanceTool | null>(null);
+  const [showSavePopup, setShowSavePopup] = React.useState(false);
+  const [catalogName, setCatalogName] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    if (!mountRef.current || !designId) return;
 
-    // get existing scene or first-time build
-    const threeDView = getOrCreateThreeDView(mountRef.current);
+    // Clear full store so new design starts fresh (scene, data, catalog, history, etc.)
+    dispatch(resetStoreForNewDesign());
 
-    if (!design3D) {
-      setLocalDesign3D(threeDView);
-      setDesign3D(threeDView);
-      dispatch(setScene(threeDView.scene));
+    // Get or create scene for this design (each design has its own scene)
+    const threeDView = getOrCreateThreeDView(mountRef.current, designId);
 
-      const dimTool = new DistanceTool(threeDView.scene);
-      dimTool.enableEditing(threeDView, (mesh, newPos) => {
-        const objectId = mesh.userData?.objectId;
-        if (!objectId) return;
+    setLocalDesign3D(threeDView);
+    setDesign3D(threeDView);
+    dispatch(setScene(threeDView.scene));
 
-        dispatch(
-          updateObject({
-            id: objectId,
-            position: {
-              x: newPos.x,
-              y: newPos.y,
-              z: newPos.z,
-            },
-          })
-        );
-      });
+    const dimTool = new DistanceTool(threeDView.scene);
+    dimTool.enableEditing(threeDView, (mesh, newPos) => {
+      const objectId = mesh.userData?.objectId;
+      if (!objectId) return;
 
-      dimToolRef.current = dimTool;
+      dispatch(
+        updateObject({
+          id: objectId,
+          position: {
+            x: newPos.x,
+            y: newPos.y,
+            z: newPos.z,
+          },
+        })
+      );
+    });
 
-      // MoveHandler only once
-      const handler = new MoveHandler({
-        scene: threeDView.scene,
-        camera: threeDView.camera as THREE.PerspectiveCamera,
-        renderer: threeDView.renderer,
-        movableObjects: [],
-      });
-      setMoveHandler(handler);
+    dimToolRef.current = dimTool;
 
-      threeDView.scene.traverse((object) => {
-        if (
-          object.name === 'grid' ||
-          object instanceof THREE.GridHelper ||
-          object.name === 'floor' ||
-          object.name === 'Sky'
-        ) {
-          object.raycast = () => [];
-        }
-      });
-    }
+    const handler = new MoveHandler({
+      scene: threeDView.scene,
+      camera: threeDView.camera as THREE.PerspectiveCamera,
+      renderer: threeDView.renderer,
+      movableObjects: [],
+    });
+    setMoveHandler(handler);
+
+    threeDView.scene.traverse((object) => {
+      if (
+        object.name === 'grid' ||
+        object instanceof THREE.GridHelper ||
+        object.name === 'floor' ||
+        object.name === 'Sky'
+      ) {
+        object.raycast = () => [];
+      }
+    });
 
     return () => {
-      if (mountRef.current && threeDView.renderer?.domElement) {
+      if (mountRef.current && threeDView.renderer?.domElement?.parentNode === mountRef.current) {
         try {
           mountRef.current.removeChild(threeDView.renderer.domElement);
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
+      setLocalDesign3D(null);
+      setDesign3D(null);
+      setMoveHandler(null);
+      setSelectedObject(null);
+      setHelperToolObject(null);
     };
-  }, []);
+  }, [designId]);
 
   useEffect(() => {
     if (!design3D) return;
@@ -158,7 +173,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   }, [design3D]);
 
   useEffect(() => {
-    if (design3D && sceneFromState) {
+    if (design3D && sceneFromState && sceneFromState === design3D.scene) {
       sceneFromState.children.forEach((child) => {
         if (!design3D.scene.getObjectById(child.id)) {
           design3D.scene.add(child.clone());
@@ -268,6 +283,17 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
   }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
 
+  const handleConfirmSave = () => {
+    if (!catalogName.trim()) {
+      setError('Library name is required');
+      return;
+    }
+
+    const saver = new ObjectsSaver();
+    saver.saveObject(catalogName.trim());
+    setShowSavePopup(false);
+  };
+
   return (
     <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
       <div ref={mountRef} style={{ width: '100%', height: '100%' }}></div>
@@ -283,8 +309,23 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             design3D={design3D}
             selectedObject={helperToolObject}
             moveHandler={moveHandler}
+            setShowSavePopup={setShowSavePopup}
+            setCatalogName={setCatalogName}
+            setError={setError}
           />
         </>
+      )}
+      {showSavePopup && (
+        <SaveToLibraryPopup
+          catalogName={catalogName}
+          error={error}
+          onCatalogNameChange={(name) => {
+            setCatalogName(name);
+            setError(null);
+          }}
+          onSave={handleConfirmSave}
+          onClose={() => setShowSavePopup(false)}
+        />
       )}
     </div>
   );

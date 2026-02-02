@@ -18,7 +18,7 @@
 .maincontent {
   display: flex;
   justify-content: center;
-  margin-top: 2.5rem;
+  margin-top: 4rem;
   flex-direction: column;
   align-items: center;
 }
@@ -45,6 +45,7 @@
   margin: 0;
   color: var(--primary-color);
 }
+
 .createdesignssubtext {
   margin: 0;
   font-size: 0.6rem;
@@ -89,6 +90,7 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
+
 .createdesingtext p {
   margin: 0.3rem 0rem 0rem 1rem;
   color: var(--text-gray);
@@ -146,6 +148,7 @@
 .designsLoadMore {
   height: 16%;
 }
+
 .designfirstpart {
   display: flex;
   justify-content: space-between;
@@ -179,9 +182,11 @@
   color: var(--primary-color);
   letter-spacing: 0.03rem;
   border: 0.063rem solid var(--text-gray);
+
   &:focus {
     outline: 0;
   }
+
   &::placeholder {
     font-family: var(--font-family);
     color: var(--primary-color);
@@ -278,11 +283,13 @@
   font-family: var(--font-family);
   font-size: 0.7rem;
 }
+
 .userName {
   margin-top: 0.4rem;
   font-family: var(--font-family);
   font-size: 0.7rem;
 }
+
 .griduserName {
   margin-top: 0rem;
   font-family: var(--font-family);
@@ -322,6 +329,7 @@
 .loadmore p {
   margin: 0;
 }
+
 .process_upload {
   margin-left: 0.3rem;
   width: 1rem;
@@ -564,6 +572,7 @@
   align-items: center;
   z-index: 1000;
 }
+
 .popup {
   background: white;
   width: 26rem;
@@ -573,6 +582,7 @@
   height: auto;
   align-items: start;
 }
+
 .createpopup {
   background: white;
   width: 25rem;
@@ -640,6 +650,7 @@
   margin-bottom: 0.8rem;
   font-size: 1.3rem;
 }
+
 .create_right_side p {
   margin-left: 1rem;
   margin-bottom: 1.5rem;
@@ -662,6 +673,7 @@
   height: 4rem;
   width: 3.4rem;
 }
+
 .createicon {
   margin-top: 0.6rem;
   margin-left: 0.7rem;
@@ -680,9 +692,11 @@
   height: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .edit_title {
   color: var(--primary-color);
 }
+
 .edit_right_side p {
   margin-left: 1rem;
   margin-top: 1rem;
@@ -691,6 +705,7 @@
   font-size: 0.7rem;
   font-family: var(--font-family);
 }
+
 .right_side h2 {
   margin-top: 0.9rem;
   margin-left: 1.1rem;
@@ -699,9 +714,11 @@
   width: 11rem;
   height: 1.5rem;
 }
+
 .inputGroup {
   margin-left: 1rem;
 }
+
 .createinputGroup {
   margin-left: 1rem;
 }
@@ -712,6 +729,7 @@
   margin-top: 0rem;
   display: flex;
 }
+
 .createButtonGrop {
   gap: 1.5rem;
   padding: 1rem;
@@ -729,11 +747,13 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
   }
 }
+
 .createcontinueButton {
   width: 23rem;
   height: 2.5rem;
@@ -745,12 +765,14 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     border: 0.063rem solid var(--primary-color);
     color: var(--primary-color);
   }
 }
+
 .canceleditButton {
   width: 23rem;
   height: 2.5rem;
@@ -761,12 +783,14 @@
   border: 0.063rem solid var(--primary-color);
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     border: 0.063rem solid var(--primary-color);
     color: var(--header-text-color);
   }
 }
+
 .cancelcreateButton {
   width: 23rem;
   height: 2.5rem;
@@ -777,11 +801,13 @@
   border: 0.063rem solid var(--primary-color);
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
   }
 }
+
 .popup h2 {
   margin-top: 0.5rem;
   margin-left: 1rem;
@@ -816,6 +842,7 @@
   border: 0.063rem solid var(--primary-color);
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     border: 0.063rem solid var(--primary-color);
@@ -833,6 +860,7 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+
   &:hover {
     color: var(--header-text-color);
   }
@@ -857,6 +885,7 @@
   margin-top: 1.3rem;
   margin-bottom: 2rem;
 }
+
 .three_dots {
   position: absolute;
   background-color: var(--primary-white);
@@ -878,6 +907,7 @@
   margin-top: -1rem;
   display: flex;
 }
+
 .dropdownMenuProfile ul {
   list-style-type: none;
   padding: 0;
@@ -923,6 +953,7 @@
   flex-direction: column;
   align-items: center;
 }
+
 .three_dots_dropdown {
   display: flex;
   flex-direction: column;
@@ -934,6 +965,7 @@
   width: 8rem;
   text-align: center;
 }
+
 .three_dots_dropdown li {
   padding: 0.5rem;
   width: 8rem;
@@ -974,6 +1006,7 @@
   height: 5.5rem;
   margin-left: -7.1rem;
 }
+
 .gridthree_dots ul {
   list-style-type: none;
   padding: 0;
@@ -983,22 +1016,26 @@
   font-size: 1rem;
   color: rgb(98, 73, 121);
 }
+
 .gridthree_dot li {
   cursor: pointer;
   color: var(--primary-color);
 }
+
 .gridthree_dots_dropdown {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 7rem;
 }
+
 .gridthree_dots_dropdown li:hover {
   font-family: var(--font-family);
 
   color: var(--common-text-color);
   opacity: 1;
 }
+
 .gridediticon {
   height: 1.1rem;
   margin-right: 0.2rem;
@@ -1063,6 +1100,7 @@
 .cursorNotAllowed {
   cursor: not-allowed;
 }
+
 .successPopup,
 .errorPopup {
   position: fixed;

@@ -8,23 +8,40 @@ import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-// import { useSelector } from 'react-redux';
-// import { UnknownAction } from 'redux';
+import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
-// import { useAppDispatch } from '../hooks';
 import { Design, HeaderProps } from '../interface';
-import { getMinifixStandards } from '../minifix/calculator';
 import { PART_TYPES } from '../sceneCreator/interface';
+import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
-// import { redoAction, undoAction } from '../store/historySlice';
-// import type { RootState } from '../store/types';
+import {
+  setActiveDesignCamDepth,
+  setActiveDesignCamDiameter,
+  setActiveDesignCamHeight,
+  setActiveDesignMinifixDiameterHole,
+  setActiveDesignMinifixDistance,
+} from '../store/activeDesignSlice';
+import {
+  selectHeaderCamDepth,
+  selectHeaderCamDiameter,
+  selectHeaderCamHeight,
+  selectHeaderMinifixDiameterHole,
+  selectHeaderMinifixDistance,
+} from '../store/selectors';
 import styles from './header.module.css';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
-  // const dispatch = useAppDispatch();
-  // const history = useSelector((state: RootState) => state.history);
+  const dispatch = useDispatch();
+
+  // Use selectors to get values with fallback to design settings
+  const resolvedMinifixDistance = useSelector(selectHeaderMinifixDistance);
+  const resolvedMinifixDiameterHole = useSelector(selectHeaderMinifixDiameterHole);
+  const resolvedCamDepth = useSelector(selectHeaderCamDepth);
+  const resolvedCamDiameter = useSelector(selectHeaderCamDiameter);
+  const resolvedCamHeight = useSelector(selectHeaderCamHeight);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -34,25 +51,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
-  const [minifixDistance, setMinifixDistance] = useState(0);
-  const [boltSize, setBoltSize] = useState(0);
-  const [camDepth, setCamDepth] = useState(0);
-  const [grooveGap, setGrooveGap] = useState(0);
-  const [grooveDig, setGrooveDig] = useState(0);
-
-  interface DesignIDSettingData {
-    id: string;
-    unit: string;
-    sheet_width: number;
-    sheet_height: number;
-    minifix_distance: number;
-    groove_gap: number;
-    groove_dig: number;
-    width: number;
-    height: number;
-    minifix_bolt: number;
-    cam_points: number;
-  }
+  const [minifixDistance, setMinifixDistance] = useState(resolvedMinifixDistance);
+  const [minifixDiameterHole, setMinifixDiameterHole] = useState(resolvedMinifixDiameterHole);
+  const [camDepth, setCamDepth] = useState(resolvedCamDepth);
+  const [camDiameter, setCamDiameter] = useState(resolvedCamDiameter);
+  const [camHeight, setCamHeight] = useState(resolvedCamHeight);
 
   const handleClear = () => {
     /** Opens the confirmation popup to clear the current design. */
@@ -73,13 +76,23 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     setIsLoading(false);
   };
 
+  // Initialize values from Redux when popup opens
   useEffect(() => {
     if (showSettingsPopup) {
-      const standards = getMinifixStandards();
-      setMinifixDistance(standards.SPACING);
-      // ...set other values too if needed
+      setMinifixDistance(resolvedMinifixDistance);
+      setMinifixDiameterHole(resolvedMinifixDiameterHole);
+      setCamDepth(resolvedCamDepth);
+      setCamDiameter(resolvedCamDiameter);
+      setCamHeight(resolvedCamHeight);
     }
-  }, [showSettingsPopup]);
+  }, [
+    showSettingsPopup,
+    resolvedMinifixDistance,
+    resolvedMinifixDiameterHole,
+    resolvedCamDepth,
+    resolvedCamDiameter,
+    resolvedCamHeight,
+  ]);
 
   const handleZoomModeToggle = () => {
     /** Toggles zoom mode in the 3D design viewer. */
@@ -102,60 +115,6 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       router.push(route).then(() => setIsLoading(false));
     }
   };
-  const fetchSettingsConfig = async () => {
-    /** Fetches current design settings (Minifix, groove, etc.) from the backend. */
-
-    const designId = window.location.pathname.split('/')[2];
-
-    const response: { status: number; data: DesignIDSettingData } = await commonService.get(
-      API_ENDPOINT.GET_DESIGN_SETTINGS(designId)
-    );
-    if (response.status === 200) {
-      setMinifixDistance(response.data.minifix_distance ?? 30);
-      setBoltSize(response.data.minifix_bolt ?? 5);
-      setCamDepth(response.data.cam_points ?? 6);
-      setGrooveGap(response.data.groove_gap ?? 3);
-      setGrooveDig(response.data.groove_dig ?? 10);
-    }
-  };
-  const handleSettingsSubmit = async () => {
-    /** Submits updated Minifix and design settings to the backend and refreshes the view. */
-
-    const designId = window.location.pathname.split('/')[2];
-    if (!designId) return;
-
-    const formData = new FormData();
-    formData.append('sheet_height', '2480');
-    formData.append('sheet_width', '1240');
-    formData.append('minifix_distance', String(minifixDistance));
-
-    try {
-      const response = await commonService.put(
-        API_ENDPOINT.UPDATE_DESIGN_SETTINGS(designId),
-        formData
-      );
-      if (response.status === 200) {
-        // Update the Minifix calculator with new spacing
-        const { updateMinifixSpacing } = await import('../minifix/calculator');
-        updateMinifixSpacing(minifixDistance);
-
-        setSuccessMessage(
-          'Settings updated successfully! Minifix spacing updated to ' + minifixDistance + 'mm'
-        );
-        fetchSettingsConfig(); // refresh
-        setTimeout(() => {
-          setSuccessMessage(null);
-          setShowSettingsPopup(false); // ✅ Close popup after message
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Failed to update settings', error);
-    }
-  };
-
-  useEffect(() => {
-    if (showSettingsPopup) fetchSettingsConfig();
-  }, [showSettingsPopup]);
 
   const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
   const designId = pathName.length > 2 ? pathName[2] : '';
@@ -305,6 +264,33 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     });
   };
 
+  const handleSettingsClick = () => {
+    setShowSettingsPopup(true);
+  };
+
+  const handleSaveHeaderSettings = () => {
+    // Dispatch design-level overrides to Redux
+    dispatch(setActiveDesignMinifixDistance(minifixDistance));
+    dispatch(setActiveDesignMinifixDiameterHole(minifixDiameterHole));
+    dispatch(setActiveDesignCamDepth(camDepth));
+    dispatch(setActiveDesignCamDiameter(camDiameter));
+    dispatch(setActiveDesignCamHeight(camHeight));
+
+    // Note: We don't update existing cupboards - they keep their own settings
+    // Only new cupboards will use these updated design-level settings
+
+    setSuccessMessage('Design settings updated successfully!');
+    setTimeout(() => {
+      setSuccessMessage(null);
+      setShowSettingsPopup(false);
+    }, 2000);
+  };
+
+  const handleSave = () => {
+    const objectSaver = new ObjectsSaver();
+    objectSaver.saveAllObjects();
+  };
+
   const headerTools = [
     // {
     //   option: 'undo',
@@ -335,6 +321,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       onClick: handleZoomModeToggle,
     },
     {
+      option: 'save',
+      name: 'Save Design',
+      icon: assets.save,
+      disabled: false,
+      onClick: handleSave,
+    },
+    {
       option: 'screenshot',
       name: 'Screenshot',
       icon: assets.screenshot_svg,
@@ -347,6 +340,13 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       icon: assets.newopenclose,
       disabled: false,
       onClick: handleOpenCloseClick,
+    },
+    {
+      option: 'settings',
+      name: 'Settings',
+      icon: assets.setting_svg,
+      disabled: false,
+      onClick: handleSettingsClick,
     },
   ];
 
@@ -491,12 +491,12 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                   />
                 </div>
                 <div className={styles.minifixInputGroup}>
-                  <label htmlFor="bolt-size">Bolt Size (mm)</label>
+                  <label htmlFor="minifix-diameter-hole">Minifix Diameter Hole (mm)</label>
                   <input
-                    id="bolt-size"
+                    id="minifix-diameter-hole"
                     type="number"
-                    value={boltSize}
-                    onChange={(e) => setBoltSize(Number(e.target.value))}
+                    value={minifixDiameterHole}
+                    onChange={(e) => setMinifixDiameterHole(Number(e.target.value))}
                     min="1"
                   />
                 </div>
@@ -512,26 +512,26 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                 </div>
               </div>
 
-              {/* Grooving Settings Section */}
-              <h4 className={styles.sectionSubtitle}>Grooving Settings</h4>
+              {/* Camlock Settings Section */}
+              <h4 className={styles.sectionSubtitle}>Camlock Settings</h4>
               <div className={styles.minifixFlexRow}>
                 <div className={styles.minifixInputGroup}>
-                  <label htmlFor="groove-Gap">Groove Gap (mm)</label>
+                  <label htmlFor="cam-diameter">Cam Diameter (mm)</label>
                   <input
-                    id="groove-gap"
+                    id="cam-diameter"
                     type="number"
-                    value={grooveGap}
-                    onChange={(e) => setGrooveGap(Number(e.target.value))}
+                    value={camDiameter}
+                    onChange={(e) => setCamDiameter(Number(e.target.value))}
                     min="1"
                   />
                 </div>
                 <div className={styles.minifixInputGroup}>
-                  <label htmlFor="groove-Dig">Groove Dig (mm)</label>
+                  <label htmlFor="cam-height">Cam Height (mm)</label>
                   <input
-                    id="groove-dig"
+                    id="cam-height"
                     type="number"
-                    value={grooveDig}
-                    onChange={(e) => setGrooveDig(Number(e.target.value))}
+                    value={camHeight}
+                    onChange={(e) => setCamHeight(Number(e.target.value))}
                     min="1"
                   />
                 </div>
@@ -539,7 +539,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
               {/* Submit Button */}
               <div className={styles.minifixSubmitGroup}>
-                <button className={styles.minifixSubmitButton} onClick={handleSettingsSubmit}>
+                <button className={styles.minifixSubmitButton} onClick={handleSaveHeaderSettings}>
                   Save Changes
                 </button>
                 {successMessage && (

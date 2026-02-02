@@ -1,56 +1,230 @@
 import * as THREE from 'three';
+import { ThreeDView } from '../design/interface';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
+import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObject } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
-import { FLOOR_PLAN_TYPES, MeshObjectData } from './interface';
+import { DesignBuilder } from './designBuilder';
+import {
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  MATERIAL_TYPES,
+  MeshObjectData,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { create2DWallFromMeshData } from './utils';
+import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
 
 export class SyncManager {
   private scene: THREE.Scene;
-  private data: MeshObjectData;
+  private data: MeshObjectData | MeshObjectData[];
   private oldData: MeshObjectData | null = null;
-  private meshBuilder: MeshBuilder;
+  private meshBuilder: MeshBuilder | null = null;
+  private isArray: boolean;
+  private moveHandlerRef: MoveHandler | null = null;
 
-  constructor(data: MeshObjectData) {
-    this.scene = store.getState().scene?.scene;
-    this.data = data;
-    this.meshBuilder = new MeshBuilder(data);
+  constructor(data: MeshObjectData | MeshObjectData[], threeDView?: ThreeDView) {
+    const scene = store.getState().scene?.scene;
+    this.scene = scene;
+    // Convert snake_case keys from database to camelCase
+    this.data = convertKeysToCamel<MeshObjectData | MeshObjectData[]>(data);
+    this.isArray = Array.isArray(this.data);
+
+    if (!this.isArray) {
+      this.meshBuilder = new MeshBuilder(this.data as MeshObjectData);
+    }
+
+    if (threeDView?.camera && threeDView?.renderer && scene) {
+      this.moveHandlerRef = new MoveHandler({
+        scene: scene,
+        camera: threeDView.camera as THREE.PerspectiveCamera,
+        renderer: threeDView.renderer,
+        movableObjects: [],
+      });
+    }
   }
 
-  // Syncs the data with the scene
-  public syncData(): void {
-    this._handleState();
-    this._handle2d();
-    this._handle3d();
+  private _normalizeData(data: MeshObjectData | MeshObjectData[]): MeshObjectData[] {
+    return Array.isArray(data) ? data : [data];
   }
 
-  // Updates the data in the redux store
-  private _handleState() {
+  public async syncData(): Promise<void> {
+    if (!this.scene) return;
+
+    const list = this._normalizeData(this.data);
+
+    this._syncState(list);
+    this._sync2D(list);
+    await this._sync3D(list);
+  }
+
+  private _findMeshById(id: string): THREE.Mesh | null {
+    let found: THREE.Mesh | null = null;
+
+    this.scene.traverse((obj) => {
+      if (!found && obj instanceof THREE.Mesh) {
+        const objId = obj.userData?.objectId;
+        if (objId === id) {
+          found = obj;
+        }
+      }
+    });
+
+    return found;
+  }
+
+  private _findParentMesh(parentId: string): THREE.Mesh | null {
+    let foundParent: THREE.Mesh | null = null;
+
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.objectId === parentId) {
+        foundParent = object;
+      }
+    });
+
+    return foundParent;
+  }
+
+  private _isObjectType(type: string): boolean {
+    return Object.values(OBJECT_TYPES).includes(type);
+  }
+
+  private _removeMeshFromScene(mesh: THREE.Mesh): void {
+    if (mesh.geometry) {
+      mesh.geometry.dispose();
+    }
+
+    if (mesh.material) {
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => {
+          if (mat instanceof THREE.Material) {
+            mat.dispose();
+          }
+        });
+      } else if (mesh.material instanceof THREE.Material) {
+        mesh.material.dispose();
+      }
+    }
+
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        this._removeMeshFromScene(child);
+      }
+    });
+
+    if (mesh.parent) {
+      mesh.parent.remove(mesh);
+    } else {
+      this.scene.remove(mesh);
+    }
+  }
+
+  private _syncState(list: MeshObjectData[]): void {
     const existingObjects = store.getState().data.objects;
 
-    const existing = existingObjects.find((obj) => obj.id === this.data.id);
+    const toAdd: MeshObjectData[] = [];
+    const toUpdate: MeshObjectData[] = [];
 
-    if (existing) {
-      // SAVE OLD DATA FIRST
-      this.oldData = structuredClone(existing);
+    list.forEach((item) => {
+      const existing = existingObjects.find((o) => o.id === item.id);
 
-      // THEN UPDATE REDUX
-      store.dispatch(updateObject({ ...this.data, id: this.data.id }));
+      if (existing) {
+        if (list.length === 1) {
+          this.oldData = structuredClone(existing);
+        }
+        toUpdate.push(item);
+      } else {
+        // For new objects, capture current minifix settings if it's a cupboard
+        let itemToAdd = item;
+
+        if (this._isObjectType(item.type) && item.isMain) {
+          // Get current resolved minifix settings from Redux
+          const state = store.getState();
+          const minifixDistance =
+            state.activeDesign.minifixDistance ?? state.designSettings.minifixDistance;
+          const minifixDiameterHole =
+            state.activeDesign.minifixDiameterHole ?? state.designSettings.minifixDiameterHole;
+          const camDepth = state.activeDesign.camDepth ?? state.designSettings.camDepth;
+          const camDiameter = state.activeDesign.camDiameter ?? state.designSettings.camDiameter;
+          const camHeight = state.activeDesign.camHeight ?? state.designSettings.camHeight;
+
+          // Store minifix settings in the cupboard object
+          itemToAdd = {
+            ...item,
+            minifixDistance,
+            minifixDiameterHole,
+            camDepth,
+            camDiameter,
+            camHeight,
+          };
+        }
+
+        const itemWithBanding = this._detectBandingFromScene(itemToAdd);
+        toAdd.push(itemWithBanding);
+      }
+    });
+
+    if (toAdd.length) {
+      store.dispatch(addObjects(toAdd));
     } else {
-      store.dispatch(addObjects([this.data]));
+      toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
     }
   }
 
-  // Updates the 2D in the canvas
-  private _handle2d() {
-    if (!(this.data.type === FLOOR_PLAN_TYPES.WALL)) return;
-
-    const existing2DWall = store.getState().data.objects.find((obj) => obj.id === this.data.id);
-    if (existing2DWall) {
-      return;
+  /**
+   * Detect edgeBanding state from the 3D scene meshes
+   * This ensures banding data is stored when objects are initially added
+   */
+  private _detectBandingFromScene(meshData: MeshObjectData): MeshObjectData {
+    if (meshData.edgeBanding) {
+      return meshData;
     }
-    create2DWallFromMeshData(this.data);
+
+    const mesh = this._findMeshById(meshData.id);
+    if (!mesh) {
+      return meshData;
+    }
+
+    const detectedBanding: {
+      top?: boolean;
+      bottom?: boolean;
+      left?: boolean;
+      right?: boolean;
+      front?: boolean;
+      back?: boolean;
+    } = {};
+
+    mesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
+        const edge = child.userData.edge;
+        if (edge && typeof edge === 'string') {
+          detectedBanding[edge as keyof typeof detectedBanding] = true;
+        }
+      }
+    });
+
+    // If we found any banding, add it to the meshData
+    if (Object.keys(detectedBanding).length > 0) {
+      return {
+        ...meshData,
+        edgeBanding: detectedBanding,
+      };
+    }
+
+    return meshData;
+  }
+
+  private _sync2D(list: MeshObjectData[]): void {
+    const existingObjects = store.getState().data.objects;
+
+    list.forEach((item) => {
+      if (item.type !== FLOOR_PLAN_TYPES.WALL) return;
+
+      const exists = existingObjects.find((o) => o.id === item.id);
+      if (!exists) create2DWallFromMeshData(item);
+    });
   }
 
   /**
@@ -124,32 +298,70 @@ export class SyncManager {
 
   // Creates a new mesh
   private _createNewMesh() {
+    if (!this.meshBuilder) {
+      throw new Error('MeshBuilder is not initialized. This should not happen for single objects.');
+    }
     const mesh = this.meshBuilder.createMesh();
     return mesh;
   }
 
   // Updates the mesh
-  private _updateMesh(mesh: THREE.Mesh) {
-    if (!this.oldData) return;
-    const changes = this._getMeshObjectPatch(this.oldData, this.data);
+  private async _updateMesh(mesh: THREE.Mesh) {
+    if (!this.oldData || !this.meshBuilder || this.isArray) return;
+
+    const data = this.data as MeshObjectData;
+    const changes = this._getMeshObjectPatch(this.oldData, data);
+    console.log('changes', changes);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
-    // Update children if dimensions changed and this is a main object (cupboard)
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
+      this.meshBuilder.updateGrooving(mesh);
     }
-  }
 
-  private _findMeshById(): THREE.Mesh | null {
-    let foundMesh: THREE.Mesh | null = null;
+    // Update banding if dimensions changed or banding state changed
+    if (changes.dimensions || changes.edgeBanding) {
+      const name = mesh.name || '';
 
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh && object.userData.objectId === this.data.id) {
-        foundMesh = object;
+      // Check if this is a drawer plank by name (drawer planks should have banding)
+      const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+        (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+      );
+
+      if (!isDrawerPlank) {
+        // Explicitly exclude drawer groups, doors, and handles
+        if (
+          mesh.userData.type === PART_TYPES.DRAWER ||
+          mesh.userData.type === PART_TYPES.DOOR ||
+          mesh.userData.type === PART_TYPES.HANDLE ||
+          mesh.userData.type === PART_TYPES.L_SHAPE_OBJECT
+        ) {
+          return;
+        }
+
+        // Include all plank types (including any future plank types)
+        const isPlank =
+          mesh.userData.type === PART_TYPES.PLANK ||
+          mesh.userData.type === PART_TYPES.VERTICAL_PLANK ||
+          mesh.userData.type === PART_TYPES.HORIZONTAL_PLANK ||
+          mesh.userData.type === PART_TYPES.BACK_PLANK ||
+          Object.values(PART_TYPES).includes(mesh.userData.type);
+
+        if (!isPlank) {
+          return;
+        }
       }
-    });
 
-    return foundMesh;
+      // This is a plank (regular or drawer plank) - update banding
+      if (changes.dimensions && data.dimensions) {
+        // Only resize/reposition existing banding to new dimensions; do not reduce plank
+        await this.meshBuilder.updateBanding(mesh, { isDimensionUpdate: true });
+      } else if (changes.edgeBanding) {
+        // Banding state changed - recreate banding
+        await this.meshBuilder.applyBandingFromState();
+      }
+      updateMinifixesForCupboard(mesh);
+    }
   }
 
   // Updates children dimensions when parent dimensions change
@@ -157,16 +369,18 @@ export class SyncManager {
     mesh: THREE.Mesh,
     newDimensions: Partial<{ width: number; height: number; depth: number }>
   ): void {
-    if (!this.oldData || !this.data.dimensions) return;
+    if (this.isArray || !this.oldData) return;
+
+    const data = this.data as MeshObjectData;
+    if (!data.dimensions) return;
 
     // Use oldData dimensions (before update) and new data dimensions (after update)
     const oldWidth = this.oldData.dimensions?.width ?? 0;
     const oldHeight = this.oldData.dimensions?.height ?? 0;
     const oldDepth = this.oldData.dimensions?.depth ?? 0;
-
-    const newWidth = newDimensions.width ?? this.data.dimensions.width ?? oldWidth;
-    const newHeight = newDimensions.height ?? this.data.dimensions.height ?? oldHeight;
-    const newDepth = newDimensions.depth ?? this.data.dimensions.depth ?? oldDepth;
+    const newWidth = newDimensions.width ?? data.dimensions.width ?? oldWidth;
+    const newHeight = newDimensions.height ?? data.dimensions.height ?? oldHeight;
+    const newDepth = newDimensions.depth ?? data.dimensions.depth ?? oldDepth;
 
     // Temporary fix for zero dimension
     const MIN_DIM = 0.01;
@@ -183,6 +397,57 @@ export class SyncManager {
 
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
+
+      // Skip banding meshes - they will be updated separately
+      if (child.userData.type === 'banding') {
+        // Update banding mesh dimensions and position
+        const edge = child.userData.edge;
+        const bandingParams = child.geometry.parameters;
+        const bandingThickness = Math.min(
+          bandingParams.width,
+          bandingParams.height,
+          bandingParams.depth
+        );
+
+        let newBandingGeometry: THREE.BoxGeometry;
+        let newBandingPosition: THREE.Vector3;
+
+        if (edge === 'top' || edge === 'bottom') {
+          newBandingGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
+          newBandingPosition = new THREE.Vector3(
+            0,
+            edge === 'top'
+              ? newHeight / 2 - bandingThickness / 2
+              : -newHeight / 2 + bandingThickness / 2,
+            0
+          );
+        } else if (edge === 'left' || edge === 'right') {
+          newBandingGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
+          newBandingPosition = new THREE.Vector3(
+            edge === 'left'
+              ? -newWidth / 2 + bandingThickness / 2
+              : newWidth / 2 - bandingThickness / 2,
+            0,
+            0
+          );
+        } else if (edge === 'front' || edge === 'back') {
+          newBandingGeometry = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
+          newBandingPosition = new THREE.Vector3(
+            0,
+            0,
+            edge === 'front'
+              ? newDepth / 2 - bandingThickness / 2
+              : -newDepth / 2 + bandingThickness / 2
+          );
+        } else {
+          return; // Unknown edge
+        }
+
+        child.geometry.dispose();
+        child.geometry = newBandingGeometry;
+        child.position.copy(newBandingPosition);
+        return;
+      }
 
       const childParams = child.geometry.parameters;
 
@@ -207,6 +472,65 @@ export class SyncManager {
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
 
       child.position.set(nextX, nextY, nextZ);
+
+      // Update banding for this child plank if it has any
+      if (
+        child.userData.type &&
+        ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(child.userData.type)
+      ) {
+        // Update banding meshes for this child plank
+        child.children.forEach((bandingChild) => {
+          if (!(bandingChild instanceof THREE.Mesh) || bandingChild.userData.type !== 'banding')
+            return;
+          if (!(bandingChild.geometry instanceof THREE.BoxGeometry)) return;
+
+          const bandingEdge = bandingChild.userData.edge;
+          const bandingParams = bandingChild.geometry.parameters;
+          const bandingThickness = Math.min(
+            bandingParams.width,
+            bandingParams.height,
+            bandingParams.depth
+          );
+
+          let newBandingGeometry: THREE.BoxGeometry;
+          let newBandingPosition: THREE.Vector3;
+
+          if (bandingEdge === 'top' || bandingEdge === 'bottom') {
+            newBandingGeometry = new THREE.BoxGeometry(nextWidth, bandingThickness, nextDepth);
+            newBandingPosition = new THREE.Vector3(
+              0,
+              bandingEdge === 'top'
+                ? nextHeight / 2 - bandingThickness / 2
+                : -nextHeight / 2 + bandingThickness / 2,
+              0
+            );
+          } else if (bandingEdge === 'left' || bandingEdge === 'right') {
+            newBandingGeometry = new THREE.BoxGeometry(bandingThickness, nextHeight, nextDepth);
+            newBandingPosition = new THREE.Vector3(
+              bandingEdge === 'left'
+                ? -nextWidth / 2 + bandingThickness / 2
+                : nextWidth / 2 - bandingThickness / 2,
+              0,
+              0
+            );
+          } else if (bandingEdge === 'front' || bandingEdge === 'back') {
+            newBandingGeometry = new THREE.BoxGeometry(nextWidth, nextHeight, bandingThickness);
+            newBandingPosition = new THREE.Vector3(
+              0,
+              0,
+              bandingEdge === 'front'
+                ? nextDepth / 2 - bandingThickness / 2
+                : -nextDepth / 2 + bandingThickness / 2
+            );
+          } else {
+            return;
+          }
+
+          bandingChild.geometry.dispose();
+          bandingChild.geometry = newBandingGeometry;
+          bandingChild.position.copy(newBandingPosition);
+        });
+      }
 
       // Note: We don't update outline for children - only the selected parent should have an outline
 
@@ -239,19 +563,250 @@ export class SyncManager {
     });
   }
 
-  // Handles the 3D mesh
-  private _handle3d() {
-    if (!this.scene) return;
+  private async _applyDrag(mesh: THREE.Mesh) {
+    if (!this.moveHandlerRef) return;
 
-    const existingMesh = this._findMeshById();
+    const pos = await this.moveHandlerRef.enableDragging(mesh);
+    if (pos) mesh.position.set(pos.x, pos.y, pos.z);
+  }
 
-    if (existingMesh !== null) {
-      this._updateMesh(existingMesh);
-      // Update outline if it exists
-      updateOrRefreshOutline(this.scene, existingMesh);
+  private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
+    const builder = new DesignBuilder(list, this.scene);
+    const root = await builder.createDesign();
+
+    if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
+      this.scene.add(root);
+      await this._applyDrag(root);
     } else {
-      const mesh = this._createNewMesh();
-      this.scene.add(mesh);
+      this._attachToParentOrScene(root, rootItem?.parent);
     }
+
+    // After banding is applied, detect and sync banding state to Redux
+    this._syncBandingFromScene(list);
+  }
+
+  /**
+   * Detect banding from scene meshes and sync to Redux store
+   * This ensures banding data is stored when objects are initially added
+   * Includes drawer planks but excludes drawer groups, doors, handles, and other non-plank types
+   */
+  private _syncBandingFromScene(list: MeshObjectData[]): void {
+    list.forEach((meshData) => {
+      const name = meshData.name || '';
+
+      // Check if this is a drawer plank by name (drawer planks should have banding)
+      const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+        (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+      );
+
+      // If it's a drawer plank, continue to detect banding
+      if (!isDrawerPlank) {
+        // Explicitly exclude drawer groups, doors, and handles
+        if (
+          meshData.type === PART_TYPES.DRAWER ||
+          meshData.type === PART_TYPES.DOOR ||
+          meshData.type === PART_TYPES.HANDLE ||
+          meshData.type === PART_TYPES.L_SHAPE_OBJECT
+        ) {
+          return;
+        }
+
+        // Include all plank types (including any future plank types)
+        const isPlank =
+          meshData.type === PART_TYPES.PLANK ||
+          meshData.type === PART_TYPES.VERTICAL_PLANK ||
+          meshData.type === PART_TYPES.HORIZONTAL_PLANK ||
+          meshData.type === PART_TYPES.BACK_PLANK ||
+          Object.values(PART_TYPES).includes(meshData.type);
+
+        if (!isPlank) {
+          return;
+        }
+      }
+
+      const mesh = this._findMeshById(meshData.id);
+      if (!mesh) return;
+
+      // Detect banding meshes from children
+      const detectedBanding: {
+        top?: boolean;
+        bottom?: boolean;
+        left?: boolean;
+        right?: boolean;
+        front?: boolean;
+        back?: boolean;
+      } = {};
+
+      mesh.children.forEach((child) => {
+        if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
+          const edge = child.userData.edge;
+          if (edge && typeof edge === 'string') {
+            detectedBanding[edge as keyof typeof detectedBanding] = true;
+          }
+        }
+      });
+
+      // If we found banding and it's not already in Redux, update it
+      if (Object.keys(detectedBanding).length > 0) {
+        const existingObjects = store.getState().data.objects;
+        const existing = existingObjects.find((o) => o.id === meshData.id);
+
+        // Only update if banding state is different or missing
+        if (existing) {
+          const existingBanding = existing.edgeBanding || {};
+          const hasChanges = Object.keys(detectedBanding).some(
+            (edge) =>
+              detectedBanding[edge as keyof typeof detectedBanding] !==
+              existingBanding[edge as keyof typeof existingBanding]
+          );
+
+          if (hasChanges || Object.keys(existingBanding).length === 0) {
+            store.dispatch(
+              updateObject({
+                id: meshData.id,
+                edgeBanding: detectedBanding,
+              })
+            );
+          }
+        }
+      }
+    });
+  }
+
+  private async _handleSingle(item: MeshObjectData) {
+    const existingMesh = this._findMeshById(item.id);
+
+    if (existingMesh) {
+      await this._updateMesh(existingMesh);
+      updateOrRefreshOutline(this.scene, existingMesh);
+      if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
+      return;
+    }
+
+    const mesh = this._createNewMesh();
+
+    if (this._isObjectType(item.type)) {
+      this.scene.add(mesh);
+      await this._applyDrag(mesh);
+      if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
+    } else {
+      this._attachToParentOrScene(mesh, item.parent);
+    }
+
+    const name = item.name || '';
+
+    // Check if this is a drawer plank by name (drawer planks should have banding)
+    const isDrawerPlank = Object.values(DRAWER_PLANK_TYPES).some(
+      (drawerPlankType) => name === drawerPlankType || name.includes(drawerPlankType)
+    );
+
+    if (!isDrawerPlank) {
+      // Explicitly exclude drawer groups, doors, and handles
+      if (
+        item.type === PART_TYPES.DRAWER ||
+        item.type === PART_TYPES.DOOR ||
+        item.type === PART_TYPES.HANDLE ||
+        item.type === PART_TYPES.L_SHAPE_OBJECT
+      ) {
+        return;
+      }
+
+      // Include all plank types (including any future plank types)
+      const isPlank =
+        item.type === PART_TYPES.PLANK ||
+        item.type === PART_TYPES.VERTICAL_PLANK ||
+        item.type === PART_TYPES.HORIZONTAL_PLANK ||
+        item.type === PART_TYPES.BACK_PLANK ||
+        Object.values(PART_TYPES).includes(item.type);
+
+      if (!isPlank) {
+        return;
+      }
+    }
+
+    // This is a plank (regular or drawer plank) - apply parent banding if needed
+    if (item.parent && this.meshBuilder) {
+      await this._applyParentBandingIfNeeded(item);
+    }
+  }
+
+  /**
+   * Apply parent's banding material to a single plank if parent has banding
+   */
+  private async _applyParentBandingIfNeeded(item: MeshObjectData): Promise<void> {
+    // If plank already has edgeBanding state, use it
+    if (item.edgeBanding) {
+      await this.meshBuilder?.applyBandingFromState();
+      return;
+    }
+
+    // Check parent for banding material
+    if (!item.parent) return;
+
+    const existingObjects = store.getState().data.objects;
+    const parentData = existingObjects.find((obj) => obj.id === item.parent);
+    if (!parentData) return;
+
+    // Find banding material in parent
+    const materialArray = Array.isArray(parentData.material)
+      ? parentData.material
+      : parentData.material
+        ? [parentData.material]
+        : [];
+
+    const parentBandingMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+
+    if (parentBandingMaterial && this.meshBuilder) {
+      // Find parent mesh to set it
+      const parentMesh = this._findParentMesh(item.parent);
+      if (parentMesh) {
+        this.meshBuilder.setParentMesh(parentMesh);
+      }
+
+      // Apply parent banding material
+      await this.meshBuilder.applyParentBandingMaterial(parentBandingMaterial);
+
+      // Detect and sync banding state to Redux
+      this._syncBandingFromScene([item]);
+    }
+  }
+
+  private _attachToParentOrScene(mesh: THREE.Object3D, parentId?: string | null) {
+    let targetParentId = parentId;
+    if (!targetParentId) {
+      const selectedChildObject = store.getState().data.selectedChildObject;
+      if (selectedChildObject) {
+        targetParentId = selectedChildObject;
+      }
+    }
+
+    if (!targetParentId) {
+      this.scene.add(mesh);
+      return;
+    }
+
+    const targetMesh = this._findMeshById(targetParentId);
+    if (!targetMesh) {
+      this.scene.add(mesh);
+      return;
+    }
+
+    const parent: THREE.Mesh = !targetMesh.parent?.userData?.isMain
+      ? targetMesh
+      : (targetMesh.parent as THREE.Mesh);
+
+    parent.add(mesh);
+    generateCompartmentsFromMesh(parent);
+  }
+
+  private async _sync3D(list: MeshObjectData[]): Promise<void> {
+    const rootItem = list.find((i) => !i.parent);
+
+    if (list.length > 1) {
+      await this._handleMultiple(list, rootItem);
+      return;
+    }
+
+    await this._handleSingle(list[0]);
   }
 }

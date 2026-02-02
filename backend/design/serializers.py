@@ -1,5 +1,7 @@
 # Python imports
 from typing import Any, Dict
+from urllib.request import Request
+from uuid import uuid4
 
 # Django imports
 from django.db import transaction
@@ -9,14 +11,16 @@ from rest_framework import serializers
 
 # App imports
 from design.models import (
-    CatalogRuleParts,
-    CatalogRules,
     Design,
     DesignCatalog,
     DesignSetting,
     DesignVersion,
+    NestingFile,
+    NestingSheet,
 )
-from design.utils import create_design_settings, split_parents_and_children
+from design.utils import create_design_settings
+from material.models import Material
+from material.serializers import MaterialSerializer
 from umaboy.models import Organization
 from user.constant import PUT
 
@@ -89,183 +93,177 @@ class SceneGetSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     data = serializers.DictField(required=False)
 
+    def _serialize_materials_without_cnc(
+        self: "SceneGetSerializer", materials: Material
+    ) -> list:
+        """
+        Serialize materials excluding CNC-related fields from properties.
+        """
+        return MaterialSerializer(materials, many=True).data
+
     def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
-        This serializer now handles ONE DesignCatalog.
-        DRF handles iteration when many=True
+        Serialize a single DesignCatalog into a scene item.
+        DRF will iterate when many=True.
         """
 
-        items = []
-        items.append(
-            {
-                **(catalog.data or {}),
-                "id": str(catalog.id),
-                "name": catalog.name,
-                "type": catalog.type,
-                "parent": str(catalog.parent.id) if catalog.parent else None,
-            }
-        )
-
-        for rule in catalog.catalog_rule.all():
-            for part in rule.catalog_rule_parts.all():
-                items.append(
-                    {
-                        **part.data,
-                        "id": str(part.id),
-                        "parent": str(catalog.id),
-                        "name": part.name,
-                        "type": part.type,
-                    }
-                )
-
-        return items
-
-
-class SceneItemSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    type = serializers.CharField()
-    parent = serializers.CharField(required=False, allow_null=True)
-    is_main = serializers.BooleanField(required=False, source="isMain")
-    geometry_type = serializers.CharField(required=False, source="geometryType")
-    dimensions = serializers.JSONField(required=False)
-    position = serializers.JSONField(required=False)
-    rotation = serializers.JSONField(required=False)
-    material = serializers.JSONField(required=False)
-    catalog_rule = serializers.CharField(required=False)
+        return {
+            **(catalog.data or {}),
+            "id": str(catalog.id),
+            "name": catalog.name,
+            "type": catalog.type,
+            "parent": str(catalog.parent.id) if catalog.parent else None,
+            "material": self._serialize_materials_without_cnc(catalog.materials.all()),
+        }
 
 
 class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
-    items = SceneItemSerializer(many=True)
+    items = serializers.ListField(required=False)
 
     def _get_design(
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
     ) -> Design:
-        return Design.objects.get(
-            id=design_id,
-            organization=organization,
-        )
+        return Design.objects.get(id=design_id, organization=organization)
 
-    def _create_catalogs(
+    def _get_or_create_material(
         self: "ScenePayloadSerializer",
-        parents: dict,
-        organization: Organization,
-        version: DesignVersion,
-    ) -> dict:
+        material_payload: dict,
+        request: Request,
+    ) -> Material:
         """
-        Create all catalogs first.
-        Do NOT set parent FK yet.
+        Create material via MaterialSerializer if not exists,
+        otherwise return existing one.
         """
-        catalog_map = {}
+        name = material_payload.get("name")
+        if not name:
+            return None
 
-        for frontend_id, data in parents.items():
-            catalog = DesignCatalog.objects.create(
-                organization=organization,
-                version=version,
-                type=data.get("type"),
-                name=data.get("name"),
-                parent=None,
-                data=data,
-            )
+        serializer = MaterialSerializer(
+            data=material_payload,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
 
-            catalog.data["id"] = str(catalog.id)
-            catalog.save(update_fields=["data"])
-
-            catalog_map[frontend_id] = catalog
-
-        return catalog_map
-
-    def _link_parent_catalogs(
-        self: "ScenePayloadSerializer", parents: dict, catalog_map: dict
-    ) -> None:
-        """
-        Update parent FK for catalogs that have a parent
-        """
-        for frontend_id, data in parents.items():
-            parent_frontend_id = data.get("parent")
-
-            if not parent_frontend_id:
-                continue
-
-            child_catalog = catalog_map[frontend_id]
-            parent_catalog = catalog_map.get(parent_frontend_id)
-
-            if not parent_catalog:
-                raise ValueError(
-                    f"Parent catalog not found for frontend id: {parent_frontend_id}"
-                )
-
-            child_catalog.parent = parent_catalog
-            child_catalog.data["parent"] = str(parent_catalog.id)
-            child_catalog.save(update_fields=["parent", "data"])
-
-    def _create_child_rules_and_parts(
-        self: "ScenePayloadSerializer", catalog_map: dict, children_map: dict
-    ) -> None:
-        for parent_id, children in children_map.items():
-            catalog = catalog_map[parent_id]
-            rule_cache = {}
-
-            for child in children:
-                rule = self._get_or_create_rule(
-                    catalog=catalog,
-                    rule_cache=rule_cache,
-                    rule_name=child.get("catalog_rule", "DEFAULT"),
-                )
-
-                child_data = {
-                    **child,
-                    "parent": str(catalog.id),
-                }
-
-                CatalogRuleParts.objects.create(
-                    catalog_rule=rule,
-                    name=child["name"],
-                    data=child_data,
-                )
-
-    def _get_or_create_rule(
+    def _attach_material(
         self: "ScenePayloadSerializer",
         catalog: DesignCatalog,
-        rule_cache: dict,
-        rule_name: str,
-    ) -> CatalogRules:
-        if rule_name not in rule_cache:
-            rule_cache[rule_name], _ = CatalogRules.objects.get_or_create(
-                catalog=catalog,
-                name=rule_name,
-            )
-        return rule_cache[rule_name]
+        item: dict,
+        request: Request,
+    ) -> None:
+        """
+        Attach material using MaterialSerializer (create if missing).
+        """
+        material_data = item.get("material")
+        if not material_data:
+            return
 
-    def create(self: "ScenePayloadSerializer", validated_data: dict) -> dict:
+        for material_payload in material_data:
+            material = self._get_or_create_material(material_payload, request)
+            if material:
+                catalog.materials.add(material)
+
+    def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
+        items = validated_data["items"]
+        is_library = request.query_params.get("is_library", "false").lower() == "true"
 
-        parents, children_map = split_parents_and_children(validated_data["items"])
-
-        with transaction.atomic():
-            design = self._get_design(validated_data["design_id"], organization)
+        design = self._get_design(validated_data["design_id"], organization)
+        version = None
+        if not is_library:
             version = DesignVersion.objects.create(design=design)
 
-            catalog_map = self._create_catalogs(
-                parents=parents,
-                organization=organization,
-                version=version,
-            )
+        if items is None:
+            return {}
 
-            self._link_parent_catalogs(
-                parents=parents,
-                catalog_map=catalog_map,
-            )
+        with transaction.atomic():
 
-            self._create_child_rules_and_parts(
-                catalog_map=catalog_map,
-                children_map=children_map,
-            )
+            temp_key_to_catalog: dict[str, DesignCatalog] = {}
+            frontend_id_to_temp_keys: dict[str, list[str]] = {}
+
+            for index, item in enumerate(items):
+                temp_key = f"{index}_{uuid4()}"
+
+                catalog = DesignCatalog.objects.create(
+                    organization=organization,
+                    version=version,
+                    type=item.get("type"),
+                    name=item.get("name"),
+                    parent=None,
+                    is_library=is_library,
+                    data=item.copy(),
+                )
+
+                catalog.data["id"] = str(catalog.id)
+                catalog.save(update_fields=["data"])
+
+                self._attach_material(catalog, item, request)
+
+                temp_key_to_catalog[temp_key] = catalog
+
+                frontend_id = item.get("id")
+                if frontend_id:
+                    frontend_id_to_temp_keys.setdefault(frontend_id, []).append(
+                        temp_key
+                    )
+
+                item["_temp_key"] = temp_key
+
+            for item in items:
+                parent_frontend_id = item.get("parent")
+                if not parent_frontend_id:
+                    continue
+
+                child_catalog = temp_key_to_catalog[item["_temp_key"]]
+
+                possible_parents = frontend_id_to_temp_keys.get(parent_frontend_id)
+                if not possible_parents:
+                    raise ValueError(f"Parent not found: {parent_frontend_id}")
+
+                parent_catalog = temp_key_to_catalog[possible_parents[0]]
+
+                child_catalog.parent = parent_catalog
+                child_catalog.data["parent"] = str(parent_catalog.id)
+                child_catalog.save(update_fields=["parent", "data"])
 
         return {
             "message": "Design saved successfully",
-            "version_id": version.id,
-            "catalog_ids": [catalog.id for catalog in catalog_map.values()],
+            "version_id": version.id if version else None,
+            "catalog_ids": [c.id for c in temp_key_to_catalog.values()],
         }
+
+
+class NestingFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NestingFile
+        fields = [
+            "id",
+            "file_type",
+            "file_path",
+            "file_name",
+            "is_sheet_specific",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class NestingSheetSerializer(serializers.ModelSerializer):
+    files = NestingFileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NestingSheet
+        fields = [
+            "id",
+            "sheet_number",
+            "width",
+            "height",
+            "efficiency",
+            "file_ids",
+            "files",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

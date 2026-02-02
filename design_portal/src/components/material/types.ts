@@ -3,6 +3,7 @@ export interface MaterialItem {
   name: string;
   icon?: string;
   subItems?: MaterialItem[];
+  img?: string;
 }
 
 export interface TableColumn {
@@ -193,6 +194,7 @@ export interface MaterialPropertiesInput {
   defaultMarkup?: number;
   salesTax?: boolean;
   defaultTaxRate?: number;
+  model_file?: string;
   waste?: number;
   estimate?: boolean;
   thickness?: number;

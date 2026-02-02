@@ -1,12 +1,33 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
+
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
+import { gettingDesignID } from '../design';
+import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setFloor, setWalls } from '../store/dataSlice';
-import { MeshObjectData } from './interface';
+import { EDGES, MeshObjectData, PART_TYPES } from './interface';
+import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
+import { ObjectsSaver } from './tools/objectSaver';
 
+export const getDesignCatalogs = async () => {
+  const response: { status: number; data: { catalogs: MeshObjectData[] } } =
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+  if (response.status !== 200) {
+    console.error('Error fetching catalogs');
+    return;
+  }
+  console.log(response.data.catalogs, 'catalogs');
+  console.log(JSON.stringify(response.data.catalogs), 'catalogs');
+  response.data.catalogs.forEach((catalog: MeshObjectData) => {
+    const builder = new SyncManager(catalog);
+    builder.syncData();
+  });
+};
 /**
  * Get the X and Y positions whenever a mouse event is called.
  */
@@ -184,8 +205,14 @@ export const deleteObject = async (clearScene?: boolean) => {
   const objectRemover = new ObjectsRemoverFromScene();
   if (clearScene) {
     objectRemover.clearScene();
+  } else {
+    objectRemover.findSingleObjectToRemove();
   }
-  objectRemover.findSingleObjectToRemove();
+};
+
+export const saveObject = async () => {
+  const objectSaver = new ObjectsSaver();
+  objectSaver.saveObject();
 };
 
 export function formatEnumLabel(value: string): string {
@@ -213,3 +240,267 @@ export function convertKeysToCamel<T>(obj: Object): T {
   }
   return obj;
 }
+
+function camelToSnake(key: string): string {
+  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
+}
+
+export function convertKeysToSnake<T>(obj: any): T {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToSnake) as any;
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [camelToSnake(k), convertKeysToSnake(v)])
+    ) as T;
+  }
+
+  return obj;
+}
+
+//deep update ids
+export function deepUpdateIds<T>(value: T, idMap: Map<string, string>): T {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return (value as unknown[]).map((item) => deepUpdateIds(item, idMap)) as unknown as T;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+
+  for (const key in obj) {
+    const v = obj[key];
+
+    if (typeof v === 'string' && idMap.has(v)) {
+      result[key] = idMap.get(v);
+    } else if (v !== null && typeof v === 'object') {
+      result[key] = deepUpdateIds(v, idMap);
+    } else {
+      result[key] = v;
+    }
+  }
+
+  return result as T;
+}
+
+/**
+ * Extract dominant/average color from an image URL
+ * Returns a hex color value
+ */
+export async function extractColorFromImage(imageUrl: string): Promise<number> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          resolve(0x000000);
+          return;
+        }
+
+        const sampleSize = Math.min(100, Math.max(img.width, img.height));
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+
+        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+
+        const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+        const data = imageData.data;
+
+        let r = 0,
+          g = 0,
+          b = 0,
+          count = 0;
+
+        for (let i = 0; i < data.length; i += 16) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+
+        r = Math.floor(r / count);
+        g = Math.floor(g / count);
+        b = Math.floor(b / count);
+
+        const hexColor = (r << 16) | (g << 8) | b;
+        resolve(hexColor);
+      } catch (error) {
+        console.warn('Failed to extract color from image:', error);
+        resolve(0x000000);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(0x000000);
+    };
+
+    img.src = imageUrl;
+  });
+}
+
+function _createGeometry(width: number, height: number, depth: number): THREE.BoxGeometry {
+  return new THREE.BoxGeometry(width, height, depth);
+}
+
+function _createVector3(x: number, y: number, z: number): THREE.Vector3 {
+  return new THREE.Vector3(x, y, z);
+}
+
+export function getNew(
+  edge: string,
+  params: UpdateDimensionsParams,
+  bandingThickness: number
+): { newGeometry: THREE.BoxGeometry; newPosition: THREE.Vector3 } | null {
+  let newGeometry: THREE.BoxGeometry;
+  let newPosition: THREE.Vector3;
+  if (edge === EDGES.TOP || edge === EDGES.BOTTOM) {
+    newGeometry = _createGeometry(params.newWidth, bandingThickness, params.newDepth);
+    newPosition = _createVector3(
+      0,
+      edge === EDGES.TOP
+        ? params.newHeight / 2 - bandingThickness / 2
+        : -params.newHeight / 2 + bandingThickness / 2,
+      0
+    );
+  } else if (edge === EDGES.LEFT || edge === EDGES.RIGHT) {
+    newGeometry = _createGeometry(bandingThickness, params.newHeight, params.newDepth);
+    newPosition = _createVector3(
+      edge === EDGES.LEFT
+        ? -params.newWidth / 2 + bandingThickness / 2
+        : params.newWidth / 2 - bandingThickness / 2,
+      0,
+      0
+    );
+  } else if (edge === EDGES.FRONT || edge === EDGES.BACK) {
+    newGeometry = _createGeometry(params.newWidth, params.newHeight, bandingThickness);
+    newPosition = _createVector3(
+      0,
+      0,
+      edge === EDGES.FRONT
+        ? params.newDepth / 2 - bandingThickness / 2
+        : -params.newDepth / 2 + bandingThickness / 2
+    );
+  } else {
+    return null;
+  }
+
+  return { newGeometry, newPosition };
+}
+
+export function findMeshById(
+  scene: THREE.Scene,
+  objectId: string,
+  isHandle?: boolean
+): THREE.Mesh | null {
+  let foundMesh: THREE.Mesh | null = null;
+
+  scene.traverse((object) => {
+    if (object instanceof THREE.Mesh && object.userData.objectId === objectId) {
+      foundMesh = object;
+      if (isHandle) {
+        foundMesh.children.forEach((child) => {
+          if (child.userData.type === PART_TYPES.HANDLE) {
+            foundMesh = child as THREE.Mesh;
+          }
+        });
+      }
+    }
+  });
+
+  return foundMesh;
+}
+export const collectSceneObjectIds = (root: THREE.Object3D) => {
+  const ids = new Set<string>();
+
+  root.traverse((child) => {
+    const id = child.userData?.objectId;
+    if (typeof id === 'string' && !child.userData?.isInvisibleBox) {
+      ids.add(id);
+    }
+  });
+
+  return ids;
+};
+
+export const createIdMap = (ids: Set<string>) => {
+  const map = new Map<string, string>();
+  ids.forEach((id) => map.set(id, crypto.randomUUID()));
+  return map;
+};
+
+export const detachInvisibleBoxes = (root: THREE.Object3D) => {
+  const boxes: THREE.Object3D[] = [];
+
+  root.traverse((child) => {
+    if (child.userData?.isInvisibleBox) boxes.push(child);
+  });
+
+  boxes.forEach((b) => b.parent?.remove(b));
+  return boxes;
+};
+
+export const restoreInvisibleBoxes = (
+  root: THREE.Object3D,
+  boxes: THREE.Object3D[],
+  rootId: string
+) => {
+  boxes.forEach((box) => {
+    const parentId = box.userData.parentId || rootId;
+    const parent = root.getObjectByProperty('userData.objectId', parentId) ?? root;
+
+    parent.add(box);
+  });
+};
+
+export const updateCloneIds = (
+  clone: THREE.Object3D,
+  rootId: string,
+  idMap: Map<string, string>
+) => {
+  clone.userData.objectId = idMap.get(rootId);
+
+  clone.traverse((child) => {
+    if (!child.userData) return;
+
+    const id = child.userData.objectId;
+    if (id && idMap.has(id)) {
+      child.userData.objectId = idMap.get(id);
+    }
+
+    child.userData = deepUpdateIds(child.userData, idMap);
+  });
+};
+
+export const createCopiedStoreObjects = (
+  objects: any[],
+  rootId: string,
+  idMap: Map<string, string>,
+  position: THREE.Vector3
+) =>
+  objects.map((obj) => {
+    const copy = structuredClone(obj);
+    copy.id = idMap.get(obj.id);
+
+    if (obj.id === rootId) {
+      copy.position = { x: position.x, y: position.y, z: position.z };
+    }
+
+    if (copy.parent && idMap.has(copy.parent)) {
+      copy.parent = idMap.get(copy.parent);
+    }
+
+    return copy;
+  });
+
+// Re-export specific components from other files for backward compatibility
+export { CustomToast } from '../utils/CustomToast';
+

@@ -134,6 +134,7 @@ class PullTypesChoices(models.TextChoices):
     Pull Types
     """
 
+    PULL = "Pull"
     CUP_1 = "Cup #1"
     KNOB_1 = "Knob #1"
     KNOB_2 = "Knob #2"
@@ -338,7 +339,7 @@ class FinishesLibrary(models.Model):
     light = models.CharField(
         max_length=100, choices=FinishesChoices.choices, null=True, blank=True
     )
-    name = models.CharField(max_length=100)
+    name = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
     shader = models.CharField(
@@ -354,8 +355,10 @@ class FinishesLibrary(models.Model):
     height = models.IntegerField(null=True, blank=True)
     decal = models.IntegerField(null=True, blank=True)
     tile = models.IntegerField(null=True, blank=True)
-    url = models.CharField(max_length=100, null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
+    url = models.TextField(null=True, blank=True)
+    image = models.ImageField(
+        max_length=255, null=True, blank=True, upload_to="upload_textures"
+    )
     is_deleted = models.BooleanField(default=False)
 
 
@@ -379,6 +382,7 @@ class Material(models.Model):
         Company, on_delete=models.CASCADE, null=True, blank=True
     )
     description = models.TextField(null=True, blank=True)
+    is_catalog = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
 
 
@@ -405,6 +409,7 @@ class Properties(models.Model):
         Material, on_delete=models.CASCADE, related_name="properties"
     )
 
+    model_file = models.FileField(upload_to="model_files", null=True, blank=True)
     width = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     length = models.FloatField(null=True, blank=True)
@@ -421,7 +426,7 @@ class Properties(models.Model):
     unit_of_issue = models.CharField(
         max_length=100,
         choices=UnitOfIssueChoices.choices,
-        default="UnitOfIssueChoices.Each",
+        default=UnitOfIssueChoices.EACH,
     )
     default_cost = models.FloatField(default=0.00)
     sell_price = models.FloatField(default=0.00)
@@ -553,6 +558,7 @@ class Properties(models.Model):
         max_length=100, choices=PullTypesChoices.choices, blank=True, null=True
     )
     center_to_center = models.FloatField(default=0.00)
+    rotation = models.FloatField(default=0.00)
     horizontal_inset = models.FloatField(default=0.00)
     vertical_inset = models.FloatField(default=0.00)
     mounting_holes_holes_diameter = models.FloatField(default=0.00)

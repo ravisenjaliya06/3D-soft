@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { MaterialForUpdate } from '../sidebar/interface';
+import { Material } from '../sceneCreator/interface';
 import { Object3D, Position, Rotation } from '../store/interface';
 
 export const ITEM = {
@@ -143,7 +143,7 @@ export interface AllItemsData {
   };
 }
 
-export type Material = { type: string; value: string };
+// export type Material = { type: string; value: string };
 
 export interface CatalogItem {
   id: string;
@@ -173,27 +173,6 @@ export interface CatalogItem {
 }
 
 export type UpdatedItemData = CatalogItem;
-
-export interface CatalogItemData {
-  id: string;
-  name: string;
-  data: {
-    name: string;
-    width: number;
-    height: number;
-    depth: number;
-    layer: number;
-    altitude: number;
-    plankSize: number;
-    position: Position;
-    material: Material;
-    parent: string;
-    child: string[];
-    grooves: Position[];
-    catalog_type: string;
-    minifixHoles: [];
-  };
-}
 
 interface RulePartMaterial {
   id?: string;
@@ -327,7 +306,7 @@ export interface UpdatePayload {
   dimensions?: Partial<Dimensions>;
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
-  material?: MaterialForUpdate;
+  material?: Material;
   textureRotation?: number;
 }
 

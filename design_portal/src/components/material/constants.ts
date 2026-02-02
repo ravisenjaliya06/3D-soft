@@ -2,7 +2,8 @@ import { assets } from '@/svgPaths';
 import type { MaterialItem, TableColumn } from './types';
 
 export const STATIC_MATERIAL_TYPES: MaterialItem[] = [
-  { id: 'banding', name: 'Banding', icon: assets.banding },
+  { id: 'banding', name: 'Banding', icon: assets.banding, img: assets.addCompany },
+
   { id: 'board_stock', name: 'Board Stock', icon: assets.brandstok },
   { id: 'caster', name: 'Caster', icon: assets.caster },
   { id: 'connector', name: 'Connector', icon: assets.connector },
@@ -15,6 +16,7 @@ export const STATIC_MATERIAL_TYPES: MaterialItem[] = [
   { id: 'miscellaneous', name: 'Miscellaneous', icon: assets.mis },
   { id: 'molding', name: 'Molding', icon: assets.molding },
   { id: 'panel_stock', name: 'Panel Stock', icon: assets.panel_stock },
+  { id: 'pull', name: 'Pull', icon: assets.pull },
   { id: 'rod', name: 'Rod', icon: assets.rod },
   { id: 'sliding_door_rail', name: 'Sliding Door Rail', icon: assets.door_rail },
   { id: 'sliding_door_roller', name: 'Sliding Door Roller', icon: assets.sliding_door_roller },

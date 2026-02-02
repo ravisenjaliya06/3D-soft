@@ -25,6 +25,7 @@ from user.utils import (
     add_user_to_organization,
     default_material_data,
     duplicate_default_catalogs_for_organization,
+    duplicate_default_textures,
     verify_otp,
 )
 
@@ -132,6 +133,7 @@ class SignupSerializer(PhoneValidationSerializer):
         add_user_to_organization(user, organization, group_names)
         default_material_data(organization)
         duplicate_default_catalogs_for_organization(organization)
+        duplicate_default_textures(organization)
 
         DesignSetting.objects.get_or_create(
             organization=organization,

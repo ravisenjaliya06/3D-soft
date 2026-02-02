@@ -6,13 +6,25 @@ from os.path import abspath, dirname
 import django
 from django.db.models import QuerySet
 
+# External imports
+from textures import TEXTURE
+
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)
 django.setup()
 
 # App imports
-from design.models import CatalogRuleParts, CatalogRules, DesignCatalog
-from material.models import Company, FinishesLibrary, Material, Properties
+from design.models import DesignCatalog
+from material.models import (
+    Company,
+    FinishesChoices,
+    FinishesLibrary,
+    Material,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
+    Properties,
+)
 from umaboy.models import Organization
 
 FINISH = [
@@ -133,212 +145,6 @@ FINISH = [
         "name": "Purple",
         "description": "Dark magenta",
         "color": "#800080",
-        "organization": None,
-    },
-]
-
-TEXTURE = [
-    {
-        "type": "Texture",
-        "name": "Art Glass",
-        "description": "Art Glass",
-        "texture_type": "Miscellaneous",
-        "width": 685.8,
-        "height": 685.8,
-        "decal": False,
-        "tile": True,
-        "image": None,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Art Glass_Frost",
-        "description": "Art_Glass_Frost",
-        "texture_type": "Miscellaneous",
-        "width": 1016,
-        "height": 685.8,
-        "decal": True,
-        "tile": True,
-        "image": None,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Art Glass_Grid",
-        "description": "Art_Glass_Grid",
-        "texture_type": "Miscellaneous",
-        "width": 1016,
-        "height": 736.6,
-        "decal": True,
-        "tile": True,
-        "image": None,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Art Glass_Rain",
-        "description": "Art_Glass_Rain",
-        "texture_type": "Miscellaneous",
-        "width": 685.8,
-        "height": 685.8,
-        "decal": True,
-        "tile": True,
-        "image": None,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Wire Mesh Glass",
-        "description": "Wire Mesh Glass",
-        "texture_type": "Miscellaneous",
-        "width": 304.8,
-        "height": 304.8,
-        "decal": True,
-        "tile": False,
-        "image": None,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Alder",
-        "description": "Alder",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Oak",
-        "description": "Oak",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Maple",
-        "description": "Maple",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Cherry",
-        "description": "Cherry",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Birch",
-        "description": "Birch",
-        "texture_type": "Wood",
-        "width": 609.6,
-        "height": 609.6,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Ash",
-        "description": "Ash",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Walnut",
-        "description": "Walnut",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "Poplar",
-        "description": "Poplar",
-        "texture_type": "Wood",
-        "width": 457.2,
-        "height": 457.2,
-        "decal": False,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "GlassTile_Black",
-        "description": "Black Glass Tile",
-        "texture_type": "Walls",
-        "width": 177.8,
-        "height": 177.8,
-        "decal": True,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "GlassTile_Gray",
-        "description": "Gray Glass Tile",
-        "texture_type": "Walls",
-        "width": 177.8,
-        "height": 177.8,
-        "decal": True,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "TravertineGold",
-        "description": "TravertineGold",
-        "texture_type": "Floors",
-        "width": 1219.2,
-        "height": 1219.2,
-        "decal": True,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "TravertineWhite",
-        "description": "TravertineWhite",
-        "texture_type": "Floors",
-        "width": 1219.2,
-        "height": 1219.2,
-        "decal": True,
-        "tile": True,
-        "organization": None,
-    },
-    {
-        "type": "Texture",
-        "name": "TravertinePink",
-        "description": "TravertinePink",
-        "texture_type": "Floors",
-        "width": 1219.2,
-        "height": 1216.6,
-        "decal": True,
-        "tile": True,
         "organization": None,
     },
 ]
@@ -469,6 +275,14 @@ MATERIAL = [
             "length_trim": 25.4,
             "thickness": 0.8,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass",
+            }
+        ],
+        "finishes": [{"name": "First", "finish": "Alder"}],
+        "finish_types": [{"name": "First", "finish_type": "Art Glass"}],
     },
     {
         "name": "PVC Woodgrain",
@@ -1930,6 +1744,12 @@ MATERIAL = [
             "length": 2438.4,
             "thickness": 19.1,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass",
+            }
+        ],
     },
     {
         "name": "5/8 1s Poplar Ply",
@@ -1955,6 +1775,12 @@ MATERIAL = [
             "length": 2438.4,
             "thickness": 15.9,
         },
+        "textures": [
+            {
+                "name": "First",
+                "texture": "Art Glass_Frost",
+            }
+        ],
     },
     {
         "name": "1/2 1s Poplar Ply",
@@ -2422,8 +2248,10 @@ MATERIAL = [
             "waste": 0.00,
             "estimate": True,
             "pull_type": "Pull",
-            "horizontal_inset": 50.8,
-            "vertical_inset": 88.9,
+            "horizontal_inset": 20,
+            "vertical_inset": 10,
+            "rotation": 90,
+            "model_file": "/glb/door_handle2.glb",
         },
     },
     {
@@ -2440,9 +2268,11 @@ MATERIAL = [
             "default_tax_rate": 0.00,
             "waste": 0.00,
             "estimate": True,
-            "pull_type": "Knob",
-            "horizontal_inset": 50.8,
-            "vertical_inset": 50.8,
+            "pull_type": "Pull",
+            "horizontal_inset": 50,
+            "vertical_inset": 50,
+            "rotation": 0,
+            "model_file": "/glb/door_handle2.glb",
         },
     },
     {
@@ -3063,6 +2893,7 @@ CATALOG = [
         "position": {"x": 0, "y": 1, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 0.001, "y": 0.001, "z": 0.001},
+        "material": ["Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111111",
@@ -3074,12 +2905,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -3092,12 +2918,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -3110,12 +2931,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -3128,12 +2944,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -3146,32 +2957,9 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
-    # {
-    #     "id": "c2d2a8b4-9b3e-4a2e-8f55-666666666666",
-    #     "name": "BACK_SKIRTING_PLANK",
-    #     "type": "plank",
-    #     "geometry_type": "BOX_GEOMETRY",
-    #     "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111101",
-    #     "dimensions": {"width": 1464, "height": 82, "depth": 18},
-    #     "position": {"x": 0, "y": -955, "z": -266},
-    #     "rotation": {"x": 0, "y": 0, "z": 0},
-    #     "scale": {"x": 1, "y": 1, "z": 1},
-    #     "material": {
-    #         "type": "TEXTURE",
-    #         "value": "/textures/light_wood.jpg",
-    #         "repeatX": 2,
-    #         "repeatY": 1,
-    #     },
-    #     "catalog_rule": "Panel",
-    # },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111303",
         "name": "HORIZONTAL_PLANK",
@@ -3182,12 +2970,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111404",
@@ -3199,12 +2982,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/textures/light_wood.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111505",
@@ -3216,12 +2994,12 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/Texture0004.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": [
+            "Alder Ven EB",
+            "5/8 1s Poplar Ply",
+            "4in Bar Pull",
+            "120 Degree Euro",
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
@@ -3233,17 +3011,84 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": {
-            "type": "TEXTURE",
-            "value": "/Texture0004.jpg",
-            "repeatX": 2,
-            "repeatY": 1,
-        },
+        "material": ["Alder Ven EB", "Wooden Knob", "430E6500V"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-111111111111",
+        "name": "DRAWER_FACE_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["5/8 1s Poplar Ply"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-222222222222",
+        "name": "DRAWER_FRONT_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["3/4 1s Poplar Ply"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-333333333333",
+        "name": "DRAWER_LEFT_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["3/4 1s Poplar Ply"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-444444444444",
+        "name": "DRAWER_RIGHT_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["3/4 1s Poplar Ply"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-555555555555",
+        "name": "DRAWER_BACK_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["3/4 1s Poplar Ply"],
+    },
+    {
+        "id": "c2d2a8b4-9b3e-4a2e-7f85-666666666666",
+        "name": "DRAWER_BOTTOM_PLANK",
+        "type": "plank",
+        "geometry_type": "BOX_GEOMETRY",
+        "parent": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
+        "dimensions": {"width": 0, "height": 0, "depth": 0},
+        "position": {"x": 0, "y": 0, "z": 0},
+        "rotation": {"x": 0, "y": 0, "z": 0},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "material": ["3/4 1s Poplar Ply"],
     },
 ]
 
 
-def get_registred_organization() -> QuerySet[Organization]:
+def get_registered_organization() -> QuerySet[Organization]:
     return Organization.objects.all()
 
 
@@ -3265,7 +3110,7 @@ def create_finish() -> None:
         )
 
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
                 FinishesLibrary.objects.create(
                     type=finish_data["type"],
@@ -3299,7 +3144,7 @@ def create_finish_type() -> None:
         )
 
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
                 FinishesLibrary.objects.create(
                     type=finish_type_data["type"],
@@ -3332,9 +3177,9 @@ def create_textures() -> None:
             defaults=defaults,
         )
         if created:
-            organization = get_registred_organization()
+            organization = get_registered_organization()
             for org in organization:
-                FinishesLibrary.objects.create(
+                FinishesLibrary.objects.update_or_create(
                     type=texture_data["type"],
                     name=texture_data["name"],
                     organization=org,
@@ -3350,7 +3195,7 @@ def create_company() -> dict[tuple[str, str, str | None], Company]:
     Returns a dictionary mapping (name, material_type, org_name_or_None) -> company object
     """
     company_objects = {}
-    organizations = get_registred_organization()
+    organizations = get_registered_organization()
 
     for company_data in COMPANY:
         defaults = {
@@ -3395,12 +3240,15 @@ def create_materials(
     for each registered organization. Properties are applied if present.
     If company is missing/blank, material will be stored with company=None.
     """
-    organizations = get_registred_organization()
+    organizations = get_registered_organization()
 
     for material_data in MATERIAL:
         company_name = material_data.get("company") or None
         material_type = material_data["type"]
         properties = material_data.get("properties", {})
+        textures = material_data.get("textures", [])
+        finishes = material_data.get("finishes", [])
+        finish_types = material_data.get("finish_types", [])
 
         if company_name is None:
             company = None
@@ -3414,6 +3262,7 @@ def create_materials(
             type=material_type,
             company=company,
             organization=None,
+            is_catalog=False,
             defaults={"description": material_data.get("description", "")},
         )
 
@@ -3421,6 +3270,56 @@ def create_materials(
             material=material,
             defaults=properties,
         )
+
+        MaterialTexture.objects.filter(material=material).delete()
+        MaterialFinish.objects.filter(material=material).delete()
+        MaterialFinishType.objects.filter(material=material).delete()
+
+        for texture_data in textures:
+            texture_name = texture_data["texture"]
+
+            texture = FinishesLibrary.objects.filter(
+                name=texture_name, type=FinishesChoices.TEXTURE.value, organization=None
+            ).first()
+
+            if not texture:
+                continue
+
+            MaterialTexture.objects.update_or_create(
+                material=material,
+                texture=texture,
+                defaults={"name": texture_data["name"]},
+            )
+
+        for finish_data in finishes:
+            finish_name = finish_data["finish"]
+            finish = FinishesLibrary.objects.filter(
+                name=finish_name, type=FinishesChoices.FINISH.value, organization=None
+            ).first()
+            if not finish:
+                continue
+
+            MaterialFinish.objects.update_or_create(
+                material=material,
+                finish=finish,
+                defaults={"name": finish_data["name"]},
+            )
+
+        for finish_type_data in finish_types:
+            finish_type_name = finish_type_data["finish_type"]
+            finish_type = FinishesLibrary.objects.filter(
+                name=finish_type_name,
+                type=FinishesChoices.FINISH_TYPE.value,
+                organization=None,
+            ).first()
+            if not finish_type:
+                continue
+
+            MaterialFinishType.objects.update_or_create(
+                material=material,
+                finish_type=finish_type,
+                defaults={"name": finish_type_data["name"]},
+            )
 
         for org in organizations:
             if company_name is None:
@@ -3437,6 +3336,7 @@ def create_materials(
                 type=material_type,
                 company=org_company,
                 organization=org,
+                is_catalog=False,
                 defaults={"description": material_data.get("description", "")},
             )
 
@@ -3445,101 +3345,181 @@ def create_materials(
                 defaults=properties,
             )
 
+            MaterialTexture.objects.filter(material=org_material).delete()
+            MaterialFinish.objects.filter(material=org_material).delete()
+            MaterialFinishType.objects.filter(material=org_material).delete()
+
+            for texture_data in textures:
+                texture_name = texture_data["texture"]
+
+                texture = FinishesLibrary.objects.filter(
+                    name=texture_name,
+                    type=FinishesChoices.TEXTURE.value,
+                    organization=org,
+                ).first()
+
+                if not texture:
+                    continue
+
+                MaterialTexture.objects.update_or_create(
+                    material=org_material,
+                    texture=texture,
+                    defaults={"name": texture_data["name"]},
+                )
+
+            for finish_data in finishes:
+                finish_name = finish_data["finish"]
+                finish = FinishesLibrary.objects.filter(
+                    name=finish_name,
+                    type=FinishesChoices.FINISH.value,
+                    organization=org,
+                ).first()
+                if not finish:
+                    continue
+
+                MaterialFinish.objects.update_or_create(
+                    material=org_material,
+                    finish=finish,
+                    defaults={"name": finish_data["name"]},
+                )
+
+            for finish_type_data in finish_types:
+                finish_type_name = finish_type_data["finish_type"]
+                finish_type = FinishesLibrary.objects.filter(
+                    name=finish_type_name,
+                    type=FinishesChoices.FINISH_TYPE.value,
+                    organization=org,
+                ).first()
+                if not finish_type:
+                    continue
+
+                MaterialFinishType.objects.update_or_create(
+                    material=org_material,
+                    finish_type=finish_type,
+                    defaults={"name": finish_type_data["name"]},
+                )
+
 
 def create_catalog(catalog_list: list[dict]) -> None:
     """
-    - is_main=True → DesignCatalog
-    - is_main=True + parent → self FK
-    - others → CatalogRules + CatalogRuleParts
+    Creates default catalogs and duplicates them for all organizations.
     """
 
-    main_catalog_map: dict[str, DesignCatalog] = {}
+    default_map: dict[str, DesignCatalog] = {}
     for item in catalog_list:
         if not item.get("is_main"):
             continue
 
-        catalog, created = DesignCatalog.objects.update_or_create(
+        catalog, _ = DesignCatalog.objects.update_or_create(
             id=item["id"],
-            name=item["name"],
-            type=item["type"],
             defaults={
+                "name": item["name"],
+                "type": item["type"],
                 "organization": None,
+                "is_library": True,
                 "version": None,
+                "parent": None,
                 "data": item,
             },
         )
 
-        if created:
-            catalog.data["id"] = str(catalog.id)
-            catalog.save(update_fields=["data"])
-
-        main_catalog_map[item["id"]] = catalog
-
-    if not main_catalog_map:
-        raise ValueError("No main catalog found (is_main=True)")
-
-    for item in catalog_list:
-        if not item.get("is_main"):
-            continue
-
-        parent_id = item.get("parent")
-        if not parent_id:
-            continue
-
-        child = main_catalog_map[item["id"]]
-        parent = main_catalog_map.get(parent_id)
-
-        if not parent:
-            continue
-
-        if child.parent_id != parent.id:
-            child.parent = parent
-            child.save(update_fields=["parent"])
-
-    rule_cache: dict[tuple[str, str], CatalogRules] = {}
+        default_map[item["id"]] = catalog
+        _attach_material_by_name(catalog, item)
 
     for item in catalog_list:
         if item.get("is_main"):
             continue
 
         parent_id = item.get("parent")
-
-        main_catalog = main_catalog_map.get(parent_id)
-        if not main_catalog:
+        if not parent_id:
             continue
 
-        rule_name = item.get("catalog_rule", "DEFAULT")
-        rule_key = (str(main_catalog.id), rule_name)
+        parent = default_map.get(parent_id)
+        if not parent:
+            raise ValueError(f"Parent not found: {parent_id}")
 
-        if rule_key not in rule_cache:
-            rule_cache[rule_key], _ = CatalogRules.objects.get_or_create(
-                catalog=main_catalog,
-                name=rule_name,
-            )
-
-        material_obj = None
-        material_data = item.get("material")
-        if material_data:
-            material_obj = Material.objects.filter(
-                name=material_data.get("value"),
-                organization__isnull=True,
-            ).first()
-
-        part, created = CatalogRuleParts.objects.update_or_create(
-            catalog_rule=rule_cache[rule_key],
+        catalog, _ = DesignCatalog.objects.update_or_create(
             id=item["id"],
-            name=item["name"],
-            type=item["type"],
             defaults={
-                "material": material_obj,
+                "name": item["name"],
+                "type": item["type"],
+                "organization": None,
+                "is_library": True,
+                "version": None,
+                "parent": parent,
                 "data": item,
             },
         )
 
-        if created:
-            part.data["id"] = str(part.id)
-            part.data["parent"] = str(main_catalog.id)
-            part.save(update_fields=["data"])
+        default_map[item["id"]] = catalog
+        _attach_material_by_name(catalog, item)
+
+    organizations = get_registered_organization()
+
+    for organization in organizations:
+        _duplicate_default_catalogs_for_org(organization, default_map)
+
+
+def _duplicate_default_catalogs_for_org(
+    organization: Organization,
+    default_map: dict[str, DesignCatalog],
+) -> None:
+    old_to_new = {}
+
+    for old in default_map.values():
+        clone, _ = DesignCatalog.objects.update_or_create(
+            organization=organization,
+            script_parent=old.id,
+            is_script=True,
+            version=None,
+            defaults={
+                "name": old.name,
+                "type": old.type,
+                "data": old.data,
+                "is_library": True,
+            },
+        )
+
+        _attach_material_by_name(clone, old, organization)
+
+        old_to_new[old.id] = clone
+
+    for old in default_map.values():
+        if old.parent_id:
+            child = old_to_new[old.id]
+            parent = old_to_new.get(old.parent_id)
+
+            if not parent:
+                raise ValueError(f"Missing parent clone for {old.id}")
+
+            child.parent = parent
+            child.data["parent"] = str(parent.id)
+            child.save(update_fields=["parent", "data"])
+
+
+def _attach_material_by_name(
+    catalog: DesignCatalog,
+    item: DesignCatalog | dict,
+    organization: Organization | None = None,
+) -> None:
+    if isinstance(item, dict):
+        material_data = item.get("material", [])
+    elif isinstance(item, DesignCatalog):
+        material_data = list(item.materials.values_list("name", flat=True))
+    else:
+        return
+
+    for material_name in material_data:
+        if not material_name:
+            continue
+
+        material = Material.objects.filter(
+            name=material_name,
+            organization=organization,
+        ).first()
+
+        if material:
+            catalog.materials.add(material)
 
 
 if __name__ == "__main__":

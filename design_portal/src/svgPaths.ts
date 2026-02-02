@@ -4,13 +4,14 @@ export const _3DMODEL = {
   clear: '/assets/3dmodel/header/clear.svg',
   file: '/assets/3dmodel/header/file.svg',
   newclear: '/assets/3dmodel/header/newclear.svg',
+  panel_design: '/assets/3dmodel/header/panel_design.svg',
   newopenclose: '/assets/3dmodel/header/newopenclose.svg',
   newredu: '/assets/3dmodel/header/newredu.svg',
   newundo: '/assets/3dmodel/header/newundo.svg',
   newzoom: '/assets/3dmodel/header/newzoom.svg',
   redo: '/assets/3dmodel/header/redo.svg',
   save: '/assets/3dmodel/header/save.svg',
-  Setting: '/assets/3dmodel/header/Setting.svg',
+  setting_svg: '/assets/3dmodel/header/Setting.svg',
   tool_part_line: '/assets/3dmodel/header/tool-part-line.svg',
   tool_toggle_open: '/assets/3dmodel/header/tool-toggle-open.svg',
   tool_toggle: '/assets/3dmodel/header/tool-toggle.svg',
@@ -35,14 +36,23 @@ export const _3DMODEL = {
   searchIcon: '/assets/3dmodel/toolbar/searchIcon.svg',
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
+  wall: '/assets/3dmodel/toolbar/wall.svg',
   directionIcon: '/assets/3dmodel/sidebar/directionarrow.svg',
   swapHorizontalIcon: '/assets/3dmodel/sidebar/swap-horizontal.svg',
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
+  icon_2d: '/assets/3dmodel/footer/2d.svg',
+  icon_3d: '/assets/3dmodel/footer/3d.svg',
+  close_white: '/assets/3dmodel/toolbar/close.svg',
+  delete_helper: '/assets/3dmodel/deletehelper.svg',
+  copy_helper: '/assets/3dmodel/copyhelper.svg',
+  plusIcon: '/assets/3dmodel/sidebar/plus.svg',
+  minusIcon: '/assets/3dmodel/sidebar/minus.svg',
 };
 
 export const ARROW_SVG = {
   arrow: '/assets/arrow.svg',
   moveObject: '/assets/move.svg',
+  saveHelper: '/assets/savehelper.svg',
 };
 
 export const BACK_LOGIN_ICON_SVG = {
@@ -70,6 +80,8 @@ export const CATALOGMANAGER = {
   edit: '/assets/catalogmanager/noteEditOutline.svg',
   matariel: '/assets/catalogmanager/matireal.svg',
   trash: '/assets/catalogmanager/trash.svg',
+  menudown: '/assets/catalogmanager/menu_down.svg',
+  menuup: '/assets/catalogmanager/menu-up.svg',
 };
 
 export const CREATEICON_SVG = {
@@ -120,6 +132,10 @@ export const DASHBOARD = {
   public_library: '/assets/dashboard/public_library.svg',
   sells: '/assets/dashboard/sells.svg',
   users: '/assets/dashboard/users.svg',
+  Mes: '/assets/dashboard/Mes.svg',
+  Designs: '/assets/dashboard/Designs.svg',
+  Material: '/assets/dashboard/Material.svg',
+  Catalogmanager: '/assets/dashboard/Catalogmanager.svg',
 };
 
 export const DELETEICON_SVG = {
@@ -217,6 +233,9 @@ export const MATERIAL = {
   door_rail: '/assets/material/door_rail.svg',
   sliding_door_roller: '/assets/material/sliding_door_roller.svg',
   wire_basket: '/assets/material/wire_basket.svg',
+  pull: '/assets/material/pull.svg',
+  addCompany: '/assets/material/addCompany.svg',
+  addMaterial: '/assets/material/addMaterial.svg',
 };
 
 export const MENU_DOWN_SVG = {
@@ -358,9 +377,14 @@ export const TOOLBAR = {
   light_wood: '/assets/toolbar/texture/light_wood.jpg',
   off_white: '/assets/toolbar/texture/off_white.jpg',
   wood: '/assets/toolbar/texture/wood.jpg',
+  platform_icon: '/assets/3dmodel/toolbar/platform.svg',
   tool_part_line: '/assets/toolbar/tool-part-line.svg',
   undo: '/assets/toolbar/undo.svg',
   zoom: '/assets/toolbar/zoom.svg',
+  left_arrow: '/assets/3dmodel/toolbar/arrow.svg',
+  kitchen: '/assets/3dmodel/toolbar/kitchen.svg',
+  part_icon: '/assets/3dmodel/toolbar/parts.svg',
+  sink_icon: '/assets/3dmodel/toolbar/sink.svg',
 };
 
 export const PROPERTY_IMG = {

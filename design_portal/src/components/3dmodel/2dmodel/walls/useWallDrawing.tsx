@@ -5,7 +5,7 @@ import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
 import {
   FLOOR_PLAN_TYPES,
   GEOMETRY,
-  MATERIAL_TYPE,
+  MATERIAL_TYPES,
   MeshObjectData,
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
@@ -148,10 +148,35 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       position: convertPosition2DTo3D({ startPoint, endPoint: clickedPoint }),
       rotation: findRotation({ startPoint, endPoint: clickedPoint }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
-      material: {
-        type: MATERIAL_TYPE.COLOR,
-        value: '#c4c3c3',
-      },
+      material: [
+        {
+          id: crypto.randomUUID(),
+          name: 'Wall Material',
+          type: MATERIAL_TYPES.WALL,
+          properties: {
+            color: '#f0f0f0',
+          },
+          textures: [
+            {
+              id: crypto.randomUUID(),
+              name: `Wall`,
+              texture: crypto.randomUUID(),
+              textureDetail: {
+                id: crypto.randomUUID(),
+                name: `Wall`,
+                organization: crypto.randomUUID(),
+                type: FLOOR_PLAN_TYPES.WALL,
+                image: `/media/textures/light_wood.jpg`,
+                url: '',
+                width: 685,
+                height: 685,
+                decal: 0,
+                title: 1,
+              },
+            },
+          ],
+        },
+      ],
       connectedTo: [],
     };
 
