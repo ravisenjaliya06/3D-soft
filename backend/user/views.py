@@ -23,9 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 # External imports
 import jwt
 from jwt import decode as jwt_decode
-from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
@@ -701,12 +699,12 @@ class AdminView(viewsets.ViewSet):
     permission_classes = [AllowAny]
     renderer_classes = [TemplateHTMLRenderer]
 
-    def login_get(self, request):
+    def login_get(self:"AdminView", request:Request) -> render:
         if request.user.is_authenticated and request.user.is_superuser:
             return HttpResponseRedirect(reverse("admin_dashboard"))
         return render(request, "custom_admin/index.html")
 
-    def login_post(self, request):
+    def login_post(self:"AdminView", request:Request) -> Response:
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -741,18 +739,18 @@ class AdminView(viewsets.ViewSet):
 
         return response
 
-    def logout(self, request):
+    def logout(self:"AdminView", request:Request) -> Response:
         logout(request)
         response = HttpResponseRedirect(reverse("admin_login"))
         response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
         Logger.info({"message": "Admin logged out successfully", "function": "AdminView.logout"})
         return response
 
-    def dashboard(self, request):
+    def dashboard(self:"AdminView", request:Request) -> render:
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
         return render(request, "custom_admin/dashboard.html", {"pending_users": pending_users})
 
-    def users(self, request):
+    def users(self:"AdminView", request:Request) -> render:
         approved_users = User.objects.filter(is_verified=True, is_superuser=False).order_by("-date_joined")
         return render(request, "custom_admin/users.html", {"approved_users": approved_users})
 
