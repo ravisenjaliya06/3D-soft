@@ -431,3 +431,23 @@ class OrganizationSerializer(serializers.ModelSerializer):
         instance.logo = validated_data.get("logo", instance.logo)
         instance.save()
         return instance
+
+
+class AdminLoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        user = User.objects.filter(email=email).first()
+
+        if not user or not user.check_password(password):
+            raise serializers.ValidationError("Invalid email or password")
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("You do not have admin access")
+
+        attrs["user"] = user
+        return attrs

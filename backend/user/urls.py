@@ -7,32 +7,28 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # App imports
 from user.views import (
     AddUserInOrganizationViewset,
-    AdminDashboardView,
-    AdminLoginView,
-    AdminLogoutView,
-    AdminUsersView,
+    # AdminDashboardView,
+    # AdminLoginView,
+    # AdminLogoutView,
+    # AdminUsersView,
     ApproveUserView,
-    RejectUserView,
     UserAuthViewset,
+    AdminView,
 )
 
 urlpatterns = [
-    # Admin Dashboard Routes - Custom Auth
-    path("django_admin/login/", AdminLoginView.as_view(), name="admin_login"),
-    path("django_admin/logout/", AdminLogoutView.as_view(), name="admin_logout"),
-    path(
-        "django_admin/dashboard/", AdminDashboardView.as_view(), name="admin_dashboard"
-    ),
-    path("django_admin/users/", AdminUsersView.as_view(), name="admin_users"),
+   path(
+    "django_admin/login/",
+    AdminView.as_view({"get": "login_get", "post": "login_post"}),
+    name="admin_login",
+),
+    path("django_admin/logout/", AdminView.as_view({"get":"logout"}), name="admin_logout"),
+    path("django_admin/dashboard/", AdminView.as_view({"get":"dashboard"}), name="admin_dashboard"),
+    path("django_admin/users/", AdminView.as_view({"get":"users"}), name="admin_users"),
     path(
         "django_admin/approve/<str:user_id>/",
         ApproveUserView.as_view(),
         name="approve_user",
-    ),
-    path(
-        "django_admin/reject/<str:user_id>/",
-        RejectUserView.as_view(),
-        name="reject_user",
     ),
     path("register/", UserAuthViewset.as_view({"post": "register"}), name="register"),
     path("otp/", UserAuthViewset.as_view({"post": "send_otp"}), name="send_otp"),
