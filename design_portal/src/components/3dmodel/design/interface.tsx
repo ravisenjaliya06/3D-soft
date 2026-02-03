@@ -124,3 +124,10 @@ export interface DimensionMeta {
   ref: number;
   axis: 'x' | 'y' | 'z';
 }
+
+export interface DistanceResult {
+  left: number | null;
+  right: number | null;
+  top: number | null;
+  bottom: number | null;
+}

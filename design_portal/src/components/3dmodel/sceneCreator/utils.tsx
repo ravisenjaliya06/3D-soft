@@ -21,8 +21,6 @@ export const getDesignCatalogs = async () => {
     console.error('Error fetching catalogs');
     return;
   }
-  console.log(response.data.catalogs, 'catalogs');
-  console.log(JSON.stringify(response.data.catalogs), 'catalogs');
   response.data.catalogs.forEach((catalog: MeshObjectData) => {
     const builder = new SyncManager(catalog);
     builder.syncData();
