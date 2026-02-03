@@ -493,86 +493,82 @@ const Sidebar: React.FC = () => {
 
     isUpdatingPositionRef.current = true;
 
-    try {
-      let targetMesh: THREE.Mesh | null = null;
-      scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
-          targetMesh = obj;
-        }
-      });
-
-      if (!targetMesh) {
-        isUpdatingPositionRef.current = false;
-        return;
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+        targetMesh = obj;
       }
+    });
 
-      // Get current distances
-      const currentDistances = distanceToolRef.current.getDistances(targetMesh);
-      const unit = getActiveUnit();
-
-      // Convert new value to meters
-      const newDistanceM = unitToMeters(value, unit);
-
-      // Get current distance for this side
-      let currentDistanceM = 0;
-      let axis: 'x' | 'y' | 'z' = 'x';
-
-      if (side === 'left' && currentDistances.left !== null) {
-        currentDistanceM = currentDistances.left;
-        axis = 'x';
-      } else if (side === 'right' && currentDistances.right !== null) {
-        currentDistanceM = currentDistances.right;
-        axis = 'x';
-      } else if (side === 'top' && currentDistances.top !== null) {
-        currentDistanceM = currentDistances.top;
-        axis = 'y';
-      } else if (side === 'bottom' && currentDistances.bottom !== null) {
-        currentDistanceM = currentDistances.bottom;
-        axis = 'y';
-      } else {
-        isUpdatingPositionRef.current = false;
-        return;
-      }
-
-      // Calculate delta (how much to move)
-      const delta = newDistanceM - currentDistanceM;
-
-      // Apply position change using DistanceTool's method
-      distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
-
-      // Update Redux store
-      const newPosition = {
-        x: (targetMesh as THREE.Mesh).position.x,
-        y: (targetMesh as THREE.Mesh).position.y,
-        z: (targetMesh as THREE.Mesh).position.z,
-      };
-
-      dispatch(
-        updateObject({
-          id: selectedObject.id,
-          position: newPosition,
-        })
-      );
-
-      // Recalculate distances after position change
-      const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
-      setPositionDistances(updatedDistances);
-
-      // Sync to scene
-      if (updateObjectRef.current) {
-        await new SyncManager(
-          {
-            ...selectedObject,
-            position: newPosition,
-          },
-          undefined
-        ).syncData();
-      }
-    } catch (error) {
-      console.error('Error updating position:', error);
-    } finally {
+    if (!targetMesh) {
       isUpdatingPositionRef.current = false;
+      return;
     }
+
+    // Get current distances
+    const currentDistances = distanceToolRef.current.getDistances(targetMesh);
+    const unit = getActiveUnit();
+
+    // Convert new value to meters
+    const newDistanceM = unitToMeters(value, unit);
+
+    // Get current distance for this side
+    let currentDistanceM = 0;
+    let axis: 'x' | 'y' | 'z' = 'x';
+
+    if (side === 'left' && currentDistances.left !== null) {
+      currentDistanceM = currentDistances.left;
+      axis = 'x';
+    } else if (side === 'right' && currentDistances.right !== null) {
+      currentDistanceM = currentDistances.right;
+      axis = 'x';
+    } else if (side === 'top' && currentDistances.top !== null) {
+      currentDistanceM = currentDistances.top;
+      axis = 'y';
+    } else if (side === 'bottom' && currentDistances.bottom !== null) {
+      currentDistanceM = currentDistances.bottom;
+      axis = 'y';
+    } else {
+      isUpdatingPositionRef.current = false;
+      return;
+    }
+
+    // Calculate delta (how much to move)
+    const delta = newDistanceM - currentDistanceM;
+
+    // Apply position change using DistanceTool's method
+    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+
+    // Update Redux store
+    const newPosition = {
+      x: (targetMesh as THREE.Mesh).position.x,
+      y: (targetMesh as THREE.Mesh).position.y,
+      z: (targetMesh as THREE.Mesh).position.z,
+    };
+
+    dispatch(
+      updateObject({
+        id: selectedObject.id,
+        position: newPosition,
+      })
+    );
+
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
+    setPositionDistances(updatedDistances);
+
+    // Sync to scene
+    if (updateObjectRef.current) {
+      await new SyncManager(
+        {
+          ...selectedObject,
+          position: newPosition,
+        },
+        undefined
+      ).syncData();
+    }
+
+    isUpdatingPositionRef.current = false;
   };
 
   const handleMaterialChange = () => {
