@@ -675,8 +675,8 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                         }
                     )
                     return super().dispatch(request, *args, **kwargs)
-                else:
-                    return HttpResponseRedirect(reverse(self.login_url))
+
+                return HttpResponseRedirect(reverse(self.login_url))
 
             except TokenError as e:
                 Logger.warning(
