@@ -202,6 +202,7 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
             organization=organization,
             script_parent=catalog.id,
             is_script=True,
+            is_library=True,
             version=None,
             type=catalog.type,
             name=catalog.name,
