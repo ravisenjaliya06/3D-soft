@@ -1,6 +1,6 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { FaCheck, FaExclamation } from 'react-icons/fa';
+
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
@@ -501,29 +501,6 @@ export const createCopiedStoreObjects = (
     return copy;
   });
 
-// NOTE: For showing any warning, error and other message to the user please use this component
-export const CustomToast = ({ appearance, message }: { appearance: string; message: string }) => {
-  const isError = appearance === 'error';
+// Re-export specific components from other files for backward compatibility
+export { CustomToast } from '../utils/CustomToast';
 
-  return (
-    <div className="relative flex w-full items-center gap-[0.75rem] rounded-md !border !border-[#444] !bg-[#2C2C2C] px-[1rem] py-[0.8rem] !shadow-lg">
-      {/* Icon */}
-      <div
-        className={`flex h-[1.5rem] w-[1.5rem] flex-shrink-0 items-center justify-center rounded-full ${
-          isError ? '!bg-[#D32F2F]' : '!bg-[#4CAF50]'
-        }`}
-      >
-        {isError ? (
-          <FaExclamation className="text-[0.85rem] text-white" />
-        ) : (
-          <FaCheck className="text-[0.85rem] text-white" />
-        )}
-      </div>
-
-      {/* Message */}
-      <p className="flex-1 font-[poppins] text-[0.9rem] leading-[1.3rem] !break-words !whitespace-normal text-white">
-        {message}
-      </p>
-    </div>
-  );
-};
