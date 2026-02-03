@@ -3,6 +3,7 @@ import uuid
 
 from django.urls import reverse
 from django.test import RequestFactory
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import status
 from rest_framework_simplejwt.tokens import AccessToken
@@ -11,40 +12,38 @@ from django.conf import settings
 
 from umaboy.models import User
 from user.views import ApproveUserView
-from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
+from tests.testing import APIBaseTestCase
 from django.db import DEFAULT_DB_ALIAS
 from django.core.exceptions import PermissionDenied
 
 class AdminAPIViewTestCase(APIBaseTestCase):
     databases = {DEFAULT_DB_ALIAS}
 
-    def setUp(self) -> None:
+    def setUp(self:"AdminAPIViewTestCase") -> None:
         super().setUp()
 
         self.factory = RequestFactory()
 
         # Admin user
-        self.admin_user = User.objects.create_user(
+        self.admin_user = User.objects.create(
             username="admin",
             email="admin@test.com",
-            password="admin@123",
+            password=make_password("admin@123"),
             is_superuser=True,
             is_staff=True,
         )
 
+
         # Normal user
-        self.normal_user = User.objects.create_user(
-            username="user",
-            email="user@test.com",
-            password="user@123",
-            is_superuser=False,
-            is_staff=False,
-            is_verified=False,
+        self.normal_user = User.objects.create(
+            username="normal",
+            email="normal@test.com",
+            password=make_password("user@123"),
         )
 
         self.admin_token = AccessToken.for_user(self.admin_user)
 
-    def test_admin_required_mixin_valid_jwt(self):
+    def test_admin_required_mixin_valid_jwt(self:"AdminAPIViewTestCase") -> None:
         self.client.force_login(self.admin_user)
         self.client.cookies[settings.ADMIN_JWT_COOKIE_NAME] = str(self.admin_token)
 
@@ -55,8 +54,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
-    def test_admin_required_mixin_invalid_jwt(self) -> None:
+    def test_admin_required_mixin_invalid_jwt(self:"AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/")
         request.user = AnonymousUser()
         request.COOKIES = {
@@ -68,8 +66,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("admin_login"), response.url)
 
-    
-    def test_admin_required_mixin_no_jwt_non_admin(self):
+    def test_admin_required_mixin_no_jwt_non_admin(self:"AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/")
         request.user = self.normal_user
         request.COOKIES = {}
@@ -79,12 +76,12 @@ class AdminAPIViewTestCase(APIBaseTestCase):
                 request, user_id=str(self.normal_user.id)
             )
 
-    def test_admin_login_get_anonymous(self) -> None:
+    def test_admin_login_get_anonymous(self:"AdminAPIViewTestCase") -> None:
         response = self.client.get(reverse("admin_login"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_admin_login_get_authenticated_admin(self) -> None:
+    def test_admin_login_get_authenticated_admin(self:"AdminAPIViewTestCase") -> None:
         self.client.force_authenticate(user=self.admin_user)
 
         response = self.client.get(reverse("admin_login"))
@@ -92,7 +89,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
         self.assertIn(reverse("admin_dashboard"), response.url)
 
-    def test_admin_login_post_invalid_json(self) -> None:
+    def test_admin_login_post_invalid_json(self:"AdminAPIViewTestCase") -> None:
         response = self.client.post(
             reverse("admin_login"),
             data="invalid-json",
@@ -102,7 +99,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json()["error"], "Invalid JSON")
 
-    def test_admin_login_post_non_admin_user(self) -> None:
+    def test_admin_login_post_non_admin_user(self:"AdminAPIViewTestCase") -> None:
         data = {
             "email": self.normal_user.email,
             "password": "user@123",
@@ -116,7 +113,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_admin_login_post_success(self) -> None:
+    def test_admin_login_post_success(self:"AdminAPIViewTestCase") -> None:
         data = {
             "email": self.admin_user.email,
             "password": "admin@123",
@@ -132,7 +129,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertIn("redirect", response.json())
         self.assertIn(settings.ADMIN_JWT_COOKIE_NAME, response.cookies)
 
-    def test_admin_logout(self) -> None:
+    def test_admin_logout(self:"AdminAPIViewTestCase") -> None:
         self.client.force_authenticate(user=self.admin_user)
 
         response = self.client.get(reverse("admin_logout"))
@@ -140,7 +137,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
         self.assertIn(settings.ADMIN_JWT_COOKIE_NAME, response.cookies)
 
-    def test_approve_user_true(self) -> None:
+    def test_approve_user_true(self:"AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/?is_approved=true")
         request.user = self.admin_user
         request.COOKIES = {
@@ -156,7 +153,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(self.normal_user.is_verified)
 
-    def test_approve_user_false(self) -> None:
+    def test_approve_user_false(self:"AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/?is_approved=false")
         request.user = self.admin_user
         request.COOKIES = {
@@ -172,18 +169,17 @@ class AdminAPIViewTestCase(APIBaseTestCase):
             User.objects.filter(id=self.normal_user.id).exists()
         )
 
-    
-def test_approve_user_not_found(self) -> None:
-    request = self.factory.post("/approve/?is_approved=true")
-    request.user = self.admin_user
-    request.COOKIES = {
-        settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)
-    }
+    def test_approve_user_not_found(self:"AdminAPIViewTestCase") -> None:
+        request = self.factory.post("/approve/?is_approved=true")
+        request.user = self.admin_user
+        request.COOKIES = {
+            settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)
+        }
 
-    non_existent_uuid = uuid.uuid4()
+        non_existent_uuid = uuid.uuid4()
 
-    response = ApproveUserView.as_view()(
-        request, user_id=str(non_existent_uuid)
-    )
+        response = ApproveUserView.as_view()(
+            request, user_id=str(non_existent_uuid)
+        )
 
-    self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
