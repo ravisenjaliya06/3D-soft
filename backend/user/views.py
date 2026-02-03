@@ -12,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -648,51 +648,6 @@ class AddUserInOrganizationViewset(ModelViewSet):
         return Response(serializer.data, status=HTTP_200_OK)
 
 
-class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    login_url = "admin_login"
-
-    def dispatch(
-        self: "AdminRequiredMixin", request: Request, *args, **kwargs
-    ) -> Response:
-        """Verify JWT token from cookie for admin authentication"""
-        token = request.COOKIES.get(settings.ADMIN_JWT_COOKIE_NAME)
-
-        if token:
-            try:
-                access_token = AccessToken(token)
-                user_id = access_token["user_id"]
-
-                user = User.objects.filter(id=user_id, is_superuser=True).first()
-
-                if user:
-                    request.user = user
-                    Logger.info(
-                        {
-                            "message": "Admin authenticated via JWT",
-                            "user_id": user.id,
-                            "function": "AdminRequiredMixin.dispatch",
-                        }
-                    )
-                else:
-                    return HttpResponseRedirect(reverse(self.login_url))
-
-            except TokenError as e:
-                Logger.warning(
-                    {
-                        "message": "JWT verification failed",
-                        "error": str(e),
-                        "function": "AdminRequiredMixin.dispatch",
-                    }
-                )
-            return HttpResponseRedirect(reverse(self.login_url))
-        else:
-            if not request.user.is_authenticated or not request.user.is_superuser:
-                return HttpResponseRedirect(reverse(self.login_url))
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def test_func(self: "AdminRequiredMixin") -> bool:
-        return self.request.user.is_superuser
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
