@@ -131,7 +131,6 @@ function createBoltDrillVisualization(connection: MinifixConnection, index: numb
     connectionId: connection.id,
     index: index,
   };
-  console.log('bolt drill');
   return mesh;
 }
 
@@ -171,7 +170,6 @@ function createDowelVisualization(
     connectionId: connection.id,
     index: index,
   };
-  console.log('dowel');
   return mesh;
 }
 

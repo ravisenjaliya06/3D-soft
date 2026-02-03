@@ -311,7 +311,6 @@ export class SyncManager {
 
     const data = this.data as MeshObjectData;
     const changes = this._getMeshObjectPatch(this.oldData, data);
-    console.log('changes', changes);
     this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
     if (changes.dimensions && mesh.userData.isMain) {
