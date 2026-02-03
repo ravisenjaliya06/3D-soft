@@ -12,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -29,6 +29,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -675,7 +676,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                 else:
                     return HttpResponseRedirect(reverse(self.login_url))
 
-            except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
+            except TokenError as e:
                 Logger.warning(
                     {
                         "message": "JWT verification failed",
@@ -683,7 +684,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                         "function": "AdminRequiredMixin.dispatch",
                     }
                 )
-                return HttpResponseRedirect(reverse(self.login_url))
+            return HttpResponseRedirect(reverse(self.login_url))
         else:
             if not request.user.is_authenticated or not request.user.is_superuser:
                 return HttpResponseRedirect(reverse(self.login_url))
@@ -691,6 +692,30 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return super().dispatch(request, *args, **kwargs)
 
     def test_func(self: "AdminRequiredMixin") -> bool:
+        return self.request.user.is_superuser
+class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    login_url = "admin_login"
+
+    def dispatch(self, request, *args, **kwargs):
+        # ✅ Respect session-authenticated user
+        if request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+
+        # JWT fallback
+        token = request.COOKIES.get(settings.ADMIN_JWT_COOKIE_NAME)
+        if not token:
+            return redirect(self.login_url)
+
+        try:
+            validated_token = AccessToken(token)
+            user = User.objects.get(id=validated_token["user_id"])
+            request.user = user
+        except Exception:
+            return redirect(self.login_url)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
         return self.request.user.is_superuser
 
 
