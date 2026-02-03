@@ -652,7 +652,6 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
     def dispatch(self:"AdminRequiredMixin", request:Request, *args, **kwargs) -> Response:
-        # ✅ Respect session-authenticated user
         if request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
 
@@ -688,12 +687,10 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                 )
                 return HttpResponseRedirect(reverse(self.login_url))
 
-        # No token
         if not request.user.is_authenticated or not request.user.is_superuser:
             return HttpResponseRedirect(reverse(self.login_url))
 
         return super().dispatch(request, *args, **kwargs)
-
 
     def test_func(self:"AdminRequiredMixin") -> bool:
         return self.request.user.is_superuser
