@@ -49,10 +49,11 @@ import { CustomToast } from '../utils/CustomToast';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { DistanceTool } from '../design/distance/distance';
-import { getActiveUnit, metersToUnit, unitToMeters } from '../handler/unitConversion';
+import { getActiveUnit, unitToMeters } from '../handler/unitConversion';
 import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
+import { DistanceInput } from './DistanceInput';
 import { Axis, Field } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
@@ -423,7 +424,6 @@ const Sidebar: React.FC = () => {
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
   ): void {
-    console.log(selectedObject, patch);
     if (!selectedObject) return;
     const updatedObject: MeshObjectData = {
       ...selectedObject,
@@ -446,7 +446,6 @@ const Sidebar: React.FC = () => {
         ? { ...selectedObject.edgeBanding, ...patch.edgeBanding }
         : selectedObject.edgeBanding,
     };
-    console.log(updatedObject);
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -488,95 +487,88 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handlePositionDistanceChange = async (
-    side: 'left' | 'right' | 'top' | 'bottom',
-    value: number
-  ) => {
+  const handlePositionDistanceChange = async (side: string, value: number) => {
     if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current)
       return;
 
     isUpdatingPositionRef.current = true;
 
-    try {
-      let targetMesh: THREE.Mesh | null = null;
-      scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
-          targetMesh = obj;
-        }
-      });
-
-      if (!targetMesh) {
-        isUpdatingPositionRef.current = false;
-        return;
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+        targetMesh = obj;
       }
+    });
 
-      // Get current distances
-      const currentDistances = distanceToolRef.current.getDistances(targetMesh);
-      const unit = getActiveUnit();
-
-      // Convert new value to meters
-      const newDistanceM = unitToMeters(value, unit);
-
-      // Get current distance for this side
-      let currentDistanceM = 0;
-      let axis: 'x' | 'y' | 'z' = 'x';
-
-      if (side === 'left' && currentDistances.left !== null) {
-        currentDistanceM = currentDistances.left;
-        axis = 'x';
-      } else if (side === 'right' && currentDistances.right !== null) {
-        currentDistanceM = currentDistances.right;
-        axis = 'x';
-      } else if (side === 'top' && currentDistances.top !== null) {
-        currentDistanceM = currentDistances.top;
-        axis = 'y';
-      } else if (side === 'bottom' && currentDistances.bottom !== null) {
-        currentDistanceM = currentDistances.bottom;
-        axis = 'y';
-      } else {
-        isUpdatingPositionRef.current = false;
-        return;
-      }
-
-      // Calculate delta (how much to move)
-      const delta = newDistanceM - currentDistanceM;
-
-      // Apply position change using DistanceTool's method
-      distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
-
-      // Update Redux store
-      const newPosition = {
-        x: (targetMesh as THREE.Mesh).position.x,
-        y: (targetMesh as THREE.Mesh).position.y,
-        z: (targetMesh as THREE.Mesh).position.z,
-      };
-
-      dispatch(
-        updateObject({
-          id: selectedObject.id,
-          position: newPosition,
-        })
-      );
-
-      // Recalculate distances after position change
-      const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
-      setPositionDistances(updatedDistances);
-
-      // Sync to scene
-      if (updateObjectRef.current) {
-        await new SyncManager(
-          {
-            ...selectedObject,
-            position: newPosition,
-          },
-          undefined
-        ).syncData();
-      }
-    } catch (error) {
-      console.error('Error updating position:', error);
-    } finally {
+    if (!targetMesh) {
       isUpdatingPositionRef.current = false;
+      return;
     }
+
+    // Get current distances
+    const currentDistances = distanceToolRef.current.getDistances(targetMesh);
+    const unit = getActiveUnit();
+
+    // Convert new value to meters
+    const newDistanceM = unitToMeters(value, unit);
+
+    // Get current distance for this side
+    let currentDistanceM = 0;
+    let axis: 'x' | 'y' | 'z' = 'x';
+
+    if (side === 'left' && currentDistances.left !== null) {
+      currentDistanceM = currentDistances.left;
+      axis = 'x';
+    } else if (side === 'right' && currentDistances.right !== null) {
+      currentDistanceM = currentDistances.right;
+      axis = 'x';
+    } else if (side === 'top' && currentDistances.top !== null) {
+      currentDistanceM = currentDistances.top;
+      axis = 'y';
+    } else if (side === 'bottom' && currentDistances.bottom !== null) {
+      currentDistanceM = currentDistances.bottom;
+      axis = 'y';
+    } else {
+      isUpdatingPositionRef.current = false;
+      return;
+    }
+
+    // Calculate delta (how much to move)
+    const delta = newDistanceM - currentDistanceM;
+
+    // Apply position change using DistanceTool's method
+    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+
+    // Update Redux store
+    const newPosition = {
+      x: (targetMesh as THREE.Mesh).position.x,
+      y: (targetMesh as THREE.Mesh).position.y,
+      z: (targetMesh as THREE.Mesh).position.z,
+    };
+
+    dispatch(
+      updateObject({
+        id: selectedObject.id,
+        position: newPosition,
+      })
+    );
+
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
+    setPositionDistances(updatedDistances);
+
+    // Sync to scene
+    if (updateObjectRef.current) {
+      await new SyncManager(
+        {
+          ...selectedObject,
+          position: newPosition,
+        },
+        undefined
+      ).syncData();
+    }
+
+    isUpdatingPositionRef.current = false;
   };
 
   const handleMaterialChange = () => {
@@ -616,9 +608,7 @@ const Sidebar: React.FC = () => {
     });
   };
   const handleDimensionChange = (field: Field, value: number) => {
-    console.log(field, value, 'field, value');
     if (!selectedObject || isDisabled) return;
-    console.log(selectedObject, 'selectedObject');
 
     // Round the value to ensure it's a whole number
     const roundedValue = Math.round(value);
@@ -651,7 +641,6 @@ const Sidebar: React.FC = () => {
     } as const;
 
     const config = axisConfig[field];
-    console.log(config, 'config');
 
     if (config) {
       if (config.side === config.negative) {
@@ -662,8 +651,6 @@ const Sidebar: React.FC = () => {
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
-    console.log(currentPos, 'currentPos');
-    console.log(roundedValue, 'roundedValue');
     applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
@@ -1116,7 +1103,6 @@ const Sidebar: React.FC = () => {
       prev.camDiameter === camDiameterInput &&
       prev.camHeight === camHeightInput
     ) {
-      console.log('Minifix settings unchanged');
       return;
     }
 
@@ -1341,10 +1327,8 @@ const Sidebar: React.FC = () => {
   };
 
   const handleControlClick = (fieldName: string, idx: number) => {
-    console.log(fieldName, idx);
     // Helper to toggle state: if same side clicked, turn off (null); otherwise set new side.
     const toggle = <T,>(current: T | null, target: T): T | null => {
-      console.log(current, target);
       return current === target ? null : target;
     };
     if (fieldName === 'width') {
@@ -1421,6 +1405,45 @@ const Sidebar: React.FC = () => {
       [key]: !prev[key],
     }));
   };
+
+  const positionFields = [
+    {
+      label: 'Left',
+      direction: 'left',
+      rotate: 'rotate-[-90deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.left,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Right',
+      direction: 'right',
+      rotate: 'rotate-[-90deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.right,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Top',
+      direction: 'top',
+      rotate: '',
+      width: 'w-[5.1rem]',
+      value: positionDistances.top,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Bottom',
+      direction: 'bottom',
+      rotate: 'rotate-[180deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.bottom,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+  ];
 
   return (
     <div
@@ -1519,13 +1542,13 @@ const Sidebar: React.FC = () => {
                           <div className="ml-[0rem] flex items-center gap-[1rem]">
                             <div
                               onClick={handleMinifixToggle}
-                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
                             >
                               {/* Knob */}
                               <div
                                 className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                   minifixEnabled
-                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                     : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                 }`}
                               />
@@ -1633,7 +1656,7 @@ const Sidebar: React.FC = () => {
                           {/* Toggle */}
                           <div className="flex items-center gap-[0.5rem]">
                             <div
-                              className={`pointer-events-none relative h-[1rem] w-[2.25rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
+                              className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
                             >
                               {/* Knob */}
                               <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
@@ -2023,7 +2046,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isHorizontalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
 
@@ -2044,7 +2067,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isVerticalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
 
@@ -2065,7 +2088,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isQuickHideActive}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
                               </div>
@@ -2101,148 +2124,17 @@ const Sidebar: React.FC = () => {
                     {!collapsed.positionMove && (
                       <>
                         <div className="grid grid-cols-2 gap-[0.4rem]">
-                          {/* LEFT */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Left
-                            </p>
-                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                value={
-                                  positionDistances.left !== null
-                                    ? metersToUnit(positionDistances.left, getActiveUnit()).toFixed(
-                                        0
-                                      )
-                                    : ''
-                                }
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val) && val >= 0) {
-                                    handlePositionDistanceChange('left', val);
-                                  }
-                                }}
-                                disabled={isQuickHideActive || positionDistances.left === null}
-                                className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* RIGHT */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Right
-                            </p>
-                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                value={
-                                  positionDistances.right !== null
-                                    ? metersToUnit(
-                                        positionDistances.right,
-                                        getActiveUnit()
-                                      ).toFixed(0)
-                                    : ''
-                                }
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val) && val >= 0) {
-                                    handlePositionDistanceChange('right', val);
-                                  }
-                                }}
-                                disabled={isQuickHideActive || positionDistances.right === null}
-                                className="ml-[0rem] h-full w-[3.2rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* TOP */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Top
-                            </p>
-                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                value={
-                                  positionDistances.top !== null
-                                    ? metersToUnit(positionDistances.top, getActiveUnit()).toFixed(
-                                        0
-                                      )
-                                    : ''
-                                }
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val) && val >= 0) {
-                                    handlePositionDistanceChange('top', val);
-                                  }
-                                }}
-                                disabled={isQuickHideActive || positionDistances.top === null}
-                                className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* BOTTOM */}
-                          <div className="flex flex-col items-start gap-[0rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Bottom
-                            </p>
-                            <div className="flex h-[1.19rem] w-[5.1rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[180deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                value={
-                                  positionDistances.bottom !== null
-                                    ? metersToUnit(
-                                        positionDistances.bottom,
-                                        getActiveUnit()
-                                      ).toFixed(0)
-                                    : ''
-                                }
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val) && val >= 0) {
-                                    handlePositionDistanceChange('bottom', val);
-                                  }
-                                }}
-                                disabled={isQuickHideActive || positionDistances.bottom === null}
-                                className="ml-[0rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
+                          {positionFields.map((field) => (
+                            <DistanceInput
+                              label={field.label}
+                              direction={field.direction}
+                              rotate={field.rotate}
+                              width={field.width}
+                              value={field.value}
+                              disabled={field.disabled}
+                              onChange={handlePositionDistanceChange}
+                            />
+                          ))}
                         </div>
                       </>
                     )}
@@ -2254,7 +2146,7 @@ const Sidebar: React.FC = () => {
               {/* ================= Handle/Handleless Selector ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[0.5rem]">
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
                     <div className="flex items-center justify-between">
                       <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Handle Mode
@@ -2262,7 +2154,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-[0.5rem]">
                       <select
-                        className="mt-[0.5rem] flex h-[1.3rem] w-[7.4rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         value={handleMode}
                         onChange={(e) => {
                           const value = e.target.value as 'handle' | 'handleless';
@@ -2309,7 +2201,7 @@ const Sidebar: React.FC = () => {
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 topPlankEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -2362,7 +2254,7 @@ const Sidebar: React.FC = () => {
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 baseheightEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -2387,7 +2279,7 @@ const Sidebar: React.FC = () => {
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
                                 frontpanelEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
@@ -2404,23 +2296,23 @@ const Sidebar: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.5rem] pb-[0rem]">
+                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]">
                           <div className="mr-[1rem] px-3 py-2">
                             <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Back Panel
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.3rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
-                          <div className="mr-[1rem] px-3 py-2">
+                          <div className="mr-[0.5rem] px-[3] py-[2]">
                             <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Inward Size
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.3rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2649,12 +2541,12 @@ const Sidebar: React.FC = () => {
                       </div>
 
                       {/* Controls Row */}
-                      <div className="mt-[0rem] flex gap-[0.5rem]">
+                      <div className="mt-[0rem] flex gap-[1rem]">
                         {/* Change Texture Button */}
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
                             isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
                           }`}
                         >

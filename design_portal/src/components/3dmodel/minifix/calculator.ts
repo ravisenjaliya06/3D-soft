@@ -302,7 +302,6 @@ function calculateHolePositions(
     z: jointPosition.z + direction.z * screwLength + camDir.z * sinkOffset,
   };
 
-
   const boltDrillPos = {
     x: jointPosition.x + direction.x * (screwLength / 2),
     y: jointPosition.y + direction.y * (screwLength / 2),

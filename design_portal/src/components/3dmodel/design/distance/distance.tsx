@@ -12,6 +12,7 @@ import {
   CreateDistanceLineParams,
   CreateSideDistanceParams,
   DimensionMeta,
+  DistanceResult,
   Priority,
   ReferenceParam,
   ThreeDView,
@@ -30,6 +31,30 @@ export class DistanceTool {
     this.scene = scene;
   }
 
+  private applyDistances(
+    axis: 'x' | 'y',
+    map: {
+      min: 'left' | 'bottom';
+      max: 'right' | 'top';
+    },
+    result: DistanceResult
+  ): void {
+    if (!this.selectedBox) return;
+
+    const { minPos, maxPos } = this.findNearestReferences(
+      axis,
+      ['x', 'y', 'z'].filter((a) => a !== axis) as Array<'x' | 'y' | 'z'>
+    );
+
+    if (minPos !== null) {
+      result[map.min] = Math.abs(this.selectedBox.min[axis] - minPos);
+    }
+
+    if (maxPos !== null) {
+      result[map.max] = Math.abs(maxPos - this.selectedBox.max[axis]);
+    }
+  }
+
   /**
    * Get distances for all four sides (left, right, top, bottom) without showing visual labels
    * Returns distances in meters
@@ -42,21 +67,12 @@ export class DistanceTool {
   } {
     this.selectedMesh = mesh;
     this.selectedBox = this.computeBoundingBox(mesh);
-    const geometryInfo = this.analyzePlankGeometry();
 
-    let mainAxis: Axis | null = null;
-
-    if (geometryInfo.isHorizontal) {
-      // horizontal plank → measure Y (top/bottom)
-      mainAxis = 'y';
-    } else if (geometryInfo.isThinX) {
-      // vertical plank facing X → measure X (left/right)
-      mainAxis = 'x';
-    } else if (geometryInfo.isThinZ) {
-      // vertical plank facing Z → measure Z (front/back, but we'll use X/Y for left/right/top/bottom)
-      // For Z-facing planks, left/right are along X axis, top/bottom are along Y axis
-      mainAxis = 'z';
+    if (!this.selectedBox) {
+      return { left: null, right: null, top: null, bottom: null };
     }
+
+    const { isHorizontal, isThinX, isThinZ } = this.analyzePlankGeometry();
 
     const result = {
       left: null as number | null,
@@ -65,46 +81,13 @@ export class DistanceTool {
       bottom: null as number | null,
     };
 
-    if (!mainAxis || !this.selectedBox) return result;
-
-    // For horizontal planks: measure Y (top/bottom)
-    if (mainAxis === 'y') {
-      const { minPos, maxPos } = this.findNearestReferences('y', ['x', 'z']);
-      if (minPos !== null) {
-        result.bottom = Math.abs(this.selectedBox.min.y - minPos);
-      }
-      if (maxPos !== null) {
-        result.top = Math.abs(maxPos - this.selectedBox.max.y);
-      }
-    }
-    // For vertical planks facing X: measure X (left/right)
-    else if (mainAxis === 'x') {
-      const { minPos, maxPos } = this.findNearestReferences('x', ['y', 'z']);
-      if (minPos !== null) {
-        result.left = Math.abs(this.selectedBox.min.x - minPos);
-      }
-      if (maxPos !== null) {
-        result.right = Math.abs(maxPos - this.selectedBox.max.x);
-      }
-    }
-    // For vertical planks facing Z: measure both X (left/right) and Y (top/bottom)
-    else if (mainAxis === 'z') {
-      // Left/Right along X axis
-      const xRefs = this.findNearestReferences('x', ['y', 'z']);
-      if (xRefs.minPos !== null) {
-        result.left = Math.abs(this.selectedBox.min.x - xRefs.minPos);
-      }
-      if (xRefs.maxPos !== null) {
-        result.right = Math.abs(xRefs.maxPos - this.selectedBox.max.x);
-      }
-      // Top/Bottom along Y axis
-      const yRefs = this.findNearestReferences('y', ['x', 'z']);
-      if (yRefs.minPos !== null) {
-        result.bottom = Math.abs(this.selectedBox.min.y - yRefs.minPos);
-      }
-      if (yRefs.maxPos !== null) {
-        result.top = Math.abs(yRefs.maxPos - this.selectedBox.max.y);
-      }
+    if (isHorizontal) {
+      this.applyDistances('y', { min: 'bottom', max: 'top' }, result);
+    } else if (isThinX) {
+      this.applyDistances('x', { min: 'left', max: 'right' }, result);
+    } else if (isThinZ) {
+      this.applyDistances('x', { min: 'left', max: 'right' }, result);
+      this.applyDistances('y', { min: 'bottom', max: 'top' }, result);
     }
 
     return result;
@@ -285,7 +268,6 @@ export class DistanceTool {
     if (!meta) return;
 
     const target = view.scene.getObjectByProperty('uuid', meta.targetUuid) as THREE.Mesh | null;
-    console.log(target, 'target');
     if (!target) return;
 
     const box = this.computeBoundingBox(target);

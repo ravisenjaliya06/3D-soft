@@ -196,7 +196,6 @@ export class MeshBuilder {
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
-    console.log(this.meshData.dimensions);
     return new THREE.BoxGeometry(
       this.meshData.dimensions?.width || 0,
       this.meshData.dimensions?.height || 0,
