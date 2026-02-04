@@ -30,10 +30,18 @@ const measurementSlice = createSlice({
     setLastMeasurement: (state, action: PayloadAction<number | null>) => {
       state.lastMeasurement = action.payload;
     },
+    resetMeasurement: () => {
+      return { ...initialState };
+    },
   },
 });
 
-export const { toggleMeasurementTool, setMeasurementActive, setUnitType, setLastMeasurement } =
-  measurementSlice.actions;
+export const {
+  toggleMeasurementTool,
+  setMeasurementActive,
+  setUnitType,
+  setLastMeasurement,
+  resetMeasurement,
+} = measurementSlice.actions;
 
 export default measurementSlice.reducer;

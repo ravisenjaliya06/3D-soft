@@ -152,6 +152,14 @@ body {
   overflow: hidden;
 }
 
+/* Ensure all form controls use Comfortaa for consistent appearance */
+input,
+textarea,
+select,
+button {
+  font-family: Comfortaa, sans-serif;
+}
+
 .fixed-image {
   position: fixed;
   bottom: 0;

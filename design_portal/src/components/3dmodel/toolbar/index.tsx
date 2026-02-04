@@ -2,9 +2,9 @@ import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
@@ -37,7 +37,7 @@ import {
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
-const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMode }) => {
   const dispatch = useAppDispatch();
   const state = useSelector((state: { data: Datastate }) => state.data);
   const isQuickHideActive = state.isQuickHideActive;
@@ -46,6 +46,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
+
+  // When parent switches to 2d view, ensure toolbar shows Home and close any secondary panels
+  useEffect(() => {
+    if (viewMode === '2d') {
+      // Show primary Home panel
+      setActiveOption('Home');
+      setActiveOptionName('Home');
+      setIsToolOpen(true);
+
+      // Close any open submenus or popups to avoid secondary panels appearing
+      setcatalogMenu(false);
+      setSelectedFurnitureCategory(null);
+      setAddPartPopup(false);
+      setSelectedCabinetItem(null);
+      setQuantityValue(1);
+    }
+  }, [viewMode]);
   const [catalogMenu, setcatalogMenu] = useState(false);
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
@@ -65,6 +82,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
   const CustomToast = ({
     appearance,
     message,
+    closeToast,
   }: {
     appearance: string;
     message: string;
@@ -73,7 +91,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
     const isError = appearance === 'error';
 
     return (
-      <div className="relative flex h-[1rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
+      <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
           className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
@@ -87,6 +105,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
         <p className="flex-1 truncate font-[poppins] text-[0.9rem] leading-[1.2rem] text-white">
           {message}
         </p>
+
+        {/* Close button (white close svg) */}
+        <img
+          src={assets.close_white}
+          alt="close"
+          className="absolute top-[0rem] right-[0rem] h-[1.25rem] w-[1.25rem] cursor-pointer"
+          onClick={() => closeToast && closeToast()}
+          aria-label="close notification"
+        />
       </div>
     );
   };
@@ -658,21 +685,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange }) => {
           </div>
         </div>
       )}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-        closeButton={false}
-        icon={false}
-        toastClassName="!relative !flex !p-0 !mb-2 !bg-transparent !shadow-none !overflow-visible"
-      />
     </>
   );
 };

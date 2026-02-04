@@ -1,13 +1,31 @@
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
+
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
+import { gettingDesignID } from '../design';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setFloor, setWalls } from '../store/dataSlice';
 import { EDGES, MeshObjectData, PART_TYPES } from './interface';
+import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
+import { ObjectsSaver } from './tools/objectSaver';
 
+export const getDesignCatalogs = async () => {
+  const response: { status: number; data: { catalogs: MeshObjectData[] } } =
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+  if (response.status !== 200) {
+    console.error('Error fetching catalogs');
+    return;
+  }
+  response.data.catalogs.forEach((catalog: MeshObjectData) => {
+    const builder = new SyncManager(catalog);
+    builder.syncData();
+  });
+};
 /**
  * Get the X and Y positions whenever a mouse event is called.
  */
@@ -190,6 +208,11 @@ export const deleteObject = async (clearScene?: boolean) => {
   }
 };
 
+export const saveObject = async () => {
+  const objectSaver = new ObjectsSaver();
+  objectSaver.saveObject();
+};
+
 export function formatEnumLabel(value: string): string {
   if (!value) return '';
 
@@ -213,6 +236,24 @@ export function convertKeysToCamel<T>(obj: Object): T {
       Object.entries(obj).map(([k, v]) => [snakeToCamel(k), convertKeysToCamel(v)])
     ) as T;
   }
+  return obj;
+}
+
+function camelToSnake(key: string): string {
+  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
+}
+
+export function convertKeysToSnake<T>(obj: any): T {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToSnake) as any;
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [camelToSnake(k), convertKeysToSnake(v)])
+    ) as T;
+  }
+
   return obj;
 }
 
@@ -457,3 +498,6 @@ export const createCopiedStoreObjects = (
 
     return copy;
   });
+
+// Re-export specific components from other files for backward compatibility
+export { CustomToast } from '../utils/CustomToast';

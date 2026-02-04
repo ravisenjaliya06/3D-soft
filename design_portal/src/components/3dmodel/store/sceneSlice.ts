@@ -21,6 +21,9 @@ const sceneSlice = createSlice({
     setScene: (state, action: PayloadAction<THREE.Scene>) => {
       state.scene = action.payload as WritableDraft<THREE.Scene>;
     },
+    resetScene: () => {
+      return { scene: new THREE.Scene() };
+    },
   },
 });
 
@@ -30,5 +33,5 @@ export const addElementInState =
     dispatch(addElement(object));
   };
 
-export const { setScene, addElement, removeElement } = sceneSlice.actions;
+export const { setScene, addElement, removeElement, resetScene } = sceneSlice.actions;
 export default sceneSlice.reducer;

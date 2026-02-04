@@ -296,6 +296,7 @@ export const addDoorOnInvisibleBox = async (
     },
     isMain: false,
     openDirection: DIRECTION_TYPES.RIGHT,
+    parent: parent.userData.objectId,
   });
 
   // await ensureHandleLoaded();
@@ -400,6 +401,7 @@ export const addDrawersOnInvisibleBox = async (
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
       isMain: true,
+      parent: parent.userData.objectId,
       openDirection: DIRECTION_TYPES.RIGHT,
       drawerType: drawerType,
       material: selectedCabinetItem[0].material,

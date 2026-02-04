@@ -42,7 +42,7 @@ const Material: React.FC = () => {
     setSearchQuery,
     setSortColumn,
     setAddMaterialPopup,
-
+    setCompanyID,
     setActiveCategory,
     setActiveTab,
     setContextMenu,
@@ -171,6 +171,8 @@ const Material: React.FC = () => {
               selectedSubItem={selectedSubItem}
               onAddCompany={handleAddCompany}
               setAddMaterialPopup={setAddMaterialPopup}
+              setCompanyID={setCompanyID}
+              setMaterialType={setSelectedType}
             />
 
             <div className={'flex flex-1 flex-col overflow-hidden'}>

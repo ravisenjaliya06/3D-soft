@@ -146,7 +146,7 @@ export class MeshBuilder {
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.repeat.set(2, 2);
+      texture.repeat.set(1, 1);
       texture.center.set(0, 0);
       texture.offset.set(0, 0);
     });
@@ -290,12 +290,19 @@ export class MeshBuilder {
       const size = new THREE.Vector3();
       bBox.getSize(size);
 
-      const horizontalInset = materialProps.horizontalInset ?? 0;
-      const verticalInset = materialProps.verticalInset ?? 0;
+      // Offsets as 0–100 (center = 50)
+      const h = THREE.MathUtils.clamp(materialProps.horizontalInset ?? 50, 0, 100);
+      const v = THREE.MathUtils.clamp(materialProps.verticalInset ?? 50, 0, 100);
+
+      const xFactor = (h - 50) / 100;
+      const yFactor = (v - 50) / 100;
+
+      const center = new THREE.Vector3();
+      bBox.getCenter(center);
 
       const localPos = new THREE.Vector3(
-        bBox.min.x + horizontalInset,
-        bBox.max.y - verticalInset,
+        center.x + xFactor * size.x,
+        center.y - yFactor * size.y,
         bBox.max.z
       );
 
@@ -303,7 +310,12 @@ export class MeshBuilder {
       const attachParentLocal = attachParent.worldToLocal(worldPos.clone());
 
       handle.position.copy(attachParentLocal);
-      handle.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+
+      const rotationDeg = materialProps.rotation ?? 90;
+      const rotationRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(rotationDeg, 0, 180));
+
+      handle.rotation.set(Math.PI / 2, rotationRad, 0);
+
       attachParent.add(handle);
     };
 
@@ -382,8 +394,13 @@ export class MeshBuilder {
 
   /**
    * Update banding positions and sizes when plank dimensions change
+   * @param options.isDimensionUpdate - When true, only the changed side's banding is updated
+   *   (resize/reposition existing banding); plank is not reduced, so other dimensions stay as set
    */
-  public async updateBanding(mesh: THREE.Mesh): Promise<void> {
+  public async updateBanding(
+    mesh: THREE.Mesh,
+    options?: { isDimensionUpdate?: boolean }
+  ): Promise<void> {
     const tool = this._getOrCreateBandingTool();
     if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
@@ -392,7 +409,6 @@ export class MeshBuilder {
 
     const { width, height, depth } = mesh.geometry.parameters;
 
-    // Get banding material
     const materialData = this.meshData.material;
     if (!materialData) return;
 
@@ -406,7 +422,8 @@ export class MeshBuilder {
         bandingMaterialData,
         bandingState,
         this.parentMesh,
-        { material: this.meshData.material, id: this.meshData.id }
+        { material: this.meshData.material, id: this.meshData.id },
+        { isDimensionUpdate: options?.isDimensionUpdate }
       );
     }
   }
@@ -547,6 +564,10 @@ export class MeshBuilder {
     return mesh;
   }
 
+  public getMaterial() {
+    this._getMaterial();
+  }
+
   public updateMesh(
     mesh: THREE.Mesh,
     changes: Partial<MeshObjectData>,
@@ -620,56 +641,6 @@ export class MeshBuilder {
     const tool = this._getOrCreateGroovingTool();
     if (tool) {
       tool.createGrooving(this.mesh);
-    }
-  }
-
-  private _updateTextureRotation(mesh: THREE.Mesh, rotationDegrees?: number): void {
-    const updateTextureRotation = (material: THREE.Material) => {
-      if (material instanceof THREE.MeshStandardMaterial && material.map) {
-        // For seamless tiling, rotate around (0, 0) not (0.5, 0.5)
-        material.map.center.set(0, 0);
-
-        // Ensure proper wrapping
-        material.map.wrapS = THREE.RepeatWrapping;
-        material.map.wrapT = THREE.RepeatWrapping;
-
-        if (rotationDegrees !== undefined) {
-          const rotationRad = THREE.MathUtils.degToRad(rotationDegrees);
-          material.map.rotation = rotationRad;
-
-          // Adjust offset to compensate for rotation and maintain seamless tiling
-          // This prevents the zigzag pattern by aligning the rotated texture properly
-          const cos = Math.cos(rotationRad);
-          const sin = Math.sin(rotationRad);
-          const offsetX = (1 - cos) * 0.5 - sin * 0.5;
-          const offsetY = (1 - cos) * 0.5 + sin * 0.5;
-          material.map.offset.set(offsetX, offsetY);
-        } else {
-          material.map.rotation = 0;
-          material.map.offset.set(0, 0);
-        }
-        material.map.needsUpdate = true;
-        material.needsUpdate = true;
-      }
-    };
-
-    if (Array.isArray(mesh.material)) {
-      mesh.material.forEach(updateTextureRotation);
-    } else {
-      updateTextureRotation(mesh.material);
-    }
-
-    // Also update children if this is a main mesh
-    if (mesh.userData.isMain) {
-      mesh.children.forEach((child) => {
-        if (child instanceof THREE.Mesh) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(updateTextureRotation);
-          } else {
-            updateTextureRotation(child.material);
-          }
-        }
-      });
     }
   }
 }

@@ -14,6 +14,8 @@ interface MaterialSidebarProps {
   onMaterialContextMenu: (e: React.MouseEvent, companyId: string) => void;
   onAddCompany: () => void;
   setAddMaterialPopup: (show: boolean) => void;
+  setCompanyID: (id: string) => void;
+  setMaterialType: (type: string) => void;
 }
 
 export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
@@ -27,6 +29,8 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
   onMaterialContextMenu,
   onAddCompany,
   setAddMaterialPopup,
+  setCompanyID,
+  setMaterialType,
 }) => {
   const renderMenuItem = (item: MaterialItem, parentType?: string) => {
     const isExpanded = expandedCategory === item.id;
@@ -76,6 +80,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   onAddCompany();
+                  setMaterialType(item.name);
                 }}
               >
                 <img src={assets.addCompany} className="h-[1rem] w-[1rem]" />
@@ -88,6 +93,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     onSubItemClick(item.id);
+                    setCompanyID(item.id);
                     setAddMaterialPopup(true);
                   }}
                 >
@@ -136,7 +142,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
         scrollbarWidth: 'thin',
         scrollbarColor: 'var(--scrollbar-color-2) transparent',
       }}
-      className="h-[42rem] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.625rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] py-[0.7rem]"
+      className="h-[80vh] min-h-[80vh] w-[14rem] overflow-x-hidden overflow-y-auto rounded-[0.625rem] border border-[0.063rem] border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] py-[0.7rem]"
     >
       <div>{materialCategories.map((category) => renderMenuItem(category))}</div>
     </div>

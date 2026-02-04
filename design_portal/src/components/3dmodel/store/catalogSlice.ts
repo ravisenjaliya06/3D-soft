@@ -13,8 +13,11 @@ const catalogSlice = createSlice({
     setObjects: (state, action: PayloadAction<CatalogWithChildren[]>) => {
       state.catalog.push(action.payload);
     },
+    resetCatalog: () => {
+      return { catalog: [] };
+    },
   },
 });
 
-export const { setObjects } = catalogSlice.actions;
+export const { setObjects, resetCatalog } = catalogSlice.actions;
 export default catalogSlice.reducer;

@@ -8,11 +8,12 @@ from typing import List
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.forms.models import model_to_dict
 from django.utils import timezone
 
 # App imports
 from design.models import DesignCatalog
-from material.models import Company, Material, Properties
+from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
@@ -177,6 +178,14 @@ def default_material_data(organization: Organization) -> bool:
     return True
 
 
+def duplicate_default_textures(organization: Organization) -> None:
+    default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
+
+    for finish in default_finishes:
+        data = model_to_dict(finish, exclude=["id", "organization"])
+        FinishesLibrary.objects.create(organization=organization, **data)
+
+
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:
     """
     Clone all default catalogs (organization IS NULL) into the given organization.
@@ -191,6 +200,9 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
     for catalog in default_catalogs:
         clone = DesignCatalog.objects.create(
             organization=organization,
+            script_parent=catalog.id,
+            is_script=True,
+            is_library=True,
             version=None,
             type=catalog.type,
             name=catalog.name,
@@ -201,7 +213,7 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
         clone.data["id"] = str(clone.id)
         clone.save(update_fields=["data"])
 
-        clone.material.set(catalog.material.all())
+        clone.materials.set(catalog.materials.all())
 
         old_to_new[catalog.id] = clone
 

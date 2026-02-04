@@ -1,8 +1,8 @@
-import { TEXTURE_MEDIA } from '@/components/3dmodel/handler/constant';
 import { _3DMODEL, assets } from '@/svgPaths';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import {
@@ -22,6 +22,8 @@ import {
   MeshObjectData,
   MeshObjectPatch,
   PART_TYPES,
+  MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
+  TextureDetails,
 } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -42,10 +44,17 @@ import {
   selectResolvedMinifixDiameterHole,
   selectResolvedMinifixDistance,
 } from '../store/selectors';
+import { CustomToast } from '../utils/CustomToast';
 
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import commonService from '@/services/CommonService';
+import { DistanceTool } from '../design/distance/distance';
+import { getActiveUnit, unitToMeters } from '../handler/unitConversion';
+import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
-import { Axis, Field, MATERIAL_TYPES } from './interface';
+import { DistanceInput } from './DistanceInput';
+import { Axis, Field } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 
 const Sidebar: React.FC = () => {
@@ -54,53 +63,36 @@ const Sidebar: React.FC = () => {
   const [isSettingOpen, setSettingOpen] = useState(false);
   const [doorPosition, setDoorPosition] = useState('None');
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#392579');
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
   const [textureRotation, setTextureRotation] = useState(0);
-  const [wasLoadMoreClicked, setWasLoadMoreClicked] = useState(false);
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
   const [handleMode, setHandleMode] = useState<'handle' | 'handleless'>('handle');
+  const [positionDistances, setPositionDistances] = useState({
+    left: null as number | null,
+    right: null as number | null,
+    top: null as number | null,
+    bottom: null as number | null,
+  });
 
   // Anchor States for Directional Scaling
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
+  const [textureData, setTextureData] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(40);
+  const [textureSearchQuery, setTextureSearchQuery] = useState('');
 
-  const materialModal = [
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-    { option: 'material_0', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD },
-    { option: 'material_1', name: 'Dark Brown', image: TEXTURE_MEDIA.WOOD_1 },
-    { option: 'material_2', name: 'Light Wood', image: TEXTURE_MEDIA.WOOD_2 },
-    { option: 'material_3', name: 'Off White', image: TEXTURE_MEDIA.WOOD_3 },
-    { option: 'material_4', name: 'Glossy Brown', image: TEXTURE_MEDIA.WOOD_4 },
-    { option: 'material_5', name: 'Light Brown', image: TEXTURE_MEDIA.WOOD_5 },
-    { option: 'material_6', name: 'Wood', image: TEXTURE_MEDIA.WOOD_6 },
-    { option: 'material_7', name: 'Wood', image: TEXTURE_MEDIA.WOOD_7 },
-  ];
-
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
+  const distanceToolRef = useRef<DistanceTool | null>(null);
   const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
+  const isUpdatingPositionRef = useRef(false);
+  //temporarily disabled
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
 
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
@@ -153,10 +145,23 @@ const Sidebar: React.FC = () => {
     }
   }, [isQuickHideActive]);
 
+  //temporarily disabled
+  // Prevent double-click events in sidebar from propagating to window (which would affect 3D scene)
   useEffect(() => {
-    if (colorInputRef.current) {
-      colorInputRef.current.style.backgroundColor = selectedColor;
+    const handleDoubleClick = (e: MouseEvent) => {
+      e.stopPropagation();
+    };
+
+    const sidebarElement = sidebarRef.current;
+    if (sidebarElement) {
+      sidebarElement.addEventListener('dblclick', handleDoubleClick);
     }
+
+    return () => {
+      if (sidebarElement) {
+        sidebarElement.removeEventListener('dblclick', handleDoubleClick);
+      }
+    };
   }, []);
 
   /** object updater ref */
@@ -168,6 +173,13 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     if (scene) {
       bandingToolRef.current = new BandingTool(scene);
+    }
+  }, [scene]);
+
+  /** distance tool ref */
+  useEffect(() => {
+    if (scene) {
+      distanceToolRef.current = new DistanceTool(scene);
     }
   }, [scene]);
 
@@ -184,9 +196,30 @@ const Sidebar: React.FC = () => {
           (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
         );
         setFrontpanelEnabled(hasSkirting);
+
+        // Calculate distances for position fields
+        if (distanceToolRef.current) {
+          const distances = distanceToolRef.current.getDistances(targetMesh);
+          setPositionDistances(distances);
+        }
+      } else {
+        setPositionDistances({ left: null, right: null, top: null, bottom: null });
       }
+    } else {
+      setPositionDistances({ left: null, right: null, top: null, bottom: null });
     }
   }, [selectedObject, scene]);
+
+  const getTextures = async () => {
+    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
+    if (response.status === 200) {
+      setTextureData(response.data);
+    }
+  };
+
+  useEffect(() => {
+    getTextures();
+  }, []);
 
   // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMeshById(scene, targetId ? targetId : '', true);
@@ -207,31 +240,115 @@ const Sidebar: React.FC = () => {
   }, [handleObject]);
 
   const updateHandlePosState = (axis: Axis, value: number) => {
+    if (!selectedObject || !handleObject) return;
+
     const roundedValue = Math.round(value);
+
+    // 1️⃣ Update local UI state
     setHandlePos((prev) => ({ ...prev, [axis]: roundedValue }));
 
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.userData.objectId,
-        { position: { [axis]: roundedValue } },
-        undefined,
-        handleObject
-      );
+    // 2️⃣ Update handle mesh position in scene
+    updateObjectRef.current?.update(
+      handleObject.userData.objectId,
+      { position: { [axis]: roundedValue } },
+      undefined,
+      handleObject
+    );
+
+    // 3️⃣ Map axis → material inset
+    let materialPatch: Record<string, number> = {};
+
+    if (axis === 'x') {
+      materialPatch.horizontalInset = roundedValue;
     }
+
+    if (axis === 'y') {
+      materialPatch.verticalInset = roundedValue;
+    }
+
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
+
+    //@ts-ignore
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+      return {
+        ...mat,
+        properties: {
+          ...mat.properties,
+          ...materialPatch,
+        },
+      };
+    });
+
+    // 5️⃣ Sync object data
+    applyObjectUpdate(selectedObject, {
+      //@ts-ignore
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
   };
 
+  // Filter textures based on search query
+  const filteredTextures = textureData.filter((texture) => {
+    if (!textureSearchQuery.trim()) return true;
+    const query = textureSearchQuery.toLowerCase();
+    return (
+      texture.name?.toLowerCase().includes(query) || texture.option?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => {
+      const newCount = prev + LOAD_MORE_INCREMENT;
+      return Math.min(newCount, filteredTextures.length);
+    });
+  };
+
+  // Check if there are more textures to load
+  const hasMoreTextures = visibleCount < filteredTextures.length;
+
+  // Reset visible count when search query changes
+  useEffect(() => {
+    setVisibleCount(LOAD_MORE_INCREMENT);
+  }, [textureSearchQuery]);
+
   const updateHandleRotState = (axis: Axis, value: number) => {
+    if (!selectedObject || !handleObject) return;
+
     const roundedValue = Math.round(value);
+
     setHandleRot((prev) => ({ ...prev, [axis]: roundedValue }));
 
-    if (handleObject) {
-      updateObjectRef.current?.update(
-        handleObject.userData.objectId,
-        { rotation: { [axis]: roundedValue } },
-        undefined,
-        handleObject
-      );
-    }
+    // Update mesh rotation
+    updateObjectRef.current?.update(
+      handleObject.userData.objectId,
+      { rotation: { [axis]: roundedValue } },
+      undefined,
+      handleObject
+    );
+
+    // Update material rotation
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
+
+    //@ts-ignore
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+      return {
+        ...mat,
+        properties: {
+          ...mat.properties,
+          rotation: roundedValue,
+        },
+      };
+    });
+
+    applyObjectUpdate(selectedObject, {
+      //@ts-ignore
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
   };
 
   const handleOpenCloseChange = () => {
@@ -370,6 +487,90 @@ const Sidebar: React.FC = () => {
     });
   };
 
+  const handlePositionDistanceChange = async (side: string, value: number) => {
+    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current)
+      return;
+
+    isUpdatingPositionRef.current = true;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (!targetMesh) {
+      isUpdatingPositionRef.current = false;
+      return;
+    }
+
+    // Get current distances
+    const currentDistances = distanceToolRef.current.getDistances(targetMesh);
+    const unit = getActiveUnit();
+
+    // Convert new value to meters
+    const newDistanceM = unitToMeters(value, unit);
+
+    // Get current distance for this side
+    let currentDistanceM = 0;
+    let axis: 'x' | 'y' | 'z' = 'x';
+
+    if (side === 'left' && currentDistances.left !== null) {
+      currentDistanceM = currentDistances.left;
+      axis = 'x';
+    } else if (side === 'right' && currentDistances.right !== null) {
+      currentDistanceM = currentDistances.right;
+      axis = 'x';
+    } else if (side === 'top' && currentDistances.top !== null) {
+      currentDistanceM = currentDistances.top;
+      axis = 'y';
+    } else if (side === 'bottom' && currentDistances.bottom !== null) {
+      currentDistanceM = currentDistances.bottom;
+      axis = 'y';
+    } else {
+      isUpdatingPositionRef.current = false;
+      return;
+    }
+
+    // Calculate delta (how much to move)
+    const delta = newDistanceM - currentDistanceM;
+
+    // Apply position change using DistanceTool's method
+    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+
+    // Update Redux store
+    const newPosition = {
+      x: (targetMesh as THREE.Mesh).position.x,
+      y: (targetMesh as THREE.Mesh).position.y,
+      z: (targetMesh as THREE.Mesh).position.z,
+    };
+
+    dispatch(
+      updateObject({
+        id: selectedObject.id,
+        position: newPosition,
+      })
+    );
+
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
+    setPositionDistances(updatedDistances);
+
+    // Sync to scene
+    if (updateObjectRef.current) {
+      await new SyncManager(
+        {
+          ...selectedObject,
+          position: newPosition,
+        },
+        undefined
+      ).syncData();
+    }
+
+    isUpdatingPositionRef.current = false;
+  };
+
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
 
@@ -396,36 +597,13 @@ const Sidebar: React.FC = () => {
     return !!(panelStock?.textures && panelStock.textures.length > 0);
   };
 
-  const applyColorToSelected = (value: string) => {
-    setSelectedColor(value);
-    if (colorInputRef.current) colorInputRef.current.style.backgroundColor = value;
-
-    const targetId = selectedChildObjectId || selectedObjectId;
-    if (!targetId || !scene) return;
-
-    const obj = objects.find((o) => o.id === targetId);
-    if (!obj) return;
-
-    const name = obj.name?.toLowerCase() ?? '';
-    if (name.includes(PART_TYPES.DOOR) || name.includes(PART_TYPES.DRAWER)) return;
-
-    // For color updates, we keep the existing Material array structure
-    // The UpdateHandler will handle the color application
-    applyObjectUpdate(obj, { material: obj.material });
-
-    // Also update via UpdateHandler for immediate visual feedback
-    if (updateObjectRef.current) {
-      updateObjectRef.current.update(obj.id, {
-        //@ts-ignore
-        material: { type: MATERIAL_TYPES.COLOR, value },
-      });
-    }
-  };
-
   const toggleTextureList = () => {
     /** Toggles the visibility of the texture selection list. */
     setIsTextureListOpen((prev) => {
-      if (!prev) setWasLoadMoreClicked(false);
+      if (!prev) {
+        // Reset visible count when opening texture list
+        setVisibleCount(LOAD_MORE_INCREMENT);
+      }
       return !prev;
     });
   };
@@ -473,7 +651,6 @@ const Sidebar: React.FC = () => {
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
-
     applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
@@ -483,30 +660,53 @@ const Sidebar: React.FC = () => {
       },
     });
 
-    // Regenerate minifixes if this is a full cupboard
-    if (isFullCupboard && scene) {
+    // Regenerate minifixes
+    if (scene) {
       requestAnimationFrame(() => {
-        const cupboardMesh = findMeshById(scene, selectedObject.id);
-        if (cupboardMesh?.userData.isMain) {
+        let cupboardMesh: THREE.Mesh | null = null;
+        if (isFullCupboard) {
+          cupboardMesh = findMeshById(scene, selectedObject.id);
+        } else if (selectedObject.parent) {
+          // If it's a child (plank), find the parent cupboard
+          cupboardMesh = findMeshById(scene, selectedObject.parent);
+        }
+
+        if (cupboardMesh && cupboardMesh.userData.isMain) {
           updateMinifixesForCupboard(cupboardMesh);
         }
       });
     }
   };
 
-  const handleTextureSelect = (texturePath: string) => {
+  const handleTextureSelect = (textureData: TextureDetails) => {
     if (!selectedObject) return;
 
-    // Update via UpdateHandler for immediate visual feedback
-    if (updateObjectRef.current) {
-      updateObjectRef.current.update(selectedObject.id, {
-        //@ts-ignore
-        material: { type: MATERIAL_TYPES.TEXTURE, value: texturePath },
-      });
-    }
+    const material = selectedObject.material;
+    const materialArray = Array.isArray(material) ? material : [material];
 
-    // Keep existing Material array structure
-    applyObjectUpdate(selectedObject, { material: selectedObject.material });
+    //@ts-ignore
+    const updatedMaterials: Material[] = materialArray.map((mat) => {
+      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK) {
+        return {
+          ...mat,
+          textures: [
+            {
+              id: mat?.textures?.[0].id,
+              name: mat?.textures?.[0].name,
+              texture: textureData.id,
+              textureDetail: textureData,
+            },
+          ],
+        };
+      }
+      return mat;
+    });
+
+    // Preserve original structure (array vs single object)
+    applyObjectUpdate(selectedObject, {
+      //@ts-ignore
+      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+    });
 
     setIsTextureListOpen(false);
   };
@@ -578,26 +778,26 @@ const Sidebar: React.FC = () => {
       title: 'Layout',
       fields: [
         {
-          label: 'Width',
+          label: isVerticalPlank ? 'Thickness' : 'Width',
           name: 'width',
-          type: 'number',
+          type: isVerticalPlank ? 'select' : 'number',
+          options: isVerticalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.width,
-          disabled: isHorizontalPlank || isDisabled,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('width', Number(e.target.value)),
-          controls: ['Left', 'Right'],
+          disabled: isVerticalPlank ? false : isHorizontalPlank || isDisabled,
+          onValueChange: (value: number) => handleDimensionChange('width', value),
+          controls: isVerticalPlank ? null : ['Left', 'Right'],
         },
         {
-          label: 'Height',
+          label: isHorizontalPlank ? 'Thickness' : 'Height',
           name: 'height',
-          type: 'number',
+          type: isHorizontalPlank ? 'select' : 'number',
+          options: isHorizontalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.height,
-          disabled: isVerticalPlank || isDisabled,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('height', Number(e.target.value)),
-          controls: ['Top', 'Bottom'],
+          disabled: isHorizontalPlank ? false : isVerticalPlank || isDisabled,
+          onValueChange: (value: number) => handleDimensionChange('height', value),
+          controls: isHorizontalPlank ? null : ['Top', 'Bottom'],
         },
         {
           label: 'Depth',
@@ -606,8 +806,7 @@ const Sidebar: React.FC = () => {
           min: 1,
           value: dimensionsUI.depth,
           disabled: isQuickHideActive,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            handleDimensionChange('depth', Number(e.target.value)),
+          onValueChange: (value: number) => handleDimensionChange('depth', value),
           controls: ['Front', 'Back'],
         },
       ],
@@ -791,10 +990,8 @@ const Sidebar: React.FC = () => {
   const [bandingRight, setBandingRight] = useState(false);
   const [bandingFront, setBandingFront] = useState(false);
   const [bandingBack, setBandingBack] = useState(false);
-  const [minifixEnabled, setMinifixEnabled] = useState(true);
+  const [minifixEnabled, setMinifixEnabled] = useState(false);
   const [minifixDisabled, setMinifixDisabled] = useState(false);
-  const [groovingEnabled, setGroovingEnabled] = useState(true);
-  const [groovingDisabled, setGroovingDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
   const [baseheightEnabled, setBaseheightEnabled] = useState(true);
@@ -819,15 +1016,15 @@ const Sidebar: React.FC = () => {
   };
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
-  const handleGroovingToggle = () => {
-    if (groovingDisabled) return;
-    setGroovingEnabled((prev) => !prev);
-  };
+  // NOTE: Open this for grooving
+  // const handleGroovingToggle = () => {
+  //   if (groovingDisabled) return;
+  //   setGroovingEnabled((prev) => !prev);
+  // };
 
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
   useEffect(() => {
     setMinifixDisabled(false);
-    setGroovingDisabled(false);
     setTopPlankDisabled(false);
     setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
@@ -887,6 +1084,18 @@ const Sidebar: React.FC = () => {
 
     // Prevent infinite loop: only update if value actually changed
     const prev = previousInputsRef.current;
+
+    // Fix for update issue:
+    // If the local input value (which might be valid) hasn't synced to the Redux object yet,
+    // we should wait for the Redux update before regenerating the scene.
+    // This prevents the scene generation from using stale data (old object state)
+    // and incorrectly updating the 'prev' ref, which would cause the subsequent
+    // correct update (from Redux sync) to be skipped.
+    const currentMinifixDistance = selectedObject.minifixDistance ?? resolvedMinifixDistance;
+    if (currentMinifixDistance !== minifixDistanceInput) {
+      return;
+    }
+
     if (
       prev.distance === minifixDistanceInput &&
       prev.diameterHole === minifixDiameterHoleInput &&
@@ -894,7 +1103,6 @@ const Sidebar: React.FC = () => {
       prev.camDiameter === camDiameterInput &&
       prev.camHeight === camHeightInput
     ) {
-      console.log('Minifix settings unchanged');
       return;
     }
 
@@ -1123,7 +1331,6 @@ const Sidebar: React.FC = () => {
     const toggle = <T,>(current: T | null, target: T): T | null => {
       return current === target ? null : target;
     };
-
     if (fieldName === 'width') {
       // Index 0 -> 'left', Index 1 -> 'right'
       const target = idx === 0 ? 'left' : 'right';
@@ -1199,20 +1406,60 @@ const Sidebar: React.FC = () => {
     }));
   };
 
+  const positionFields = [
+    {
+      label: 'Left',
+      direction: 'left',
+      rotate: 'rotate-[-90deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.left,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Right',
+      direction: 'right',
+      rotate: 'rotate-[-90deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.right,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Top',
+      direction: 'top',
+      rotate: '',
+      width: 'w-[5.1rem]',
+      value: positionDistances.top,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+    {
+      label: 'Bottom',
+      direction: 'bottom',
+      rotate: 'rotate-[180deg]',
+      width: 'w-[5.1rem]',
+      value: positionDistances.bottom,
+      disabled: isQuickHideActive,
+      onChange: handlePositionDistanceChange,
+    },
+  ];
+
   return (
     <div
+      ref={sidebarRef}
       className={
         isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-[92vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
       }
     >
       {/* ================= TITLE ================= */}
       <div
         onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] flex h-[1.8rem] w-[15rem] items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--sidebarhadding-background-color-20)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
       >
-        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[white]">
+        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
           {getSidebarTitle()}
         </p>
 
@@ -1231,22 +1478,20 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isSettingOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+                } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
-                  ? 'rounded-[0.2rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+                } `}
             >
               Navigation
             </button>
@@ -1295,15 +1540,14 @@ const Sidebar: React.FC = () => {
                           <div className="ml-[0rem] flex items-center gap-[1rem]">
                             <div
                               onClick={handleMinifixToggle}
-                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
                             >
                               {/* Knob */}
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  minifixEnabled
-                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
+                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                     : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                }`}
+                                  }`}
                               />
                             </div>
                             <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1318,10 +1562,44 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={minifixDistanceInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
                                 setMinifixDistanceInput(value);
+
+                                if (value % 32 !== 0) {
+                                  toast(
+                                    ({ closeToast }) => (
+                                      <CustomToast
+                                        appearance="error"
+                                        message="Distance must be in multiple of 32"
+                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
+                                      // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
+                                      // It does NOT assume closeToast.
+                                      // Wait, the one in Toolbar DID have closeToast.
+                                      // I should probably update CustomToast to optionally accept it or just ignore it.
+                                      // Let's check CustomToast again.
+                                      />
+                                    ),
+                                    {
+                                      position: 'top-right',
+                                      autoClose: 3000,
+                                      hideProgressBar: true, // as per user pref or default
+                                      closeButton: false,
+                                      icon: false,
+                                      className: '!p-0 !bg-transparent !shadow-none !mb-2',
+                                    }
+                                  );
+                                  // We allow setting the state so user can type, but maybe we shouldn't dispatch update?
+                                  // User Request: "if minifix distance is 32 so i can only add miniifx ditance 64 other wise 128"
+                                  // "i cnat add" implies blocking or reverting.
+                                  // But user needs to type "6" then "4". If I block "6", they can't type "64".
+                                  // So I should probably allow typing but warn.
+                                  // AND NOT dispatch updateObject?
+                                  return;
+                                }
+
                                 // Save to cupboard object if it's a full cupboard
                                 if (selectedObject && isFullCupboard) {
                                   dispatch(
@@ -1345,6 +1623,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={minifixDiameterHoleInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1370,23 +1649,17 @@ const Sidebar: React.FC = () => {
                         <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
 
                         {/* -------- RIGHT PART -------- */}
-                        <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                        <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
                           {/* Toggle */}
                           <div className="flex items-center gap-[0.5rem]">
                             <div
-                              onClick={handleGroovingToggle}
-                              className={`relative h-[1rem] w-[2.25rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${groovingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${groovingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
                             >
                               {/* Knob */}
-                              <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  groovingEnabled
-                                    ? 'translate-x-[1.2rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                              />
+                              <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
                             </div>
-                            <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+
+                            <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
                               Grooving
                             </p>
                           </div>
@@ -1398,6 +1671,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={true}
                               // value={inside}
                               // onChange={(e) => setInside(Number(e.target.value))}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -1411,9 +1685,10 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
+                              disabled={true}
                               // value={edgeToEnd}
                               // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1450,6 +1725,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camDiameterInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1475,6 +1751,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camDepthInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1500,6 +1777,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
+                              disabled={!minifixEnabled}
                               value={camHeightInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -1552,12 +1830,12 @@ const Sidebar: React.FC = () => {
                               type="number"
                               min={0}
                               max={25}
-                              value={shelvesInnerDistance}
+                              value={shelvesInnerDistance.toFixed(2)}
                               onChange={(e) =>
                                 handleShelvesInnerDistanceChange(Number(e.target.value))
                               }
                               disabled={isDisabled}
-                              className="h-[1.2rem] w-[3.7rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[4rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -1603,12 +1881,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                          | 'top'
-                                          | 'bottom'
-                                          | 'left'
-                                          | 'right'
-                                          | 'front'
-                                          | 'back',
+                                        | 'top'
+                                        | 'bottom'
+                                        | 'left'
+                                        | 'right'
+                                        | 'front'
+                                        | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -1670,55 +1948,75 @@ const Sidebar: React.FC = () => {
                                         {field.label}
                                       </p>
 
-                                      <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                        {controlIconMap[field.name].map((icon, idx) => {
-                                          let isActive = false;
-                                          if (field.name === 'width') {
-                                            isActive =
-                                              (idx === 0 && widthSide === 'left') ||
-                                              (idx === 1 && widthSide === 'right');
-                                          } else if (field.name === 'height') {
-                                            isActive =
-                                              (idx === 0 && heightSide === 'top') ||
-                                              (idx === 1 && heightSide === 'bottom');
-                                          } else if (field.name === 'depth') {
-                                            isActive =
-                                              (idx === 0 && depthSide === 'front') ||
-                                              (idx === 1 && depthSide === 'back');
-                                          }
+                                      {field.controls && (
+                                        <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                          {controlIconMap[field.name]?.map((icon, idx) => {
+                                            let isActive = false;
+                                            if (field.name === 'width') {
+                                              isActive =
+                                                (idx === 0 && widthSide === 'left') ||
+                                                (idx === 1 && widthSide === 'right');
+                                            } else if (field.name === 'height') {
+                                              isActive =
+                                                (idx === 0 && heightSide === 'top') ||
+                                                (idx === 1 && heightSide === 'bottom');
+                                            } else if (field.name === 'depth') {
+                                              isActive =
+                                                (idx === 0 && depthSide === 'front') ||
+                                                (idx === 1 && depthSide === 'back');
+                                            }
 
-                                          return (
-                                            <button
-                                              key={idx}
-                                              type="button"
-                                              onClick={() => handleControlClick(field.name, idx)}
-                                              className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                                isActive
-                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                              } `}
-                                            >
-                                              <img
-                                                src={icon}
-                                                alt="control"
-                                                className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                              />
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
+                                            return (
+                                              <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => handleControlClick(field.name, idx)}
+                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
+                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  } `}
+                                              >
+                                                <img
+                                                  src={icon}
+                                                  alt="control"
+                                                  className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                                />
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                     </div>
 
                                     {/* RIGHT SIDE INPUT */}
-                                    <input
-                                      type="number"
-                                      min={field.min}
-                                      step="1"
-                                      value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      disabled={field.disabled}
-                                      className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
+                                    {field.type === 'select' ? (
+                                      <select
+                                        value={field.value ?? ''}
+                                        onChange={(e) =>
+                                          field.onValueChange(Number(e.target.value))
+                                        }
+                                        disabled={field.disabled}
+                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
+                                      >
+                                        {field.options?.map((opt) => (
+                                          <option key={opt} value={opt}>
+                                            {opt}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min={field.min}
+                                        step={1}
+                                        value={field.value ?? ''}
+                                        onChange={(e) =>
+                                          field.onValueChange(Number(e.target.value))
+                                        }
+                                        disabled={field.disabled}
+                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -1726,7 +2024,7 @@ const Sidebar: React.FC = () => {
 
                             {/* CUPBOARD LAYOUT - 2x2 GRID */}
                             {!isPlankSelected && (
-                              <div className="mt-[0rem] mr-[1rem] grid grid-cols-2 gap-[0rem]">
+                              <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
                                 {/* Width */}
                                 <div className="flex flex-col gap-[0.2rem]">
                                   <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1744,7 +2042,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isHorizontalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
 
@@ -1765,7 +2063,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isVerticalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
 
@@ -1786,7 +2084,7 @@ const Sidebar: React.FC = () => {
                                       )
                                     }
                                     disabled={isQuickHideActive}
-                                    className="h-[1.2rem] w-[5.5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   />
                                 </div>
                               </div>
@@ -1822,90 +2120,17 @@ const Sidebar: React.FC = () => {
                     {!collapsed.positionMove && (
                       <>
                         <div className="grid grid-cols-2 gap-[0.4rem]">
-                          {/* LEFT */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Left
-                            </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[-90deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* RIGHT */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Right
-                            </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[90deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* TOP */}
-                          <div className="flex flex-col items-start gap-[0.1rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Top
-                            </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] px-[0.2rem]">
-                              <img src={assets.directionIcon} className="h-[0.5rem] w-[0.5rem]" />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* BOTTOM */}
-                          <div className="flex flex-col items-start gap-[0rem]">
-                            <p className="mt-[0rem] mb-[0rem] text-[0.5rem] font-[700] text-[var(--primary-color)]">
-                              Bottom
-                            </p>
-                            <div className="flex h-[1.19rem] w-[4.61rem] items-center rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[rgba(242,242,242,1)] p-[0rem] px-[0.2rem]">
-                              <img
-                                src={assets.directionIcon}
-                                className="h-[0.5rem] w-[0.5rem] rotate-[180deg]"
-                              />
-                              <img
-                                src={assets.vrLine}
-                                className="ml-[0.3rem] h-[1rem] w-[0.5rem]"
-                              />
-
-                              <input
-                                type="number"
-                                className="ml-[0.4rem] h-full w-[3.1rem] border-0 bg-transparent text-[0.58rem] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                          </div>
+                          {positionFields.map((field) => (
+                            <DistanceInput
+                              label={field.label}
+                              direction={field.direction}
+                              rotate={field.rotate}
+                              width={field.width}
+                              value={field.value}
+                              disabled={field.disabled}
+                              onChange={handlePositionDistanceChange}
+                            />
+                          ))}
                         </div>
                       </>
                     )}
@@ -1917,15 +2142,15 @@ const Sidebar: React.FC = () => {
               {/* ================= Handle/Handleless Selector ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
                     <div className="flex items-center justify-between">
-                      <p className="mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Handle Mode
                       </p>
                     </div>
-                    <div className="flex items-center gap-[0.7rem]">
+                    <div className="flex items-center gap-[0.5rem]">
                       <select
-                        className="flex h-[1.2rem] w-[13rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         value={handleMode}
                         onChange={(e) => {
                           const value = e.target.value as 'handle' | 'handleless';
@@ -1970,11 +2195,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                topPlankEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -1986,7 +2210,7 @@ const Sidebar: React.FC = () => {
                               type="number"
                               value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
                               onChange={handleTopPlankDepthChange}
-                              className="ml-[1.3rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[1.3rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2023,11 +2247,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                baseheightEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2037,7 +2260,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2048,11 +2271,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                frontpanelEnabled
-                                  ? 'translate-x-[1.2rem] bg-[white] ring-[var(--primary-color)]'
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2062,28 +2284,28 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-[0rem]">
                             <input
                               type="number"
-                              className="ml-[0.5rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
 
-                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.5rem] pb-[0rem]">
+                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]">
                           <div className="mr-[1rem] px-3 py-2">
                             <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Back Panel
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
-                          <div className="mr-[1rem] px-3 py-2">
+                          <div className="mr-[0.5rem] px-[3] py-[2]">
                             <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
                               Inward Size
                             </p>
                             <input
                               type="number"
-                              className="h-[1.2rem] w-[5.35rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
@@ -2239,10 +2461,10 @@ const Sidebar: React.FC = () => {
                 {!collapsed.material && (
                   <>
                     {/* Color */}
-                    <div className="mb-[0rem] ml-[1rem] flex items-center justify-between">
+                    {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
                       <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
-                      <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] p-[0rem] px-[0.3rem] py-[0.3rem]">
+                      <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] px-[0.3rem] py-[0.3rem]">
                         <div
                           style={{
                             position: 'relative',
@@ -2254,28 +2476,27 @@ const Sidebar: React.FC = () => {
                         >
                           <input
                             type="color"
-                            value={selectedColor}
-                            onChange={(e) => applyColorToSelected(e.target.value)}
+                            disabled
                             style={{
                               position: 'absolute',
                               width: '200%',
                               height: '200%',
                               border: 'none',
                               padding: '0',
-                              cursor: 'pointer',
+                              cursor: 'not-allowed',
                               left: '-25%',
                               top: '-25%',
                             }}
                           />
                         </div>
+
                         <input
                           type="text"
-                          value={selectedColor.toUpperCase()}
-                          onChange={(e) => applyColorToSelected(e.target.value)}
-                          className="w-[5rem] border-[0rem] bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
+                          disabled
+                          className="w-[5rem] cursor-not-allowed bg-[var(--primary-light-grey)] text-[0.65rem] text-[var(--primary-color)] uppercase outline-none"
                         />
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Change Material */}
                     <div
@@ -2286,7 +2507,7 @@ const Sidebar: React.FC = () => {
                         Change Material
                       </p>
                       <button
-                        className="flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                         disabled={isQuickHideActive}
                       >
                         <p className="items-center text-center text-[0.55rem] font-[700]">
@@ -2313,14 +2534,13 @@ const Sidebar: React.FC = () => {
                       </div>
 
                       {/* Controls Row */}
-                      <div className="mt-[0rem] flex gap-[0.5rem]">
+                      <div className="mt-[0rem] flex gap-[1rem]">
                         {/* Change Texture Button */}
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.2rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -2336,7 +2556,7 @@ const Sidebar: React.FC = () => {
                               className="pointer-events-none h-[0.8rem] w-[0.8rem] opacity-70"
                             />
                           </div>
-                          <div className="flex h-[1rem] flex-1 items-center justify-center pl-[0.3rem]">
+                          <div className="flex h-[1.2rem] flex-1 items-center justify-center pl-[0.3rem]">
                             {/* Input */}
                             <input
                               type="number"
@@ -2345,10 +2565,10 @@ const Sidebar: React.FC = () => {
                               value={textureRotation}
                               onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
                               disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                              className="h-[1rem] w-[2.5rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1rem] w-[2.8rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
-                          <div className="pr-[0.5rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
+                          <div className="pr-[0.2rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
                             °
                           </div>
                         </div>
@@ -2358,9 +2578,25 @@ const Sidebar: React.FC = () => {
                     {/* Texture List */}
                     {isTextureListOpen && (
                       <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                        {/* Search Field */}
+                        <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
+                          <input
+                            type="text"
+                            placeholder="Search textures..."
+                            value={textureSearchQuery}
+                            onChange={(e) => setTextureSearchQuery(e.target.value)}
+                            className="w-[9.2rem] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                          />
+                          {textureSearchQuery && (
+                            <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                              {filteredTextures.length} result
+                              {filteredTextures.length !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
                         {/* Scrollable grid area */}
                         <div
-                          className={`flex-1 ${wasLoadMoreClicked ? 'overflow-y-auto' : 'overflow-hidden'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                          className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
                         >
                           <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                             {/* Add New Texture Button */}
@@ -2374,55 +2610,65 @@ const Sidebar: React.FC = () => {
                                   />
                                 </div>
 
-                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.4rem] leading-none font-bold tracking-tighter whitespace-normal text-[white] uppercase">
+                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
                                   Add New Texture
                                 </span>
                               </button>
                             </div>
 
-                            {(wasLoadMoreClicked ? materialModal : materialModal.slice(0, 41)).map(
-                              (m, idx) => (
+                            {filteredTextures.length === 0 ? (
+                              <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
+                                <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                  No textures found
+                                </span>
+                                <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
+                                  Try a different search term
+                                </span>
+                              </div>
+                            ) : (
+                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
                                 <div
                                   key={`${m.option}-${idx}`}
                                   className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                  onClick={() => handleTextureSelect(m.image)}
+                                  onClick={() => handleTextureSelect(m)}
                                 >
-                                  {/* Texture Image */}
                                   <img
-                                    src={m.image}
+                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
                                     alt={m.name}
                                     className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
                                   />
 
-                                  {/* Black Semi-Transparent Overlay */}
                                   <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
 
-                                  {/* Texture Name Display */}
-                                  <div className="absolute inset-0 flex items-center items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 text-center opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                    <span className="items-center justify-center text-center text-[0.5rem] font-semibold text-[white]">
+                                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                    <span className="text-[0.5rem] font-semibold text-white">
                                       {m.name}
                                     </span>
                                   </div>
                                 </div>
-                              )
+                              ))
                             )}
                           </div>
+                          {hasMoreTextures && (
+                            <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.3rem]">
+                              <button
+                                className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
+                                onClick={handleLoadMore}
+                              >
+                                Load More
+                                <div className="flex h-[0.5rem] w-[0.5rem] items-center justify-center p-[0rem]">
+                                  <img
+                                    className="h-[0.8rem] w-[0.8rem]"
+                                    src={assets.loadMore}
+                                    alt="Load More"
+                                  />
+                                </div>
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Load More Button at bottom */}
-                        {!wasLoadMoreClicked && (
-                          <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.6rem]">
-                            <button
-                              className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                              onClick={() => setWasLoadMoreClicked(true)}
-                            >
-                              Load More
-                              <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded-full border-[0.1rem] border-[var(--primary-color)] p-[0rem]">
-                                <span className="text-[1rem] leading-none">↻</span>
-                              </div>
-                            </button>
-                          </div>
-                        )}
                       </div>
                     )}
 

@@ -193,7 +193,7 @@ export class UpdateObjectInScene {
       });
     }
 
-    // Use BandingTool to update banding
+    // Use BandingTool to update banding (dimension change: only resize banding, do not reduce plank)
     await this.bandingTool.updateBanding(
       mesh,
       {
@@ -207,7 +207,8 @@ export class UpdateObjectInScene {
       {
         material: currentObject?.material,
         id: currentObject?.id,
-      }
+      },
+      { isDimensionUpdate: true }
     );
   }
 
@@ -362,7 +363,7 @@ export class UpdateObjectInScene {
   private applyTextureMaterial(mesh: THREE.Mesh, textureUrl: string): void {
     const loader = new THREE.TextureLoader();
     loader.load(
-      textureUrl,
+      `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureUrl}`,
       (texture) => {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(2, 1);

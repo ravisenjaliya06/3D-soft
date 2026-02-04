@@ -116,7 +116,7 @@ interface Texture {
   textureDetail: TextureDetails;
 }
 
-interface TextureDetails {
+export interface TextureDetails {
   decal: number;
   height: number;
   id: string;
@@ -222,6 +222,9 @@ export interface HelperToolProps {
   design3D: ThreeDView;
   selectedObject: THREE.Mesh | null;
   moveHandler: MoveHandler | null;
+  setShowSavePopup: React.Dispatch<React.SetStateAction<boolean>>;
+  setCatalogName: React.Dispatch<React.SetStateAction<string>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 // TODO (HARSH): Created for temporary patching. Will update later when using SyncManager for lists.
@@ -233,4 +236,5 @@ export type MeshObjectPatch = Omit<
   position?: Partial<Position>;
   rotation?: Partial<Rotation>;
   edgeBanding?: EdgeBandingState;
+  material?: Material[];
 };

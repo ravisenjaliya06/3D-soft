@@ -1,10 +1,13 @@
 # Python imports
 import sys
 from os.path import abspath, dirname
-from textures import TEXTURE
+
 # Django imports
 import django
 from django.db.models import QuerySet
+
+# External imports
+from textures import TEXTURE
 
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)
@@ -2245,8 +2248,9 @@ MATERIAL = [
             "waste": 0.00,
             "estimate": True,
             "pull_type": "Pull",
-            "horizontal_inset": 50.8,
-            "vertical_inset": 88.9,
+            "horizontal_inset": 5,
+            "vertical_inset": 5,
+            "rotation": 90,
             "model_file": "/glb/door_handle2.glb",
         },
     },
@@ -2264,10 +2268,11 @@ MATERIAL = [
             "default_tax_rate": 0.00,
             "waste": 0.00,
             "estimate": True,
-            "pull_type": "Knob",
-            "horizontal_inset": 50.8,
-            "vertical_inset": 50.8,
-            "model_file": "/glb/3dmodel.glb",
+            "pull_type": "Pull",
+            "horizontal_inset": 50,
+            "vertical_inset": 50,
+            "rotation": 0,
+            "model_file": "/glb/door_handle2.glb",
         },
     },
     {
@@ -2900,7 +2905,7 @@ CATALOG = [
         "position": {"x": -741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2913,7 +2918,7 @@ CATALOG = [
         "position": {"x": 741, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2926,7 +2931,7 @@ CATALOG = [
         "position": {"x": 0, "y": 991, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2939,7 +2944,7 @@ CATALOG = [
         "position": {"x": 0, "y": -909, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2952,7 +2957,7 @@ CATALOG = [
         "position": {"x": 0, "y": 41, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["3/4 1s Poplar Ply"],
+        "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
         "catalog_rule": "Panel",
     },
     {
@@ -2989,7 +2994,12 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": ["Alder Ven EB", "5/8 1s Poplar Ply", "4in Bar Pull", "120 Degree Euro"],
+        "material": [
+            "Alder Ven EB",
+            "5/8 1s Poplar Ply",
+            "4in Bar Pull",
+            "120 Degree Euro",
+        ],
     },
     {
         "id": "b1f1c9a1-7a4c-4d8f-9e12-111111111606",
@@ -3252,6 +3262,7 @@ def create_materials(
             type=material_type,
             company=company,
             organization=None,
+            is_catalog=False,
             defaults={"description": material_data.get("description", "")},
         )
 
@@ -3325,6 +3336,7 @@ def create_materials(
                 type=material_type,
                 company=org_company,
                 organization=org,
+                is_catalog=False,
                 defaults={"description": material_data.get("description", "")},
             )
 
@@ -3404,6 +3416,7 @@ def create_catalog(catalog_list: list[dict]) -> None:
                 "name": item["name"],
                 "type": item["type"],
                 "organization": None,
+                "is_library": True,
                 "version": None,
                 "parent": None,
                 "data": item,
@@ -3431,6 +3444,7 @@ def create_catalog(catalog_list: list[dict]) -> None:
                 "name": item["name"],
                 "type": item["type"],
                 "organization": None,
+                "is_library": True,
                 "version": None,
                 "parent": parent,
                 "data": item,
@@ -3455,10 +3469,15 @@ def _duplicate_default_catalogs_for_org(
     for old in default_map.values():
         clone, _ = DesignCatalog.objects.update_or_create(
             organization=organization,
+            script_parent=old.id,
+            is_script=True,
             version=None,
-            name=old.name,
-            type=old.type,
-            defaults={"data": old.data},
+            defaults={
+                "name": old.name,
+                "type": old.type,
+                "data": old.data,
+                "is_library": True,
+            },
         )
 
         _attach_material_by_name(clone, old, organization)

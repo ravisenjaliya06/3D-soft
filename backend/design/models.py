@@ -42,6 +42,7 @@ class CatalogTypeChoices(models.TextChoices):
     CUPBOARD = "cupboard"
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
+    WALL = "wall"
 
     UNKNOWN = "unknown"
 
@@ -169,9 +170,93 @@ class DesignCatalog(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
+    is_library = models.BooleanField(default=False)
+    script_parent = models.UUIDField(null=True, blank=True)
+    is_script = models.BooleanField(default=False)
     data = models.JSONField(null=True, blank=True)
     materials = models.ManyToManyField(
         "material.Material", related_name="design_catalog_material"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class NestingSheet(models.Model):
+    """
+    Model to store nesting sheet information.
+    """
+
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    design = models.ForeignKey(
+        Design, on_delete=models.CASCADE, related_name="nesting_sheets"
+    )
+    design_setting = models.ForeignKey(
+        DesignSetting,
+        on_delete=models.CASCADE,
+        related_name="nesting_sheets",
+        null=True,
+        blank=True,
+    )
+    sheet_number = models.IntegerField()
+    width = models.FloatField()
+    height = models.FloatField()
+    efficiency = models.FloatField(null=True, blank=True)
+    file_ids = models.JSONField(
+        default=list
+    )  # List of catalog IDs (rids) on this sheet
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["design", "sheet_number"]]
+        ordering = ["sheet_number"]
+
+    def __str__(self: "NestingSheet") -> str:
+        return f"Sheet {self.sheet_number} - {self.design.design_name}"
+
+
+class NestingFile(models.Model):
+    """
+    Model to store nesting output files (SVG, GCODE, DWG, XML, PDF, XLSX).
+    """
+
+    FILE_TYPE_CHOICES = [
+        ("svg", "SVG"),
+        ("gcode", "GCODE"),
+        ("dwg", "DWG"),
+        ("xml", "XML"),
+        ("pdf", "PDF"),
+        ("xlsx", "XLSX"),
+        ("zip", "ZIP"),
+    ]
+
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    design = models.ForeignKey(
+        Design, on_delete=models.CASCADE, related_name="nesting_files"
+    )
+    sheet = models.ForeignKey(
+        NestingSheet,
+        on_delete=models.CASCADE,
+        related_name="files",
+        null=True,
+        blank=True,
+    )
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
+    file_path = models.CharField(max_length=500)
+    file_name = models.CharField(max_length=255)
+    is_sheet_specific = models.BooleanField(
+        default=False,
+        help_text="True if file is specific to a sheet, False if it's for all sheets",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self: "NestingFile") -> str:
+        return f"{self.file_type} - {self.file_name}"

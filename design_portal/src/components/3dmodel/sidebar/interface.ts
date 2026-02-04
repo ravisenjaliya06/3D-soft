@@ -42,3 +42,15 @@ export interface MaterialForUpdate {
   type: MaterialType;
   value: string;
 }
+
+export type Direction = 'left' | 'right' | 'top' | 'bottom';
+
+export interface DistanceInputProps {
+  label: string;
+  direction: string;
+  rotate: string;
+  width: string;
+  value: number | null;
+  disabled: boolean;
+  onChange: (direction: string, value: number) => void;
+}

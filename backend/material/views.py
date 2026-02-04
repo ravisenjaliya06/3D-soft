@@ -54,7 +54,9 @@ class MaterialViewSet(viewsets.ModelViewSet):
         company_id = self.kwargs.get("company_id")
         material_type = self.request.query_params.get("type")
         qs = Material.objects.filter(
-            organization=self.request.user.selected_organization, is_deleted=False
+            organization=self.request.user.selected_organization,
+            is_deleted=False,
+            is_catalog=False,
         )
 
         if material_type:

@@ -162,6 +162,9 @@ const dataSlice = createSlice({
     setFloor: (state, action: PayloadAction<Floor[]>) => {
       state.floor = action.payload;
     },
+    resetData: () => {
+      return { ...initialState };
+    },
   },
 });
 
@@ -193,6 +196,7 @@ export const {
   updateWall,
   removeWall,
   clearWalls,
+  resetData,
 } = dataSlice.actions;
 
 export default dataSlice.reducer;

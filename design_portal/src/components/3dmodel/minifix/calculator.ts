@@ -25,6 +25,10 @@ export function calculateMinifixPositions(
     return [];
   }
 
+  connections.sort(
+    (a, b) => a.plankA.id.localeCompare(b.plankA.id) || a.plankB.id.localeCompare(b.plankB.id)
+  );
+
   connections.forEach((connection, index) => {
     const { plankA, plankB, jointPosition, connectionType } = connection;
     const screwPlank = connectionType === 'VERTICAL_TO_HORIZONTAL' ? plankB : plankA;
@@ -55,9 +59,11 @@ export function calculateMinifixPositions(
       while (iterations < 100) {
         iterations++;
         const dist = k * effectiveSpacing;
-        if (dist > limit) {
-          break;
-        }
+        // if (dist > limit) {
+        //   break;
+        // }
+        const EPS = 0.0001;
+        if (dist > limit - EPS) break;
         offsets.push(dist);
         offsets.push(-dist);
         k++;
@@ -70,9 +76,14 @@ export function calculateMinifixPositions(
         y: spacingAxis === 'y' ? jointPosition.y + offset : jointPosition.y,
         z: spacingAxis === 'z' ? jointPosition.z + offset : jointPosition.z,
       };
+      const safeJoint = {
+        x: shiftedJoint.x,
+        y: shiftedJoint.y,
+        z: shiftedJoint.z,
+      };
 
       const minifixConnection = calculateSingleConnection(
-        { ...connection, jointPosition: shiftedJoint },
+        { ...connection, jointPosition: safeJoint },
         cupboardId,
         index * 100 + i,
         activeStandards,
@@ -102,11 +113,17 @@ function calculateSingleConnection(
   let camPlank = plankB;
 
   if (connectionType === 'VERTICAL_TO_HORIZONTAL') {
-    // Standard Cabinet: Bolt in Side (Vertical), Cam in Shelf (Horizontal)
-    // plankA is Vertical (Side) based on detector.ts
-    // plankB is Horizontal (Shelf)
-    screwPlank = plankA;
-    camPlank = plankB;
+    // Check if Vertical plank (plankA) is touching with its Y-normal face (Edge) -> Divider
+    // Or with its X/Z-normal face (Face) -> Side Panel
+    if (Math.abs(connection.touchingFaceNormal.y) > 0.5) {
+      // Divider: Bolt in Horizontal (Top/Bottom), Cam in Vertical (Divider)
+      screwPlank = plankB;
+      camPlank = plankA;
+    } else {
+      // Side Panel: Bolt in Vertical (Side), Cam in Horizontal (Shelf)
+      screwPlank = plankA;
+      camPlank = plankB;
+    }
   } else if (connectionType === 'VERTICAL_TO_VERTICAL') {
     // Drawers: Bolt in Front/Back, Cam in Side Plank?
     // User says: "Drawer Back plank receives the cam".
@@ -127,15 +144,23 @@ function calculateSingleConnection(
 
   // Determine bolt direction based on touching face normal
   // touchingFaceNormal is the normal of plankA's touching face (pointing OUT of A into B)
-  let boltDirection = connection.touchingFaceNormal;
+  const normalize = (v: Position) => {
+    const len = Math.hypot(v.x, v.y, v.z) || 1;
+    return {
+      x: Math.sign(v.x / len),
+      y: Math.sign(v.y / len),
+      z: Math.sign(v.z / len),
+    };
+  };
+  let boltDirection = normalize(connection.touchingFaceNormal);
 
   if (screwPlank.id !== connection.plankA.id) {
     // If screwPlank is plankB, we want the normal of plankB's touching face.
     // plankB's touching face normal is opposite to plankA's.
     boltDirection = {
-      x: -connection.touchingFaceNormal.x,
-      y: -connection.touchingFaceNormal.y,
-      z: -connection.touchingFaceNormal.z,
+      x: -boltDirection.x,
+      y: -boltDirection.y,
+      z: -boltDirection.z,
     };
   }
 
@@ -153,7 +178,7 @@ function calculateSingleConnection(
   }
 
   return {
-    id: `minifix-${cupboardId}-${index}`,
+    id: `minifix-${cupboardId}-${connection.plankA.id}-${connection.plankB.id}-${index}`,
     cupboardId,
     plankAId: screwPlank.id,
     plankBId: camPlank.id,
@@ -199,9 +224,45 @@ function calculateHolePositions(
   const { screwLength, dowelDistance } = standards;
 
   // Use passed direction directly
-  const boltDir = direction;
+  // const boltDir = direction;
   const screwDir = { x: -direction.x, y: -direction.y, z: -direction.z }; // Into screw plank
-  const camDir = direction; // Into cam plank
+  // const camDir = direction; // Into cam plank
+
+  // --- FIX START: Determine correct Cam Direction (Face Normal) ---
+  // Heuristic: The smallest dimension of the plank is its thickness.
+  // The Cam is always drilled into the face (perpendicular to thickness).
+  // AND it must point TOWARDS the Screw Plank (which is holding the bolt).
+
+  const { width, height, depth } = camPlank;
+  const minDim = Math.min(width, height, depth);
+
+  let camAxis: 'x' | 'y' | 'z' = 'y'; // Axis perpendicular to the face
+
+  if (minDim === width) {
+    camAxis = 'x';
+  } else if (minDim === height) {
+    camAxis = 'y';
+  } else {
+    camAxis = 'z';
+  }
+
+  // Calculate direction from Cam Plank Center to Screw Plank Center
+  const centerDiff = {
+    x: screwPlank.position.x - camPlank.position.x,
+    y: screwPlank.position.y - camPlank.position.y,
+    z: screwPlank.position.z - camPlank.position.z,
+  };
+
+  let camDir = { x: 0, y: 0, z: 0 };
+
+  if (camAxis === 'x') {
+    camDir.x = Math.sign(centerDiff.x) || 1;
+  } else if (camAxis === 'y') {
+    camDir.y = Math.sign(centerDiff.y) || 1;
+  } else {
+    camDir.z = Math.sign(centerDiff.z) || 1;
+  }
+  // --- FIX END ---
 
   // Screw Position: At the joint interface
   const screwPos = {
@@ -211,27 +272,41 @@ function calculateHolePositions(
   };
 
   // Cam Position:
-  // User Rule: "Cam center = joint position + (cam direction * cam depth / 2)"
-  // But practically for minifix: Distance from edge is Screw Length (e.g. 34mm).
-  // Cam Depth usually refers to hole depth.
-  // We place the Cam Center at `Joint + BoltDir * ScrewLength`.
+  // We determine position based on the "In-Plane" direction from the Screw Plank to the Cam Plank.
+  // This avoids issues where the default `direction` points out of the Face (creating floating cams).
+
+  // Vector from Screw -> Cam (In-Plane)
+  const invDiff = { x: -centerDiff.x, y: -centerDiff.y, z: -centerDiff.z };
+  // Project to remove Face Normal component (camAxis) to get In-Plane vector
+  if (camAxis === 'x') invDiff.x = 0;
+  if (camAxis === 'y') invDiff.y = 0;
+  if (camAxis === 'z') invDiff.z = 0;
+
+  const depthOffset = standards.camDepth / 2;
+
+  // Position = Joint + (Distance from Edge along In-Plane Dir) + (Sink into Face along Inward Normal)
+  // Position = Joint + (Distance from Edge along In-Plane Dir) - (Sink into Face because camDir is Outward Normal)
+  // We subtract `camDir` * depthOffset to sink it into the plank.
+  // const camPos = {
+  //   x: jointPosition.x + inPlaneDir.x * screwLength - camDir.x * depthOffset,
+  //   y: jointPosition.y + inPlaneDir.y * screwLength - camDir.y * depthOffset,
+  //   z: jointPosition.z + inPlaneDir.z * screwLength - camDir.z * depthOffset,
+  // };
+
+  const surfaceOffset = minDim / 2;
+  const sinkOffset = surfaceOffset - depthOffset;
+
   const camPos = {
-    x: jointPosition.x + boltDir.x * screwLength,
-    y: jointPosition.y + boltDir.y * screwLength,
-    z: jointPosition.z + boltDir.z * screwLength,
+    x: jointPosition.x + direction.x * screwLength + camDir.x * sinkOffset,
+    y: jointPosition.y + direction.y * screwLength + camDir.y * sinkOffset,
+    z: jointPosition.z + direction.z * screwLength + camDir.z * sinkOffset,
   };
 
   const boltDrillPos = {
-    x: jointPosition.x + boltDir.x * (screwLength / 2),
-    y: jointPosition.y + boltDir.y * (screwLength / 2),
-    z: jointPosition.z + boltDir.z * (screwLength / 2),
+    x: jointPosition.x + direction.x * (screwLength / 2),
+    y: jointPosition.y + direction.y * (screwLength / 2),
+    z: jointPosition.z + direction.z * (screwLength / 2),
   };
-
-  // Dowel Position:
-  // Must be offset perpendicular to drilling direction.
-  // We use `spacingAxis` to determine the offset direction.
-  // Cabinet (spacingAxis='z'): Dowel is offset in Z.
-  // Drawer (spacingAxis='y'): Dowel is offset in Y.
 
   const dowelOffsetVector = { x: 0, y: 0, z: 0 };
 
@@ -250,20 +325,21 @@ function calculateHolePositions(
     z: jointPosition.z + dowelOffsetVector.z,
   };
 
+  const isVertical = Math.abs(Math.round(screwDir.y)) === 1;
   return {
     screw: {
       position: screwPos,
       direction: screwDir, // Pointing INTO screw plank
-      localPosition2D: calculateLocal2DPosition(screwPos, screwPlank, Math.abs(screwDir.y) > 0.9),
+      localPosition2D: calculateLocal2DPosition(screwPos, screwPlank, isVertical),
     },
     cam: {
       position: camPos,
-      direction: camDir, // Pointing INTO cam plank
+      direction: camDir, // Pointing INTO cam plank (Inward Normal)
       localPosition2D: calculateLocal2DPosition(camPos, camPlank, camPlank.width > camPlank.height),
     },
     boltDrill: {
       position: boltDrillPos,
-      direction: screwDir,
+      direction: screwDir, // Might need update, but keeping consistent with screw for now
       localPosition2D: calculateLocal2DPosition(
         boltDrillPos,
         camPlank,
@@ -272,7 +348,8 @@ function calculateHolePositions(
     },
     dowel: {
       position: finalDowelPos,
-      direction: camDir,
+      // direction: camDir,
+      direction: direction,
       localPosition2D: calculateLocal2DPosition(
         finalDowelPos,
         camPlank,

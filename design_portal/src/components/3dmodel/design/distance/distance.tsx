@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { generateCompartmentsFromMesh } from '../../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../../handler/items';
 import { getActiveUnit, metersToUnit, unitToMeters } from '../../handler/unitConversion';
+import { MIN_THICKNESS } from '../../sceneCreator/constants';
+import { GROOVE_TYPE } from '../../sceneCreator/interface';
 import { findXY } from '../../sceneCreator/utils';
 import { Axis } from '../../sidebar/interface';
 import { isPlankObjectFindByName, isWallObject } from '../../utils/objectTypes';
@@ -10,6 +12,7 @@ import {
   CreateDistanceLineParams,
   CreateSideDistanceParams,
   DimensionMeta,
+  DistanceResult,
   Priority,
   ReferenceParam,
   ThreeDView,
@@ -26,6 +29,68 @@ export class DistanceTool {
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
+  }
+
+  private applyDistances(
+    axis: 'x' | 'y',
+    map: {
+      min: 'left' | 'bottom';
+      max: 'right' | 'top';
+    },
+    result: DistanceResult
+  ): void {
+    if (!this.selectedBox) return;
+
+    const { minPos, maxPos } = this.findNearestReferences(
+      axis,
+      ['x', 'y', 'z'].filter((a) => a !== axis) as Array<'x' | 'y' | 'z'>
+    );
+
+    if (minPos !== null) {
+      result[map.min] = Math.abs(this.selectedBox.min[axis] - minPos);
+    }
+
+    if (maxPos !== null) {
+      result[map.max] = Math.abs(maxPos - this.selectedBox.max[axis]);
+    }
+  }
+
+  /**
+   * Get distances for all four sides (left, right, top, bottom) without showing visual labels
+   * Returns distances in meters
+   */
+  public getDistances(mesh: THREE.Mesh): {
+    left: number | null;
+    right: number | null;
+    top: number | null;
+    bottom: number | null;
+  } {
+    this.selectedMesh = mesh;
+    this.selectedBox = this.computeBoundingBox(mesh);
+
+    if (!this.selectedBox) {
+      return { left: null, right: null, top: null, bottom: null };
+    }
+
+    const { isHorizontal, isThinX, isThinZ } = this.analyzePlankGeometry();
+
+    const result = {
+      left: null as number | null,
+      right: null as number | null,
+      top: null as number | null,
+      bottom: null as number | null,
+    };
+
+    if (isHorizontal) {
+      this.applyDistances('y', { min: 'bottom', max: 'top' }, result);
+    } else if (isThinX) {
+      this.applyDistances('x', { min: 'left', max: 'right' }, result);
+    } else if (isThinZ) {
+      this.applyDistances('x', { min: 'left', max: 'right' }, result);
+      this.applyDistances('y', { min: 'bottom', max: 'top' }, result);
+    }
+
+    return result;
   }
 
   public showDistances(mesh: THREE.Mesh): void {
@@ -230,6 +295,10 @@ export class DistanceTool {
         generateCompartmentsFromMesh(target.parent as THREE.Mesh);
       }
 
+      if (target.parent instanceof THREE.Mesh) {
+        updateMinifixesForCupboard(target.parent);
+      }
+
       if (onUpdate) {
         onUpdate(target, target.position.clone());
       }
@@ -429,8 +498,17 @@ export class DistanceTool {
     return true;
   }
 
+  private isGrooveObject(obj: THREE.Object3D): boolean {
+    const type = obj.userData?.type;
+    return (
+      type === GROOVE_TYPE.GROOVE ||
+      type === GROOVE_TYPE.PROTRUSION ||
+      obj.name?.toLowerCase().includes('groove')
+    );
+  }
+
   // Find nearest plank and wall to the given object
-  private findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
+  public findNearestReferences(axis: Axis, overlapAxes: Axis[]) {
     if (!this.selectedMesh || !this.selectedBox)
       return { minPos: null, maxPos: null, minBox: null, maxBox: null };
 
@@ -443,18 +521,27 @@ export class DistanceTool {
     const selfMax = this.selectedBox.max[axis];
 
     const getPriority = (obj: THREE.Object3D): Priority => {
-      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+      if (this.isGrooveObject(obj)) return Priority.NONE;
+
       if (isWallObject(obj)) return Priority.WALL;
+      if (isPlankObjectFindByName(obj)) return Priority.PLANK;
+
       return Priority.NONE;
     };
 
     this.scene.traverse((obj) => {
-      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh)) return;
-
+      if (obj === this.selectedMesh || !(obj instanceof THREE.Mesh) || this.isGrooveObject(obj)) {
+        return;
+      }
       const priority = getPriority(obj);
       if (priority === Priority.NONE) return;
 
       const box = this.computeBoundingBox(obj);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      if (size.x < MIN_THICKNESS || size.y < MIN_THICKNESS || size.z < MIN_THICKNESS) {
+        return;
+      }
       if (!this.overlapsOnAxes(this.selectedBox!, box, overlapAxes)) return;
 
       // Negative direction (find max pos < selfMin)
@@ -647,7 +734,7 @@ export class DistanceTool {
     return side === 'min' ? box.min.z : box.max.z;
   }
 
-  private applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
+  public applyPositionDelta(target: THREE.Object3D, axis: string, delta: number) {
     const worldPos = new THREE.Vector3();
     target.getWorldPosition(worldPos);
     if (axis === 'x') worldPos.x += delta;

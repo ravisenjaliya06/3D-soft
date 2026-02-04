@@ -353,7 +353,8 @@ export class SyncManager {
 
       // This is a plank (regular or drawer plank) - update banding
       if (changes.dimensions && data.dimensions) {
-        await this.meshBuilder.updateBanding(mesh);
+        // Only resize/reposition existing banding to new dimensions; do not reduce plank
+        await this.meshBuilder.updateBanding(mesh, { isDimensionUpdate: true });
       } else if (changes.edgeBanding) {
         // Banding state changed - recreate banding
         await this.meshBuilder.applyBandingFromState();

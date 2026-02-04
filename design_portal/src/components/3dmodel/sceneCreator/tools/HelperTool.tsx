@@ -19,7 +19,14 @@ import {
 } from '../utils';
 import styles from './helpertool.module.css';
 
-const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveHandler }) => {
+const HelperTool: React.FC<HelperToolProps> = ({
+  design3D,
+  selectedObject,
+  moveHandler,
+  setShowSavePopup,
+  setCatalogName,
+  setError,
+}) => {
   const helperToolRef = useRef<CSS2DObject | null>(null);
   const rendererRef = useRef<CSS2DRenderer | null>(null);
   const isMovingRef = useRef(false);
@@ -133,6 +140,12 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
     router.push(`/design/${designId}/paneldesign`);
   }, [router, design3D]);
 
+  const handleSave = useCallback(() => {
+    setCatalogName('');
+    setError(null);
+    setShowSavePopup(true);
+  }, []);
+
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
@@ -152,7 +165,6 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
       {
         id: 'panel-design',
         icon: assets.panel_design,
-
         title: 'Panel Design',
         onClick: handlePanelDesign,
       },
@@ -161,6 +173,12 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
         icon: assets.copy_helper,
         title: 'Copy',
         onClick: handleCopy,
+      },
+      {
+        id: 'save',
+        icon: assets.saveHelper,
+        title: 'Save to library',
+        onClick: handleSave,
       },
     ];
   }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);
@@ -175,6 +193,7 @@ const HelperTool: React.FC<HelperToolProps> = ({ design3D, selectedObject, moveH
       actions().forEach((action) => {
         const btn = document.createElement('button');
         btn.className = styles.helperToolBtn;
+        btn.dataset.action = action.id;
         btn.innerHTML = `<img src="${action.icon}" alt="${action.title}" />`;
         btn.title = action.title;
 
