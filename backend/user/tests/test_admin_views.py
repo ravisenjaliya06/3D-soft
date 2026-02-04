@@ -48,16 +48,18 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.admin_token = AccessToken.for_user(self.admin_user)
 
-    def test_admin_required_mixin_valid_jwt(self: "AdminAPIViewTestCase") -> None:
+    def test_admin_required_mixin_valid_jwt(self:"AdminAPIViewTestCase"):
         self.client.force_login(self.admin_user)
         self.client.cookies[settings.ADMIN_JWT_COOKIE_NAME] = str(self.admin_token)
 
         response = self.client.post(
             reverse("approve_user", kwargs={"user_id": str(self.normal_user.id)}),
             {"is_approved": "true"},
+            follow=False,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("admin_dashboard"), response.url)
 
     def test_admin_required_mixin_invalid_jwt(self:"AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/")
@@ -141,24 +143,34 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_approve_user_true(self: "AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/?is_approved=true")
         request.user = self.admin_user
-        request.COOKIES = {settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)}
+        request.COOKIES = {
+            settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)
+        }
 
-        response = ApproveUserView.as_view()(request, user_id=str(self.normal_user.id))
+        response = ApproveUserView.as_view()(
+            request, user_id=str(self.normal_user.id)
+        )
 
         self.normal_user.refresh_from_db()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(self.normal_user.is_verified)
 
     def test_approve_user_false(self: "AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/?is_approved=false")
         request.user = self.admin_user
-        request.COOKIES = {settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)}
+        request.COOKIES = {
+            settings.ADMIN_JWT_COOKIE_NAME: str(self.admin_token)
+        }
 
-        response = ApproveUserView.as_view()(request, user_id=str(self.normal_user.id))
+        response = ApproveUserView.as_view()(
+            request, user_id=str(self.normal_user.id)
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(User.objects.filter(id=self.normal_user.id).exists())
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            User.objects.filter(id=self.normal_user.id).exists()
+        )
 
     def test_approve_user_not_found(self: "AdminAPIViewTestCase") -> None:
         request = self.factory.post("/approve/?is_approved=true")

@@ -83,7 +83,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-medium">Total Users</div>
-                            <h4 class="mb-0 fw-bold" id="totalUsers">{{ pending_users.count }}</h4>
+                            <h4 class="mb-0 fw-bold" id="totalUsers">{{ total_users }}</h4>
                         </div>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-medium">Active Accounts</div>
-                            <h4 class="mb-0 fw-bold" id="activeUsers">0</h4>
+                            <h4 class="mb-0 fw-bold" id="activeUsers">{{ active_users }}</h4>
                         </div>
                     </div>
                 </div>
@@ -109,7 +109,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-medium">Pending Requests</div>
-                            <h4 class="mb-0 fw-bold" id="pendingRequests">{{ pending_users.count }}</h4>
+                            <h4 class="mb-0 fw-bold" id="pendingRequests">{{ total_pending_users }}</h4>
                         </div>
                     </div>
                 </div>

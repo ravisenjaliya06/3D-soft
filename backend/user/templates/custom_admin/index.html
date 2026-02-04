@@ -37,6 +37,7 @@
           <h3 class="fw-bold text-dark">Welcome Back</h3>
           <p class="text-muted small">Sign in to access your dashboard</p>
         </div>
+        <div id="loginError" class="alert alert-danger py-2 small d-none" role="alert"></div>
 
         <form id="loginForm" novalidate>
           <div class="mb-3">
@@ -111,8 +112,8 @@
     <!-- Custom Script -->
     <script src="{% static 'custom_admin/script.js' %}"></script>
     <script>
-      // Override Login Logic
       const loginForm = document.getElementById("loginForm");
+      const errorBox = document.getElementById("loginError");
 
       const newLoginForm = loginForm.cloneNode(true);
       loginForm.parentNode.replaceChild(newLoginForm, loginForm);
@@ -121,64 +122,73 @@
         event.preventDefault();
         event.stopPropagation();
 
-        if (newLoginForm.checkValidity()) {
-          const btn = newLoginForm.querySelector('button[type="submit"]');
-          const originalText = btn.innerHTML;
-          btn.innerHTML =
-            '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Signing In...';
-          btn.disabled = true;
+        // hide previous error
+        errorBox.classList.add("d-none");
+        errorBox.innerText = "";
 
-          const email = document.getElementById("email").value;
-          const password = document.getElementById("password").value;
+        if (!newLoginForm.checkValidity()) {
+          newLoginForm.classList.add("was-validated");
+          return;
+        }
 
-          // Get CSRF Token
-          function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== "") {
-              const cookies = document.cookie.split(";");
-              for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === name + "=") {
-                  cookieValue = decodeURIComponent(
-                    cookie.substring(name.length + 1)
-                  );
-                  break;
-                }
+        const btn = newLoginForm.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm"></span> Signing In...';
+        btn.disabled = true;
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+              cookie = cookie.trim();
+              if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
               }
             }
-            return cookieValue;
           }
-          const csrftoken = getCookie("csrftoken");
-
-          fetch('{% url "admin_login" %}', {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrftoken,
-            },
-            body: JSON.stringify({ email: email, password: password }),
-          })
-            .then(async (response) => {
-              const data = await response.json();
-
-              if (response.ok) {
-                window.location.href = data.redirect;
-              } else {
-                alert(data.error || "Login failed");
-              }
-            })
-            .catch((error) => {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
-              console.error("Error:", error);
-              alert("An error occurred during login.");
-            });
+          return cookieValue;
         }
+
+        fetch('{% url "admin_login" %}', {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ email, password }),
+        })
+          .then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw data;
+            }
+
+            window.location.href = data.redirect;
+          })
+          .catch((error) => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            errorBox.innerText =
+              error.error ||
+              error.detail ||
+              "Invalid email or password";
+
+            errorBox.classList.remove("d-none");
+          });
 
         newLoginForm.classList.add("was-validated");
       });
-
     </script>
+
   </body>
 </html>

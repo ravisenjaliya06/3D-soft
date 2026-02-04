@@ -2,6 +2,7 @@
 import os
 import secrets
 from datetime import timedelta
+from django.utils.timezone import now
 from typing import Tuple
 
 # Django imports
@@ -742,10 +743,21 @@ class AdminView(viewsets.ViewSet):
         return response
 
     def dashboard(self: "AdminView", request: Request) -> render:
+        total_users = User.objects.count()
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
-        return render(
-            request, "custom_admin/dashboard.html", {"pending_users": pending_users}
-        )
+        total_pending_users = User.objects.filter(is_verified=False, is_superuser=False).count()
+        active_users = User.objects.filter(
+            last_login__gte=now() - timedelta(minutes=10)
+        ).count()
+
+        context = {
+            "pending_users": pending_users,
+            "total_users": total_users,
+            "total_pending_users": total_pending_users,
+            "active_users": active_users,
+
+        }
+        return render(request, "custom_admin/dashboard.html", context)
 
     def users(self: "AdminView", request: Request) -> render:
         approved_users = User.objects.filter(
@@ -767,7 +779,7 @@ class ApproveUserView(AdminRequiredMixin, View):
         if is_approved == "true":
             user.is_verified = True
             user.save()
-            return JsonResponse({"message": "User approved"}, status=200)
+            return HttpResponseRedirect(reverse("admin_dashboard"))
 
         user.delete()
-        return JsonResponse({"message": "User rejected"})
+        return HttpResponseRedirect(reverse("admin_dashboard"))
