@@ -439,7 +439,7 @@ class AdminLoginSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
 
-    def validate(self:"AdminLoginSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+    def validate(self: "AdminLoginSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
         email = attrs.get("email")
         password = attrs.get("password")
 

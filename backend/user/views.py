@@ -1,5 +1,5 @@
 # Python imports
-import json
+import os
 import secrets
 from datetime import timedelta
 from typing import Tuple
@@ -22,14 +22,14 @@ from django.views.decorators.csrf import csrf_exempt
 
 # External imports
 import jwt
+from dotenv import load_dotenv
 from jwt import decode as jwt_decode
-from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
-from rest_framework.authentication import SessionAuthentication
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -55,6 +55,7 @@ from user.constant import (
 from user.logger import UserLogger as Logger
 from user.serializers import (
     AddUserInOrganizationSerializer,
+    AdminLoginSerializer,
     EditUserInOrganizationSerializer,
     LoginSerializer,
     OrganizationSerializer,
@@ -64,13 +65,14 @@ from user.serializers import (
     SignupSerializer,
     UserProfileEditSerializer,
     UserProfileSerializer,
-    AdminLoginSerializer
 )
 from user.typing import EmailData
 from user.utils import send_email
 
 # Local imports
 from .permissions import AccountManager
+
+load_dotenv()
 
 
 class UserAuthViewset(ModelViewSet):
@@ -416,7 +418,7 @@ class UserAuthViewset(ModelViewSet):
         email_data = EmailData(
             sender_email=settings.SENDER_EMAIL,
             sender_password=settings.SENDER_PASSWORD,
-            receiver_email=settings.ADMIN_EMAIL,
+            receiver_email=os.getenv("ADMIN_EMAIL"),
             subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
             html=email_content,
         )
@@ -651,48 +653,40 @@ class AddUserInOrganizationViewset(ModelViewSet):
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = "admin_login"
 
-    def dispatch(self:"AdminRequiredMixin", request:Request, *args, **kwargs) -> Response:
+    def dispatch(
+        self: "AdminRequiredMixin", request: Request, *args, **kwargs
+    ) -> Response:
         if request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
 
-        # JWT fallback
         token = request.COOKIES.get(settings.ADMIN_JWT_COOKIE_NAME)
         if token:
-            try:
-                access_token = AccessToken(token)
-                user_id = access_token["user_id"]
+            access_token = AccessToken(token)
 
-                user = User.objects.filter(id=user_id, is_superuser=True).first()
-
-                if user:
-                    request.user = user
-                    Logger.info(
-                        {
-                            "message": "Admin authenticated via JWT",
-                            "user_id": user.id,
-                            "function": "AdminRequiredMixin.dispatch",
-                        }
-                    )
-                    return super().dispatch(request, *args, **kwargs)
-
+            user_id = access_token.get("user_id")
+            if not user_id:
                 return HttpResponseRedirect(reverse(self.login_url))
 
-            except TokenError as e:
-                Logger.warning(
-                    {
-                        "message": "JWT verification failed",
-                        "error": str(e),
-                        "function": "AdminRequiredMixin.dispatch",
-                    }
-                )
+            user = User.objects.filter(id=user_id, is_superuser=True).first()
+            if not user:
                 return HttpResponseRedirect(reverse(self.login_url))
+
+            request.user = user
+            Logger.info(
+                {
+                    "message": "Admin authenticated via JWT",
+                    "user_id": user.id,
+                    "function": "AdminRequiredMixin.dispatch",
+                }
+            )
+            return super().dispatch(request, *args, **kwargs)
 
         if not request.user.is_authenticated or not request.user.is_superuser:
             return HttpResponseRedirect(reverse(self.login_url))
 
         return super().dispatch(request, *args, **kwargs)
 
-    def test_func(self:"AdminRequiredMixin") -> bool:
+    def test_func(self: "AdminRequiredMixin") -> bool:
         return self.request.user.is_superuser
 
 
@@ -701,25 +695,22 @@ class AdminView(viewsets.ViewSet):
     permission_classes = [AllowAny]
     renderer_classes = [TemplateHTMLRenderer]
 
-    def login_get(self:"AdminView", request:Request) -> render:
+    def login_get(self: "AdminView", request: Request) -> render:
         if request.user.is_authenticated and request.user.is_superuser:
             return HttpResponseRedirect(reverse("admin_dashboard"))
         return render(request, "custom_admin/index.html")
 
-    def login_post(self:"AdminView", request:Request) -> Response:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        serializer = AdminLoginSerializer(data=data)
+    def login_post(self: "AdminView", request: Request) -> Response:
+        serializer = AdminLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data["user"]
+
         if not user.is_superuser:
             return JsonResponse({"error": "Admin access only"}, status=403)
 
-        login(request, user)
+        login(request._request, user)
+
         access_token = AccessToken.for_user(user)
 
         response = JsonResponse(
@@ -741,20 +732,28 @@ class AdminView(viewsets.ViewSet):
 
         return response
 
-    def logout(self:"AdminView", request:Request) -> Response:
+    def logout(self: "AdminView", request: Request) -> Response:
         logout(request)
         response = HttpResponseRedirect(reverse("admin_login"))
         response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
-        Logger.info({"message": "Admin logged out successfully", "function": "AdminView.logout"})
+        Logger.info(
+            {"message": "Admin logged out successfully", "function": "AdminView.logout"}
+        )
         return response
 
-    def dashboard(self:"AdminView", request:Request) -> render:
+    def dashboard(self: "AdminView", request: Request) -> render:
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
-        return render(request, "custom_admin/dashboard.html", {"pending_users": pending_users})
+        return render(
+            request, "custom_admin/dashboard.html", {"pending_users": pending_users}
+        )
 
-    def users(self:"AdminView", request:Request) -> render:
-        approved_users = User.objects.filter(is_verified=True, is_superuser=False).order_by("-date_joined")
-        return render(request, "custom_admin/users.html", {"approved_users": approved_users})
+    def users(self: "AdminView", request: Request) -> render:
+        approved_users = User.objects.filter(
+            is_verified=True, is_superuser=False
+        ).order_by("-date_joined")
+        return render(
+            request, "custom_admin/users.html", {"approved_users": approved_users}
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -770,6 +769,5 @@ class ApproveUserView(AdminRequiredMixin, View):
             user.save()
             return JsonResponse({"message": "User approved"}, status=200)
 
-        if is_approved == "false":
-            user.delete()
+        user.delete()
         return JsonResponse({"message": "User rejected"})
