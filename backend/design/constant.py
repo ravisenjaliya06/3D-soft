@@ -5,3 +5,14 @@ GROOVE_GAP = 2
 GROOVE_DIG = 1
 
 IS_MAIN = "isMain"
+
+# Nesting Constants
+KEY_NAME = "Name"
+KEY_ID = "ID"
+KEY_DIMENSIONS = "Dimensions"
+KEY_WIDTH = "width"
+KEY_HEIGHT = "height"
+KEY_TYPE = "type"
+KEY_RADIUS = "radius"
+KEY_INPUT_NAME = "name"
+TYPE_CIRCLE = "circle"
