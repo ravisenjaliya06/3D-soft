@@ -48,7 +48,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.admin_token = AccessToken.for_user(self.admin_user)
 
-    def test_admin_required_mixin_valid_jwt(self:"AdminAPIViewTestCase"):
+    def test_admin_required_mixin_valid_jwt(self:"AdminAPIViewTestCase") -> None:
         self.client.force_login(self.admin_user)
         self.client.cookies[settings.ADMIN_JWT_COOKIE_NAME] = str(self.admin_token)
 
