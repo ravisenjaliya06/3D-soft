@@ -133,12 +133,12 @@ function calculateSingleConnection(
 
     const isSidePlankA = plankA.name.includes('LEFT') || plankA.name.includes('RIGHT');
 
+    screwPlank = plankB;
+    camPlank = plankA;
+
     if (isSidePlankA) {
       screwPlank = plankA; // Side has Bolt
       camPlank = plankB; // Front/Back has Cam
-    } else {
-      screwPlank = plankB; // Side has Bolt
-      camPlank = plankA; // Front/Back has Cam
     }
   }
 
