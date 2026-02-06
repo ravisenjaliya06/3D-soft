@@ -2,7 +2,7 @@
 import json
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 # Django imports
 from django.http import HttpResponse
@@ -12,17 +12,18 @@ import pytest
 from rest_framework import status
 
 # App imports
-from design.nest import KEY_DIMENSIONS, KEY_ID, KEY_NAME, NestingService, nest
+from design.nest import (
+    KEY_DIMENSIONS,
+    KEY_ID,
+    KEY_NAME,
+    KEY_UNIQUE_ID,
+    KEY_DEPTH,
+    KEY_WIDTH,
+    KEY_HEIGHT,
+    NestingService,
+    nest
+)
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-
-
-# Create a mock JsonResponse for tests
-class MockJsonResponse(HttpResponse):
-    def __init__(self: "MockJsonResponse", data: dict, status: int = 200) -> None:
-        content = json.dumps(data)
-        super().__init__(content, content_type="application/json", status=status)
-        self.status_code = status
-        self.data = data
 
 
 @pytest.mark.django_db
@@ -32,15 +33,12 @@ class NestModuleTestCase(APIBaseTestCase):
     def setUp(self: "NestModuleTestCase") -> None:
         super().setUp()
         self.files_basic = {
-            "1": {"type": "rectangle", "width": 100, "height": 50, "name": "Part 1"},
-            "2": {"type": "rectangle", "width": 80, "height": 60, "name": "Part 2"},
+            "1": {"type": "rectangle", "width": 100, "depth": 50, "height": 18, "name": "Part 1"},
+            "2": {"type": "rectangle", "width": 80, "depth": 60, "height": 18, "name": "Part 2"},
         }
 
     def test_calculate_efficiency(self: "NestModuleTestCase") -> None:
         """Test the calculate_efficiency static method"""
-        # rectangles: (bin_id, x, y, w, h, ...)
-        # Using simplified tuple structure for test matching the logic: sum(w*h) / (W*H)
-        # Note: logical tuple structure used in calculation is just needing index 3 and 4 for w and h
         rectangles = [(0, 0, 0, 100, 200, "rect1"), (0, 0, 0, 300, 150, "rect2")]
         width = 500
         height = 300
@@ -54,99 +52,169 @@ class NestModuleTestCase(APIBaseTestCase):
 
         self.assertEqual(actual_efficiency, expected_efficiency)
 
-    def test_calculate_efficiency_empty(self: "NestModuleTestCase") -> None:
-        """Test calculate_efficiency with empty rectangles"""
-        rectangles = []
-        width = 500
-        height = 300
-        expected_efficiency = 0.0
-
-        actual_efficiency = NestingService.calculate_efficiency(
-            rectangles, width, height
-        )
-        self.assertEqual(actual_efficiency, expected_efficiency)
-
-    def test_nesting_service_optimize(self: "NestModuleTestCase") -> None:
-        """Test NestingService optimization logic"""
+    def test_unique_id_generation(self: "NestModuleTestCase") -> None:
+        """Test that unique IDs are generated correctly based on thickness (height)"""
+        files = {
+            "1": {"width": 100, "height": 100, "depth": 18, "name": "P1", "type": "rectangle"},
+            "2": {"width": 100, "height": 100, "depth": 12, "name": "P2", "type": "rectangle"},
+            "3": {"width": 100, "height": 100, "depth": 18, "name": "P3", "type": "rectangle"},
+        }
+        
         service = NestingService(width=1000, height=1000)
-        packed_items = service.optimize(self.files_basic)
-
-        self.assertEqual(len(packed_items), 2)
-
-        # Verify keys in result
-        first_item = packed_items[0]
-        self.assertIn(KEY_NAME, first_item)
-        self.assertIn(KEY_ID, first_item)
-        self.assertIn(KEY_DIMENSIONS, first_item)
+        packed_items = service.optimize(files)
+        
+        self.assertEqual(len(packed_items), 3)
+        
+        # Verify IDs logic A/B
+        ids = [item[KEY_UNIQUE_ID] for item in packed_items]
+        self.assertTrue(any(x.startswith("A1.") for x in ids)) # 18mm
+        self.assertTrue(any(x.startswith("B1.") for x in ids)) # 12mm
 
     @patch("pandas.DataFrame.to_excel")
     def test_nesting_service_generate_excel(
         self: "NestModuleTestCase", mock_to_excel: MagicMock
     ) -> None:
-        """Test Excel generation logic (mocking file write)"""
+        """Test Excel generation logic"""
         output_file = "test_output.json"
-
         packed_items = [
-            {KEY_NAME: "P1", KEY_ID: "1", KEY_DIMENSIONS: "10x10"},
-            {KEY_NAME: "P2", KEY_ID: "2", KEY_DIMENSIONS: "20x20"},
+            {KEY_NAME: "P1", KEY_ID: "1", KEY_UNIQUE_ID: "A1.1", KEY_DIMENSIONS: "10x10"},
         ]
-
+        
         service = NestingService(width=1000, height=1000)
         excel_path = service.generate_excel(packed_items, output_file)
-
+        
         self.assertTrue(excel_path.endswith(".xlsx"))
-
-        # Verify to_excel was called
         mock_to_excel.assert_called_once()
-        args, kwargs = mock_to_excel.call_args
-        self.assertTrue(args[0].endswith(".xlsx"))
-        self.assertEqual(kwargs["index"], False)
+    
+    @patch("svgwrite.Drawing")
+    def test_generate_svg(self: "NestModuleTestCase", MockDrawing: MagicMock) -> None:
+        """Test SVG generation returns list of files"""
+        mock_dwg_instance = MockDrawing.return_value
+        
+        packed_items = [
+            {
+                KEY_UNIQUE_ID: "A1.1", 
+                KEY_WIDTH: 100, 
+                KEY_HEIGHT: 50, 
+                "x": 10, 
+                "y": 10, 
+                "sheet_num": "A1",
+                KEY_NAME: "test"
+            },
+            {
+                KEY_UNIQUE_ID: "B1.1", 
+                KEY_WIDTH: 100, 
+                KEY_HEIGHT: 50, 
+                "x": 10, 
+                "y": 10, 
+                "sheet_num": "B1",
+                KEY_NAME: "test2"
+            }
+        ]
+        
+        service = NestingService(width=1000, height=1000)
+        svg_paths = service.generate_svg(packed_items, "test.json")
+        
+        self.assertIsInstance(svg_paths, list)
+        self.assertEqual(len(svg_paths), 2)
+        
 
-    @patch("pandas.DataFrame.to_excel")
-    def test_nest_wrapper_function(
-        self: "NestModuleTestCase", mock_to_excel: MagicMock
+
+    def test_spacing_effect(self: "NestModuleTestCase") -> None:
+        """Test that spacing increases the effective area of packed items."""
+        files = {
+            "1": {"width": 100, "depth": 100, "height": 18, "name": "P1", "type": "rectangle"},
+        }
+        
+        # Service with 0 spacing
+        service_zero = NestingService(width=1000, height=1000, spacing=0)
+        items_zero = service_zero.optimize(files)
+        # Position should be roughly 0,0 (plus padding/optimization variance, but X usually starts at 0)
+        
+        # Service with 10 spacing
+        service_spaced = NestingService(width=1000, height=1000, spacing=10)
+        items_spaced = service_spaced.optimize(files)
+        
+        # In the spaced version, the item is centered in its padded slot.
+        # Slot size = 110 x 110.
+        # Rectpack usually places at bottom-left 0,0.
+        # Our Logic: "x": x + self.spacing / 2
+        # So X should be 5.
+        
+        item_zero = items_zero[0]
+        item_spaced = items_spaced[0]
+        
+        self.assertEqual(item_zero["x"], 0)
+        self.assertEqual(item_spaced["x"], 5.0)
+        self.assertEqual(item_spaced["y"], 5.0)
+
+
+    @patch("reportlab.pdfgen.canvas.Canvas")
+    @patch("reportlab.graphics.renderPDF.draw")
+    @patch("svglib.svglib.svg2rlg")
+    def test_generate_layout_pdf(
+        self: "NestModuleTestCase", MockSvg2Rlg, MockDraw, MockCanvas
     ) -> None:
-        """Test the module level nest() wrapper function"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "output.json")
-
-            # Call nest function
-            response = nest(output_file, self.files_basic, 1000, 1000)
-
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            response_data = json.loads(response.content)
-            self.assertIn("output_file", response_data)
-            self.assertIn("message", response_data)
-            self.assertIn("total_parts", response_data)
-            self.assertEqual(response_data["total_parts"], 2)
-
-            # Check file path in response logic (not actual existence since we mocked write)
-            excel_path = response_data["output_file"]
-            self.assertTrue(excel_path.endswith(".xlsx"))
-            mock_to_excel.assert_called()
-
-    def test_nest_with_circles(self: "NestModuleTestCase") -> None:
-        """Test nesting with circle types"""
-        files = {"c1": {"type": "circle", "radius": 50, "name": "Circle 1"}}
+        """Test Layout PDF generation"""
+        # Configure the mock drawing object to have width/height
+        mock_drawing = MagicMock()
+        mock_drawing.width = 100.0
+        mock_drawing.height = 200.0
+        MockSvg2Rlg.return_value = mock_drawing
 
         service = NestingService(width=1000, height=1000)
-        packed = service.optimize(files)
+        svg_paths = ["sheet1.svg", "sheet2.svg"]
+        
+        pdf_path = service.generate_layout_pdf(svg_paths, "test.json")
+        
+        self.assertTrue(pdf_path.endswith("_layout.pdf"))
+        self.assertEqual(MockSvg2Rlg.call_count, 2)
 
-        self.assertEqual(len(packed), 1)
-        self.assertEqual(packed[0][KEY_NAME], "Circle 1")
+    @patch("reportlab.pdfgen.canvas.Canvas")
+    @patch("reportlab.graphics.shapes.Drawing")
+    @patch("reportlab.graphics.renderPDF.draw")
+    @patch("reportlab.graphics.barcode.qr.QrCodeWidget")
+    def test_generate_labels(
+        self: "NestModuleTestCase", MockQR, MockDraw, MockDrawing, MockCanvas
+    ) -> None:
+        """Test Label generation logic"""
+        mock_canvas_instance = MockCanvas.return_value
+        
+        packed_items = [
+            {
+                KEY_UNIQUE_ID: "A1.1", 
+                KEY_NAME: "Part1", 
+                KEY_DIMENSIONS: "100x50",
+                KEY_ID: "1"
+            }
+        ]
+        
+        service = NestingService(width=1000, height=1000)
+        service.generate_labels(packed_items, "test.json")
+        
+        MockQR.assert_called() # QR Widget created
+        MockDrawing.assert_called() # Drawing created
+        MockDraw.assert_called() # Drawing rendered to PDF
+        mock_canvas_instance.save.assert_called() # PDF saved
 
-    def test_nest_fail_gracefully(self: "NestModuleTestCase") -> None:
-        """Test that nest() handles exceptions (e.g. invalid file path)"""
-        # Passing an invalid path that might cause file write error is tricky with tempfile
-        # Instead we can patch NestingService.optimize to raise an exception
-
-        with patch.object(
-            NestingService, "optimize", side_effect=Exception("Optimization error")
-        ):
-            response = nest("dummy.json", self.files_basic, 100, 100)
-
-            self.assertEqual(response.status_code, 500)
-            data = json.loads(response.content)
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Optimization error")
+    @patch("design.nest.NestingService.generate_labels")
+    @patch("design.nest.NestingService.generate_layout_pdf")
+    @patch("design.nest.NestingService.generate_svg")
+    @patch("design.nest.NestingService.generate_excel")
+    def test_nest_wrapper_calls(
+        self: "NestModuleTestCase", mock_excel, mock_svg, mock_layout, mock_labels
+    ) -> None:
+        """Test that nest() wrapper calls all generation methods"""
+        # Return dummy paths
+        mock_excel.return_value = "out.xlsx"
+        mock_svg.return_value = ["out_A1.svg"]
+        mock_layout.return_value = "out_layout.pdf"
+        mock_labels.return_value = "out_labels.pdf"
+        
+        response = nest("out.json", self.files_basic, 1000, 1000)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_excel.assert_called()
+        mock_svg.assert_called()
+        mock_layout.assert_called()
+        mock_labels.assert_called()

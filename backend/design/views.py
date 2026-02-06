@@ -314,8 +314,11 @@ class NestAPIViewset(ModelViewSet):
                 "type": item["type"],
                 "width": float(item["width"]),
                 "height": float(item["height"]),
+                "depth": float(item["depth"]),
                 "grooves": item.get("grooves", []),
                 "minifix_holes": item.get("minifix_holes", []),
+                "position": item.get("position", {}),
+                "rotation": item.get("rotation", {}),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
