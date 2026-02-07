@@ -7,7 +7,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
-import { HelperToolProps } from '../interface';
+import { HelperToolProps, INVISIBLE_BOXES, PART_TYPES } from '../interface';
 import {
   collectSceneObjectIds,
   createCopiedStoreObjects,
@@ -18,6 +18,7 @@ import {
   updateCloneIds,
 } from '../utils';
 import styles from './helpertool.module.css';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
 const HelperTool: React.FC<HelperToolProps> = ({
   design3D,
@@ -146,6 +147,52 @@ const HelperTool: React.FC<HelperToolProps> = ({
     setShowSavePopup(true);
   }, []);
 
+  const handleOBJ = useCallback((object: THREE.Mesh) => {
+    console.log('selectedObject', object);
+    if (!object) return;
+
+    object.children.forEach((child) => {
+      if (child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX || child.name.includes('invisibleBox')) {
+        console.log('child', child);
+        object.remove(child);
+      }
+    });
+
+    const exporter = new GLTFExporter();
+
+    exporter.parse(
+      object,
+      (result) => {
+        let blob: Blob;
+
+        if (result instanceof ArrayBuffer) {
+          // GLB (binary)
+          blob = new Blob([result], { type: 'model/gltf-binary' });
+        } else {
+          // Fallback: JSON glTF
+          const json = JSON.stringify(result);
+          blob = new Blob([json], { type: 'application/json' });
+        }
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'mesh.glb';
+        link.click();
+        console.log('GLB export complete', link);
+
+        URL.revokeObjectURL(link.href);
+      },
+      (error) => {
+        console.error('GLB export failed:', error);
+      },
+      {
+        binary: true,          // 🔑 THIS MAKES IT .glb
+        onlyVisible: true,
+        truncateDrawRange: true
+      }
+    );
+  }, [selectedObject]);
+
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
@@ -179,6 +226,12 @@ const HelperTool: React.FC<HelperToolProps> = ({
         icon: assets.saveHelper,
         title: 'Save to library',
         onClick: handleSave,
+      },
+      {
+        id: 'save1',
+        icon: assets.saveHelper,
+        title: 'Save to library',
+        onClick: handleOBJ,
       },
     ];
   }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);

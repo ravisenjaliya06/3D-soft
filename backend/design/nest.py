@@ -3,6 +3,7 @@ import logging
 import os
 import secrets
 import math
+import svgwrite
 from typing import Any, Dict, List, Optional, Tuple
 
 # Django imports
@@ -111,14 +112,24 @@ class NestingService:
             original_h = original_item.get(KEY_HEIGHT, h)  # h corresponds to Height now
 
             is_rotated = abs(w - original_h) < 0.1 and abs(h - original_w) < 0.1
+            
+            # Preserve original dimensions for visualization logic
+            
+            extras = {
+                "original_width": original_w,
+                "original_height": original_h
+            }
 
-            # (bin_id, x, y, w, h, rid, is_rotated)
-            processed_rectangles.append((bin_id, x, y, w, h, rid, is_rotated))
+            # (bin_id, x, y, w, h, rid, is_rotated, extras)
+            processed_rectangles.append((bin_id, x, y, w, h, rid, is_rotated, extras))
             packed_ids.add(rid)
 
-        efficiency = self.calculate_efficiency(
-            processed_rectangles, self.bin_width, self.bin_height
-        )
+        # Calculate efficiency inline to be safe
+        used_area = sum(w * h for _, _, _, w, h, _ in rectangles)
+        if self.bin_width * self.bin_height > 0:
+             efficiency = (used_area / (self.bin_width * self.bin_height)) * 100
+        else:
+             efficiency = 0.0
 
         unplaced = {
             rid: data for rid, data in remaining_files.items() if rid not in packed_ids
@@ -161,9 +172,51 @@ class NestingService:
         # Group files by thickness (Depth in data.json)
         files_by_depth: Dict[float, Dict[str, Any]] = {}
         for rid, details in files.items():
-            # KEY_DEPTH maps to "depth" which is Thickness
+            # KEY_DEPTH maps to "depth" which is usually Thickness
             try:
-                thickness = float(details.get(KEY_DEPTH, 0))
+                # Dimensions from JSON: {width, height, depth}
+                # User Requirement: Thickness is ~18mm. Width/Length are Panel sizes.
+                
+                dims = details.get("dimensions", {})
+                raw_w = float(dims.get("width", details.get(KEY_WIDTH, 0)))
+                raw_h = float(dims.get("height", details.get(KEY_HEIGHT, 0)))
+                raw_d = float(dims.get("depth", details.get(KEY_DEPTH, 0)))
+                
+                # Determine which is Thickness (Smallest dimension)
+                # Usually Depth (18). 
+                # If W=18, H=2000, D=600 -> W is Thickness.
+                # If H=18, W=1000, D=600 -> H is Thickness.
+                
+                dim_list = [("width", raw_w), ("height", raw_h), ("depth", raw_d)]
+                dim_list.sort(key=lambda x: x[1]) # Sort by value
+                
+                smallest_key, smallest_val = dim_list[0]
+                
+                # Assign Normalized Dimensions for Packing
+                # Packing needs W x H (Face). Thickness is metadata.
+                
+                if smallest_key == "depth":
+                    thickness = raw_d
+                    w = raw_w
+                    h = raw_h
+                elif smallest_key == "width":
+                    thickness = raw_w
+                    w = raw_h # Swap to maintain area
+                    h = raw_d
+                    # Update details for consistency
+                    details[KEY_WIDTH] = w
+                    details[KEY_HEIGHT] = h
+                    details[KEY_DEPTH] = thickness
+                else: # height is thickness
+                    thickness = raw_h
+                    w = raw_w
+                    h = raw_d # Swap depth/height for face
+                    # Update details
+                    details[KEY_WIDTH] = w
+                    details[KEY_HEIGHT] = h
+                    details[KEY_DEPTH] = thickness
+                    
+                # Ensure thickness matches key logic
             except (ValueError, TypeError):
                 thickness = 0.0
                 
@@ -211,7 +264,14 @@ class NestingService:
                 # Format results and assign unique IDs
                 item_counter = 1
                 for rect in best_rectangles:
-                    bin_id, x, y, w, h, rid, is_rotated = rect
+                    bin_id, x, y, w, h, rid, is_rotated, extras = rect
+                    
+                    # Ensure numeric types to avoid formatting errors
+                    safe_x = self._safe_float(x)
+                    safe_y = self._safe_float(y)
+                    safe_w = self._safe_float(w)
+                    safe_h = self._safe_float(h)
+                    
                     item_details = files.get(rid, {})
                     
                     unique_id = f"{material_code}{sheet_count}.{item_counter}"
@@ -220,14 +280,19 @@ class NestingService:
                         {
                             KEY_NAME: item_details.get(KEY_INPUT_NAME, "Unknown"),
                             KEY_ID: rid,
-                            KEY_DIMENSIONS: f"{w:.2f} x {h:.2f}",
+                            KEY_DIMENSIONS: f"{safe_w:.2f} x {safe_h:.2f}",
                             KEY_UNIQUE_ID: unique_id,
-                            KEY_WIDTH: w,   # Width of Face
-                            KEY_HEIGHT: h,  # Height of Face
-                            "x": x + self.spacing / 2,         # Data for SVG (Centered in padded area)
-                            "y": y + self.spacing / 2,         # Data for SVG (Centered in padded area)
+                            KEY_WIDTH: safe_w,   # Width of Face
+                            KEY_HEIGHT: safe_h,  # Height of Face
+                            "x": safe_x + self.spacing / 2,         # Data for SVG (Centered in padded area)
+                            "y": safe_y + self.spacing / 2,         # Data for SVG (Centered in padded area)
                             "is_rotated": is_rotated,
                             "sheet_num": f"{material_code}{sheet_count}", # Grouping for visualization
+
+                            "original_height": extras.get("original_height"),
+                            "material_name": item_details.get("material_name", ""),
+                            "depth": item_details.get(KEY_DEPTH, 17.0),
+                            "minifix_holes": item_details.get("minifix_holes", [])
                         }
                     )
                     item_counter += 1
@@ -258,6 +323,177 @@ class NestingService:
             logger.error("Failed to write Excel file: %s", e)
             raise
 
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        """Helper to safely convert any value to float, handling dicts/None gracefully."""
+        try:
+            if isinstance(value, (dict, list, tuple, type(None))):
+                return default
+            return float(value)
+        except (ValueError, TypeError):
+            return default
+
+    def generate_xmls(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> List[str]:
+        """
+        Generates XML files for each panel containing machining data.
+        Returns a list of generated XML file paths.
+        """
+        import xml.etree.ElementTree as ET
+        from xml.dom import minidom
+        
+        generated_files = []
+        base_dir = os.path.dirname(output_path)
+        
+        # Ensure base directory and xml subdirectory exist
+        xml_dir = os.path.join(base_dir, "xml")
+        os.makedirs(xml_dir, exist_ok=True)
+        
+        for item in packed_items:
+            # We use the unique ID for the filename
+            filename = f"{item[KEY_UNIQUE_ID]}.xml"
+            filepath = os.path.join(xml_dir, filename)
+            
+            # Root Element
+            root = ET.Element("Root")
+            project = ET.SubElement(root, "Project", Name="", Flag="SWJ008")
+            panels = ET.SubElement(project, "Panels")
+            
+            # Panel Attributes
+            
+            w = f"{self._safe_float(item.get(KEY_WIDTH)):.6f}"
+            l = f"{self._safe_float(item.get(KEY_HEIGHT)):.6f}"
+            thval = self._safe_float(item.get('depth', 17.0))
+            th = f"{thval:.6f}"
+            
+            panel_attrs = {
+                "ID": "", 
+                "Name": str(item.get(KEY_INPUT_NAME, item.get(KEY_ID))), 
+                "Width": w, 
+                "Length": l, 
+                "Material": str(item.get("material_name", "")), 
+                "Thickness": th, 
+                "IsProduce": "true", 
+                "MachiningPoint": "1", 
+                "Type": "1", 
+                "Face5ID": "", 
+                "Face6ID": "", 
+                "Grain": "L", 
+                "ExitID": "0", 
+                "TrimmingThreeEdges": "0", 
+                "TrimmingBoardHead": "0"
+            }
+            
+            panel = ET.SubElement(panels, "Panel", **panel_attrs)
+            
+            # Machines / Holes
+            machines = ET.SubElement(panel, "Machines")
+            
+            minifix_holes = item.get("minifix_holes", [])
+            mac_index = 0
+            
+            for hole in minifix_holes:
+                try:
+                    mac_index += 1
+                    
+                    hole_type = str(hole.get("type", "")).upper()
+                    json_drill_type = str(hole.get("drill_type", "1"))
+                    xml_type = "2" if json_drill_type == "1" else "1"
+                    face_id = str(hole.get("face", "0"))
+                    
+                    pos = hole.get("local_position2_d", {})
+                    
+                    raw_diameter = self._safe_float(hole.get("diameter", 0))
+                    raw_depth = self._safe_float(hole.get("length", 0))
+                    
+                    panel_w_val = self._safe_float(item.get(KEY_WIDTH))
+                    panel_l_val = self._safe_float(item.get(KEY_HEIGHT))
+                    
+                    final_x = 0.0
+                    final_y = 0.0
+                    final_depth = raw_depth
+                    final_diameter = raw_diameter
+                    
+                    # ----------------------------------------
+                    # COORDINATE LOGIC
+                    # ----------------------------------------
+                    
+                    if xml_type == "2" and hole_type in ["SCREW", "DOWEL"]:
+                        final_x = self._safe_float(pos.get("y", 0))
+                        final_y = self._safe_float(pos.get("x", 0))
+                    elif xml_type == "2" and hole_type in ["CAM"]:
+                        final_x = self._safe_float(pos.get("x", 0))
+                        final_y = self._safe_float(pos.get("y", 0))
+                    else:
+                        if face_id == "5":
+                             final_x = 0.0
+                             final_y = self._safe_float(pos.get("x", 0))
+                        elif face_id == "3":
+                             final_x = panel_w_val
+                             final_y = self._safe_float(pos.get("y", 0))
+                        elif face_id == "4":
+                             final_x = self._safe_float(pos.get("x", 0))
+                             final_y = 0.0
+                        elif face_id == "2":
+                             final_x = self._safe_float(pos.get("x", 0))
+                             final_y = panel_l_val
+                        elif face_id == "1":
+                             final_x = self._safe_float(pos.get("x", 0))
+                             final_y = 0.0
+                        elif face_id == "6":
+                             final_x = self._safe_float(pos.get("x", 0))
+                             final_y = panel_l_val
+                        else:
+                             final_x = self._safe_float(pos.get("x", 0))
+                             final_y = self._safe_float(pos.get("y", 0))
+
+                    machining_attrs = {
+                        "ID": "1000", 
+                        "Type": xml_type,
+                        "IsGenCode": "2", 
+                        "Face": face_id,
+                        "X": f"{final_x:.6f}",
+                        "Y": f"{final_y:.6f}",
+                        "Depth": f"{final_depth:.6f}",
+                        "Diameter": f"{final_diameter:.6f}",
+                        "ToolName": "0",
+                        "MacIndex": str(mac_index)
+                    }
+                    
+                    # If Edge Drill (XML Type 1), we need Z.
+                    if xml_type == "1":
+                        z_val = thval / 2
+                        machining_attrs["Z"] = f"{z_val:.6f}"
+                    
+                    ET.SubElement(machines, "Machining", **machining_attrs)
+                    
+                except Exception as e:
+                    logger.warning(f"Error processing hole: {e}")
+                    continue
+
+            # EdgeGroup (Static as per example for now?)
+            slope_group = ET.SubElement(panel, "SlopeEdgeGroup")
+            edge_group = ET.SubElement(panel, "EdgeGroup")
+            # Create edges with Thickness=0 default
+            for f in ["1", "2", "3", "4"]:
+                ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")
+
+            # Pretty print
+            xml_bytes = ET.tostring(root)
+            xml_str = minidom.parseString(xml_bytes).toprettyxml(indent="    ")
+            
+            # Remove empty lines caused by pretty print if any
+            xml_str = os.linesep.join([s for s in xml_str.splitlines() if s.strip()])
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(xml_str)
+                
+            generated_files.append(filepath)
+            
+        logger.info("Generated %d XML files.", len(generated_files))
+        return generated_files
+
     def generate_svg(
         self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
     ) -> List[str]:
@@ -266,9 +502,7 @@ class NestingService:
         Returns a list of generated SVG file paths.
         Visualize holes based on accurate 3D global coordinate transformation.
         """
-        import svgwrite
-        
-        # Group by sheet
+
         sheets = {}
         for item in packed_items:
             s_num = item["sheet_num"]
@@ -288,16 +522,14 @@ class NestingService:
         for s_num in sorted(sheets.keys()):
             svg_file = f"{base_name}_{s_num}.svg"
             dwg = svgwrite.Drawing(svg_file, size=(total_w, total_h))
-            
-            # Draw sheet boundary
+
             dwg.add(dwg.rect(
                 insert=(padding, padding),
                 size=(sheet_w, sheet_h),
                 fill="none",
                 stroke="black"
             ))
-            
-            # Draw items
+
             for item in sheets[s_num]:
                 sheet_x = item["x"] + padding
                 sheet_y = item["y"] + padding
@@ -305,14 +537,114 @@ class NestingService:
                 h = item[KEY_HEIGHT]
                 is_rotated = item.get("is_rotated", False)
                 
-                # Panel rect
                 dwg.add(dwg.rect(
                     insert=(sheet_x, sheet_y),
                     size=(w, h),
-                    fill="#e0e0e0",
+                    fill="#e0e0e0", 
                     stroke="blue",
                     stroke_width="2"
                 ))
+
+                holes = item.get("minifix_holes", [])
+                
+                for hole in holes:
+                    h_pos = hole.get("local_position2_d", {})
+                    hx = self._safe_float(h_pos.get("x", 0))
+                    hy = self._safe_float(h_pos.get("y", 0))
+                    
+                for hole in holes:
+                    hole_type = str(hole.get("type", "")).upper()
+                    h_pos = hole.get("local_position2_d", {})
+                    # For Edge Drills, X is usually along the edge.
+                    if hole_type in ["SCREW", "DOWEL"]:
+                        raw_pos_x = self._safe_float(h_pos.get("x", 0))
+                        raw_pos_y = self._safe_float(h_pos.get("y", 0))
+                    elif hole_type in ["CAM"]:
+                        raw_pos_x = self._safe_float(h_pos.get("y", 0))
+                        raw_pos_y = self._safe_float(h_pos.get("x", 0))
+                    else:
+                        raw_pos_x = self._safe_float(h_pos.get("x", 0))
+                        raw_pos_y = self._safe_float(h_pos.get("y", 0))
+                    
+                    diameter = self._safe_float(hole.get("diameter", 15))
+                    length = self._safe_float(hole.get("length", 10)) 
+                    drill_type = str(hole.get("drill_type", "1"))
+                    face_id = str(hole.get("face", "0"))
+
+                    edge_map = {
+                        "5": "LEFT",
+                        "3": "RIGHT",
+                        "4": "TOP",   
+                        "2": "BOTTOM",
+                        "1": "TOP",
+                        "6": "BOTTOM"
+                    }
+                    
+                    edge = edge_map.get(face_id, "UNKNOWN")
+                    if is_rotated:
+                        rotation_map = {
+                            "TOP": "RIGHT",
+                            "RIGHT": "BOTTOM",
+                            "BOTTOM": "LEFT",
+                            "LEFT": "TOP"
+                        }
+                        edge = rotation_map.get(edge, edge)
+                    
+                    rect_x, rect_y = 0, 0
+                    rect_w, rect_h = 0, 0
+                    
+                    # Default Visuals
+                    viz_w = length
+                    viz_l = diameter
+                    
+                    # Apply Logic
+                    if drill_type == "2":
+                        pos_val = raw_pos_x 
+                        
+                        if edge == "LEFT":
+                            rect_x = raw_pos_x
+                            rect_y = 0
+                            rect_w = viz_l
+                            rect_h = viz_w
+                        elif edge == "RIGHT":
+                            rect_x = raw_pos_x
+                            rect_y = h - viz_w
+                            rect_w = viz_l
+                            rect_h = viz_w
+                        elif edge == "TOP":
+                            rect_x = pos_val - viz_w/2
+                            rect_y = 0
+                            rect_w = viz_w
+                            rect_h = viz_l
+                        elif edge == "BOTTOM":
+                            rect_x = pos_val - viz_w/2
+                            rect_y = h - viz_l
+                            rect_w = viz_w
+                            rect_h = viz_l
+                        
+                        # Draw Rect
+                        dwg.add(dwg.rect(
+                            insert=(sheet_x + rect_x, sheet_y + rect_y),
+                            size=(rect_w, rect_h),
+                            fill="none",
+                            stroke="green", 
+                            stroke_width="1"
+                        ))
+                        
+                    else:
+                        cx = raw_pos_x
+                        cy = raw_pos_y
+                        
+                        if is_rotated:
+                             cx, cy = raw_pos_y, raw_pos_x
+                             
+                        dwg.add(dwg.circle(
+                            center=(sheet_x + cx, sheet_y + cy),
+                            r=diameter / 2,
+                            fill="red",
+                            stroke="black",
+                            stroke_width="0.5"
+                        ))
 
                 # --- Label Group ---
                 label_g = dwg.g()
@@ -494,6 +826,9 @@ def nest(
         svg_paths = service.generate_svg(packed_items, output)
         layout_pdf_path = service.generate_layout_pdf(svg_paths, output)
         labels_pdf_path = service.generate_labels(packed_items, output)
+        
+        # New: Generate XMLs
+        xml_paths = service.generate_xmls(packed_items, output)
 
         return JsonResponse(
             {
@@ -501,6 +836,7 @@ def nest(
                 "svg_files": svg_paths,
                 "layout_file": layout_pdf_path,
                 "labels_file": labels_pdf_path,
+                "xml_files": xml_paths, # Return list of generated XMLs
                 "message": "Nesting completed successfully.",
                 "total_parts": len(packed_items),
             },

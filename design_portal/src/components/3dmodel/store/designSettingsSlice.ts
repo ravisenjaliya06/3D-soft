@@ -17,7 +17,7 @@ interface DesignSettingsState {
 }
 
 const initialState: DesignSettingsState = {
-  minifixDistance: 128,
+  minifixDistance: 320,
   minifixDiameterHole: 8,
   camDepth: 12,
   camHeight: 32,

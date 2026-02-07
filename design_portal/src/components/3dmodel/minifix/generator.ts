@@ -38,51 +38,50 @@ function generatePlankHoles(
 
     connections.forEach((connection) => {
       if (connection.plankAId === plank.id) {
-        const screwHole: MinifixHole = {
-          type: 'SCREW',
-          connectorId: connection.id,
-          position: connection.screw.position,
-          direction: connection.screw.direction,
-          diameter: connection.screw.diameter,
-          length: connection.screw.length,
-          localPosition2D: connection.screw.localPosition2D,
-        };
+        // If Plank A is Housing Plank (check calculator logic, usually yes for Horizontal-Vertical if Plank A is Horizontal)
+        // Actually, we need to check which plank is Housing.
+        // But the connection object has explicit fields now.
+        // We need to know if 'plank' is the Housing plank or Bolt plank.
+
+        // Check ID match against stored IDs in connection?
+        // Wait, connection.plankA/B refer to the planks involved.
+        // The MinifixConnection object has `plankAId` and `plankBId`.
+        // And it has `screwHousing`, `screwMating`, etc.
+        // BUT `screwHousing` hole object doesn't explicitly say "I belong to Plank A".
+        // It has a `direction` and `localPosition2D`.
+        // However, `generator.ts` logic is: `if (connection.plankAId === plank.id)`.
+        // We need to know which holes belong to Plank A.
+
+        // In calculator.ts, we assigned:
+        // `plankAId: housingPlank.id`
+        // `plankBId: boltPlank.id`
+        // So `plankA` IS the Housing Plank. `plankB` IS the Bolt Plank.
+        // (Wait, let me double check calculator.ts return statement)
+
+        // Calculator.ts:
+        // plankAId: housingPlank.id,
+        // plankBId: boltPlank.id,
+        // screwHousing: ... (belongs to Housing Plank = A)
+        // screwMating: ... (belongs to Bolt Plank = B)
+
+        // So for Plank A (Housing):
+        const screwHole: MinifixHole = { ...connection.screwHousing, connectorId: connection.id };
         holes.push(screwHole);
+
+        const dowelHole: MinifixHole = { ...connection.dowelHousing, connectorId: connection.id };
+        holes.push(dowelHole);
+
+        const camHole: MinifixHole = { ...connection.cam, connectorId: connection.id };
+        holes.push(camHole);
       }
 
       if (connection.plankBId === plank.id) {
-        const camHole: MinifixHole = {
-          type: 'CAM',
-          connectorId: connection.id,
-          position: connection.cam.position,
-          direction: connection.cam.direction,
-          diameter: connection.cam.diameter,
-          depth: connection.cam.depth,
-          localPosition2D: connection.cam.localPosition2D,
-        };
-        holes.push(camHole);
+        // Plank B is Bolt/Mating Plank
+        const screwMatingHole: MinifixHole = { ...connection.screwMating, connectorId: connection.id };
+        holes.push(screwMatingHole);
 
-        const dowelHole: MinifixHole = {
-          type: 'DOWEL',
-          connectorId: connection.id,
-          position: connection.dowel.position,
-          direction: connection.dowel.direction,
-          diameter: connection.dowel.diameter,
-          length: connection.dowel.length,
-          localPosition2D: connection.dowel.localPosition2D,
-        };
-        holes.push(dowelHole);
-
-        const boltDrillHole: MinifixHole = {
-          type: 'BOLT_DRILL',
-          connectorId: connection.id,
-          position: connection.boltDrill.position,
-          direction: connection.boltDrill.direction,
-          diameter: connection.boltDrill.diameter || connection.screw.diameter,
-          length: connection.boltDrill.length || connection.screw.length / 2,
-          localPosition2D: connection.boltDrill.localPosition2D,
-        };
-        holes.push(boltDrillHole);
+        const dowelMatingHole: MinifixHole = { ...connection.dowelMating, connectorId: connection.id };
+        holes.push(dowelMatingHole);
       }
     });
 
