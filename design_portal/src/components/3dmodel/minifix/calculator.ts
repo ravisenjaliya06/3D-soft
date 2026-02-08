@@ -35,28 +35,6 @@ function calculateLocal2D(point: Position, plank: PlankData, faceId: string): { 
   const dy = point.y - center.y;
   const dz = point.z - center.z;
 
-  // switch (faceId) {
-  //   case '1':
-  //     return { x: dx + halfW, y: dz + halfD };
-
-  //   case '6':
-  //     return { x: dx + halfW, y: dz + halfD };
-
-  //   case '2':
-  //     return { x: dx + halfW, y: dy + halfH };
-
-  //   case '4':
-  //     return { x: -dx + halfW, y: dy + halfH };
-
-  //   case '3':
-  //     return { x: -dz + halfD, y: dy + halfH };
-
-  //   case '5':
-  //     return { x: dz + halfD, y: dy + halfH };
-
-  //   default:
-  //     return { x: 0, y: 0 };
-  // }
   switch (faceId) {
     case '1':
       return { x: dx + halfW, y: dz + halfD };
