@@ -17,17 +17,17 @@ interface DesignSettingsState {
 }
 
 const initialState: DesignSettingsState = {
-  minifixDistance: 320,
+  minifixDistance: 128,
   minifixDiameterHole: 8,
   camDepth: 12,
   camHeight: 32,
   edgeBandingDistance: 2,
   // Minifix Standards Defaults
-  screwDiameter: 8,
-  screwLength: 25,
+  screwDiameter: 10,
+  screwLength: 40,
   camDiameter: 15,
   dowelDiameter: 8,
-  dowelLength: 24,
+  dowelLength: 30,
   dowelDistance: 32,
 };
 

@@ -2,9 +2,18 @@ import { Position } from '../store/interface';
 import { MINIFIX_STANDARDS } from './constant';
 import type { MinifixConnection, MinifixHole, MinifixStandards, PlankConnection, PlankData } from './types';
 
-function getFaceId(normal: Position): string {
+function getFaceId(normal: Position, name?: string): string {
   console.log(normal);
   const { x, y, z } = normal;
+
+  if (name?.toUpperCase().includes('VERTICAL')) {
+    if (x >= 1) return '1';
+    if (z >= 1) return '2';
+    if (y <= -1) return '3';
+    if (z <= -1) return '4';
+    if (y >= 1) return '5';
+    if (x <= -1) return '6';
+  }
 
   if (y >= 1) return '1';
   if (z >= 1) return '2';
@@ -26,6 +35,28 @@ function calculateLocal2D(point: Position, plank: PlankData, faceId: string): { 
   const dy = point.y - center.y;
   const dz = point.z - center.z;
 
+  // switch (faceId) {
+  //   case '1':
+  //     return { x: dx + halfW, y: dz + halfD };
+
+  //   case '6':
+  //     return { x: dx + halfW, y: dz + halfD };
+
+  //   case '2':
+  //     return { x: dx + halfW, y: dy + halfH };
+
+  //   case '4':
+  //     return { x: -dx + halfW, y: dy + halfH };
+
+  //   case '3':
+  //     return { x: -dz + halfD, y: dy + halfH };
+
+  //   case '5':
+  //     return { x: dz + halfD, y: dy + halfH };
+
+  //   default:
+  //     return { x: 0, y: 0 };
+  // }
   switch (faceId) {
     case '1':
       return { x: dx + halfW, y: dz + halfD };
@@ -176,33 +207,33 @@ function calculateSingleConnectionData(
   }
 
   const housingFaceNormal = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
-  const housingFaceId = getFaceId(housingFaceNormal);
+  const housingFaceId = getFaceId(housingFaceNormal, housingPlank.name);
 
   const screwHousingHole: MinifixHole = {
     type: 'SCREW',
     connectorId: id,
     position: jointPos,
     direction: intoHousingDir,
-    drillType: '2',
+    drillType: '1',
     face: housingFaceId,
     diameter: standards.screwDiameter,
-    length: 30,
+    length: standards.screwLength - 10,
     localPosition2D: calculateLocal2D(jointPos, housingPlank, housingFaceId),
   };
 
   const intoBoltDir = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
   const boltFaceNormal = { x: -intoBoltDir.x, y: -intoBoltDir.y, z: -intoBoltDir.z };
-  const boltFaceId = getFaceId(boltFaceNormal);
+  const boltFaceId = getFaceId(boltFaceNormal, boltPlank.name);
 
   const screwMatingHole: MinifixHole = {
     type: 'SCREW',
     connectorId: id,
     position: jointPos,
     direction: intoBoltDir,
-    drillType: '1',
+    drillType: '2',
     face: boltFaceId,
-    diameter: 5,
-    length: 10,
+    diameter: standards.screwDiameter,
+    length: standards.screwLength - 30,
     localPosition2D: calculateLocal2D(jointPos, boltPlank, boltFaceId),
   };
 
@@ -223,8 +254,8 @@ function calculateSingleConnectionData(
     connectorId: id,
     position: camPos3D,
     direction: camDir,
-    drillType: '1',
-    face: getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z }), // Face ID based on Surface Normal
+    drillType: '2',
+    face: getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z }, housingPlank.name),
     diameter: standards.camDiameter,
     depth: standards.camDepth,
     localPosition2D: calculateLocal2D(camPos3D, housingPlank, getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z })),
@@ -248,10 +279,10 @@ function calculateSingleConnectionData(
     connectorId: id,
     position: dowelPos,
     direction: intoHousingDir,
-    drillType: '2',
+    drillType: '1',
     face: housingFaceId,
     diameter: standards.dowelDiameter,
-    length: 20,
+    length: standards.dowelLength - 10,
     localPosition2D: calculateLocal2D(dowelPos, housingPlank, housingFaceId),
   };
 
@@ -260,10 +291,10 @@ function calculateSingleConnectionData(
     connectorId: id,
     position: dowelPos,
     direction: intoBoltDir,
-    drillType: '1',
+    drillType: '2',
     face: boltFaceId,
     diameter: standards.dowelDiameter,
-    length: 10,
+    length: standards.dowelLength - 20,
     localPosition2D: calculateLocal2D(dowelPos, boltPlank, boltFaceId),
   };
 

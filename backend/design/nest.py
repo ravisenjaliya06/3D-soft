@@ -398,14 +398,13 @@ class NestingService:
                     mac_index += 1
                     
                     hole_type = str(hole.get("type", "")).upper()
-                    json_drill_type = str(hole.get("drill_type", "1"))
-                    xml_type = "2" if json_drill_type == "1" else "1"
+                    xml_type = str(hole.get("drill_type", "1"))
                     face_id = str(hole.get("face", "0"))
                     
                     pos = hole.get("local_position2_d", {})
                     
                     raw_diameter = self._safe_float(hole.get("diameter", 0))
-                    raw_depth = self._safe_float(hole.get("length", 0))
+                    raw_depth = self._safe_float(hole.get("length") or hole.get("depth") or 0)
                     
                     panel_w_val = self._safe_float(item.get(KEY_WIDTH))
                     panel_l_val = self._safe_float(item.get(KEY_HEIGHT))
@@ -418,11 +417,10 @@ class NestingService:
                     # ----------------------------------------
                     # COORDINATE LOGIC
                     # ----------------------------------------
-                    
-                    if xml_type == "2" and hole_type in ["SCREW", "DOWEL"]:
+                    if xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id not in ["1", "6"] or xml_type == "2" and hole_type in ["CAM"] and face_id in ["6"]:
                         final_x = self._safe_float(pos.get("y", 0))
                         final_y = self._safe_float(pos.get("x", 0))
-                    elif xml_type == "2" and hole_type in ["CAM"]:
+                    elif xml_type == "2" and hole_type in ["CAM"] or xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
                         final_x = self._safe_float(pos.get("x", 0))
                         final_y = self._safe_float(pos.get("y", 0))
                     else:
@@ -430,8 +428,8 @@ class NestingService:
                              final_x = 0.0
                              final_y = self._safe_float(pos.get("x", 0))
                         elif face_id == "3":
-                             final_x = panel_w_val
-                             final_y = self._safe_float(pos.get("y", 0))
+                             final_x = panel_l_val
+                             final_y = self._safe_float(pos.get("x", 0))
                         elif face_id == "4":
                              final_x = self._safe_float(pos.get("x", 0))
                              final_y = 0.0
@@ -447,7 +445,11 @@ class NestingService:
                         else:
                              final_x = self._safe_float(pos.get("x", 0))
                              final_y = self._safe_float(pos.get("y", 0))
-
+                    
+                    if int(xml_type) == 1 and hole_type in ["SCREW", "DOWEL"] and face_id == "5":
+                        convert_face_id = int(face_id)
+                        face_id = str(convert_face_id - 1)
+                
                     machining_attrs = {
                         "ID": "1000", 
                         "Type": xml_type,
@@ -497,6 +499,7 @@ class NestingService:
     def generate_svg(
         self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
     ) -> List[str]:
+        print("Generating SVG...", packed_items)
         """
         Generates SVG visualizations (one per sheet).
         Returns a list of generated SVG file paths.
@@ -549,17 +552,12 @@ class NestingService:
                 
                 for hole in holes:
                     h_pos = hole.get("local_position2_d", {})
-                    hx = self._safe_float(h_pos.get("x", 0))
-                    hy = self._safe_float(h_pos.get("y", 0))
                     
                 for hole in holes:
                     hole_type = str(hole.get("type", "")).upper()
                     h_pos = hole.get("local_position2_d", {})
-                    # For Edge Drills, X is usually along the edge.
-                    if hole_type in ["SCREW", "DOWEL"]:
-                        raw_pos_x = self._safe_float(h_pos.get("x", 0))
-                        raw_pos_y = self._safe_float(h_pos.get("y", 0))
-                    elif hole_type in ["CAM"]:
+                    face_id = str(hole.get("face", "0"))
+                    if hole_type in ["CAM"] and face_id != "6" or hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
                         raw_pos_x = self._safe_float(h_pos.get("y", 0))
                         raw_pos_y = self._safe_float(h_pos.get("x", 0))
                     else:
@@ -569,7 +567,6 @@ class NestingService:
                     diameter = self._safe_float(hole.get("diameter", 15))
                     length = self._safe_float(hole.get("length", 10)) 
                     drill_type = str(hole.get("drill_type", "1"))
-                    face_id = str(hole.get("face", "0"))
 
                     edge_map = {
                         "5": "LEFT",
@@ -596,11 +593,8 @@ class NestingService:
                     # Default Visuals
                     viz_w = length
                     viz_l = diameter
-                    
-                    # Apply Logic
-                    if drill_type == "2":
-                        pos_val = raw_pos_x 
-                        
+
+                    if drill_type == "1":
                         if edge == "LEFT":
                             rect_x = raw_pos_x
                             rect_y = 0
@@ -612,17 +606,16 @@ class NestingService:
                             rect_w = viz_l
                             rect_h = viz_w
                         elif edge == "TOP":
-                            rect_x = pos_val - viz_w/2
-                            rect_y = 0
-                            rect_w = viz_w
-                            rect_h = viz_l
+                            rect_x = raw_pos_x
+                            rect_y = h - viz_w
+                            rect_w = viz_l
+                            rect_h = viz_w
                         elif edge == "BOTTOM":
-                            rect_x = pos_val - viz_w/2
-                            rect_y = h - viz_l
-                            rect_w = viz_w
-                            rect_h = viz_l
-                        
-                        # Draw Rect
+                            rect_x = raw_pos_x
+                            rect_y = 0
+                            rect_w = viz_l
+                            rect_h = viz_w
+
                         dwg.add(dwg.rect(
                             insert=(sheet_x + rect_x, sheet_y + rect_y),
                             size=(rect_w, rect_h),
@@ -634,9 +627,9 @@ class NestingService:
                     else:
                         cx = raw_pos_x
                         cy = raw_pos_y
-                        
+                        print(f"Rotated: {raw_pos_x, raw_pos_y}")
                         if is_rotated:
-                             cx, cy = raw_pos_y, raw_pos_x
+                            cx, cy = raw_pos_y, raw_pos_x
                              
                         dwg.add(dwg.circle(
                             center=(sheet_x + cx, sheet_y + cy),

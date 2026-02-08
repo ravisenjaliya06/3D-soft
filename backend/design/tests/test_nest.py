@@ -89,8 +89,6 @@ class NestModuleTestCase(APIBaseTestCase):
     @patch("svgwrite.Drawing")
     def test_generate_svg(self: "NestModuleTestCase", MockDrawing: MagicMock) -> None:
         """Test SVG generation returns list of files"""
-        mock_dwg_instance = MockDrawing.return_value
-        
         packed_items = [
             {
                 KEY_UNIQUE_ID: "A1.1", 
