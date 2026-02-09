@@ -318,6 +318,10 @@ export class SyncManager {
       this.meshBuilder.updateGrooving(mesh);
     }
 
+    if (changes.dimensions && (mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.includes('BACK_PLANK'))) {
+      this.meshBuilder.updateGrooving(mesh);
+    }
+
     // Update banding if dimensions changed or banding state changed
     if (changes.dimensions || changes.edgeBanding) {
       const name = mesh.name || '';
@@ -726,6 +730,14 @@ export class SyncManager {
     // This is a plank (regular or drawer plank) - apply parent banding if needed
     if (item.parent && this.meshBuilder) {
       await this._applyParentBandingIfNeeded(item);
+    }
+
+    // Apply grooving if it is a Back Plank
+    if (
+      this.meshBuilder &&
+      (item.type === PART_TYPES.BACK_PLANK || (item.name && item.name.toUpperCase().includes('BACK_PLANK')))
+    ) {
+      this.meshBuilder.updateGrooving(mesh);
     }
   }
 

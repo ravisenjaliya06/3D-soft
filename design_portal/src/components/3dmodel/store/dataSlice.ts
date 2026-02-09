@@ -63,6 +63,9 @@ const dataSlice = createSlice({
           edgeBanding: updatedObject.edgeBanding
             ? { ...existingObject.edgeBanding, ...updatedObject.edgeBanding }
             : existingObject.edgeBanding,
+          grooves: updatedObject.grooves
+            ? { ...existingObject.grooves, ...updatedObject.grooves }
+            : existingObject.grooves,
         };
         state.objects[index] = mergedObject;
       }

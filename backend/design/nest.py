@@ -390,6 +390,7 @@ class NestingService:
             # Machines / Holes
             machines = ET.SubElement(panel, "Machines")
             
+            # 1. Minifix Holes
             minifix_holes = item.get("minifix_holes", [])
             mac_index = 0
             
@@ -474,9 +475,40 @@ class NestingService:
                     logger.warning(f"Error processing hole: {e}")
                     continue
 
+            # 2. Grooves / Slots
+            grooves = item.get("grooves", [])
+            for groove in grooves:
+                try:
+                    mac_index += 1
+                    # Values from frontend are expected to be accurate
+                    # Groove Data: {id, type, isGenCode, face, x, y, endX, endY, width, depth, ...}
+                    
+                    # Default map matching XML example
+                    m_attrs = {
+                        "ID": str(groove.get("id", "6000")),
+                        "Type": str(groove.get("type", "4")), # 4 = Slot
+                        "IsGenCode": str(groove.get("isGenCode", "2")),
+                        "Face": str(groove.get("face", "5")),
+                        "X": f"{self._safe_float(groove.get('x', 0)):.6f}",
+                        "Y": f"{self._safe_float(groove.get('y', 0)):.6f}",
+                        "EndX": f"{self._safe_float(groove.get('endX', 0)):.6f}",
+                        "EndY": f"{self._safe_float(groove.get('endY', 0)):.6f}",
+                        "Width": f"{self._safe_float(groove.get('width', 0)):.6f}",
+                        "Depth": f"{self._safe_float(groove.get('depth', 0)):.6f}",
+                        "ToolOffset": str(groove.get("toolOffset", "ÖÐ")),
+                        "SlotType": str(groove.get("slotType", "0")),
+                        "MacIndex": str(mac_index)
+                    }
+                    
+                    ET.SubElement(machines, "Machining", **m_attrs)
+                except Exception as e:
+                    logger.warning(f"Error processing groove: {e}")
+                    continue
+
             # EdgeGroup (Static as per example for now?)
             slope_group = ET.SubElement(panel, "SlopeEdgeGroup")
             edge_group = ET.SubElement(panel, "EdgeGroup")
+
             # Create edges with Thickness=0 default
             for f in ["1", "2", "3", "4"]:
                 ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")

@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import {
   GROOVE_DEPTH,
-  GROOVE_END_INSET,
-  GROOVE_START_INSET,
   GROOVE_WIDTH,
-  PROTRUSION_DEPTH,
-  PROTRUSION_WIDTH,
 } from '../constants';
-import { EDGES, GROOVE_TYPE, PART_TYPES } from '../interface';
+import { EDGES, PART_TYPES } from '../interface';
+import { store } from '../../store';
+import { updateObject } from '../../store/dataSlice';
 
 /**
  * Comprehensive GroovingTool class for managing grooving on planks
@@ -49,380 +47,6 @@ export class GroovingTool {
   }
 
   /**
-   * Create groove material (slightly darker to show depth)
-   */
-  private createGrooveMaterial(plankMaterial: THREE.Material): THREE.Material {
-    const grooveMaterial = plankMaterial.clone();
-    grooveMaterial.visible = true;
-
-    if (!(grooveMaterial instanceof THREE.MeshStandardMaterial)) {
-      return grooveMaterial;
-    }
-
-    if (!grooveMaterial.color) {
-      grooveMaterial.transparent = false;
-      return grooveMaterial;
-    }
-
-    const color = new THREE.Color();
-    color.copy(grooveMaterial.color);
-    color.multiplyScalar(0.7);
-    grooveMaterial.color = color;
-    grooveMaterial.transparent = false;
-
-    return grooveMaterial;
-  }
-
-  /**
-   * Create protrusion material (same as plank material)
-   */
-  private createProtrusionMaterial(plankMaterial: THREE.Material): THREE.Material {
-    const protrusionMaterial = plankMaterial.clone();
-    protrusionMaterial.visible = true;
-
-    if (protrusionMaterial instanceof THREE.MeshStandardMaterial) {
-      protrusionMaterial.transparent = false;
-    }
-
-    return protrusionMaterial;
-  }
-
-  /**
-   * Create a groove mesh (female part) on a plank edge
-   */
-  private createGrooveMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    material: THREE.Material
-  ): THREE.Mesh {
-    const groove = new THREE.Mesh(geometry, material);
-    groove.position.copy(position);
-    groove.name = `Groove_${edge}_${mesh.name}`;
-    groove.userData.type = GROOVE_TYPE.GROOVE;
-    groove.userData.edge = edge;
-    groove.userData.objectId = `${mesh.userData.objectId}_groove_${edge.toLowerCase()}`;
-
-    // Ensure groove is visible
-    groove.visible = true;
-    groove.castShadow = true;
-    groove.receiveShadow = true;
-
-    mesh.add(groove);
-    return groove;
-  }
-
-  /**
-   * Create a protrusion mesh (male part) on back plank edge
-   */
-  private createProtrusionMesh(
-    mesh: THREE.Mesh,
-    edge: string,
-    geometry: THREE.BoxGeometry,
-    position: THREE.Vector3,
-    material: THREE.Material
-  ): THREE.Mesh {
-    const protrusion = new THREE.Mesh(geometry, material);
-    protrusion.position.copy(position);
-    protrusion.name = `Protrusion_${edge}_${mesh.name}`;
-    protrusion.userData.type = GROOVE_TYPE.PROTRUSION;
-    protrusion.userData.edge = edge;
-    protrusion.userData.objectId = `${mesh.userData.objectId}_protrusion_${edge.toLowerCase()}`;
-
-    protrusion.visible = true;
-    protrusion.castShadow = true;
-    protrusion.receiveShadow = true;
-
-    mesh.add(protrusion);
-    return protrusion;
-  }
-
-  /**
-   * Calculate groove dimensions and positions for top/bottom edges
-   */
-  private calculateTopBottomGroove(
-    width: number,
-    height: number,
-    edge: string
-  ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    const grooveLength = width - GROOVE_START_INSET - GROOVE_END_INSET;
-    const grooveCenterX = (-width / 2 + GROOVE_START_INSET + (width / 2 - GROOVE_END_INSET)) / 2;
-
-    const isTop = edge === EDGES.TOP;
-    const grooveCenterY = isTop
-      ? height / 2 - GROOVE_WIDTH / 2 // Slightly inside top edge
-      : -height / 2 + GROOVE_WIDTH / 2; // Slightly inside bottom edge
-
-    const geometry = new THREE.BoxGeometry(grooveLength, GROOVE_WIDTH, GROOVE_DEPTH);
-    const position = new THREE.Vector3(grooveCenterX, grooveCenterY, 0);
-
-    return { geometry, position };
-  }
-
-  /**
-   * Calculate groove dimensions and positions for left/right edges
-   */
-  private calculateLeftRightGroove(
-    width: number,
-    height: number,
-    edge: string
-  ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    const grooveLength = height - GROOVE_START_INSET - GROOVE_END_INSET;
-
-    const isLeft = edge === EDGES.LEFT;
-    const grooveCenterX = isLeft ? -width / 2 + GROOVE_WIDTH / 2 : width / 2 - GROOVE_WIDTH / 2;
-
-    const grooveCenterY = (-height / 2 + GROOVE_START_INSET + (height / 2 - GROOVE_END_INSET)) / 2;
-
-    const geometry = new THREE.BoxGeometry(GROOVE_WIDTH, grooveLength, GROOVE_DEPTH);
-    const position = new THREE.Vector3(grooveCenterX, grooveCenterY, 0);
-
-    return { geometry, position };
-  }
-
-  /**
-   * Calculate protrusion dimensions and positions
-   */
-  private calculateProtrusion(
-    width: number,
-    height: number,
-    edge: string
-  ): { geometry: THREE.BoxGeometry; position: THREE.Vector3 } {
-    const isHorizontal = edge === EDGES.TOP || edge === EDGES.BOTTOM;
-    const isVertical = edge === EDGES.LEFT || edge === EDGES.RIGHT;
-
-    if (!isHorizontal && !isVertical) {
-      throw new Error(`Invalid edge for protrusion: ${edge}`);
-    }
-
-    const geometry = isHorizontal
-      ? new THREE.BoxGeometry(width, PROTRUSION_WIDTH, PROTRUSION_DEPTH)
-      : new THREE.BoxGeometry(PROTRUSION_WIDTH, height, PROTRUSION_DEPTH);
-
-    const position = new THREE.Vector3(
-      isVertical ? (edge === EDGES.LEFT ? -1 : 1) * (width / 2 + PROTRUSION_WIDTH / 2) : 0,
-      isHorizontal ? (edge === EDGES.BOTTOM ? -1 : 1) * (height / 2 + PROTRUSION_WIDTH / 2) : 0,
-      0
-    );
-
-    return { geometry, position };
-  }
-
-  /**
-   * Check if child is a grooving mesh (groove or protrusion)
-   */
-  private isGroovingMesh(child: THREE.Object3D): boolean {
-    return (
-      child.userData.type === GROOVE_TYPE.GROOVE || child.userData.type === GROOVE_TYPE.PROTRUSION
-    );
-  }
-
-  /**
-   * Dispose of mesh geometry and materials properly
-   */
-  private disposeMesh(mesh: THREE.Mesh): void {
-    if (!(mesh instanceof THREE.Mesh)) {
-      return;
-    }
-
-    mesh.geometry.dispose();
-
-    if (mesh.material instanceof THREE.Material) {
-      mesh.material.dispose();
-      return;
-    }
-
-    if (Array.isArray(mesh.material)) {
-      mesh.material.forEach((mat) => {
-        if (mat instanceof THREE.Material) {
-          mat.dispose();
-        }
-      });
-    }
-  }
-
-  /**
-   * Get all grooving children from a mesh
-   */
-  private getGroovingChildren(mesh: THREE.Mesh, edge?: string): THREE.Object3D[] {
-    const children: THREE.Object3D[] = [];
-
-    mesh.children.forEach((child) => {
-      if (!this.isGroovingMesh(child) || (edge && child.userData.edge !== edge)) {
-        return;
-      }
-
-      children.push(child);
-    });
-
-    return children;
-  }
-
-  /**
-   * Create grooving system: grooves (female) and protrusions (male) on back plank
-   */
-  public createGrooving(mesh: THREE.Mesh): void {
-    if (!this.validateMeshForGrooving(mesh)) {
-      return;
-    }
-
-    // TypeScript type narrowing - we know it's BoxGeometry from validation
-    const geometry = mesh.geometry as THREE.BoxGeometry;
-    const { width, height } = geometry.parameters;
-    const plankMaterial = this.getPlankMaterial(mesh);
-    const grooveMaterial = this.createGrooveMaterial(plankMaterial);
-    const protrusionMaterial = this.createProtrusionMaterial(plankMaterial);
-
-    // Create grooves (female parts) on all edges
-    const topBottomEdges = [EDGES.TOP, EDGES.BOTTOM];
-    const leftRightEdges = [EDGES.LEFT, EDGES.RIGHT];
-
-    topBottomEdges.forEach((edge) => {
-      const groove = this.calculateTopBottomGroove(width, height, edge);
-      this.createGrooveMesh(mesh, edge, groove.geometry, groove.position, grooveMaterial);
-    });
-
-    leftRightEdges.forEach((edge) => {
-      const groove = this.calculateLeftRightGroove(width, height, edge);
-      this.createGrooveMesh(mesh, edge, groove.geometry, groove.position, grooveMaterial);
-    });
-
-    // Create protrusions (male parts) on all edges
-    const allEdges = [EDGES.TOP, EDGES.BOTTOM, EDGES.LEFT, EDGES.RIGHT];
-    allEdges.forEach((edge) => {
-      const protrusion = this.calculateProtrusion(width, height, edge);
-      this.createProtrusionMesh(
-        mesh,
-        edge,
-        protrusion.geometry,
-        protrusion.position,
-        protrusionMaterial
-      );
-    });
-  }
-
-  /**
-   * Update grooving positions and sizes when plank dimensions change
-   */
-  public updateGrooving(mesh: THREE.Mesh): void {
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
-      return;
-    }
-
-    this.removeAllGrooving(mesh);
-    this.createGrooving(mesh);
-  }
-
-  /**
-   * Remove all grooving meshes from a plank
-   */
-  public removeAllGrooving(mesh: THREE.Mesh): void {
-    const toRemove = this.getGroovingChildren(mesh);
-
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        this.disposeMesh(child);
-      }
-      mesh.remove(child);
-    });
-  }
-
-  /**
-   * Remove grooving from a specific edge
-   */
-  public removeGroovingOnEdge(mesh: THREE.Mesh, edge: string): void {
-    const toRemove = this.getGroovingChildren(mesh, edge);
-
-    toRemove.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        this.disposeMesh(child);
-      }
-      mesh.remove(child);
-    });
-  }
-
-  /**
-   * Get all grooving meshes for a plank
-   */
-  public getGroovingMeshes(mesh: THREE.Mesh): THREE.Mesh[] {
-    const groovingMeshes: THREE.Mesh[] = [];
-    const children = this.getGroovingChildren(mesh);
-
-    children.forEach((child) => {
-      if (child instanceof THREE.Mesh) {
-        groovingMeshes.push(child);
-      }
-    });
-
-    return groovingMeshes;
-  }
-
-  /**
-   * Get grooving mesh for a specific edge
-   */
-  public getGroovingMeshForEdge(
-    mesh: THREE.Mesh,
-    edge: string,
-    type?: 'groove' | 'protrusion'
-  ): THREE.Mesh | null {
-    const children = this.getGroovingChildren(mesh, edge);
-
-    for (const child of children) {
-      if (!(child instanceof THREE.Mesh)) continue;
-      if (!type) return child;
-
-      const expectedType = GROOVE_TYPE[type.toUpperCase() as keyof typeof GROOVE_TYPE];
-      if (child.userData.type === expectedType) {
-        return child;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Detect existing grooving state from scene meshes
-   */
-  public detectGroovingState(mesh: THREE.Mesh): {
-    grooves: string[];
-    protrusions: string[];
-  } {
-    const grooves: string[] = [];
-    const protrusions: string[] = [];
-    const children = this.getGroovingChildren(mesh);
-
-    children.forEach((child) => {
-      if (!(child instanceof THREE.Mesh)) {
-        return;
-      }
-
-      const edge = child.userData.edge;
-      if (!edge || typeof edge !== 'string') {
-        return;
-      }
-
-      if (child.userData.type === GROOVE_TYPE.GROOVE && !grooves.includes(edge)) {
-        grooves.push(edge);
-        return;
-      }
-
-      if (child.userData.type === GROOVE_TYPE.PROTRUSION && !protrusions.includes(edge)) {
-        protrusions.push(edge);
-      }
-    });
-
-    return { grooves, protrusions };
-  }
-
-  /**
-   * Check if grooving exists on a specific edge
-   */
-  public hasGroovingOnEdge(mesh: THREE.Mesh, edge: string): boolean {
-    return this.getGroovingMeshForEdge(mesh, edge) !== null;
-  }
-
-  /**
    * Validate mesh before grooving operations
    */
   private validateMeshForGrooving(mesh: THREE.Mesh): boolean {
@@ -430,4 +54,239 @@ export class GroovingTool {
       this.isPlank(mesh) && mesh.geometry instanceof THREE.BoxGeometry && this.isBackPlank(mesh)
     );
   }
+
+  /**
+   * Calculate groove data for a specific edge on an *adjacent* plank.
+   * This calculates the cut relative to the ADJACENT plank's coordinate system.
+   */
+  private calculateGrooveDataForAdjacentPlank(
+    adjacentMesh: THREE.Mesh,
+    backMesh: THREE.Mesh,
+    edgeOnBack: string // 'top', 'bottom', 'left', 'right' of the back plank
+  ): any {
+    console.log('calculateGrooveDataForAdjacentPlank');
+    // 1. Get Back Plank Dimensions (Global)
+    const backGeo = backMesh.geometry as THREE.BoxGeometry;
+    // const backWidth = backGeo.parameters.width * backMesh.scale.x;
+    // const backHeight = backGeo.parameters.height * backMesh.scale.y;
+
+    // 2. Get Adjacent Plank Dimensions
+    const adjGeo = adjacentMesh.geometry as THREE.BoxGeometry;
+    const adjWidth = adjGeo.parameters.width * adjacentMesh.scale.x;
+    const adjHeight = adjGeo.parameters.height * adjacentMesh.scale.y;
+
+    // 3. Determine Face and Coordinates based on relative position
+    // Default values matching XML example for now
+    const grooveData = {
+      id: "6000",
+      type: "4",
+      isGenCode: "2",
+      face: "5", // Assuming inner face for now
+      x: 0,
+      y: 0,
+      endX: 0,
+      endY: 0,
+      width: GROOVE_WIDTH, // 10
+      depth: GROOVE_DEPTH, // 6
+      toolOffset: "ÖÐ",
+      slotType: "0",
+      macIndex: "1"
+    };
+
+    // Logic for XML "Slot" coordinates (Type 4)
+    if (edgeOnBack === EDGES.TOP || edgeOnBack === EDGES.BOTTOM) {
+      // Horizontal Groove on Adjacent Panel
+      // XML Example: width=10, depth=6
+      // Coordinates depend on the machine origin. 
+      // Assuming simplistic mapping for now.
+      grooveData.x = 0;
+      grooveData.y = 20; // 20mm inset
+      grooveData.endX = adjWidth;
+      grooveData.endY = 20;
+    } else {
+      // Vertical Groove
+      grooveData.x = 20;
+      grooveData.y = 0;
+      grooveData.endX = 20;
+      grooveData.endY = adjHeight;
+    }
+
+    return grooveData;
+  }
+
+  /**
+   * Find adjacent meshes (Top, Bottom, Left, Right)
+   * This is a simplified finder based on bounding boxes or names/userData.
+   */
+  private findAdjacentPlank(backMesh: THREE.Mesh, edge: string): THREE.Mesh | null {
+    // TODO: Implement robust adjacency detection.
+    // For now, relies on naming convention if possible? 
+    // Or iterate all planks and check distance.
+
+    let foundMesh: THREE.Mesh | null = null;
+
+    this.scene.traverse((object) => {
+      if (foundMesh) return;
+      if (object === backMesh) return;
+      if (!(object instanceof THREE.Mesh)) return;
+      if (!object.userData || !Object.values(PART_TYPES).includes(object.userData.type)) return;
+      if (object.userData.type === PART_TYPES.BACK_PLANK) return;
+
+      // Naive check: Bounding Box intersection or proximity
+      // Since this is "magic" for now, we leave it as a placeholder hook for the user to improve
+      // or we implement a basic centroid distance check.
+    });
+
+    return foundMesh;
+  }
+
+  /**
+   * New Create Grooving: modify data, don't create meshes.
+   */
+  public createGrooving(mesh: THREE.Mesh): void {
+    if (!this.validateMeshForGrooving(mesh)) {
+      return;
+    }
+
+    // 1. Resize Back Plank
+    // Increase Width and Height by PROTRUSION_DEPTH * 2 (assuming groove on all sides)
+
+    // We modify the geometry dimensions.
+    const geometry = mesh.geometry as THREE.BoxGeometry;
+    const oldW = geometry.parameters.width;
+    const oldH = geometry.parameters.height;
+
+    // Check if already resized? 
+    // Store original size in userData to avoid double resizing?
+    if (!mesh.userData.originalDimensions) {
+      mesh.userData.originalDimensions = { width: oldW, height: oldH };
+
+      const newW = oldW + (GROOVE_DEPTH * 2);
+      const newH = oldH + (GROOVE_DEPTH * 2);
+
+      // Update Geometry
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.BoxGeometry(newW, newH, geometry.parameters.depth);
+      // Reset scale if needed, but usually scale should be 1.
+    }
+
+    // 2. Add Groove Data to Adjacent Planks
+    // Identifying neighbors is key.
+    console.log(mesh)
+    const siblings = mesh.children;
+    console.log(`[GroovingTool] Found ${siblings.length} siblings to check.`);
+
+    siblings.forEach(sibling => {
+      console.log(`[GroovingTool] Sibling ID: ${sibling.userData?.objectId}, Name: ${sibling.name}, Constructor: ${sibling.constructor.name}, Type: ${sibling.type}`);
+      if (sibling === mesh) return;
+
+      if (!(sibling instanceof THREE.Mesh)) {
+        console.log(`[GroovingTool] Siobling ${sibling.name} is not a Mesh.`);
+        return;
+      }
+
+      const isPlank = this.isPlank(sibling);
+      const isBack = this.isBackPlank(sibling);
+
+      console.log(`[GroovingTool] Sibling ${sibling.name} Check: IsPlank=${isPlank}, IsBack=${isBack}`);
+
+      if (!isPlank) return;
+      if (isBack) return;
+
+      // Determine relationship (Top/Bottom/Left/Right)
+      // For this task, we will add groove data to ALL plank siblings as a POC 
+      // because we lack the spatial graph.
+      // But we should try to be specific if possible.
+      // Let's assume standard names:
+
+      const name = sibling.name.toUpperCase();
+      let edge = '';
+      if (name.includes('TOP')) edge = EDGES.TOP;
+      else if (name.includes('BOTTOM')) edge = EDGES.BOTTOM;
+      else if (name.includes('LEFT')) edge = EDGES.LEFT;
+      else if (name.includes('RIGHT')) edge = EDGES.RIGHT;
+
+      console.log(`[GroovingTool] Sibling ${sibling.name} Edge Detection: ${edge}`);
+
+      if (edge) {
+        const grooveData = this.calculateGrooveDataForAdjacentPlank(sibling, mesh, edge);
+        console.log('Groove Data:', grooveData);
+
+        // Store in userData and Sync to Redux
+        if (sibling.userData.objectId) {
+          // If Persistent Object: Fetch from Store -> Update -> Dispatch
+          const state = store.getState();
+          const existingObject = state.data.objects.find((o: any) => o.id === sibling.userData.objectId);
+
+          // Create copy of grooves array or empty array
+          const currentGrooves = existingObject?.grooves ? [...existingObject.grooves] : [];
+
+          const existingIndex = currentGrooves.findIndex((g: any) => g.id === grooveData.id);
+
+          if (existingIndex !== -1) {
+            currentGrooves[existingIndex] = grooveData;
+          } else {
+            currentGrooves.push(grooveData);
+          }
+
+          // Update local mesh data immediately to reflect changes visually if needed
+          if (!sibling.userData.grooves) sibling.userData.grooves = [];
+          sibling.userData.grooves = currentGrooves;
+
+          // Update store
+          console.log('Updating store', currentGrooves);
+          store.dispatch(updateObject({
+            id: sibling.userData.objectId,
+            grooves: currentGrooves
+          }));
+        } else {
+          // Non-persistent Object (e.g. preview): Update userData only
+          if (!sibling.userData.grooves) {
+            sibling.userData.grooves = [];
+          }
+          const existingIndex = sibling.userData.grooves.findIndex((g: any) => g.id === grooveData.id);
+          if (existingIndex === -1) {
+            sibling.userData.grooves.push(grooveData);
+          } else {
+            sibling.userData.grooves[existingIndex] = grooveData;
+          }
+        }
+      }
+    });
+
+    console.log("Back plank resized and groove data calculated");
+  }
+
+  public updateGrooving(mesh: THREE.Mesh): void {
+    this.createGrooving(mesh);
+  }
+
+  public removeAllGrooving(mesh: THREE.Mesh): void {
+    // Restore original size
+    if (mesh.userData.originalDimensions) {
+      const { width, height } = mesh.userData.originalDimensions;
+      // Restore geometry
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.BoxGeometry(width, height, (mesh.geometry as THREE.BoxGeometry).parameters.depth);
+      delete mesh.userData.originalDimensions;
+    }
+
+    // Remove groove data from siblings
+    const siblings = mesh.parent?.children || this.scene.children;
+    siblings.forEach(sibling => {
+      if (sibling === mesh) return;
+      if (!(sibling instanceof THREE.Mesh)) return;
+      if (sibling.userData.grooves) {
+        // Filter out grooves related to this back plank (ID 6000 is generic, might need unique ID)
+        // For now, clear generic ID 6000
+        sibling.userData.grooves = sibling.userData.grooves.filter((g: any) => g.id !== "6000");
+      }
+    });
+  }
+
+  // Legacy/Unused methods stubs to maintain interface if called elsewhere
+  public removeGroovingOnEdge(mesh: THREE.Mesh, edge: string): void { }
+  public getGroovingMeshes(mesh: THREE.Mesh): THREE.Mesh[] { return []; }
+  public hasGroovingOnEdge(mesh: THREE.Mesh, edge: string): boolean { return false; }
+  public detectGroovingState(mesh: THREE.Mesh): any { return { grooves: [], protrusions: [] }; }
 }
