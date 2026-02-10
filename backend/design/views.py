@@ -312,6 +312,7 @@ class NestAPIViewset(ModelViewSet):
         for rid, item in parsed_data.items():
             normalized[rid] = {
                 "type": item["type"],
+                "name": item["name"],
                 "width": float(item["width"]),
                 "height": float(item["height"]),
                 "depth": float(item["depth"]),

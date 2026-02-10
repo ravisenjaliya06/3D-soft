@@ -102,6 +102,7 @@ class NestingService:
 
         processed_rectangles = []
         packed_ids = set()
+        spacing = self.spacing
 
         for rect in rectangles:
             bin_id, x, y, w, h, rid = rect
@@ -109,9 +110,14 @@ class NestingService:
             # Determine rotation
             original_item = remaining_files.get(rid, {})
             original_w = original_item.get(KEY_WIDTH, w)
-            original_h = original_item.get(KEY_HEIGHT, h)  # h corresponds to Height now
+            original_h = original_item.get(KEY_HEIGHT, h)
 
-            is_rotated = abs(w - original_h) < 0.1 and abs(h - original_w) < 0.1
+            is_rotated = abs((w - spacing) - original_h) < 0.1 and abs((h - spacing) - original_w) < 0.1
+            if original_item.get('name') == 'HORIZONTAL_PLANK':
+                print(original_item, "original_item")
+                print(w, h, "w, h")
+                print(original_w, original_h, "original_w, original_h")
+                print(is_rotated, "is_rotated 123")
             
             # Preserve original dimensions for visualization logic
             
@@ -292,7 +298,8 @@ class NestingService:
                             "original_height": extras.get("original_height"),
                             "material_name": item_details.get("material_name", ""),
                             "depth": item_details.get(KEY_DEPTH, 17.0),
-                            "minifix_holes": item_details.get("minifix_holes", [])
+                            "minifix_holes": item_details.get("minifix_holes", []),
+                            "grooves": item_details.get("grooves", []),
                         }
                     )
                     item_counter += 1
@@ -419,6 +426,7 @@ class NestingService:
                     # COORDINATE LOGIC
                     # ----------------------------------------
                     if xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id not in ["1", "6"] or xml_type == "2" and hole_type in ["CAM"] and face_id in ["6"]:
+                    # if xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id not in ["1", "6"]:
                         final_x = self._safe_float(pos.get("y", 0))
                         final_y = self._safe_float(pos.get("x", 0))
                     elif xml_type == "2" and hole_type in ["CAM"] or xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
@@ -480,23 +488,20 @@ class NestingService:
             for groove in grooves:
                 try:
                     mac_index += 1
-                    # Values from frontend are expected to be accurate
-                    # Groove Data: {id, type, isGenCode, face, x, y, endX, endY, width, depth, ...}
-                    
-                    # Default map matching XML example
+
                     m_attrs = {
                         "ID": str(groove.get("id", "6000")),
-                        "Type": str(groove.get("type", "4")), # 4 = Slot
-                        "IsGenCode": str(groove.get("isGenCode", "2")),
+                        "Type": str(groove.get("type", "4")),
+                        "IsGenCode": str(groove.get("is_gen_code", "2")),
                         "Face": str(groove.get("face", "5")),
                         "X": f"{self._safe_float(groove.get('x', 0)):.6f}",
                         "Y": f"{self._safe_float(groove.get('y', 0)):.6f}",
-                        "EndX": f"{self._safe_float(groove.get('endX', 0)):.6f}",
-                        "EndY": f"{self._safe_float(groove.get('endY', 0)):.6f}",
+                        "EndX": f"{self._safe_float(groove.get('end_x', 0)):.6f}",
+                        "EndY": f"{self._safe_float(groove.get('end_y', 0)):.6f}",
                         "Width": f"{self._safe_float(groove.get('width', 0)):.6f}",
                         "Depth": f"{self._safe_float(groove.get('depth', 0)):.6f}",
-                        "ToolOffset": str(groove.get("toolOffset", "ÖÐ")),
-                        "SlotType": str(groove.get("slotType", "0")),
+                        "ToolOffset": str(groove.get("tool_offset", "ÖÐ")),
+                        "SlotType": str(groove.get("slot_type", "0")),
                         "MacIndex": str(mac_index)
                     }
                     
@@ -531,7 +536,6 @@ class NestingService:
     def generate_svg(
         self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
     ) -> List[str]:
-        print("Generating SVG...", packed_items)
         """
         Generates SVG visualizations (one per sheet).
         Returns a list of generated SVG file paths.
@@ -539,11 +543,11 @@ class NestingService:
         """
 
         sheets = {}
-        for item in packed_items:
-            s_num = item["sheet_num"]
+        for items in packed_items:
+            s_num = items["sheet_num"]
             if s_num not in sheets:
                 sheets[s_num] = []
-            sheets[s_num].append(item)
+            sheets[s_num].append(items)
 
         generated_files = []
         base_name = os.path.splitext(output_path)[0]
@@ -566,6 +570,7 @@ class NestingService:
             ))
 
             for item in sheets[s_num]:
+                print(item)
                 sheet_x = item["x"] + padding
                 sheet_y = item["y"] + padding
                 w = item[KEY_WIDTH]
@@ -580,6 +585,7 @@ class NestingService:
                     stroke_width="2"
                 ))
 
+                name = item.get(KEY_NAME, "")
                 holes = item.get("minifix_holes", [])
                 
                 for hole in holes:
@@ -589,7 +595,8 @@ class NestingService:
                     hole_type = str(hole.get("type", "")).upper()
                     h_pos = hole.get("local_position2_d", {})
                     face_id = str(hole.get("face", "0"))
-                    if hole_type in ["CAM"] and face_id != "6" or hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
+                    # if hole_type in ["CAM"] and face_id != "6" or hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
+                    if hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
                         raw_pos_x = self._safe_float(h_pos.get("y", 0))
                         raw_pos_y = self._safe_float(h_pos.get("x", 0))
                     else:
@@ -639,12 +646,13 @@ class NestingService:
                             rect_h = viz_w
                         elif edge == "TOP":
                             rect_x = raw_pos_x
-                            rect_y = h - viz_w
+                            rect_y = 0
                             rect_w = viz_l
                             rect_h = viz_w
                         elif edge == "BOTTOM":
+                            
                             rect_x = raw_pos_x
-                            rect_y = 0
+                            rect_y = h - viz_w
                             rect_w = viz_l
                             rect_h = viz_w
 
@@ -655,12 +663,11 @@ class NestingService:
                             stroke="green", 
                             stroke_width="1"
                         ))
-                        
+
                     else:
                         cx = raw_pos_x
                         cy = raw_pos_y
-                        print(f"Rotated: {raw_pos_x, raw_pos_y}")
-                        if is_rotated:
+                        if is_rotated and (name != "HORIZONTAL_PLANK" or hole_type in ["CAM"]):
                             cx, cy = raw_pos_y, raw_pos_x
                              
                         dwg.add(dwg.circle(
@@ -670,6 +677,28 @@ class NestingService:
                             stroke="black",
                             stroke_width="0.5"
                         ))
+
+                # --- Grooves ---
+                grooves = item.get("grooves", [])
+                for groove in grooves:
+                    g_x = self._safe_float(groove.get("x", 0))
+                    g_y = self._safe_float(groove.get("y", 0))
+                    g_end_x = self._safe_float(groove.get("end_x", 0))
+                    g_end_y = self._safe_float(groove.get("end_y", 0))
+                    g_width = self._safe_float(groove.get("width", 10))
+                    
+                    if is_rotated:
+                        # Swap coordinates if rotated
+                        g_x, g_y = g_x, g_y
+                        g_end_x, g_end_y = g_end_x, g_end_y
+                        
+                    dwg.add(dwg.line(
+                        start=(sheet_x + g_x, sheet_y + g_y),
+                        end=(sheet_x + g_end_x, sheet_y + g_end_y),
+                        stroke="orange", 
+                        stroke_width=g_width,
+                        stroke_opacity="0.6"
+                    ))
 
                 # --- Label Group ---
                 label_g = dwg.g()

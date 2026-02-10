@@ -164,25 +164,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         if grooves:
             processed_grooves = []
             for groove in grooves:
-                # Pass through all relevant fields for Type 4 machining
-                processed_groove = {
-                    "id": groove.get("id", "6000"),
-                    "type": groove.get("type", "4"),
-                    "isGenCode": groove.get("isGenCode", "2"),
-                    "face": groove.get("face", "5"),
-                    "x": float(groove.get("x", 0)),
-                    "y": float(groove.get("y", 0)),
-                    "endX": float(groove.get("endX", 0)),
-                    "endY": float(groove.get("endY", 0)),
-                    "width": float(groove.get("width", 0)),
-                    "depth": float(groove.get("depth", 0)),
-                    "toolOffset": groove.get("toolOffset", "ÖÐ"),
-                    "slotType": groove.get("slotType", "0"),
-                    "macIndex": groove.get("macIndex", "1"),
-                    # Keep legacy fields if needed for other parts, or just pass everything?
-                    # "orientation": groove.get("orientation", "horizontal"),
-                }
-                processed_grooves.append(processed_groove)
+                processed_grooves.append(groove)
             plank_data["grooves"] = processed_grooves
 
         # Extract minifix holes
