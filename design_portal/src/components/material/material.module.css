@@ -248,3 +248,20 @@
     max-height: 500px;
   }
 }
+
+/* Optional: custom scrollbar */
+.scrollContainer {
+  overflow-y: auto;
+  grid-template-columns: repeat(4, 1fr);
+  background-color: var(--primary-white);
+  scrollbar-width: thin;
+}
+
+.scrollContainer::-webkit-scrollbar {
+  width: 0.37rem;
+}
+
+.scrollContainer::-webkit-scrollbar-thumb {
+  background-color: var(--primary-light-gray);
+  border-radius: 0.18rem;
+}

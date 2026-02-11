@@ -221,7 +221,7 @@ export const MATERIAL = {
   down_arrow: '/assets/material/down_arrow.svg',
   drawerguid: '/assets/material/drawerguid.svg',
   filter: '/assets/material/filter.svg',
-  hing: '/assets/material/hing.svg',
+  hinge: '/assets/material/hinge.svg',
   mis: '/assets/material/mis.svg',
   molding: '/assets/material/molding.svg',
   up_arrow: '/assets/material/up arrow.svg',

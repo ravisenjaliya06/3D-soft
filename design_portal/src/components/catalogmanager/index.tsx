@@ -332,8 +332,8 @@ const CatalogManager = () => {
     Caster: assets.caster,
     Connector: assets.connector,
     'Drawer Guide': assets.drawerguid,
-    Hinge: assets.pull,
-    'Hinge Plate': assets.hing,
+    Hinge: assets.hinge,
+    'Hinge Plate': assets.hinge,
     Laminate: assets.brandstok,
     Leg: assets.leg,
     'Leg Leveler': assets.leg_leveler,
@@ -351,7 +351,7 @@ const CatalogManager = () => {
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
       <div className="max-w-[85rem] flex-[3]">
-        <Header isBorderRadius={true} />
+        <Header isBorderRadius={true} dashboardName="Catalog Manager" />
 
         <div className="justify-between">
           {/* TOP TOOLBAR */}
@@ -423,7 +423,7 @@ const CatalogManager = () => {
                   <img
                     src={assets.addd}
                     alt="Add"
-                    className="ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer"
+                    className="pointer-events-none ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer opacity-50"
                     onClick={handleAddCatalog}
                   />
                 </div>
@@ -442,11 +442,10 @@ const CatalogManager = () => {
                     <div
                       key={type}
                       onClick={() => setActiveRuleType(type)}
-                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
-                        activeRuleType === type
-                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
-                          : 'text-gray-500 hover:bg-gray-100'
-                      }`}
+                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${activeRuleType === type
+                        ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
+                        : 'text-gray-500 hover:bg-gray-100'
+                        }`}
                     >
                       <img src={iconList[type]} alt="" className="h-[1rem] w-[1rem]" />
                       {type}
@@ -578,11 +577,10 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                            selectedPartId === part.id
-                              ? 'bg-[var(--primary-hover)]'
-                              : 'bg-[var(--primary-white)]'
-                          } `}
+                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${selectedPartId === part.id
+                            ? 'bg-[var(--primary-hover)]'
+                            : 'bg-[var(--primary-white)]'
+                            } `}
                         >
                           <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
                             <div className="flex h-full items-center text-left text-[0.72rem] text-[#3F3F46]">
@@ -745,11 +743,10 @@ const CatalogManager = () => {
                               draggable
                               onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
                               onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-table-hover)] ${
-                                selectedMaterialId === row.id
-                                  ? 'bg-[var(--primary-hover)]'
-                                  : 'bg-[var(--primary-white)]'
-                              } `}
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-table-hover)] ${selectedMaterialId === row.id
+                                ? 'bg-[var(--primary-hover)]'
+                                : 'bg-[var(--primary-white)]'
+                                } `}
                             >
                               {/* RADIO */}
                               <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">

@@ -13,10 +13,8 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
   actionButton,
 }) => {
   return (
-    <div className="mb-[1rem] flex h-[7vh] items-center justify-between rounded-[0.600rem] border-[0.063rem] border-[rgba(57,37,121,0.3)] bg-gradient-to-r from-white to-[#f5e5ff] px-[1.5rem] py-[0rem]">
-      <div className="flex items-center">{/* Dropdown can be added here if needed */}</div>
-
-      <div className="flex items-center space-x-3">
+    <div className="mt-[0.75rem] mb-[1rem] flex h-[7vh] items-center justify-between rounded-[0.4rem] border-[0.063rem] border-[rgba(57,37,121,0.3)] bg-gradient-to-r from-white to-[#f5e5ff] px-[1.5rem] py-[0rem]">
+      <div className="ml-[43.5rem] flex items-center">
         <button className="flex items-center border-[0rem] bg-transparent pr-[1rem]">
           <img src={assets.filter || '/placeholder.svg'} alt="" className="h-[1rem] w-[1rem]" />
         </button>
@@ -34,12 +32,14 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
           </svg>
 
           {/* Input */}
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="h-[1.5rem] w-[8.625rem] rounded-[0.5rem] border-[0.1rem] border-[var(--border-color)] bg-transparent pr-3 pl-[2.25rem] text-[0.75rem] text-[var(--text-color)] outline-none focus:border-[var(--border-color)]"
-          />
+          <div className="relative z-25">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-[1.5rem] w-[8.625rem] overflow-visible rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-transparent pr-3 pl-[2.25rem] text-[0.75rem] text-[var(--text-color)] outline-none focus:border-[var(--border-color)]"
+            />
+          </div>
         </div>
 
         {actionButton}

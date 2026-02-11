@@ -496,7 +496,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {homeTools.map(({ option, icon, onClick, isActive, disabled }) => (
                     <div
                       key={option}
-                      className={styles.toollistbox}
+                      className={`${styles.toollistbox} ${isActive ? styles.activeItem : ''}`}
                       onClick={!disabled ? onClick : undefined}
                       style={{
                         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -504,14 +504,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       }}
                       title={disabled ? 'Coming Soon' : option}
                     >
-                      <div
-                        className={`${styles.activegroup_tools} ${
-                          isActive ? styles.activegroup_tools_selected : ''
-                        }`}
-                      >
+                      <div className={styles.activegroup_tools}>
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
                       <span>{option}</span>
+                      <div className={styles.left_toolbarlist_arrow}>
+                        <img src={assets.left_arrow} alt="arrow" />
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -156,7 +156,7 @@ const Material: React.FC = () => {
       <Sidebar />
 
       <div className="max-w-[80rem] min-w-0 flex-[3]">
-        <Header isBorderRadius={true} />
+        <Header isBorderRadius={true} dashboardName="Material" />
 
         {!addMaterialPopup && (
           <div className={styles.maincontainer}>

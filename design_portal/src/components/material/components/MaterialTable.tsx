@@ -2,6 +2,7 @@ import { assets, MENU_DOWN_SVG, MENU_UP_SVG } from '@/svgPaths';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { CATEGORY_TABS } from '../constants';
+import styles from '../material.module.css';
 import type { TableRow } from '../types';
 
 interface MaterialTableProps {
@@ -55,14 +56,8 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
-    <div
-      style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'var(--scrollbar-color-2) transparent',
-      }}
-      className="h-full flex-1 overflow-auto overflow-y-auto rounded-[10px] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px] [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
-    >
-      <div className="sticky top-0 z-20 ml-[1rem] bg-[var(--primary-white)]">
+    <div className="h-full max-h-[73vh] flex-1 rounded-[0.4rem] border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] p-0 pb-[5px]">
+      <div className="sticky top-0 z-20 ml-[1rem] rounded-[0.4rem] bg-[var(--primary-white)]">
         <div className="flex min-w-max">
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
@@ -71,11 +66,10 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
               className="mr-[0.7rem] cursor-pointer px-[0.1rem] pb-[0.5rem]"
             >
               <p
-                className={`m-[0] inline-block py-[0.3rem] pt-[0.8rem] text-[0.85rem] transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-b border-black font-[700] text-[var(--primary-color)]'
-                    : 'border-b border-transparent text-[var(--primary-color-grey-2)] hover:border-black hover:text-[var(--primary-color)]'
-                } `}
+                className={`m-[0] inline-block py-[0.3rem] pt-[0.8rem] text-[0.85rem] transition-all duration-200 ${activeTab === tab.id
+                  ? 'border-b border-black font-[700] text-[var(--primary-color)]'
+                  : 'border-b border-transparent text-[var(--primary-color-grey-2)] hover:border-black hover:text-[var(--primary-color)]'
+                  } `}
               >
                 {tab.label}
               </p>
@@ -83,78 +77,82 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           ))}
         </div>
       </div>
-      <table className="w-full table-auto border-collapse overflow-auto bg-white text-left align-middle text-[0.85rem]">
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className={`sticky top-0 z-10 border-t border-r border-l border-[#39257933] bg-white p-[0.75rem] py-[0px] pb-[5px] text-xs font-[600] whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
-                onClick={() => column.sortable && onSort(column.key)}
-              >
-                <div className="flex items-center justify-start">
-                  <p className="text-[0.80rem] font-[500]">{column.label}</p>
-                  {column.sortable && (
-                    <div className="flex flex-col items-center">
-                      <img
-                        src={MENU_UP_SVG.menu_up}
-                        alt="Sort icon"
-                        className="mb-[-6px] ml-[3px] w-[1rem]"
-                      />
-                      <img
-                        src={MENU_DOWN_SVG.menu_down}
-                        alt="Sort icon"
-                        className="mt-[-2.5px] ml-[6px] w-[1rem]"
-                      />
-                    </div>
-                  )}
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {visibleMaterials.length === 0 ? (
+      <div
+        className={`${styles.scrollContainer} h-[67.5vh] max-h-[67.5vh] overflow-x-auto overflow-y-auto`}
+      >
+        <table className="w-full table-auto border-collapse overflow-auto bg-white text-left align-middle text-[0.85rem]">
+          <thead>
             <tr>
-              <td
-                colSpan={columns.length}
-                className="py-[10rem] text-center text-[0.75rem] font-medium text-gray-500"
-              >
-                No items available
-              </td>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className={`sticky top-0 z-10 border-t border-r border-l border-[#39257933] bg-white p-[0.75rem] py-[0px] pb-[5px] text-xs font-[600] whitespace-nowrap text-gray-700 ${column.sortable ? 'cursor-pointer select-none hover:bg-gray-50' : ''}`}
+                  onClick={() => column.sortable && onSort(column.key)}
+                >
+                  <div className="flex items-center justify-start">
+                    <p className="text-[0.80rem] font-[500]">{column.label}</p>
+                    {column.sortable && (
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={MENU_UP_SVG.menu_up}
+                          alt="Sort icon"
+                          className="mb-[-6px] ml-[3px] w-[1rem]"
+                        />
+                        <img
+                          src={MENU_DOWN_SVG.menu_down}
+                          alt="Sort icon"
+                          className="mt-[-2.5px] ml-[6px] w-[1rem]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </th>
+              ))}
             </tr>
-          ) : (
-            visibleMaterials.map((row, rowIndex) => (
-              <tr
-                key={row.id}
-                className="border-[#39257933] text-sm transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.65rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
-                  >
-                    {getCellValue(row, column.key)}
-                  </td>
-                ))}
+          </thead>
+          <tbody>
+            {visibleMaterials.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="py-[10rem] text-center text-[0.75rem] font-medium text-gray-500"
+                >
+                  No items available
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      {visibleCount < materials.length && (
-        <div className="flex justify-center p-4">
-          <button
-            onClick={() => setVisibleCount((prev) => prev + initVisibleCount)}
-            className="m-[1.5rem] space-x-[0.5rem] border-none bg-transparent px-6 py-2 text-[1.05rem] font-medium text-[var(--primary-color)] transition-colors"
-          >
-            <div className="flex items-center space-x-[0.5rem]">
-              <span>Load More</span>
-              <img src={assets.loadMore || '/placeholder.svg'} alt="" className="top-[0.5rem]" />
-            </div>
-          </button>
-        </div>
-      )}
+            ) : (
+              visibleMaterials.map((row, rowIndex) => (
+                <tr
+                  key={row.id}
+                  className="border-[#39257933] text-sm transition-colors odd:bg-[#F4F7FA] hover:bg-[#f0f9ff] odd:hover:bg-[#e9f0f7]"
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`h-[20px] max-w-[250px] min-w-[100px] truncate border-r border-l border-[#39257933] p-[0.75rem] text-[0.65rem] whitespace-nowrap text-gray-700 ${rowIndex === visibleMaterials.length - 1 ? 'border-b border-[#39257933]' : ''}`}
+                    >
+                      {getCellValue(row, column.key)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        {visibleCount < materials.length && (
+          <div className="flex justify-center p-4">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + initVisibleCount)}
+              className="m-[1.5rem] space-x-[0.5rem] border-none bg-transparent px-6 py-2 text-[1.05rem] font-medium text-[var(--primary-color)] transition-colors"
+            >
+              <div className="flex items-center space-x-[0.5rem]">
+                <span>Load More</span>
+                <img src={assets.loadMore || '/placeholder.svg'} alt="" className="top-[0.5rem]" />
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
