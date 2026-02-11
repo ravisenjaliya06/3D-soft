@@ -77,10 +77,16 @@ function generatePlankHoles(
 
       if (connection.plankBId === plank.id) {
         // Plank B is Bolt/Mating Plank
-        const screwMatingHole: MinifixHole = { ...connection.screwMating, connectorId: connection.id };
+        const screwMatingHole: MinifixHole = {
+          ...connection.screwMating,
+          connectorId: connection.id,
+        };
         holes.push(screwMatingHole);
 
-        const dowelMatingHole: MinifixHole = { ...connection.dowelMating, connectorId: connection.id };
+        const dowelMatingHole: MinifixHole = {
+          ...connection.dowelMating,
+          connectorId: connection.id,
+        };
         holes.push(dowelMatingHole);
       }
     });

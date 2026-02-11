@@ -67,10 +67,10 @@ export interface MinifixConnection {
   // Bolt Plank = The plank that contains the Thread insert (Usually Side/Vertical)
 
   screwHousing: MinifixHole; // 30mm hole in Housing Plank (Edge)
-  screwMating: MinifixHole;  // 10mm hole in Bolt Plank (Face)
+  screwMating: MinifixHole; // 10mm hole in Bolt Plank (Face)
   dowelHousing: MinifixHole; // 20mm hole in Housing Plank (Edge)
-  dowelMating: MinifixHole;  // 10mm hole in Bolt Plank (Face)
-  cam: MinifixHole;          // Cam hole in Housing Plank (Face)
+  dowelMating: MinifixHole; // 10mm hole in Bolt Plank (Face)
+  cam: MinifixHole; // Cam hole in Housing Plank (Face)
 }
 
 export type Axis = 'x' | 'y' | 'z';

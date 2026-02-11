@@ -1,6 +1,12 @@
 import { Position } from '../store/interface';
 import { MINIFIX_STANDARDS } from './constant';
-import type { MinifixConnection, MinifixHole, MinifixStandards, PlankConnection, PlankData } from './types';
+import type {
+  MinifixConnection,
+  MinifixHole,
+  MinifixStandards,
+  PlankConnection,
+  PlankData,
+} from './types';
 
 function getFaceId(normal: Position, name?: string): string {
   console.log(normal);
@@ -25,7 +31,11 @@ function getFaceId(normal: Position, name?: string): string {
   return '0';
 }
 
-function calculateLocal2D(point: Position, plank: PlankData, faceId: string): { x: number; y: number } {
+function calculateLocal2D(
+  point: Position,
+  plank: PlankData,
+  faceId: string
+): { x: number; y: number } {
   const { position: center, width, height, depth } = plank;
   const halfW = width / 2;
   const halfH = height / 2;
@@ -88,7 +98,10 @@ export function calculateMinifixPositions(
     let housingPlank = plankA;
     let boltPlank = plankB;
 
-    if (connectionType === 'HORIZONTAL_TO_VERTICAL' || connectionType === 'VERTICAL_TO_HORIZONTAL') {
+    if (
+      connectionType === 'HORIZONTAL_TO_VERTICAL' ||
+      connectionType === 'VERTICAL_TO_HORIZONTAL'
+    ) {
       const isOverlay = Math.abs(connection.touchingFaceNormal.y) > 0.9;
 
       if (isOverlay) {
@@ -105,11 +118,14 @@ export function calculateMinifixPositions(
         boltPlank = p1;
       }
     } else {
-      const isSideA = plankA.name.toUpperCase().includes('LEFT') || plankA.name.toUpperCase().includes('RIGHT');
+      const isSideA =
+        plankA.name.toUpperCase().includes('LEFT') || plankA.name.toUpperCase().includes('RIGHT');
       if (isSideA) {
-        housingPlank = plankB; boltPlank = plankA;
+        housingPlank = plankB;
+        boltPlank = plankA;
       } else {
-        housingPlank = plankA; boltPlank = plankB;
+        housingPlank = plankA;
+        boltPlank = plankB;
       }
     }
 
@@ -174,13 +190,13 @@ function calculateSingleConnectionData(
     intoHousingDir = {
       x: -Math.round(connection.touchingFaceNormal.x),
       y: -Math.round(connection.touchingFaceNormal.y),
-      z: -Math.round(connection.touchingFaceNormal.z)
+      z: -Math.round(connection.touchingFaceNormal.z),
     };
   } else {
     intoHousingDir = {
       x: Math.round(connection.touchingFaceNormal.x),
       y: Math.round(connection.touchingFaceNormal.y),
-      z: Math.round(connection.touchingFaceNormal.z)
+      z: Math.round(connection.touchingFaceNormal.z),
     };
   }
 
@@ -236,9 +252,12 @@ function calculateSingleConnectionData(
     face: getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z }, housingPlank.name),
     diameter: standards.camDiameter,
     depth: standards.camDepth,
-    localPosition2D: calculateLocal2D(camPos3D, housingPlank, getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z })),
+    localPosition2D: calculateLocal2D(
+      camPos3D,
+      housingPlank,
+      getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z })
+    ),
   };
-
 
   // DOWEL HOLES
   const dowelOffsetVector = { x: 0, y: 0, z: 0 };

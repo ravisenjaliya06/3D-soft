@@ -38,7 +38,11 @@ export function visualizeMinifixConnections(
   });
 }
 
-function createScrewVisualization(connection: MinifixConnection, index: number, isHousing: boolean): THREE.Mesh {
+function createScrewVisualization(
+  connection: MinifixConnection,
+  index: number,
+  isHousing: boolean
+): THREE.Mesh {
   const hole = isHousing ? connection.screwHousing : connection.screwMating;
   const geometry = new THREE.CylinderGeometry(
     (hole.diameter || 8) / 2,
@@ -52,11 +56,7 @@ function createScrewVisualization(connection: MinifixConnection, index: number, 
     roughness: 0.2,
   });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(
-    hole.position.x,
-    hole.position.y,
-    hole.position.z
-  );
+  mesh.position.set(hole.position.x, hole.position.y, hole.position.z);
   // Shift cylinder center if needed?
   // Cylinder is centered at origin.
   // We want it to start at position and go in direction.
@@ -113,7 +113,7 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   // We align Y (0, 1, 0) to boltDir (Drill Direction).
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), boltDir);
 
-  // Legacy fix for Horizontal to Vertical? 
+  // Legacy fix for Horizontal to Vertical?
   // If we just align Y to direction, it should be correct regardless of joint type.
   // The calculator provides the correct world-space direction.
   // So we don't need the conditional override unless there's a specific texture alignment issue.
@@ -127,8 +127,6 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   };
   return mesh;
 }
-
-
 
 function createDowelVisualization(
   connection: MinifixConnection,
@@ -175,10 +173,7 @@ function createDowelVisualization(
 function removeExistingMinifix(cupboardObject: THREE.Object3D): void {
   const toRemove: THREE.Object3D[] = [];
   cupboardObject.traverse((child) => {
-    if (
-      child.name.startsWith('Minifix_') ||
-      child.name.startsWith('JointMarker_')
-    ) {
+    if (child.name.startsWith('Minifix_') || child.name.startsWith('JointMarker_')) {
       toRemove.push(child);
     }
   });

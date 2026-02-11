@@ -234,7 +234,9 @@ const Mes = () => {
               </div>
 
               {/* Title */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <h2>
                   {viewMode === 'designs' && 'Designs'}
                   {viewMode === 'sheets' && `Sheets - ${selectedDesign?.design_name || ''}`}

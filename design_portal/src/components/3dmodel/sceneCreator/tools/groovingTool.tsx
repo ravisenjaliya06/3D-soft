@@ -1,11 +1,8 @@
 import * as THREE from 'three';
-import {
-  GROOVE_DEPTH,
-  GROOVE_WIDTH,
-} from '../constants';
-import { EDGES, PART_TYPES } from '../interface';
 import { store } from '../../store';
 import { updateObject } from '../../store/dataSlice';
+import { GROOVE_DEPTH, GROOVE_WIDTH } from '../constants';
+import { PART_TYPES } from '../interface';
 
 /**
  * Comprehensive GroovingTool class for managing grooving on planks
@@ -31,7 +28,9 @@ export class GroovingTool {
    */
   public isBackPlank(mesh: THREE.Mesh): boolean {
     if (!this.isPlank(mesh)) return false;
-    return mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.toUpperCase().includes('BACK_PLANK');
+    return (
+      mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.toUpperCase().includes('BACK_PLANK')
+    );
   }
 
   /**
@@ -49,8 +48,7 @@ export class GroovingTool {
    */
   private calculateGrooveFromIntersection(
     sibling: THREE.Mesh,
-    intersectionBox: THREE.Box3,
-    backMesh: THREE.Mesh
+    intersectionBox: THREE.Box3
   ): any {
     // 1. Convert Intersection to Sibling Local Space
     // We need the min/max of the intersection in the Sibling's local coordinate system.
@@ -75,10 +73,10 @@ export class GroovingTool {
       new THREE.Vector3(intersectionBox.max.x, intersectionBox.max.y, intersectionBox.min.z),
       new THREE.Vector3(intersectionBox.max.x, intersectionBox.min.y, intersectionBox.max.z),
       new THREE.Vector3(intersectionBox.min.x, intersectionBox.max.y, intersectionBox.max.z),
-      new THREE.Vector3(intersectionBox.max.x, intersectionBox.max.y, intersectionBox.max.z)
+      new THREE.Vector3(intersectionBox.max.x, intersectionBox.max.y, intersectionBox.max.z),
     ];
 
-    corners.forEach(p => {
+    corners.forEach((p) => {
       p.applyMatrix4(toLocal);
       localBox.expandByPoint(p);
     });
@@ -89,7 +87,7 @@ export class GroovingTool {
     const dimList = [
       { key: 'width', val: geo.parameters.width },
       { key: 'height', val: geo.parameters.height },
-      { key: 'depth', val: geo.parameters.depth }
+      { key: 'depth', val: geo.parameters.depth },
     ].sort((a, b) => a.val - b.val);
 
     const thicknessKey = dimList[0].key;
@@ -109,7 +107,11 @@ export class GroovingTool {
     // Let's assume XML coordinates are from Bottom-Left corner of Face.
     // So we need to offset the local coordinates by +Size/2.
 
-    const halfSize = { width: geo.parameters.width / 2, height: geo.parameters.height / 2, depth: geo.parameters.depth / 2 };
+    const halfSize = {
+      width: geo.parameters.width / 2,
+      height: geo.parameters.height / 2,
+      depth: geo.parameters.depth / 2,
+    };
 
     // Normalized Coordinates (0 to Size)
     // Start Point
@@ -122,8 +124,12 @@ export class GroovingTool {
     const ley = localBox.max.y + halfSize.height;
     const lez = localBox.max.z + halfSize.depth;
 
-    let x = 0, y = 0, endX = 0, endY = 0;
-    let faceW = 0, faceH = 0;
+    let x = 0,
+      y = 0,
+      endX = 0,
+      endY = 0;
+    let faceW = 0,
+      faceH = 0;
 
     if (thicknessKey === 'depth') {
       // Face is X/Y. Z is Thickness.
@@ -135,7 +141,6 @@ export class GroovingTool {
       y = ly;
       endX = lex;
       endY = ley;
-
     } else if (thicknessKey === 'width') {
       // Face is Y/Z. X is Thickness.
       // nest.py: w = raw_h (Y), h = raw_d (Z)
@@ -146,8 +151,8 @@ export class GroovingTool {
       y = lz;
       endX = ley;
       endY = lez;
-
-    } else { // height is thickness
+    } else {
+      // height is thickness
       // Face is X/Z. Y is Thickness.
       // nest.py: w = raw_w (X), h = raw_d (Z)
       faceW = geo.parameters.width;
@@ -172,19 +177,19 @@ export class GroovingTool {
     const dy = Math.abs(endY - y);
 
     const finalData = {
-      id: "6000",
-      type: "4",
-      isGenCode: "2",
-      face: "5",
+      id: '6000',
+      type: '4',
+      isGenCode: '2',
+      face: '5',
       x: 0,
       y: 0,
       endX: 0,
       endY: 0,
       width: GROOVE_WIDTH,
       depth: GROOVE_DEPTH,
-      toolOffset: "ÖÐ",
-      slotType: "0",
-      macIndex: "1"
+      toolOffset: 'ÖÐ',
+      slotType: '0',
+      macIndex: '1',
     };
 
     // If dx > dy, groove runs along X. Y is constant (Midpoint).
@@ -207,7 +212,9 @@ export class GroovingTool {
     finalData.endX = Number(finalData.endX.toFixed(6));
     finalData.endY = Number(finalData.endY.toFixed(6));
 
-    console.log(`[GroovingTool] Intersection: LocalBoxMin(${lx},${ly},${lz}) Max(${lex},${ley},${lez}). Face(${thicknessKey}): ${faceW}x${faceH}. Groove: (${finalData.x},${finalData.y}) -> (${finalData.endX},${finalData.endY})`);
+    console.log(
+      `[GroovingTool] Intersection: LocalBoxMin(${lx},${ly},${lz}) Max(${lex},${ley},${lez}). Face(${thicknessKey}): ${faceW}x${faceH}. Groove: (${finalData.x},${finalData.y}) -> (${finalData.endX},${finalData.endY})`
+    );
 
     return finalData;
   }
@@ -220,7 +227,7 @@ export class GroovingTool {
       return;
     }
 
-    console.log("[GroovingTool] Processing Back Plank:", mesh.name, mesh.userData.id);
+    console.log('[GroovingTool] Processing Back Plank:', mesh.name, mesh.userData.id);
 
     // 1. Resize Back Plank (if not already)
     const geometry = mesh.geometry as THREE.BoxGeometry;
@@ -229,8 +236,8 @@ export class GroovingTool {
 
     if (!mesh.userData.originalDimensions) {
       mesh.userData.originalDimensions = { width: oldW, height: oldH };
-      const newW = oldW + (GROOVE_DEPTH * 2);
-      const newH = oldH + (GROOVE_DEPTH * 2);
+      const newW = oldW + GROOVE_DEPTH * 2;
+      const newH = oldH + GROOVE_DEPTH * 2;
       console.log(`[GroovingTool] Resizing back plank from ${oldW}x${oldH} to ${newW}x${newH}`);
       mesh.geometry.dispose();
       mesh.geometry = new THREE.BoxGeometry(newW, newH, geometry.parameters.depth);
@@ -244,14 +251,14 @@ export class GroovingTool {
     // 2. Compute Back Plank World Box
     // Use Box3 setFromObject to include rotation/scale/position
     const backBox = new THREE.Box3().setFromObject(mesh);
-    // Slightly shrink backBox to avoid touching-only contacts? 
-    // Or expand slightly if we want tolerance? 
+    // Slightly shrink backBox to avoid touching-only contacts?
+    // Or expand slightly if we want tolerance?
     // Intersection volume is what we want.
 
     const siblings = mesh.parent?.children || [];
     console.log(`[GroovingTool] Found ${siblings.length} siblings.`);
 
-    siblings.forEach(sibling => {
+    siblings.forEach((sibling) => {
       if (sibling === mesh) return;
       if (!(sibling instanceof THREE.Mesh)) return;
 
@@ -269,14 +276,15 @@ export class GroovingTool {
         const intersectionBox = backBox.clone().intersect(siblingBox);
 
         // Calculate Groove Data from this intersection
-        const grooveData = this.calculateGrooveFromIntersection(sibling, intersectionBox, mesh);
+        const grooveData = this.calculateGrooveFromIntersection(sibling, intersectionBox);
 
         // Logic to Store/Update
         if (sibling.userData.objectId) {
-
           // Get current store state to preserve existing grooves
           const state = store.getState();
-          const existingObject = state.data.objects.find((o: any) => o.id === sibling.userData.objectId);
+          const existingObject = state.data.objects.find(
+            (o: any) => o.id === sibling.userData.objectId
+          );
 
           let currentGrooves: any[] = [];
           if (existingObject && existingObject.grooves) {
@@ -294,12 +302,17 @@ export class GroovingTool {
           }
 
           sibling.userData.grooves = currentGrooves;
-          console.log(`[GroovingTool] Dispatching Geometric Update for ${sibling.userData.objectId}:`, grooveData);
+          console.log(
+            `[GroovingTool] Dispatching Geometric Update for ${sibling.userData.objectId}:`,
+            grooveData
+          );
 
-          store.dispatch(updateObject({
-            id: sibling.userData.objectId,
-            grooves: currentGrooves
-          }));
+          store.dispatch(
+            updateObject({
+              id: sibling.userData.objectId,
+              grooves: currentGrooves,
+            })
+          );
         }
       }
     });
@@ -314,34 +327,35 @@ export class GroovingTool {
     if (mesh.userData.originalDimensions) {
       const { width, height } = mesh.userData.originalDimensions;
       mesh.geometry.dispose();
-      mesh.geometry = new THREE.BoxGeometry(width, height, (mesh.geometry as THREE.BoxGeometry).parameters.depth);
+      mesh.geometry = new THREE.BoxGeometry(
+        width,
+        height,
+        (mesh.geometry as THREE.BoxGeometry).parameters.depth
+      );
       delete mesh.userData.originalDimensions;
     }
 
     // Remove groove data from siblings
     const siblings = mesh.parent?.children || [];
-    siblings.forEach(sibling => {
+    siblings.forEach((sibling) => {
       if (sibling === mesh) return;
       if (!(sibling instanceof THREE.Mesh)) return;
 
       if (sibling.userData.grooves) {
         // Filter out grooves related to this back plank
-        const newGrooves = sibling.userData.grooves.filter((g: any) => g.id !== "6000");
+        const newGrooves = sibling.userData.grooves.filter((g: any) => g.id !== '6000');
         sibling.userData.grooves = newGrooves;
 
         if (sibling.userData.objectId) {
-          store.dispatch(updateObject({
-            id: sibling.userData.objectId,
-            grooves: newGrooves
-          }));
+          store.dispatch(
+            updateObject({
+              id: sibling.userData.objectId,
+              grooves: newGrooves,
+            })
+          );
         }
       }
     });
   }
 
-  // Legacy/Unused methods stubs
-  public removeGroovingOnEdge(mesh: THREE.Mesh, edge: string): void { }
-  public getGroovingMeshes(mesh: THREE.Mesh): THREE.Mesh[] { return []; }
-  public hasGroovingOnEdge(mesh: THREE.Mesh, edge: string): boolean { return false; }
-  public detectGroovingState(mesh: THREE.Mesh): any { return { grooves: [], protrusions: [] }; }
 }

@@ -318,7 +318,10 @@ export class SyncManager {
       this.meshBuilder.updateGrooving(mesh);
     }
 
-    if (changes.dimensions && (mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.includes('BACK_PLANK'))) {
+    if (
+      changes.dimensions &&
+      (mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.includes('BACK_PLANK'))
+    ) {
       this.meshBuilder.updateGrooving(mesh);
     }
 
@@ -735,7 +738,8 @@ export class SyncManager {
     // Apply grooving if it is a Back Plank
     if (
       this.meshBuilder &&
-      (item.type === PART_TYPES.BACK_PLANK || (item.name && item.name.toUpperCase().includes('BACK_PLANK')))
+      (item.type === PART_TYPES.BACK_PLANK ||
+        (item.name && item.name.toUpperCase().includes('BACK_PLANK')))
     ) {
       this.meshBuilder.updateGrooving(mesh);
     }
