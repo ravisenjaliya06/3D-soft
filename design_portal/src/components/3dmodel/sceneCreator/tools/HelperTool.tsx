@@ -136,7 +136,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
   }, []);
 
   const handlePanelDesign = useCallback(() => {
-    const designId = window.location.pathname.split('/')[2]; // or get from props / state
+    const designId = window.location.pathname.split('/')[2];
 
     router.push(`/design/${designId}/paneldesign`);
   }, [router, design3D]);
