@@ -560,7 +560,8 @@ export class MeshBuilder {
     this._setScale(mesh);
     this._setUserData(mesh);
     this._handleMaterial();
-    this._createGrooving();
+    this._handleMaterial();
+    // this._createGrooving();
     return mesh;
   }
 

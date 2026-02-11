@@ -43,14 +43,16 @@ export interface PlankConnection {
 
 export interface MinifixHole {
   type: 'SCREW' | 'CAM' | 'DOWEL' | 'BOLT_DRILL';
-  connectorId: string;
-  position: Position;
-  direction: Position;
+  connectorId: string; // ID of the parent connection
+  position: Position; // World position
+  direction: Position; // Normal vector pointing INTO the hole
+  drillType: '1' | '2'; // '1' = Vertical (Face), '2' = Horizontal (Edge)
+  face: string; // '1' through '6'
   diameter?: number;
   length?: number;
   depth?: number;
-  height?: number;
-  localPosition2D: { x: number; y: number };
+  height?: number; // Needed?
+  localPosition2D: { x: number; y: number }; // Relative to plank origin (bottom-left or center)
 }
 
 export interface MinifixConnection {
@@ -60,34 +62,15 @@ export interface MinifixConnection {
   plankBId: string;
   jointPosition: Position;
   connectionType: 'HORIZONTAL_TO_VERTICAL' | 'VERTICAL_TO_HORIZONTAL' | 'VERTICAL_TO_VERTICAL';
-  screw: {
-    position: Position;
-    direction: Position;
-    diameter: number;
-    length: number;
-    localPosition2D: { x: number; y: number }; // Now mandatory
-  };
-  cam: {
-    position: Position;
-    direction: Position;
-    diameter: number;
-    depth: number;
-    localPosition2D: { x: number; y: number }; // Now mandatory
-  };
-  dowel: {
-    position: Position;
-    direction: Position;
-    diameter: number;
-    length: number;
-    localPosition2D: { x: number; y: number }; // Now mandatory
-  };
-  boltDrill: {
-    position: Position;
-    direction: Position;
-    diameter?: number;
-    length?: number;
-    localPosition2D: { x: number; y: number }; // Now mandatory
-  };
+
+  // Housing Plank = The plank that contains the Cam and the Through-holes (Usually Top/Bottom)
+  // Bolt Plank = The plank that contains the Thread insert (Usually Side/Vertical)
+
+  screwHousing: MinifixHole; // 30mm hole in Housing Plank (Edge)
+  screwMating: MinifixHole; // 10mm hole in Bolt Plank (Face)
+  dowelHousing: MinifixHole; // 20mm hole in Housing Plank (Edge)
+  dowelMating: MinifixHole; // 10mm hole in Bolt Plank (Face)
+  cam: MinifixHole; // Cam hole in Housing Plank (Face)
 }
 
 export type Axis = 'x' | 'y' | 'z';
