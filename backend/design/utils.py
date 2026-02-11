@@ -177,7 +177,9 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                     "diameter": float(hole.get("diameter", 0)),
                     "depth": float(hole.get("depth", 0)),
                     "length": float(hole.get("length", 0)),  # For dowels
-                    "local_position2_d": hole.get("local_position2_d", {"x": 0, "y": 0}),
+                    "local_position2_d": hole.get(
+                        "local_position2_d", {"x": 0, "y": 0}
+                    ),
                     "position": hole.get("position", {"x": 0, "y": 0, "z": 0}),
                     "direction": hole.get("direction", {"x": 0, "y": 0, "z": 0}),
                     "drill_type": hole.get("drill_type", "1"),

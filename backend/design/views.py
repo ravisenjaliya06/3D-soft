@@ -380,7 +380,9 @@ class NestAPIViewset(ModelViewSet):
             file_path = f"{base_path}/xml_files.zip"
         else:
             return Response(
-                {"Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip)"},
+                {
+                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip)"
+                },
                 status=HTTP_400_BAD_REQUEST,
             )
         return Response({"file": file_path}, status=HTTP_200_OK)
