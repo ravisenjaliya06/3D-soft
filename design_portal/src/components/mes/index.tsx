@@ -156,6 +156,36 @@ const Mes = () => {
     a.remove();
   };
 
+  const handleDownload = async (format: string) => {
+    if (!selectedDesign) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response: { status: number; data: { file: string } } = await commonService.put(
+        API_ENDPOINT.DOWNLOAD_NESTING_PDF(selectedDesign.id),
+        { format }
+      );
+
+      if (response.status === 200 && response.data.file) {
+        const filePath = response.data.file.replace('umaboy', '');
+        const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${filePath}`;
+        const a = document.createElement('a');
+        a.href = fileUrl;
+        a.download = response.data.file.split('/').pop() || 'download';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        setError('Failed to download file');
+      }
+    } catch (err) {
+      setError('Error downloading file');
+      console.error('Download error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -204,11 +234,26 @@ const Mes = () => {
               </div>
 
               {/* Title */}
-              <h2>
-                {viewMode === 'designs' && 'Designs'}
-                {viewMode === 'sheets' && `Sheets - ${selectedDesign?.design_name || ''}`}
-                {viewMode === 'files' && `Files - Sheet ${selectedSheet?.sheet_number || ''}`}
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2>
+                  {viewMode === 'designs' && 'Designs'}
+                  {viewMode === 'sheets' && `Sheets - ${selectedDesign?.design_name || ''}`}
+                  {viewMode === 'files' && `Files - Sheet ${selectedSheet?.sheet_number || ''}`}
+                </h2>
+                {viewMode === 'sheets' && (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className={styles.viewButton} onClick={() => handleDownload('xlsx')}>
+                      Download XLSX
+                    </button>
+                    <button className={styles.viewButton} onClick={() => handleDownload('pdf')}>
+                      Download PDF
+                    </button>
+                    <button className={styles.viewButton} onClick={() => handleDownload('xml_zip')}>
+                      Download XML Zip
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {error && <div className={styles.errorMessage}>{error}</div>}
 
