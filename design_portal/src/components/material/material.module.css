@@ -42,39 +42,21 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.materialleftside::-webkit-scrollbar,
-.tableContainer::-webkit-scrollbar,
-.modalBody::-webkit-scrollbar,
-.custom_scrollbar::-webkit-scrollbar {
-  width: 0.4rem;
-  height: 0.4rem;
+.scrollContainer {
+  overflow-y: auto;
+  grid-template-columns: repeat(4, 1fr);
+  background-color: var(--primary-white);
+  scrollbar-width: thin;
 }
 
-.materialleftside::-webkit-scrollbar-track,
-.tableContainer::-webkit-scrollbar-track,
-.modalBody::-webkit-scrollbar-track,
-.custom_scrollbar::-webkit-scrollbar-track {
-  background: var(--primary-white);
-  border-radius: 0.7rem;
-  margin-right: 1rem;
-  margin-bottom: 1rem;
+.scrollContainer::-webkit-scrollbar {
+  width: 0.37rem;
 }
 
-.materialleftside::-webkit-scrollbar-thumb,
-.tableContainer::-webkit-scrollbar-thumb,
-.modalBody::-webkit-scrollbar-thumb,
-.custom_scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 0.7rem;
+.scrollContainer::-webkit-scrollbar-thumb {
+  background-color: var(--primary-light-gray);
+  border-radius: 0.18rem;
 }
-
-.materialleftside::-webkit-scrollbar-thumb:hover,
-.tableContainer::-webkit-scrollbar-thumb:hover,
-.modalBody::-webkit-scrollbar-thumb:hover,
-.custom_scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color);
-}
-
 .contextMenu {
   background: white;
   border: 0.063rem solid #ddd;
