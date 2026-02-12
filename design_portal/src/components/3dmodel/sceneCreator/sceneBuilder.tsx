@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
-import { createGrid } from '../design/grid-creator';
+// import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
 import { loadSinkModel } from '../design/scene';
 import { MoveHandler } from '../handler/moveHandler';
@@ -41,7 +41,7 @@ export class SceneBuilder {
   private hemiLight: THREE.HemisphereLight;
 
   // Environment
-  private grid: THREE.GridHelper;
+  // private grid: THREE.GridHelper;
   private daySky: Sky;
   private nightSky: Sky;
   private stars: THREE.Points;
@@ -73,7 +73,7 @@ export class SceneBuilder {
     this.renderer = this.createRenderer();
 
     // Initialize environment
-    this.grid = this.createGrid();
+    // this.grid = this.createGrid();
     const skySet = this.createSkySet();
     this.daySky = skySet.daySky;
     this.nightSky = skySet.nightSky;
@@ -151,10 +151,10 @@ export class SceneBuilder {
     return renderer;
   }
 
-  private createGrid(): THREE.GridHelper {
-    const gridConfig = this.config.gridConfig || {};
-    return createGrid(gridConfig.size || 1000, gridConfig.divisions || 1000);
-  }
+  // private createGrid(): THREE.GridHelper {
+  //   const gridConfig = this.config.gridConfig || {};
+  //   return createGrid(gridConfig.size || 1000, gridConfig.divisions || 1000);
+  // }
 
   private createSkySet(): { daySky: Sky; nightSky: Sky; stars: THREE.Points } {
     const daySky = createSky(SKY_SETS.daySky);
@@ -232,7 +232,7 @@ export class SceneBuilder {
 
   private async setupScene(): Promise<void> {
     // Add grid
-    this.scene.add(this.grid);
+    // this.scene.add(this.grid);
     this.scene.add(new THREE.AxesHelper(0.4));
 
     this.scene.background = new THREE.Color(0xa9a9a9);

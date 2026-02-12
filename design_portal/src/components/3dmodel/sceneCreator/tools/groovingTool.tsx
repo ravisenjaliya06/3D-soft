@@ -46,10 +46,7 @@ export class GroovingTool {
    * Calculate groove data based on geometric intersection
    * Converts World Intersection to Local Sibling Space and maps to Face 5
    */
-  private calculateGrooveFromIntersection(
-    sibling: THREE.Mesh,
-    intersectionBox: THREE.Box3
-  ): any {
+  private calculateGrooveFromIntersection(sibling: THREE.Mesh, intersectionBox: THREE.Box3): any {
     // 1. Convert Intersection to Sibling Local Space
     // We need the min/max of the intersection in the Sibling's local coordinate system.
     // Box3 is axis-aligned in World. To get Local Box, we transform corners?
@@ -357,5 +354,4 @@ export class GroovingTool {
       }
     });
   }
-
 }
