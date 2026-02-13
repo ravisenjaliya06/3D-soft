@@ -600,14 +600,6 @@ export class MeshBuilder {
       geometry,
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
-    const edges = new THREE.EdgesGeometry(geometry, 40);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, depthTest: true });
-    const outline = new THREE.LineSegments(edges, lineMaterial);
-    // outline.scale.multiplyScalar(1.002);
-
-    // mesh.add(outline);
-    // mesh.castShadow = true;
-    // mesh.receiveShadow = true;
     this.mesh = mesh;
 
     this._setName(mesh);
