@@ -689,6 +689,12 @@ export class SyncManager {
       return;
     }
 
+    // Don't create new mesh for floor - FloorManager handles geometry creation
+    // SyncManager only updates materials for existing floor meshes
+    if (item.type === 'floor') {
+      return;
+    }
+
     const mesh = this._createNewMesh();
 
     if (this._isObjectType(item.type)) {

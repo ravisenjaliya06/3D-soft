@@ -173,6 +173,9 @@ export class MeshBuilder {
     materialArray.forEach((materialData) => {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
+      } else if (materialData.type === 'Floor') {
+        // Support floor material type - use same texture loading as Panel Stock
+        createdMaterial = this._createTextureMaterial(materialData);
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
@@ -637,10 +640,14 @@ export class MeshBuilder {
       if (oldMaterialArray.length > 0 && newMaterialArray.length > 0) {
         const oldMat = oldMaterialArray[0];
         const newMat = newMaterialArray[0];
+
+        // Support both PANEL_STOCK and Floor material types
+        const supportedTypes = [MATERIAL_TYPES.PANEL_STOCK, 'Floor'];
+
         if (
-          oldMat.type === MATERIAL_TYPES.PANEL_STOCK &&
-          newMat.type === MATERIAL_TYPES.PANEL_STOCK &&
-          oldMat.textures?.[0]?.textureDetail?.image === newMat.textures?.[0]?.textureDetail?.image
+          supportedTypes.includes(oldMat.type) &&
+          supportedTypes.includes(newMat.type) &&
+          oldMat.textures?.[0]?.textureDetail?.image !== newMat.textures?.[0]?.textureDetail?.image
         ) {
           mesh.material.dispose();
           mesh.material = this._getMaterial();
