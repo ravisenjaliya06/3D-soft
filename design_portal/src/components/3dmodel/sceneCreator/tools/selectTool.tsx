@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
@@ -24,10 +23,7 @@ export class SelectObjectController {
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
   public onShowHelperTool: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(
-    camera: THREE.PerspectiveCamera,
-    scene: THREE.Scene,
-  ) {
+  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
     this.camera = camera;
     this.scene = scene;
 
@@ -383,7 +379,7 @@ export class SelectObjectController {
       mesh.position.copy(center);
     }
 
-    mesh.raycast = () => { };
+    mesh.raycast = () => {};
 
     return mesh;
   }
