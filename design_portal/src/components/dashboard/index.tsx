@@ -29,64 +29,59 @@ const ProjectDashboard = () => {
     fetchDesigns();
   }, []);
 
+  // Stats Data for cleaner mapping
+  const statsData = [
+    { label: 'Projects', value: 0, icon: assets.projects, color: 'blue' },
+    { label: 'Designs', value: designsCount, icon: assets.dashboarddesign, color: 'purple' },
+    { label: 'Users', value: 0, icon: assets.users, color: 'green' },
+    { label: 'Sales', value: 0, icon: assets.sells, color: 'orange' },
+  ];
+
+  // Features Data
+  const featuresData = [
+    { label: 'MES', icon: assets.Mes, route: '/mes' },
+    { label: 'Material', icon: assets.Material, route: '/material' },
+    { label: 'Catalog Manager', icon: assets.Catalogmanager, route: '/catalog' },
+    { label: 'Design', icon: assets.Designs, route: '/design' },
+  ];
+
   return (
     <div className={styles.container}>
       <Sidebar />
       <div className={styles.rightside}>
-        <Header dashboardName="Dashboard" />
+        <Header dashboardName="Dashboard" isBorderRadius={true} />
 
         <div className={styles.mainContent}>
-          <div className={styles.showdetails}>
-            <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.projects} alt="Project" />
-              <div className={styles.projectDetails}>
-                <p className={styles.showname}>Projects</p>
-                <p className={styles.showValues}>0</p>
+          {/* Top Row: Stats Cards */}
+          <div className={styles.statsGrid}>
+            {statsData.map((stat, index) => (
+              <div key={index} className={styles.statCard}>
+                <div className={styles.iconContainer}>
+                  <img src={stat.icon} alt={stat.label} />
+                </div>
+                <div className={styles.statInfo}>
+                  <p className={styles.statLabel}>{stat.label}</p>
+                  <h3 className={styles.statValue}>{stat.value}</h3>
+                </div>
               </div>
-            </div>
-            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
-            <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.dashboarddesign} alt="Design" />
-              <div className={styles.projectDetails}>
-                <p className={styles.showname}>Designs</p>
-                <p className={styles.showValues}>{designsCount}</p>
-              </div>
-            </div>
-            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
-            <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.users} alt="Users" />
-              <div className={styles.projectDetails}>
-                <p className={styles.showname}>Users</p>
-                <p className={styles.showValues}>0</p>
-              </div>
-            </div>
-            <img className={styles.Lines} src={assets.tab_line} alt="Line" />
-            <div className={styles.showprojectdetails}>
-              <img className={styles.showprojectimage} src={assets.sells} alt="Sells" />
-              <div className={styles.projectDetails}>
-                <p className={styles.showname}>Sells</p>
-                <p className={styles.showValues}>0</p>
-              </div>
+            ))}
+          </div>
+
+          {/* Bottom Row: Quick Navigation */}
+          <div>
+            <h3 className={styles.sectionTitle}>Quick Access</h3>
+            <div className={styles.featuresGrid}>
+              {featuresData.map((feature, index) => (
+                <div key={index} className={styles.featureCard}>
+                  <div className={styles.featureIconWrapper}>
+                    <img src={feature.icon} alt={feature.label} />
+                  </div>
+                  <p className={styles.featureTitle}>{feature.label}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className={styles.CardSectionlist}>
-            <div className={styles.CardSection}>
-              <img src={assets.Mes} alt="Floorplan" />
-              <p>MES</p>
-            </div>
-            <div className={styles.CardSection}>
-              <img src={assets.Material} alt="Public_library" />
-              <p>Material</p>
-            </div>
-            <div className={styles.CardSection}>
-              <img src={assets.Catalogmanager} alt="Final_design" />
-              <p>Catalog Manager</p>
-            </div>
-            <div className={styles.CardSection}>
-              <img src={assets.Designs} alt="Nesting" />
-              <p>Design</p>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
