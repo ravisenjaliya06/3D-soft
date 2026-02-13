@@ -3,12 +3,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
+import { FloorManager } from '../sceneCreator/floorManager';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { resetStoreForNewDesign, store } from '../store';
+import { store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
@@ -83,6 +84,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isQuickHideActive = useAppSelector((state) => state.data.isQuickHideActive);
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
+  const objects = useAppSelector((state) => state.data.objects);
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
@@ -102,7 +104,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!mountRef.current || !designId) return;
 
     // Clear full store so new design starts fresh (scene, data, catalog, history, etc.)
-    dispatch(resetStoreForNewDesign());
+    // i commented this line because i want to use the same store for multiple designs
+    // dispatch(resetStoreForNewDesign());
 
     // Get or create scene for this design (each design has its own scene)
     const threeDView = getOrCreateThreeDView(mountRef.current, designId);
@@ -232,6 +235,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'CUPBOARD',
     'TABLE',
     'PLATFORM',
+    'FLOOR',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
@@ -283,6 +287,48 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
   }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
 
+  // Sync floor from Redux data.objects to 3D scene
+  // FloorManager creates the initial floor geometry
+  // MeshBuilder handles texture updates for existing floor meshes
+  useEffect(() => {
+    if (!design3D?.scene) return;
+
+    // Filter floor objects from data.objects array
+    const floorObjects = objects.filter((obj) => obj.type === 'floor');
+
+    if (floorObjects.length === 0) return;
+
+    // Convert MeshObjectData back to Floor format for FloorManager
+    const floorData = floorObjects.map((obj) => {
+      // Extract texture URL from floor material
+      let textureUrl = '/textures/wood_7.jpg'; // Default
+      if (obj.material && Array.isArray(obj.material)) {
+        const floorMaterial = obj.material.find((mat) => mat.type === 'Floor');
+        if (floorMaterial?.textures && floorMaterial.textures.length > 0) {
+          const textureDetail = floorMaterial.textures[0].textureDetail;
+          if (textureDetail?.image) {
+            // Add API base URL prefix if texture path starts with /media
+            if (textureDetail.image.startsWith('/media')) {
+              textureUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureDetail.image}`;
+            } else {
+              textureUrl = textureDetail.image;
+            }
+          }
+        }
+      }
+
+      return {
+        id: obj.id,
+        points: obj.floorData?.points || [],
+        walls: obj.floorData?.walls || [],
+        textureUrl: textureUrl,
+      };
+    });
+
+    const floorManager = new FloorManager(design3D.scene, floorData);
+    floorManager.syncData();
+  }, [design3D, objects]);
+
   const handleConfirmSave = () => {
     if (!catalogName.trim()) {
       setError('Library name is required');
@@ -303,7 +349,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             design3D={design3D}
             isActive={isMeasurementActive}
             unitType={currentUnitType}
-            onComplete={() => {}}
+            onComplete={() => { }}
           />
           <HelperTool
             design3D={design3D}

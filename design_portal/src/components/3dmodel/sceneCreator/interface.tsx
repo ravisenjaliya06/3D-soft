@@ -15,6 +15,7 @@ export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
   SINK: 'sink',
+  FLOOR: 'floor',
 };
 
 export const PART_TYPES = {
@@ -183,6 +184,12 @@ export interface MeshObjectData {
   camHeight?: number;
   handleMode?: 'handle' | 'handleless';
   grooves?: GrooveData[];
+
+  // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
+  floorData?: {
+    points: { id?: string; x: number; y: number }[];
+    walls: string[];
+  };
 }
 
 export interface GrooveData {
