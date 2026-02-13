@@ -300,22 +300,54 @@ export class MeshBuilder {
       const center = new THREE.Vector3();
       bBox.getCenter(center);
 
-      const localPos = new THREE.Vector3(
-        center.x + xFactor * size.x,
-        center.y - yFactor * size.y,
-        bBox.max.z
-      );
+      // Calculate initial local position
+      let posX = center.x + xFactor * size.x;
+      let posY = center.y - yFactor * size.y;
+
+      // Handle clamping to prevent sticking out
+      const handleBox = new THREE.Box3().setFromObject(handle);
+      const handleSize = new THREE.Vector3();
+      handleBox.getSize(handleSize);
+
+      const rotationDeg = materialProps.rotation ?? 90;
+      const rotationRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(rotationDeg, 0, 180));
+
+      // Determine handle dimensions in its final orientation
+      handle.rotation.set(Math.PI / 2, rotationRad, 0);
+      handle.updateMatrixWorld(true);
+      const rotatedHandleBox = new THREE.Box3().setFromObject(handle);
+      const rotatedHandleSize = new THREE.Vector3();
+      rotatedHandleBox.getSize(rotatedHandleSize);
+
+      // Clamp posX and posY based on rotatedHandleSize
+      const halfHandleW = rotatedHandleSize.x / 2;
+      const halfHandleH = rotatedHandleSize.y / 2;
+
+      // Add padding (e.g., 15mm) to prevent hugging the edge
+      const padding = 15;
+
+      // targetMesh local bounds with padding
+      const minX = bBox.min.x + halfHandleW + padding;
+      const maxX = bBox.max.x - halfHandleW - padding;
+      const minY = bBox.min.y + halfHandleH + padding;
+      const maxY = bBox.max.y - halfHandleH - padding;
+
+      // Ensure we don't clamp to an invalid range if door is smaller than handle + padding
+      // If it's too small, we fall back to the simple clamping (no padding) or center it.
+      const safeMinX = Math.min(minX, maxX);
+      const safeMaxX = Math.max(minX, maxX);
+      const safeMinY = Math.min(minY, maxY);
+      const safeMaxY = Math.max(minY, maxY);
+
+      posX = THREE.MathUtils.clamp(posX, safeMinX, safeMaxX);
+      posY = THREE.MathUtils.clamp(posY, safeMinY, safeMaxY);
+
+      const localPos = new THREE.Vector3(posX, posY, bBox.max.z);
 
       const worldPos = targetMesh.localToWorld(localPos.clone());
       const attachParentLocal = attachParent.worldToLocal(worldPos.clone());
 
       handle.position.copy(attachParentLocal);
-
-      const rotationDeg = materialProps.rotation ?? 90;
-      const rotationRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(rotationDeg, 0, 180));
-
-      handle.rotation.set(Math.PI / 2, rotationRad, 0);
-
       attachParent.add(handle);
     };
 
@@ -405,15 +437,20 @@ export class MeshBuilder {
     if (!tool || !(mesh.geometry instanceof THREE.BoxGeometry)) return;
 
     const bandingState = this.meshData.edgeBanding;
-    if (!bandingState) return;
+    // For dimension updates, we don't need bandingState as we just resize existing meshes.
+    // For full updates, if bandingState is missing, the tool can still perform auto-detection.
+    if (!bandingState && !options?.isDimensionUpdate) {
+      // If we want to allow auto-detection during sync, we could proceed.
+      // For now, let's at least allow dimension updates to proceed.
+    }
 
     const { width, height, depth } = mesh.geometry.parameters;
 
-    const materialData = this.meshData.material;
-    if (!materialData) return;
-
-    const materialArray = Array.isArray(materialData) ? materialData : [materialData];
-    const bandingMaterialData = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.BANDING);
+    const bandingMaterialData = tool.getBandingMaterial(
+      mesh,
+      { material: this.meshData.material, parent: this.meshData.parent },
+      store.getState().data.objects
+    );
 
     if (bandingMaterialData) {
       await tool.updateBanding(
@@ -560,8 +597,7 @@ export class MeshBuilder {
     this._setScale(mesh);
     this._setUserData(mesh);
     this._handleMaterial();
-    this._handleMaterial();
-    // this._createGrooving();
+    this._createGrooving();
     return mesh;
   }
 

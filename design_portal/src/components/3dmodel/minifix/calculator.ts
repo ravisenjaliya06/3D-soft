@@ -9,7 +9,6 @@ import type {
 } from './types';
 
 function getFaceId(normal: Position, name?: string): string {
-  console.log(normal);
   const { x, y, z } = normal;
 
   if (name?.toUpperCase().includes('VERTICAL')) {
