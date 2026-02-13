@@ -3,7 +3,7 @@
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
-  background-color: #f7f9fc;
+  background-color: var(--background-color);
   font-family: 'Inter', sans-serif;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .statCard {
-  background: #ffffff;
+  background: var(--primary-white);
   border-radius: 1.25rem;
   padding: 1.5rem;
   display: flex;
@@ -118,7 +118,7 @@
 }
 
 .featureCard {
-  background: #ffffff;
+  background: var(--primary-white);
   border-radius: 1.25rem;
   padding: 2rem;
   display: flex;
@@ -224,4 +224,11 @@
   .container {
     overflow-y: auto;
   }
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  color: #334155;
+  margin-bottom: 1.5rem;
+  margin-left: 0.5rem;
 }

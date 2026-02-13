@@ -69,7 +69,7 @@ const ProjectDashboard = () => {
 
           {/* Bottom Row: Quick Navigation */}
           <div>
-            <h3 style={{ fontSize: '1.2rem', color: '#334155', marginBottom: '1.5rem', marginLeft: '0.5rem' }}>Quick Access</h3>
+            <h3 className={styles.sectionTitle}>Quick Access</h3>
             <div className={styles.featuresGrid}>
               {featuresData.map((feature, index) => (
                 <div key={index} className={styles.featureCard}>
