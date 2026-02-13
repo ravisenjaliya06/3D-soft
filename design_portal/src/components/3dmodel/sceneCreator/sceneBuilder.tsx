@@ -38,7 +38,7 @@ export class SceneBuilder {
   // Lighting
   private ambientLight: THREE.AmbientLight;
   private directionalLight: THREE.DirectionalLight;
-  private hemiLight: THREE.HemisphereLight;
+  private hemiLight: THREE.HemisphereLight | null;
 
   // Environment
   // private grid: THREE.GridHelper;
@@ -83,7 +83,7 @@ export class SceneBuilder {
     const lights = this.createLighting();
     this.ambientLight = lights.ambientLight;
     this.directionalLight = lights.directionalLight;
-    this.hemiLight = lights.hemiLight;
+    this.hemiLight = lights.hemiLight || null;
 
     // Initialize controls
     this.controls = this.createOrbitControls();
@@ -105,6 +105,8 @@ export class SceneBuilder {
     // Setup event listeners
     this.setupEventListeners();
 
+    // this.setupEnvironment();
+
     // Start animation loop
     this.startAnimation();
   }
@@ -116,10 +118,10 @@ export class SceneBuilder {
   private createPerspectiveCamera(): THREE.PerspectiveCamera {
     const cameraConfig = this.config.cameraConfig || {};
     const camera = new THREE.PerspectiveCamera(
-      cameraConfig.fov || 50,
+      45,
       window.innerWidth / window.innerHeight,
-      cameraConfig.near || 0.1,
-      cameraConfig.far || 1000
+      0.1,
+      1000
     );
 
     const position = cameraConfig.position || new THREE.Vector3(0, 3, 15);
@@ -130,31 +132,29 @@ export class SceneBuilder {
   }
 
   private createRenderer(): THREE.WebGLRenderer {
-    const rendererConfig = this.config.rendererConfig || {};
     const renderer = new THREE.WebGLRenderer({
-      antialias: rendererConfig.antialias !== undefined ? rendererConfig.antialias : true,
-      alpha: rendererConfig.alpha !== undefined ? rendererConfig.alpha : true,
-      preserveDrawingBuffer:
-        rendererConfig.preserveDrawingBuffer !== undefined
-          ? rendererConfig.preserveDrawingBuffer
-          : true,
+      antialias: false,
+      // alpha: true,
+      // preserveDrawingBuffer: false,
+      // powerPreference: "high-performance"
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    renderer.toneMappingExposure = 1;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    // renderer.setPixelRatio(Math.min(1.0));
+    // renderer.setClearColor(0x000000, 0);
+
+    renderer.shadowMap.enabled = true;
+    // renderer.shadowMap.type = THREE.PCFShadowMap;
+
+    // renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // renderer.toneMappingExposure = 1.0;
+    // this.scene.environmentIntensity = 0.8;
 
     this.mount.appendChild(renderer.domElement);
-
     return renderer;
   }
-
-  // private createGrid(): THREE.GridHelper {
-  //   const gridConfig = this.config.gridConfig || {};
-  //   return createGrid(gridConfig.size || 1000, gridConfig.divisions || 1000);
-  // }
 
   private createSkySet(): { daySky: Sky; nightSky: Sky; stars: THREE.Points } {
     const daySky = createSky(SKY_SETS.daySky);
@@ -181,22 +181,18 @@ export class SceneBuilder {
   private createLighting(): {
     ambientLight: THREE.AmbientLight;
     directionalLight: THREE.DirectionalLight;
-    hemiLight: THREE.HemisphereLight;
+    hemiLight: THREE.HemisphereLight | null;
   } {
     const lightingConfig = this.config.lightingConfig || {};
 
     // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, lightingConfig.ambientIntensity || 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
+    // ambientLight.intensity = 0.9;
 
     // Directional light
-    const directionalLight = new THREE.DirectionalLight(
-      0xffffff,
-      lightingConfig.directionalIntensity || 0.8
-    );
-    directionalLight.position.set(10, 15, 10);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 8, 5);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
 
     // Hemisphere light
     const hemiLight = new THREE.HemisphereLight(
@@ -204,8 +200,9 @@ export class SceneBuilder {
       0x444444,
       lightingConfig.hemiIntensity || 0.6
     );
+    hemiLight.intensity = 0.2;
 
-    return { ambientLight, directionalLight, hemiLight };
+    return { ambientLight, directionalLight, hemiLight: null };
   }
 
   private createOrbitControls(): OrbitControls {
@@ -235,16 +232,19 @@ export class SceneBuilder {
     // this.scene.add(this.grid);
     this.scene.add(new THREE.AxesHelper(0.4));
 
-    this.scene.background = new THREE.Color(0xa9a9a9);
+    this.scene.background = new THREE.Color(0xdddddd);
 
     // Add lighting
     this.scene.add(this.ambientLight);
     this.scene.add(this.directionalLight);
-    this.scene.add(this.hemiLight);
+    // this.scene.add(this.hemiLight || new THREE.AmbientLight(0xffffff, 0.2));
   }
 
   private setupEventListeners(): void {
     window.addEventListener('resize', () => this.handleResize());
+    this.controls.addEventListener('change', () => {
+      this.renderer.render(this.scene, this.camera);
+    });
   }
 
   private handleResize(): void {
@@ -355,6 +355,10 @@ export class SceneBuilder {
 
     // Remove event listeners
     window.removeEventListener('resize', () => this.handleResize());
+    window.addEventListener('resize', () => {
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
     // Dispose of geometries and materials
     this.scene.traverse((object) => {

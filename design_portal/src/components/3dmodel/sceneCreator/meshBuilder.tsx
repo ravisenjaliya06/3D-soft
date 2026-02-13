@@ -21,6 +21,7 @@ export class MeshBuilder {
   private parentMesh: THREE.Mesh | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
+  private textureLoader = new THREE.TextureLoader();
 
   constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
@@ -140,15 +141,19 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-      texture = new THREE.TextureLoader().load(
+      texture = this.textureLoader.load(
         `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
       );
+      // texture.anisotropy = 8;
+      // texture.generateMipmaps = true;
+      // texture.minFilter = THREE.LinearMipmapLinearFilter;
+      // texture.magFilter = THREE.LinearFilter;
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.repeat.set(1, 1);
-      texture.center.set(0, 0);
-      texture.offset.set(0, 0);
+      // texture.center.set(0, 0);
+      // texture.offset.set(0, 0);
     });
     return texture;
   }
@@ -159,6 +164,9 @@ export class MeshBuilder {
     return new THREE.MeshStandardMaterial({
       map: texture,
       wireframe: false,
+      roughness: 0.9,
+      metalness: 0,
+      // envMapIntensity: 0.6
     });
   }
 
@@ -592,6 +600,14 @@ export class MeshBuilder {
       geometry,
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
+    const edges = new THREE.EdgesGeometry(geometry, 40);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, depthTest: true });
+    const outline = new THREE.LineSegments(edges, lineMaterial);
+    // outline.scale.multiplyScalar(1.002);
+
+    // mesh.add(outline);
+    // mesh.castShadow = true;
+    // mesh.receiveShadow = true;
     this.mesh = mesh;
 
     this._setName(mesh);
