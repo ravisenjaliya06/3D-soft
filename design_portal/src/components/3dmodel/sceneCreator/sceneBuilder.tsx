@@ -118,7 +118,7 @@ export class SceneBuilder {
   private createPerspectiveCamera(): THREE.PerspectiveCamera {
     const cameraConfig = this.config.cameraConfig || {};
     const camera = new THREE.PerspectiveCamera(
-      45,
+      75,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
@@ -133,24 +133,13 @@ export class SceneBuilder {
 
   private createRenderer(): THREE.WebGLRenderer {
     const renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      // alpha: true,
-      // preserveDrawingBuffer: false,
-      // powerPreference: "high-performance"
+      antialias: true,
+      logarithmicDepthBuffer: true
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    // renderer.setPixelRatio(Math.min(1.0));
-    // renderer.setClearColor(0x000000, 0);
-
+    renderer.setPixelRatio(1);
     renderer.shadowMap.enabled = true;
-    // renderer.shadowMap.type = THREE.PCFShadowMap;
-
-    // renderer.outputColorSpace = THREE.SRGBColorSpace;
-    // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // renderer.toneMappingExposure = 1.0;
-    // this.scene.environmentIntensity = 0.8;
 
     this.mount.appendChild(renderer.domElement);
     return renderer;
@@ -183,8 +172,6 @@ export class SceneBuilder {
     directionalLight: THREE.DirectionalLight;
     hemiLight: THREE.HemisphereLight | null;
   } {
-    const lightingConfig = this.config.lightingConfig || {};
-
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
     // ambientLight.intensity = 0.9;
@@ -193,15 +180,6 @@ export class SceneBuilder {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 8, 5);
     directionalLight.castShadow = true;
-
-    // Hemisphere light
-    const hemiLight = new THREE.HemisphereLight(
-      0xffffff,
-      0x444444,
-      lightingConfig.hemiIntensity || 0.6
-    );
-    hemiLight.intensity = 0.2;
-
     return { ambientLight, directionalLight, hemiLight: null };
   }
 
@@ -237,7 +215,6 @@ export class SceneBuilder {
     // Add lighting
     this.scene.add(this.ambientLight);
     this.scene.add(this.directionalLight);
-    // this.scene.add(this.hemiLight || new THREE.AmbientLight(0xffffff, 0.2));
   }
 
   private setupEventListeners(): void {

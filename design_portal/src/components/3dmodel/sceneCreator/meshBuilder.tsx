@@ -144,16 +144,10 @@ export class MeshBuilder {
       texture = this.textureLoader.load(
         `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
       );
-      // texture.anisotropy = 8;
-      // texture.generateMipmaps = true;
-      // texture.minFilter = THREE.LinearMipmapLinearFilter;
-      // texture.magFilter = THREE.LinearFilter;
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.repeat.set(1, 1);
-      // texture.center.set(0, 0);
-      // texture.offset.set(0, 0);
     });
     return texture;
   }
@@ -164,9 +158,6 @@ export class MeshBuilder {
     return new THREE.MeshStandardMaterial({
       map: texture,
       wireframe: false,
-      roughness: 0.9,
-      metalness: 0,
-      // envMapIntensity: 0.6
     });
   }
 
