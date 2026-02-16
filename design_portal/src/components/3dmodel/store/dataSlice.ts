@@ -20,6 +20,7 @@ const initialState: DataState = {
   points: [],
   walls: [],
   floor: [],
+  globalDoorsOpen: false,
 };
 
 const dataSlice = createSlice({
@@ -40,6 +41,9 @@ const dataSlice = createSlice({
     },
     setSelectedChildObject: (state, action: PayloadAction<string | null>) => {
       state.selectedChildObject = action.payload;
+    },
+    setGlobalDoorsOpen: (state, action: PayloadAction<boolean>) => {
+      state.globalDoorsOpen = action.payload;
     },
     updateObject: (state, action: PayloadAction<Partial<MeshObjectData> & { id: string }>) => {
       const updatedObject = action.payload;
@@ -178,6 +182,7 @@ export const {
   setUnitType,
   setCreationCancelHint,
   togglAlignment,
+  setGlobalDoorsOpen,
 } = dataSlice.actions;
 
 export const {

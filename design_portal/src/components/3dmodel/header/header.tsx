@@ -10,6 +10,7 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
+import { RootState } from '../store';
 import { Design, HeaderProps } from '../interface';
 import { PART_TYPES } from '../sceneCreator/interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
@@ -23,6 +24,7 @@ import {
   setActiveDesignMinifixDiameterHole,
   setActiveDesignMinifixDistance,
 } from '../store/activeDesignSlice';
+import { setGlobalDoorsOpen } from '../store/dataSlice';
 import {
   selectHeaderCamDepth,
   selectHeaderCamDiameter,
@@ -34,6 +36,7 @@ import styles from './header.module.css';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useDispatch();
+  const globalDoorsOpen = useSelector((state: RootState) => state.data.globalDoorsOpen);
 
   // Use selectors to get values with fallback to design settings
   const resolvedMinifixDistance = useSelector(selectHeaderMinifixDistance);
@@ -247,21 +250,15 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const handleOpenCloseClick = () => {
+    if (!design3D || !design3D.scene) return;
+
     /** Toggles open/close animations for doors and drawers in the 3D scene. */
     const controller = new CabinetMotionController();
 
-    design3D?.scene.traverse((child) => {
-      if (child.userData.type === PART_TYPES.DOOR && child instanceof THREE.Mesh) {
-        const direction = child.userData.openDirection;
-        if (direction) {
-          controller.toggleDoor(child);
-        }
-      }
+    const newState = !globalDoorsOpen;
+    dispatch(setGlobalDoorsOpen(newState));
 
-      if (child.userData.type === PART_TYPES.DRAWER && child instanceof THREE.Mesh) {
-        controller.toggleDrawer(child);
-      }
-    });
+    controller.toggleAll(design3D.scene, newState);
   };
 
   const handleSettingsClick = () => {
