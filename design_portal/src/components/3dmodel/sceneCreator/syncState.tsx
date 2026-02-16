@@ -300,7 +300,7 @@ export class SyncManager {
   private _createNewMesh(item?: MeshObjectData) {
     if (!this.meshBuilder) {
       if (item) {
-        // If meshBuilder is not initialized (e.g. valid when processing an array), 
+        // If meshBuilder is not initialized (e.g. valid when processing an array),
         // initialize it temporarily for this item to create the mesh
         this.meshBuilder = new MeshBuilder(item, this.scene);
       } else {
