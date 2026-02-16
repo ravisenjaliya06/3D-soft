@@ -9,14 +9,11 @@ import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as THREE from 'three';
-import { RootState } from '../store';
 import { Design, HeaderProps } from '../interface';
-import { PART_TYPES } from '../sceneCreator/interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { store } from '../store';
+import { RootState, store } from '../store';
 import {
   setActiveDesignCamDepth,
   setActiveDesignCamDiameter,
