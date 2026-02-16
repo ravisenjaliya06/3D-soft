@@ -21,6 +21,7 @@ export class MeshBuilder {
   private parentMesh: THREE.Mesh | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
+  private textureLoader = new THREE.TextureLoader();
 
   constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
@@ -140,15 +141,13 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-      texture = new THREE.TextureLoader().load(
+      texture = this.textureLoader.load(
         `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
       );
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.repeat.set(1, 1);
-      texture.center.set(0, 0);
-      texture.offset.set(0, 0);
     });
     return texture;
   }
