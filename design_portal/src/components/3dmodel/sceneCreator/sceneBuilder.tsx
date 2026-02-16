@@ -105,8 +105,6 @@ export class SceneBuilder {
     // Setup event listeners
     this.setupEventListeners();
 
-    // this.setupEnvironment();
-
     // Start animation loop
     this.startAnimation();
   }
@@ -174,7 +172,6 @@ export class SceneBuilder {
   } {
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
-    // ambientLight.intensity = 0.9;
 
     // Directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);

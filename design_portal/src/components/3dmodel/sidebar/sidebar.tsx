@@ -1590,12 +1590,7 @@ const Sidebar: React.FC = () => {
                                       <CustomToast
                                         appearance="error"
                                         message="Distance must be in multiple of 32"
-                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
-                                        // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
-                                        // It does NOT assume closeToast.
-                                        // Wait, the one in Toolbar DID have closeToast.
-                                        // I should probably update CustomToast to optionally accept it or just ignore it.
-                                        // Let's check CustomToast again.
+                                        closeToast={closeToast}
                                       />
                                     ),
                                     {
