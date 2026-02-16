@@ -306,7 +306,7 @@ export class SelectObjectController {
     }
 
     if (!this.hoveredObject) return;
-    const outline = createLineObjects(this.hoveredObject, 0x00EEFF);
+    const outline = createLineObjects(this.hoveredObject, 0x00eeff);
     this.scene.add(outline);
     this.hoverOutline = outline;
   }
@@ -387,10 +387,13 @@ export class SelectObjectController {
 
   private _createOutLine(obj: THREE.Mesh) {
     let outline: THREE.Object3D;
-    if (obj.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX || obj.userData.type === PART_TYPES.PLANK) {
+    if (
+      obj.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
+      obj.userData.type === PART_TYPES.PLANK
+    ) {
       outline = this._createSelectionBox(obj);
     } else {
-      outline = createLineObjects(obj, 0x1A7AF8);
+      outline = createLineObjects(obj, 0x1a7af8);
     }
 
     this.scene.add(outline);

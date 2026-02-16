@@ -1,13 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { Sky } from 'three/examples/jsm/objects/Sky.js';
 // import { createGrid } from '../design/grid-creator';
 import { ThreeDView } from '../design/interface';
 import { loadSinkModel } from '../design/scene';
 import { MoveHandler } from '../handler/moveHandler';
-import { createSky } from '../helper/sky';
-import { SKY_SETS } from '../helper/sky/constants';
 import { SceneBuilderConfig } from './interface';
 import { SelectObjectController } from './tools/selectTool';
 import { ZoomSelectionController } from './tools/zoomTools';
@@ -38,13 +35,6 @@ export class SceneBuilder {
   // Lighting
   private ambientLight: THREE.AmbientLight;
   private directionalLight: THREE.DirectionalLight;
-  private hemiLight: THREE.HemisphereLight | null;
-
-  // Environment
-  // private grid: THREE.GridHelper;
-  private daySky: Sky;
-  private nightSky: Sky;
-  private stars: THREE.Points;
 
   // State
   private isDay: boolean = true;
@@ -72,18 +62,10 @@ export class SceneBuilder {
     this.camera = this.perspectiveCamera;
     this.renderer = this.createRenderer();
 
-    // Initialize environment
-    // this.grid = this.createGrid();
-    const skySet = this.createSkySet();
-    this.daySky = skySet.daySky;
-    this.nightSky = skySet.nightSky;
-    this.stars = skySet.stars;
-
     // Initialize lighting
     const lights = this.createLighting();
     this.ambientLight = lights.ambientLight;
     this.directionalLight = lights.directionalLight;
-    this.hemiLight = lights.hemiLight || null;
 
     // Initialize controls
     this.controls = this.createOrbitControls();
@@ -132,7 +114,7 @@ export class SceneBuilder {
   private createRenderer(): THREE.WebGLRenderer {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      logarithmicDepthBuffer: true
+      logarithmicDepthBuffer: true,
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -141,28 +123,6 @@ export class SceneBuilder {
 
     this.mount.appendChild(renderer.domElement);
     return renderer;
-  }
-
-  private createSkySet(): { daySky: Sky; nightSky: Sky; stars: THREE.Points } {
-    const daySky = createSky(SKY_SETS.daySky);
-    const nightSky = createSky(SKY_SETS.nightSky);
-
-    // Create stars
-    const starGeometry = new THREE.BufferGeometry();
-    const starVertices = [];
-    for (let i = 0; i < 5000; i++) {
-      starVertices.push(
-        (Math.random() - 0.5) * 2000,
-        (Math.random() - 0.5) * 2000,
-        (Math.random() - 0.5) * 2000
-      );
-    }
-    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    stars.name = 'stars';
-
-    return { daySky, nightSky, stars };
   }
 
   private createLighting(): {
