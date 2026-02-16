@@ -297,9 +297,15 @@ export class SyncManager {
   }
 
   // Creates a new mesh
-  private _createNewMesh() {
+  private _createNewMesh(item?: MeshObjectData) {
     if (!this.meshBuilder) {
-      throw new Error('MeshBuilder is not initialized. This should not happen for single objects.');
+      if (item) {
+        // If meshBuilder is not initialized (e.g. valid when processing an array), 
+        // initialize it temporarily for this item to create the mesh
+        this.meshBuilder = new MeshBuilder(item, this.scene);
+      } else {
+        throw new Error('MeshBuilder is not initialized and no item provided.');
+      }
     }
     const mesh = this.meshBuilder.createMesh();
     return mesh;
@@ -695,7 +701,7 @@ export class SyncManager {
       return;
     }
 
-    const mesh = this._createNewMesh();
+    const mesh = this._createNewMesh(item);
 
     if (this._isObjectType(item.type)) {
       this.scene.add(mesh);

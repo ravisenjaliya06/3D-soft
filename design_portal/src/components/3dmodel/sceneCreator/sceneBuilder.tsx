@@ -131,7 +131,7 @@ export class SceneBuilder {
     hemiLight: THREE.HemisphereLight | null;
   } {
     // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.9);
 
     // Directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);

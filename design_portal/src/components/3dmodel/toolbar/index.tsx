@@ -20,6 +20,7 @@ import { ToolbarProps } from '../interface';
 import {
   GEOMETRY,
   INVISIBLE_BOXES,
+  MATERIAL_TYPES,
   MeshObjectData,
   OBJECT_TYPES,
   PART_TYPES,
@@ -94,9 +95,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
-            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-          }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+            }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -379,9 +379,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           scale: { x: 0.01, y: 0.01, z: 0.01 },
           material: [
             {
-              id: 'platform-mat',
+              id: crypto.randomUUID(),
               name: 'Platform Material',
-              type: 'Panel Stock',
+              type: MATERIAL_TYPES.MISCELLANEOUS,
+              properties: {
+                model: false,
+                unit_of_issue: 'Each',
+                default_cost: 0,
+                sell_price: 0,
+                default_markup: 0,
+                sales_tax: false,
+                default_tax_rate: 0,
+                waste: 0,
+                estimate: false,
+                model_file: null,
+              },
+              textures: [],
             },
           ],
         },
@@ -396,9 +409,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           scale: { x: 0.01, y: 0.01, z: 0.01 },
           material: [
             {
-              id: 'sink-mat',
+              id: crypto.randomUUID(),
               name: 'Sink Material',
-              type: 'Laminate',
+              type: MATERIAL_TYPES.MISCELLANEOUS,
+              properties: {
+                model: false,
+                unit_of_issue: 'Each',
+                default_cost: 0,
+                sell_price: 0,
+                default_markup: 0,
+                sales_tax: false,
+                default_tax_rate: 0,
+                waste: 0,
+                estimate: false,
+                model_file: null,
+              },
+              textures: [],
             },
           ],
         },
@@ -476,9 +502,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${
-                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                  }`}
+                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                    }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -615,7 +640,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <img
                     src={
                       iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]
                     }
                     alt={item.name}
