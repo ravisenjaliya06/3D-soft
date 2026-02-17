@@ -65,7 +65,7 @@
 }
 
 .activeTab {
-  background: linear-gradient(135deg, var(--wizardstepbox-bg-color) 0%, var(--primary-color) 100%);
+  background: var(--gradient-primary);
   color: var(--primary-white);
   font-weight: 700;
   border-color: transparent;
@@ -308,7 +308,7 @@
   display: flex;
   width: 10rem;
   height: 2.1rem;
-  background: linear-gradient(135deg, var(--wizardstepbox-bg-color) 0%, var(--primary-color) 100%);
+  background: var(--gradient-primary);
   color: var(--primary-white);
   gap: 0.5rem;
   justify-content: center;
@@ -325,7 +325,7 @@
 }
 
 .createWorkOrderButton:hover {
-  background: linear-gradient(135deg, var(--hover-button) 0%, var(--wizardstepbox-bg-color) 100%);
+  background: var(--gradient-primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 6px 20px var(--box-shadow-color);
 }
@@ -651,7 +651,7 @@
   font-family: var(--font-family);
   font-size: 0.9rem;
   font-weight: 500;
-  background: linear-gradient(135deg, var(--wizardstepbox-bg-color) 0%, var(--primary-color) 100%);
+  background: var(--gradient-primary);
   color: var(--primary-white);
   border: none;
   border-radius: 0.6rem;
@@ -660,7 +660,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: linear-gradient(135deg, var(--hover-button) 0%, var(--wizardstepbox-bg-color) 100%);
+    background: var(--gradient-primary-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px var(--box-shadow-color);
   }
@@ -737,7 +737,7 @@
 
 /* ─── View Button ─── */
 .viewButton {
-  background: linear-gradient(135deg, var(--wizardstepbox-bg-color) 0%, var(--primary-color) 100%);
+  background: var(--gradient-primary);
   color: var(--primary-white);
   border: none;
   border-radius: 0.6rem;
@@ -751,14 +751,14 @@
 }
 
 .viewButton:hover {
-  background: linear-gradient(135deg, var(--hover-button) 0%, var(--wizardstepbox-bg-color) 100%);
+  background: var(--gradient-primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px var(--box-shadow-color);
 }
 
 /* ─── Download Button ─── */
 .downloadButton {
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green) 100%);
+  background: var(--gradient-green);
   color: var(--primary-white);
   border: none;
   border-radius: 0.6rem;
@@ -772,7 +772,7 @@
 }
 
 .downloadButton:hover {
-  opacity: 0.9;
+  background: var(--gradient-green-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px var(--box-shadow-color);
 }
