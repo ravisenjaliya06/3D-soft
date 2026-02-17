@@ -1,4 +1,14 @@
 import InputField from '@/components/inputfields/InputField';
+import {
+  CENTER_STUDY_TABLE,
+  DINNER_TABLE,
+  FLOWER,
+  FRIDGE,
+  MICROWAVE,
+  SOFA,
+  STOVE,
+  TV,
+} from '@/glbPaths';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
@@ -15,6 +25,7 @@ import {
   addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
+import { GLBLoader } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -62,6 +73,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       setAddPartPopup(false);
       setSelectedCabinetItem(null);
       setQuantityValue(1);
+      setIsModelOpen(false);
     }
   }, [viewMode]);
   const [catalogMenu, setcatalogMenu] = useState(false);
@@ -72,6 +84,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [isModelOpen, setIsModelOpen] = useState(false);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
@@ -168,7 +181,76 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   };
 
   /** Handle selection of a cabinet item from toolbar submenu */
-  const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData) => {
+  const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData | any) => {
+    // Check if it's a GLB model (has path property)
+    if (item.path) {
+      if (!threeDView || !threeDView.scene) return;
+
+      try {
+        // Set realistic target dimensions (in meters) based on category
+        let targetSize = { width: 0.12, height: 0.12, depth: 0.12 };
+
+        // Determine category from path and set appropriate realistic dimensions
+        if (item.path.includes('/sofa/')) {
+          // Sofas: typically 2m wide, 0.8m tall, 0.9m deep
+          targetSize = { width: 4.0, height: 0.8, depth: 0.9 };
+        } else if (item.path.includes('/fridge/')) {
+          // Fridges: typically 0.7m wide, 1.7m tall, 0.7m deep
+          targetSize = { width: 0.8, height: 1.7, depth: 0.7 };
+        } else if (item.path.includes('/stove/')) {
+          // Stoves: typically 0.6m wide, 0.9m tall, 0.6m deep
+          targetSize = { width: 0.15, height: 0.15, depth: 0.15 };
+        } else if (item.path.includes('/tv/')) {
+          // TVs: typically 1.2m wide, 0.7m tall, 0.1m deep
+          targetSize = { width: 1.2, height: 0.7, depth: 0.1 };
+        } else if (item.path.includes('/dinnertable/')) {
+          // Dinner tables: typically 1.5m wide, 0.75m tall, 0.9m deep
+          targetSize = { width: 2.0, height: 1.0, depth: 0.9 };
+        } else if (item.path.includes('/flower/')) {
+          // Flower pots: typically 0.3m wide, 0.4m tall, 0.3m deep
+          targetSize = { width: 0.3, height: 0.4, depth: 0.3 };
+        } else if (item.path.includes('/microwave/')) {
+          // Microwaves/toasters: typically 0.5m wide, 0.3m tall, 0.4m deep
+          targetSize = { width: 0.5, height: 0.3, depth: 0.4 };
+        } else if (item.path.includes('/table/')) {
+          // Study/center tables: typically 1.2m wide, 0.75m tall, 0.6m deep
+          targetSize = { width: 1.2, height: 0.75, depth: 0.6 };
+        }
+
+        const model = await GLBLoader(item.path, item.name, targetSize);
+
+        if (model) {
+          model.userData.objectId = item.id;
+          model.userData.isGLB = true;
+
+          // Position at center and perfectly on top of floor (y = 0)
+          // We calculate the bbox to find the exact bottom offset
+          const box = new THREE.Box3().setFromObject(model);
+          const bottomY = box.min.y;
+          const centerX = (box.max.x + box.min.x) / 2;
+          const centerZ = (box.max.z + box.min.z) / 2;
+
+          // Shift the model so its bottom is at Y=0 and it's centered on XZ
+          model.position.set(-centerX, -bottomY, -centerZ);
+
+          threeDView.scene.add(model);
+
+          // Proactively start dragging the new model for better placement
+          if (threeDView.moveHandler) {
+            threeDView.moveHandler.startDragging(model);
+          }
+
+          if (threeDView.renderer && threeDView.camera) {
+            threeDView.renderer.render(threeDView.scene, threeDView.camera);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading GLB model:', error);
+        toast.error(`Failed to load ${item.name}`);
+      }
+      return;
+    }
+
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
 
@@ -358,6 +440,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     { option: 'Kitchen', icon: assets.kitchen },
     { option: 'Cabinet', icon: assets.cabinet_svg },
     { option: 'Parts', icon: assets.part_icon },
+    { option: 'Model', icon: assets.homefurniture, isExpandable: true },
+  ];
+
+  const modelSubmenuItems = [
+    { option: 'Sofa', icon: '/assets/3dmodel/toolbar/sofa/black.png' },
+    { option: 'Fridge', icon: '/assets/3dmodel/toolbar/fridge/black_fridge.png' },
+    { option: 'Stove', icon: '/assets/3dmodel/toolbar/stove/big_five_burner.png' },
+    { option: 'TV', icon: '/assets/3dmodel/toolbar/tv/flat_screen.png' },
+    { option: 'Dinner Table', icon: '/assets/3dmodel/toolbar/dinner_table/brown_6sit_table.png' },
+    { option: 'Flower', icon: '/assets/3dmodel/toolbar/flower/black_pot.png' },
+    { option: 'Microwave', icon: '/assets/3dmodel/toolbar/microwave/toaster.png' },
+    { option: 'Study Table', icon: '/assets/3dmodel/toolbar/table/brown_study_table.png' },
   ];
 
   const getFilteredCabinetItems = (category: string) => {
@@ -365,10 +459,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       Parts: Object.values(PART_TYPES),
       Cabinet: Object.values(OBJECT_TYPES),
       Kitchen: [OBJECT_TYPES.PLATFORM],
+      'Kitchen Cabinet': Object.values(OBJECT_TYPES),
+      'Kitchen Cabinet Parts': [...Object.values(PART_TYPES), ...Object.values(OBJECT_TYPES)],
     };
+
+    // Explicit return for GLB categories
+    if (category === 'Sofa') return SOFA;
+    if (category === 'Fridge') return FRIDGE;
+    if (category === 'Stove') return STOVE;
+    if (category === 'TV') return TV;
+    if (category === 'Dinner Table') return DINNER_TABLE;
+    if (category === 'Flower') return FLOWER;
+    if (category === 'Microwave') return MICROWAVE;
+    if (category === 'Study Table') return CENTER_STUDY_TABLE;
+
     const allowedTypes = categoryFilters[category] || [];
     if (category === 'Kitchen') {
-      return [
+      const baseItems = [
         {
           id: 'platform-default',
           name: 'Platform',
@@ -430,6 +537,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           ],
         },
       ];
+
+      if (category === 'Kitchen') return baseItems;
+
+      const otherItems = cabinetItems
+        .map((item: any) => item[0])
+        .filter((item: any) => allowedTypes.includes(item.type));
+
+      return [...baseItems, ...otherItems];
     }
     return cabinetItems
       .map((item: any) => item[0])
@@ -438,6 +553,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Open the Second Popup for selected furniture category */
   const handleFurnitureCategoryClick = (category: string) => {
+    if (category === 'Model') {
+      const nextOpenState = !isModelOpen;
+      setIsModelOpen(nextOpenState);
+      if (nextOpenState) {
+        // If opening model list, close any active category panel
+        setSelectedFurnitureCategory(null);
+      }
+      if (!nextOpenState) {
+        setSelectedFurnitureCategory(null);
+      }
+      return;
+    }
+
+    // Check if the clicked category is a sub-model item
+    const isModelSubItem = modelSubmenuItems.some((item) => item.option === category);
+
+    // If clicking a primary category (not a sub-item of Model), close the Model expansion
+    if (!isModelSubItem) {
+      setIsModelOpen(false);
+    }
+
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
@@ -453,6 +589,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
+    setIsModelOpen(false);
   };
 
   const iconMap: IconMap = {
@@ -565,31 +702,68 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
               {activeOption === 'Furniture' && (
                 <div className={styles.activegroup_tools_group}>
-                  {furnitureTools.map(({ option, icon }) => (
-                    <div
-                      key={option}
-                      className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''}`}
-                      onClick={() => handleFurnitureCategoryClick(option)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className={styles.activegroup_tools}>
-                        <img src={icon} alt={`${option} Icon`} />
+                  {furnitureTools.map(({ option, icon, isExpandable }) => (
+                    <React.Fragment key={option}>
+                      <div
+                        className={`${styles.furnitureItemslist} ${
+                          selectedFurnitureCategory === option ? styles.activeItem : ''
+                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        onClick={() => handleFurnitureCategoryClick(option)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className={styles.activegroup_tools}>
+                          <img src={icon} alt={`${option} Icon`} />
+                        </div>
+
+                        <span>{option}</span>
+
+                        <img
+                          src={assets.left_arrow}
+                          alt=""
+                          className={styles.arrow}
+                          style={{
+                            transform:
+                              isExpandable && isModelOpen
+                                ? 'rotate(90deg)'
+                                : selectedFurnitureCategory === option
+                                  ? 'rotate(180deg)'
+                                  : 'rotate(0deg)',
+                          }}
+                        />
                       </div>
 
-                      <span>{option}</span>
-
-                      <img
-                        src={assets.left_arrow}
-                        alt=""
-                        className={styles.arrow}
-                        style={{
-                          transform:
-                            selectedFurnitureCategory === option
-                              ? 'rotate(180deg)'
-                              : 'rotate(0deg)',
-                        }}
-                      />
-                    </div>
+                      {isExpandable && (
+                        <div
+                          className={`${styles.submenuContainer} ${isModelOpen ? styles.open : ''}`}
+                        >
+                          {modelSubmenuItems.map((subItem) => (
+                            <div
+                              key={subItem.option}
+                              className={`${styles.dropdownItem} ${
+                                selectedFurnitureCategory === subItem.option ? styles.active : ''
+                              }`}
+                              onClick={() => handleFurnitureCategoryClick(subItem.option)}
+                            >
+                              <div className={styles.activegroup_tools}>
+                                <img src={subItem.icon} alt={`${subItem.option} Icon`} />
+                              </div>
+                              <span>{subItem.option}</span>
+                              <img
+                                src={assets.left_arrow}
+                                alt=""
+                                className={styles.arrow}
+                                style={{
+                                  transform:
+                                    selectedFurnitureCategory === subItem.option
+                                      ? 'rotate(180deg)'
+                                      : 'rotate(0deg)',
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))}
                 </div>
               )}
@@ -641,6 +815,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 >
                   <img
                     src={
+                      item.image ||
                       iconMap[
                         item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]

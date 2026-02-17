@@ -342,7 +342,7 @@ export class SelectObjectController {
 
   private _createSelectionBox(obj: THREE.Mesh): THREE.Mesh {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x12086F,
+      color: 0x12086f,
       transparent: true,
       opacity: 0.3,
       depthTest: false,

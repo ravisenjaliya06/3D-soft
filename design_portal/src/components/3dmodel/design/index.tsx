@@ -274,9 +274,77 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
   }, [design3D]);
 
+  useEffect(() => {
+    if (!design3D || !design3D.transformControls) return;
+
+    const transformControls = design3D.transformControls;
+
+    if (selectedObject && selectedObject.userData && selectedObject.userData.isGLB) {
+      if (transformControls.attach) {
+        transformControls.attach(selectedObject);
+      }
+    } else {
+      if (transformControls.detach) {
+        transformControls.detach();
+      }
+    }
+
+    const onTransformChange = () => {
+      if (!selectedObject) return;
+
+      const objectId = selectedObject.userData.objectId;
+      if (!objectId) return;
+
+      // Update Redux store with new position/rotation/scale
+      dispatch(
+        updateObject({
+          id: objectId,
+          position: {
+            x: selectedObject.position.x,
+            y: selectedObject.position.y,
+            z: selectedObject.position.z,
+          },
+          rotation: {
+            x: selectedObject.rotation.x,
+            y: selectedObject.rotation.y,
+            z: selectedObject.rotation.z,
+          },
+          scale: {
+            x: selectedObject.scale.x,
+            y: selectedObject.scale.y,
+            z: selectedObject.scale.z,
+          },
+        })
+      );
+    };
+
+    transformControls.addEventListener('mouseUp', onTransformChange);
+
+    return () => {
+      transformControls.removeEventListener('mouseUp', onTransformChange);
+    };
+  }, [design3D, selectedObject, dispatch]);
+
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
       deleteObject();
+    }
+
+    if (design3D && design3D.transformControls) {
+      if (event.key.toLowerCase() === 'g') {
+        design3D.transformControls.setMode('translate');
+      } else if (event.key.toLowerCase() === 'r') {
+        design3D.transformControls.setMode('scale');
+      } else if (event.key.toLowerCase() === 'e') {
+        design3D.transformControls.setMode('rotate');
+      }
+    }
+
+    if (event.key === 'Escape') {
+      if (design3D && design3D.selector) {
+        design3D.selector.deselect();
+        setSelectedObject(null);
+      }
     }
   };
 
