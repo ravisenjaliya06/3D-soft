@@ -826,10 +826,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <img
                     src={
                       item.image ||
-                      iconMap[
-                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
-                      ]
+                      (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
+                        ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
+                        : iconMap[
+                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                        ]) ||
+                      assets.cabinet
                     }
+                    onError={(e) => {
+                      const fallback =
+                        iconMap[
+                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                        ] || assets.cabinet;
+                      e.currentTarget.src = fallback;
+                      e.currentTarget.onerror = null;
+                    }}
                     alt={item.name}
                   />
                   <span>{formatEnumLabel(item.name)}</span>
