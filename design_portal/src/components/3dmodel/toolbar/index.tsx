@@ -24,11 +24,13 @@ import {
   addHorizontalPlanksInsideBox,
   addLShapeObjectToBox,
   addVerticalPlanksToBox,
+  addSideObjectToCupboard,
 } from '../design/scene';
 import { GLBLoader } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
+  DIRECTION_TYPES,
   GEOMETRY,
   INVISIBLE_BOXES,
   MATERIAL_TYPES,
@@ -292,7 +294,75 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   };
 
-  /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
+  const handleSideObjectAdd = async (direction: string) => {
+    if (!selectedCabinetItem) return;
+
+    const scene = threeDView!.scene;
+    let targetBox: THREE.Mesh | null = null;
+    const selectedChildObject = store.getState().data.selectedObject;
+
+    scene.traverse((obj) => {
+      if (obj.userData.objectId === selectedChildObject) {
+        targetBox = obj as THREE.Mesh;
+      }
+    });
+
+    if (!targetBox) {
+      toast(
+        ({ closeToast }) => (
+          <CustomToast appearance="error" message="Please select a cupboard first" closeToast={closeToast} />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+        }
+      );
+      return;
+    }
+
+    // Check if cupboard is main
+    const mesh = targetBox as THREE.Mesh;
+    const isMain = mesh.userData.isMain || mesh.userData.type === 'cupboard';
+    // User said: "These objects should work only when a cupboard (is_main: true) is selected."
+    // Also: "Do not show the 'Please select a blank box' error"
+
+    if (!isMain) {
+      toast(
+        ({ closeToast }) => (
+          <CustomToast appearance="error" message="Please select a main cupboard" closeToast={closeToast} />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+        }
+      );
+      return;
+    }
+
+    await addSideObjectToCupboard(
+      scene,
+      targetBox,
+      selectedCabinetItem.type,
+      direction,
+      selectedCabinetItem
+    );
+
+    setAddPartPopup(false);
+    setSelectedCabinetItem(null);
+    dispatch(setSelectedChildObject(null));
+    removeExistingLines();
+  };
+
   const onAddItems = async () => {
     if (!selectedCabinetItem) {
       console.error('No cabinet item selected');
@@ -606,8 +676,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     cupboard: assets.cabinet,
     platform: assets.platform_icon,
     sink: assets.sink_icon,
-    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
     lShapeObject: assets.vertical,
+    uShapeObject: assets.vertical,
   };
 
   return (
@@ -864,36 +934,46 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               alt="close"
               onClick={closePopup}
             />
-            <div className={styles.create_right_side}>
-              <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
-              <form
-                className={styles.form}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onAddItems();
-                }}
-              >
-                <div className={styles.createinputGroup}>
-                  <InputField
-                    smallField={true}
-                    className={styles.inputField}
-                    borderColor="var(--primary-color-grey-2)"
-                    value={quantityValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setQuantityValue(Number(e.target.value))
-                    }
-                    placeholder="Enter quantity"
-                    label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
-                    error={undefined}
-                  />
+            {(selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT || selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT) ? (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center' }}>
+                <button className={styles.createcontinueButton} style={{ width: 'auto', padding: '5px 15px' }} onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}>Up</button>
+                <button className={styles.createcontinueButton} style={{ width: 'auto', padding: '5px 15px' }} onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}>Left</button>
+                <button className={styles.createcontinueButton} style={{ width: 'auto', padding: '5px 15px' }} onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}>Right</button>
+              </div>
+            ) : (
+              <>
+                <div className={styles.create_right_side}>
+                  <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
+                  <form
+                    className={styles.form}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      onAddItems();
+                    }}
+                  >
+                    <div className={styles.createinputGroup}>
+                      <InputField
+                        smallField={true}
+                        className={styles.inputField}
+                        borderColor="var(--primary-color-grey-2)"
+                        value={quantityValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setQuantityValue(Number(e.target.value))
+                        }
+                        placeholder="Enter quantity"
+                        label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
+                        error={undefined}
+                      />
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
-            <div className={styles.createButtonGrop}>
-              <button className={styles.createcontinueButton} onClick={onAddItems}>
-                Add
-              </button>
-            </div>
+                <div className={styles.createButtonGrop}>
+                  <button className={styles.createcontinueButton} onClick={onAddItems}>
+                    Add
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

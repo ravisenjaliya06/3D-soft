@@ -147,58 +147,6 @@ const HelperTool: React.FC<HelperToolProps> = ({
     setShowSavePopup(true);
   }, []);
 
-  const handleOBJ = useCallback(
-    (object: THREE.Mesh) => {
-      console.log('selectedObject', object);
-      if (!object) return;
-
-      object.children.forEach((child) => {
-        if (
-          child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
-          child.name.includes('invisibleBox')
-        ) {
-          console.log('child', child);
-          object.remove(child);
-        }
-      });
-
-      const exporter = new GLTFExporter();
-
-      exporter.parse(
-        object,
-        (result) => {
-          let blob: Blob;
-
-          if (result instanceof ArrayBuffer) {
-            // GLB (binary)
-            blob = new Blob([result], { type: 'model/gltf-binary' });
-          } else {
-            // Fallback: JSON glTF
-            const json = JSON.stringify(result);
-            blob = new Blob([json], { type: 'application/json' });
-          }
-
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = 'mesh.glb';
-          link.click();
-          console.log('GLB export complete', link);
-
-          URL.revokeObjectURL(link.href);
-        },
-        (error) => {
-          console.error('GLB export failed:', error);
-        },
-        {
-          binary: true, // 🔑 THIS MAKES IT .glb
-          onlyVisible: true,
-          truncateDrawRange: true,
-        }
-      );
-    },
-    [selectedObject]
-  );
-
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
@@ -232,12 +180,6 @@ const HelperTool: React.FC<HelperToolProps> = ({
         icon: assets.saveHelper,
         title: 'Save to library',
         onClick: handleSave,
-      },
-      {
-        id: 'save1',
-        icon: assets.saveHelper,
-        title: 'Save to library',
-        onClick: handleOBJ,
       },
     ];
   }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);
