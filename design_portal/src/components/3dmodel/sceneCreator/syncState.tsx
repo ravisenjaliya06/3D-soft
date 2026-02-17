@@ -24,6 +24,8 @@ export class SyncManager {
   private meshBuilder: MeshBuilder | null = null;
   private isArray: boolean;
   private moveHandlerRef: MoveHandler | null = null;
+  private sceneObjectMap: Map<string, THREE.Mesh> = new Map();
+  private storeObjectMap: Map<string, MeshObjectData> = new Map();
 
   constructor(data: MeshObjectData | MeshObjectData[], threeDView?: ThreeDView) {
     const scene = store.getState().scene?.scene;
@@ -53,6 +55,9 @@ export class SyncManager {
   public async syncData(): Promise<void> {
     if (!this.scene) return;
 
+    // Initialize Maps for O(1) access
+    this._initializeMaps();
+
     const list = this._normalizeData(this.data);
 
     this._syncState(list);
@@ -60,31 +65,31 @@ export class SyncManager {
     await this._sync3D(list);
   }
 
-  private _findMeshById(id: string): THREE.Mesh | null {
-    let found: THREE.Mesh | null = null;
-
+  private _initializeMaps(): void {
+    // 1. Scene Map
+    this.sceneObjectMap.clear();
     this.scene.traverse((obj) => {
-      if (!found && obj instanceof THREE.Mesh) {
-        const objId = obj.userData?.objectId;
-        if (objId === id) {
-          found = obj;
-        }
+      if (obj instanceof THREE.Mesh && obj.userData?.objectId) {
+        this.sceneObjectMap.set(obj.userData.objectId, obj);
       }
     });
 
-    return found;
+    // 2. Store Map
+    this.storeObjectMap.clear();
+    const existingObjects = store.getState().data.objects;
+    existingObjects.forEach((obj) => {
+      if (obj.id) {
+        this.storeObjectMap.set(obj.id, obj);
+      }
+    });
+  }
+
+  private _findMeshById(id: string): THREE.Mesh | null {
+    return this.sceneObjectMap.get(id) || null;
   }
 
   private _findParentMesh(parentId: string): THREE.Mesh | null {
-    let foundParent: THREE.Mesh | null = null;
-
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh && object.userData.objectId === parentId) {
-        foundParent = object;
-      }
-    });
-
-    return foundParent;
+    return this.sceneObjectMap.get(parentId) || null;
   }
 
   private _isObjectType(type: string): boolean {
@@ -92,6 +97,10 @@ export class SyncManager {
   }
 
   private _removeMeshFromScene(mesh: THREE.Mesh): void {
+    if (mesh.userData?.objectId) {
+      this.sceneObjectMap.delete(mesh.userData.objectId);
+    }
+
     if (mesh.geometry) {
       mesh.geometry.dispose();
     }
@@ -122,13 +131,11 @@ export class SyncManager {
   }
 
   private _syncState(list: MeshObjectData[]): void {
-    const existingObjects = store.getState().data.objects;
-
     const toAdd: MeshObjectData[] = [];
     const toUpdate: MeshObjectData[] = [];
 
     list.forEach((item) => {
-      const existing = existingObjects.find((o) => o.id === item.id);
+      const existing = this.storeObjectMap.get(item.id);
 
       if (existing) {
         if (list.length === 1) {
@@ -163,6 +170,9 @@ export class SyncManager {
 
         const itemWithBanding = this._detectBandingFromScene(itemToAdd);
         toAdd.push(itemWithBanding);
+
+        // Update map so subsequent methods (like _sync2D) see it as existing
+        this.storeObjectMap.set(item.id, itemWithBanding);
       }
     });
 
@@ -217,12 +227,10 @@ export class SyncManager {
   }
 
   private _sync2D(list: MeshObjectData[]): void {
-    const existingObjects = store.getState().data.objects;
-
     list.forEach((item) => {
       if (item.type !== FLOOR_PLAN_TYPES.WALL) return;
 
-      const exists = existingObjects.find((o) => o.id === item.id);
+      const exists = this.storeObjectMap.has(item.id);
       if (!exists) create2DWallFromMeshData(item);
     });
   }
@@ -308,6 +316,10 @@ export class SyncManager {
       }
     }
     const mesh = this.meshBuilder.createMesh();
+    // Update map with new mesh
+    if (mesh.userData?.objectId) {
+      this.sceneObjectMap.set(mesh.userData.objectId, mesh);
+    }
     return mesh;
   }
 
@@ -551,8 +563,7 @@ export class SyncManager {
        * update its dimensions + position there as well.
        */
       if (child.userData.objectId) {
-        const existingObjects = store.getState().data.objects;
-        const childData = existingObjects.find((obj) => obj.id === child.userData.objectId);
+        const childData = this.storeObjectMap.get(child.userData.objectId);
 
         if (childData) {
           store.dispatch(
@@ -585,6 +596,13 @@ export class SyncManager {
   private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
     const builder = new DesignBuilder(list, this.scene);
     const root = await builder.createDesign();
+
+    // Update map with new hierarchy
+    root.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.userData?.objectId) {
+        this.sceneObjectMap.set(child.userData.objectId, child);
+      }
+    });
 
     if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
       this.scene.add(root);
@@ -660,8 +678,7 @@ export class SyncManager {
 
       // If we found banding and it's not already in Redux, update it
       if (Object.keys(detectedBanding).length > 0) {
-        const existingObjects = store.getState().data.objects;
-        const existing = existingObjects.find((o) => o.id === meshData.id);
+        const existing = this.storeObjectMap.get(meshData.id);
 
         // Only update if banding state is different or missing
         if (existing) {
@@ -770,8 +787,7 @@ export class SyncManager {
     // Check parent for banding material
     if (!item.parent) return;
 
-    const existingObjects = store.getState().data.objects;
-    const parentData = existingObjects.find((obj) => obj.id === item.parent);
+    const parentData = this.storeObjectMap.get(item.parent);
     if (!parentData) return;
 
     // Find banding material in parent
