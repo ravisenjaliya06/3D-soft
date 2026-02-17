@@ -1,6 +1,6 @@
 import gsap from 'gsap';
 import * as THREE from 'three';
-import { DIRECTION_TYPES } from '../interface';
+import { DIRECTION_TYPES, PART_TYPES } from '../interface';
 
 export class CabinetMotionController {
   private ANIM_DURATION = 1;
@@ -187,5 +187,30 @@ export class CabinetMotionController {
     });
 
     mesh.userData.isClosed = !isClosed;
+  }
+
+  // Toggle all doors and drawers in the scene based on global state
+  public toggleAll(scene: THREE.Scene, shouldOpen: boolean) {
+    if (!scene) return;
+
+    scene.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      const { type } = node.userData;
+
+      const isDoor = type === PART_TYPES.DOOR;
+      const isDrawer = type === PART_TYPES.DRAWER;
+
+      if (!isDoor && !isDrawer) return;
+
+      const isCurrentlyClosed = node.userData.isClosed ?? true;
+
+      if (shouldOpen === isCurrentlyClosed) {
+        isDoor
+          ? this.toggleDoor(node)
+          : isDrawer
+          ? this.toggleDrawer(node)
+          : null;
+      }
+    });
   }
 }

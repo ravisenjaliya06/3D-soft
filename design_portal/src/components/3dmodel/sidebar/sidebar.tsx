@@ -1,4 +1,5 @@
 import { _3DMODEL, assets } from '@/svgPaths';
+import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -479,15 +480,35 @@ const Sidebar: React.FC = () => {
     setNavOpen(true);
   };
 
-  // (Harsh): Temporary placement — will move to updateHandler once door selection is ready.
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    scene.traverse((child) => {
-      if (child.userData.objectId === selectedObject?.id) {
-        child.userData.openDirection = position.toLowerCase();
-      }
-    });
+    if (selectedObject) {
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
+          const controller = new CabinetMotionController();
+          const wasOpen = child.userData.isClosed === false;
+
+          if (wasOpen) {
+            controller.toggleDoor(child);
+
+            const pivotGroup = child.parent;
+            if (pivotGroup?.userData.isPivotGroup) {
+              gsap.killTweensOf(pivotGroup.rotation);
+              pivotGroup.rotation.set(0, 0, 0);
+            }
+          }
+
+          child.userData.openDirection = position.toLowerCase();
+
+          // for re-open
+          if (wasOpen) {
+            controller.toggleDoor(child);
+          }
+        }
+      });
+    }
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
