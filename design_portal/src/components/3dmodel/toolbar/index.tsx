@@ -36,6 +36,7 @@ import {
   OBJECT_TYPES,
   PART_TYPES,
 } from '../sceneCreator/interface';
+import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -185,6 +186,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     if (item.path) {
       if (!threeDView || !threeDView.scene) return;
 
+      showFullScreenLoader(`Loading ${item.name}...`);
       try {
         // Set realistic target dimensions (in meters) based on category
         let targetSize = { width: 0.12, height: 0.12, depth: 0.12 };
@@ -246,6 +248,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       } catch (error) {
         console.error('Error loading GLB model:', error);
         toast.error(`Failed to load ${item.name}`);
+      } finally {
+        hideFullScreenLoader();
       }
       return;
     }
