@@ -54,6 +54,7 @@ const Material: React.FC = () => {
   /** When a category is clicked, open it and load its materials */
   const handleCategoryClick = (categoryId: string, name: string) => {
     setActiveCategory(categoryId);
+    setSelectedType(name);
     const tabs = CATEGORY_TABS[categoryId];
     if (tabs && tabs.length > 0) {
       setActiveTab(tabs[0].id);
