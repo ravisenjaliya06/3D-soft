@@ -62,8 +62,12 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
   if (!activeCategory || !CATEGORY_TABS[activeCategory]) {
     return (
-      <div className="flex flex-1 items-center justify-center rounded-xl border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] text-[0.8rem] text-[var(--text-gray)] shadow-sm">
-        Please select a category
+      <div className="flex flex-1 flex-col items-center justify-center gap-[0.75rem] rounded-2xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-b from-[#ffffff] to-[#f8f5ff] shadow-[0_4px_24px_rgba(57,37,121,0.06)]">
+        <svg className="h-[2rem] w-[2rem] text-[#c9b8f0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
+        <span className="text-[0.8rem] font-medium text-[#8e9cb3]">Please select a category</span>
       </div>
     );
   }
@@ -72,25 +76,35 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const columns = activeTabObject ? withMandatoryNameColumn(activeTabObject.columns) : [];
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-[var(--primary-color-grey-2)] bg-[var(--primary-white)] shadow-sm">
+    <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-[rgba(124,92,191,0.12)] bg-[#ffffff] shadow-[0_4px_24px_rgba(57,37,121,0.06),0_1px_4px_rgba(57,37,121,0.04)]">
       {/* ─── Tabs ─── */}
-      <div className="shrink-0 border-b border-[var(--table-title-border-color)] bg-[var(--primary-white)] px-[1rem]">
-        <div className="flex gap-[0.25rem]">
+      <div className="shrink-0 border-b border-[rgba(124,92,191,0.08)] bg-gradient-to-r from-[#fcfaff] via-[#faf8ff] to-[#ffffff] px-[1.25rem]">
+        <div className="flex gap-[0.15rem]">
           {CATEGORY_TABS[activeCategory].map((tab) => (
             <div
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="cursor-pointer px-[0.5rem]"
+              className={`relative cursor-pointer px-[0.75rem] py-[0.7rem] transition-all duration-200 ${
+                activeTab === tab.id ? '' : 'hover:bg-[rgba(124,92,191,0.04)]'
+              } rounded-t-lg`}
             >
               <p
-                className={`m-0 inline-block py-[0.6rem] text-[0.8rem] font-medium transition-all duration-200 ${
+                className={`m-0 inline-block text-[0.8rem] font-medium transition-all duration-250 ${
                   activeTab === tab.id
-                    ? 'border-b-2 border-[var(--primary-color)] font-semibold text-[var(--primary-color)]'
-                    : 'border-b-2 border-transparent text-[var(--text-gray)] hover:text-[var(--primary-color)]'
+                    ? 'font-bold text-[#4b2aad]'
+                    : 'text-[#8e9cb3] hover:text-[#7c5cbf]'
                 }`}
               >
                 {tab.label}
               </p>
+              {/* Active indicator */}
+              <div
+                className={`absolute right-0 bottom-0 left-0 h-[2.5px] rounded-full transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-[#7c5cbf] to-[#4b2aad] opacity-100'
+                    : 'bg-transparent opacity-0'
+                }`}
+              />
             </div>
           ))}
         </div>
@@ -102,28 +116,28 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
         onWheel={handleWheel}
         className={`${styles.scrollContainer} flex-1 overflow-x-auto overflow-y-auto`}
       >
-        <table className="w-full table-auto border-collapse bg-white text-left text-[0.8rem]">
+        <table className="w-full table-auto border-collapse text-left text-[0.8rem]">
           <thead>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`sticky top-0 z-10 border-b border-[var(--table-title-border-color)] bg-[var(--thbackground-color)] px-[1rem] py-[0.6rem] text-[0.7rem] font-semibold whitespace-nowrap text-[var(--soft-dark-grey)] uppercase tracking-wider ${column.sortable ? 'cursor-pointer select-none transition-colors hover:bg-[var(--hover-background-color-2)] hover:text-[var(--text-color)]' : ''}`}
+                  className={`sticky top-0 z-10 border-b border-[rgba(124,92,191,0.08)] bg-gradient-to-b from-[#f8f5ff] to-[#f3eeff] px-[1.25rem] py-[0.7rem] text-[0.68rem] font-bold whitespace-nowrap text-[#7c5cbf] uppercase tracking-[0.08em] ${column.sortable ? 'cursor-pointer select-none transition-all duration-200 hover:bg-[#ece5ff] hover:text-[#4b2aad]' : ''}`}
                   onClick={() => column.sortable && onSort(column.key)}
                 >
-                  <div className="flex items-center gap-[0.25rem]">
+                  <div className="flex items-center gap-[0.3rem]">
                     <span>{column.label}</span>
                     {column.sortable && (
-                      <div className="ml-[0.2rem] flex flex-col items-center">
+                      <div className="ml-[0.15rem] flex flex-col items-center opacity-40 transition-opacity duration-200 group-hover:opacity-70">
                         <img
                           src={MENU_UP_SVG.menu_up}
                           alt="Sort"
-                          className="mb-[-5px] h-[1rem] w-[1rem] opacity-60"
+                          className="mb-[-5px] h-[1rem] w-[1rem]"
                         />
                         <img
                           src={MENU_DOWN_SVG.menu_down}
                           alt="Sort"
-                          className="ml-[0.2rem] mt-[-5px] h-[1rem] w-[1rem] opacity-60"
+                          className="ml-[0.2rem] mt-[-5px] h-[1rem] w-[1rem]"
                         />
                       </div>
                     )}
@@ -137,21 +151,23 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-[10rem] text-center text-[0.75rem] font-medium text-[var(--text-gray)]"
+                  className="py-[10rem] text-center text-[0.75rem] font-medium text-[#a8b0bf]"
                 >
                   No items available
                 </td>
               </tr>
             ) : (
-              visibleMaterials.map((row) => (
+              visibleMaterials.map((row, idx) => (
                 <tr
                   key={row.id}
-                  className="border-b border-[var(--table-title-border-color)] text-sm transition-colors duration-150 odd:bg-[var(--designpage-background-color)] hover:bg-[var(--primary-table-hover)]"
+                  className={`border-b border-[rgba(124,92,191,0.05)] text-sm transition-all duration-200 hover:bg-gradient-to-r hover:from-[#f5f1ff] hover:to-[#faf8ff] hover:shadow-[inset_3px_0_0_#7c5cbf] ${
+                    idx % 2 === 1 ? 'bg-[#faf9ff]' : 'bg-white'
+                  }`}
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className="max-w-[220px] min-w-[80px] truncate px-[1rem] py-[0.6rem] text-[0.73rem] whitespace-nowrap text-[var(--project-item-text)]"
+                      className="max-w-[220px] min-w-[80px] truncate px-[1.25rem] py-[0.65rem] text-[0.73rem] whitespace-nowrap text-[#4a5568]"
                     >
                       {getCellValue(row, column.key)}
                     </td>
@@ -164,10 +180,10 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
 
         {/* ─── Load More ─── */}
         {visibleCount < materials.length && (
-          <div className="flex justify-center border-t border-[var(--table-title-border-color)] py-[0.75rem]">
+          <div className="flex justify-center border-t border-[rgba(124,92,191,0.08)] bg-gradient-to-b from-transparent to-[#faf8ff] py-[0.85rem]">
             <button
               onClick={() => setVisibleCount((prev) => prev + initVisibleCount)}
-              className="flex items-center gap-[0.5rem] rounded-lg border border-[var(--primary-color-grey-2)] bg-white px-[1rem] py-[0.4rem] text-[0.8rem] font-medium text-[var(--primary-color)] shadow-sm transition-all hover:bg-[var(--primary-hover)] hover:shadow"
+              className="flex items-center gap-[0.5rem] rounded-xl border border-[rgba(124,92,191,0.15)] bg-gradient-to-r from-[#faf8ff] to-[#f0ebff] px-[1.25rem] py-[0.45rem] text-[0.78rem] font-semibold text-[#4b2aad] shadow-[0_2px_8px_rgba(57,37,121,0.06)] transition-all duration-200 hover:border-[#7c5cbf] hover:shadow-[0_4px_16px_rgba(57,37,121,0.12)] hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Load More</span>
               <img src={assets.loadMore || '/placeholder.svg'} alt="" className="h-[0.75rem] w-[0.75rem]" />

@@ -173,7 +173,7 @@ const Material: React.FC = () => {
               setMaterialType={setSelectedType}
             />
 
-            <div className="flex min-w-0 flex-1 flex-col gap-[0.5rem] overflow-hidden px-[1rem]">
+            <div className="flex min-w-0 flex-1 flex-col gap-[0.75rem] overflow-hidden px-[0.5rem]">
               <MaterialToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
