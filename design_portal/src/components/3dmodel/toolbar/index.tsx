@@ -25,7 +25,7 @@ import {
   addLShapeObjectToBox,
   addVerticalPlanksToBox,
 } from '../design/scene';
-import { GLBLoader } from '../helper/glbLoader';
+import { GLBLoader, preloadGLB } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -575,6 +575,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
+    if (category !== selectedFurnitureCategory) {
+      // Preload items for this category
+      const items = getFilteredCabinetItems(category);
+      items.forEach((item: any) => {
+        if (item.path) {
+          preloadGLB(item.path);
+        }
+      });
+    }
+
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);

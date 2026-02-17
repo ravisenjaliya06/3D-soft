@@ -9,6 +9,9 @@ export class SelectObjectController {
   private scene: THREE.Scene;
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
+  private lastMouse: THREE.Vector2;
+  private lastCameraPosition: THREE.Vector3;
+  private lastCameraQuaternion: THREE.Quaternion;
 
   private hoveredObject: THREE.Mesh | null = null;
   private hoverOutline: THREE.LineSegments | null = null;
@@ -29,6 +32,9 @@ export class SelectObjectController {
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+    this.lastMouse = new THREE.Vector2(-999, -999); // Force initial update
+    this.lastCameraPosition = new THREE.Vector3();
+    this.lastCameraQuaternion = new THREE.Quaternion();
 
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onDoubleClick = this._onDoubleClick.bind(this);
@@ -47,7 +53,19 @@ export class SelectObjectController {
       this.hoveredObject = null;
       if (this.onHover) this.onHover(null);
     }
-    this._handleHover();
+
+    // Optimization: Only raycast if mouse or camera changed
+    const mouseChanged = !this.mouse.equals(this.lastMouse);
+    const cameraMoved = !this.camera.position.equals(this.lastCameraPosition);
+    const cameraRotated = !this.camera.quaternion.equals(this.lastCameraQuaternion);
+
+    if (mouseChanged || cameraMoved || cameraRotated) {
+      this._handleHover();
+      // Update last known states
+      this.lastMouse.copy(this.mouse);
+      this.lastCameraPosition.copy(this.camera.position);
+      this.lastCameraQuaternion.copy(this.camera.quaternion);
+    }
   }
 
   public dispose() {
@@ -380,7 +398,7 @@ export class SelectObjectController {
       mesh.position.copy(center);
     }
 
-    mesh.raycast = () => {};
+    mesh.raycast = () => { };
 
     return mesh;
   }
