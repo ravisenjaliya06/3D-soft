@@ -385,9 +385,9 @@ export class MeshBuilder {
     const url = '/glb/kitchen_sink.glb';
 
     const sinkModel = await GLBLoader(url, 'KitchenSink', {
-      width: this.meshData.dimensions.width * 0.01,
-      height: this.meshData.dimensions.height * 0.01,
-      depth: this.meshData.dimensions.depth * 0.01,
+      width: this.meshData.dimensions.width,
+      height: this.meshData.dimensions.height,
+      depth: this.meshData.dimensions.depth,
     });
     sinkModel.name = `Sink_for_${mesh.name}`;
     sinkModel.userData.type = OBJECT_TYPES.SINK;
