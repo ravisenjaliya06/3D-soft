@@ -102,10 +102,15 @@ def parse_design_data(data: List[Dict]) -> Dict:
                     "depth": float(hole.get("depth", 0)),
                     "length": float(hole.get("length", 0)),  # For dowels
                     "localPosition2D": hole.get("localPosition2D", {"x": 0, "y": 0}),
+                    "position": hole.get("position", {"x": 0, "y": 0, "z": 0}),
                     "direction": hole.get("direction", {"x": 0, "y": 0, "z": 0}),
                 }
                 processed_holes.append(processed_hole)
             plank_data["minifix_holes"] = processed_holes
+
+        # Extract position and rotation
+        plank_data["position"] = item.get("position", {"x": 0, "y": 0, "z": 0})
+        plank_data["rotation"] = item.get("rotation", {"x": 0, "y": 0, "z": 0})
 
         result[part_id] = plank_data
 
@@ -159,15 +164,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         if grooves:
             processed_grooves = []
             for groove in grooves:
-                processed_groove = {
-                    "type": groove.get("type", "groove"),
-                    "orientation": groove.get("orientation", "horizontal"),
-                    "groove_gap": float(groove.get("groove_gap", 2)),
-                    "groove_dig": float(groove.get("groove_dig", 1)),
-                    "x": float(groove.get("x", 0)),
-                    "y": float(groove.get("y", 0)),
-                }
-                processed_grooves.append(processed_groove)
+                processed_grooves.append(groove)
             plank_data["grooves"] = processed_grooves
 
         # Extract minifix holes
@@ -180,11 +177,20 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                     "diameter": float(hole.get("diameter", 0)),
                     "depth": float(hole.get("depth", 0)),
                     "length": float(hole.get("length", 0)),  # For dowels
-                    "localPosition2D": hole.get("local_position2_d", {"x": 0, "y": 0}),
+                    "local_position2_d": hole.get(
+                        "local_position2_d", {"x": 0, "y": 0}
+                    ),
+                    "position": hole.get("position", {"x": 0, "y": 0, "z": 0}),
                     "direction": hole.get("direction", {"x": 0, "y": 0, "z": 0}),
+                    "drill_type": hole.get("drill_type", "1"),
+                    "face": hole.get("face", "1"),
                 }
                 processed_holes.append(processed_hole)
             plank_data["minifix_holes"] = processed_holes
+
+        # Extract position and rotation
+        plank_data["position"] = catalog_data.get("position", {"x": 0, "y": 0, "z": 0})
+        plank_data["rotation"] = catalog_data.get("rotation", {"x": 0, "y": 0, "z": 0})
 
         result[catalog_id] = plank_data
 

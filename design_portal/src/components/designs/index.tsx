@@ -7,6 +7,7 @@ import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { resetStoreForNewDesign, store } from '../3dmodel/store';
 import { Design, DesignResponse, User } from './interface';
 type StatusStylesType = {
   [key: string]: { [key: string]: string };
@@ -280,6 +281,7 @@ const Designs = () => {
   }, []);
 
   const handleRedirectDesign = (id: string) => {
+    store.dispatch(resetStoreForNewDesign());
     setLoading(true);
     router.push({
       pathname: `/design/${id}`,

@@ -1,1488 +1,946 @@
 # Python imports
-import contextlib
 import logging
 import os
 import secrets
-import shutil
-import zipfile
-from typing import Dict, List, Tuple
-from xml.etree import ElementTree
+from typing import Any, Dict, List, Optional, Tuple
 
 # Django imports
-from django.db import transaction
 from django.http import JsonResponse
 
 # External imports
+import pandas as pd
+import svgwrite
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
-from reportlab.graphics import renderPDF
-from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK
-from svglib.svglib import svg2rlg
-from svgwrite import Drawing
-from svgwrite.shapes import Rect
-from svgwrite.text import Text
 
-# App imports
-from design.models import DesignSetting, NestingFile, NestingSheet
+# Local imports
+from .constant import (
+    KEY_DEPTH,
+    KEY_DIMENSIONS,
+    KEY_HEIGHT,
+    KEY_ID,
+    KEY_INPUT_NAME,
+    KEY_NAME,
+    KEY_RADIUS,
+    KEY_TYPE,
+    KEY_UNIQUE_ID,
+    KEY_WIDTH,
+    TYPE_CIRCLE,
+)
 
-try:
-    # External imports
-    import ezdxf
-
-    EZDXF_AVAILABLE = True
-except ImportError:
-    EZDXF_AVAILABLE = False
+logger = logging.getLogger(__name__)
 
 
-def generate_gcode(
-    rectangles: List[Tuple],
-    output_file: str,
-    files: Dict,
-    feed_rate: int = 1000,
-    plunge_rate: int = 100,
-    cut_height: int = 3,
-    safe_height: float = 5.0,
-    material_thickness: float = 18.0,
-) -> None:
+class NestingService:
     """
-    Generate G-code for CNC machine with proper hole drilling and cutting.
-    Handles minifix holes (CAM, DOWEL, SCREW, BOLT_DRILL) with correct depths.
+    Service class responsible for optimal nesting of parts and generating an Excel report.
+    Adheres to 'One Function One Work' principle.
     """
-    gcode = [
-        "G21 ; Set units to millimeters",
-        "G90 ; Use absolute coordinates",
-        "G17 ; Select XY plane",
-        "G28 ; Home all axes",
-        "M3 S1000 ; Start spindle clockwise at 1000 RPM",
-        "M8 ; Turn on coolant",
-        f"F{feed_rate} ; Set feed rate",
-        f"G0 Z{safe_height:.3f} ; Move to safe height",
-    ]
 
-    for rect in rectangles:
-        # Handle both old format (6 elements) and new format (7 elements with rotation)
-        if len(rect) == 7:
-            _, x, y, w, h, rid, is_rotated = rect
+    SORT_ALGORITHMS = [SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE]
+
+    def __init__(
+        self: "NestingService",
+        width: int,
+        height: int,
+        target_efficiency: float = 95.0,
+        allow_rotation: bool = True,
+        spacing: float = 5.0,
+    ) -> None:
+        self.bin_width = width
+        self.bin_height = height
+        self.target_efficiency = target_efficiency
+        self.allow_rotation = allow_rotation
+        self.spacing = spacing
+
+    @staticmethod
+    def calculate_efficiency(rectangles: List[Tuple], width: int, height: int) -> float:
+        """
+        Calculate the efficiency of layout for a single sheet.
+        """
+        if not rectangles:
+            return 0.0
+        used_area = sum(rect[3] * rect[4] for rect in rectangles)
+        return (used_area / (width * height)) * 100
+
+    def _prepare_packer(self: "NestingService", sort_algo: int) -> object:
+        """
+        Initialize and configure a new Packer instance with a specific sort algorithm.
+        """
+        packer = newPacker(sort_algo=sort_algo, rotation=self.allow_rotation)
+        packer.add_bin(self.bin_width, self.bin_height)
+        return packer
+
+    def _pack_rectangles(
+        self: "NestingService", packer: object, remaining_files: Dict[str, Any]
+    ) -> None:
+        """
+        Add rectangles to the packer instance.
+        """
+        for rid, details in remaining_files.items():
+            try:
+                if details.get(KEY_TYPE) == TYPE_CIRCLE:
+                    diameter = 2 * details[KEY_RADIUS]
+                    packer.add_rect(
+                        diameter + self.spacing, diameter + self.spacing, rid=rid
+                    )
+                else:
+                    # Usage: add_rect(width, height)
+                    # We pack (Width, Height) to represent the Face.
+                    # KEY_DEPTH is Thickness.
+                    packer.add_rect(
+                        details[KEY_WIDTH] + self.spacing,
+                        details[KEY_HEIGHT] + self.spacing,
+                        rid=rid,
+                    )
+            except KeyError:
+                continue
+
+    def _process_packed_results(
+        self: "NestingService", packer: object, remaining_files: Dict[str, Any]
+    ) -> Tuple[List[Tuple], float, Dict[str, Any]]:
+        """
+        Process the results from the packer, identifying nested and unplaced items.
+        Returns: (packed_rectangles, efficiency, unplaced_items)
+        """
+        rectangles = packer.rect_list()
+
+        processed_rectangles = []
+        packed_ids = set()
+        spacing = self.spacing
+
+        for rect in rectangles:
+            bin_id, x, y, w, h, rid = rect
+
+            # Determine rotation
+            original_item = remaining_files.get(rid, {})
+            original_w = original_item.get(KEY_WIDTH, w)
+            original_h = original_item.get(KEY_HEIGHT, h)
+
+            is_rotated = (
+                abs((w - spacing) - original_h) < 0.1
+                and abs((h - spacing) - original_w) < 0.1
+            )
+            # Preserve original dimensions for visualization logic
+            extras = {"original_width": original_w, "original_height": original_h}
+
+            # (bin_id, x, y, w, h, rid, is_rotated, extras)
+            processed_rectangles.append((bin_id, x, y, w, h, rid, is_rotated, extras))
+            packed_ids.add(rid)
+
+        # Calculate efficiency inline to be safe
+        used_area = sum(w * h for _, _, _, w, h, _ in rectangles)
+        if self.bin_width * self.bin_height > 0:
+            efficiency = (used_area / (self.bin_width * self.bin_height)) * 100
         else:
-            _, x, y, w, h, rid = rect
-            is_rotated = False
+            efficiency = 0.0
 
-        # Ensure w and h are numeric (defensive check)
+        unplaced = {
+            rid: data for rid, data in remaining_files.items() if rid not in packed_ids
+        }
+
+        return processed_rectangles, efficiency, unplaced
+
+    def _try_single_packing_pass(
+        self: "NestingService", remaining_files: Dict[str, Any]
+    ) -> Tuple[List[Tuple], float, Dict[str, Any]]:
+        """
+        Attempt to pack *once* using a random sort algorithm.
+        """
+        algo = secrets.choice(self.SORT_ALGORITHMS)
+        packer = self._prepare_packer(algo)
+        self._pack_rectangles(packer, remaining_files)
+        packer.pack()
+        return self._process_packed_results(packer, remaining_files)
+
+    def optimize(self: "NestingService", files: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Main optimization loop. Processes files grouped by thickness (KEY_HEIGHT), creates multiple sheets,
+        assigns Unique IDs (e.g. A1.1), and returns a flat list of nested parts.
+        """
+        # Pre-processing: Flatten 'dimensions' if present
+        processed_files = {}
+        for rid, details in files.items():
+            details_copy = details.copy()
+            if "dimensions" in details_copy:
+                details_copy.update(details_copy["dimensions"])
+                # Ensure float conversion for critical keys
+                if (
+                    KEY_HEIGHT in details_copy["dimensions"]
+                ):  # "height" in dimensions is thickness? No, "depth"?
+                    # Based on data.json: dimensions: {width, depth, height}.
+                    # nest.py: KEY_HEIGHT matches 'height' (18). So yes, Thickness is height.
+                    pass
+            processed_files[rid] = details_copy
+
+        files = processed_files
+
+        # Group files by thickness (Depth in data.json)
+        files_by_depth: Dict[float, Dict[str, Any]] = {}
+        for rid, details in files.items():
+            # KEY_DEPTH maps to "depth" which is usually Thickness
+            try:
+                # Dimensions from JSON: {width, height, depth}
+                # User Requirement: Thickness is ~18mm. Width/Length are Panel sizes.
+
+                dims = details.get("dimensions", {})
+                raw_w = float(dims.get("width", details.get(KEY_WIDTH, 0)))
+                raw_h = float(dims.get("height", details.get(KEY_HEIGHT, 0)))
+                raw_d = float(dims.get("depth", details.get(KEY_DEPTH, 0)))
+
+                # Determine which is Thickness (Smallest dimension)
+                # Usually Depth (18).
+                # If W=18, H=2000, D=600 -> W is Thickness.
+                # If H=18, W=1000, D=600 -> H is Thickness.
+
+                dim_list = [("width", raw_w), ("height", raw_h), ("depth", raw_d)]
+                dim_list.sort(key=lambda x: x[1])  # Sort by value
+
+                smallest_key, smallest_val = dim_list[0]
+
+                # Assign Normalized Dimensions for Packing
+                # Packing needs W x H (Face). Thickness is metadata.
+
+                if smallest_key == "depth":
+                    thickness = raw_d
+                    w = raw_w
+                    h = raw_h
+                elif smallest_key == "width":
+                    thickness = raw_w
+                    w = raw_h  # Swap to maintain area
+                    h = raw_d
+                    # Update details for consistency
+                    details[KEY_WIDTH] = w
+                    details[KEY_HEIGHT] = h
+                    details[KEY_DEPTH] = thickness
+                else:  # height is thickness
+                    thickness = raw_h
+                    w = raw_w
+                    h = raw_d  # Swap depth/height for face
+                    # Update details
+                    details[KEY_WIDTH] = w
+                    details[KEY_HEIGHT] = h
+                    details[KEY_DEPTH] = thickness
+
+                # Ensure thickness matches key logic
+            except (ValueError, TypeError):
+                thickness = 0.0
+
+            if thickness not in files_by_depth:
+                files_by_depth[thickness] = {}
+            files_by_depth[thickness][rid] = details
+
+        # Sort thicknesses to assign codes A, B, C... deterministic
+        sorted_thicknesses = sorted(files_by_depth.keys(), reverse=True)
+
+        all_packed_items = []
+
+        for i, thickness in enumerate(sorted_thicknesses):
+            material_code = chr(65 + i)  # A, B, C...
+            material_files = files_by_depth[thickness]
+
+            remaining_files = dict(material_files)
+            sheet_count = 1
+
+            while remaining_files:
+                best_eff = 0.0
+                best_rectangles = None
+                best_unplaced = {}
+
+                # Retry mechanism
+                attempts = 0
+                while attempts < 6:
+                    rectangles, eff, unplaced_try = self._try_single_packing_pass(
+                        remaining_files
+                    )
+                    if eff > best_eff:
+                        best_eff = eff
+                        best_rectangles = rectangles
+                        best_unplaced = unplaced_try
+                    if best_eff >= self.target_efficiency:
+                        break
+                    attempts += 1
+
+                if not best_rectangles and not best_eff:
+                    logger.warning(
+                        "Could not pack remaining files: %s",
+                        list(remaining_files.keys()),
+                    )
+                    break
+
+                # Format results and assign unique IDs
+                item_counter = 1
+                for rect in best_rectangles:
+                    bin_id, x, y, w, h, rid, is_rotated, extras = rect
+
+                    # Ensure numeric types to avoid formatting errors
+                    safe_x = self._safe_float(x)
+                    safe_y = self._safe_float(y)
+                    safe_w = self._safe_float(w)
+                    safe_h = self._safe_float(h)
+
+                    item_details = files.get(rid, {})
+
+                    unique_id = f"{material_code}{sheet_count}.{item_counter}"
+
+                    all_packed_items.append(
+                        {
+                            KEY_NAME: item_details.get(KEY_INPUT_NAME, "Unknown"),
+                            KEY_ID: rid,
+                            KEY_DIMENSIONS: f"{safe_w:.2f} x {safe_h:.2f}",
+                            KEY_UNIQUE_ID: unique_id,
+                            KEY_WIDTH: safe_w,  # Width of Face
+                            KEY_HEIGHT: safe_h,  # Height of Face
+                            "x": safe_x
+                            + self.spacing
+                            / 2,  # Data for SVG (Centered in padded area)
+                            "y": safe_y
+                            + self.spacing
+                            / 2,  # Data for SVG (Centered in padded area)
+                            "is_rotated": is_rotated,
+                            "sheet_num": f"{material_code}{sheet_count}",  # Grouping for visualization
+                            "original_height": extras.get("original_height"),
+                            "material_name": item_details.get("material_name", ""),
+                            "depth": item_details.get(KEY_DEPTH, 17.0),
+                            "minifix_holes": item_details.get("minifix_holes", []),
+                            "grooves": item_details.get("grooves", []),
+                        }
+                    )
+                    item_counter += 1
+
+                sheet_count += 1
+                remaining_files = best_unplaced
+
+        return all_packed_items
+
+    def generate_excel(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> str:
+        """
+        Generates and saves the Excel report.
+        """
+        excel_path = os.path.splitext(output_path)[0] + ".xlsx"
         try:
-            if not isinstance(w, (int, float)):
-                w = float(w)
-            if not isinstance(h, (int, float)):
-                h = float(h)
-            # Ensure they're positive
-            w = max(0.1, float(w))
-            h = max(0.1, float(h))
-        except (ValueError, TypeError, AttributeError):
-            continue  # Skip this rectangle if dimensions are invalid
+            df = pd.DataFrame(packed_items)
+            if not df.empty:
+                df = df[[KEY_NAME, KEY_ID, KEY_UNIQUE_ID, KEY_DIMENSIONS]]
+            else:
+                df = pd.DataFrame(
+                    columns=[KEY_NAME, KEY_ID, KEY_UNIQUE_ID, KEY_DIMENSIONS]
+                )
 
-        item = files[rid]
+            df.to_excel(excel_path, index=False)
+            logger.info("Excel file generated at: %s", excel_path)
+            return excel_path
+        except Exception as e:
+            logger.error("Failed to write Excel file: %s", e)
+            raise
 
-        if item["type"] == "circle":
-            radius = item["radius"]
-            center_x = x + radius
-            center_y = y + radius
-            gcode.append(f"G0 X{center_x:.3f} Y{center_y:.3f} ; Move to circle center")
-            gcode.append(f"G1 Z-{cut_height:.3f} F{plunge_rate} ; Plunge")
-            gcode.append(f"G2 I{radius:.3f} ; Cut circle")
-            gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
-        else:
-            # Cut outer rectangle
-            gcode.append(f"G0 X{x:.3f} Y{y:.3f} ; Move to start")
-            gcode.append(f"G1 Z-{cut_height:.3f} F{plunge_rate} ; Plunge")
-            gcode.append(f"G1 X{x + w:.3f} Y{y:.3f} ; Line 1")
-            gcode.append(f"G1 X{x + w:.3f} Y{y + h:.3f} ; Line 2")
-            gcode.append(f"G1 X{x:.3f} Y{y + h:.3f} ; Line 3")
-            gcode.append(f"G1 X{x:.3f} Y{y:.3f} ; Line 4")
-            gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        """Helper to safely convert any value to float, handling dicts/None gracefully."""
+        try:
+            if isinstance(value, (dict, list, tuple, type(None))):
+                return default
+            return float(value)
+        except (ValueError, TypeError):
+            return default
 
-            # Process grooves
+    def generate_xmls(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> List[str]:
+        """
+        Generates XML files for each panel containing machining data.
+        Returns a list of generated XML file paths.
+        """
+        # Python imports
+        import xml.etree.ElementTree as ET
+        from xml.dom import minidom
+
+        generated_files = []
+        base_dir = os.path.dirname(output_path)
+
+        # Ensure base directory and xml subdirectory exist
+        xml_dir = os.path.join(base_dir, "xml")
+        os.makedirs(xml_dir, exist_ok=True)
+
+        for item in packed_items:
+            # We use the unique ID for the filename
+            filename = f"{item[KEY_UNIQUE_ID]}.xml"
+            filepath = os.path.join(xml_dir, filename)
+
+            # Root Element
+            root = ET.Element("Root")
+            project = ET.SubElement(root, "Project", Name="", Flag="SWJ008")
+            panels = ET.SubElement(project, "Panels")
+
+            # Panel Attributes
+
+            w = f"{self._safe_float(item.get(KEY_WIDTH)):.6f}"
+            l = f"{self._safe_float(item.get(KEY_HEIGHT)):.6f}"
+            thval = self._safe_float(item.get("depth", 17.0))
+            th = f"{thval:.6f}"
+
+            panel_attrs = {
+                "ID": "",
+                "Name": str(item.get(KEY_INPUT_NAME, item.get(KEY_ID))),
+                "Width": w,
+                "Length": l,
+                "Material": str(item.get("material_name", "")),
+                "Thickness": th,
+                "IsProduce": "true",
+                "MachiningPoint": "1",
+                "Type": "1",
+                "Face5ID": "",
+                "Face6ID": "",
+                "Grain": "L",
+                "ExitID": "0",
+                "TrimmingThreeEdges": "0",
+                "TrimmingBoardHead": "0",
+            }
+
+            panel = ET.SubElement(panels, "Panel", **panel_attrs)
+
+            # Machines / Holes
+            machines = ET.SubElement(panel, "Machines")
+
+            # 1. Minifix Holes
+            minifix_holes = item.get("minifix_holes", [])
+            mac_index = 0
+
+            for hole in minifix_holes:
+                try:
+                    mac_index += 1
+
+                    hole_type = str(hole.get("type", "")).upper()
+                    xml_type = str(hole.get("drill_type", "1"))
+                    face_id = str(hole.get("face", "0"))
+
+                    pos = hole.get("local_position2_d", {})
+
+                    raw_diameter = self._safe_float(hole.get("diameter", 0))
+                    raw_depth = self._safe_float(
+                        hole.get("length") or hole.get("depth") or 0
+                    )
+
+                    panel_w_val = self._safe_float(item.get(KEY_WIDTH))
+                    panel_l_val = self._safe_float(item.get(KEY_HEIGHT))
+
+                    final_x = 0.0
+                    final_y = 0.0
+                    final_depth = raw_depth
+                    final_diameter = raw_diameter
+
+                    # ----------------------------------------
+                    # COORDINATE LOGIC
+                    # ----------------------------------------
+                    if (
+                        xml_type == "2"
+                        and hole_type in ["SCREW", "DOWEL"]
+                        and face_id not in ["1", "6"]
+                        or xml_type == "2"
+                        and hole_type in ["CAM"]
+                        and face_id in ["6"]
+                    ):
+                        # if xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id not in ["1", "6"]:
+                        final_x = self._safe_float(pos.get("y", 0))
+                        final_y = self._safe_float(pos.get("x", 0))
+                    elif (
+                        xml_type == "2"
+                        and hole_type in ["CAM"]
+                        or xml_type == "2"
+                        and hole_type in ["SCREW", "DOWEL"]
+                        and face_id in ["1", "6"]
+                    ):
+                        final_x = self._safe_float(pos.get("x", 0))
+                        final_y = self._safe_float(pos.get("y", 0))
+                    else:
+                        if face_id == "5":
+                            final_x = 0.0
+                            final_y = self._safe_float(pos.get("x", 0))
+                        elif face_id == "3":
+                            final_x = panel_l_val
+                            final_y = self._safe_float(pos.get("x", 0))
+                        elif face_id == "4":
+                            final_x = self._safe_float(pos.get("x", 0))
+                            final_y = 0.0
+                        elif face_id == "2":
+                            final_x = self._safe_float(pos.get("x", 0))
+                            final_y = panel_l_val
+                        elif face_id == "1":
+                            final_x = self._safe_float(pos.get("x", 0))
+                            final_y = 0.0
+                        elif face_id == "6":
+                            final_x = self._safe_float(pos.get("x", 0))
+                            final_y = panel_l_val
+                        else:
+                            final_x = self._safe_float(pos.get("x", 0))
+                            final_y = self._safe_float(pos.get("y", 0))
+
+                    if (
+                        int(xml_type) == 1
+                        and hole_type in ["SCREW", "DOWEL"]
+                        and face_id == "5"
+                    ):
+                        convert_face_id = int(face_id)
+                        face_id = str(convert_face_id - 1)
+
+                    machining_attrs = {
+                        "ID": "1000",
+                        "Type": xml_type,
+                        "IsGenCode": "2",
+                        "Face": face_id,
+                        "X": f"{final_x:.6f}",
+                        "Y": f"{final_y:.6f}",
+                        "Depth": f"{final_depth:.6f}",
+                        "Diameter": f"{final_diameter:.6f}",
+                        "ToolName": "0",
+                        "MacIndex": str(mac_index),
+                    }
+
+                    # If Edge Drill (XML Type 1), we need Z.
+                    if xml_type == "1":
+                        z_val = thval / 2
+                        machining_attrs["Z"] = f"{z_val:.6f}"
+
+                    ET.SubElement(machines, "Machining", **machining_attrs)
+
+                except Exception as e:
+                    logger.warning(f"Error processing hole: {e}")
+                    continue
+
+            # 2. Grooves / Slots
             grooves = item.get("grooves", [])
             for groove in grooves:
-                groove_dig = groove.get("groove_dig", 1)
-                orientation = groove.get("orientation", "horizontal")
-                groove_x = groove.get("x", 0)
-                groove_y = groove.get("y", 0)
+                try:
+                    mac_index += 1
+
+                    m_attrs = {
+                        "ID": str(groove.get("id", "6000")),
+                        "Type": str(groove.get("type", "4")),
+                        "IsGenCode": str(groove.get("is_gen_code", "2")),
+                        "Face": str(groove.get("face", "5")),
+                        "X": f"{self._safe_float(groove.get('x', 0)):.6f}",
+                        "Y": f"{self._safe_float(groove.get('y', 0)):.6f}",
+                        "EndX": f"{self._safe_float(groove.get('end_x', 0)):.6f}",
+                        "EndY": f"{self._safe_float(groove.get('end_y', 0)):.6f}",
+                        "Width": f"{self._safe_float(groove.get('width', 0)):.6f}",
+                        "Depth": f"{self._safe_float(groove.get('depth', 0)):.6f}",
+                        "ToolOffset": str(groove.get("tool_offset", "ÖÐ")),
+                        "SlotType": str(groove.get("slot_type", "0")),
+                        "MacIndex": str(mac_index),
+                    }
+
+                    ET.SubElement(machines, "Machining", **m_attrs)
+                except Exception as e:
+                    logger.warning(f"Error processing groove: {e}")
+                    continue
+
+            # EdgeGroup (Static as per example for now?)
+            slope_group = ET.SubElement(panel, "SlopeEdgeGroup")
+            edge_group = ET.SubElement(panel, "EdgeGroup")
+
+            # Create edges with Thickness=0 default
+            for f in ["1", "2", "3", "4"]:
+                ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")
+
+            # Pretty print
+            xml_bytes = ET.tostring(root)
+            xml_str = minidom.parseString(xml_bytes).toprettyxml(indent="    ")
+
+            # Remove empty lines caused by pretty print if any
+            xml_str = os.linesep.join([s for s in xml_str.splitlines() if s.strip()])
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(xml_str)
+
+            generated_files.append(filepath)
+
+        logger.info("Generated %d XML files.", len(generated_files))
+        return generated_files
+
+    def generate_svg(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> List[str]:
+        """
+        Generates SVG visualizations (one per sheet).
+        Returns a list of generated SVG file paths.
+        Visualize holes based on accurate 3D global coordinate transformation.
+        """
+
+        sheets = {}
+        for items in packed_items:
+            s_num = items["sheet_num"]
+            if s_num not in sheets:
+                sheets[s_num] = []
+            sheets[s_num].append(items)
+
+        generated_files = []
+        base_name = os.path.splitext(output_path)[0]
+
+        padding = 50
+        sheet_w = self.bin_width
+        sheet_h = self.bin_height
+        total_w = sheet_w + 2 * padding
+        total_h = sheet_h + 2 * padding
+
+        for s_num in sorted(sheets.keys()):
+            svg_file = f"{base_name}_{s_num}.svg"
+            dwg = svgwrite.Drawing(svg_file, size=(total_w, total_h))
 
-                if orientation == "horizontal":
-                    start_x = x + groove_x if groove_x >= 0 else x
-                    end_x = x + w + groove_x if groove_x < 0 else x + w
-                    groove_y_pos = y + groove_y if groove_y >= 0 else y + h
-                    gcode.append(
-                        f"G0 X{start_x:.3f} Y{groove_y_pos:.3f} ; Move to groove start"
-                    )
-                    gcode.append(
-                        f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove"
-                    )
-                    gcode.append(f"G1 X{end_x:.3f} Y{groove_y_pos:.3f} ; Cut groove")
-                    gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
-                else:  # vertical
-                    start_y = y + groove_y if groove_y >= 0 else y
-                    end_y = y + h + groove_y if groove_y < 0 else y + h
-                    groove_x_pos = x + groove_x if groove_x >= 0 else x + w
-                    gcode.append(
-                        f"G0 X{groove_x_pos:.3f} Y{start_y:.3f} ; Move to groove start"
-                    )
-                    gcode.append(
-                        f"G1 Z-{groove_dig:.3f} F{plunge_rate} ; Plunge for groove"
-                    )
-                    gcode.append(f"G1 X{groove_x_pos:.3f} Y{end_y:.3f} ; Cut groove")
-                    gcode.append(f"G0 Z{safe_height:.3f} ; Lift cutter")
-
-            # Process minifix holes
-            minifix_holes = item.get("minifix_holes", [])
-            if not minifix_holes:
-                continue  # Skip if no holes
-
-            # Process ALL drill holes (DOWEL, SCREW, BOLT_DRILL, CAM)
-            drill_holes = []
-            for hole_item in minifix_holes:
-                hole_type = hole_item.get("type", "").upper()
-                if hole_type in ["DOWEL", "SCREW", "BOLT_DRILL", "CAM"]:
-                    drill_holes.append(hole_item)
-
-            if not drill_holes:
-                continue  # Skip if no drill holes
-
-            # Get plank thickness from item data
-            rect_width = float(w)
-            rect_height = float(h)
-
-            depth_value = item.get("depth", None)
-
-            # Calculate fallback thickness (use preserved rectangle dimensions)
-            try:
-                fallback_thickness = min(rect_width, rect_height)
-            except (ValueError, TypeError):
-                fallback_thickness = 18.0  # Default thickness
-
-            # Safely convert to float, handling dict, None, or invalid values
-            plank_thickness = None
-            try:
-                if depth_value is None:
-                    plank_thickness = fallback_thickness
-                elif isinstance(depth_value, dict):
-                    for key in ["value", "depth", "thickness", "z", "height"]:
-                        if key in depth_value:
-                            val = depth_value[key]
-                            if isinstance(val, (int, float)):
-                                plank_thickness = float(val)
-                                break
-                            if isinstance(val, str):
-                                try:
-                                    plank_thickness = float(val)
-                                    break
-                                except ValueError:
-                                    continue
-                    if plank_thickness is None:
-                        plank_thickness = fallback_thickness
-                elif isinstance(depth_value, (int, float, str)):
-                    plank_thickness = float(depth_value)
-                else:
-                    plank_thickness = fallback_thickness
-            except (ValueError, TypeError, AttributeError):
-                plank_thickness = fallback_thickness
-
-            # Ensure thickness is positive and valid
-            try:
-                if (
-                    not isinstance(plank_thickness, (int, float))
-                    or plank_thickness <= 0
-                ):
-                    plank_thickness = fallback_thickness
-            except TypeError:
-                plank_thickness = fallback_thickness
-
-            drill_z_position = 0.0  # Center of thickness (Z=0)
-            hole_center_z = 0.0  # Hole center is at middle of thickness (Z=0)
-
-            for hole in drill_holes:
-                hole_type = hole.get("type", "").upper()
-                diameter = hole.get("diameter", 0)
-                depth = hole.get("depth", 0)
-                length = hole.get("length", 0)  # For dowels
-                local_pos = hole.get("localPosition2D", {"x": 0, "y": 0})
-                direction = hole.get("direction", {"x": 0, "y": 0, "z": 0})
-
-                # --- 1. COORDINATE AUTO-CORRECTION (Fix for "Blue Screw" issue) ---
-                local_x_raw = local_pos.get("x", 0)
-                local_y_raw = local_pos.get("y", 0)
-                dir_x_raw = direction.get("x", 0)
-                dir_y_raw = direction.get("y", 0)
-
-                # Determine ORIGINAL dimensions to check coordinate validity
-                # If rotated on sheet, w is height, h is width on sheet
-                if is_rotated:
-                    orig_w = rect_height
-                    orig_h = rect_width
-                else:
-                    orig_w = rect_width
-                    orig_h = rect_height
-
-                # Check if coordinates are defined for the wrong orientation
-                # (e.g. defined for horizontal X-axis but plank is vertical)
-                # We use a safety margin to avoid false positives on square-ish planks
-                # Logic: If coordinate exceeds dimension/2 but fits within the OTHER dimension, swap.
-
-                half_orig_w = orig_w / 2.0
-                half_orig_h = orig_h / 2.0
-                safety_margin = 1.0  # 1mm tolerance
-
-                # Check X vs Original Width
-                x_out_of_bounds = abs(local_x_raw) > (half_orig_w + safety_margin)
-                x_fits_in_height = abs(local_x_raw) <= (half_orig_h + safety_margin)
-
-                # Check Y vs Original Height
-                y_out_of_bounds = abs(local_y_raw) > (half_orig_h + safety_margin)
-                y_fits_in_width = abs(local_y_raw) <= (half_orig_w + safety_margin)
-
-                if (x_out_of_bounds and x_fits_in_height) or (
-                    y_out_of_bounds and y_fits_in_width
-                ):
-                    # Swap Position Coordinates
-                    local_x_raw, local_y_raw = local_y_raw, local_x_raw
-                    # Swap Direction Vector
-                    dir_x_raw, dir_y_raw = dir_y_raw, dir_x_raw
-                    # logging.info(f"Auto-corrected coordinates for hole {hole_type} on part {rid}")
-
-                # --- Calculation of Absolute Position ---
-                plank_center_x = x + (rect_width / 2)
-                plank_center_y = y + (rect_height / 2)
-
-                if is_rotated:
-                    local_x_on_sheet = local_y_raw
-                    local_y_on_sheet = local_x_raw
-                    # Direction also rotates
-                    dir_x = dir_y_raw
-                    dir_y = dir_x_raw
-                else:
-                    local_x_on_sheet = local_x_raw
-                    local_y_on_sheet = local_y_raw
-                    dir_x = dir_x_raw
-                    dir_y = dir_y_raw
-
-                hole_x_center = plank_center_x + local_x_on_sheet
-                hole_y_center = plank_center_y + local_y_on_sheet
-                radius = diameter / 2
-
-                # --- 2. FACE DRILLING (CAM HOLES) ---
-                if hole_type == "CAM":
-                    # CAM holes are drilled on the face (Top surface)
-                    # Drill Depth
-                    actual_depth = depth if depth > 0 else 12.0
-
-                    gcode.append(
-                        f"G0 X{hole_x_center:.3f} Y{hole_y_center:.3f} ; Move to CAM hole center"
-                    )
-                    # Plunge
-                    gcode.append(
-                        f"G1 Z-{actual_depth:.3f} F{plunge_rate} ; Drill CAM hole"
-                    )
-
-                    # If hole is large (like 15mm CAM), we might need to mill it as a pocket
-                    # Assuming the cutter is smaller than the hole.
-                    # If cutter == hole diameter (e.g. 15mm bit), plunge is enough.
-                    # As a safe default for CAMs (usually 15mm), we do a circle cut (assuming standard endmill e.g. 6mm or 3mm)
-                    # If the cutter > diameter, this would be bad, but usually cutter <= 8mm.
-
-                    # We simply cut a circle contour at the bottom.
-                    # Note: Ideally we should pocket, but contour is standard fallback.
-                    gcode.append(f"G2 I{radius:.3f} ; Cut CAM circle")
-
-                    gcode.append(f"G0 Z{safe_height:.3f} ; Retract")
-                    continue  # Done with CAM, skip edge logic
-
-                # --- 3. EDGE DRILLING (DOWEL, SCREW, BOLT_DRILL) ---
-                # Determine hole depth
-                if hole_type == "DOWEL":
-                    actual_depth = length if length > 0 else 24
-                elif hole_type == "SCREW":
-                    actual_depth = length if length > 0 else 25
-                elif hole_type == "BOLT_DRILL":
-                    actual_depth = depth if depth > 0 else 12.5
-                else:
-                    actual_depth = depth if depth > 0 else 12
-
-                # Edge drilling logic (Using computed dir_x, dir_y)
-                abs_dir_x = abs(dir_x)
-                abs_dir_y = abs(dir_y)
-
-                if abs_dir_x >= abs_dir_y and abs_dir_x > 0.1:
-                    # Hole on left or right edge
-                    hole_y = hole_y_center
-                    hole_y = max(y, min(y + rect_height, hole_y))
-
-                    if dir_x < 0:  # Left edge
-                        edge_x = x
-                        drill_start_x = edge_x
-                        drill_end_x = edge_x + actual_depth
-                        gcode.append(
-                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type}"
-                        )
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
-                        gcode.append("G19")  # YZ plane
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    else:  # Right edge
-                        edge_x = x + rect_width
-                        drill_start_x = edge_x
-                        drill_end_x = edge_x - actual_depth
-                        gcode.append(
-                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type}"
-                        )
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
-                        gcode.append("G19")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    gcode.append(f"G0 Z{safe_height:.3f}")
-
-                elif abs_dir_y > abs_dir_x and abs_dir_y > 0.1:
-                    # Hole on top or bottom edge
-                    hole_x = hole_x_center
-                    hole_x = max(x, min(x + rect_width, hole_x))
-
-                    if dir_y < 0:  # Bottom edge
-                        edge_y = y
-                        drill_start_y = edge_y
-                        drill_end_y = edge_y + actual_depth
-                        gcode.append(
-                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type}"
-                        )
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18")  # XZ plane
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    else:  # Top edge
-                        edge_y = y + rect_height
-                        drill_start_y = edge_y
-                        drill_end_y = edge_y - actual_depth
-                        gcode.append(
-                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type}"
-                        )
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18")  # XZ plane
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    gcode.append(f"G0 Z{safe_height:.3f}")
-
-                else:
-                    # Fallback
-                    dist_to_left = abs(hole_x_center - x)
-                    dist_to_right = abs(hole_x_center - (x + rect_width))
-                    dist_to_bottom = abs(hole_y_center - y)
-                    dist_to_top = abs(hole_y_center - (y + rect_height))
-
-                    min_dist = min(
-                        dist_to_left, dist_to_right, dist_to_bottom, dist_to_top
-                    )
-
-                    if min_dist == dist_to_left:
-                        edge_x = x
-                        drill_start_x = edge_x
-                        drill_end_x = edge_x + actual_depth
-                        hole_y = hole_y_center
-                        hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(
-                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to left edge at {hole_type} (auto)"
-                        )
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
-                        gcode.append("G19")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    elif min_dist == dist_to_right:
-                        edge_x = x + rect_width
-                        drill_start_x = edge_x
-                        drill_end_x = edge_x - actual_depth
-                        hole_y = hole_y_center
-                        hole_y = max(y, min(y + rect_height, hole_y))
-                        gcode.append(
-                            f"G0 X{drill_start_x:.3f} Y{hole_y:.3f} Z{drill_z_position:.3f} ; Move to right edge at {hole_type} (auto)"
-                        )
-                        gcode.append(f"G1 X{drill_end_x:.3f} F{plunge_rate}")
-                        gcode.append("G19")
-                        gcode.append(f"G0 Y{hole_y - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 Y{hole_y + radius:.3f} Z{hole_center_z:.3f} J{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 Y{hole_y - radius:.3f} Z{hole_center_z:.3f} J-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    elif min_dist == dist_to_bottom:
-                        edge_y = y
-                        drill_start_y = edge_y
-                        drill_end_y = edge_y + actual_depth
-                        hole_x = hole_x_center
-                        hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(
-                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to bottom edge at {hole_type} (auto)"
-                        )
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18")
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    else:  # top
-                        edge_y = y + rect_height
-                        drill_start_y = edge_y
-                        drill_end_y = edge_y - actual_depth
-                        hole_x = hole_x_center
-                        hole_x = max(x, min(x + rect_width, hole_x))
-                        gcode.append(
-                            f"G0 X{hole_x:.3f} Y{drill_start_y:.3f} Z{drill_z_position:.3f} ; Move to top edge at {hole_type} (auto)"
-                        )
-                        gcode.append(f"G1 Y{drill_end_y:.3f} F{plunge_rate}")
-                        gcode.append("G18")
-                        gcode.append(f"G0 X{hole_x - radius:.3f} Z{hole_center_z:.3f}")
-                        gcode.append(
-                            f"G2 X{hole_x + radius:.3f} Z{hole_center_z:.3f} I{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append(
-                            f"G2 X{hole_x - radius:.3f} Z{hole_center_z:.3f} I-{radius:.3f} K0 F{feed_rate}"
-                        )
-                        gcode.append("G17")
-                    gcode.append(f"G0 Z{safe_height:.3f}")
-
-    gcode += [
-        f"G0 Z{safe_height:.3f} ; Move to safe height",
-        "M9 ; Turn off coolant",
-        "M5 ; Stop spindle",
-        "G28 ; Home all axes",
-        "M30 ; End program",
-    ]
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write("\n".join(gcode))
-
-
-def calculate_efficiency(rectangles: List[Tuple], width: int, height: int) -> float:
-    used_area = sum(rect[3] * rect[4] for rect in rectangles)
-    return (used_area / (width * height)) * 100
-
-
-def convert_svgs_to_pdf(svg_files: List[str], pdf_output: str) -> None:
-    if not svg_files:
-        return
-
-    canvas_pdf = canvas.Canvas(pdf_output)
-    for svg_file in svg_files:
-        if not os.path.exists(svg_file):
-            continue
-
-        drawing = svg2rlg(svg_file)
-        if drawing:
-            width, height = drawing.width, drawing.height
-            canvas_pdf.setPageSize((width, height))
-            renderPDF.draw(drawing, canvas_pdf, 0, 0)
-            canvas_pdf.showPage()
-
-    canvas_pdf.save()
-
-
-def generate_dwg_file(
-    rectangles: List[Tuple],
-    files: Dict,
-    output_file: str,
-    sheet_dims: Tuple,
-) -> None:
-    """
-    Generate DWG file for nesting layout.
-    """
-    if not EZDXF_AVAILABLE:
-        return  # Skip if ezdxf not available
-
-    try:
-        doc = ezdxf.new("R2010")
-        msp = doc.modelspace()
-
-        bin_width, bin_height = sheet_dims
-
-        # Draw sheet boundary
-        msp.add_lwpolyline(
-            [
-                (0, 0),
-                (bin_width, 0),
-                (bin_width, bin_height),
-                (0, bin_height),
-                (0, 0),
-            ],
-            close=True,
-        )
-
-        # Draw rectangles
-        for rect in rectangles:
-            # Handle both formats
-            if len(rect) == 7:
-                _, x, y, w, h, rid, is_rotated = rect
-            else:
-                _, x, y, w, h, rid = rect
-                is_rotated = False
-
-            item = files[rid]
-
-            # Draw rectangle
-            msp.add_lwpolyline(
-                [
-                    (x, y),
-                    (x + w, y),
-                    (x + w, y + h),
-                    (x, y + h),
-                    (x, y),
-                ],
-                close=True,
-            )
-
-            # Draw minifix holes (exclude CAM)
-            minifix_holes = item.get("minifix_holes", [])
-            drill_holes = [h for h in minifix_holes if h.get("type") != "CAM"]
-
-            for hole in drill_holes:
-                diameter = hole.get("diameter", 0)
-                local_pos = hole.get("localPosition2D", {"x": 0, "y": 0})
-
-                # localPosition2D is relative to plank CENTER
-                plank_center_x = x + (w / 2)
-                plank_center_y = y + (h / 2)
-
-                # Account for rotation
-                if is_rotated:
-                    local_x = local_pos.get("y", 0)
-                    local_y = local_pos.get("x", 0)
-                else:
-                    local_x = local_pos.get("x", 0)
-                    local_y = local_pos.get("y", 0)
-
-                hole_x = plank_center_x + local_x
-                hole_y = plank_center_y + local_y
-                radius = diameter / 2
-
-                # Draw as small circle on edge (for DWG, we show position)
-                msp.add_circle((hole_x, hole_y), radius)
-
-        doc.saveas(output_file)
-    except (IOError, OSError, ValueError, AttributeError) as e:
-        logging.warning("Failed to generate DWG file: %s", e)
-
-
-def generate_xml_file(
-    rectangles: List[Tuple],
-    files: Dict,
-    output_file: str,
-    sheet_dims: Tuple,
-    sheet_number: int,
-) -> None:
-    """
-    Generate XML file for nesting data.
-    """
-    root = ElementTree.Element("nesting")
-    root.set("sheet_number", str(sheet_number))
-
-    sheet_elem = ElementTree.SubElement(root, "sheet")
-    sheet_elem.set("width", str(sheet_dims[0]))
-    sheet_elem.set("height", str(sheet_dims[1]))
-
-    parts_elem = ElementTree.SubElement(root, "parts")
-
-    for i, rect in enumerate(rectangles):
-        # Handle both formats
-        if len(rect) == 7:
-            _, x, y, w, h, rid, _ = rect
-        else:
-            _, x, y, w, h, rid = rect
-
-        item = files[rid]
-
-        part_elem = ElementTree.SubElement(parts_elem, "part")
-        part_elem.set("id", str(i + 1))
-        part_elem.set("name", item.get("name", ""))
-        part_elem.set("type", item.get("type", "rectangle"))
-
-        position_elem = ElementTree.SubElement(part_elem, "position")
-        position_elem.set("x", str(x))
-        position_elem.set("y", str(y))
-
-        dimensions_elem = ElementTree.SubElement(part_elem, "dimensions")
-        dimensions_elem.set("width", str(w))
-        dimensions_elem.set("height", str(h))
-        dimensions_elem.set("depth", str(item.get("depth", 0)))
-
-        # Add grooves
-        grooves = item.get("grooves", [])
-        if grooves:
-            grooves_elem = ElementTree.SubElement(part_elem, "grooves")
-            for groove in grooves:
-                groove_elem = ElementTree.SubElement(grooves_elem, "groove")
-                groove_elem.set("type", str(groove.get("type", "")))
-                groove_elem.set("orientation", str(groove.get("orientation", "")))
-                groove_elem.set("x", str(groove.get("x", 0)))
-                groove_elem.set("y", str(groove.get("y", 0)))
-
-        # Add minifix holes
-        minifix_holes = item.get("minifix_holes", [])
-        if minifix_holes:
-            holes_elem = ElementTree.SubElement(part_elem, "minifix_holes")
-            for hole in minifix_holes:
-                hole_elem = ElementTree.SubElement(holes_elem, "hole")
-                hole_elem.set("type", str(hole.get("type", "")))
-                hole_elem.set("diameter", str(hole.get("diameter", 0)))
-                hole_elem.set("depth", str(hole.get("depth", 0)))
-                local_pos = hole.get("localPosition2D", {})
-                hole_elem.set("local_x", str(local_pos.get("x", 0)))
-                hole_elem.set("local_y", str(local_pos.get("y", 0)))
-
-    tree = ElementTree.ElementTree(root)
-    # Indent is available in Python 3.9+, use contextlib.suppress for compatibility
-    with contextlib.suppress(AttributeError):
-        ElementTree.indent(tree, space="  ")  # Python < 3.9 doesn't have indent
-    tree.write(output_file, encoding="utf-8", xml_declaration=True)
-
-
-def try_packing(
-    width: int,
-    height: int,
-    rotation_allowed: bool,
-    remaining_files: Dict,
-    sort_algorithms: List,
-) -> Tuple[List[Tuple], float, Dict]:
-    packer = newPacker(
-        sort_algo=secrets.choice(sort_algorithms), rotation=rotation_allowed
-    )
-
-    for rid, details in remaining_files.items():
-        try:
-            if details["type"] == "circle":
-                diameter = 2 * details["radius"]
-                packer.add_rect(diameter, diameter, rid=rid)
-            else:
-                original_w = details["width"]
-                original_h = details["height"]
-                packer.add_rect(original_w, original_h, rid=rid)
-        except KeyError:
-            continue
-
-    packer.add_bin(width, height)
-    packer.pack()
-
-    rectangles = packer.rect_list()
-    # rectpack returns: (bin, x, y, w, h, rid)
-    # Check if rotation occurred by comparing w,h with original
-    processed_rectangles = []
-    for rect in rectangles:
-        bin_id, x, y, w, h, rid = rect
-        original_item = remaining_files.get(rid, {})
-        original_w = original_item.get("width", w)
-        original_h = original_item.get("height", h)
-
-        # Determine if rotated (dimensions swapped)
-        is_rotated = abs(w - original_h) < 0.1 and abs(h - original_w) < 0.1
-
-        # Store rotation info in extended tuple: (bin, x, y, w, h, rid, rotated)
-        processed_rectangles.append((bin_id, x, y, w, h, rid, is_rotated))
-
-    packed_ids = {rect[5] for rect in processed_rectangles}
-    unplaced = {
-        file_id: file_data
-        for file_id, file_data in remaining_files.items()
-        if file_id not in packed_ids
-    }
-    efficiency = calculate_efficiency(processed_rectangles, width, height)
-
-    return processed_rectangles, efficiency, unplaced
-
-
-def draw_sheet_to_svg(
-    file_path: str,
-    rectangles: List[Tuple],
-    files: Dict,
-    sheet_dims: Tuple,
-    enclosing_rectangle: Tuple,
-    best_efficiency: float = None,
-    scale: float = 1.0,
-) -> None:
-
-    page_width = 210  # A4 width in mm
-    page_height = 297  # A4 height in mm
-
-    # === Custom Margins ===
-    margin_left = 2
-    margin_right = 2
-    margin_top = 3
-    margin_bottom = 3
-
-    usable_height = page_height - margin_top - margin_bottom
-
-    # Input sheet dimensions
-    bin_width, bin_height = sheet_dims
-    nesting_height_mm = bin_height
-
-    # Estimate table height
-    table_rows = len(rectangles) + 4
-    row_height = 6
-    table_height_mm = table_rows * row_height
-
-    total_content_height_mm = max(nesting_height_mm, table_height_mm)
-    max_height_available = usable_height
-    scale = max_height_available / total_content_height_mm
-
-    nesting_width = bin_width * scale
-    nesting_height = bin_height * scale
-
-    # Create SVG
-    dwg = Drawing(
-        file_path,
-        profile="tiny",
-        size=(f"{page_width}mm", f"{page_height}mm"),
-        viewBox=f"0 0 {page_width} {page_height + 20}",
-    )
-    # === Grid lines/ Plank Arrangement ===
-    for x in range(0, int(bin_width)):
-        dx = x * scale + margin_left
-        dwg.add(
-            dwg.line(
-                start=(dx, margin_top),
-                end=(dx, nesting_height + margin_top),
-                stroke="#eee",
-                stroke_width=0.2,
-            )
-        )
-    for y in range(0, int(bin_height)):
-        dy = y * scale + margin_top
-        dwg.add(
-            dwg.line(
-                start=(margin_left, dy),
-                end=(nesting_width + margin_left, dy),
-                stroke="#eee",
-                stroke_width=0.2,
-            )
-        )
-
-    # === Enclosing Rectangle ===
-    if enclosing_rectangle:
-        dwg.add(
-            Rect(
-                insert=(margin_left, margin_top),
-                size=(nesting_width, nesting_height),
-                fill="none",
-                stroke="black",
-                stroke_width=0.5,
-            )
-        )
-
-    # === Draw Parts ===
-    total_area = 0
-    for i, rect in enumerate(rectangles):
-        # Handle both old format (6 elements) and new format (7 elements with rotation)
-        if len(rect) == 7:
-            _, x, y, w, h, rid, is_rotated = rect
-        else:
-            _, x, y, w, h, rid = rect
-            is_rotated = False
-
-        item = files[rid]
-
-        grooves = item.get("grooves", [])
-        minifix_holes = item.get("minifix_holes", [])
-        # Process ALL drill holes (DOWEL, SCREW, BOLT_DRILL), exclude CAM
-        drill_holes = (
-            [
-                h
-                for h in minifix_holes
-                if h.get("type") in ["DOWEL", "SCREW", "BOLT_DRILL"]
-            ]
-            if minifix_holes
-            else []
-        )
-
-        color = "lightblue" if item["type"] == "rectangle" else "lightgrey"
-        x_scaled = x * scale + margin_left
-        y_scaled = y * scale + margin_top
-        w_scaled = w * scale
-        h_scaled = h * scale
-        total_area += w * h
-
-        if item["type"] == "circle":
-            radius = item["radius"] * scale
-            dwg.add(
-                dwg.circle(
-                    center=(x_scaled + radius, y_scaled + radius),
-                    r=radius,
-                    fill=color,
-                    stroke="black",
-                    stroke_width=0.3,
-                )
-            )
-        else:
             dwg.add(
                 dwg.rect(
-                    insert=(x_scaled, y_scaled),
-                    size=(w_scaled, h_scaled),
-                    fill=color,
+                    insert=(padding, padding),
+                    size=(sheet_w, sheet_h),
+                    fill="none",
                     stroke="black",
-                    stroke_width=0.3,
                 )
             )
 
-        dwg.add(
-            Text(
-                str(i + 1),
-                insert=(x_scaled + w_scaled / 2, y_scaled + h_scaled / 2),
-                font_size="1.8px",
-                fill="black",
-                text_anchor="middle",
-            )
-        )
+            for item in sheets[s_num]:
+                sheet_x = item["x"] + padding
+                sheet_y = item["y"] + padding
+                w = item[KEY_WIDTH]
+                h = item[KEY_HEIGHT]
+                is_rotated = item.get("is_rotated", False)
 
-        # === Draw grooves ===
-        for groove in grooves:
-            gap = groove.get("groove_gap", 0) * scale
-            dig = groove.get("groove_dig", 0) * scale
-            orientation = groove["orientation"]
-            groove_type = groove["type"]
-
-            # Determine if plank is horizontal
-            is_square = w_scaled == h_scaled
-            is_horizontal_plank = w_scaled > h_scaled
-
-            actual_orientation = orientation
-            if not is_square:
-                if orientation == "vertical" and is_horizontal_plank:
-                    actual_orientation = "horizontal"
-                elif orientation == "horizontal" and not is_horizontal_plank:
-                    actual_orientation = "vertical"
-
-            # === Horizontal Groove Drawing ===
-            if actual_orientation == "horizontal":
-                length = w_scaled
-                x1 = x_scaled
-                x2 = x_scaled + length
-
-                # Groove edge logic: top or bottom based on y
-                if groove.get("y", 0) < 0:
-                    y_outer = y_scaled
-                    y_inner = y_outer + dig
-                else:
-                    y_outer = y_scaled + h_scaled
-                    y_inner = y_outer - dig
-
-                # Two red lines for gap
-                y_center = y_inner
-                y_line1 = y_center - gap / 2
-                y_line2 = y_center + gap / 2
-
-                if groove_type == "groove":
-                    # Red edge lines
-                    dwg.add(
-                        dwg.line(
-                            (x1, y_line1), (x2, y_line1), stroke="red", stroke_width=0.2
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (x1, y_line2), (x2, y_line2), stroke="red", stroke_width=0.2
-                        )
-                    )
-
-                elif groove_type == "fitment":
-                    dwg.add(
-                        dwg.line(
-                            (x1, (y_line1 + y_line2) / 2),
-                            (x2, (y_line1 + y_line2) / 2),
-                            stroke="black",
-                            stroke_width=0.3,
-                            stroke_dasharray="1,1",
-                        )
-                    )
-
-            # === Vertical Groove Drawing ===
-            elif actual_orientation == "vertical":
-                length = h_scaled
-                y1 = y_scaled
-                y2 = y_scaled + length
-
-                # Groove edge logic: left or right based on x
-                if groove.get("x", 0) < 0:
-                    x_outer = x_scaled
-                    x_inner = x_outer + dig
-                else:
-                    x_outer = x_scaled + w_scaled
-                    x_inner = x_outer - dig
-
-                # Two red lines for gap
-                x_center = x_inner
-                x_line1 = x_center - gap / 5
-                x_line2 = x_center + gap / 2
-
-                if groove_type == "groove":
-                    # Red edge lines
-                    dwg.add(
-                        dwg.line(
-                            (x_line1, y1), (x_line1, y2), stroke="red", stroke_width=0.2
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (x_line2, y1), (x_line2, y2), stroke="red", stroke_width=0.2
-                        )
-                    )
-
-                elif groove_type == "fitment":
-                    dwg.add(
-                        dwg.line(
-                            ((x_line1 + x_line2) / 2, y1),
-                            ((x_line1 + x_line2) / 2, y2),
-                            stroke="black",
-                            stroke_width=0.3,
-                            stroke_dasharray="1,1",
-                        )
-                    )
-        # === Draw minifix holes as "L L" shapes on edges ===
-        # Only show drill holes (DOWEL, SCREW, BOLT_DRILL), exclude CAM
-
-        for hole in drill_holes:
-            local_pos = hole.get("localPosition2D", {"x": 0, "y": 0})
-            direction = hole.get("direction", {"x": 0, "y": 0, "z": 0})
-
-            # localPosition2D is relative to plank CENTER
-            plank_center_x_scaled = x_scaled + (w_scaled / 2)
-            plank_center_y_scaled = y_scaled + (h_scaled / 2)
-
-            # Get local position (relative to center)
-            local_x_raw = local_pos.get("x", 0)
-            local_y_raw = local_pos.get("y", 0)
-
-            # Account for plank rotation on sheet (same logic as G-code)
-            if is_rotated:
-                local_x_on_sheet = local_y_raw
-                local_y_on_sheet = local_x_raw
-            else:
-                local_x_on_sheet = local_x_raw
-                local_y_on_sheet = local_y_raw
-
-            # Calculate absolute hole position on sheet (scaled) - relative to center
-            hole_x_center_scaled = plank_center_x_scaled + (local_x_on_sheet * scale)
-            hole_y_center_scaled = plank_center_y_scaled + (local_y_on_sheet * scale)
-
-            # Determine which edge the hole is on based on direction
-            dir_x_raw = direction.get("x", 0)
-            dir_y_raw = direction.get("y", 0)
-
-            # Account for rotation when determining edge (same logic as G-code)
-            if is_rotated:
-                dir_x = dir_y_raw
-                dir_y = dir_x_raw
-            else:
-                dir_x = dir_x_raw
-                dir_y = dir_y_raw
-
-            abs_dir_x = abs(dir_x)
-            abs_dir_y = abs(dir_y)
-
-            # Determine edge position and draw "L" shape
-            l_size = 2 * scale  # Size of L shape
-            hole_color = (
-                "blue"
-                if hole.get("type") == "SCREW"
-                else "orange" if hole.get("type") == "DOWEL" else "red"
-            )
-
-            if (
-                abs_dir_x >= abs_dir_y and abs_dir_x > 0.1
-            ):  # Left or right edge (X direction dominant or equal)
-                # Position hole Y coordinate on the edge (use Y position from localPosition2D)
-                edge_y = hole_y_center_scaled
-                # Clamp Y to be within plank bounds
-                edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-
-                if dir_x < 0:  # Left edge
-                    edge_x = x_scaled
-                else:  # Right edge
-                    edge_x = x_scaled + w_scaled
-                # Draw "L" shape on left/right edge
                 dwg.add(
-                    dwg.line(
-                        (edge_x, edge_y - l_size),
-                        (edge_x, edge_y + l_size),
-                        stroke=hole_color,
-                        stroke_width=1.0,
+                    dwg.rect(
+                        insert=(sheet_x, sheet_y),
+                        size=(w, h),
+                        fill="#e0e0e0",
+                        stroke="blue",
+                        stroke_width="2",
                     )
                 )
-                dwg.add(
-                    dwg.line(
-                        (edge_x, edge_y),
-                        (edge_x - l_size if dir_x < 0 else edge_x + l_size, edge_y),
-                        stroke=hole_color,
-                        stroke_width=1.0,
+
+                name = item.get(KEY_NAME, "")
+                holes = item.get("minifix_holes", [])
+
+                for hole in holes:
+                    h_pos = hole.get("local_position2_d", {})
+
+                for hole in holes:
+                    hole_type = str(hole.get("type", "")).upper()
+                    h_pos = hole.get("local_position2_d", {})
+                    face_id = str(hole.get("face", "0"))
+                    # if hole_type in ["CAM"] and face_id != "6" or hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
+                    if hole_type in ["SCREW", "DOWEL"] and face_id in ["1", "6"]:
+                        raw_pos_x = self._safe_float(h_pos.get("y", 0))
+                        raw_pos_y = self._safe_float(h_pos.get("x", 0))
+                    else:
+                        raw_pos_x = self._safe_float(h_pos.get("x", 0))
+                        raw_pos_y = self._safe_float(h_pos.get("y", 0))
+
+                    diameter = self._safe_float(hole.get("diameter", 15))
+                    length = self._safe_float(hole.get("length", 10))
+                    drill_type = str(hole.get("drill_type", "1"))
+
+                    edge_map = {
+                        "5": "LEFT",
+                        "3": "RIGHT",
+                        "4": "TOP",
+                        "2": "BOTTOM",
+                        "1": "TOP",
+                        "6": "BOTTOM",
+                    }
+
+                    edge = edge_map.get(face_id, "UNKNOWN")
+                    if is_rotated:
+                        rotation_map = {
+                            "TOP": "RIGHT",
+                            "RIGHT": "BOTTOM",
+                            "BOTTOM": "LEFT",
+                            "LEFT": "TOP",
+                        }
+                        edge = rotation_map.get(edge, edge)
+
+                    rect_x, rect_y = 0, 0
+                    rect_w, rect_h = 0, 0
+
+                    # Default Visuals
+                    viz_w = length
+                    viz_l = diameter
+
+                    if drill_type == "1":
+                        if edge == "LEFT":
+                            rect_x = raw_pos_x
+                            rect_y = 0
+                            rect_w = viz_l
+                            rect_h = viz_w
+                        elif edge == "RIGHT":
+                            rect_x = raw_pos_x
+                            rect_y = h - viz_w
+                            rect_w = viz_l
+                            rect_h = viz_w
+                        elif edge == "TOP":
+                            rect_x = raw_pos_x
+                            rect_y = 0
+                            rect_w = viz_l
+                            rect_h = viz_w
+                        elif edge == "BOTTOM":
+
+                            rect_x = raw_pos_x
+                            rect_y = h - viz_w
+                            rect_w = viz_l
+                            rect_h = viz_w
+
+                        dwg.add(
+                            dwg.rect(
+                                insert=(sheet_x + rect_x, sheet_y + rect_y),
+                                size=(rect_w, rect_h),
+                                fill="none",
+                                stroke="green",
+                                stroke_width="1",
+                            )
+                        )
+
+                    else:
+                        cx = raw_pos_x
+                        cy = raw_pos_y
+                        if is_rotated and (
+                            name != "HORIZONTAL_PLANK" or hole_type in ["CAM"]
+                        ):
+                            cx, cy = raw_pos_y, raw_pos_x
+
+                        dwg.add(
+                            dwg.circle(
+                                center=(sheet_x + cx, sheet_y + cy),
+                                r=diameter / 2,
+                                fill="red",
+                                stroke="black",
+                                stroke_width="0.5",
+                            )
+                        )
+
+                # --- Grooves ---
+                grooves = item.get("grooves", [])
+                for groove in grooves:
+                    g_x = self._safe_float(groove.get("x", 0))
+                    g_y = self._safe_float(groove.get("y", 0))
+                    g_end_x = self._safe_float(groove.get("end_x", 0))
+                    g_end_y = self._safe_float(groove.get("end_y", 0))
+                    g_width = self._safe_float(groove.get("width", 10))
+
+                    if is_rotated:
+                        # Swap coordinates if rotated
+                        g_x, g_y = g_x, g_y
+                        g_end_x, g_end_y = g_end_x, g_end_y
+
+                    dwg.add(
+                        dwg.line(
+                            start=(sheet_x + g_x, sheet_y + g_y),
+                            end=(sheet_x + g_end_x, sheet_y + g_end_y),
+                            stroke="orange",
+                            stroke_width=g_width,
+                            stroke_opacity="0.6",
+                        )
+                    )
+
+                # --- Label Group ---
+                label_g = dwg.g()
+                unique_id = item.get(KEY_UNIQUE_ID, "")
+
+                # Simulate text size
+                text_w = len(unique_id) * 8 + 10
+                text_h = 20
+                lbl_cx = sheet_x + w / 2 - text_w / 2
+                lbl_cy = sheet_y + h / 2 - text_h / 2
+
+                # Label Background
+                label_g.add(
+                    dwg.rect(
+                        insert=(lbl_cx, lbl_cy),
+                        size=(text_w, text_h),
+                        rx=5,
+                        ry=5,
+                        fill="white",
+                        fill_opacity=0.3,
+                        stroke="none",
                     )
                 )
-            elif (
-                abs_dir_y > abs_dir_x and abs_dir_y > 0.1
-            ):  # Top or bottom edge (Y direction dominant)
-                # Position hole X coordinate on the edge (use X position from localPosition2D)
-                edge_x = hole_x_center_scaled
-                # Clamp X to be within plank bounds
-                edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
 
-                if dir_y < 0:  # Bottom edge
-                    edge_y = y_scaled
-                else:  # Top edge
-                    edge_y = y_scaled + h_scaled
-                # Draw "L" shape on top/bottom edge
-                dwg.add(
-                    dwg.line(
-                        (edge_x - l_size, edge_y),
-                        (edge_x + l_size, edge_y),
-                        stroke=hole_color,
-                        stroke_width=1.0,
+                # Text
+                label_g.add(
+                    dwg.text(
+                        unique_id,
+                        insert=(sheet_x + w / 2, sheet_y + h / 2 + 5),
+                        text_anchor="middle",
+                        font_size="12",
+                        fill="black",
                     )
                 )
-                dwg.add(
-                    dwg.line(
-                        (edge_x, edge_y),
-                        (edge_x, edge_y - l_size if dir_y < 0 else edge_y + l_size),
-                        stroke=hole_color,
-                        stroke_width=1.0,
-                    )
-                )
-            else:
-                # Fallback: auto-detect closest edge if direction unclear
-                dist_to_left = abs(hole_x_center_scaled - x_scaled)
-                dist_to_right = abs(hole_x_center_scaled - (x_scaled + w_scaled))
-                dist_to_bottom = abs(hole_y_center_scaled - y_scaled)
-                dist_to_top = abs(hole_y_center_scaled - (y_scaled + h_scaled))
+                dwg.add(label_g)
 
-                min_dist = min(dist_to_left, dist_to_right, dist_to_bottom, dist_to_top)
+            dwg.save()
+            generated_files.append(svg_file)
 
-                if min_dist == dist_to_left:
-                    edge_x = x_scaled
-                    edge_y = hole_y_center_scaled
-                    edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y - l_size),
-                            (edge_x, edge_y + l_size),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y),
-                            (edge_x - l_size, edge_y),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                elif min_dist == dist_to_right:
-                    edge_x = x_scaled + w_scaled
-                    edge_y = hole_y_center_scaled
-                    edge_y = max(y_scaled, min(y_scaled + h_scaled, edge_y))
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y - l_size),
-                            (edge_x, edge_y + l_size),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y),
-                            (edge_x + l_size, edge_y),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                elif min_dist == dist_to_bottom:
-                    edge_x = hole_x_center_scaled
-                    edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
-                    edge_y = y_scaled
-                    dwg.add(
-                        dwg.line(
-                            (edge_x - l_size, edge_y),
-                            (edge_x + l_size, edge_y),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y),
-                            (edge_x, edge_y - l_size),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                else:  # Top edge
-                    edge_x = hole_x_center_scaled
-                    edge_x = max(x_scaled, min(x_scaled + w_scaled, edge_x))
-                    edge_y = y_scaled + h_scaled
-                    dwg.add(
-                        dwg.line(
-                            (edge_x - l_size, edge_y),
-                            (edge_x + l_size, edge_y),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
-                    dwg.add(
-                        dwg.line(
-                            (edge_x, edge_y),
-                            (edge_x, edge_y + l_size),
-                            stroke=hole_color,
-                            stroke_width=1.0,
-                        )
-                    )
+        logger.info("Generated %d SVG files.", len(generated_files))
+        return generated_files
 
-    # === Table (Right Column) ===
-    table_x = 151 - margin_right
-    table_y = margin_top + 10
-    row_height = 5
-    col_widths = [8, 24, 24]
+    def generate_layout_pdf(
+        self: "NestingService", svg_paths: List[str], output_path: str
+    ) -> str:
+        """
+        Combines generated SVGs into a single Layout PDF.
+        """
+        # External imports
+        from reportlab.graphics import renderPDF
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        from svglib.svglib import svg2rlg
 
-    dwg.add(
-        Text(
-            "Best Attempt Results",
-            insert=(table_x, table_y - 5),
-            font_size="4px",
-            font_weight="bold",
-        )
-    )
+        pdf_path = os.path.splitext(output_path)[0] + "_layout.pdf"
+        c = canvas.Canvas(pdf_path, pagesize=A4)
+        page_w, page_h = A4
+        margin = 20
 
-    headers = ["ID", "Width (mm)", "Height (mm)"]
-    for i, header in enumerate(headers):
-        x = table_x + sum(col_widths[:i])
-        dwg.add(
-            Rect(
-                insert=(x, table_y),
-                size=(col_widths[i], row_height),
-                fill="white",
-                stroke="black",
-                stroke_width=0.3,
-            )
-        )
-        dwg.add(
-            Text(
-                header,
-                insert=(x + col_widths[i] / 2, table_y + 4),
-                font_size="3px",
-                text_anchor="middle",
-            )
-        )
+        for svg_file in svg_paths:
+            drawing = svg2rlg(svg_file)
+            if drawing:
+                # Calculate Scale to fit page
+                dw = drawing.width
+                dh = drawing.height
 
-    for i, rect in enumerate(rectangles):
-        # Handle both formats
-        if len(rect) == 7:
-            _, _, _, w, h, _, _ = rect
-        else:
-            _, _, _, w, h, _ = rect
-        y = table_y + (i + 1) * row_height
-        row_data = [str(i + 1), f"{w:.2f}", f"{h:.2f}"]
-        for j, val in enumerate(row_data):
-            x = table_x + sum(col_widths[:j])
-            dwg.add(
-                Rect(
-                    insert=(x, y),
-                    size=(col_widths[j], row_height),
-                    fill="white",
-                    stroke="black",
-                    stroke_width=0.3,
-                )
-            )
-            dwg.add(
-                Text(
-                    val,
-                    insert=(x + col_widths[j] / 2, y + 4),
-                    font_size="3px",
-                    text_anchor="middle",
-                )
-            )
+                available_w = page_w - 2 * margin
+                available_h = page_h - 2 * margin
 
-    # === Summary ===
-    summary_y = table_y + (len(rectangles) + 2) * row_height
-    if best_efficiency is not None:
-        dwg.add(
-            Text(
-                f"Best Efficiency: {best_efficiency:.2f}%",
-                insert=(table_x, summary_y),
-                font_size="5px",
-                font_weight="bold",
-            )
-        )
-    dwg.add(
-        Text(
-            f"Total Parts: {len(rectangles)}",
-            insert=(table_x, summary_y + 5),
-            font_size="3px",
-        )
-    )
-    dwg.add(
-        Text(
-            f"Main Sheet Dimensions: {bin_width}mm × {bin_height}mm",
-            insert=(table_x, summary_y + 10),
-            font_size="3px",
-        )
-    )
+                scale_w = available_w / dw if dw > 0 else 1
+                scale_h = available_h / dh if dh > 0 else 1
+                scale = min(scale_w, scale_h)
 
-    dwg.save()
+                # Apply scale
+                drawing.scale(scale, scale)
+
+                # Center on page
+                scaled_w = dw * scale
+                scaled_h = dh * scale
+                x_off = (page_w - scaled_w) / 2
+                y_off = (page_h - scaled_h) / 2
+
+                renderPDF.draw(drawing, c, x_off, y_off)
+                c.showPage()
+
+        c.save()
+        logger.info("Layout PDF generated at: %s", pdf_path)
+        return pdf_path
+
+    def generate_labels(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> str:
+        """
+        Generates a PDF with labels/QR codes using reportlab.
+        """
+        # External imports
+        from reportlab.graphics.barcode import qr
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas
+
+        pdf_path = os.path.splitext(output_path)[0] + "_labels.pdf"
+        c = canvas.Canvas(pdf_path, pagesize=A4)
+        w_page, h_page = A4
+
+        x_start = 10 * mm
+        y_start = h_page - 40 * mm
+        x = x_start
+        y = y_start
+
+        for item in packed_items:
+            # Draw Label Box
+            c.rect(x, y, 90 * mm, 30 * mm)
+
+            # QR Content
+            qr_content = f"ID:{item[KEY_UNIQUE_ID]}|Name:{item[KEY_NAME]}|Dim:{item[KEY_DIMENSIONS]}"
+
+            # Draw QR
+            # Explicitly set value to be safe
+            qr_code = qr.QrCodeWidget(qr_content)
+            qr_code.barWidth = 0.5 * mm
+            qr_code.barHeight = 0.5 * mm
+
+            bounds = qr_code.getBounds()
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+
+            # Scale to 25x25mm area
+            d = Drawing(45, 45, transform=[25 / width, 0, 0, 25 / height, 0, 0])
+            d.add(qr_code)
+
+            # External imports
+            from reportlab.graphics import renderPDF
+
+            renderPDF.draw(d, c, x + 2 * mm, y + 2 * mm)
+
+            # Draw Text
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(x + 30 * mm, y + 22 * mm, f"ID: {item[KEY_UNIQUE_ID]}")
+            c.setFont("Helvetica", 10)
+            c.drawString(x + 30 * mm, y + 15 * mm, f"Name: {item[KEY_NAME][:20]}")
+            c.drawString(x + 30 * mm, y + 8 * mm, f"Size: {item[KEY_DIMENSIONS]}")
+
+            # Grid logic (2 cols per page)
+            x += 95 * mm
+            if x > w_page - 90 * mm:
+                x = x_start
+                y -= 35 * mm
+
+            if y < 20 * mm:
+                c.showPage()
+                y = y_start
+                x = x_start
+
+        c.save()
+        logger.info("Labels PDF generated at: %s", pdf_path)
+        return pdf_path
 
 
-def cleanup_output_folder(output_folder: str) -> None:
-    """
-    Delete all existing files in the output folder before creating new ones.
-    """
-    if os.path.exists(output_folder):
-        try:
-            # Remove all files in the folder
-            for filename in os.listdir(output_folder):
-                file_path = os.path.join(output_folder, filename)
-                try:
-                    if os.path.isfile(file_path) or os.path.islink(file_path):
-                        os.unlink(file_path)
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                except (OSError, PermissionError) as e:
-                    logging.warning("Failed to delete %s. Reason: %s", file_path, e)
-        except (OSError, PermissionError) as e:
-            logging.error("Error cleaning up output folder %s: %s", output_folder, e)
-
-
+# --- Module Wrapper for Backward Compatibility / View Usage ---
 def nest(
     output: str,
-    files: Dict,
+    files: Dict[str, Any],
     wbin: int,
     hbin: int,
     enclosing_rectangle: bool = False,
     target_efficiency: float = 95.0,
     allow_rotation: bool = True,
-    design_setting: DesignSetting = None,
+    spacing: float = 5.0,
+    design_setting: Optional[object] = None,
 ) -> JsonResponse:
-    # Get output folder and clean up existing files
-    output_folder = os.path.dirname(output)
-    if output_folder:
-        cleanup_output_folder(output_folder)
-
-    sort_algorithms = [SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE]
-    remaining_files = dict(files)
-    sheet_number = 1
-    svg_files = []
-    gcode_files = []
-    sheet_mapping = []
-    sheet_efficiencies = []  # Track efficiency per sheet
-
-    while remaining_files:
-        best_eff, best_rectangles, unplaced = 0.0, None, {}
-        attempts = 0
-
-        while attempts < 6:
-            rectangles, eff, unplaced_try = try_packing(
-                wbin, hbin, allow_rotation, remaining_files, sort_algorithms
-            )
-            if eff > best_eff:
-                best_eff, best_rectangles, unplaced = eff, rectangles, unplaced_try
-            if best_eff >= target_efficiency:
-                break
-            attempts += 1
-
-        if best_rectangles is None:
-            logging.warning(
-                "No suitable nesting found for remaining files on sheet %s. Stopping nesting.",
-                sheet_number,
-            )
-            break
-
-        # Extract rid from rectangles (handle both formats)
-        rids = []
-        for rect in best_rectangles:
-            if len(rect) == 7:
-                rids.append(rect[5])
-            else:
-                rids.append(rect[5])
-        sheet_mapping.append({f"sheet{sheet_number}": rids})
-        sheet_efficiencies.append(best_eff)  # Store efficiency for this sheet
-
-        svg_name = f"{os.path.splitext(output)[0]}_sheet_{sheet_number}.svg"
-        draw_sheet_to_svg(
-            svg_name,
-            best_rectangles,
-            files,
-            (wbin, hbin),
-            enclosing_rectangle,
-            best_efficiency=best_eff,
+    """
+    Wrapper function to use the NestingService.
+    """
+    try:
+        service = NestingService(
+            width=wbin,
+            height=hbin,
+            target_efficiency=target_efficiency,
+            allow_rotation=allow_rotation,
+            spacing=spacing,
         )
 
-        # Generate G-code
-        gcode_path = f"{os.path.splitext(svg_name)[0]}.gcode"
-        generate_gcode(best_rectangles, gcode_path, files)
-        gcode_files.append(gcode_path)
+        packed_items = service.optimize(files)
+        excel_path = service.generate_excel(packed_items, output)
+        svg_paths = service.generate_svg(packed_items, output)
+        layout_pdf_path = service.generate_layout_pdf(svg_paths, output)
+        labels_pdf_path = service.generate_labels(packed_items, output)
 
-        # Generate DWG file
-        dwg_path = f"{os.path.splitext(svg_name)[0]}.dwg"
-        generate_dwg_file(best_rectangles, files, dwg_path, (wbin, hbin))
+        # New: Generate XMLs
+        xml_paths = service.generate_xmls(packed_items, output)
 
-        # Generate XML file
-        xml_path = f"{os.path.splitext(svg_name)[0]}.xml"
-        generate_xml_file(best_rectangles, files, xml_path, (wbin, hbin), sheet_number)
-
-        svg_files.append(svg_name)
-        remaining_files = unplaced
-        sheet_number += 1
-
-    pdf_output = f"{os.path.splitext(output)[0]}.pdf"
-    convert_svgs_to_pdf(svg_files, pdf_output)
-
-    # Create ZIP of GCODE files
-    zip_output = f"{os.path.splitext(output)[0]}_gcodes.zip"
-    with zipfile.ZipFile(zip_output, "w") as zipf:
-        for gcode_file in gcode_files:
-            zipf.write(gcode_file, arcname=os.path.basename(gcode_file))
-
-    # Store sheets and files in database
-    design = design_setting.design if design_setting else None
-    if design_setting and design:
-        with transaction.atomic():
-            # Save sheet_data to design_setting
-            design_setting.sheet_data = sheet_mapping
-            design_setting.save(update_fields=["sheet_data"])
-
-            # Delete existing sheets and files for this design to avoid duplicates
-            NestingSheet.objects.filter(design=design).delete()
-
-            # Create sheets and files in database
-            for idx, sheet_info in enumerate(sheet_mapping):
-                sheet_key = list(sheet_info.keys())[0]  # e.g., "sheet1"
-                sheet_num = idx + 1
-                rids = sheet_info[sheet_key]
-
-                # Get efficiency for this sheet
-                efficiency = (
-                    sheet_efficiencies[idx] if idx < len(sheet_efficiencies) else None
-                )
-
-                # Create NestingSheet
-                nesting_sheet = NestingSheet.objects.create(
-                    design=design,
-                    design_setting=design_setting,
-                    sheet_number=sheet_num,
-                    width=wbin,
-                    height=hbin,
-                    efficiency=efficiency,
-                    file_ids=rids,
-                )
-
-                # Create file records for this sheet
-                svg_file = svg_files[idx] if idx < len(svg_files) else None
-                gcode_file = gcode_files[idx] if idx < len(gcode_files) else None
-                dwg_file = f"{os.path.splitext(svg_file)[0]}.dwg" if svg_file else None
-                xml_file = f"{os.path.splitext(svg_file)[0]}.xml" if svg_file else None
-
-                # SVG file
-                if svg_file and os.path.exists(svg_file):
-                    NestingFile.objects.create(
-                        design=design,
-                        sheet=nesting_sheet,
-                        file_type="svg",
-                        file_path=svg_file,
-                        file_name=os.path.basename(svg_file),
-                        is_sheet_specific=True,
-                    )
-
-                # GCODE file
-                if gcode_file and os.path.exists(gcode_file):
-                    NestingFile.objects.create(
-                        design=design,
-                        sheet=nesting_sheet,
-                        file_type="gcode",
-                        file_path=gcode_file,
-                        file_name=os.path.basename(gcode_file),
-                        is_sheet_specific=True,
-                    )
-
-                # DWG file
-                if dwg_file and os.path.exists(dwg_file):
-                    NestingFile.objects.create(
-                        design=design,
-                        sheet=nesting_sheet,
-                        file_type="dwg",
-                        file_path=dwg_file,
-                        file_name=os.path.basename(dwg_file),
-                        is_sheet_specific=True,
-                    )
-
-                # XML file
-                if xml_file and os.path.exists(xml_file):
-                    NestingFile.objects.create(
-                        design=design,
-                        sheet=nesting_sheet,
-                        file_type="xml",
-                        file_path=xml_file,
-                        file_name=os.path.basename(xml_file),
-                        is_sheet_specific=True,
-                    )
-
-            # Create PDF and ZIP files (not sheet-specific)
-            if pdf_output and os.path.exists(pdf_output):
-                NestingFile.objects.create(
-                    design=design,
-                    sheet=None,
-                    file_type="pdf",
-                    file_path=pdf_output,
-                    file_name=os.path.basename(pdf_output),
-                    is_sheet_specific=False,
-                )
-
-            if zip_output and os.path.exists(zip_output):
-                NestingFile.objects.create(
-                    design=design,
-                    sheet=None,
-                    file_type="zip",
-                    file_path=zip_output,
-                    file_name=os.path.basename(zip_output),
-                    is_sheet_specific=False,
-                )
-
-    return JsonResponse(
-        {
-            "output_file": pdf_output,
-            "gcode_zip": zip_output,
-            "sheets": sheet_number - 1,
-        },
-        status=HTTP_200_OK,
-    )
+        return JsonResponse(
+            {
+                "output_file": excel_path,
+                "svg_files": svg_paths,
+                "layout_file": layout_pdf_path,
+                "labels_file": labels_pdf_path,
+                "xml_files": xml_paths,  # Return list of generated XMLs
+                "message": "Nesting completed successfully.",
+                "total_parts": len(packed_items),
+            },
+            status=HTTP_200_OK,
+        )
+    except Exception as e:
+        logger.exception("Nesting failed")
+        return JsonResponse({"error": str(e)}, status=500)

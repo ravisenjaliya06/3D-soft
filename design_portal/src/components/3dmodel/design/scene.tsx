@@ -615,23 +615,8 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       drawerMesh.children.forEach((child) => {
         if (child.userData.type === 'handle') {
           const handleId = child.userData.objectId;
-
-          // Find the actual mesh if it's a group
-          let handleMesh: THREE.Mesh | null = null;
-          if (child instanceof THREE.Mesh) {
-            handleMesh = child;
-          } else {
-            child.traverse((obj) => {
-              if (obj instanceof THREE.Mesh && !handleMesh) {
-                handleMesh = obj;
-              }
-            });
-          }
-
-          if (handleMesh) {
-            const zOffset = handleMesh.position.z - currentFaceZ;
-            handleZOffsets.set(handleId, zOffset);
-          }
+          const zOffset = child.position.z - currentFaceZ;
+          handleZOffsets.set(handleId, zOffset);
         }
       });
     }
@@ -673,6 +658,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
               },
             })
           );
+
+          // Refresh banding for the face
+          const builder = new MeshBuilder(faceData, scene);
+          builder.setParentMesh(drawerMesh as THREE.Mesh);
+          builder.updateBanding(child, { isDimensionUpdate: true });
         }
       }
     });
@@ -684,38 +674,24 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
         const zOffset = handleZOffsets.get(handleId);
 
         if (zOffset !== undefined) {
-          // Find the actual mesh if it's a group
-          let handleMesh: THREE.Mesh | null = null;
-          if (child instanceof THREE.Mesh) {
-            handleMesh = child;
-          } else {
-            child.traverse((obj) => {
-              if (obj instanceof THREE.Mesh && !handleMesh) {
-                handleMesh = obj;
-              }
-            });
-          }
+          // New handle Z position: new face position + same offset
+          const newHandleZ = insetFaceZ + zOffset;
 
-          if (handleMesh) {
-            // New handle Z position: new face position + same offset
-            const newHandleZ = insetFaceZ + zOffset;
+          // Update handle position directly on the group
+          child.position.z = newHandleZ;
 
-            // Update handle position
-            handleMesh.position.z = newHandleZ;
-
-            // Update Redux store
-            const handleData = currentObjects.find((obj) => obj.id === handleId);
-            if (handleData) {
-              store.dispatch(
-                updateObject({
-                  ...handleData,
-                  position: {
-                    ...handleData.position,
-                    z: newHandleZ,
-                  },
-                })
-              );
-            }
+          // Update Redux store
+          const handleData = currentObjects.find((obj) => obj.id === handleId);
+          if (handleData) {
+            store.dispatch(
+              updateObject({
+                ...handleData,
+                position: {
+                  ...handleData.position,
+                  z: newHandleZ,
+                },
+              })
+            );
           }
         }
       }
@@ -741,23 +717,8 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
     drawerMesh.children.forEach((child) => {
       if (child.userData.type === 'handle') {
         const handleId = child.userData.objectId;
-
-        // Find the actual mesh if it's a group
-        let handleMesh: THREE.Mesh | null = null;
-        if (child instanceof THREE.Mesh) {
-          handleMesh = child;
-        } else {
-          child.traverse((obj) => {
-            if (obj instanceof THREE.Mesh && !handleMesh) {
-              handleMesh = obj;
-            }
-          });
-        }
-
-        if (handleMesh) {
-          const zOffset = handleMesh.position.z - currentFaceZ;
-          handleZOffsets.set(handleId, zOffset);
-        }
+        const zOffset = child.position.z - currentFaceZ;
+        handleZOffsets.set(handleId, zOffset);
       }
     });
   }
@@ -819,6 +780,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
           position: { ...partData.position, z: newZ },
         })
       );
+
+      // Refresh banding for the updated plank
+      const builder = new MeshBuilder(partData, scene);
+      builder.setParentMesh(drawerMesh as THREE.Mesh);
+      builder.updateBanding(child, { isDimensionUpdate: true });
     }
   });
 
@@ -829,38 +795,24 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       const zOffset = handleZOffsets.get(handleId);
 
       if (zOffset !== undefined) {
-        // Find the actual mesh if it's a group
-        let handleMesh: THREE.Mesh | null = null;
-        if (child instanceof THREE.Mesh) {
-          handleMesh = child;
-        } else {
-          child.traverse((obj) => {
-            if (obj instanceof THREE.Mesh && !handleMesh) {
-              handleMesh = obj;
-            }
-          });
-        }
+        // New handle Z position: new face position + same offset
+        const newHandleZ = newFaceZ + zOffset;
 
-        if (handleMesh) {
-          // New handle Z position: new face position + same offset
-          const newHandleZ = newFaceZ + zOffset;
+        // Update handle position directly on the group
+        child.position.z = newHandleZ;
 
-          // Update handle position
-          handleMesh.position.z = newHandleZ;
-
-          // Update Redux store
-          const handleData = currentObjects.find((obj) => obj.id === handleId);
-          if (handleData) {
-            store.dispatch(
-              updateObject({
-                ...handleData,
-                position: {
-                  ...handleData.position,
-                  z: newHandleZ,
-                },
-              })
-            );
-          }
+        // Update Redux store
+        const handleData = currentObjects.find((obj) => obj.id === handleId);
+        if (handleData) {
+          store.dispatch(
+            updateObject({
+              ...handleData,
+              position: {
+                ...handleData.position,
+                z: newHandleZ,
+              },
+            })
+          );
         }
       }
     }

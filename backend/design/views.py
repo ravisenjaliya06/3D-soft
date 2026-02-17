@@ -312,10 +312,14 @@ class NestAPIViewset(ModelViewSet):
         for rid, item in parsed_data.items():
             normalized[rid] = {
                 "type": item["type"],
+                "name": item["name"],
                 "width": float(item["width"]),
                 "height": float(item["height"]),
+                "depth": float(item["depth"]),
                 "grooves": item.get("grooves", []),
                 "minifix_holes": item.get("minifix_holes", []),
+                "position": item.get("position", {}),
+                "rotation": item.get("rotation", {}),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
@@ -361,7 +365,7 @@ class NestAPIViewset(ModelViewSet):
         base_path = f"umaboy/media/output/{design_id}"
 
         if format_type == "pdf":
-            file_path = f"{base_path}/nesting.pdf"
+            file_path = f"{base_path}/nesting_layout.pdf"
         elif format_type == "xlsx":
             file_path = f"{base_path}/nesting.xlsx"
         elif format_type == "gcode":
@@ -372,9 +376,13 @@ class NestAPIViewset(ModelViewSet):
             file_path = f"{base_path}/nesting_sheet_{sheet_number}.xml"
         elif format_type == "svg":
             file_path = f"{base_path}/nesting_sheet_{sheet_number}.svg"
+        elif format_type == "xml_zip":
+            file_path = f"{base_path}/xml_files.zip"
         else:
             return Response(
-                {"Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg)"},
+                {
+                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip)"
+                },
                 status=HTTP_400_BAD_REQUEST,
             )
         return Response({"file": file_path}, status=HTTP_200_OK)

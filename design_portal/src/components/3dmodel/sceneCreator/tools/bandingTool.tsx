@@ -992,7 +992,7 @@ export class BandingTool {
       materialData = this.getBandingMaterial(mesh, objectData) ?? undefined;
     }
 
-    if (materialData && bandingState) {
+    if (materialData) {
       await this.createBandingOnPlank(mesh, materialData, bandingState, parentMesh, objectData);
     }
   }

@@ -3,12 +3,11 @@ import commonService from '@/services/CommonService';
 
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
-import { findRoomsFromWalls, getFloorPolygon } from '../2dmodel/walls/wallFloor';
 import { gettingDesignID } from '../design';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { Dimensions } from '../interface';
 import { store } from '../store';
-import { addPoint, setFloor, setWalls } from '../store/dataSlice';
+import { addPoint, setWalls } from '../store/dataSlice';
 import { EDGES, MeshObjectData, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
@@ -184,17 +183,6 @@ export function create2DWallFromMeshData(data: MeshObjectData) {
   store.dispatch(setWalls(updatedWalls));
   store.dispatch(addPoint(startPoint));
   store.dispatch(addPoint(endPoint));
-
-  // 7. Recalculate rooms
-  const rooms = findRoomsFromWalls(updatedWalls);
-
-  const floorPolygons = rooms.map((room) => ({
-    id: crypto.randomUUID(),
-    points: getFloorPolygon(room),
-    walls: room.map((wall) => wall.id),
-  }));
-
-  store.dispatch(setFloor(floorPolygons));
 }
 
 export const deleteObject = async (clearScene?: boolean) => {

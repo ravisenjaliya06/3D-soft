@@ -29,6 +29,34 @@ const InputField = ({
             </option>
           ))}
         </select>
+      ) : type === 'file' ? (
+        <div className={styles.fileInputContainer}>
+          <div className={`${styles.fileInputWrapper} ${props.value ? styles.hasFile : ''}`}>
+            <label
+              className={styles.fileInputLabel}
+              onClick={() => props.onFocus && props.onFocus()}
+              onMouseEnter={() => props.onFocus && props.onFocus()}
+            >
+              <div className={styles.fileInputContent}>
+                <img src={assets.file} alt="upload" className={styles.uploadIcon} />
+                <div className={styles.fileInfo}>
+                  <span className={styles.labelText}>{label}</span>
+                  <span className={styles.fileName}>
+                    {props.value?.name || props.placeholder || 'Choose a file...'}
+                  </span>
+                </div>
+              </div>
+              <input
+                type="file"
+                className={styles.hiddenFileInput}
+                onChange={onChange}
+                {...props}
+                value="" // Keep empty to allow re-selection of same file name
+              />
+            </label>
+          </div>
+          {error && <p className={styles.errorMessage}>{error}</p>}
+        </div>
       ) : (
         <>
           <TextField

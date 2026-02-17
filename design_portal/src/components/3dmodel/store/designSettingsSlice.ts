@@ -23,11 +23,11 @@ const initialState: DesignSettingsState = {
   camHeight: 32,
   edgeBandingDistance: 2,
   // Minifix Standards Defaults
-  screwDiameter: 8,
-  screwLength: 25,
+  screwDiameter: 10,
+  screwLength: 40,
   camDiameter: 15,
   dowelDiameter: 8,
-  dowelLength: 24,
+  dowelLength: 30,
   dowelDistance: 32,
 };
 

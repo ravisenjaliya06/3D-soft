@@ -3,12 +3,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
+import { FloorManager } from '../sceneCreator/floorManager';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { OutlineManager } from '../sceneCreator/tools/quickHideTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { resetStoreForNewDesign, store } from '../store';
+import { store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
@@ -83,6 +84,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isQuickHideActive = useAppSelector((state) => state.data.isQuickHideActive);
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
+  const objects = useAppSelector((state) => state.data.objects);
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
@@ -102,7 +104,8 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!mountRef.current || !designId) return;
 
     // Clear full store so new design starts fresh (scene, data, catalog, history, etc.)
-    dispatch(resetStoreForNewDesign());
+    // i commented this line because i want to use the same store for multiple designs
+    // dispatch(resetStoreForNewDesign());
 
     // Get or create scene for this design (each design has its own scene)
     const threeDView = getOrCreateThreeDView(mountRef.current, designId);
@@ -232,6 +235,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'CUPBOARD',
     'TABLE',
     'PLATFORM',
+    'FLOOR',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
@@ -270,9 +274,77 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     };
   }, [design3D]);
 
+  useEffect(() => {
+    if (!design3D || !design3D.transformControls) return;
+
+    const transformControls = design3D.transformControls;
+
+    if (selectedObject && selectedObject.userData && selectedObject.userData.isGLB) {
+      if (transformControls.attach) {
+        transformControls.attach(selectedObject);
+      }
+    } else {
+      if (transformControls.detach) {
+        transformControls.detach();
+      }
+    }
+
+    const onTransformChange = () => {
+      if (!selectedObject) return;
+
+      const objectId = selectedObject.userData.objectId;
+      if (!objectId) return;
+
+      // Update Redux store with new position/rotation/scale
+      dispatch(
+        updateObject({
+          id: objectId,
+          position: {
+            x: selectedObject.position.x,
+            y: selectedObject.position.y,
+            z: selectedObject.position.z,
+          },
+          rotation: {
+            x: selectedObject.rotation.x,
+            y: selectedObject.rotation.y,
+            z: selectedObject.rotation.z,
+          },
+          scale: {
+            x: selectedObject.scale.x,
+            y: selectedObject.scale.y,
+            z: selectedObject.scale.z,
+          },
+        })
+      );
+    };
+
+    transformControls.addEventListener('mouseUp', onTransformChange);
+
+    return () => {
+      transformControls.removeEventListener('mouseUp', onTransformChange);
+    };
+  }, [design3D, selectedObject, dispatch]);
+
   const handleKeyboardEvents = (event: KeyboardEvent) => {
     if (event.key === 'Delete') {
       deleteObject();
+    }
+
+    if (design3D && design3D.transformControls) {
+      if (event.key.toLowerCase() === 'g') {
+        design3D.transformControls.setMode('translate');
+      } else if (event.key.toLowerCase() === 'r') {
+        design3D.transformControls.setMode('scale');
+      } else if (event.key.toLowerCase() === 'e') {
+        design3D.transformControls.setMode('rotate');
+      }
+    }
+
+    if (event.key === 'Escape') {
+      if (design3D && design3D.selector) {
+        design3D.selector.deselect();
+        setSelectedObject(null);
+      }
     }
   };
 
@@ -282,6 +354,48 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       window.removeEventListener('keydown', handleKeyboardEvents);
     };
   }, [selectedObject, design3D, moveHandler, isSelectableMesh]);
+
+  // Sync floor from Redux data.objects to 3D scene
+  // FloorManager creates the initial floor geometry
+  // MeshBuilder handles texture updates for existing floor meshes
+  useEffect(() => {
+    if (!design3D?.scene) return;
+
+    // Filter floor objects from data.objects array
+    const floorObjects = objects.filter((obj) => obj.type === 'floor');
+
+    if (floorObjects.length === 0) return;
+
+    // Convert MeshObjectData back to Floor format for FloorManager
+    const floorData = floorObjects.map((obj) => {
+      // Extract texture URL from floor material
+      let textureUrl = '/textures/wood_7.jpg'; // Default
+      if (obj.material && Array.isArray(obj.material)) {
+        const floorMaterial = obj.material.find((mat) => mat.type === 'Floor');
+        if (floorMaterial?.textures && floorMaterial.textures.length > 0) {
+          const textureDetail = floorMaterial.textures[0].textureDetail;
+          if (textureDetail?.image) {
+            // Add API base URL prefix if texture path starts with /media
+            if (textureDetail.image.startsWith('/media')) {
+              textureUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${textureDetail.image}`;
+            } else {
+              textureUrl = textureDetail.image;
+            }
+          }
+        }
+      }
+
+      return {
+        id: obj.id,
+        points: obj.floorData?.points || [],
+        walls: obj.floorData?.walls || [],
+        textureUrl: textureUrl,
+      };
+    });
+
+    const floorManager = new FloorManager(design3D.scene, floorData);
+    floorManager.syncData();
+  }, [design3D, objects]);
 
   const handleConfirmSave = () => {
     if (!catalogName.trim()) {

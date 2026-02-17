@@ -15,6 +15,7 @@ export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
   SINK: 'sink',
+  FLOOR: 'floor',
 };
 
 export const PART_TYPES = {
@@ -182,6 +183,29 @@ export interface MeshObjectData {
   camDiameter?: number;
   camHeight?: number;
   handleMode?: 'handle' | 'handleless';
+  grooves?: GrooveData[];
+
+  // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
+  floorData?: {
+    points: { id?: string; x: number; y: number }[];
+    walls: string[];
+  };
+}
+
+export interface GrooveData {
+  id: string; // "6000" in example
+  type: string; // "4"
+  isGenCode: string; // "2"
+  face: string; // "5"
+  x: number;
+  y: number;
+  endX: number;
+  endY: number;
+  width: number;
+  depth: number;
+  toolOffset: string; // "ÖÐ" (Center?) - maybe use enum
+  slotType: string; // "0"
+  macIndex: string; // "1"
 }
 
 export interface userData {

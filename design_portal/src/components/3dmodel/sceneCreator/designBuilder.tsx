@@ -144,6 +144,19 @@ export class DesignBuilder {
       }
     });
 
+    this.data.forEach((meshData) => {
+      if (
+        meshData.type === PART_TYPES.BACK_PLANK ||
+        (meshData.name && meshData.name.includes('BACK_PLANK'))
+      ) {
+        const builder = this.builderMap.get(meshData.id);
+        const mesh = this.meshMap.get(meshData.id);
+        if (builder && mesh) {
+          builder.updateGrooving(mesh);
+        }
+      }
+    });
+
     // Apply parent's banding material to child planks (async - waits for color extraction)
     await this._applyParentBandingToPlanks();
 
