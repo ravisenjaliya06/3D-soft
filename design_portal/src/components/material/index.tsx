@@ -150,12 +150,10 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div
-      className={`${styles.custom_scrollbar} flex h-dvh flex-row overflow-hidden max-2xl:overflow-auto`}
-    >
+    <div className="flex h-screen flex-row overflow-hidden bg-[var(--background-color)]">
       <Sidebar />
 
-      <div className="max-w-[80rem] min-w-0 flex-[3]">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
         <Header isBorderRadius={true} dashboardName="Material" />
 
         {!addMaterialPopup && (
@@ -175,8 +173,19 @@ const Material: React.FC = () => {
               setMaterialType={setSelectedType}
             />
 
-            <div className={'flex flex-1 flex-col overflow-hidden'}>
-              <MaterialToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <div className="flex min-w-0 flex-1 flex-col gap-[0.5rem] overflow-hidden px-[1rem]">
+              <MaterialToolbar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedType={selectedType}
+                selectedName={
+                  selectedSubItem
+                    ? materialCategories
+                        .flatMap((c) => c.subItems || [])
+                        .find((s) => s.id === selectedSubItem)?.name || null
+                    : null
+                }
+              />
 
               <MaterialTable
                 materials={getFilteredMaterials()}
