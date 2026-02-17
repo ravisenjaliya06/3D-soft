@@ -731,8 +731,8 @@ const Sidebar: React.FC = () => {
           ...mat,
           textures: [
             {
-              id: mat?.textures?.[0].id,
-              name: mat?.textures?.[0].name,
+              id: mat?.textures?.[0]?.id || crypto.randomUUID(),
+              name: mat?.textures?.[0]?.name || 'Texture',
               texture: textureData.id,
               textureDetail: textureData,
             },
