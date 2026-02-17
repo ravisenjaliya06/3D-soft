@@ -265,7 +265,10 @@ export class SelectObjectController {
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         // Skip if it's the selected main object itself (we might want to select its parts though)
-        if (this.selectedMainObject && object.userData.objectId === this.selectedMainObject.userData.objectId) {
+        if (
+          this.selectedMainObject &&
+          object.userData.objectId === this.selectedMainObject.userData.objectId
+        ) {
           return;
         }
         targets.push(object);
@@ -425,7 +428,7 @@ export class SelectObjectController {
       mesh.position.copy(center);
     }
 
-    mesh.raycast = () => { };
+    mesh.raycast = () => {};
 
     return mesh;
   }
