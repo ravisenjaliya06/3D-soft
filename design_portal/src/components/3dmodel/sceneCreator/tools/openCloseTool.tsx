@@ -204,12 +204,12 @@ export class CabinetMotionController {
 
       const isCurrentlyClosed = node.userData.isClosed ?? true;
 
-      if (shouldOpen && isCurrentlyClosed) {
-        if (isDoor) this.toggleDoor(node);
-        if (isDrawer) this.toggleDrawer(node);
-      } else if (!shouldOpen && !isCurrentlyClosed) {
-        if (isDoor) this.toggleDoor(node);
-        if (isDrawer) this.toggleDrawer(node);
+      if (shouldOpen === isCurrentlyClosed) {
+        isDoor
+          ? this.toggleDoor(node)
+          : isDrawer
+          ? this.toggleDrawer(node)
+          : null;
       }
     });
   }
