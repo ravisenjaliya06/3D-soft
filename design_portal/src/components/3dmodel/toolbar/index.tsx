@@ -36,6 +36,7 @@ import {
   OBJECT_TYPES,
   PART_TYPES,
 } from '../sceneCreator/interface';
+import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -108,9 +109,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
-            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-          }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+            }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -186,6 +186,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     if (item.path) {
       if (!threeDView || !threeDView.scene) return;
 
+      showFullScreenLoader(`Loading ${item.name}...`);
       try {
         // Set realistic target dimensions (in meters) based on category
         let targetSize = { width: 0.12, height: 0.12, depth: 0.12 };
@@ -247,6 +248,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       } catch (error) {
         console.error('Error loading GLB model:', error);
         toast.error(`Failed to load ${item.name}`);
+      } finally {
+        hideFullScreenLoader();
       }
       return;
     }
@@ -640,9 +643,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${
-                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                  }`}
+                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                    }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -705,9 +707,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {furnitureTools.map(({ option, icon, isExpandable }) => (
                     <React.Fragment key={option}>
                       <div
-                        className={`${styles.furnitureItemslist} ${
-                          selectedFurnitureCategory === option ? styles.activeItem : ''
-                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''
+                          } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
                         onClick={() => handleFurnitureCategoryClick(option)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -739,9 +740,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           {modelSubmenuItems.map((subItem) => (
                             <div
                               key={subItem.option}
-                              className={`${styles.dropdownItem} ${
-                                selectedFurnitureCategory === subItem.option ? styles.active : ''
-                              }`}
+                              className={`${styles.dropdownItem} ${selectedFurnitureCategory === subItem.option ? styles.active : ''
+                                }`}
                               onClick={() => handleFurnitureCategoryClick(subItem.option)}
                             >
                               <div className={styles.activegroup_tools}>
@@ -817,7 +817,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                     src={
                       item.image ||
                       iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                      item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                       ]
                     }
                     alt={item.name}
