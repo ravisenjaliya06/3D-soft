@@ -116,7 +116,6 @@
   letter-spacing: -0.02em;
 }
 
-
 /* Dropdown Menu */
 .dropdownMenuProfile {
   position: absolute;
@@ -183,7 +182,6 @@
   width: calc(100% - 1rem);
   border: none;
 }
-
 
 /* Utils */
 .simpleLine {

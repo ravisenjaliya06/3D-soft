@@ -182,6 +182,7 @@ export interface DataState {
   points: WallPoint[];
   walls: MeshObjectData[];
   floor: Floor[];
+  globalDoorsOpen?: boolean;
 }
 export interface HistoryAction {
   id: string;
