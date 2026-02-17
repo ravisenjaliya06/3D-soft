@@ -38,7 +38,11 @@ jobs:
       - name: Check backend folder changes
         id: backend_changes
         run: |
-          echo "changed=$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)" >> $GITHUB_OUTPUT
+          if git diff --name-only HEAD^ HEAD | grep -q '^backend/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Skip backend deploy if no changes
         if: steps.backend_changes.outputs.changed == ''
@@ -131,7 +135,11 @@ jobs:
       - name: Check frontend folder changes
         id: frontend_changes
         run: |
-          echo "changed=$(git diff --name-only HEAD^ HEAD | grep '^design_portal/' || true)" >> $GITHUB_OUTPUT
+          if git diff --name-only HEAD^ HEAD | grep -q '^design_portal/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Skip frontend deploy if no changes
         if: steps.frontend_changes.outputs.changed == ''
