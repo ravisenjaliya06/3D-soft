@@ -3,6 +3,7 @@
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
+  background-color: var(--background-color);
 }
 
 .rightside {
@@ -11,6 +12,7 @@
   min-width: none;
 }
 
+/* ─── Main Container ─── */
 .maincontainer {
   display: flex;
   flex-direction: row;
@@ -19,14 +21,14 @@
   margin-top: 1rem;
 }
 
+/* ─── Top Toolbar ─── */
 .topToolbar {
   display: flex;
-  /* justify-content: space-between; */
   align-items: center;
   padding: 1rem 1.5rem;
-  border: 0.063rem solid rgba(57, 37, 121, 0.3);
-  background: linear-gradient(90deg, #fff 0%, #f5e5ff 100%);
-  border-radius: 1rem;
+  border: 0.063rem solid var(--border-color);
+  background: linear-gradient(90deg, var(--primary-white) 0%, var(--primary-light-pink) 100%);
+  border-radius: 0.6rem;
   margin-bottom: 1rem;
   width: 79rem;
   gap: 0.8rem;
@@ -34,7 +36,7 @@
 
 .dividerLine {
   width: 0.063rem;
-  background-color: #ccc;
+  background-color: var(--toolbar-border-color);
   height: 100%;
   align-self: stretch;
 }
@@ -61,6 +63,11 @@
 .addIcon {
   width: 1rem;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.addIcon:hover {
+  transform: scale(1.1);
 }
 
 .editIcon {
@@ -81,15 +88,20 @@
 
 .dropdown {
   padding: 0.2rem 0.4rem 0.2rem 0.2rem;
-  border: 0.063rem solid #d1d5db;
+  border: 0.063rem solid var(--input-border-color);
   border-radius: 0.375rem;
-  background: #f4f3ff;
+  background: var(--active-button-color);
   font-size: 0.69rem;
   color: var(--primary-black);
   cursor: pointer;
   min-width: 10rem;
   outline: none;
   font-family: var(--font-family);
+  transition: border-color 0.2s ease;
+}
+
+.dropdown:focus {
+  border-color: var(--primary-color);
 }
 
 .toolbarRightContent span {
@@ -100,6 +112,7 @@
   font-weight: 500;
 }
 
+/* ─── Main Content Area ─── */
 .mainContent {
   display: flex;
   flex-direction: row;
@@ -108,23 +121,25 @@
   height: 41rem;
 }
 
+/* ─── Left Sidebar Box ─── */
 .leftBox {
   display: flex;
   flex-direction: column;
-  border: 0.063rem solid rgba(57, 37, 121, 0.3);
-  border-radius: 1rem;
+  border: 0.063rem solid var(--border-color);
+  border-radius: 0.6rem;
   background-color: var(--primary-white);
   padding: 0.5rem;
   width: 12.19rem;
   height: 40rem;
 }
 
+/* ─── Right Content Box ─── */
 .rightBox {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border: 0.063rem solid rgba(57, 37, 121, 0.3);
-  border-radius: 1rem;
+  border: 0.063rem solid var(--border-color);
+  border-radius: 0.6rem;
   background-color: var(--primary-white);
   padding: 1rem;
   width: 28rem;
@@ -138,16 +153,22 @@
 
 .rightBoxdropdown {
   padding: 0.1rem;
-  border: 0.063rem solid #d1d5db;
+  border: 0.063rem solid var(--input-border-color);
   border-radius: 0.375rem;
-  background: #f4f3ff;
+  background: var(--active-button-color);
   font-size: 0.69rem;
   color: var(--primary-black);
   font-family: var(--font-family);
   width: 8rem;
   height: 1.5rem;
+  transition: border-color 0.2s ease;
 }
 
+.rightBoxdropdown:focus {
+  border-color: var(--primary-color);
+}
+
+/* ─── Search ─── */
 .searchContainer {
   position: relative;
   display: flex;
@@ -162,14 +183,14 @@
   height: 0.4rem;
   background-color: var(--primary-white);
   font-size: 0.8rem;
-  color: #374151;
+  color: var(--text-color);
   outline: none;
   font-family: var(--font-family);
+  transition: border-color 0.2s ease;
 }
 
 .searchInput:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 .searchIcon {
@@ -177,18 +198,20 @@
   right: 0.75rem;
   width: 1rem;
   height: 1rem;
-  color: #6b7280;
+  color: var(--soft-dark-grey);
   pointer-events: none;
 }
 
+/* ─── Dividers ─── */
 .divider {
   border: 0;
-  border-top: 0.063rem solid rgba(57, 37, 121, 0.3);
+  border-top: 0.063rem solid var(--border-color);
   margin: 0.2rem 0;
 }
 
+/* ─── Top Box (Info Section) ─── */
 .topBox {
-  border: 0.063rem solid rgba(57, 37, 121, 0.3);
+  border: 0.063rem solid var(--border-color);
   border-radius: 0.5rem;
   padding: 0.5rem;
   background-color: var(--primary-white);
@@ -196,28 +219,32 @@
 
 .bottomBox {
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--primary-white);
   align-items: center;
   justify-content: center;
 }
 
+/* ─── Navigation Items ─── */
 .navItem {
   padding: 0.5rem;
   font-family: var(--font-family);
   font-size: 0.8rem;
   color: var(--primary-color);
   cursor: pointer;
+  border-radius: 0.35rem;
+  transition: background-color 0.2s ease;
 }
 
 .navItem:hover {
-  background-color: #f4f3ff;
+  background-color: var(--active-button-color);
 }
 
+/* ─── Add Button ─── */
 .addButton {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  border: 0.063rem solid var(--primary-color);
   border-radius: 0.375rem;
   cursor: pointer;
   font-family: var(--font-family);
@@ -228,14 +255,17 @@
   justify-content: center;
   gap: 0.4rem;
   height: 2rem;
+  background: var(--primary-white);
+  transition: all 0.2s ease;
 }
 
 .addButton:hover {
-  background-color: var(--primary-hover-color);
+  background-color: var(--primary-hover);
 }
 
+/* ─── Box Title (Section Header) ─── */
 .boxTitle {
-  background-color: #e9e3f5;
+  background-color: var(--draft-color);
   padding: 0.5rem 1rem;
   border-radius: 0.5rem 0.5rem 0 0;
   font-family: var(--font-family);
@@ -245,6 +275,7 @@
   margin: 0 0 0.5rem 0;
 }
 
+/* ─── Info Table (Key-Value Pairs) ─── */
 .infoTable {
   display: flex;
   flex-direction: column;
@@ -255,7 +286,7 @@
 
 .row {
   display: flex;
-  border-top: 1px solid rgba(57, 37, 121, 0.2);
+  border-top: 1px solid var(--table-title-border-color);
 }
 
 .row:first-child {
@@ -263,13 +294,13 @@
 }
 
 .key {
-  background-color: #f4f3ff;
+  background-color: var(--active-button-color);
   padding: 0.6rem 1rem;
   font-size: 0.75rem;
   font-weight: 500;
   font-family: var(--font-family);
   color: var(--primary-color);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-right: 1px solid var(--table-title-border-color);
 }
 
 .value {
@@ -294,6 +325,7 @@
   outline: none;
 }
 
+/* ─── Top Box Content (Title + Actions) ─── */
 .topBoxContent {
   display: flex;
   gap: 0.5rem;
@@ -310,11 +342,12 @@
   margin-left: 2.5rem;
 }
 
+/* ─── Rule Action Buttons ─── */
 .addButtonRule {
   width: 4rem;
   height: 1.2rem;
   color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  border: 0.063rem solid var(--primary-color);
   border-radius: 1rem;
   cursor: pointer;
   font-family: var(--font-family);
@@ -325,6 +358,11 @@
   gap: 0.4rem;
   padding: 0.1rem 0.2rem;
   background-color: var(--primary-white);
+  transition: all 0.2s ease;
+}
+
+.addButtonRule:hover {
+  background-color: var(--primary-hover);
 }
 
 .addiconButton .editIconButton .deleteIconButton {
@@ -335,8 +373,8 @@
 .editButtonRule {
   width: 4rem;
   height: 1.2rem;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  color: var(--ready-text-color);
+  border: 0.063rem solid var(--ready-border-color);
   border-radius: 1rem;
   cursor: pointer;
   font-family: var(--font-family);
@@ -346,15 +384,18 @@
   justify-content: center;
   gap: 0.4rem;
   padding: 0.1rem 0.2rem;
-  color: #007c0c;
-  border: 1px solid #007c0c;
-  background-color: #d9f7e9;
+  background-color: var(--ready-color);
+  transition: all 0.2s ease;
+}
+
+.editButtonRule:hover {
+  opacity: 0.85;
 }
 
 .deleteButtonRule {
   width: 4rem;
   height: 1.2rem;
-  color: var(--primary-color);
+  color: var(--delete-text-color);
   border: 0.063rem solid var(--delete-text-color);
   border-radius: 1rem;
   cursor: pointer;
@@ -364,9 +405,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.1rem;
-  color: var(--delete-text-color);
   background-color: var(--delete-color);
   padding: 0.1rem 0.2rem;
+  transition: all 0.2s ease;
+}
+
+.deleteButtonRule:hover {
+  opacity: 0.85;
 }
 
 .selectedRow {
@@ -378,6 +423,7 @@
   width: 0.7rem;
 }
 
+/* ─── Sidebar Menu Items ─── */
 .matirealmanu {
   height: 17rem;
   width: 10rem;
@@ -395,21 +441,20 @@
   gap: 0.5rem;
   cursor: pointer;
   padding-left: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .rulematireal span {
   font-family: var(--font-family);
   font-size: 0.7rem;
   color: var(--primary-color);
-  transition: all 0.1s ease;
+  transition: all 0.15s ease;
 }
 
 .rulematireal img {
   width: 0.9rem;
   filter: invert(28%) sepia(100%) saturate(700%) hue-rotate(230deg) brightness(90%) contrast(100%);
-
-  transition: all 0.1s ease;
+  transition: all 0.15s ease;
 }
 
 .rulematireal:hover {
@@ -436,6 +481,7 @@
   filter: brightness(0) invert(1);
 }
 
+/* ─── Menu Icon Container ─── */
 .manuiconContainer {
   display: flex;
   gap: 2rem;
@@ -446,19 +492,38 @@
 
 .manuaddIcon {
   width: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.manuaddIcon:hover {
+  transform: scale(1.1);
 }
 
 .manueditIcon {
   width: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.manueditIcon:hover {
+  transform: scale(1.1);
 }
 
 .manudeleteIcon {
   width: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
+.manudeleteIcon:hover {
+  transform: scale(1.1);
+}
+
+/* ─── Parts Table ─── */
 .tableWrapper {
   margin-top: 0.5rem;
-  border: 0.063rem solid rgba(57, 37, 121, 0.3);
+  border: 0.063rem solid var(--border-color);
   border-radius: 0.5rem;
   overflow-y: auto;
   width: 38rem;
@@ -472,14 +537,12 @@
   border-collapse: collapse;
   font-family: var(--font-family);
   flex: 1;
-  /* fill the container height */
 }
 
 .partsTable tbody {
   display: block;
   flex: 1;
   overflow-y: auto;
-  /* scroll if rows exceed */
 }
 
 .partsTable thead,
@@ -487,15 +550,14 @@
   display: table;
   width: 100%;
   table-layout: fixed;
-  /* keep columns aligned */
 }
 
 .partsTable th {
-  background-color: #e9e3f5;
+  background-color: var(--draft-color);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--primary-color);
-  border-bottom: 1px solid rgba(57, 37, 121, 0.2);
+  border-bottom: 1px solid var(--table-title-border-color);
   height: 2rem;
   position: sticky;
   top: 0;
@@ -510,13 +572,13 @@
   padding: 0.3rem 0.8rem;
   font-size: 0.6rem;
   color: var(--primary-black);
-  border-top: 1px solid rgba(57, 37, 121, 0.2);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-top: 1px solid var(--table-title-border-color);
+  border-right: 1px solid var(--table-title-border-color);
   height: 1.5rem;
 }
 
 .partsTable tr:hover {
-  background-color: #f9f7ff;
+  background-color: var(--active-button-color);
 }
 
 .partsTable input {
@@ -529,6 +591,7 @@
   background: transparent;
 }
 
+/* ─── Door Table ─── */
 .doorTableWrapper {
   margin-top: 0.5rem;
   border-radius: 0.5rem;
@@ -542,16 +605,16 @@
   border-collapse: collapse;
   font-family: var(--font-family);
   table-layout: fixed;
-  border: 1px solid rgba(57, 37, 121, 0.3);
+  border: 0.063rem solid var(--border-color);
 }
 
 .doorTable th {
-  background-color: #e9e3f5;
+  background-color: var(--draft-color);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--primary-color);
-  border-bottom: 1px solid rgba(57, 37, 121, 0.2);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-bottom: 1px solid var(--table-title-border-color);
+  border-right: 1px solid var(--table-title-border-color);
   height: 1.5rem;
   position: sticky;
   top: 0;
@@ -568,8 +631,8 @@
   padding: 0.3rem 0.8rem;
   font-size: 0.6rem;
   color: var(--primary-black);
-  border-top: 1px solid rgba(57, 37, 121, 0.2);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-top: 1px solid var(--table-title-border-color);
+  border-right: 1px solid var(--table-title-border-color);
   height: 1.5rem;
   word-wrap: break-word;
 }
@@ -579,7 +642,7 @@
 }
 
 .doorTable tr:hover {
-  background-color: #f9f7ff;
+  background-color: var(--active-button-color);
 }
 
 .buttonContainer {
@@ -588,6 +651,7 @@
   gap: 1rem;
 }
 
+/* ─── Scrollbars ─── */
 .doorTableWrapper::-webkit-scrollbar {
   width: 0.4rem;
 }
@@ -598,7 +662,7 @@
 }
 
 .doorTableWrapper::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--scrollbar-color);
   border-radius: 0.7rem;
 }
 
@@ -620,7 +684,7 @@
 }
 
 .tableWrapper::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--scrollbar-color);
   border-radius: 0.7rem;
 }
 
@@ -632,13 +696,14 @@
   display: none;
 }
 
+/* ─── Create Popup ─── */
 .createpopupOverlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--popup-background-color);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -646,11 +711,12 @@
 }
 
 .createpopup {
-  background: white;
+  background: var(--primary-white);
   width: 25rem;
   border-radius: 0.9rem;
   position: relative;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 15px var(--dropdown-shadow);
+  border: 0.063rem solid var(--border-color);
   height: auto;
   align-items: start;
   padding: 0.5rem;
@@ -669,6 +735,11 @@
   top: 1.6rem;
   right: 1.5rem;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.createclose:hover {
+  transform: scale(1.1);
 }
 
 .create_right_side {
@@ -713,16 +784,28 @@
   width: 23rem;
   height: 2.5rem;
   font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.5rem;
+  border: 0.1rem solid var(--primary-color);
+  border-radius: 0.75rem;
   cursor: pointer;
+  background: var(--primary-white);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(57, 37, 121, 0.18);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -730,32 +813,40 @@
   width: 23rem;
   height: 2.5rem;
   font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   background-color: var(--primary-color);
   color: var(--primary-white);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(57, 37, 121, 0.25);
 
   &:hover {
-    background-color: var(--primary-hover);
-    border: 0.063rem solid var(--primary-color);
-    color: var(--primary-color);
+    background-color: var(--hover-button);
+    box-shadow: 0 4px 12px rgba(57, 37, 121, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(57, 37, 121, 0.2);
   }
 }
 
+/* ─── Custom Table ─── */
 .table_container {
   margin-top: 0.5rem;
-  border: 1px solid rgba(57, 37, 121, 0.3);
+  border: 0.063rem solid var(--border-color);
   border-radius: 0.5rem;
   overflow-y: auto;
   width: 100%;
   height: 12.5rem;
-  /* adjust as needed */
 }
 
-/* MATCH partsTable design */
 .custom_table {
   width: 100%;
   border-collapse: collapse;
@@ -764,12 +855,12 @@
 }
 
 .custom_table th {
-  background-color: #e9e3f5;
+  background-color: var(--draft-color);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--primary-color);
-  border-bottom: 1px solid rgba(57, 37, 121, 0.2);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-bottom: 1px solid var(--table-title-border-color);
+  border-right: 1px solid var(--table-title-border-color);
   height: 1.5rem;
   text-align: center;
   padding: 0.3rem 0.8rem;
@@ -786,8 +877,8 @@
   padding: 0.3rem 0.8rem;
   font-size: 0.7rem;
   color: var(--primary-black);
-  border-top: 1px solid rgba(57, 37, 121, 0.2);
-  border-right: 1px solid rgba(57, 37, 121, 0.2);
+  border-top: 1px solid var(--table-title-border-color);
+  border-right: 1px solid var(--table-title-border-color);
   height: 1.8rem;
   word-wrap: break-word;
   cursor: pointer;
@@ -802,10 +893,9 @@
 }
 
 /* .custom_table tr:hover {
-  background-color: #f9f7ff;
+  background-color: var(--active-button-color);
 } */
 
-/* Editable input same as partsTable */
 .custom_table input {
   width: 100%;
   font-size: 0.7rem;
@@ -820,7 +910,7 @@
   outline: none;
 }
 
-/* scrollbar same as partsTable */
+/* ─── Custom Table Scrollbar ─── */
 .table_container::-webkit-scrollbar {
   width: 0.4rem;
 }
@@ -831,7 +921,7 @@
 }
 
 .table_container::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--scrollbar-color);
   border-radius: 0.7rem;
 }
 
@@ -843,15 +933,14 @@
   display: none;
 }
 
-/* delete popup */
-
+/* ─── Delete Popup ─── */
 .deletepopupOverlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.568);
+  background: var(--popup-background-color);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -859,11 +948,12 @@
 }
 
 .deletepopup {
-  background: white;
+  background: var(--primary-white);
   width: 20rem;
   border-radius: 0.9rem;
   position: relative;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 15px var(--dropdown-shadow);
+  border: 0.063rem solid var(--border-color);
   height: auto;
   padding: 1rem;
 }
@@ -880,6 +970,11 @@
   top: 1.5rem;
   right: 1.5rem;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.close:hover {
+  transform: scale(1.1);
 }
 
 .right_side {
@@ -919,17 +1014,29 @@
   width: 20rem;
   height: 2.5rem;
   font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.3rem;
+  border: 0.1rem solid var(--primary-color);
+  border-radius: 0.75rem;
   cursor: pointer;
+  background: var(--primary-white);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   &:hover {
     background-color: var(--primary-hover);
-    border: 0.063rem solid var(--primary-color);
+    border: 0.1rem solid var(--primary-color);
     color: var(--header-text-color);
+    box-shadow: 0 2px 6px rgba(57, 37, 121, 0.18);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -937,20 +1044,33 @@
   width: 20rem;
   height: 2.5rem;
   font-family: var(--font-family);
-  font-size: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   background-color: var(--primary-red);
   color: var(--primary-white);
   border: none;
-  border-radius: 0.3rem;
-  border: 0.063rem solid var(--primary-red);
+  border-radius: 0.75rem;
+  border: 0.1rem solid var(--primary-red);
   cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
 
   &:hover {
     color: var(--primary-red);
     background-color: var(--primary-light-red);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.2);
   }
 }
 
+/* ─── Add Material Design Button ─── */
 .addMaterialDesign {
   display: flex;
   justify-content: center;
@@ -958,20 +1078,32 @@
   margin-top: 1.2rem;
   width: 11rem;
   height: 2rem;
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.5rem;
+  border: 0.1rem solid var(--primary-color);
+  border-radius: 0.75rem;
   color: var(--primary-color);
   font-family: var(--font-family);
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   gap: 0.3rem;
+  background: var(--primary-white);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .addMaterialDesign:hover {
   background-color: var(--primary-hover);
-  border: 0.063rem solid var(--primary-color);
+  border: 0.1rem solid var(--primary-color);
   color: var(--primary-color);
+  box-shadow: 0 2px 6px rgba(57, 37, 121, 0.18);
+  transform: translateY(-1px);
+}
+
+.addMaterialDesign:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .addMaterialDesign img {
