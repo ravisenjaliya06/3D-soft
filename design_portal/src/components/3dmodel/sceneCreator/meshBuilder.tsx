@@ -369,9 +369,9 @@ export class MeshBuilder {
       : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
-      width: (materialProps.width ? materialProps.width : 5) * 0.01,
-      height: (materialProps.height ? materialProps.height : 5) * 0.01,
-      depth: (materialProps.depth ? materialProps.depth : 25) * 0.01,
+      width: (materialProps.width ? materialProps.width : 5),
+      height: (materialProps.height ? materialProps.height : 5),
+      depth: (materialProps.depth ? materialProps.depth : 25),
     });
 
     handleModel.name = `Handle_for_${mesh.name}`;
