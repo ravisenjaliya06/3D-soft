@@ -1513,8 +1513,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleSetting}
               className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Setting
@@ -1523,8 +1523,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleNavigation}
               className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Navigation
@@ -1579,8 +1579,8 @@ const Sidebar: React.FC = () => {
                               {/* Knob */}
                               <div
                                 className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                  ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                   }`}
                               />
                             </div>
@@ -2001,8 +2001,8 @@ const Sidebar: React.FC = () => {
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
                                                 className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
                                                   } `}
                                               >
                                                 <img
@@ -2225,8 +2225,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2277,8 +2277,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2301,8 +2301,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
