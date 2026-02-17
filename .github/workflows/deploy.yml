@@ -9,6 +9,8 @@ jobs:
     name: Deploy Backend
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    outputs:
+      backend_changed: ${{ steps.backend_changes.outputs.changed }}
     defaults:
       run:
         shell: bash
@@ -42,7 +44,6 @@ jobs:
         if: steps.backend_changes.outputs.changed == ''
         run: |
           echo "No backend changes, skipping deploy."
-
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -137,7 +138,6 @@ jobs:
         run: |
           echo "No frontend changes, skipping deploy."
 
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -188,4 +188,11 @@ jobs:
       
           curl -X POST -H "Content-Type: application/json" \
                -d "{\"text\":\"Frontend Design Portal Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
+               ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+
+      - name: Notify No Changes
+        if: needs.deploy-backend.outputs.backend_changed == '' && steps.frontend_changes.outputs.changed == ''
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+               -d "{\"text\":\"No backend or frontend changes detected. Skipping deployment: ${{ github.workflow }} - ${{ github.ref }}\"}" \
                ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
