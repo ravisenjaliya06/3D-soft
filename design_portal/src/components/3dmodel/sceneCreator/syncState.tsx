@@ -131,8 +131,6 @@ export class SyncManager {
   }
 
   private _syncState(list: MeshObjectData[]): void {
-    const existingObjects = store.getState().data.objects;
-
     const toAdd: MeshObjectData[] = [];
     const toUpdate: MeshObjectData[] = [];
 
@@ -229,8 +227,6 @@ export class SyncManager {
   }
 
   private _sync2D(list: MeshObjectData[]): void {
-    const existingObjects = store.getState().data.objects;
-
     list.forEach((item) => {
       if (item.type !== FLOOR_PLAN_TYPES.WALL) return;
 
