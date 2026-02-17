@@ -369,9 +369,9 @@ export class MeshBuilder {
       : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
-      width: (materialProps.width ? materialProps.width : 5) * 0.01,
-      height: (materialProps.height ? materialProps.height : 5) * 0.01,
-      depth: (materialProps.depth ? materialProps.depth : 25) * 0.01,
+      width: materialProps.width ? materialProps.width : 5,
+      height: materialProps.height ? materialProps.height : 5,
+      depth: materialProps.depth ? materialProps.depth : 25,
     });
 
     handleModel.name = `Handle_for_${mesh.name}`;
@@ -385,9 +385,9 @@ export class MeshBuilder {
     const url = '/glb/kitchen_sink.glb';
 
     const sinkModel = await GLBLoader(url, 'KitchenSink', {
-      width: this.meshData.dimensions.width * 0.01,
-      height: this.meshData.dimensions.height * 0.01,
-      depth: this.meshData.dimensions.depth * 0.01,
+      width: this.meshData.dimensions.width,
+      height: this.meshData.dimensions.height,
+      depth: this.meshData.dimensions.depth,
     });
     sinkModel.name = `Sink_for_${mesh.name}`;
     sinkModel.userData.type = OBJECT_TYPES.SINK;

@@ -1,0 +1,22 @@
+# Project Rules & Guidelines
+
+## Technology Stack
+- **Framework**: Next.js 16 (App Router)
+- **Library**: React 19
+- **Styling**: Tailwind CSS 4.0+
+- **Language**: TypeScript
+
+## Design Principles
+- **Modern & Premium**: Designs should be visually stunning, using glassmorphism, gradients, and smooth animations where appropriate.
+- **Responsive**: All UIs must be fully responsive across devices.
+- **Aesthetics**: Avoid generic styles; use curated palettes and modern typography.
+
+## CRITICAL RULES (RED LINES)
+- **PRESERVE FUNCTIONALITY**: When adding new features, you must **NEVER** remove or break existing functionality. New features must be additive.
+- **Backward Compatibility**: Ensure changes are backward compatible unless explicitly instructed otherwise.
+- **Validation**: Verify that existing flows (e.g., scene loading, interactions) continue to work after any change.
+
+## Code Quality
+- **Type Safety**: Use strict TypeScript types. Avoid `any`.
+- **Component Design**: Keep components focused, reusable, and small.
+- **Performance**: Optimize for speed (rendering, loading).
