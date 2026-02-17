@@ -9,52 +9,75 @@ export function visualizeMinifixConnections(
 ): void {
   removeExistingMinifix(cupboardObject);
   connections.forEach((connection, index) => {
-    const screwMesh = createScrewVisualization(connection, index);
-    screwMesh.name = `Minifix_Screw_${connection.id}`;
-    screwMesh.visible = false;
-    cupboardObject.add(screwMesh);
+    // Visualize Housing (Screw + Dowel + Cam)
+    const screwHousingMesh = createScrewVisualization(connection, index, true);
+    screwHousingMesh.name = `Minifix_ScrewHousing_${connection.id}`;
+    screwHousingMesh.visible = false;
+    cupboardObject.add(screwHousingMesh);
+
+    const dowelHousingMesh = createDowelVisualization(connection, index, standards, true);
+    dowelHousingMesh.name = `Minifix_DowelHousing_${connection.id}`;
+    dowelHousingMesh.visible = false;
+    cupboardObject.add(dowelHousingMesh);
+
     const camMesh = createCamVisualization(connection, index);
     camMesh.name = `Minifix_Cam_${connection.id}`;
     camMesh.visible = false;
     cupboardObject.add(camMesh);
-    const dowelMesh = createDowelVisualization(connection, index, standards);
-    dowelMesh.name = `Minifix_Dowel_${connection.id}`;
-    dowelMesh.visible = false;
-    cupboardObject.add(dowelMesh);
-    const boltDrillMesh = createBoltDrillVisualization(connection, index);
-    boltDrillMesh.name = `Minifix_BoltDrill_${connection.id}`;
-    boltDrillMesh.visible = false;
-    cupboardObject.add(boltDrillMesh);
+
+    // Visualize Mating (Screw Hole + Dowel Hole) -> Represented as cylinders for now
+    const screwMatingMesh = createScrewVisualization(connection, index, false);
+    screwMatingMesh.name = `Minifix_ScrewMating_${connection.id}`;
+    screwMatingMesh.visible = false;
+    cupboardObject.add(screwMatingMesh);
+
+    const dowelMatingMesh = createDowelVisualization(connection, index, standards, false);
+    dowelMatingMesh.name = `Minifix_DowelMating_${connection.id}`;
+    dowelMatingMesh.visible = false;
+    cupboardObject.add(dowelMatingMesh);
   });
 }
 
-function createScrewVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
+function createScrewVisualization(
+  connection: MinifixConnection,
+  index: number,
+  isHousing: boolean
+): THREE.Mesh {
+  const hole = isHousing ? connection.screwHousing : connection.screwMating;
   const geometry = new THREE.CylinderGeometry(
-    connection.screw.diameter / 2,
-    connection.screw.diameter / 2,
-    connection.screw.length,
+    (hole.diameter || 8) / 2,
+    (hole.diameter || 8) / 2,
+    hole.length || 30,
     16
   );
   const material = new THREE.MeshStandardMaterial({
-    color: 0x0066cc, // Blue for screw
+    color: isHousing ? 0x0066cc : 0x999999, // Blue for screw, Grey for mating hole
     metalness: 0.8,
     roughness: 0.2,
   });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(
-    connection.jointPosition.x,
-    connection.jointPosition.y,
-    connection.jointPosition.z
-  );
-  // Rotate to match direction
+  mesh.position.set(hole.position.x, hole.position.y, hole.position.z);
+  // Shift cylinder center if needed?
+  // Cylinder is centered at origin.
+  // We want it to start at position and go in direction.
+  // Or is position the center?
+  // Usually minifix hole position is the START on the face/edge.
+  // So we need to translate geometry by length/2 in direction.
+
   const direction = new THREE.Vector3(
-    connection.screw.direction.x,
-    connection.screw.direction.y,
-    connection.screw.direction.z
+    hole.direction.x,
+    hole.direction.y,
+    hole.direction.z
   ).normalize();
+
+  // Align 'Y' axis of cylinder to Direction
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+
+  // Offset to start from surface
+  mesh.position.add(direction.clone().multiplyScalar((hole.length || 30) / 2));
+
   mesh.userData = {
-    minifixType: 'SCREW',
+    minifixType: isHousing ? 'SCREW_HOUSING' : 'SCREW_MATING',
     connectionId: connection.id,
     index: index,
   };
@@ -63,9 +86,9 @@ function createScrewVisualization(connection: MinifixConnection, index: number):
 
 function createCamVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
   const geometry = new THREE.CylinderGeometry(
-    connection.cam.diameter / 2,
-    connection.cam.diameter / 2,
-    connection.cam.depth,
+    (connection.cam.diameter || 15) / 2,
+    (connection.cam.diameter || 15) / 2,
+    connection.cam.depth || 12,
     32
   );
   const material = new THREE.MeshStandardMaterial({
@@ -87,10 +110,14 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   );
   // Rotate cam face to look towards screw
   // Cylinder default axis = Y
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 0), boltDir);
-  if (connection.connectionType == 'HORIZONTAL_TO_VERTICAL') {
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), boltDir);
-  }
+  // We align Y (0, 1, 0) to boltDir (Drill Direction).
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), boltDir);
+
+  // Legacy fix for Horizontal to Vertical?
+  // If we just align Y to direction, it should be correct regardless of joint type.
+  // The calculator provides the correct world-space direction.
+  // So we don't need the conditional override unless there's a specific texture alignment issue.
+  // Assuming geometry is rotationally symmetric (Cylinder), aligning Axis is enough.
 
   // Flip logic removed. We rely on the calculator to provide correct "Inward" direction normals.
   mesh.userData = {
@@ -101,48 +128,17 @@ function createCamVisualization(connection: MinifixConnection, index: number): T
   return mesh;
 }
 
-function createBoltDrillVisualization(connection: MinifixConnection, index: number): THREE.Mesh {
-  const geometry = new THREE.CylinderGeometry(
-    (connection.boltDrill.diameter ?? connection.screw.diameter) / 2,
-    (connection.boltDrill.diameter ?? connection.screw.diameter) / 2,
-    connection.boltDrill.length ?? connection.screw.length / 2,
-    16
-  );
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x999999,
-    metalness: 0.4,
-    roughness: 0.6,
-    visible: true,
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(
-    connection.boltDrill.position.x,
-    connection.boltDrill.position.y,
-    connection.boltDrill.position.z
-  );
-  const direction = new THREE.Vector3(
-    connection.boltDrill.direction.x,
-    connection.boltDrill.direction.y,
-    connection.boltDrill.direction.z
-  ).normalize();
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-  mesh.userData = {
-    minifixType: 'BOLT_DRILL',
-    connectionId: connection.id,
-    index: index,
-  };
-  return mesh;
-}
-
 function createDowelVisualization(
   connection: MinifixConnection,
   index: number,
-  standards: MinifixStandards
+  standards: MinifixStandards,
+  isHousing: boolean
 ): THREE.Mesh {
+  const hole = isHousing ? connection.dowelHousing : connection.dowelMating;
   const geometry = new THREE.CylinderGeometry(
-    connection.dowel.diameter / 2,
-    connection.dowel.diameter / 2,
-    connection.dowel.length / 2,
+    (hole.diameter || 8) / 2,
+    (hole.diameter || 8) / 2,
+    hole.length || 20,
     16
   );
   const material = new THREE.MeshStandardMaterial({
@@ -151,22 +147,23 @@ function createDowelVisualization(
     roughness: 0.8,
   });
   const mesh = new THREE.Mesh(geometry, material);
-  // Determine offset axis based on connection type
-  const offsetAxis = connection.connectionType === 'VERTICAL_TO_VERTICAL' ? 'y' : 'z';
-  const pos = {
-    x: connection.jointPosition.x,
-    y: connection.jointPosition.y + (offsetAxis === 'y' ? standards.dowelDistance : 0),
-    z: connection.jointPosition.z + (offsetAxis === 'z' ? standards.dowelDistance : 0),
-  };
-  mesh.position.set(pos.x, pos.y, pos.z);
+
+  // Position is already calculated in calculator as the start position on edge/face
+  mesh.position.set(hole.position.x, hole.position.y, hole.position.z);
+
   const direction = new THREE.Vector3(
-    connection.dowel.direction.x,
-    connection.dowel.direction.y,
-    connection.dowel.direction.z
+    hole.direction.x,
+    hole.direction.y,
+    hole.direction.z
   ).normalize();
+
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+
+  // Offset to start from surface
+  mesh.position.add(direction.clone().multiplyScalar((hole.length || 20) / 2));
+
   mesh.userData = {
-    minifixType: 'DOWEL',
+    minifixType: isHousing ? 'DOWEL_HOUSING' : 'DOWEL_MATING',
     connectionId: connection.id,
     index: index,
   };
@@ -176,13 +173,7 @@ function createDowelVisualization(
 function removeExistingMinifix(cupboardObject: THREE.Object3D): void {
   const toRemove: THREE.Object3D[] = [];
   cupboardObject.traverse((child) => {
-    if (
-      child.name.startsWith('Minifix_Screw_') ||
-      child.name.startsWith('Minifix_Cam_') ||
-      child.name.startsWith('Minifix_Dowel_') ||
-      child.name.startsWith('Minifix_BoltDrill_') ||
-      child.name.startsWith('JointMarker_')
-    ) {
+    if (child.name.startsWith('Minifix_') || child.name.startsWith('JointMarker_')) {
       toRemove.push(child);
     }
   });

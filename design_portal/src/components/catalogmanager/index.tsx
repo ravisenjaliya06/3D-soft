@@ -332,8 +332,8 @@ const CatalogManager = () => {
     Caster: assets.caster,
     Connector: assets.connector,
     'Drawer Guide': assets.drawerguid,
-    Hinge: assets.pull,
-    'Hinge Plate': assets.hing,
+    Hinge: assets.hinge,
+    'Hinge Plate': assets.hinge,
     Laminate: assets.brandstok,
     Leg: assets.leg,
     'Leg Leveler': assets.leg_leveler,
@@ -351,7 +351,7 @@ const CatalogManager = () => {
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
       <div className="max-w-[85rem] flex-[3]">
-        <Header isBorderRadius={true} />
+        <Header isBorderRadius={true} dashboardName="Catalog Manager" />
 
         <div className="justify-between">
           {/* TOP TOOLBAR */}
@@ -423,7 +423,7 @@ const CatalogManager = () => {
                   <img
                     src={assets.addd}
                     alt="Add"
-                    className="ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer"
+                    className="pointer-events-none ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer opacity-50"
                     onClick={handleAddCatalog}
                   />
                 </div>

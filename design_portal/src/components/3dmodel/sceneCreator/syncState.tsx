@@ -297,9 +297,15 @@ export class SyncManager {
   }
 
   // Creates a new mesh
-  private _createNewMesh() {
+  private _createNewMesh(item?: MeshObjectData) {
     if (!this.meshBuilder) {
-      throw new Error('MeshBuilder is not initialized. This should not happen for single objects.');
+      if (item) {
+        // If meshBuilder is not initialized (e.g. valid when processing an array),
+        // initialize it temporarily for this item to create the mesh
+        this.meshBuilder = new MeshBuilder(item, this.scene);
+      } else {
+        throw new Error('MeshBuilder is not initialized and no item provided.');
+      }
     }
     const mesh = this.meshBuilder.createMesh();
     return mesh;
@@ -315,6 +321,13 @@ export class SyncManager {
 
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
+      this.meshBuilder.updateGrooving(mesh);
+    }
+
+    if (
+      changes.dimensions &&
+      (mesh.userData.type === PART_TYPES.BACK_PLANK || mesh.name.includes('BACK_PLANK'))
+    ) {
       this.meshBuilder.updateGrooving(mesh);
     }
 
@@ -682,7 +695,13 @@ export class SyncManager {
       return;
     }
 
-    const mesh = this._createNewMesh();
+    // Don't create new mesh for floor - FloorManager handles geometry creation
+    // SyncManager only updates materials for existing floor meshes
+    if (item.type === 'floor') {
+      return;
+    }
+
+    const mesh = this._createNewMesh(item);
 
     if (this._isObjectType(item.type)) {
       this.scene.add(mesh);
@@ -726,6 +745,15 @@ export class SyncManager {
     // This is a plank (regular or drawer plank) - apply parent banding if needed
     if (item.parent && this.meshBuilder) {
       await this._applyParentBandingIfNeeded(item);
+    }
+
+    // Apply grooving if it is a Back Plank
+    if (
+      this.meshBuilder &&
+      (item.type === PART_TYPES.BACK_PLANK ||
+        (item.name && item.name.toUpperCase().includes('BACK_PLANK')))
+    ) {
+      this.meshBuilder.updateGrooving(mesh);
     }
   }
 

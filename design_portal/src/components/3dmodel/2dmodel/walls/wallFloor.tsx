@@ -4,21 +4,54 @@ import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   // Return empty result if a polygon cannot exist
-  if (walls.length < 3) return [];
+  if (walls.length < 2) return [];
 
   // Store all unique wall endpoints as polygon vertices
   const pointMap = new Map<string, WallPoint>();
+  const pointCounts = new Map<string, number>();
 
   walls.forEach((wall) => {
     const { startPoint, endPoint } = getWall2DPoints(wall);
     const key1 = `${Math.round(startPoint.x)},${Math.round(startPoint.y)}`;
     const key2 = `${Math.round(endPoint.x)},${Math.round(endPoint.y)}`;
-    pointMap.set(key1, startPoint); // Add start point
-    pointMap.set(key2, endPoint); // Add end point
+
+    pointMap.set(key1, startPoint);
+    pointMap.set(key2, endPoint);
+
+    pointCounts.set(key1, (pointCounts.get(key1) || 0) + 1);
+    pointCounts.set(key2, (pointCounts.get(key2) || 0) + 1);
   });
 
   // Convert stored points into an array
   const points = Array.from(pointMap.values());
+
+  // Special handling for 2 connected walls (L-shape) to form a rectangle
+  if (points.length === 3) {
+    let corner: WallPoint | undefined;
+    let neighbors: WallPoint[] = [];
+
+    // Find the corner (shared point)
+    for (const [key, count] of pointCounts.entries()) {
+      if (count === 2) {
+        corner = pointMap.get(key);
+      } else {
+        const p = pointMap.get(key);
+        if (p) neighbors.push(p);
+      }
+    }
+
+    if (corner && neighbors.length === 2) {
+      // Calculate 4th point to complete the parallelogram
+      const p1 = neighbors[0];
+      const p2 = neighbors[1];
+      const newPoint = {
+        x: p1.x + p2.x - corner.x,
+        y: p1.y + p2.y - corner.y,
+        id: crypto.randomUUID(),
+      };
+      points.push(newPoint);
+    }
+  }
 
   // Compute the centroid of all polygon points
   const center = {
@@ -37,90 +70,65 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   return points;
 }
 
-export function findRoomsFromWalls(walls: MeshObjectData[]): MeshObjectData[][] {
-  // Store all detected closed room loops
-  const rooms: MeshObjectData[][] = [];
-  // Track walls already traversed to avoid revisits
-  const used = new Set<string>();
+export function findConnectedWalls(walls: MeshObjectData[]): MeshObjectData[][] {
+  const connectedGroups: MeshObjectData[][] = [];
+  const visited = new Set<string>();
 
-  // Generate a unique key for a point based on coordinates
-  const pointKey = (x: number, y: number) => `${Math.round(x)},${Math.round(y)}`;
+  // Helper to find connected walls using BFS
+  function bfs(startWall: MeshObjectData): MeshObjectData[] {
+    const group: MeshObjectData[] = [];
+    const queue: MeshObjectData[] = [startWall];
+    visited.add(startWall.id);
 
-  // Build map: each point maps to all walls touching it
-  const pointToWallsMap = new Map<string, MeshObjectData[]>();
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      group.push(current);
 
-  walls.forEach((wall) => {
-    const { startPoint: wallStartPoint, endPoint: wallEndPoint } = getWall2DPoints(wall);
-    const startPointKey = pointKey(wallStartPoint.x, wallStartPoint.y);
-    const endPointKey = pointKey(wallEndPoint.x, wallEndPoint.y);
+      // Find neighbors
+      const neighbors = walls.filter((w) => {
+        if (visited.has(w.id)) return false;
 
-    if (!pointToWallsMap.has(startPointKey)) pointToWallsMap.set(startPointKey, []);
-    if (!pointToWallsMap.has(endPointKey)) pointToWallsMap.set(endPointKey, []);
+        // Check if directly connected via ID reference or geometry overlap
+        // We use geometric check here since connectedTo might not be fully synced or reliable outside of redux actions
+        // But useWallDrawing calculates connectedTo, so let's try to use that first if available
+        if (current.connectedTo && current.connectedTo.includes(w.id)) return true;
+        if (w.connectedTo && w.connectedTo.includes(current.id)) return true;
 
-    pointToWallsMap.get(startPointKey)!.push(wall); // Add wall to start point
-    pointToWallsMap.get(endPointKey)!.push(wall); // Add wall to end point
-  });
+        // Fallback to geometric check
+        const { startPoint: s1, endPoint: e1 } = getWall2DPoints(current);
+        const { startPoint: s2, endPoint: e2 } = getWall2DPoints(w);
 
-  // Attempt to trace a loop starting from a given wall
-  function followLoop(startWall: MeshObjectData): MeshObjectData[] | null {
-    const loop: MeshObjectData[] = [];
-    let current = startWall;
-    let { startPoint, endPoint } = getWall2DPoints(current);
-    let prevPoint = pointKey(startPoint.x, startPoint.y);
+        // Simple point equality check (using rounding to avoid float issues)
+        const isSamePoint = (p1: WallPoint, p2: WallPoint) =>
+          Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
 
-    while (true) {
-      loop.push(current); // Add current wall to loop
-      used.add(current.id); // Mark current wall as visited
+        return (
+          isSamePoint(s1, s2) || isSamePoint(s1, e2) || isSamePoint(e1, s2) || isSamePoint(e1, e2)
+        );
+      });
 
-      const startPointKey = pointKey(startPoint.x, startPoint.y);
-      const endPointKey = pointKey(endPoint.x, endPoint.y);
-
-      const nextPoint = startPointKey === prevPoint ? endPointKey : startPointKey;
-
-      const neighbors = pointToWallsMap.get(nextPoint) || []; // Walls connected at next point
-      const nextWall = neighbors.find((next) => !used.has(next.id)); // Next unused wall
-
-      if (!nextWall) break; // Stop if traversal cannot continue
-
-      prevPoint = nextPoint; // Move traversal cursor
-      current = nextWall; // Advance to next wall
-      const nextPoints = getWall2DPoints(current);
-      startPoint = nextPoints.startPoint;
-      endPoint = nextPoints.endPoint;
+      for (const neighbor of neighbors) {
+        visited.add(neighbor.id);
+        queue.push(neighbor);
+      }
     }
-
-    // Verify that loop is geometrically closed
-    const firstWall = loop[0];
-    const { startPoint: firstWallStartPoint, endPoint: firstWallEndPoint } =
-      getWall2DPoints(firstWall);
-    const lastWall = loop[loop.length - 1];
-    const { startPoint: lastWallStartPoint, endPoint: lastWallEndPoint } =
-      getWall2DPoints(lastWall);
-
-    const firstStartKey = pointKey(firstWallStartPoint.x, firstWallStartPoint.y);
-    const firstEndKey = pointKey(firstWallEndPoint.x, firstWallEndPoint.y);
-
-    const lastStartKey = pointKey(lastWallStartPoint.x, lastWallStartPoint.y);
-    const lastEndKey = pointKey(lastWallEndPoint.x, lastWallEndPoint.y);
-
-    // True if the first and last walls share any common point
-    const isLoopClosed =
-      firstStartKey === lastStartKey ||
-      firstStartKey === lastEndKey ||
-      firstEndKey === lastStartKey ||
-      firstEndKey === lastEndKey;
-
-    return isLoopClosed ? loop : null; // Return loop only if valid closure exists
+    return group;
   }
 
-  // Traverse each wall and detect room loops if unused
-  walls.forEach((wall) => {
-    if (!used.has(wall.id)) {
-      const loop = followLoop(wall);
-      if (loop) rooms.push(loop); // Store only valid closed loops
+  for (const wall of walls) {
+    if (!visited.has(wall.id)) {
+      const group = bfs(wall);
+      // Only return groups with at least 2 walls as requested
+      if (group.length >= 2) {
+        connectedGroups.push(group);
+      }
     }
-  });
+  }
 
-  // Return all detected room boundaries
-  return rooms;
+  return connectedGroups;
+}
+
+// Kept for backward compatibility if needed, but implementation redirects to findConnectedWalls
+export function findRoomsFromWalls(walls: MeshObjectData[]): MeshObjectData[][] {
+  return findConnectedWalls(walls);
 }

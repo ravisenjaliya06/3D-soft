@@ -8,6 +8,8 @@ from design.models import (
     DesignScreenshot,
     DesignSetting,
     DesignVersion,
+    NestingFile,
+    NestingSheet,
 )
 
 
@@ -64,3 +66,5 @@ admin.site.register(DesignSetting, DesignSettingsAdmin)
 admin.site.register(DesignScreenshot)
 admin.site.register(DesignVersion, DesignVersionAdmin)
 admin.site.register(DesignCatalog)
+admin.site.register(NestingSheet)
+admin.site.register(NestingFile)

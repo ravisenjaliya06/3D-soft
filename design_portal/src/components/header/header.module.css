@@ -1,171 +1,189 @@
+/* Main Header Container */
 .mainheader {
   display: flex;
-  justify-content: right;
+  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem 0rem 1rem;
-  width: 82rem;
+  padding: 0.5rem 2.5rem 0.5rem 1.5rem;
+  width: 100%;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--primary-white);
+  position: relative;
+  z-index: 50;
+  height: 5rem;
+  box-sizing: border-box;
 }
 
 .withBorderRadius {
-  border-radius: 0rem 0rem 0rem 0.7rem;
+  border-radius: 0;
 }
 
 .noBorderRadius {
-  border-radius: 0rem;
+  border-radius: 0;
 }
 
 .headerContent {
   display: flex;
   align-items: center;
-  margin-right: 0.2rem;
-  position: fixed;
-  right: 1rem;
-  top: 0.5rem;
+  gap: 1.2rem;
 }
 
-.profileIcon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  margin-top: 0.5rem;
-  margin-left: 0.5rem;
-  cursor: pointer;
-}
-.profile_setting_line {
-  height: 0.2rem;
-}
-
-.userInfo {
-  margin-left: 0.7rem;
-  margin-right: 0;
-  margin-top: 0.5rem;
-  width: 7rem;
-}
-
-.userName {
-  margin: 0;
-  font-family: var(--font-family);
-  font-size: 0.8rem;
-  color: var(--primary-color);
-  cursor: pointer;
-  font-weight: 500;
-  max-width: 2rem;
-  margin-top: 0.3rem;
-}
-
-.userSubtitle {
-  margin-top: 0rem;
-  font-family: var(--font-family);
-  font-size: 0.6rem;
-  color: var(--subtext-color);
-  cursor: pointer;
-}
-
-.dropdownMenuProfile {
-  position: absolute;
-  background-color: var(--primary-white);
-  box-shadow: 0rem 0.125rem 0.313rem var(--dropdown-shadow);
-  border-radius: 0rem 0rem 0.313rem 0.313rem;
-  width: 10rem;
-  display: flex;
-  justify-content: center;
-  padding: 0.3rem;
-  top: 2.75rem;
-  left: 3rem;
-  z-index: 1;
-}
-
-.dropdownMenuProfile ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  text-align: center;
-}
-
-.dropdownMenuProfile li {
-  position: relative;
-  padding: 0.5rem;
-  cursor: pointer;
-  color: var(--text-gray);
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-}
-
-.ProfiledropdownList {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.ProfiledropdownList li {
-  padding: 0.5rem;
-  width: 8rem;
-  text-align: center;
-}
-
-.ProfiledropdownList li:hover {
-  background-color: var(--dropdown-background-color);
-  border-radius: 0.6rem;
-}
-
-.simpleLine {
-  margin: 0rem 2rem 1rem 2rem;
-  width: 81rem;
-}
-
+/* Profile Container */
 .profileIconContainer {
-  width: 11.5rem;
-  height: 2.6rem;
-  background-color: var(--primary-white);
+  min-width: 10.5rem;
+  height: 2.8rem;
+  padding: 0.2rem 0.4rem;
+  background: var(--primary-white);
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
   border-radius: 0.5rem;
   font-family: var(--font-family);
-  border: 0.1rem solid var(--border-color);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.profileIconContainer p {
+.profileIconContainer:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+}
+
+.profileIcon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+.userInfo {
+  flex: 1;
+  margin: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.userName {
+  margin: 0;
   font-family: var(--font-family);
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userSubtitle {
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 0.65rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dropDown {
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-top: 0.3rem;
-  margin-right: 0.3rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.2rem;
+  opacity: 0.5;
+  transition: transform 0.3s ease;
 }
 
-.simpleLine {
-  width: 1rem;
-  margin: 1.5rem 0 0 1rem;
-  height: 1rem;
+/* Dropdown Open State */
+.profileIconContainer:hover .dropDown {
+  opacity: 1;
 }
 
-.simpleLine img {
-  width: 81.8rem;
-  height: 1rem;
-}
-
+/* Header Title */
 .headerTitle {
   display: flex;
   align-items: center;
-  margin-right: 0.5rem;
-  margin-left: 0.5rem;
-  margin-top: 0;
-  margin-bottom: 0;
-  height: 0;
-  position: relative;
-  top: 2rem;
-  left: 1rem;
 }
 
 .headerTitle p {
   font-family: var(--font-family);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Dropdown Menu */
+.dropdownMenuProfile {
+  position: absolute;
+  top: 3.5rem;
+  right: 0;
+  background: var(--primary-white);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 0.6rem;
+  width: 100%;
+  /* CHANGED: Match parent width exactly */
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  border: 1px solid #f1f5f9;
+  animation: slideDown 0.15s ease-out;
+  box-sizing: border-box;
+  /* Ensures padding included in width */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownMenuProfile ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ProfiledropdownList li {
+  padding: 0.6rem 0.5rem;
+  /* Slightly reduced horizontal padding to fit small width */
+  margin: 0.1rem 0;
+  cursor: pointer;
+  color: #475569;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
   font-weight: 500;
+  border-radius: 0.4rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ProfiledropdownList li:hover {
+  background-color: #f8fafc;
   color: var(--primary-color);
-  margin-right: 0.5rem;
-  margin-left: 0.5rem;
+}
+
+.profile_setting_line {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.2rem 0.5rem;
+  width: calc(100% - 1rem);
+  border: none;
+}
+
+/* Utils */
+.simpleLine {
+  display: none;
 }

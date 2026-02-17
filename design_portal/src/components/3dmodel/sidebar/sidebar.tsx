@@ -1,4 +1,5 @@
 import { _3DMODEL, assets } from '@/svgPaths';
+import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -446,6 +447,9 @@ const Sidebar: React.FC = () => {
         ? { ...selectedObject.edgeBanding, ...patch.edgeBanding }
         : selectedObject.edgeBanding,
     };
+
+    // Use SyncManager for all objects including floor
+    // MeshBuilder now supports floor material updates
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -476,15 +480,35 @@ const Sidebar: React.FC = () => {
     setNavOpen(true);
   };
 
-  // (Harsh): Temporary placement — will move to updateHandler once door selection is ready.
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    scene.traverse((child) => {
-      if (child.userData.objectId === selectedObject?.id) {
-        child.userData.openDirection = position.toLowerCase();
-      }
-    });
+    if (selectedObject) {
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
+          const controller = new CabinetMotionController();
+          const wasOpen = child.userData.isClosed === false;
+
+          if (wasOpen) {
+            controller.toggleDoor(child);
+
+            const pivotGroup = child.parent;
+            if (pivotGroup?.userData.isPivotGroup) {
+              gsap.killTweensOf(pivotGroup.rotation);
+              pivotGroup.rotation.set(0, 0, 0);
+            }
+          }
+
+          child.userData.openDirection = position.toLowerCase();
+
+          // for re-open
+          if (wasOpen) {
+            controller.toggleDoor(child);
+          }
+        }
+      });
+    }
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
@@ -580,9 +604,12 @@ const Sidebar: React.FC = () => {
   // Helper function to get texture from Material array
   const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
     if (!materialArray || !Array.isArray(materialArray)) return null;
-    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
-    if (panelStock?.textures && panelStock.textures.length > 0) {
-      const texture = panelStock.textures[0];
+    // Support both Panel Stock and Floor material types
+    const material = materialArray.find(
+      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
+    );
+    if (material?.textures && material.textures.length > 0) {
+      const texture = material.textures[0];
       if (texture?.textureDetail?.image) {
         return texture.textureDetail.image;
       }
@@ -593,8 +620,11 @@ const Sidebar: React.FC = () => {
   // Helper function to check if material has texture
   const hasTextureMaterial = (materialArray?: Material[]): boolean => {
     if (!materialArray || !Array.isArray(materialArray)) return false;
-    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
-    return !!(panelStock?.textures && panelStock.textures.length > 0);
+    // Support both Panel Stock and Floor material types
+    const material = materialArray.find(
+      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
+    );
+    return !!(material?.textures && material.textures.length > 0);
   };
 
   const toggleTextureList = () => {
@@ -686,7 +716,8 @@ const Sidebar: React.FC = () => {
 
     //@ts-ignore
     const updatedMaterials: Material[] = materialArray.map((mat) => {
-      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK) {
+      // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
+      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK || mat?.type === 'Floor') {
         return {
           ...mat,
           textures: [
@@ -891,6 +922,8 @@ const Sidebar: React.FC = () => {
       PART_TYPES.DOOR,
       PART_TYPES.VERTICAL_PLANK,
       PART_TYPES.HORIZONTAL_PLANK,
+      ...Object.values(DRAWER_PLANK_TYPES),
+      'floor', // Exclude floor objects - they should have texture change enabled
     ].includes(selectedObject.type);
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
@@ -908,7 +941,8 @@ const Sidebar: React.FC = () => {
     selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
 
   // Disable texture change for cupboards and invisible boxes
-  const isTextureChangeDisabled = isFullCupboard || isInvisibleBoxSelected || isQuickHideActive;
+  const isTextureChangeDisabled =
+    isFullCupboard || (isInvisibleBoxSelected && !isPlankSelected) || isQuickHideActive;
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
@@ -1479,8 +1513,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleSetting}
               className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Setting
@@ -1489,8 +1523,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleNavigation}
               className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Navigation
@@ -1545,8 +1579,8 @@ const Sidebar: React.FC = () => {
                               {/* Knob */}
                               <div
                                 className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                  ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                   }`}
                               />
                             </div>
@@ -1574,12 +1608,7 @@ const Sidebar: React.FC = () => {
                                       <CustomToast
                                         appearance="error"
                                         message="Distance must be in multiple of 32"
-                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
-                                      // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
-                                      // It does NOT assume closeToast.
-                                      // Wait, the one in Toolbar DID have closeToast.
-                                      // I should probably update CustomToast to optionally accept it or just ignore it.
-                                      // Let's check CustomToast again.
+                                        closeToast={closeToast}
                                       />
                                     ),
                                     {
@@ -1972,8 +2001,8 @@ const Sidebar: React.FC = () => {
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
                                                 className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
                                                   } `}
                                               >
                                                 <img
@@ -2196,8 +2225,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2248,8 +2277,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2272,8 +2301,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>

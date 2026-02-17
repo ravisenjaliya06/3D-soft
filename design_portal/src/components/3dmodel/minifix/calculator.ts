@@ -1,6 +1,72 @@
 import { Position } from '../store/interface';
 import { MINIFIX_STANDARDS } from './constant';
-import type { MinifixConnection, MinifixStandards, PlankConnection, PlankData } from './types';
+import type {
+  MinifixConnection,
+  MinifixHole,
+  MinifixStandards,
+  PlankConnection,
+  PlankData,
+} from './types';
+
+function getFaceId(normal: Position, name?: string): string {
+  const { x, y, z } = normal;
+
+  if (name?.toUpperCase().includes('VERTICAL')) {
+    if (x >= 1) return '1';
+    if (z >= 1) return '2';
+    if (y <= -1) return '3';
+    if (z <= -1) return '4';
+    if (y >= 1) return '5';
+    if (x <= -1) return '6';
+  }
+
+  if (y >= 1) return '1';
+  if (z >= 1) return '2';
+  if (x >= 1) return '3';
+  if (z <= -1) return '4';
+  if (x <= -1) return '5';
+  if (y <= -1) return '6';
+
+  return '0';
+}
+
+function calculateLocal2D(
+  point: Position,
+  plank: PlankData,
+  faceId: string
+): { x: number; y: number } {
+  const { position: center, width, height, depth } = plank;
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const halfD = depth / 2;
+
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const dz = point.z - center.z;
+
+  switch (faceId) {
+    case '1':
+      return { x: dx + halfW, y: dz + halfD };
+
+    case '6':
+      return { x: dx + halfW, y: dz + halfD };
+
+    case '2':
+      return { x: dx + halfW, y: dy + halfH };
+
+    case '4':
+      return { x: -dx + halfW, y: dy + halfH };
+
+    case '3':
+      return { x: -dz + halfD, y: dy + halfH };
+
+    case '5':
+      return { x: dz + halfD, y: dy + halfH };
+
+    default:
+      return { x: 0, y: 0 };
+  }
+}
 
 export function calculateMinifixPositions(
   connections: PlankConnection[],
@@ -9,61 +75,75 @@ export function calculateMinifixPositions(
 ): MinifixConnection[] {
   const minifixConnections: MinifixConnection[] = [];
 
-  // Resolve standards and spacing
+  // Resolve standards
   let activeStandards = MINIFIX_STANDARDS;
   if (typeof spacing === 'object') {
     activeStandards = spacing;
   }
-
   const effectiveSpacing =
     (typeof spacing === 'number' ? spacing : activeStandards.minifixDistance) ||
     MINIFIX_STANDARDS.minifixDistance;
 
-  // Safety check to prevent infinite loop
-  if (effectiveSpacing <= 0) {
-    console.error('Invalid minifix spacing:', effectiveSpacing);
-    return [];
-  }
+  if (effectiveSpacing <= 0) return [];
 
+  // Sort for determinism
   connections.sort(
     (a, b) => a.plankA.id.localeCompare(b.plankA.id) || a.plankB.id.localeCompare(b.plankB.id)
   );
 
   connections.forEach((connection, index) => {
-    const { plankA, plankB, jointPosition, connectionType } = connection;
-    const screwPlank = connectionType === 'VERTICAL_TO_HORIZONTAL' ? plankB : plankA;
+    const { plankA, plankB, connectionType } = connection;
 
-    // Determine spacing axis and relevant dimension
-    // Cupboards (H-V) -> Z axis (Depth)
-    // Drawers (V-V)   -> Y axis (Height)
+    let housingPlank = plankA;
+    let boltPlank = plankB;
+
+    if (
+      connectionType === 'HORIZONTAL_TO_VERTICAL' ||
+      connectionType === 'VERTICAL_TO_HORIZONTAL'
+    ) {
+      const isOverlay = Math.abs(connection.touchingFaceNormal.y) > 0.9;
+
+      if (isOverlay) {
+        const p1 = plankA.width > plankA.height ? plankB : plankA;
+        const p2 = plankA.width > plankA.height ? plankA : plankB;
+
+        housingPlank = p1;
+        boltPlank = p2;
+      } else {
+        const p1 = plankA.width > plankA.height ? plankB : plankA;
+        const p2 = plankA.width > plankA.height ? plankA : plankB;
+
+        housingPlank = p2;
+        boltPlank = p1;
+      }
+    } else {
+      const isSideA =
+        plankA.name.toUpperCase().includes('LEFT') || plankA.name.toUpperCase().includes('RIGHT');
+      if (isSideA) {
+        housingPlank = plankB;
+        boltPlank = plankA;
+      } else {
+        housingPlank = plankA;
+        boltPlank = plankB;
+      }
+    }
+
     const spacingAxis = connectionType === 'VERTICAL_TO_VERTICAL' ? 'y' : 'z';
-    const limitDimension = spacingAxis === 'y' ? screwPlank.height : screwPlank.depth;
+    const dimA = spacingAxis === 'y' ? plankA.height : plankA.depth;
+    const dimB = spacingAxis === 'y' ? plankB.height : plankB.depth;
+    const limitDimension = Math.min(dimA, dimB);
 
-    // Center-out strategy
-    const offsets: number[] = [];
-
-    // Always try to place one at the center first
-    offsets.push(0);
-
-    let k = 1;
-    // Limit based on dimension and spacing.
-    // We want to stop before we hit the edge.
-    // Since the dowel is at +32mm, we need to ensure we have at least 32mm + margin at the positive end.
-    // Margin of 40 (32 + 8) provides safety.
     const dowelDistance = activeStandards.dowelDistance || MINIFIX_STANDARDS.dowelDistance;
     const limit = limitDimension / 2 - (dowelDistance + 8);
 
-    // Additional safety: max iterations and NaN check
+    const offsets: number[] = [0];
+    let k = 1;
     let iterations = 0;
     if (!isNaN(limit) && !isNaN(effectiveSpacing)) {
       while (iterations < 100) {
         iterations++;
         const dist = k * effectiveSpacing;
-        // if (dist > limit) {
-        //   break;
-        // }
-        const EPS = 0.0001;
-        if (dist > limit - EPS) break;
+        if (dist > limit - 0.0001) break;
         offsets.push(dist);
         offsets.push(-dist);
         k++;
@@ -71,330 +151,162 @@ export function calculateMinifixPositions(
     }
 
     offsets.forEach((offset, i) => {
-      const shiftedJoint = {
-        x: jointPosition.x,
-        y: spacingAxis === 'y' ? jointPosition.y + offset : jointPosition.y,
-        z: spacingAxis === 'z' ? jointPosition.z + offset : jointPosition.z,
-      };
-      const safeJoint = {
-        x: shiftedJoint.x,
-        y: shiftedJoint.y,
-        z: shiftedJoint.z,
-      };
+      const shiftedJoint = { ...connection.jointPosition };
+      if (spacingAxis === 'y') shiftedJoint.y += offset;
+      else shiftedJoint.z += offset; // z axis
 
-      const minifixConnection = calculateSingleConnection(
-        { ...connection, jointPosition: safeJoint },
-        cupboardId,
-        index * 100 + i,
+      const connId = `minifix-${cupboardId}-${plankA.id}-${plankB.id}-${index * 100 + i}`;
+
+      const mp = calculateSingleConnectionData(
+        housingPlank,
+        boltPlank,
+        shiftedJoint,
         activeStandards,
+        connId,
+        connection,
         spacingAxis
       );
 
-      if (minifixConnection) {
-        (minifixConnection as MinifixConnection).jointPosition = shiftedJoint;
-        minifixConnections.push(minifixConnection);
-      }
+      if (mp) minifixConnections.push(mp);
     });
   });
 
   return minifixConnections;
 }
 
-function calculateSingleConnection(
-  connection: PlankConnection,
-  cupboardId: string,
-  index: number,
+function calculateSingleConnectionData(
+  housingPlank: PlankData,
+  boltPlank: PlankData,
+  jointPos: Position,
   standards: MinifixStandards,
+  id: string,
+  connection: PlankConnection,
   spacingAxis: 'y' | 'z'
 ): MinifixConnection | null {
-  const { plankA, plankB, jointPosition, connectionType } = connection;
+  let intoHousingDir: Position;
 
-  let screwPlank = plankA;
-  let camPlank = plankB;
-
-  if (connectionType === 'VERTICAL_TO_HORIZONTAL') {
-    // Check if Vertical plank (plankA) is touching with its Y-normal face (Edge) -> Divider
-    // Or with its X/Z-normal face (Face) -> Side Panel
-    if (Math.abs(connection.touchingFaceNormal.y) > 0.5) {
-      // Divider: Bolt in Horizontal (Top/Bottom), Cam in Vertical (Divider)
-      screwPlank = plankB;
-      camPlank = plankA;
-    } else {
-      // Side Panel: Bolt in Vertical (Side), Cam in Horizontal (Shelf)
-      screwPlank = plankA;
-      camPlank = plankB;
-    }
-  } else if (connectionType === 'VERTICAL_TO_VERTICAL') {
-    // Drawers: Bolt in Front/Back, Cam in Side Plank?
-    // User says: "Drawer Back plank receives the cam".
-    // So Cam Plank is Back/Front. Screw is Side.
-    // detector.ts says plankA is usually Left/Right Side for drawers due to query order?
-    // Let's check name.
-
-    const isSidePlankA = plankA.name.includes('LEFT') || plankA.name.includes('RIGHT');
-
-    if (isSidePlankA) {
-      screwPlank = plankA; // Side has Bolt
-      camPlank = plankB; // Front/Back has Cam
-    } else {
-      screwPlank = plankB; // Side has Bolt
-      camPlank = plankA; // Front/Back has Cam
-    }
-  }
-
-  // Determine bolt direction based on touching face normal
-  // touchingFaceNormal is the normal of plankA's touching face (pointing OUT of A into B)
-  const normalize = (v: Position) => {
-    const len = Math.hypot(v.x, v.y, v.z) || 1;
-    return {
-      x: Math.sign(v.x / len),
-      y: Math.sign(v.y / len),
-      z: Math.sign(v.z / len),
+  if (housingPlank.id === connection.plankA.id) {
+    intoHousingDir = {
+      x: -Math.round(connection.touchingFaceNormal.x),
+      y: -Math.round(connection.touchingFaceNormal.y),
+      z: -Math.round(connection.touchingFaceNormal.z),
     };
-  };
-  let boltDirection = normalize(connection.touchingFaceNormal);
-
-  if (screwPlank.id !== connection.plankA.id) {
-    // If screwPlank is plankB, we want the normal of plankB's touching face.
-    // plankB's touching face normal is opposite to plankA's.
-    boltDirection = {
-      x: -boltDirection.x,
-      y: -boltDirection.y,
-      z: -boltDirection.z,
+  } else {
+    intoHousingDir = {
+      x: Math.round(connection.touchingFaceNormal.x),
+      y: Math.round(connection.touchingFaceNormal.y),
+      z: Math.round(connection.touchingFaceNormal.z),
     };
   }
 
-  const positions = calculateHolePositions(
-    screwPlank,
-    camPlank,
-    jointPosition,
-    standards,
-    boltDirection,
-    spacingAxis
-  );
+  const housingFaceNormal = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
+  const housingFaceId = getFaceId(housingFaceNormal, housingPlank.name);
 
-  if (!positions) {
-    return null;
+  const screwHousingHole: MinifixHole = {
+    type: 'SCREW',
+    connectorId: id,
+    position: jointPos,
+    direction: intoHousingDir,
+    drillType: '1',
+    face: housingFaceId,
+    diameter: standards.screwDiameter,
+    length: standards.screwLength - 10,
+    localPosition2D: calculateLocal2D(jointPos, housingPlank, housingFaceId),
+  };
+
+  const intoBoltDir = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
+  const boltFaceNormal = { x: -intoBoltDir.x, y: -intoBoltDir.y, z: -intoBoltDir.z };
+  const boltFaceId = getFaceId(boltFaceNormal, boltPlank.name);
+
+  const screwMatingHole: MinifixHole = {
+    type: 'SCREW',
+    connectorId: id,
+    position: jointPos,
+    direction: intoBoltDir,
+    drillType: '2',
+    face: boltFaceId,
+    diameter: standards.screwDiameter,
+    length: standards.screwLength - 30,
+    localPosition2D: calculateLocal2D(jointPos, boltPlank, boltFaceId),
+  };
+
+  const camDist = 34;
+  const camPos3D = {
+    x: jointPos.x + intoHousingDir.x * camDist,
+    y: jointPos.y + intoHousingDir.y * camDist,
+    z: jointPos.z + intoHousingDir.z * camDist,
+  };
+
+  let camDir = { x: 0, y: -1, z: 0 };
+  if (Math.abs(intoHousingDir.y) > 0.9) {
+    camDir = { x: 1, y: 0, z: 0 };
   }
 
-  return {
-    id: `minifix-${cupboardId}-${connection.plankA.id}-${connection.plankB.id}-${index}`,
-    cupboardId,
-    plankAId: screwPlank.id,
-    plankBId: camPlank.id,
-    jointPosition,
-    connectionType,
-    screw: {
-      position: positions.screw.position,
-      direction: positions.screw.direction,
-      diameter: standards.screwDiameter,
-      length: standards.screwLength,
-      localPosition2D: positions.screw.localPosition2D,
-    },
-    cam: {
-      position: positions.cam.position,
-      direction: positions.cam.direction,
-      diameter: standards.camDiameter,
-      depth: standards.camDepth,
-      localPosition2D: positions.cam.localPosition2D,
-    },
-    dowel: {
-      position: positions.dowel.position,
-      direction: positions.dowel.direction,
-      diameter: standards.dowelDiameter,
-      length: standards.dowelLength,
-      localPosition2D: positions.dowel.localPosition2D,
-    },
-    boltDrill: {
-      position: positions.boltDrill.position,
-      direction: positions.boltDrill.direction,
-      localPosition2D: positions.boltDrill.localPosition2D,
-    },
-  };
-}
-
-function calculateHolePositions(
-  screwPlank: PlankData,
-  camPlank: PlankData,
-  jointPosition: Position,
-  standards: MinifixStandards,
-  direction: Position,
-  spacingAxis: 'y' | 'z'
-) {
-  const { screwLength, dowelDistance } = standards;
-
-  // Use passed direction directly
-  // const boltDir = direction;
-  const screwDir = { x: -direction.x, y: -direction.y, z: -direction.z }; // Into screw plank
-  // const camDir = direction; // Into cam plank
-
-  // --- FIX START: Determine correct Cam Direction (Face Normal) ---
-  // Heuristic: The smallest dimension of the plank is its thickness.
-  // The Cam is always drilled into the face (perpendicular to thickness).
-  // AND it must point TOWARDS the Screw Plank (which is holding the bolt).
-
-  const { width, height, depth } = camPlank;
-  const minDim = Math.min(width, height, depth);
-
-  let camAxis: 'x' | 'y' | 'z' = 'y'; // Axis perpendicular to the face
-
-  if (minDim === width) {
-    camAxis = 'x';
-  } else if (minDim === height) {
-    camAxis = 'y';
-  } else {
-    camAxis = 'z';
-  }
-
-  // Calculate direction from Cam Plank Center to Screw Plank Center
-  const centerDiff = {
-    x: screwPlank.position.x - camPlank.position.x,
-    y: screwPlank.position.y - camPlank.position.y,
-    z: screwPlank.position.z - camPlank.position.z,
+  const camHole: MinifixHole = {
+    type: 'CAM',
+    connectorId: id,
+    position: camPos3D,
+    direction: camDir,
+    drillType: '2',
+    face: getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z }, housingPlank.name),
+    diameter: standards.camDiameter,
+    depth: standards.camDepth,
+    localPosition2D: calculateLocal2D(
+      camPos3D,
+      housingPlank,
+      getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z })
+    ),
   };
 
-  let camDir = { x: 0, y: 0, z: 0 };
-
-  if (camAxis === 'x') {
-    camDir.x = Math.sign(centerDiff.x) || 1;
-  } else if (camAxis === 'y') {
-    camDir.y = Math.sign(centerDiff.y) || 1;
-  } else {
-    camDir.z = Math.sign(centerDiff.z) || 1;
-  }
-  // --- FIX END ---
-
-  // Screw Position: At the joint interface
-  const screwPos = {
-    x: jointPosition.x,
-    y: jointPosition.y,
-    z: jointPosition.z,
-  };
-
-  // Cam Position:
-  // We determine position based on the "In-Plane" direction from the Screw Plank to the Cam Plank.
-  // This avoids issues where the default `direction` points out of the Face (creating floating cams).
-
-  // Vector from Screw -> Cam (In-Plane)
-  const invDiff = { x: -centerDiff.x, y: -centerDiff.y, z: -centerDiff.z };
-  // Project to remove Face Normal component (camAxis) to get In-Plane vector
-  if (camAxis === 'x') invDiff.x = 0;
-  if (camAxis === 'y') invDiff.y = 0;
-  if (camAxis === 'z') invDiff.z = 0;
-
-  const depthOffset = standards.camDepth / 2;
-
-  // Position = Joint + (Distance from Edge along In-Plane Dir) + (Sink into Face along Inward Normal)
-  // Position = Joint + (Distance from Edge along In-Plane Dir) - (Sink into Face because camDir is Outward Normal)
-  // We subtract `camDir` * depthOffset to sink it into the plank.
-  // const camPos = {
-  //   x: jointPosition.x + inPlaneDir.x * screwLength - camDir.x * depthOffset,
-  //   y: jointPosition.y + inPlaneDir.y * screwLength - camDir.y * depthOffset,
-  //   z: jointPosition.z + inPlaneDir.z * screwLength - camDir.z * depthOffset,
-  // };
-
-  const surfaceOffset = minDim / 2;
-  const sinkOffset = surfaceOffset - depthOffset;
-
-  const camPos = {
-    x: jointPosition.x + direction.x * screwLength + camDir.x * sinkOffset,
-    y: jointPosition.y + direction.y * screwLength + camDir.y * sinkOffset,
-    z: jointPosition.z + direction.z * screwLength + camDir.z * sinkOffset,
-  };
-
-  const boltDrillPos = {
-    x: jointPosition.x + direction.x * (screwLength / 2),
-    y: jointPosition.y + direction.y * (screwLength / 2),
-    z: jointPosition.z + direction.z * (screwLength / 2),
-  };
-
+  // DOWEL HOLES
   const dowelOffsetVector = { x: 0, y: 0, z: 0 };
+  if (spacingAxis === 'z') dowelOffsetVector.z = standards.dowelDistance;
+  else dowelOffsetVector.y = standards.dowelDistance;
 
-  if (spacingAxis === 'z') {
-    dowelOffsetVector.z = dowelDistance;
-  } else if (spacingAxis === 'y') {
-    dowelOffsetVector.y = dowelDistance;
-  } else {
-    // Fallback if logic fails (shouldn't happen with strict types)
-    dowelOffsetVector.z = dowelDistance;
-  }
-
-  const finalDowelPos = {
-    x: jointPosition.x + dowelOffsetVector.x,
-    y: jointPosition.y + dowelOffsetVector.y,
-    z: jointPosition.z + dowelOffsetVector.z,
+  const dowelPos = {
+    x: jointPos.x + dowelOffsetVector.x,
+    y: jointPos.y + dowelOffsetVector.y,
+    z: jointPos.z + dowelOffsetVector.z,
   };
 
-  const isVertical = Math.abs(Math.round(screwDir.y)) === 1;
+  // Dowel Housing (20mm, Type 2)
+  const dowelHousingHole: MinifixHole = {
+    type: 'DOWEL',
+    connectorId: id,
+    position: dowelPos,
+    direction: intoHousingDir,
+    drillType: '1',
+    face: housingFaceId,
+    diameter: standards.dowelDiameter,
+    length: standards.dowelLength - 10,
+    localPosition2D: calculateLocal2D(dowelPos, housingPlank, housingFaceId),
+  };
+
+  const dowelMatingHole: MinifixHole = {
+    type: 'DOWEL',
+    connectorId: id,
+    position: dowelPos,
+    direction: intoBoltDir,
+    drillType: '2',
+    face: boltFaceId,
+    diameter: standards.dowelDiameter,
+    length: standards.dowelLength - 20,
+    localPosition2D: calculateLocal2D(dowelPos, boltPlank, boltFaceId),
+  };
+
   return {
-    screw: {
-      position: screwPos,
-      direction: screwDir, // Pointing INTO screw plank
-      localPosition2D: calculateLocal2DPosition(screwPos, screwPlank, isVertical),
-    },
-    cam: {
-      position: camPos,
-      direction: camDir, // Pointing INTO cam plank (Inward Normal)
-      localPosition2D: calculateLocal2DPosition(camPos, camPlank, camPlank.width > camPlank.height),
-    },
-    boltDrill: {
-      position: boltDrillPos,
-      direction: screwDir, // Might need update, but keeping consistent with screw for now
-      localPosition2D: calculateLocal2DPosition(
-        boltDrillPos,
-        camPlank,
-        camPlank.width > camPlank.height
-      ),
-    },
-    dowel: {
-      position: finalDowelPos,
-      // direction: camDir,
-      direction: direction,
-      localPosition2D: calculateLocal2DPosition(
-        finalDowelPos,
-        camPlank,
-        camPlank.width > camPlank.height
-      ),
-    },
+    id,
+    cupboardId: 'cupboard-1',
+    plankAId: housingPlank.id,
+    plankBId: boltPlank.id,
+    jointPosition: jointPos,
+    connectionType: 'HORIZONTAL_TO_VERTICAL',
+    screwHousing: screwHousingHole,
+    screwMating: screwMatingHole,
+    dowelHousing: dowelHousingHole,
+    dowelMating: dowelMatingHole,
+    cam: camHole,
   };
-}
-
-function calculateLocal2DPosition(
-  position: Position,
-  plank: PlankData,
-  isVertical: boolean
-): { x: number; y: number } {
-  // Use plank's center as the local origin
-  const center = {
-    x: plank.position.x,
-    y: plank.position.y,
-    z: plank.position.z,
-  };
-
-  let localX: number;
-  let localY: number;
-
-  if (isVertical) {
-    // Vertical plank: use XZ plane (width x depth)
-    localX = position.x - center.x; // Relative to center, allows negative values
-    localY = position.z - center.z; // Relative to center, allows negative values
-    // Optional bounds checking (relaxed to allow slight offsets)
-    const maxX = (plank.width / 2) * 1.5;
-    const maxY = (plank.depth / 2) * 1.5;
-    localX = Math.max(-maxX, Math.min(maxX, localX));
-    localY = Math.max(-maxY, Math.min(maxY, localY));
-  } else {
-    // Horizontal plank: use XY plane (width x height)
-    localX = position.y - center.y;
-    localY = position.z - center.z;
-
-    const maxX = (plank.height / 2) * 1.5;
-    const maxY = (plank.depth / 2) * 1.5;
-    localX = Math.max(-maxX, Math.min(maxX, localX));
-    localY = Math.max(-maxY, Math.min(maxY, localY));
-  }
-
-  return { x: localX, y: localY };
 }
 
 export function getMinifixStandards(): MinifixStandards {

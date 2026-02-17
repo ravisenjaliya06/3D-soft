@@ -245,9 +245,13 @@
 
 .designName {
   width: 12rem;
+  max-width: 12rem;
   font-family: var(--font-family);
   font-size: 0.8rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .designsdetailsontime {
