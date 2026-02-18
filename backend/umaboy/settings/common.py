@@ -246,6 +246,8 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+ADMIN_URL = os.environ.get("ADMIN_URL", "")
+
 # SERVER_URL
 SERVER_URL = os.environ.get("SERVER_URL", "")
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "")

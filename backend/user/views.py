@@ -1,5 +1,4 @@
 # Python imports
-import os
 import secrets
 from datetime import timedelta
 from django.utils.timezone import now
@@ -419,7 +418,7 @@ class UserAuthViewset(ModelViewSet):
         email_data = EmailData(
             sender_email=settings.SENDER_EMAIL,
             sender_password=settings.SENDER_PASSWORD,
-            receiver_email=os.getenv("ADMIN_EMAIL"),
+            receiver_email=settings.ADMIN_EMAIL,
             subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
             html=email_content,
         )
