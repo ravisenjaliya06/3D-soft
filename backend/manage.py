@@ -12,7 +12,7 @@ def main():
         os.getenv("DJANGO_SETTINGS_MODULE", "umaboy.settings.production"),
     )
     try:
-        # Django imports - "remove this comment"
+        # Django imports
         from django.core.management import execute_from_command_line
     except ImportError as exc:
         raise ImportError(

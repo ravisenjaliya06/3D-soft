@@ -85,9 +85,9 @@ jobs:
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            STATUS_MSG="✅ Backend CI Passed"
+            STATUS_MSG="✅ Backend Validation Passed"
           else
-            STATUS_MSG="❌ Backend CI Failed"
+            STATUS_MSG="❌ Backend Validation Failed"
           fi
 
           AUTHOR="${{ github.event.pull_request.user.login }}"
