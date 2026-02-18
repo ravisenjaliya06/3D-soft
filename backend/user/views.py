@@ -442,7 +442,7 @@ class UserAuthViewset(ModelViewSet):
         email_data = EmailData(
             sender_email=settings.SENDER_EMAIL,
             sender_password=settings.SENDER_PASSWORD,
-            receiver_email=settings.ADMIN_EMAIL,
+            receiver_email=settings.ADMIN_URL,
             subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
             html=email_content,
         )
