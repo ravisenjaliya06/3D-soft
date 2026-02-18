@@ -216,7 +216,7 @@
             btn.addEventListener('click', function () {
                 const userId = this.getAttribute('data-user-id');
                 if (!userId) return;
-                fetch(`/v1/user/django_admin/approve/${userId}/?is_approved=true`, {
+                fetch(`/v1/admin_portal/approve/${userId}/?is_approved=true`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrftoken,
@@ -224,6 +224,7 @@
                     }
                 })
                     .then(response => {
+                        console.log(response);
                         if (response.ok) {
                             window.location.reload();
                         } else {
@@ -238,7 +239,7 @@
                 const userId = this.getAttribute('data-user-id');
                 if (!userId) return;
                 if (confirm('Are you sure you want to reject this user?')) {
-                    fetch(`/v1/user/django_admin/approve/${userId}/?is_approved=false`, {
+                    fetch(`/v1/admin_portal/approve/${userId}/?is_approved=false`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': csrftoken,
@@ -257,4 +258,5 @@
         });
     </script>
 </body>
+
 </html>

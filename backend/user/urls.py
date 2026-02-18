@@ -7,35 +7,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # App imports
 from user.views import (
     AddUserInOrganizationViewset,
-    AdminView,
-    ApproveUserView,
+
     UserAuthViewset,
 )
 
 urlpatterns = [
-    path(
-        "django_admin/login/",
-        AdminView.as_view({"get": "login_get", "post": "login_post"}),
-        name="admin_login",
-    ),
-    path(
-        "django_admin/logout/",
-        AdminView.as_view({"get": "logout"}),
-        name="admin_logout",
-    ),
-    path(
-        "django_admin/dashboard/",
-        AdminView.as_view({"get": "dashboard"}),
-        name="admin_dashboard",
-    ),
-    path(
-        "django_admin/users/", AdminView.as_view({"get": "users"}), name="admin_users"
-    ),
-    path(
-        "django_admin/approve/<str:user_id>/",
-        ApproveUserView.as_view(),
-        name="approve_user",
-    ),
     path("register/", UserAuthViewset.as_view({"post": "register"}), name="register"),
     path("otp/", UserAuthViewset.as_view({"post": "send_otp"}), name="send_otp"),
     path("otp/validate/", UserAuthViewset.as_view({"post": "verify_user"}), name="otp"),

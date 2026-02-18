@@ -165,7 +165,7 @@
                 const userId = this.getAttribute('data-user-id');
                 if (!userId) return;
                 if (confirm('Are you sure you want to remove this user?')) {
-                    fetch(`/v1/user/django_admin/reject/${userId}/`, {
+                    fetch(`/v1/admin_portal/approve/${userId}/?is_approved=false`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': csrftoken,

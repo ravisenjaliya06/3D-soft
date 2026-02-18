@@ -755,7 +755,6 @@ class AdminView(viewsets.ViewSet):
             "total_users": total_users,
             "total_pending_users": total_pending_users,
             "active_users": active_users,
-
         }
         return render(request, "custom_admin/dashboard.html", context)
 
@@ -771,7 +770,9 @@ class AdminView(viewsets.ViewSet):
 @method_decorator(csrf_exempt, name="dispatch")
 class ApproveUserView(AdminRequiredMixin, View):
     def post(self: "ApproveUserView", request: Request, user_id: str) -> JsonResponse:
-        is_approved = request.GET.get("is_approved")
+        # Check both POST/data and GET for flexibility, but prefer POST for state-changing actions
+        is_approved = request.POST.get("is_approved") or request.GET.get("is_approved")
+        
         user = User.objects.filter(id=user_id).first()
         if not user:
             return JsonResponse({"error": "User not found"}, status=404)
@@ -779,6 +780,7 @@ class ApproveUserView(AdminRequiredMixin, View):
         if is_approved == "true":
             user.is_verified = True
             user.save()
+            # Send notification email if needed here
             return HttpResponseRedirect(reverse("admin_dashboard"))
 
         user.delete()
