@@ -79,7 +79,7 @@ jobs:
               pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
 
               # Use reload instead of restart for zero-downtime
-              systemctl reload gunicorn
+              systemctl restart gunicorn
               echo "✅ Backend deployed."
               cd .. 
             else
