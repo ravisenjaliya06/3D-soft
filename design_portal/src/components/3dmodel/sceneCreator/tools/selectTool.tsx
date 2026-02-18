@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { INVISIBLE_BOXES, PART_TYPES } from '../interface';
+import { FLOOR_PLAN_TYPES, INVISIBLE_BOXES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -134,6 +134,9 @@ export class SelectObjectController {
 
     // Trigger HelperTool display
     if (this.onShowHelperTool) {
+      if (Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type)) {
+        return;
+      }
       this.onShowHelperTool(object);
     }
 
