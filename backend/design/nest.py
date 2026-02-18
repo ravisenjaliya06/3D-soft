@@ -337,7 +337,7 @@ class NestingService:
             raise
 
     @staticmethod
-    def _safe_float(value: Any, default: float = 0.0) -> float:
+    def _safe_float(value: Any, default: float = 0.0) -> float:  # noqa: ANN401
         """Helper to safely convert any value to float, handling dicts/None gracefully."""
         try:
             if isinstance(value, (dict, list, tuple, type(None))):
@@ -354,7 +354,7 @@ class NestingService:
         Returns a list of generated XML file paths.
         """
         # Python imports
-        import xml.etree.ElementTree as ET
+        import xml.etree.ElementTree as ET  # noqa: N817
         from xml.dom import minidom
 
         generated_files = []
@@ -376,16 +376,16 @@ class NestingService:
 
             # Panel Attributes
 
-            w = f"{self._safe_float(item.get(KEY_WIDTH)):.6f}"
-            l = f"{self._safe_float(item.get(KEY_HEIGHT)):.6f}"
+            width = f"{self._safe_float(item.get(KEY_WIDTH)):.6f}"
+            length = f"{self._safe_float(item.get(KEY_HEIGHT)):.6f}"
             thval = self._safe_float(item.get("depth", 17.0))
             th = f"{thval:.6f}"
 
             panel_attrs = {
                 "ID": "",
                 "Name": str(item.get(KEY_INPUT_NAME, item.get(KEY_ID))),
-                "Width": w,
-                "Length": l,
+                "Width": width,
+                "Length": length,
                 "Material": str(item.get("material_name", "")),
                 "Thickness": th,
                 "IsProduce": "true",
@@ -423,7 +423,6 @@ class NestingService:
                         hole.get("length") or hole.get("depth") or 0
                     )
 
-                    panel_w_val = self._safe_float(item.get(KEY_WIDTH))
                     panel_l_val = self._safe_float(item.get(KEY_HEIGHT))
 
                     final_x = 0.0
@@ -505,7 +504,7 @@ class NestingService:
 
                     ET.SubElement(machines, "Machining", **machining_attrs)
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Error processing hole: {e}")
                     continue
 
@@ -532,12 +531,11 @@ class NestingService:
                     }
 
                     ET.SubElement(machines, "Machining", **m_attrs)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning(f"Error processing groove: {e}")
                     continue
 
             # EdgeGroup (Static as per example for now?)
-            slope_group = ET.SubElement(panel, "SlopeEdgeGroup")
             edge_group = ET.SubElement(panel, "EdgeGroup")
 
             # Create edges with Thickness=0 default
@@ -546,7 +544,9 @@ class NestingService:
 
             # Pretty print
             xml_bytes = ET.tostring(root)
-            xml_str = minidom.parseString(xml_bytes).toprettyxml(indent="    ")
+            xml_str = minidom.parseString(xml_bytes).toprettyxml(  # noqa: S318
+                indent="    "
+            )
 
             # Remove empty lines caused by pretty print if any
             xml_str = os.linesep.join([s for s in xml_str.splitlines() if s.strip()])
