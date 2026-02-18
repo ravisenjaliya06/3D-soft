@@ -6,7 +6,6 @@
 .venv/
 .mypy_cache/git config --list
 .umaboy/__pycache__
-Pipfile.lock
 
 **/project/textures/
 **/project/catalog_items/
