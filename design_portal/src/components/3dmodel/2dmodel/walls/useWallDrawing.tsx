@@ -220,7 +220,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           },
           position: {
             x: centerX / 100,
-            y: 0.01,
+            y: 0,
             z: centerY / 100,
           },
           rotation: {

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { FloorManager } from '../sceneCreator/floorManager';
+import { MATERIAL_TYPES } from '../sceneCreator/interface';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
@@ -17,7 +18,6 @@ import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
-import { MATERIAL_TYPES } from '../sceneCreator/interface';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */

@@ -15,7 +15,7 @@ export const FLOOR_PLAN_TYPES = {
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
-  SINK: 'sink'
+  SINK: 'sink',
 };
 
 export const PART_TYPES = {
