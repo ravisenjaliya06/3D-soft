@@ -119,14 +119,39 @@ jobs:
       - name: Notify Google Chat
         if: always()
         run: |
-          STATUS="SUCCESS"
-          if [ "${{ job.status }}" != "success" ]; then 
-            STATUS="FAILED"
+          # 1. Determine Status Emoji
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS_ICON="✅"
+            STATUS_TEXT="Deployment Successful"
+          else
+            STATUS_ICON="❌"
+            STATUS_TEXT="Deployment Failed"
           fi
-          
-          # Dynamic message based on what changed
-          MSG="Deployment $STATUS. (Backend: ${{ env.BACKEND_CHANGED }}, Frontend: ${{ env.FRONTEND_CHANGED }})"
-      
+
+          # 2. Get Git Details
+          # Using git log to get the last commit message
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          AUTHOR=$(git log -1 --pretty=format:"%an")
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+
+          # 3. Create Status Tags for Backend/Frontend
+          # We use emojis to show what was updated vs skipped
+          BE_STATUS=$([[ "${{ env.BACKEND_CHANGED }}" == "true" ]] && echo "🚀 Updated" || echo "⏭️ Skipped")
+          FE_STATUS=$([[ "${{ env.FRONTEND_CHANGED }}" == "true" ]] && echo "🎨 Updated" || echo "⏭️ Skipped")
+
+          # 4. Construct the Payload
+          # We use \n for newlines
+          TEXT="*$STATUS_ICON $STATUS_TEXT*\n\n"
+          TEXT+="📦 *Repo:* $REPO ($BRANCH)\n"
+          TEXT+="👤 *Author:* $AUTHOR\n"
+          TEXT+="📝 *Commit:* $COMMIT_MSG\n\n"
+          TEXT+="--- *Changes* ---\n"
+          TEXT+="🔹 *Backend:* $BE_STATUS\n"
+          TEXT+="🔸 *Frontend:* $FE_STATUS\n\n"
+          TEXT+="🔗 <https://github.com/$REPO/commit/${{ github.sha }}|View Commit Details>"
+
+          # 5. Send Notification
           curl -X POST -H "Content-Type: application/json" \
-               -d "{\"text\":\"$MSG - ${{ github.ref }}\"}" \
+               -d "{\"text\":\"$TEXT\"}" \
                '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'
