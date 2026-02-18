@@ -120,11 +120,13 @@ jobs:
         if: always()
         run: |
           STATUS="SUCCESS"
-          if [ "${{ job.status }}" != "success" ]; then STATUS="FAILED"; fi
+          if [ "${{ job.status }}" != "success" ]; then 
+            STATUS="FAILED"
+          fi
           
           # Dynamic message based on what changed
           MSG="Deployment $STATUS. (Backend: ${{ env.BACKEND_CHANGED }}, Frontend: ${{ env.FRONTEND_CHANGED }})"
       
           curl -X POST -H "Content-Type: application/json" \
                -d "{\"text\":\"$MSG - ${{ github.ref }}\"}" \
-               ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+               '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'
