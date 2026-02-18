@@ -53,7 +53,7 @@ from user.serializers import (
     UserProfileSerializer,
 )
 from user.typing import EmailData
-from user.utils import send_email
+from user.utils import send_email, send_google_chat_notification
 
 # Local imports
 from .permissions import AccountManager
@@ -92,6 +92,19 @@ class UserAuthViewset(ModelViewSet):
             | common_info_logger
         )
         self._send_otp_email(user, otp)
+        registration_message = (
+            "🟢 *New User Registered*\n"
+            "----------------------------------\n"
+            f"📧 *Email:* `{user.email}`\n"
+            f"👤 *Username:* {user.username}\n"
+            f"📅 *Joined:* {user.created_at.strftime('%Y-%m-%d %H:%M')}\n"
+            "----------------------------------\n"
+            f"🔗 <https://youradmin.com/users/?q={user.email}|View in Admin>"
+        )
+        send_google_chat_notification(
+            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
+            message=registration_message,
+        )
         return Response(
             {
                 "message": "User registered",
@@ -152,6 +165,19 @@ class UserAuthViewset(ModelViewSet):
             }
             | common_info_logger
         )
+        login_message = (
+            "🔑 *User Login*\n"
+            "----------------------------------\n"
+            f"👤 *Name:* {user.get_full_name() or user.username}\n"
+            f"📧 *User:* `{user.email}`\n"
+            f"🆔 *ID:* `{user.id}`\n"
+            "----------------------------------\n"
+        )
+        send_google_chat_notification(
+            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
+            message=login_message,
+        )
+
         connected_organizations = [
             {"id": org.id, "name": org.name} for org in user.organizations.all()
         ]

@@ -11,6 +11,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.forms.models import model_to_dict
 from django.utils import timezone
 
+# External imports
+import requests
+
 # App imports
 from design.models import DesignCatalog
 from material.models import Company, FinishesLibrary, Material, Properties
@@ -99,6 +102,31 @@ def send_email(email_data: EmailData) -> bool:
     except smtplib.SMTPException as e:
         Logger.error({"message": "smtp exception", "error": str(e)} | common_debug_info)
     return False
+
+
+def send_google_chat_notification(webhook_url: str, message: str) -> None:
+    """
+    Send a notification to a Google Chat webhook.
+    """
+    if not webhook_url:
+        return
+
+    try:
+        response = requests.post(
+            webhook_url,
+            json={"text": message},
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        Logger.info({"message": "Google Chat notification sent", "text": message})
+    except Exception as e:  # noqa: BLE001
+        Logger.error(
+            {
+                "message": "Failed to send Google Chat notification",
+                "error": str(e),
+                "text": message,
+            }
+        )
 
 
 def verify_otp(email: str | None, otp: str | None) -> User:
