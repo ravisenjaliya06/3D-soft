@@ -115,7 +115,7 @@ class NestModuleTestCase(APIBaseTestCase):
         mock_to_excel.assert_called_once()
 
     @patch("svgwrite.Drawing")
-    def test_generate_svg(self: "NestModuleTestCase", MockDrawing: MagicMock) -> None:
+    def test_generate_svg(self: "NestModuleTestCase", mock_drawing: MagicMock) -> None:
         """Test SVG generation returns list of files"""
         packed_items = [
             {
@@ -182,14 +182,17 @@ class NestModuleTestCase(APIBaseTestCase):
     @patch("reportlab.graphics.renderPDF.draw")
     @patch("svglib.svglib.svg2rlg")
     def test_generate_layout_pdf(
-        self: "NestModuleTestCase", MockSvg2Rlg, MockDraw, MockCanvas
+        self: "NestModuleTestCase",
+        mock_svg2rlg: MagicMock,
+        mock_draw: MagicMock,
+        mock_canvas: MagicMock,
     ) -> None:
         """Test Layout PDF generation"""
         # Configure the mock drawing object to have width/height
         mock_drawing = MagicMock()
         mock_drawing.width = 100.0
         mock_drawing.height = 200.0
-        MockSvg2Rlg.return_value = mock_drawing
+        mock_svg2rlg.return_value = mock_drawing
 
         service = NestingService(width=1000, height=1000)
         svg_paths = ["sheet1.svg", "sheet2.svg"]
@@ -197,17 +200,21 @@ class NestModuleTestCase(APIBaseTestCase):
         pdf_path = service.generate_layout_pdf(svg_paths, "test.json")
 
         self.assertTrue(pdf_path.endswith("_layout.pdf"))
-        self.assertEqual(MockSvg2Rlg.call_count, 2)
+        self.assertEqual(mock_svg2rlg.call_count, 2)
 
     @patch("reportlab.pdfgen.canvas.Canvas")
     @patch("reportlab.graphics.shapes.Drawing")
     @patch("reportlab.graphics.renderPDF.draw")
     @patch("reportlab.graphics.barcode.qr.QrCodeWidget")
     def test_generate_labels(
-        self: "NestModuleTestCase", MockQR, MockDraw, MockDrawing, MockCanvas
+        self: "NestModuleTestCase",
+        mock_qr: MagicMock,
+        mock_draw: MagicMock,
+        mock_drawing: MagicMock,
+        mock_canvas: MagicMock,
     ) -> None:
         """Test Label generation logic"""
-        mock_canvas_instance = MockCanvas.return_value
+        mock_canvas_instance = mock_canvas.return_value
 
         packed_items = [
             {
@@ -221,9 +228,9 @@ class NestModuleTestCase(APIBaseTestCase):
         service = NestingService(width=1000, height=1000)
         service.generate_labels(packed_items, "test.json")
 
-        MockQR.assert_called()  # QR Widget created
-        MockDrawing.assert_called()  # Drawing created
-        MockDraw.assert_called()  # Drawing rendered to PDF
+        mock_qr.assert_called()  # QR Widget created
+        mock_drawing.assert_called()  # Drawing created
+        mock_draw.assert_called()  # Drawing rendered to PDF
         mock_canvas_instance.save.assert_called()  # PDF saved
 
     @patch("design.nest.NestingService.generate_labels")
