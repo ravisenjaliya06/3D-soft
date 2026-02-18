@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: './design_portal/package-lock.json'
-
+      
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run Linter (ESLint)
         run: |
