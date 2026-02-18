@@ -97,9 +97,8 @@ class UserAuthViewset(ModelViewSet):
             "----------------------------------\n"
             f"📧 *Email:* `{user.email}`\n"
             f"👤 *Username:* {user.username}\n"
-            f"📅 *Joined:* {user.created_at.strftime('%Y-%m-%d %H:%M')}\n"
-            "----------------------------------\n"
-            f"🔗 <https://youradmin.com/users/?q={user.email}|View in Admin>"
+            f"📅 *Joined:* {user.date_joined.strftime('%Y-%m-%d %H:%M')}\n"
+            "----------------------------------"
         )
         send_google_chat_notification(
             webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
