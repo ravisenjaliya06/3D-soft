@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
 import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
+import { FloorManager } from '../../sceneCreator/floorManager';
 import {
   FLOOR_PLAN_TYPES,
   GEOMETRY,
@@ -10,8 +11,8 @@ import {
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
-import { RootState } from '../../store';
-import { addPoint, setFloor, setWalls } from '../../store/dataSlice';
+import { RootState, store } from '../../store';
+import { addObjects, addPoint, setFloor, setWalls } from '../../store/dataSlice';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -152,29 +153,20 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         {
           id: crypto.randomUUID(),
           name: 'Wall Material',
-          type: MATERIAL_TYPES.WALL,
+          type: MATERIAL_TYPES.MISCELLANEOUS,
           properties: {
-            color: '#f0f0f0',
+            model: false,
+            unit_of_issue: 'Each',
+            default_cost: 0,
+            sell_price: 0,
+            default_markup: 0,
+            sales_tax: false,
+            default_tax_rate: 0,
+            waste: 0,
+            estimate: false,
+            model_file: null,
           },
-          textures: [
-            {
-              id: crypto.randomUUID(),
-              name: `Wall`,
-              texture: crypto.randomUUID(),
-              textureDetail: {
-                id: crypto.randomUUID(),
-                name: `Wall`,
-                organization: crypto.randomUUID(),
-                type: FLOOR_PLAN_TYPES.WALL,
-                image: `/media/textures/light_wood.jpg`,
-                url: '',
-                width: 685,
-                height: 685,
-                decal: 0,
-                title: 1,
-              },
-            },
-          ],
+          textures: [],
         },
       ],
       connectedTo: [],
@@ -190,14 +182,95 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     // Find rooms from walls
     const rooms = findRoomsFromWalls(updatedWalls);
 
-    // store floor in redux
-    const floorPolygons = rooms.map((room) => ({
-      id: crypto.randomUUID(),
-      points: getFloorPolygon(room),
-      walls: room.map((wall) => wall.id),
-    }));
+    // Only create floor if there are rooms (connected walls forming closed shapes)
+    if (rooms.length > 0) {
+      // Create floor polygons for backward compatibility
+      const floorPolygons = rooms.map((room) => ({
+        id: crypto.randomUUID(),
+        points: getFloorPolygon(room),
+        walls: room.map((wall) => wall.id),
+      }));
 
-    dispatch(setFloor(floorPolygons));
+      // Convert floor to MeshObjectData format and store in data.objects array
+      const floorObjects: MeshObjectData[] = rooms.map((room) => {
+        const points = getFloorPolygon(room);
+
+        // Calculate bounding box for floor dimensions
+        const xs = points.map((p) => p.x);
+        const ys = points.map((p) => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const width = maxX - minX;
+        const depth = maxY - minY;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        return {
+          id: crypto.randomUUID(),
+          name: 'Floor',
+          type: 'floor',
+          isMain: true,
+          geometryType: GEOMETRY.NONE,
+          dimensions: {
+            width: width,
+            height: 0.01,
+            depth: depth,
+          },
+          position: {
+            x: centerX / 100,
+            y: 0.01,
+            z: centerY / 100,
+          },
+          rotation: {
+            x: 0,
+            y: 0,
+            z: 0,
+          },
+          material: [
+            {
+              id: crypto.randomUUID(),
+              name: 'Floor Material',
+              type: 'Floor',
+              properties: {
+                model: false,
+                unit_of_issue: 'Each',
+                default_cost: 0,
+                sell_price: 0,
+                default_markup: 0,
+                sales_tax: false,
+                default_tax_rate: 0,
+                waste: 0,
+                estimate: false,
+                model_file: null,
+              },
+              textures: [],
+            },
+          ],
+          floorData: {
+            points: points,
+            walls: room.map((wall) => wall.id),
+          },
+          textureUrl: '/textures/wood_7.jpg',
+        };
+      });
+
+      // Store floor objects in data.objects array using direct dispatch
+      // (Don't use SyncManager - it adds unwanted data and tries to use MeshBuilder)
+      if (floorObjects.length > 0) {
+        dispatch(addObjects(floorObjects));
+      }
+
+      // Also keep in data.floor for backward compatibility
+      dispatch(setFloor(floorPolygons));
+
+      const scene = store.getState().scene?.scene;
+      if (scene) {
+        const floorManager = new FloorManager(scene, floorPolygons);
+        floorManager.syncData();
+      }
+    }
 
     // Set next start point for continuous drawing
     setStartPointId(clickedPoint.id || null);

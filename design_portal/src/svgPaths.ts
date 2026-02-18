@@ -221,7 +221,7 @@ export const MATERIAL = {
   down_arrow: '/assets/material/down_arrow.svg',
   drawerguid: '/assets/material/drawerguid.svg',
   filter: '/assets/material/filter.svg',
-  hing: '/assets/material/hing.svg',
+  hinge: '/assets/material/hinge.svg',
   mis: '/assets/material/mis.svg',
   molding: '/assets/material/molding.svg',
   up_arrow: '/assets/material/up arrow.svg',
@@ -353,7 +353,7 @@ export const TITLELOGO_SVG = {
 export const TOOLBAR = {
   _5996079: '/assets/toolbar/5996079.png',
   cabinet: '/assets/toolbar/cabinet.svg',
-  cabinet_svg: '/assets/toolbar/cabinet_svg.svg',
+  cabinet_svg: '/assets/toolbar/wardropbe.svg',
   door_icon: '/assets/toolbar/door-icon.svg',
   door: '/assets/toolbar/door.svg',
   double_door: '/assets/toolbar/double_door.svg',

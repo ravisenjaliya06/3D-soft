@@ -57,3 +57,84 @@
   margin-top: 0rem !important;
   margin-bottom: 0.2rem !important;
 }
+
+/* File Input Styling */
+.fileInputContainer {
+  margin-bottom: 0.7rem;
+  width: 100%;
+  max-width: 23rem;
+}
+
+.fileInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  position: relative;
+}
+
+.fileInputLabel {
+  display: block;
+  cursor: pointer;
+  border: 0.063rem solid var(--primary-color-grey-2);
+  border-radius: 0.2rem;
+  padding: 0.4rem 1rem;
+  background-color: #fff;
+  transition: all 0.2s ease-in-out;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.fileInputLabel:hover {
+  border-color: #392579;
+  background-color: #f8f9ff;
+}
+
+.hasFile .fileInputLabel {
+  border-color: #392579;
+  background-color: #f8f9ff;
+}
+
+.fileInputContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.uploadIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+  opacity: 0.7;
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.labelText {
+  font-size: 0.65rem;
+  color: #6f6c8f;
+  font-weight: 500;
+  line-height: 1;
+  margin-bottom: 0.1rem;
+}
+
+.fileName {
+  font-size: 0.75rem;
+  color: #392579;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18rem;
+}
+
+.hiddenFileInput {
+  display: none;
+}

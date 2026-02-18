@@ -1,48 +1,49 @@
 # Python imports
-import json
-import os
-import tempfile
-from unittest.mock import MagicMock, mock_open, patch
-
-# Django imports
-from django.http import HttpResponse
+from unittest.mock import MagicMock, patch
 
 # External imports
 import pytest
-from rectpack import SORT_AREA, SORT_PERI
 from rest_framework import status
 
 # App imports
-from design.models import DesignSetting, NestingFile, NestingSheet
 from design.nest import (
-    calculate_efficiency,
-    cleanup_output_folder,
-    convert_svgs_to_pdf,
-    draw_sheet_to_svg,
-    generate_dwg_file,
-    generate_gcode,
-    generate_xml_file,
+    KEY_DIMENSIONS,
+    KEY_HEIGHT,
+    KEY_ID,
+    KEY_NAME,
+    KEY_UNIQUE_ID,
+    KEY_WIDTH,
+    NestingService,
     nest,
-    try_packing,
 )
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-
-
-# Create a mock JsonResponse for tests
-class MockJsonResponse(HttpResponse):
-    def __init__(self: "MockJsonResponse", data: dict, status: int = 200) -> None:
-        content = json.dumps(data)
-        super().__init__(content, content_type="application/json", status=status)
-        self.status_code = status
-        self.data = data
 
 
 @pytest.mark.django_db
 class NestModuleTestCase(APIBaseTestCase):
     databases = {DEFAULT_DATABASE}
 
+    def setUp(self: "NestModuleTestCase") -> None:
+        super().setUp()
+        self.files_basic = {
+            "1": {
+                "type": "rectangle",
+                "width": 100,
+                "depth": 50,
+                "height": 18,
+                "name": "Part 1",
+            },
+            "2": {
+                "type": "rectangle",
+                "width": 80,
+                "depth": 60,
+                "height": 18,
+                "name": "Part 2",
+            },
+        }
+
     def test_calculate_efficiency(self: "NestModuleTestCase") -> None:
-        """Test the calculate_efficiency function for proper area calculation"""
+        """Test the calculate_efficiency static method"""
         rectangles = [(0, 0, 0, 100, 200, "rect1"), (0, 0, 0, 300, 150, "rect2")]
         width = 500
         height = 300
@@ -50,801 +51,203 @@ class NestModuleTestCase(APIBaseTestCase):
         total_area = width * height
         expected_efficiency = (used_area / total_area) * 100
 
-        actual_efficiency = calculate_efficiency(rectangles, width, height)
+        actual_efficiency = NestingService.calculate_efficiency(
+            rectangles, width, height
+        )
 
         self.assertEqual(actual_efficiency, expected_efficiency)
 
-    def test_calculate_efficiency_with_rotation(self: "NestModuleTestCase") -> None:
-        """Test calculate_efficiency with rotated rectangles (7-element tuples)"""
-        rectangles = [
-            (0, 0, 0, 100, 200, "rect1", False),
-            (0, 0, 0, 300, 150, "rect2", True),
+    def test_unique_id_generation(self: "NestModuleTestCase") -> None:
+        """Test that unique IDs are generated correctly based on thickness (height)"""
+        files = {
+            "1": {
+                "width": 100,
+                "height": 100,
+                "depth": 18,
+                "name": "P1",
+                "type": "rectangle",
+            },
+            "2": {
+                "width": 100,
+                "height": 100,
+                "depth": 12,
+                "name": "P2",
+                "type": "rectangle",
+            },
+            "3": {
+                "width": 100,
+                "height": 100,
+                "depth": 18,
+                "name": "P3",
+                "type": "rectangle",
+            },
+        }
+
+        service = NestingService(width=1000, height=1000)
+        packed_items = service.optimize(files)
+
+        self.assertEqual(len(packed_items), 3)
+
+        # Verify IDs logic A/B
+        ids = [item[KEY_UNIQUE_ID] for item in packed_items]
+        self.assertTrue(any(x.startswith("A1.") for x in ids))  # 18mm
+        self.assertTrue(any(x.startswith("B1.") for x in ids))  # 12mm
+
+    @patch("pandas.DataFrame.to_excel")
+    def test_nesting_service_generate_excel(
+        self: "NestModuleTestCase", mock_to_excel: MagicMock
+    ) -> None:
+        """Test Excel generation logic"""
+        output_file = "test_output.json"
+        packed_items = [
+            {
+                KEY_NAME: "P1",
+                KEY_ID: "1",
+                KEY_UNIQUE_ID: "A1.1",
+                KEY_DIMENSIONS: "10x10",
+            },
         ]
-        width = 500
-        height = 300
-        used_area = 100 * 200 + 300 * 150
-        total_area = width * height
-        expected_efficiency = (used_area / total_area) * 100
 
-        actual_efficiency = calculate_efficiency(rectangles, width, height)
-        self.assertEqual(actual_efficiency, expected_efficiency)
+        service = NestingService(width=1000, height=1000)
+        excel_path = service.generate_excel(packed_items, output_file)
 
-    def test_calculate_efficiency_empty(self: "NestModuleTestCase") -> None:
-        """Test calculate_efficiency with empty rectangles"""
-        rectangles = []
-        width = 500
-        height = 300
-        expected_efficiency = 0.0
+        self.assertTrue(excel_path.endswith(".xlsx"))
+        mock_to_excel.assert_called_once()
 
-        actual_efficiency = calculate_efficiency(rectangles, width, height)
-        self.assertEqual(actual_efficiency, expected_efficiency)
+    @patch("svgwrite.Drawing")
+    def test_generate_svg(self: "NestModuleTestCase", MockDrawing: MagicMock) -> None:
+        """Test SVG generation returns list of files"""
+        packed_items = [
+            {
+                KEY_UNIQUE_ID: "A1.1",
+                KEY_WIDTH: 100,
+                KEY_HEIGHT: 50,
+                "x": 10,
+                "y": 10,
+                "sheet_num": "A1",
+                KEY_NAME: "test",
+            },
+            {
+                KEY_UNIQUE_ID: "B1.1",
+                KEY_WIDTH: 100,
+                KEY_HEIGHT: 50,
+                "x": 10,
+                "y": 10,
+                "sheet_num": "B1",
+                KEY_NAME: "test2",
+            },
+        ]
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_rectangle(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode for rectangle"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
+        service = NestingService(width=1000, height=1000)
+        svg_paths = service.generate_svg(packed_items, "test.json")
 
+        self.assertIsInstance(svg_paths, list)
+        self.assertEqual(len(svg_paths), 2)
+
+    def test_spacing_effect(self: "NestModuleTestCase") -> None:
+        """Test that spacing increases the effective area of packed items."""
         files = {
-            "rect1": {"type": "rectangle"},
-        }
-
-        generate_gcode(rectangles, "test_output.gcode", files)
-
-        mock_file.assert_called_once_with("test_output.gcode", "w", encoding="utf-8")
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("G21", written_gcode)
-        self.assertIn("G90", written_gcode)
-        self.assertIn("G0 X10.000", written_gcode)
-
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_circle(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode for circle"""
-        rectangles = [(0, 150, 30, 80, 60, "circle1")]
-
-        files = {
-            "circle1": {"type": "circle", "radius": 40},
-        }
-
-        generate_gcode(rectangles, "test_output.gcode", files)
-
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("G2 I", written_gcode)
-
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_with_grooves(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode with grooves"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
+            "1": {
+                "width": 100,
+                "depth": 100,
+                "height": 18,
+                "name": "P1",
                 "type": "rectangle",
-                "grooves": [
-                    {
-                        "groove_dig": 2.0,
-                        "orientation": "horizontal",
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
             },
         }
 
-        generate_gcode(rectangles, "test_output.gcode", files)
+        # Service with 0 spacing
+        service_zero = NestingService(width=1000, height=1000, spacing=0)
+        items_zero = service_zero.optimize(files)
+        # Position should be roughly 0,0 (plus padding/optimization variance, but X usually starts at 0)
 
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("groove", written_gcode.lower())
+        # Service with 10 spacing
+        service_spaced = NestingService(width=1000, height=1000, spacing=10)
+        items_spaced = service_spaced.optimize(files)
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_with_minifix_holes(
-        self: "NestModuleTestCase", mock_file: MagicMock
+        # In the spaced version, the item is centered in its padded slot.
+        # Slot size = 110 x 110.
+        # Rectpack usually places at bottom-left 0,0.
+        # Our Logic: "x": x + self.spacing / 2
+        # So X should be 5.
+
+        item_zero = items_zero[0]
+        item_spaced = items_spaced[0]
+
+        self.assertEqual(item_zero["x"], 0)
+        self.assertEqual(item_spaced["x"], 5.0)
+        self.assertEqual(item_spaced["y"], 5.0)
+
+    @patch("reportlab.pdfgen.canvas.Canvas")
+    @patch("reportlab.graphics.renderPDF.draw")
+    @patch("svglib.svglib.svg2rlg")
+    def test_generate_layout_pdf(
+        self: "NestModuleTestCase", MockSvg2Rlg, MockDraw, MockCanvas
     ) -> None:
-        """Test generate_gcode with minifix holes"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
+        """Test Layout PDF generation"""
+        # Configure the mock drawing object to have width/height
+        mock_drawing = MagicMock()
+        mock_drawing.width = 100.0
+        mock_drawing.height = 200.0
+        MockSvg2Rlg.return_value = mock_drawing
 
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "depth": 18.0,
-                "minifix_holes": [
-                    {
-                        "type": "DOWEL",
-                        "diameter": 8.0,
-                        "length": 24.0,
-                        "localPosition2D": {"x": 0, "y": 0},
-                        "direction": {"x": -1, "y": 0, "z": 0},
-                    }
-                ],
-            },
-        }
+        service = NestingService(width=1000, height=1000)
+        svg_paths = ["sheet1.svg", "sheet2.svg"]
 
-        generate_gcode(rectangles, "test_output.gcode", files)
+        pdf_path = service.generate_layout_pdf(svg_paths, "test.json")
 
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("DOWEL", written_gcode)
+        self.assertTrue(pdf_path.endswith("_layout.pdf"))
+        self.assertEqual(MockSvg2Rlg.call_count, 2)
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_with_rotation(
-        self: "NestModuleTestCase", mock_file: MagicMock
+    @patch("reportlab.pdfgen.canvas.Canvas")
+    @patch("reportlab.graphics.shapes.Drawing")
+    @patch("reportlab.graphics.renderPDF.draw")
+    @patch("reportlab.graphics.barcode.qr.QrCodeWidget")
+    def test_generate_labels(
+        self: "NestModuleTestCase", MockQR, MockDraw, MockDrawing, MockCanvas
     ) -> None:
-        """Test generate_gcode with rotated rectangle"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1", True)]
+        """Test Label generation logic"""
+        mock_canvas_instance = MockCanvas.return_value
 
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "depth": 18.0,
-                "minifix_holes": [
-                    {
-                        "type": "SCREW",
-                        "diameter": 5.0,
-                        "length": 25.0,
-                        "localPosition2D": {"x": 10, "y": 5},
-                        "direction": {"x": 0, "y": -1, "z": 0},
-                    }
-                ],
-            },
-        }
+        packed_items = [
+            {
+                KEY_UNIQUE_ID: "A1.1",
+                KEY_NAME: "Part1",
+                KEY_DIMENSIONS: "100x50",
+                KEY_ID: "1",
+            }
+        ]
 
-        generate_gcode(rectangles, "test_output.gcode", files)
+        service = NestingService(width=1000, height=1000)
+        service.generate_labels(packed_items, "test.json")
 
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("SCREW", written_gcode)
+        MockQR.assert_called()  # QR Widget created
+        MockDrawing.assert_called()  # Drawing created
+        MockDraw.assert_called()  # Drawing rendered to PDF
+        mock_canvas_instance.save.assert_called()  # PDF saved
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_invalid_dimensions(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode handles invalid dimensions gracefully"""
-        rectangles = [(0, 10, 20, "invalid", "invalid", "rect1")]
-
-        files = {
-            "rect1": {"type": "rectangle"},
-        }
-
-        generate_gcode(rectangles, "test_output.gcode", files)
-
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("G21", written_gcode)
-
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_vertical_groove(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode with vertical groove"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "grooves": [
-                    {
-                        "groove_dig": 2.0,
-                        "orientation": "vertical",
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-            },
-        }
-
-        generate_gcode(rectangles, "test_output.gcode", files)
-
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("groove", written_gcode.lower())
-
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_bolt_drill(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode with BOLT_DRILL hole"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "depth": 18.0,
-                "minifix_holes": [
-                    {
-                        "type": "BOLT_DRILL",
-                        "diameter": 10.0,
-                        "depth": 12.5,
-                        "localPosition2D": {"x": 0, "y": 0},
-                        "direction": {"x": 1, "y": 0, "z": 0},
-                    }
-                ],
-            },
-        }
-
-        generate_gcode(rectangles, "test_output.gcode", files)
-
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("BOLT_DRILL", written_gcode)
-
-    @patch("builtins.open", new_callable=mock_open)
-    def test_generate_gcode_custom_parameters(
-        self: "NestModuleTestCase", mock_file: MagicMock
-    ) -> None:
-        """Test generate_gcode with custom parameters"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {"type": "rectangle"},
-        }
-
-        generate_gcode(
-            rectangles,
-            "test_output.gcode",
-            files,
-            feed_rate=2000,
-            plunge_rate=200,
-            cut_height=5,
-            safe_height=10.0,
-            material_thickness=20.0,
-        )
-
-        written_gcode = "".join(call[0][0] for call in mock_file().write.call_args_list)
-        self.assertIn("F2000", written_gcode)
-        self.assertIn("Z10.000", written_gcode)
-
-    def test_try_packing(self: "NestModuleTestCase") -> None:
-        """Test try_packing function"""
-        files = {
-            "rect1": {"type": "rectangle", "width": 100, "height": 50},
-            "rect2": {"type": "rectangle", "width": 80, "height": 60},
-        }
-
-        rectangles, efficiency, unplaced = try_packing(
-            500, 300, True, files, [SORT_AREA, SORT_PERI]
-        )
-
-        self.assertIsInstance(rectangles, list)
-        self.assertIsInstance(efficiency, float)
-        self.assertIsInstance(unplaced, dict)
-        self.assertGreaterEqual(efficiency, 0.0)
-        self.assertLessEqual(efficiency, 100.0)
-
-    def test_try_packing_circle(self: "NestModuleTestCase") -> None:
-        """Test try_packing with circle"""
-        files = {
-            "circle1": {"type": "circle", "radius": 25},
-        }
-
-        rectangles, efficiency, unplaced = try_packing(
-            500, 300, True, files, [SORT_AREA, SORT_PERI]
-        )
-
-        self.assertIsInstance(rectangles, list)
-        self.assertIsInstance(efficiency, float)
-
-    def test_try_packing_no_rotation(self: "NestModuleTestCase") -> None:
-        """Test try_packing without rotation"""
-        files = {
-            "rect1": {"type": "rectangle", "width": 100, "height": 50},
-        }
-
-        rectangles, efficiency, unplaced = try_packing(
-            500, 300, False, files, [SORT_AREA]
-        )
-
-        self.assertIsInstance(rectangles, list)
-
-    def test_try_packing_large_items(self: "NestModuleTestCase") -> None:
-        """Test try_packing with items larger than bin"""
-        files = {
-            "rect1": {"type": "rectangle", "width": 1000, "height": 1000},
-        }
-
-        rectangles, efficiency, unplaced = try_packing(
-            500, 300, True, files, [SORT_AREA]
-        )
-
-        self.assertIsInstance(unplaced, dict)
-        self.assertIn("rect1", unplaced)
-
-    @patch("design.nest.svg2rlg")
-    @patch("design.nest.renderPDF")
-    @patch("design.nest.canvas.Canvas")
-    def test_convert_svgs_to_pdf(
+    @patch("design.nest.NestingService.generate_labels")
+    @patch("design.nest.NestingService.generate_layout_pdf")
+    @patch("design.nest.NestingService.generate_svg")
+    @patch("design.nest.NestingService.generate_excel")
+    def test_nest_wrapper_calls(
         self: "NestModuleTestCase",
-        mock_canvas: MagicMock,
-        mock_render: MagicMock,
-        mock_svg2rlg: MagicMock,
+        mock_excel: MagicMock,
+        mock_svg: MagicMock,
+        mock_layout: MagicMock,
+        mock_labels: MagicMock,
     ) -> None:
-        """Test convert_svgs_to_pdf"""
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp.write(b"<svg></svg>")
-            tmp_path = tmp.name
-
-        try:
-            mock_drawing = MagicMock()
-            mock_drawing.width = 100
-            mock_drawing.height = 200
-            mock_svg2rlg.return_value = mock_drawing
-
-            convert_svgs_to_pdf([tmp_path], "output.pdf")
-
-            mock_svg2rlg.assert_called_once()
-            mock_canvas.assert_called_once()
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_convert_svgs_to_pdf_empty(self: "NestModuleTestCase") -> None:
-        """Test convert_svgs_to_pdf with empty list"""
-        convert_svgs_to_pdf([], "output.pdf")
-        # Should not raise error
-
-    @patch("design.nest.EZDXF_AVAILABLE", False)
-    def test_generate_dwg_file_not_available(self: "NestModuleTestCase") -> None:
-        """Test generate_dwg_file when ezdxf not available"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-        files = {"rect1": {"type": "rectangle"}}
-
-        generate_dwg_file(rectangles, files, "output.dwg", (500, 300))
-        # Should not raise error
-
-    def test_generate_xml_file(self: "NestModuleTestCase") -> None:
-        """Test generate_xml_file"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "name": "Test Rectangle",
-                "depth": 18.0,
-                "grooves": [
-                    {
-                        "type": "groove",
-                        "orientation": "horizontal",
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-                "minifix_holes": [
-                    {
-                        "type": "DOWEL",
-                        "diameter": 8.0,
-                        "depth": 24.0,
-                        "localPosition2D": {"x": 0, "y": 0},
-                    }
-                ],
-            },
-        }
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            generate_xml_file(rectangles, files, tmp_path, (500, 300), 1)
-
-            self.assertTrue(os.path.exists(tmp_path))
-            with open(tmp_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                self.assertIn("nesting", content)
-                self.assertIn("sheet_number", content)
-                self.assertIn("Test Rectangle", content)
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_generate_xml_file_with_rotation(self: "NestModuleTestCase") -> None:
-        """Test generate_xml_file with rotated rectangle"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1", True)]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "name": "Rotated Rectangle",
-                "depth": 18.0,
-            },
-        }
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            generate_xml_file(rectangles, files, tmp_path, (500, 300), 1)
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_cleanup_output_folder(self: "NestModuleTestCase") -> None:
-        """Test cleanup_output_folder"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Create some test files
-            test_file1 = os.path.join(tmpdir, "test1.txt")
-            test_file2 = os.path.join(tmpdir, "test2.txt")
-            with open(test_file1, "w") as f:
-                f.write("test")
-            with open(test_file2, "w") as f:
-                f.write("test")
-
-            cleanup_output_folder(tmpdir)
-
-            self.assertEqual(len(os.listdir(tmpdir)), 0)
-
-    def test_cleanup_output_folder_nonexistent(self: "NestModuleTestCase") -> None:
-        """Test cleanup_output_folder with nonexistent folder"""
-        cleanup_output_folder("/nonexistent/folder/path")
-        # Should not raise error
-
-    def test_nest_function_basic(self: "NestModuleTestCase") -> None:
-        """Test nest function with basic data"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-            # Python imports
-            import json
-
-            result_data = json.loads(result.content)
-            self.assertIn("output_file", result_data)
-            self.assertIn("sheets", result_data)
-
-    def test_nest_function_with_design_setting(self: "NestModuleTestCase") -> None:
-        """Test nest function with design_setting"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-        }
-
-        design_setting = DesignSetting.objects.create(
-            design=self.design,
-            organization=self.organization,
-            unit="mm",
-            sheet_width=500,
-            sheet_height=300,
-        )
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300, design_setting=design_setting)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-
-            # Check that sheets were created
-            sheets = NestingSheet.objects.filter(design=self.design)
-            self.assertGreater(sheets.count(), 0)
-
-            # Check that files were created
-            files_count = NestingFile.objects.filter(design=self.design).count()
-            self.assertGreater(files_count, 0)
-
-    def test_nest_function_multiple_sheets(self: "NestModuleTestCase") -> None:
-        """Test nest function that requires multiple sheets"""
-        files = {
-            f"rect{i}": {
-                "type": "rectangle",
-                "width": 200,
-                "height": 150,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-            for i in range(5)
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-            # Python imports
-            import json
-
-            result_data = json.loads(result.content)
-            self.assertGreaterEqual(result_data["sheets"], 1)
-
-    def test_nest_function_with_grooves_and_holes(self: "NestModuleTestCase") -> None:
-        """Test nest function with grooves and minifix holes"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "depth": 18.0,
-                "grooves": [
-                    {
-                        "type": "groove",
-                        "orientation": "horizontal",
-                        "groove_gap": 2.0,
-                        "groove_dig": 1.0,
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-                "minifix_holes": [
-                    {
-                        "type": "DOWEL",
-                        "diameter": 8.0,
-                        "length": 24.0,
-                        "localPosition2D": {"x": 0, "y": 0},
-                        "direction": {"x": -1, "y": 0, "z": 0},
-                    }
-                ],
-            }
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-
-    def test_nest_function_enclosing_rectangle(self: "NestModuleTestCase") -> None:
-        """Test nest function with enclosing_rectangle=True"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300, enclosing_rectangle=True)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-
-    def test_nest_function_target_efficiency(self: "NestModuleTestCase") -> None:
-        """Test nest function with target_efficiency"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300, target_efficiency=80.0)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-
-    def test_nest_function_no_rotation(self: "NestModuleTestCase") -> None:
-        """Test nest function with allow_rotation=False"""
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "width": 100,
-                "height": 50,
-                "grooves": [],
-                "minifix_holes": [],
-            }
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "nesting.svg")
-            result = nest(output_file, files, 500, 300, allow_rotation=False)
-
-            self.assertEqual(result.status_code, status.HTTP_200_OK)
-
-    def test_draw_sheet_to_svg_basic(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg function"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "name": "Test Rectangle",
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-                best_efficiency=85.5,
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_draw_sheet_to_svg_with_grooves(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg with grooves"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "grooves": [
-                    {
-                        "type": "groove",
-                        "orientation": "horizontal",
-                        "groove_gap": 2.0,
-                        "groove_dig": 1.0,
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_draw_sheet_to_svg_with_holes(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg with minifix holes"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "minifix_holes": [
-                    {
-                        "type": "DOWEL",
-                        "diameter": 8.0,
-                        "localPosition2D": {"x": 0, "y": 0},
-                        "direction": {"x": -1, "y": 0, "z": 0},
-                    }
-                ],
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_draw_sheet_to_svg_with_rotation(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg with rotated rectangle"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1", True)]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "minifix_holes": [
-                    {
-                        "type": "SCREW",
-                        "diameter": 5.0,
-                        "localPosition2D": {"x": 10, "y": 5},
-                        "direction": {"x": 0, "y": -1, "z": 0},
-                    }
-                ],
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_draw_sheet_to_svg_circle(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg with circle"""
-        rectangles = [(0, 10, 20, 80, 80, "circle1")]
-
-        files = {
-            "circle1": {
-                "type": "circle",
-                "radius": 40,
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    def test_draw_sheet_to_svg_fitment_groove(self: "NestModuleTestCase") -> None:
-        """Test draw_sheet_to_svg with fitment type groove"""
-        rectangles = [(0, 10, 20, 100, 50, "rect1")]
-
-        files = {
-            "rect1": {
-                "type": "rectangle",
-                "grooves": [
-                    {
-                        "type": "fitment",
-                        "orientation": "vertical",
-                        "groove_gap": 2.0,
-                        "groove_dig": 1.0,
-                        "x": 0,
-                        "y": 0,
-                    }
-                ],
-            }
-        }
-
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            draw_sheet_to_svg(
-                tmp_path,
-                rectangles,
-                files,
-                (500, 300),
-                (500, 300),
-            )
-
-            self.assertTrue(os.path.exists(tmp_path))
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        """Test that nest() wrapper calls all generation methods"""
+        # Return dummy paths
+        mock_excel.return_value = "out.xlsx"
+        mock_svg.return_value = ["out_A1.svg"]
+        mock_layout.return_value = "out_layout.pdf"
+        mock_labels.return_value = "out_labels.pdf"
+
+        response = nest("out.json", self.files_basic, 1000, 1000)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_excel.assert_called()
+        mock_svg.assert_called()
+        mock_layout.assert_called()
+        mock_labels.assert_called()

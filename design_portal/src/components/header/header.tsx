@@ -98,12 +98,14 @@ const Header = ({
 
   return (
     <>
-      <div className={styles.headerTitle}>
-        <p>{dashboardName}</p>
-      </div>
       <div
         className={`${styles.mainheader} ${isBorderRadius ? styles.withBorderRadius : styles.noBorderRadius} ${isDropdownOpen ? styles.dropdownShadow : ''}`}
       >
+        {/* Title Moved Inside for Flex Alignment */}
+        <div className={styles.headerTitle}>
+          <p>{dashboardName}</p>
+        </div>
+
         <div className={styles.headerContent}>
           {isFullscreen ? (
             <FullscreenExit
@@ -174,6 +176,7 @@ const Header = ({
           </div>
         </div>
       </div>
+      {/* Old line separator kept just in case but likely hidden via CSS */}
       <div className={styles.simpleLine}>
         <img src={assets.header_part_line} alt="simpleLine" className={styles.simpleLine} />
       </div>

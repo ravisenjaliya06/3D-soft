@@ -2,11 +2,55 @@ import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets, DESIGN } from '@/svgPaths';
+import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import styles from './material.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
+
+const GltfModel = ({ url }: { url: string }) => {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} />;
+};
+
+const ModelViewer = ({ file }: { file: File | null }) => {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  return (
+    <div className="ml-[3rem] flex h-[21rem] w-[21rem] items-center justify-center overflow-hidden rounded-[0.5rem] border-[0.1rem] border-[#6F6C8F] bg-[#919090] shadow-md">
+      {url ? (
+        <Suspense
+          fallback={
+            <div className="flex h-full w-full items-center justify-center text-white">
+              Loading...
+            </div>
+          }
+        >
+          <Canvas key={url} shadows camera={{ position: [0, 0, 5], fov: 85 }}>
+            <Stage intensity={0.5} environment="city" adjustCamera={1.8}>
+              <GltfModel url={url} />
+            </Stage>
+            <OrbitControls makeDefault minDistance={0.2} maxDistance={20} />
+          </Canvas>
+        </Suspense>
+      ) : (
+        <div className="text-sm text-white italic opacity-60">No model selected</div>
+      )}
+    </div>
+  );
+};
 
 type Props = {
   setCreateWorkOrderPopup: (value: boolean) => void;
@@ -20,11 +64,12 @@ interface PopupStep {
   fields: Array<{
     key: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'toggle';
+    type: 'text' | 'number' | 'select' | 'toggle' | 'file';
     placeholder?: string;
     options?: string[];
     disabled?: boolean;
     img?: string;
+    accept?: string;
   }>;
 }
 
@@ -36,6 +81,7 @@ interface Field {
   placeholder?: string;
   label: string;
   img?: string;
+  accept?: string;
 }
 
 const AddMaterialPopup: React.FC<Props> = ({
@@ -425,6 +471,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter height (mm)',
               img: assets.caster_height,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
@@ -565,6 +618,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter slot type',
               disabled: false,
               img: assets.rafix,
+            },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -984,6 +1044,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter offset (mm)',
               img: assets.guide_back_notch_offset,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -1133,6 +1200,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter spacing (mm)',
               img: assets.hinge_anchor_spacing,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -1244,6 +1318,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter hole offset (mm)',
               img: assets.hinge_plate_hole_offset,
+            },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
             },
           ],
         },
@@ -1502,6 +1583,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter width (mm)',
               img: assets.leg_width,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
@@ -1582,6 +1670,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter height (mm)',
               img: assets.leg_leveler_height,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
@@ -1637,6 +1732,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               label: 'Model',
               type: 'text',
               placeholder: 'Enter model',
+            },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
             },
           ],
         },
@@ -1705,6 +1807,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter length (mm)',
               img: assets.size_length,
+            },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
             },
             { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
@@ -1990,6 +2099,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter diameter (mm)',
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -2135,6 +2251,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter quantity',
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -2253,6 +2376,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter spacing (mm)',
               img: assets.sliding_door_rail_hole_spacing,
+            },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
             },
           ],
         },
@@ -2535,6 +2665,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter depth (mm)',
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -2707,6 +2844,13 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter position 6 (mm)',
               img: assets.guide_position_6,
             },
+            {
+              key: 'model_file',
+              label: '3D Model',
+              type: 'file',
+              placeholder: 'Upload GLB',
+              accept: '.glb',
+            },
           ],
         },
         pricingStep,
@@ -2808,7 +2952,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const isLastStep = currentStep === currentSequence.length - 1;
 
   /** Update the form value when the user types or selects something */
-  const handleInputChange = (key: string, value: string | number | boolean) => {
+  const handleInputChange = (key: string, value: string | number | boolean | File | null) => {
     setFormData((prev) => ({
       ...prev,
       [key]: value,
@@ -3159,7 +3303,6 @@ const AddMaterialPopup: React.FC<Props> = ({
       properties: {
         ...baseProperties,
         ...materialSpecificProperties,
-        model_file: null,
       },
       finishes,
       finish_types,
@@ -3228,10 +3371,10 @@ const AddMaterialPopup: React.FC<Props> = ({
               />
 
               <div
-                className={`relative h-[25px] w-[45px] rounded-[20px] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
+                className={`relative h-[1.5625rem] w-[2.8125rem] rounded-[1.25rem] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
               >
                 <div
-                  className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[20px] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
+                  className={`absolute top-[0.1875rem] left-[0.1875rem] h-[1.125rem] w-[1.125rem] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[1.25rem] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
                 ></div>
               </div>
             </div>
@@ -3256,6 +3399,25 @@ const AddMaterialPopup: React.FC<Props> = ({
               disabled={field.disabled}
               borderColor={undefined}
               error={undefined}
+            />
+          </div>
+        );
+      case 'file':
+        return (
+          <div title={field.label}>
+            <InputField
+              label={field.label}
+              type="file"
+              value={value}
+              onFocus={onActivate}
+              placeholder={field.placeholder}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange(field.key, e.target.files ? e.target.files[0] : null)
+              }
+              disabled={field.disabled}
+              borderColor={undefined}
+              error={undefined}
+              accept={field.accept}
             />
           </div>
         );
@@ -3296,7 +3458,23 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   const uiStep = getUIStepIndex(currentPopup);
 
+  /** Navigate to a specific UI step */
+  const handleStepClick = (uiIndex: number) => {
+    // Basic validation: don't allow skipping the first step without a name
+    if (!formData.name && uiIndex > 0) return;
+
+    const targetStepIndex = currentSequence.findIndex((step) => getUIStepIndex(step) === uiIndex);
+    if (targetStepIndex !== -1) {
+      setFinishError(null);
+      setCurrentStep(targetStepIndex);
+    }
+  };
+
   const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveFieldKey(null);
+  }, [currentStep]);
 
   return (
     <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
@@ -3307,7 +3485,11 @@ const AddMaterialPopup: React.FC<Props> = ({
             const isCompleted = index < uiStep;
 
             return (
-              <div key={label} className="flex items-center gap-[0.5rem]">
+              <div
+                key={label}
+                className="flex cursor-pointer items-center gap-[0.5rem] transition-all"
+                onClick={() => handleStepClick(index)}
+              >
                 {/* STEP BOX */}
                 <div
                   className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
@@ -3347,7 +3529,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* CONNECTOR */}
                 {index < steps.length - 1 && (
                   <div
-                    className={`h-[0.25rem] w-[9rem] rounded ${
+                    className={`h-[0.25rem] w-[9rem] rounded-[0.2rem] ${
                       index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
                     }`}
                   />
@@ -3367,7 +3549,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               <h3 className="mb-[0.5rem] text-[1.5rem] font-[400] text-[#170F49]">
                 {currentPopup?.title || 'Add New Material'}
               </h3>
-              <p className="mt-[0px] text-sm font-normal text-[#6F6C8F]">
+              <p className="mt-[0rem] text-sm font-normal text-[#6F6C8F]">
                 Fill in the details and choose the materials that perfectly match your needs.
               </p>
             </div>
@@ -3390,7 +3572,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                           <div
                             key={field.key || index}
                             className={`m-[1rem] pt-3 pb-2 ${
-                              isSmall ? 'max-w-[100%] min-w-[200px] flex-1' : 'w-full'
+                              isSmall ? 'max-w-[100%] min-w-[12.5rem] flex-1' : 'w-full'
                             }`}
                           >
                             {renderField(field, () => setActiveFieldKey(field.key))}
@@ -3406,7 +3588,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                           <div
                             key={field.key || index}
                             className={`m-[1rem] pt-3 pb-2 ${
-                              isSmall ? 'max-w-[48%] min-w-[200px] flex-1' : 'w-[48%]'
+                              isSmall ? 'max-w-[48%] min-w-[12.5rem] flex-1' : 'w-[48%]'
                             } ${isSmall ? 'flex h-[2.5rem] flex-wrap gap-3' : ''}`}
                           >
                             {renderField(field)}
@@ -3418,18 +3600,42 @@ const AddMaterialPopup: React.FC<Props> = ({
                 </div>
 
                 {hasImageFields &&
-                  activeFieldKey &&
                   (() => {
                     const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
-                    return activeField?.img ? (
-                      <div className="flex w-1/2 shrink-0 items-center justify-center overflow-hidden">
-                        <img
-                          src={activeField.img}
-                          className="ml-[3rem] max-h-full w-[21rem] max-w-full rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
-                          alt="Field Preview"
-                        />
-                      </div>
-                    ) : null;
+                    const modelFieldInStep = currentPopup?.fields.find(
+                      (f) => f.key === 'model_file'
+                    );
+
+                    if (activeFieldKey === 'model_file' && modelFieldInStep) {
+                      return (
+                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
+                          <ModelViewer file={(formData.model_file as File) || null} />
+                        </div>
+                      );
+                    }
+
+                    if (activeField?.img) {
+                      return (
+                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
+                          <img
+                            src={activeField.img}
+                            className="ml-[3rem] max-h-full w-[21rem] max-w-full rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
+                            alt="Field Preview"
+                          />
+                        </div>
+                      );
+                    }
+
+                    // Fallback to model viewer if we are on the model upload step and a model exists
+                    if (!activeFieldKey && formData.model_file && modelFieldInStep) {
+                      return (
+                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
+                          <ModelViewer file={formData.model_file as File} />
+                        </div>
+                      );
+                    }
+
+                    return null;
                   })()}
               </div>
             );
@@ -3441,26 +3647,24 @@ const AddMaterialPopup: React.FC<Props> = ({
             </p>
 
             <div className="mr-[3rem] flex gap-[1rem]">
-              {!isFirstStep ? (
+              <button
+                className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
+                onClick={() => setCreateWorkOrderPopup(false)}
+              >
+                Cancel
+              </button>
+              {!isFirstStep && (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] rounded-lg border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
                   onClick={handleBack}
-                  disabled={isFirstStep}
                 >
                   Back
-                </button>
-              ) : (
-                <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
-                  onClick={() => setCreateWorkOrderPopup(false)}
-                >
-                  Cancel
                 </button>
               )}
 
               {!isLastStep ? (
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
+                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
                   onClick={handleNext}
                   disabled={!formData.name && currentStep === 0}
                 >
@@ -3469,7 +3673,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               ) : (
                 <>
                   <button
-                    className="h-[2rem] w-[7rem] cursor-pointer rounded-[5px] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.9rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
+                    className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
                     onClick={handleFinish}
                   >
                     Finish

@@ -1,4 +1,5 @@
 import { _3DMODEL, assets } from '@/svgPaths';
+import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,6 +19,7 @@ import { Dimensions } from '../interface';
 import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  INVISIBLE_BOXES,
   Material,
   MeshObjectData,
   MeshObjectPatch,
@@ -80,6 +82,7 @@ const Sidebar: React.FC = () => {
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
+  const [isInvisibleBox, setIsIncisibleBox] = useState<boolean>(false);
   const [textureData, setTextureData] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(40);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
@@ -97,7 +100,6 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
-  const selectedInvisibleBoxId = useSelector((state: RootState) => state.data.selectedInvisibleBox);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
@@ -129,6 +131,14 @@ const Sidebar: React.FC = () => {
     if (selectedObjectId || selectedChildObjectId) {
       setSettingOpen(true);
       setNavOpen(false);
+
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh || child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX) {
+          setIsIncisibleBox(true);
+        } else {
+          setIsIncisibleBox(false);
+        }
+      });
     } else {
       setSettingOpen(false);
       setNavOpen(true);
@@ -446,6 +456,9 @@ const Sidebar: React.FC = () => {
         ? { ...selectedObject.edgeBanding, ...patch.edgeBanding }
         : selectedObject.edgeBanding,
     };
+
+    // Use SyncManager for all objects including floor
+    // MeshBuilder now supports floor material updates
     const syncManager = new SyncManager(updatedObject);
     syncManager.syncData();
   }
@@ -476,15 +489,35 @@ const Sidebar: React.FC = () => {
     setNavOpen(true);
   };
 
-  // (Harsh): Temporary placement — will move to updateHandler once door selection is ready.
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    scene.traverse((child) => {
-      if (child.userData.objectId === selectedObject?.id) {
-        child.userData.openDirection = position.toLowerCase();
-      }
-    });
+    if (selectedObject) {
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
+          const controller = new CabinetMotionController();
+          const wasOpen = child.userData.isClosed === false;
+
+          if (wasOpen) {
+            controller.toggleDoor(child);
+
+            const pivotGroup = child.parent;
+            if (pivotGroup?.userData.isPivotGroup) {
+              gsap.killTweensOf(pivotGroup.rotation);
+              pivotGroup.rotation.set(0, 0, 0);
+            }
+          }
+
+          child.userData.openDirection = position.toLowerCase();
+
+          // for re-open
+          if (wasOpen) {
+            controller.toggleDoor(child);
+          }
+        }
+      });
+    }
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
@@ -580,9 +613,12 @@ const Sidebar: React.FC = () => {
   // Helper function to get texture from Material array
   const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
     if (!materialArray || !Array.isArray(materialArray)) return null;
-    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
-    if (panelStock?.textures && panelStock.textures.length > 0) {
-      const texture = panelStock.textures[0];
+    // Support both Panel Stock and Floor material types
+    const material = materialArray.find(
+      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
+    );
+    if (material?.textures && material.textures.length > 0) {
+      const texture = material.textures[0];
       if (texture?.textureDetail?.image) {
         return texture.textureDetail.image;
       }
@@ -593,8 +629,11 @@ const Sidebar: React.FC = () => {
   // Helper function to check if material has texture
   const hasTextureMaterial = (materialArray?: Material[]): boolean => {
     if (!materialArray || !Array.isArray(materialArray)) return false;
-    const panelStock = materialArray.find((mat) => mat.type === 'Panel Stock');
-    return !!(panelStock?.textures && panelStock.textures.length > 0);
+    // Support both Panel Stock and Floor material types
+    const material = materialArray.find(
+      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
+    );
+    return !!(material?.textures && material.textures.length > 0);
   };
 
   const toggleTextureList = () => {
@@ -686,13 +725,14 @@ const Sidebar: React.FC = () => {
 
     //@ts-ignore
     const updatedMaterials: Material[] = materialArray.map((mat) => {
-      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK) {
+      // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
+      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK || mat?.type === 'Floor') {
         return {
           ...mat,
           textures: [
             {
-              id: mat?.textures?.[0].id,
-              name: mat?.textures?.[0].name,
+              id: mat?.textures?.[0]?.id || crypto.randomUUID(),
+              name: mat?.textures?.[0]?.name || 'Texture',
               texture: textureData.id,
               textureDetail: textureData,
             },
@@ -891,6 +931,8 @@ const Sidebar: React.FC = () => {
       PART_TYPES.DOOR,
       PART_TYPES.VERTICAL_PLANK,
       PART_TYPES.HORIZONTAL_PLANK,
+      ...Object.values(DRAWER_PLANK_TYPES),
+      'floor', // Exclude floor objects - they should have texture change enabled
     ].includes(selectedObject.type);
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
@@ -901,14 +943,14 @@ const Sidebar: React.FC = () => {
 
   // Check if invisible box is selected
   const isInvisibleBoxSelected =
-    !!selectedInvisibleBoxId ||
     selectedObject?.type === 'INVISIBLEBOX' ||
     selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
     selectedObject?.name?.toLowerCase().includes('invisible_box') ||
     selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
 
   // Disable texture change for cupboards and invisible boxes
-  const isTextureChangeDisabled = isFullCupboard || isInvisibleBoxSelected || isQuickHideActive;
+  const isTextureChangeDisabled =
+    isFullCupboard || (isInvisibleBoxSelected && !isPlankSelected) || isQuickHideActive;
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
@@ -1509,8 +1551,15 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* ================= NO SELECTION ================= */}
-          {isSettingOpen && !selectedObject && (
+          {isSettingOpen && !selectedObject && !isInvisibleBox && (
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
+          )}
+
+          {/* ================= INVISIBLE BOX ================= */}
+          {isSettingOpen && isInvisibleBox && (
+            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">
+              Add parts to see properties
+            </p>
           )}
 
           {/* ================= SETTINGS ================= */}
@@ -1577,12 +1626,7 @@ const Sidebar: React.FC = () => {
                                       <CustomToast
                                         appearance="error"
                                         message="Distance must be in multiple of 32"
-                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
-                                        // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
-                                        // It does NOT assume closeToast.
-                                        // Wait, the one in Toolbar DID have closeToast.
-                                        // I should probably update CustomToast to optionally accept it or just ignore it.
-                                        // Let's check CustomToast again.
+                                        closeToast={closeToast}
                                       />
                                     ),
                                     {

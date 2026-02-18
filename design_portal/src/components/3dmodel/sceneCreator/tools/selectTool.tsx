@@ -1,44 +1,45 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { PART_TYPES } from '../interface';
+import { INVISIBLE_BOXES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
-  private renderer: THREE.WebGLRenderer;
-  private orbitControls: OrbitControls;
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
+  private lastMouse: THREE.Vector2;
+  private lastCameraPosition: THREE.Vector3;
+  private lastCameraQuaternion: THREE.Quaternion;
 
   private hoveredObject: THREE.Mesh | null = null;
   private hoverOutline: THREE.LineSegments | null = null;
   private selectedMainObject: THREE.Mesh | null = null;
   private selectedPart: THREE.Mesh | null = null;
   private selectedOutline: THREE.LineSegments | null = null;
-  private objectSelectOutline: THREE.LineSegments | null = null;
-  private partSelectOutline: THREE.LineSegments | null = null;
+  private objectSelectOutline: THREE.Object3D | null = null;
+  private partSelectOutline: THREE.Object3D | null = null;
+
+  // Caching for performance
+  private cachedTargets: THREE.Mesh[] = [];
+  private lastCacheUpdate: number = 0;
+  private readonly CACHE_DURATION = 500; // ms
 
   // optional callbacks for React
   public onHover: ((obj: THREE.Mesh | null) => void) | null = null;
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
   public onShowHelperTool: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(
-    camera: THREE.PerspectiveCamera,
-    scene: THREE.Scene,
-    renderer: THREE.WebGLRenderer,
-    controls: OrbitControls
-  ) {
+  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
     this.camera = camera;
     this.scene = scene;
-    this.renderer = renderer;
-    this.orbitControls = controls;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+    this.lastMouse = new THREE.Vector2(-999, -999); // Force initial update
+    this.lastCameraPosition = new THREE.Vector3();
+    this.lastCameraQuaternion = new THREE.Quaternion();
 
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onDoubleClick = this._onDoubleClick.bind(this);
@@ -57,7 +58,19 @@ export class SelectObjectController {
       this.hoveredObject = null;
       if (this.onHover) this.onHover(null);
     }
-    this._handleHover();
+
+    // Optimization: Only raycast if mouse or camera changed
+    const mouseChanged = !this.mouse.equals(this.lastMouse);
+    const cameraMoved = !this.camera.position.equals(this.lastCameraPosition);
+    const cameraRotated = !this.camera.quaternion.equals(this.lastCameraQuaternion);
+
+    if (mouseChanged || cameraMoved || cameraRotated) {
+      this._handleHover();
+      // Update last known states
+      this.lastMouse.copy(this.mouse);
+      this.lastCameraPosition.copy(this.camera.position);
+      this.lastCameraQuaternion.copy(this.camera.quaternion);
+    }
   }
 
   public dispose() {
@@ -67,6 +80,7 @@ export class SelectObjectController {
 
   public deselect() {
     this._nullAllValues();
+    this.clearCache();
   }
 
   private _nullAllValues() {
@@ -94,6 +108,11 @@ export class SelectObjectController {
     return this.selectedMainObject;
   }
 
+  public clearCache() {
+    this.cachedTargets = [];
+    this.lastCacheUpdate = 0;
+  }
+
   private _onMouseMove(event: MouseEvent) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -106,6 +125,7 @@ export class SelectObjectController {
     this._clearAllOutlines();
     this.selectedMainObject = object;
     this.selectedPart = null;
+    this.clearCache();
 
     store.dispatch(setobjectSelected(object.userData.objectId));
     store.dispatch(setSelectedChildObject(null));
@@ -127,6 +147,7 @@ export class SelectObjectController {
     if (!this.selectedMainObject) return;
     this._clearAllOutlines();
     this.selectedPart = object;
+    this.clearCache();
 
     if (this.onSelect) this.onSelect(object);
     store.dispatch(setSelectedChildObject(object.userData.objectId));
@@ -233,30 +254,47 @@ export class SelectObjectController {
   }
 
   private _findTargetToHover(): THREE.Mesh[] {
+    const now = Date.now();
+    if (now - this.lastCacheUpdate < this.CACHE_DURATION && this.cachedTargets.length > 0) {
+      return this.cachedTargets;
+    }
+
     const targets: THREE.Mesh[] = [];
 
+    // Traverse scene to find all candidate meshes
     this.scene.traverse((object) => {
-      if (
-        object instanceof THREE.Mesh &&
-        object.userData.objectId !== this.selectedMainObject?.userData.objectId
-      ) {
+      if (object instanceof THREE.Mesh) {
+        // Skip if it's the selected main object itself (we might want to select its parts though)
+        if (
+          this.selectedMainObject &&
+          object.userData.objectId === this.selectedMainObject.userData.objectId
+        ) {
+          return;
+        }
         targets.push(object);
       }
     });
 
+    // If a main object is selected, we also want to be able to hover its children parts
     if (this.selectedMainObject) {
       this.selectedMainObject.traverse((child) => {
         if (child instanceof THREE.Mesh && child !== this.selectedMainObject) {
-          targets.push(child);
+          // Ensure we don't add duplicates if they were already caught by scene traverse
+          if (!targets.includes(child)) {
+            targets.push(child);
+          }
         }
       });
     }
 
+    this.cachedTargets = targets;
+    this.lastCacheUpdate = now;
     return targets;
   }
 
   private _findHoverObject(targets: THREE.Mesh[]) {
-    let hits = this.raycaster.intersectObjects(targets, true);
+    // Optimization: recursive = false because 'targets' already contains all descendants from traversal
+    let hits = this.raycaster.intersectObjects(targets, false);
     if (this.selectedPart) {
       hits = hits.filter((h) => h.object !== this.selectedPart);
     }
@@ -294,11 +332,19 @@ export class SelectObjectController {
     }
   }
 
-  private _removeOutline(outline: THREE.LineSegments) {
+  private _removeOutline(outline: THREE.Object3D) {
     if (!outline) return;
     this.scene.remove(outline);
-    outline.geometry.dispose();
-    (outline.material as THREE.LineBasicMaterial).dispose?.();
+    if ((outline as THREE.Mesh).geometry) (outline as THREE.Mesh).geometry.dispose();
+
+    const mat = (outline as THREE.Mesh).material;
+    if (mat) {
+      if (Array.isArray(mat)) {
+        mat.forEach((m) => m.dispose());
+      } else {
+        (mat as THREE.Material).dispose();
+      }
+    }
   }
 
   private _applyHoverEffect() {
@@ -308,7 +354,7 @@ export class SelectObjectController {
     }
 
     if (!this.hoveredObject) return;
-    const outline = createLineObjects(this.hoveredObject, 0x0088ff);
+    const outline = createLineObjects(this.hoveredObject, 0x00eeff);
     this.scene.add(outline);
     this.hoverOutline = outline;
   }
@@ -342,6 +388,66 @@ export class SelectObjectController {
     }
   }
 
+  private _createSelectionBox(obj: THREE.Mesh): THREE.Mesh {
+    const material = new THREE.MeshBasicMaterial({
+      color: 0x12086f,
+      transparent: true,
+      opacity: 0.3,
+      depthTest: false,
+      side: THREE.DoubleSide,
+    });
+
+    let box: THREE.Box3;
+
+    if (obj.geometry) {
+      if (!obj.geometry.boundingBox) {
+        obj.geometry.computeBoundingBox();
+      }
+
+      box = obj.geometry.boundingBox!.clone();
+    } else {
+      box = new THREE.Box3().setFromObject(obj);
+    }
+
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    geometry.translate(center.x, center.y, center.z);
+
+    // Here we create the mesh without MeshBuilder because in the future we may need to apply draggable behavior
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = 'outline_box';
+
+    if (obj.geometry) {
+      mesh.matrixAutoUpdate = false;
+      mesh.matrix.copy(obj.matrixWorld);
+    } else {
+      mesh.position.copy(center);
+    }
+
+    mesh.raycast = () => {};
+
+    return mesh;
+  }
+
+  private _createOutLine(obj: THREE.Mesh) {
+    let outline: THREE.Object3D;
+    if (
+      obj.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
+      obj.userData.type === PART_TYPES.PLANK
+    ) {
+      outline = this._createSelectionBox(obj);
+    } else {
+      outline = createLineObjects(obj, 0x1a7af8);
+    }
+
+    this.scene.add(outline);
+    this.partSelectOutline = outline;
+  }
+
   private _applyPartSelectOutline(obj: THREE.Mesh) {
     // Ensure the object's world matrix is updated before creating outline
     // This is critical for child objects (like planks) that may have transforms from their parent
@@ -354,17 +460,13 @@ export class SelectObjectController {
       parent = parent.parent;
     }
 
-    const outline = createLineObjects(obj, 0xffff00);
-    this.scene.add(outline);
-    this.partSelectOutline = outline;
+    this._createOutLine(obj);
   }
 
   private _applySmallCupboardSelectOutline(obj: THREE.Mesh) {
     // Ensure the object's world matrix is updated before creating outline
     obj.updateWorldMatrix(true, false);
-    const outline = createLineObjects(obj, 0xffff00);
-    this.scene.add(outline);
-    this.objectSelectOutline = outline;
+    this._createOutLine(obj);
   }
 
   private _applyObjectBigOutline() {

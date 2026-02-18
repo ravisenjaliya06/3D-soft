@@ -1,19 +1,37 @@
 .container {
   display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
+
+/* ===== EXPANDED SIDEBAR ===== */
 
 .leftside {
   flex: 0 0 15rem;
   width: 15rem;
   background-color: var(--primary-color);
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+  transition: width 0.3s ease;
 }
+
+/* ===== COLLAPSED SIDEBAR ===== */
 
 .leftsidebar {
-  width: 4.8rem;
+  width: 5.5rem;
   background-color: var(--primary-color);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: width 0.3s ease;
 }
 
+/* ===== TOGGLE BUTTONS ===== */
+
+/* Expanded: arrow at bottom-right */
 .dropdown {
   position: relative;
   display: inline-block;
@@ -29,135 +47,250 @@
   width: 1.6rem;
 }
 
+/* Collapsed: arrow at right edge (matching original) */
 .dropup {
   position: relative;
   display: inline-block;
-  margin-left: 4rem;
+  margin-left: 4.8rem;
   cursor: pointer;
 }
 
-.project_logo {
-  margin-top: 1.3rem;
-  margin-left: 1.9rem;
-}
-
-.project_logo img {
-  width: 6.5rem;
-  margin-bottom: 1rem;
-  cursor: pointer;
-}
-
-.simple_line2 img {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 3.5rem;
-  padding: 0rem 0.2rem;
-}
-
-.simple_line img {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 14.4rem;
-  padding: 0rem 0.2rem;
-}
-
-.nav {
-  margin-top: 1.5rem;
-}
-
-.nav ul {
-  margin-right: 1rem;
-  list-style-type: none;
-  padding: 0;
-}
-
-.nav li {
-  display: flex;
-  align-items: center;
-  padding: 0.7rem 0;
-  cursor: pointer;
-  font-family: 'Poppins';
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-white);
-  opacity: 0.5;
-}
-
-.sidebar_icon {
-  width: 1.2rem;
-  height: 1.5rem;
-  margin-left: 1.7rem;
-  margin-right: 1rem;
-}
-
-.icon_adjusted {
-  margin-left: 1rem;
-}
-
-.icon_adjusteds {
-  margin-left: 1.6rem;
-}
+/* ===== USER HELP (Bottom Section) ===== */
 
 .userhelp {
   position: fixed;
   bottom: 1rem;
 }
 
-.projects_icon {
-  margin-top: 0.5rem;
-  width: 2rem;
-  height: 2rem;
+/* ===== LOGO & HEADER ===== */
+
+.project_logo {
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  padding-left: 1.5rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
 }
 
-.nav li.active {
-  background: linear-gradient(90deg, rgba(144, 120, 221, 0.2) 0%, #392579 87.74%);
-  height: 1.4rem;
-  margin: 0;
-  box-shadow: 0px 0.219rem 0.344rem 0px var(--box-shadow-color);
-  opacity: 1 !important;
-  width: 15rem;
+.project_logo img {
+  width: 8rem;
+  max-height: 3.5rem;
+  object-fit: contain;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
 }
 
-.nav li.active_small {
-  background: linear-gradient(90deg, rgba(144, 120, 221, 0.2) 0%, #392579 87.74%);
-  height: 1.4rem;
-  margin: 0;
-  box-shadow: 0px 0.219rem 0.344rem 0px var(--box-shadow-color);
-  opacity: 1 !important;
+.project_logo img:hover {
+  opacity: 0.9;
+}
+
+/* Collapsed Logo — perfectly centered */
+.leftsidebar .project_logo {
+  height: 5rem;
+  width: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.leftsidebar .project_logo img {
   width: 4.5rem;
+  max-height: 4.5rem;
+  height: auto;
+  margin: 0;
+  object-fit: contain;
 }
 
-.selected_icon {
-  width: 0.6rem;
-  height: 1.8rem;
+/* ===== DIVIDER LINES ===== */
+
+.simple_line,
+.simple_line2 {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 1rem;
+  opacity: 0.3;
 }
+
+.simple_line img {
+  width: 85%;
+  height: auto;
+}
+
+.simple_line2 img {
+  width: 3.5rem;
+  height: auto;
+}
+
+/* ===== NAVIGATION ===== */
+
+.nav {
+  flex: 1;
+  width: 100%;
+  padding-top: 0.5rem;
+  padding-bottom: 8rem;
+  overflow-y: auto;
+}
+
+.nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ===== BASE LIST ITEM (Expanded) ===== */
+
+.nav li {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  margin: 0 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-white);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover State (Expanded) */
+.nav li:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* Active State (Expanded) */
+.nav li.active {
+  background: linear-gradient(90deg, rgba(144, 120, 221, 0.25) 0%, #392579 100%);
+  opacity: 1 !important;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(57, 37, 121, 0.25);
+  border: 1px solid rgba(144, 120, 221, 0.4);
+  transform: none;
+}
+
+/* ===== COLLAPSED LIST ITEM ===== */
 
 .listItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: calc(5.5rem - 1.6rem); /* sidebar width minus margins */
+  margin: 0 auto !important; /* Center horizontally */
+  padding: 0.75rem 0 !important;
+  border-radius: 10px;
   position: relative;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
+
+/* Remove icon margin in collapsed mode so it centers perfectly */
+.listItem .sidebar_icon {
+  margin: 0 !important;
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* Hover for collapsed items — no translateX shift, just background */
+.listItem:hover {
+  transform: none !important;
+}
+
+/* Active State (Collapsed) — centered highlight box */
+.nav li.active_small {
+  background: linear-gradient(135deg, rgba(144, 120, 221, 0.3) 0%, #392579 100%);
+  opacity: 1 !important;
+  box-shadow: 0 4px 12px rgba(57, 37, 121, 0.35);
+  border-radius: 12px;
+  border: 1px solid rgba(144, 120, 221, 0.3);
+}
+
+/* ===== ICONS ===== */
+
+.sidebar_icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-right: 1rem;
+  object-fit: contain;
+  filter: brightness(0.9);
+  transition: all 0.3s ease;
+}
+
+.nav li:hover .sidebar_icon,
+.nav li.active .sidebar_icon,
+.nav li.active_small .sidebar_icon {
+  filter: brightness(1.2);
+}
+
+/* Icon adjustments for expanded active state */
+.icon_adjusted {
+  margin-left: 0;
+}
+
+.icon_adjusteds {
+  margin: 0;
+}
+
+/* ===== SELECTED INDICATOR (Vertical bar) ===== */
+
+.selected_icon {
+  position: absolute;
+  left: 0.6rem;
+  height: 1.2rem;
+  width: auto;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+}
+
+/* Active padding for expanded (space for indicator) */
+.nav li.active span,
+.nav li.active {
+  padding-left: 2.2rem;
+}
+
+/* Inactive padding for expanded */
+.nav li:not(.active) {
+  padding-left: 1rem;
+}
+
+/* ===== TOOLTIPS (Collapsed Sidebar) ===== */
 
 .listItem[data-title]::after {
   content: attr(data-title);
   position: absolute;
-  top: 40%;
-  left: 70%;
-  transform: translateX(-50%);
+  left: calc(100% + 0.8rem);
+  top: 50%;
+  transform: translateY(-50%);
   background-color: var(--primary-white);
   color: var(--primary-color);
-  padding: 0.313rem 0.625rem;
-  border-radius: 0.25rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
   white-space: nowrap;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s ease-in-out;
-  z-index: 20;
+  transition: all 0.25s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
 }
 
 .listItem[data-title]:hover::after {
   opacity: 1;
   visibility: visible;
+  left: calc(100% + 1.2rem);
 }

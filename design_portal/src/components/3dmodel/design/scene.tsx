@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import {
   generateCompartmentsFromMesh,
@@ -25,6 +26,7 @@ import {
   setSelectedChildObject,
   updateObject,
 } from '../store/dataSlice';
+import { CustomToast } from '../utils/CustomToast';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
@@ -615,23 +617,8 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       drawerMesh.children.forEach((child) => {
         if (child.userData.type === 'handle') {
           const handleId = child.userData.objectId;
-
-          // Find the actual mesh if it's a group
-          let handleMesh: THREE.Mesh | null = null;
-          if (child instanceof THREE.Mesh) {
-            handleMesh = child;
-          } else {
-            child.traverse((obj) => {
-              if (obj instanceof THREE.Mesh && !handleMesh) {
-                handleMesh = obj;
-              }
-            });
-          }
-
-          if (handleMesh) {
-            const zOffset = handleMesh.position.z - currentFaceZ;
-            handleZOffsets.set(handleId, zOffset);
-          }
+          const zOffset = child.position.z - currentFaceZ;
+          handleZOffsets.set(handleId, zOffset);
         }
       });
     }
@@ -673,6 +660,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
               },
             })
           );
+
+          // Refresh banding for the face
+          const builder = new MeshBuilder(faceData, scene);
+          builder.setParentMesh(drawerMesh as THREE.Mesh);
+          builder.updateBanding(child, { isDimensionUpdate: true });
         }
       }
     });
@@ -684,38 +676,24 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
         const zOffset = handleZOffsets.get(handleId);
 
         if (zOffset !== undefined) {
-          // Find the actual mesh if it's a group
-          let handleMesh: THREE.Mesh | null = null;
-          if (child instanceof THREE.Mesh) {
-            handleMesh = child;
-          } else {
-            child.traverse((obj) => {
-              if (obj instanceof THREE.Mesh && !handleMesh) {
-                handleMesh = obj;
-              }
-            });
-          }
+          // New handle Z position: new face position + same offset
+          const newHandleZ = insetFaceZ + zOffset;
 
-          if (handleMesh) {
-            // New handle Z position: new face position + same offset
-            const newHandleZ = insetFaceZ + zOffset;
+          // Update handle position directly on the group
+          child.position.z = newHandleZ;
 
-            // Update handle position
-            handleMesh.position.z = newHandleZ;
-
-            // Update Redux store
-            const handleData = currentObjects.find((obj) => obj.id === handleId);
-            if (handleData) {
-              store.dispatch(
-                updateObject({
-                  ...handleData,
-                  position: {
-                    ...handleData.position,
-                    z: newHandleZ,
-                  },
-                })
-              );
-            }
+          // Update Redux store
+          const handleData = currentObjects.find((obj) => obj.id === handleId);
+          if (handleData) {
+            store.dispatch(
+              updateObject({
+                ...handleData,
+                position: {
+                  ...handleData.position,
+                  z: newHandleZ,
+                },
+              })
+            );
           }
         }
       }
@@ -741,23 +719,8 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
     drawerMesh.children.forEach((child) => {
       if (child.userData.type === 'handle') {
         const handleId = child.userData.objectId;
-
-        // Find the actual mesh if it's a group
-        let handleMesh: THREE.Mesh | null = null;
-        if (child instanceof THREE.Mesh) {
-          handleMesh = child;
-        } else {
-          child.traverse((obj) => {
-            if (obj instanceof THREE.Mesh && !handleMesh) {
-              handleMesh = obj;
-            }
-          });
-        }
-
-        if (handleMesh) {
-          const zOffset = handleMesh.position.z - currentFaceZ;
-          handleZOffsets.set(handleId, zOffset);
-        }
+        const zOffset = child.position.z - currentFaceZ;
+        handleZOffsets.set(handleId, zOffset);
       }
     });
   }
@@ -819,6 +782,11 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
           position: { ...partData.position, z: newZ },
         })
       );
+
+      // Refresh banding for the updated plank
+      const builder = new MeshBuilder(partData, scene);
+      builder.setParentMesh(drawerMesh as THREE.Mesh);
+      builder.updateBanding(child, { isDimensionUpdate: true });
     }
   });
 
@@ -829,38 +797,24 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
       const zOffset = handleZOffsets.get(handleId);
 
       if (zOffset !== undefined) {
-        // Find the actual mesh if it's a group
-        let handleMesh: THREE.Mesh | null = null;
-        if (child instanceof THREE.Mesh) {
-          handleMesh = child;
-        } else {
-          child.traverse((obj) => {
-            if (obj instanceof THREE.Mesh && !handleMesh) {
-              handleMesh = obj;
-            }
-          });
-        }
+        // New handle Z position: new face position + same offset
+        const newHandleZ = newFaceZ + zOffset;
 
-        if (handleMesh) {
-          // New handle Z position: new face position + same offset
-          const newHandleZ = newFaceZ + zOffset;
+        // Update handle position directly on the group
+        child.position.z = newHandleZ;
 
-          // Update handle position
-          handleMesh.position.z = newHandleZ;
-
-          // Update Redux store
-          const handleData = currentObjects.find((obj) => obj.id === handleId);
-          if (handleData) {
-            store.dispatch(
-              updateObject({
-                ...handleData,
-                position: {
-                  ...handleData.position,
-                  z: newHandleZ,
-                },
-              })
-            );
-          }
+        // Update Redux store
+        const handleData = currentObjects.find((obj) => obj.id === handleId);
+        if (handleData) {
+          store.dispatch(
+            updateObject({
+              ...handleData,
+              position: {
+                ...handleData.position,
+                z: newHandleZ,
+              },
+            })
+          );
         }
       }
     }
@@ -1315,4 +1269,219 @@ const updateMeshHeightAndBanding = async (
     isHandleless,
     reductionAmount
   );
+};
+
+export const checkSideObjectExists = (cupboardMesh: THREE.Mesh, direction: string): boolean => {
+  if (!cupboardMesh) return false;
+  let exists = false;
+  cupboardMesh.children.forEach((child) => {
+    if (
+      (child.userData.type === PART_TYPES.L_SHAPE_OBJECT ||
+        child.userData.type === PART_TYPES.U_SHAPE_OBJECT) &&
+      child.userData.direction === direction
+    ) {
+      exists = true;
+    }
+  });
+  return exists;
+};
+
+export const addSideObjectToCupboard = async (
+  scene: THREE.Scene,
+  cupboardMesh: THREE.Mesh,
+  type: string,
+  direction: string,
+  selectedCabinetItem: MeshObjectData
+) => {
+  if (!cupboardMesh) return;
+
+  if (checkSideObjectExists(cupboardMesh, direction)) {
+    toast(
+      ({ closeToast }) => (
+        <CustomToast
+          appearance="error"
+          message="Already have a side object on this side"
+          closeToast={closeToast}
+        />
+      ),
+      {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeButton: false,
+        className: '!bg-transparent !shadow-none !p-0',
+      }
+    );
+    return;
+  }
+
+  showFullScreenLoader(`Adding ${type === PART_TYPES.U_SHAPE_OBJECT ? 'U' : 'L'}-Shape object`);
+
+  const geometry = cupboardMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  const bbox = geometry.boundingBox!;
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+
+  const { x: width, y: height, z: depth } = size;
+
+  // Defaults
+  const thickness = 18;
+  const stripWidth = 50;
+  const material = selectedCabinetItem.material;
+
+  const planks: MeshObjectData[] = [];
+
+  const createPlank = (
+    w: number,
+    h: number,
+    d: number,
+    relX: number,
+    relY: number,
+    relZ: number,
+    name: string
+  ): MeshObjectData => {
+    return {
+      id: crypto.randomUUID(),
+      name: name,
+      type: PART_TYPES.L_SHAPE_OBJECT ? PART_TYPES.L_SHAPE_OBJECT : PART_TYPES.U_SHAPE_OBJECT,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      dimensions: { width: w, height: h, depth: d },
+      position: { x: relX, y: relY, z: relZ },
+      rotation: { x: 0, y: 0, z: 0 },
+      parent: cupboardMesh.userData.objectId,
+      material: material,
+      isMain: false,
+    };
+  };
+
+  const uStripWidth = 80;
+
+  const isU = type === PART_TYPES.U_SHAPE_OBJECT;
+  const currentStripWidth = isU ? uStripWidth : stripWidth;
+  const isTop = direction === DIRECTION_TYPES.TOP || direction === 'top';
+
+  if (isTop) {
+    if (!isU) {
+      // L-Shape Top
+      planks.push(
+        createPlank(
+          width,
+          currentStripWidth,
+          thickness,
+          0,
+          height / 2 + currentStripWidth / 2,
+          depth / 2 - thickness / 2,
+          'L_Front'
+        ),
+        createPlank(
+          width,
+          thickness,
+          currentStripWidth,
+          0,
+          height / 2 + thickness / 2,
+          depth / 2 - thickness - currentStripWidth / 2,
+          'L_Top'
+        )
+      );
+    } else {
+      // U-Shape Top
+      const innerGap = currentStripWidth - 2 * thickness;
+      planks.push(
+        createPlank(
+          width,
+          thickness,
+          currentStripWidth,
+          0,
+          height / 2 + thickness / 2,
+          depth / 2 - currentStripWidth / 2,
+          'U_Top'
+        ),
+        createPlank(
+          width,
+          innerGap,
+          thickness,
+          0,
+          height / 2 + currentStripWidth / 2,
+          depth / 2 - thickness / 2,
+          'U_Front'
+        ),
+        createPlank(
+          width,
+          thickness,
+          currentStripWidth,
+          0,
+          height / 2 + currentStripWidth - thickness / 2,
+          depth / 2 - currentStripWidth / 2,
+          'U_Inner_Top'
+        )
+      );
+    }
+  } else {
+    // Side (Left / Right)
+    const sign = direction === DIRECTION_TYPES.RIGHT ? 1 : -1;
+
+    if (!isU) {
+      // L-Shape Side
+      planks.push(
+        createPlank(
+          currentStripWidth,
+          height,
+          thickness,
+          sign * (width / 2 + currentStripWidth / 2),
+          0,
+          depth / 2 - thickness / 2,
+          'L_Front'
+        ),
+        createPlank(
+          thickness,
+          height,
+          currentStripWidth,
+          sign * (width / 2 + thickness / 2),
+          0,
+          depth / 2 - thickness - currentStripWidth / 2,
+          'L_Side'
+        )
+      );
+    } else {
+      // U-Shape Side
+      const innerGap = currentStripWidth - 2 * thickness;
+      planks.push(
+        createPlank(
+          thickness,
+          height,
+          currentStripWidth,
+          sign * (width / 2 + thickness / 2),
+          0,
+          depth / 2 - currentStripWidth / 2,
+          'U_Side_Outer'
+        ),
+        createPlank(
+          innerGap,
+          height,
+          thickness,
+          sign * (width / 2 + currentStripWidth / 2),
+          0,
+          depth / 2 - thickness / 2,
+          'U_Front'
+        ),
+        createPlank(
+          thickness,
+          height,
+          currentStripWidth,
+          sign * (width / 2 + currentStripWidth - thickness / 2),
+          0,
+          depth / 2 - currentStripWidth / 2,
+          'U_Side_Inner'
+        )
+      );
+    }
+  }
+
+  // Create objects (planks)
+  for (const plank of planks) {
+    await meshBuilder(plank);
+  }
+
+  hideFullScreenLoader();
 };

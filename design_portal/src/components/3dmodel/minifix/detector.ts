@@ -59,11 +59,39 @@ function analyzeConnection(plankA: PlankData, plankB: PlankData): PlankConnectio
 
   const isAHorizontal = orientationA === 'HORIZONTAL';
 
+  const finalPlankA = isAHorizontal ? plankB : plankA; // Bolt (usually)
+  const finalPlankB = isAHorizontal ? plankA : plankB; // Housing (usually)
+
+  // Recalculate Normal strictly based on Final A -> Final B geometric relationship.
+  // We want Normal of A touching B.
+  // If A is Left of B, Normal is +X.
+  // If A is Right of B, Normal is -X.
+  // If A is Bottom of B, Normal is +Y.
+  // If A is Top of B, Normal is -Y.
+  // If A is Back of B, Normal is +Z.
+  // If A is Front of B, Normal is -Z.
+
+  const bA = getPlankBounds(finalPlankA);
+  const bB = getPlankBounds(finalPlankB);
+  const t = JOINER_THRESHOLD;
+
+  let robustNormal = joint.normal; // Fallback
+
+  // Check X
+  if (Math.abs(bA.maxX - bB.minX) < t) robustNormal = { x: 1, y: 0, z: 0 };
+  else if (Math.abs(bA.minX - bB.maxX) < t) robustNormal = { x: -1, y: 0, z: 0 };
+  // Check Y
+  else if (Math.abs(bA.maxY - bB.minY) < t) robustNormal = { x: 0, y: 1, z: 0 };
+  else if (Math.abs(bA.minY - bB.maxY) < t) robustNormal = { x: 0, y: -1, z: 0 };
+  // Check Z
+  else if (Math.abs(bA.maxZ - bB.minZ) < t) robustNormal = { x: 0, y: 0, z: 1 };
+  else if (Math.abs(bA.minZ - bB.maxZ) < t) robustNormal = { x: 0, y: 0, z: -1 };
+
   return {
-    plankA: isAHorizontal ? plankB : plankA, // bolt plank
-    plankB: isAHorizontal ? plankA : plankB, // cam plank
+    plankA: finalPlankA,
+    plankB: finalPlankB,
     jointPosition: joint,
-    touchingFaceNormal: joint.normal,
+    touchingFaceNormal: robustNormal,
     connectionType,
   };
 }

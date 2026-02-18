@@ -194,7 +194,8 @@ export interface MaterialPropertiesInput {
   defaultMarkup?: number;
   salesTax?: boolean;
   defaultTaxRate?: number;
-  model_file?: string;
+  model_file?: File | null;
+
   waste?: number;
   estimate?: boolean;
   thickness?: number;
