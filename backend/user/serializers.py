@@ -131,9 +131,9 @@ class SignupSerializer(PhoneValidationSerializer):
         user.selected_organization = organization
         user.save()
         add_user_to_organization(user, organization, group_names)
+        duplicate_default_textures(organization)
         default_material_data(organization)
         duplicate_default_catalogs_for_organization(organization)
-        duplicate_default_textures(organization)
 
         DesignSetting.objects.get_or_create(
             organization=organization,
