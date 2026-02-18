@@ -27,7 +27,7 @@ import {
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
-import { GLBLoader, preloadGLB } from '../helper/glbLoader';
+import { GLBLoader, scheduleGLBPreload } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -95,7 +95,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
     allModels.forEach((item) => {
       if (item.path) {
-        preloadGLB(item.path);
+        scheduleGLBPreload(item.path);
       }
     });
   }, []);
@@ -185,7 +185,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       // Preload any GLB models found in the fetched cabinet items
       cabinetResponse.data.flat().forEach((item: any) => {
         if (item.path) {
-          preloadGLB(item.path);
+          scheduleGLBPreload(item.path);
         }
       });
     }
@@ -280,8 +280,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             name: item.name,
             dimensions: targetSize,
             position: position || { x: 0, y: 0, z: 0 },
-            material: []
-          }
+            material: [],
+          };
           store.dispatch(addObjects([itemData]));
 
           if (threeDView.renderer && threeDView.camera) {
