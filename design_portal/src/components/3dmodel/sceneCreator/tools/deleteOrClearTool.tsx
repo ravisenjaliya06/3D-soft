@@ -44,7 +44,6 @@ export class ObjectsRemoverFromScene {
         this.removedObjectParent = object.parent;
       }
       object.parent?.remove(object);
-      console.log('Object removed: ', object.userData.objectId);
       store.dispatch(removeObject(object.userData.objectId));
     });
     this.objectsToRemove = [];
@@ -68,8 +67,6 @@ export class ObjectsRemoverFromScene {
           Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type))
       ) {
         this.objectsToRemove.push(object);
-      } else if (object.userData.isGLB === true) {
-        this.scene.remove(object);
       }
     });
 
