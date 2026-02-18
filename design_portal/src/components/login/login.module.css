@@ -421,7 +421,7 @@
   width: 1.3rem;
 }
 
-.errorContainer{
+.errorContainer {
   margin-top: 0.5rem;
   margin-bottom: 1rem;
   margin-left: 5rem;
@@ -490,6 +490,6 @@
   animation: fadeIn 0.5s ease-out;
 }
 
-.messageBox{
+.messageBox {
   width: 80%;
 }

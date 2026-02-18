@@ -64,13 +64,18 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
           >
             {/* LEFT ICON / PLACEHOLDER (IMPORTANT) */}
             {!isSubItem && item.icon ? (
-              <img src={item.icon} className={`h-[1rem] w-[1rem] transition-all duration-200 ${isExpanded ? 'opacity-100 scale-110' : 'opacity-60'}`} />
+              <img
+                src={item.icon}
+                className={`h-[1rem] w-[1rem] transition-all duration-200 ${isExpanded ? 'scale-110 opacity-100' : 'opacity-60'}`}
+              />
             ) : (
               <div className="h-[0rem] w-[0rem]" />
             )}
 
             {/* NAME */}
-            <span className={`truncate text-[0.75rem] leading-tight transition-colors duration-200 ${!isSubItem && !isExpanded ? 'text-[#5a6577]' : ''} ${isSubItem && !isSubItemActive ? 'text-[#7a8699]' : ''}`}>
+            <span
+              className={`truncate text-[0.75rem] leading-tight transition-colors duration-200 ${!isSubItem && !isExpanded ? 'text-[#5a6577]' : ''} ${isSubItem && !isSubItemActive ? 'text-[#7a8699]' : ''}`}
+            >
               {item.name}
             </span>
 
@@ -78,7 +83,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
             {!isSubItem && isExpanded ? (
               /* CATEGORY BUTTON */
               <button
-                className={`mr-[0.25rem] flex h-[1.4rem] w-[1.4rem] cursor-pointer items-center justify-center rounded-md border-0 bg-[rgba(124,92,191,0.08)] p-[0rem] opacity-0 transition-all duration-200 hover:bg-[rgba(124,92,191,0.15)] hover:scale-110 ${isExpanded ? 'opacity-100' : ''} `}
+                className={`mr-[0.25rem] flex h-[1.4rem] w-[1.4rem] cursor-pointer items-center justify-center rounded-md border-0 bg-[rgba(124,92,191,0.08)] p-[0rem] opacity-0 transition-all duration-200 hover:scale-110 hover:bg-[rgba(124,92,191,0.15)] ${isExpanded ? 'opacity-100' : ''} `}
                 onClick={(e) => {
                   e.stopPropagation();
                   onAddCompany();
@@ -91,7 +96,7 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
               isSubItem && (
                 /* SUB ITEM BUTTON */
                 <button
-                  className={`mr-[0.5rem] flex h-[1.4rem] w-[1.4rem] cursor-pointer items-center justify-center rounded-md border-[0rem] bg-[rgba(124,92,191,0.08)] p-[0rem] opacity-0 transition-all duration-200 hover:bg-[rgba(124,92,191,0.15)] hover:scale-110 group-hover:opacity-100 ${isSubItemActive ? 'opacity-100' : ''} `}
+                  className={`mr-[0.5rem] flex h-[1.4rem] w-[1.4rem] cursor-pointer items-center justify-center rounded-md border-[0rem] bg-[rgba(124,92,191,0.08)] p-[0rem] opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-[rgba(124,92,191,0.15)] ${isSubItemActive ? 'opacity-100' : ''} `}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSubItemClick(item.id);
@@ -142,7 +147,13 @@ export const MaterialSidebar: React.FC<MaterialSidebarProps> = ({
     <div className="flex w-[15rem] min-w-[15rem] flex-col overflow-hidden rounded-2xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-b from-[#ffffff] via-[#fcfaff] to-[#f8f5ff] shadow-[0_4px_24px_rgba(57,37,121,0.06),0_1px_4px_rgba(57,37,121,0.04)]">
       {/* Sidebar Header */}
       <div className={styles.sidebarTitle}>
-        <svg className="h-[0.8rem] w-[0.8rem] text-[#7c5cbf]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+        <svg
+          className="h-[0.8rem] w-[0.8rem] text-[#7c5cbf]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="3" width="7" height="7" rx="1.5" />
           <rect x="3" y="14" width="7" height="7" rx="1.5" />

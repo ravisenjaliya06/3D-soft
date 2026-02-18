@@ -28,7 +28,13 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
             </div>
             {selectedName && (
               <>
-                <svg className="h-[0.7rem] w-[0.7rem] text-[#c9b8f0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <svg
+                  className="h-[0.7rem] w-[0.7rem] text-[#c9b8f0]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
                   <path strokeLinecap="round" d="m9 18 6-6-6-6" />
                 </svg>
                 <span className="font-medium text-[#5a6577]">{selectedName}</span>
@@ -40,8 +46,12 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
 
       {/* Right side — filter + search + action */}
       <div className="ml-auto flex items-center gap-[0.6rem]">
-        <button className="flex h-[2.1rem] w-[2.1rem] items-center justify-center rounded-xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-br from-[#faf8ff] to-[#f0ebff] transition-all duration-200 hover:border-[#7c5cbf] hover:shadow-[0_4px_12px_rgba(124,92,191,0.15)] hover:scale-105 active:scale-95">
-          <img src={assets.filter || '/placeholder.svg'} alt="Filter" className="h-[0.9rem] w-[0.9rem] opacity-70" />
+        <button className="flex h-[2.1rem] w-[2.1rem] items-center justify-center rounded-xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-br from-[#faf8ff] to-[#f0ebff] transition-all duration-200 hover:scale-105 hover:border-[#7c5cbf] hover:shadow-[0_4px_12px_rgba(124,92,191,0.15)] active:scale-95">
+          <img
+            src={assets.filter || '/placeholder.svg'}
+            alt="Filter"
+            className="h-[0.9rem] w-[0.9rem] opacity-70"
+          />
         </button>
         <div className="relative flex items-center">
           {/* Search Icon */}
@@ -62,7 +72,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search materials..."
-            className="h-[2.1rem] w-[14rem] rounded-xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-r from-[#faf8ff] to-[#f5f1ff] py-1 pr-3 pl-[2.2rem] text-[0.75rem] text-[#2d3748] outline-none transition-all duration-200 placeholder:text-[#a8b0bf] focus:border-[#7c5cbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(124,92,191,0.1)] focus:placeholder:text-[#c9b8f0]"
+            className="h-[2.1rem] w-[14rem] rounded-xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-r from-[#faf8ff] to-[#f5f1ff] py-1 pr-3 pl-[2.2rem] text-[0.75rem] text-[#2d3748] transition-all duration-200 outline-none placeholder:text-[#a8b0bf] focus:border-[#7c5cbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(124,92,191,0.1)] focus:placeholder:text-[#c9b8f0]"
           />
         </div>
 

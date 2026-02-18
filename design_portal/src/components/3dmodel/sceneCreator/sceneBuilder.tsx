@@ -165,7 +165,6 @@ export class SceneBuilder {
   private async setupScene(): Promise<void> {
     // Add grid
     // this.scene.add(this.grid);
-    this.scene.add(new THREE.AxesHelper(0.4));
 
     this.scene.background = new THREE.Color(0xdddddd);
 
