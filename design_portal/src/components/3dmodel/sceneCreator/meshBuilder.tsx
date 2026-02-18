@@ -400,7 +400,7 @@ export class MeshBuilder {
     const url = this.meshData.path || '';
     if (!url) return;
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
+    const backendUrl = url;
 
     try {
       const model = await GLBLoader(backendUrl, 'Model', {
