@@ -232,7 +232,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
             {
               id: crypto.randomUUID(),
               name: 'Floor Material',
-              type: MATERIAL_TYPES.MISCELLANEOUS,
+              type: 'Floor',
               properties: {
                 model: false,
                 unit_of_issue: 'Each',

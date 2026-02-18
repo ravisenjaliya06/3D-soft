@@ -23,12 +23,15 @@ import {
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addLShapeObjectToBox,
+  addSideObjectToCupboard,
   addVerticalPlanksToBox,
 } from '../design/scene';
+import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
 import { GLBLoader } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
+  DIRECTION_TYPES,
   GEOMETRY,
   INVISIBLE_BOXES,
   MATERIAL_TYPES,
@@ -36,7 +39,6 @@ import {
   OBJECT_TYPES,
   PART_TYPES,
 } from '../sceneCreator/interface';
-import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
@@ -109,8 +111,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-            }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -292,7 +295,83 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   };
 
-  /** Add selected furniture parts (door/drawer/plank) to the chosen cabinet box */
+  const handleSideObjectAdd = async (direction: string) => {
+    if (!selectedCabinetItem) return;
+
+    const scene = threeDView!.scene;
+    let targetBox: THREE.Mesh | null = null;
+    const selectedChildObject = store.getState().data.selectedObject;
+
+    scene.traverse((obj) => {
+      if (obj.userData.objectId === selectedChildObject) {
+        targetBox = obj as THREE.Mesh;
+      }
+    });
+
+    if (!targetBox) {
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message="Please select a cupboard first"
+            closeToast={closeToast}
+          />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+        }
+      );
+      return;
+    }
+
+    // Check if cupboard is main
+    const mesh = targetBox as THREE.Mesh;
+    const isMain = mesh.userData.isMain || mesh.userData.type === 'cupboard';
+    // User said: "These objects should work only when a cupboard (is_main: true) is selected."
+    // Also: "Do not show the 'Please select a blank box' error"
+
+    if (!isMain) {
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message="Please select a main cupboard"
+            closeToast={closeToast}
+          />
+        ),
+        {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeButton: false,
+          icon: false,
+          className: '!p-0 !bg-black !shadow-none !mb-4',
+          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+        }
+      );
+      return;
+    }
+
+    await addSideObjectToCupboard(
+      scene,
+      targetBox,
+      selectedCabinetItem.type,
+      direction,
+      selectedCabinetItem
+    );
+
+    setAddPartPopup(false);
+    setSelectedCabinetItem(null);
+    dispatch(setSelectedChildObject(null));
+    removeExistingLines();
+  };
+
   const onAddItems = async () => {
     if (!selectedCabinetItem) {
       console.error('No cabinet item selected');
@@ -606,8 +685,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     cupboard: assets.cabinet,
     platform: assets.platform_icon,
     sink: assets.sink_icon,
-    'L-Shape Object': assets.vertical, // Using vertical icon as placeholder
     lShapeObject: assets.vertical,
+    uShapeObject: assets.vertical,
   };
 
   return (
@@ -643,8 +722,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                    }`}
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -707,8 +787,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {furnitureTools.map(({ option, icon, isExpandable }) => (
                     <React.Fragment key={option}>
                       <div
-                        className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''
-                          } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        className={`${styles.furnitureItemslist} ${
+                          selectedFurnitureCategory === option ? styles.activeItem : ''
+                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
                         onClick={() => handleFurnitureCategoryClick(option)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -740,8 +821,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           {modelSubmenuItems.map((subItem) => (
                             <div
                               key={subItem.option}
-                              className={`${styles.dropdownItem} ${selectedFurnitureCategory === subItem.option ? styles.active : ''
-                                }`}
+                              className={`${styles.dropdownItem} ${
+                                selectedFurnitureCategory === subItem.option ? styles.active : ''
+                              }`}
                               onClick={() => handleFurnitureCategoryClick(subItem.option)}
                             >
                               <div className={styles.activegroup_tools}>
@@ -819,14 +901,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
                         ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
                         : iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
-                        ]) ||
+                            item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                          ]) ||
                       assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =
                         iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                          item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                         ] || assets.cabinet;
                       e.currentTarget.src = fallback;
                       e.currentTarget.onerror = null;
@@ -864,36 +946,72 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               alt="close"
               onClick={closePopup}
             />
-            <div className={styles.create_right_side}>
-              <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
-              <form
-                className={styles.form}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onAddItems();
+            {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
+            selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px',
+                  marginTop: '10px',
+                  justifyContent: 'center',
                 }}
               >
-                <div className={styles.createinputGroup}>
-                  <InputField
-                    smallField={true}
-                    className={styles.inputField}
-                    borderColor="var(--primary-color-grey-2)"
-                    value={quantityValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setQuantityValue(Number(e.target.value))
-                    }
-                    placeholder="Enter quantity"
-                    label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
-                    error={undefined}
-                  />
+                <button
+                  className={styles.createcontinueButton}
+                  style={{ width: 'auto', padding: '5px 15px' }}
+                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}
+                >
+                  Up
+                </button>
+                <button
+                  className={styles.createcontinueButton}
+                  style={{ width: 'auto', padding: '5px 15px' }}
+                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}
+                >
+                  Left
+                </button>
+                <button
+                  className={styles.createcontinueButton}
+                  style={{ width: 'auto', padding: '5px 15px' }}
+                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}
+                >
+                  Right
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className={styles.create_right_side}>
+                  <p>Enter the number of {formatEnumLabel(selectedCabinetItem.name)} to add.</p>
+                  <form
+                    className={styles.form}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      onAddItems();
+                    }}
+                  >
+                    <div className={styles.createinputGroup}>
+                      <InputField
+                        smallField={true}
+                        className={styles.inputField}
+                        borderColor="var(--primary-color-grey-2)"
+                        value={quantityValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setQuantityValue(Number(e.target.value))
+                        }
+                        placeholder="Enter quantity"
+                        label={`Quantity for ${formatEnumLabel(selectedCabinetItem.name)}`}
+                        error={undefined}
+                      />
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
-            <div className={styles.createButtonGrop}>
-              <button className={styles.createcontinueButton} onClick={onAddItems}>
-                Add
-              </button>
-            </div>
+                <div className={styles.createButtonGrop}>
+                  <button className={styles.createcontinueButton} onClick={onAddItems}>
+                    Add
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

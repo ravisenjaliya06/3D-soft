@@ -26,6 +26,7 @@ export const PART_TYPES = {
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
   L_SHAPE_OBJECT: 'lShapeObject',
+  U_SHAPE_OBJECT: 'uShapeObject',
   HANDLE: 'handle',
 };
 
