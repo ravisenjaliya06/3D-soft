@@ -27,7 +27,7 @@ import {
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
-import { GLBLoader } from '../helper/glbLoader';
+import { GLBLoader, preloadGLB } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -79,6 +79,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       setIsModelOpen(false);
     }
   }, [viewMode]);
+
+  useEffect(() => {
+    const allModels = [
+      ...SOFA,
+      ...FRIDGE,
+      ...STOVE,
+      ...TV,
+      ...DINNER_TABLE,
+      ...FLOWER,
+      ...MICROWAVE,
+      ...CENTER_STUDY_TABLE,
+    ];
+
+    allModels.forEach((item) => {
+      if (item.path) {
+        preloadGLB(item.path);
+      }
+    });
+  }, []);
   const [catalogMenu, setcatalogMenu] = useState(false);
   const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
@@ -162,6 +181,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         console.log(cabinetResponse.data, 'cabinetResponse.data');
       }
       setCabinetItems(cabinetResponse.data);
+      // Preload any GLB models found in the fetched cabinet items
+      cabinetResponse.data.flat().forEach((item: any) => {
+        if (item.path) {
+          preloadGLB(item.path);
+        }
+      });
     }
   };
 

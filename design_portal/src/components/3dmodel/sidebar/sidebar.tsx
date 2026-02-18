@@ -725,7 +725,10 @@ const Sidebar: React.FC = () => {
     //@ts-ignore
     const updatedMaterials: Material[] = materialArray.map((mat) => {
       // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
-      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK || mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS) {
+      if (
+        mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK ||
+        mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS
+      ) {
         return {
           ...mat,
           textures: [
