@@ -251,3 +251,4 @@ ADMIN_URL = os.environ.get("ADMIN_URL", "")
 # SERVER_URL
 SERVER_URL = os.environ.get("SERVER_URL", "")
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "")
+CUSTOMER_ALERT_WEBHOOK_URL = os.environ.get("CUSTOMER_ALERT_WEBHOOK_URL", "")

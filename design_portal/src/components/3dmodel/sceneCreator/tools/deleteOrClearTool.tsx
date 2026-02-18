@@ -13,7 +13,7 @@ import {
   setSelectedChildObject,
 } from '../../store/dataSlice';
 import { removeAllOutlines } from '../../utils/outlineHelpers';
-import { FLOOR_PLAN_TYPES, OBJECT_TYPES, PART_TYPES } from '../interface';
+import { DRAWER_PLANK_TYPES, FLOOR_PLAN_TYPES, OBJECT_TYPES, PART_TYPES } from '../interface';
 
 /**
  * Removes all objects from scene
@@ -63,6 +63,7 @@ export class ObjectsRemoverFromScene {
         object instanceof THREE.Mesh &&
         (Object.values(OBJECT_TYPES).includes(object.userData.type) ||
           Object.values(PART_TYPES).includes(object.userData.type) ||
+          Object.values(DRAWER_PLANK_TYPES).includes(object.userData.type) ||
           Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type))
       ) {
         this.objectsToRemove.push(object);
