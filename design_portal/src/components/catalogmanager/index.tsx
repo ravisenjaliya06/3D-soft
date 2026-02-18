@@ -438,7 +438,9 @@ const CatalogManager = () => {
               {/* ================= RULE LIST ================= */}
               <div className="flex flex-[1] flex-col overflow-y-auto">
                 <div className="px-[0.5rem] pt-[0.6rem] pb-[0.3rem]">
-                  <p className="mb-[0.4rem] px-[0.5rem] text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[var(--soft-dark-grey)]">Material Types</p>
+                  <p className="mb-[0.4rem] px-[0.5rem] text-[0.65rem] font-semibold tracking-[0.08em] text-[var(--soft-dark-grey)] uppercase">
+                    Material Types
+                  </p>
                 </div>
                 <div className="flex flex-col gap-[0.25rem] px-[0.5rem] pb-[0.5rem]">
                   {ruleMaterialTypes.map((type) => (
@@ -450,9 +452,18 @@ const CatalogManager = () => {
                           ? 'bg-[var(--primary-color)] text-[var(--primary-white)] shadow-[0_2px_8px_var(--box-shadow-color)]'
                           : 'text-[var(--project-item-text)] hover:bg-[var(--active-button-color)] hover:text-[var(--primary-color)]'
                       }`}
-                      style={activeRuleType === type ? { boxShadow: '0 2px 8px rgba(57,37,121,0.18)' } : {}}
+                      style={
+                        activeRuleType === type
+                          ? { boxShadow: '0 2px 8px rgba(57,37,121,0.18)' }
+                          : {}
+                      }
                     >
-                      <img src={iconList[type]} alt="" className={`h-[1.1rem] w-[1.1rem] transition-all duration-200 ${activeRuleType === type ? 'brightness-0 invert' : 'opacity-70'}`} style={activeRuleType === type ? { filter: 'brightness(0) invert(1)' } : {}} />
+                      <img
+                        src={iconList[type]}
+                        alt=""
+                        className={`h-[1.1rem] w-[1.1rem] transition-all duration-200 ${activeRuleType === type ? 'brightness-0 invert' : 'opacity-70'}`}
+                        style={activeRuleType === type ? { filter: 'brightness(0) invert(1)' } : {}}
+                      />
                       {type}
                     </div>
                   ))}
@@ -463,7 +474,7 @@ const CatalogManager = () => {
               <div className="border-t-[0.063rem] border-[var(--border-color)] p-[0rem]">
                 <div className="rounded-b-[0.6rem] bg-[var(--active-button-color)] p-[0.5rem]">
                   {/* HEADER */}
-                  <p className="mb-[0.4rem] text-center text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary-color)]">
+                  <p className="mb-[0.4rem] text-center text-[0.65rem] font-semibold tracking-[0.08em] text-[var(--primary-color)] uppercase">
                     Part Details
                   </p>
 
@@ -542,7 +553,7 @@ const CatalogManager = () => {
                     </tr>
 
                     <tr>
-                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-left text-[0.7rem] font-[600] uppercase tracking-[0.06em] text-[var(--soft-dark-grey)]">
+                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-left text-[0.7rem] font-[600] tracking-[0.06em] text-[var(--soft-dark-grey)] uppercase">
                         <div className="ml-[0rem] flex items-center text-left">
                           Part
                           <img
@@ -553,7 +564,7 @@ const CatalogManager = () => {
                         </div>
                       </th>
 
-                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-left text-[0.7rem] font-[600] uppercase tracking-[0.06em] text-[var(--soft-dark-grey)]">
+                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-left text-[0.7rem] font-[600] tracking-[0.06em] text-[var(--soft-dark-grey)] uppercase">
                         <div className="flex items-center">
                           Material
                           <img
@@ -564,7 +575,7 @@ const CatalogManager = () => {
                         </div>
                       </th>
 
-                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-center text-[0.7rem] font-[600] uppercase tracking-[0.06em] text-[var(--soft-dark-grey)]">
+                      <th className="h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] bg-[var(--active-button-color)] p-[0rem] px-[1rem] py-[0.3rem] text-center text-[0.7rem] font-[600] tracking-[0.06em] text-[var(--soft-dark-grey)] uppercase">
                         Action
                       </th>
                     </tr>
@@ -587,16 +598,24 @@ const CatalogManager = () => {
                               ? 'bg-[var(--primary-hover)]'
                               : 'bg-[var(--primary-white)] hover:bg-[var(--active-button-color)]'
                           } `}
-                          style={selectedPartId === part.id ? { boxShadow: 'inset 3px 0 0 var(--primary-color)' } : {}}
+                          style={
+                            selectedPartId === part.id
+                              ? { boxShadow: 'inset 3px 0 0 var(--primary-color)' }
+                              : {}
+                          }
                         >
                           <td className="h-[2.2rem] min-h-[2.2rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] px-[1rem]">
-                            <div className={`flex h-full items-center text-left text-[0.72rem] ${selectedPartId === part.id ? 'font-semibold text-[var(--primary-color)]' : 'text-[var(--project-item-text)]'}`}>
+                            <div
+                              className={`flex h-full items-center text-left text-[0.72rem] ${selectedPartId === part.id ? 'font-semibold text-[var(--primary-color)]' : 'text-[var(--project-item-text)]'}`}
+                            >
                               {formatEnumLabel(part.name)}
                             </div>
                           </td>
 
                           <td className="h-[2.2rem] min-h-[2.2rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] px-[1rem]">
-                            <div className={`flex h-full items-center text-[0.72rem] ${part.material?.name ? 'text-[var(--project-item-text)]' : 'text-[var(--soft-dark-grey)] italic opacity-60'}`}>
+                            <div
+                              className={`flex h-full items-center text-[0.72rem] ${part.material?.name ? 'text-[var(--project-item-text)]' : 'text-[var(--soft-dark-grey)] italic opacity-60'}`}
+                            >
                               {part.material?.name || 'No material assigned'}
                             </div>
                           </td>
@@ -697,7 +716,7 @@ const CatalogManager = () => {
                       placeholder="Search"
                       value={materialSearch}
                       onChange={(e) => setMaterialSearch(e.target.value)}
-                      className="m-[0rem] h-[1.5rem] w-[15rem] flex-1 rounded-[0.4375rem] border-[0.063rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem] pr-9 pl-[1.5rem] text-[0.65rem] text-[var(--primary-color)] placeholder:text-[var(--soft-dark-grey)] outline-none focus:border-[var(--primary-color)] focus:ring-[0.1rem] focus:ring-[var(--primary-hover)]"
+                      className="m-[0rem] h-[1.5rem] w-[15rem] flex-1 rounded-[0.4375rem] border-[0.063rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem] pr-9 pl-[1.5rem] text-[0.65rem] text-[var(--primary-color)] outline-none placeholder:text-[var(--soft-dark-grey)] focus:border-[var(--primary-color)] focus:ring-[0.1rem] focus:ring-[var(--primary-hover)]"
                     />
                   </div>
                 </div>
@@ -716,7 +735,7 @@ const CatalogManager = () => {
                       <tr className="p-[0rem]">
                         <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem]"></th>
 
-                        <th className="m-[0rem] h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem] py-[0.3rem] text-left text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-[var(--soft-dark-grey)]">
+                        <th className="m-[0rem] h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem] py-[0.3rem] text-left text-[0.7rem] font-semibold tracking-[0.06em] text-[var(--soft-dark-grey)] uppercase">
                           <div className="flex items-center p-[0rem]">
                             Material Name
                             <img
@@ -727,7 +746,7 @@ const CatalogManager = () => {
                           </div>
                         </th>
 
-                        <th className="m-[0rem] h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem] py-[0.3rem] text-left text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-[var(--soft-dark-grey)]">
+                        <th className="m-[0rem] h-[1.75rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem] py-[0.3rem] text-left text-[0.7rem] font-semibold tracking-[0.06em] text-[var(--soft-dark-grey)] uppercase">
                           <div className="flex items-center p-[0rem]">
                             Description
                             <img
@@ -755,7 +774,11 @@ const CatalogManager = () => {
                                   ? 'bg-[var(--primary-hover)]'
                                   : 'bg-[var(--primary-white)] hover:bg-[var(--active-button-color)]'
                               } `}
-                              style={selectedMaterialId === row.id ? { boxShadow: 'inset 3px 0 0 var(--primary-color)' } : {}}
+                              style={
+                                selectedMaterialId === row.id
+                                  ? { boxShadow: 'inset 3px 0 0 var(--primary-color)' }
+                                  : {}
+                              }
                             >
                               {/* RADIO */}
                               <td className="m-[0rem] h-[2rem] min-h-[2rem] border-b-[0.063rem] border-[rgba(57,37,121,0.08)] p-[0rem] px-[1rem]">

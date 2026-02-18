@@ -98,21 +98,14 @@ const dataSlice = createSlice({
       const idToRemove = action.payload;
 
       const collectIdsToRemove = (id: string): string[] => {
-        const children = state.objects
-          .filter(obj => obj.parent === id)
-          .map(obj => obj.id);
+        const children = state.objects.filter((obj) => obj.parent === id).map((obj) => obj.id);
 
-        return [
-          id,
-          ...children.flatMap(childId => collectIdsToRemove(childId))
-        ];
+        return [id, ...children.flatMap((childId) => collectIdsToRemove(childId))];
       };
 
       const idsToRemove = collectIdsToRemove(idToRemove);
 
-      state.objects = state.objects.filter(
-        obj => !idsToRemove.includes(obj.id)
-      );
+      state.objects = state.objects.filter((obj) => !idsToRemove.includes(obj.id));
     },
     toggleQuickHide: (state, action: PayloadAction<boolean>) => {
       state.isQuickHideActive = action.payload;

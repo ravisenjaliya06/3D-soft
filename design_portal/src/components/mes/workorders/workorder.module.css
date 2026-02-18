@@ -39,7 +39,9 @@
 
 .tableData:hover {
   border-color: var(--toggle-button-border-color);
-  box-shadow: inset 3px 0 0 var(--primary-selected-color), 0 4px 12px var(--box-shadow-color);
+  box-shadow:
+    inset 3px 0 0 var(--primary-selected-color),
+    0 4px 12px var(--box-shadow-color);
   background: var(--selectedrow-color);
 }
 
@@ -112,7 +114,9 @@
   align-items: center;
   padding: 0.3rem;
   z-index: 10;
-  box-shadow: 0 8px 32px var(--box-shadow-color), 0 2px 8px var(--box-shadow-color);
+  box-shadow:
+    0 8px 32px var(--box-shadow-color),
+    0 2px 8px var(--box-shadow-color);
   border: 1px solid var(--table-title-border-color);
   position: fixed;
   margin-top: 8.5rem;
@@ -304,7 +308,9 @@
   border: none;
   color: var(--primary-selected-color);
   background: none;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .closeButton:hover {
@@ -419,8 +425,12 @@
 
 /* ─── Animations ─── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes popIn {

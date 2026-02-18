@@ -288,9 +288,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         await syncManager.syncData();
       }
     } else {
-      setSelectedCabinetItem(item);
-      setQuantityValue(1);
-      setAddPartPopup(true);
+      if (['door', 'Sliding Door'].includes(item.type)) {
+        setSelectedCabinetItem(item);
+        onAddItems(item, 1);
+      } else {
+        setSelectedCabinetItem(item);
+        setQuantityValue(1);
+        setAddPartPopup(true);
+      }
       handleSubmenuClick(event);
     }
   };
@@ -372,13 +377,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     removeExistingLines();
   };
 
-  const onAddItems = async () => {
-    if (!selectedCabinetItem) {
+  const onAddItems = async (overrideItem?: any, overrideQuantity?: number) => {
+    // Ensure overrideItem is a valid item object (has 'type' and 'id') and not a React event
+    const isValidItem =
+      overrideItem &&
+      overrideItem.type &&
+      overrideItem.id &&
+      typeof overrideItem.preventDefault !== 'function';
+    const itemToAdd = isValidItem ? overrideItem : selectedCabinetItem;
+    if (!itemToAdd) {
       console.error('No cabinet item selected');
       return;
     }
     setAddPartPopup(false);
-    const num = parseInt(quantityValue.toString(), 10);
+
+    const quantity =
+      overrideQuantity !== undefined ? overrideQuantity : parseInt(quantityValue.toString(), 10);
+    const num = quantity;
+
     if (!Number.isFinite(num) || num <= 0) {
       return;
     }
@@ -393,8 +409,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       }
     });
 
-    const itemType = selectedCabinetItem.type;
-    const itemName = selectedCabinetItem.name;
+    const itemType = itemToAdd.type;
+    const itemName = itemToAdd.name;
 
     const showErrorToast = (message: string) => {
       toast(
@@ -424,24 +440,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     if (['door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, selectedCabinetItem);
+      await addDoorOnInvisibleBox(scene, targetBox, itemToAdd);
     } else if (itemType === 'drawer') {
-      const fullGroup = cabinetItems.find((group) =>
-        group.some((g) => g.id === selectedCabinetItem.id)
-      );
+      const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === itemToAdd.id));
       await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);
     } else if (itemType === 'plank') {
       const nameLower = (itemName || '').toLowerCase();
       if (nameLower.includes('vertical')) {
-        await addVerticalPlanksToBox(scene, targetBox, num, selectedCabinetItem);
+        await addVerticalPlanksToBox(scene, targetBox, num, itemToAdd);
       } else if (nameLower.includes('horizontal')) {
-        await addHorizontalPlanksInsideBox(scene, targetBox, num, selectedCabinetItem);
+        await addHorizontalPlanksInsideBox(scene, targetBox, num, itemToAdd);
       }
     } else if (
       itemType === PART_TYPES.L_SHAPE_OBJECT ||
       (itemName || '').toLowerCase().includes('l-shape')
     ) {
-      await addLShapeObjectToBox(scene, targetBox, selectedCabinetItem);
+      await addLShapeObjectToBox(scene, targetBox, itemToAdd);
     }
 
     setAddPartPopup(false);
@@ -1006,7 +1020,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   </form>
                 </div>
                 <div className={styles.createButtonGrop}>
-                  <button className={styles.createcontinueButton} onClick={onAddItems}>
+                  <button className={styles.createcontinueButton} onClick={() => onAddItems()}>
                     Add
                   </button>
                 </div>

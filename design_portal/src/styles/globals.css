@@ -111,8 +111,16 @@
   --radio-color: #6c4eff;
 
   /* gradient colors */
-  --gradient-primary: linear-gradient(135deg, var(--wizardstepbox-bg-color) 0%, var(--primary-color) 100%);
-  --gradient-primary-hover: linear-gradient(135deg, var(--hover-button) 0%, var(--wizardstepbox-bg-color) 100%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--wizardstepbox-bg-color) 0%,
+    var(--primary-color) 100%
+  );
+  --gradient-primary-hover: linear-gradient(
+    135deg,
+    var(--hover-button) 0%,
+    var(--wizardstepbox-bg-color) 100%
+  );
   --gradient-green: linear-gradient(135deg, #1c9a2a 0%, var(--primary-green) 100%);
   --gradient-green-hover: linear-gradient(135deg, var(--primary-green) 0%, #157a1e 100%);
 
