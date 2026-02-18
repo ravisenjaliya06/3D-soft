@@ -14,7 +14,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "test_result")
 
 
-def load_data():
+def load_data() -> dict:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
     # Extract flattened files dict for nest.py input
