@@ -3,12 +3,11 @@ import { useRouter } from 'next/navigation';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
-import { HelperToolProps, INVISIBLE_BOXES } from '../interface';
+import { HelperToolProps } from '../interface';
 import {
   collectSceneObjectIds,
   createCopiedStoreObjects,

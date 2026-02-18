@@ -1,6 +1,5 @@
-import * as THREE from 'three';
 import { toast } from 'react-toastify';
-import { CustomToast } from '../utils/CustomToast';
+import * as THREE from 'three';
 import {
   generateCompartmentsFromMesh,
   hideFullScreenLoader,
@@ -14,7 +13,6 @@ import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   GEOMETRY,
-  MATERIAL_TYPES,
   MeshObjectData,
   PART_TYPES,
 } from '../sceneCreator/interface';
@@ -28,7 +26,7 @@ import {
   setSelectedChildObject,
   updateObject,
 } from '../store/dataSlice';
-import { context } from '@react-three/fiber';
+import { CustomToast } from '../utils/CustomToast';
 
 let cachedHandleModel: THREE.Object3D | null = null;
 
