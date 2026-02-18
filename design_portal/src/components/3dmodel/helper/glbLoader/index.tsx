@@ -34,6 +34,7 @@ const processQueue = async () => {
         );
       });
     } catch (e) {
+      console.error(e);
       // Ignore errors so queue keeps processing
     }
   }
