@@ -210,7 +210,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         return {
           id: crypto.randomUUID(),
           name: 'Floor',
-          type: 'floor',
+          type: FLOOR_PLAN_TYPES.FLOOR,
           isMain: true,
           geometryType: GEOMETRY.NONE,
           dimensions: {
@@ -220,7 +220,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           },
           position: {
             x: centerX / 100,
-            y: 0.01,
+            y: 0,
             z: centerY / 100,
           },
           rotation: {
@@ -232,7 +232,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
             {
               id: crypto.randomUUID(),
               name: 'Floor Material',
-              type: 'Floor',
+              type: MATERIAL_TYPES.MISCELLANEOUS,
               properties: {
                 model: false,
                 unit_of_issue: 'Each',
@@ -252,7 +252,6 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
             points: points,
             walls: room.map((wall) => wall.id),
           },
-          textureUrl: '/textures/wood_7.jpg',
         };
       });
 

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { FloorManager } from '../sceneCreator/floorManager';
+import { MATERIAL_TYPES } from '../sceneCreator/interface';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
@@ -371,7 +372,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       // Extract texture URL from floor material
       let textureUrl = '/textures/wood_7.jpg'; // Default
       if (obj.material && Array.isArray(obj.material)) {
-        const floorMaterial = obj.material.find((mat) => mat.type === 'Floor');
+        const floorMaterial = obj.material.find((mat) => mat.type === MATERIAL_TYPES.MISCELLANEOUS);
         if (floorMaterial?.textures && floorMaterial.textures.length > 0) {
           const textureDetail = floorMaterial.textures[0].textureDetail;
           if (textureDetail?.image) {
