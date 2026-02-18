@@ -179,7 +179,7 @@ export const TV = [
   {
     id: crypto.randomUUID(),
     name: 'Flat-Grey TV',
-    path: '/glb/tv/tv1.glb',
+    path: '/glb/tv/tv2.glb',
     image: '/assets/3dmodel/toolbar/tv/flat_grey.png',
   },
 ];
