@@ -421,7 +421,14 @@
   width: 1.3rem;
 }
 
-.loginerrorMessage {
+.errorContainer{
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  margin-left: 5rem;
+  margin-right: 5rem;
+}
+
+.errorMessage {
   font-family: var(--font-family) !important;
   font-size: 0.6rem !important;
   text-align: center;

@@ -16,7 +16,6 @@ const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [loginerror, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -32,7 +31,6 @@ const Login = () => {
     setEmailError(null);
     setPasswordError(null);
     setError(null);
-    setLoginError(null);
 
     const loginPayload: LoginForm = { email, password };
     const { formData, errors } = handleFormData<LoginForm>(loginPayload, setError);
@@ -80,7 +78,7 @@ const Login = () => {
       return;
     }
 
-    setLoginError(errorMessage);
+    setError(errorMessage);
     setIsLoading(false);
   };
 
@@ -146,8 +144,7 @@ const Login = () => {
               ))}
             </div>
 
-            <div className={styles.messageBox}>
-              {loginerror && <p className={styles.loginerrorMessage}>{loginerror}</p>}
+            <div className={styles.errorContainer}>
               {error && <p className={styles.errorMessage}>{error}</p>}
             </div>
 
