@@ -16,6 +16,7 @@ export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
   SINK: 'sink',
+  MODEL: 'model',
 };
 
 export const PART_TYPES = {
@@ -161,6 +162,7 @@ export interface MeshObjectData {
   dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
+  path?: string;
 
   //optional properties
   description?: string;

@@ -187,7 +187,7 @@ export class MeshBuilder {
         });
       }
 
-      if (this.meshData.type === OBJECT_TYPES.SINK) {
+      if (this.meshData.type === OBJECT_TYPES.SINK || this.meshData.type === OBJECT_TYPES.MODEL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           visible: false,
         });
@@ -396,6 +396,29 @@ export class MeshBuilder {
     mesh.add(sinkModel);
   }
 
+  private async _loadModel(mesh: THREE.Mesh) {
+    const url = this.meshData.path || '';
+    if (!url) return;
+
+    const backendUrl = url;
+
+    try {
+      const model = await GLBLoader(backendUrl, 'Model', {
+        width: this.meshData.dimensions.width,
+        height: this.meshData.dimensions.height,
+        depth: this.meshData.dimensions.depth,
+      });
+
+      model.name = `Model_for_${mesh.name}`;
+      model.userData.type = OBJECT_TYPES.MODEL;
+      model.userData.objectId = this.meshData.id;
+
+      mesh.add(model);
+    } catch (error) {
+      console.error('Failed to load model:', error);
+    }
+  }
+
   /**
    * Remove all banding meshes from a plank
    */
@@ -580,6 +603,8 @@ export class MeshBuilder {
 
     if (this.meshData.type === OBJECT_TYPES.SINK) {
       this._loadSink(this.mesh!);
+    } else if (this.meshData.type === OBJECT_TYPES.MODEL) {
+      this._loadModel(this.mesh!);
     }
   }
 

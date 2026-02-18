@@ -43,6 +43,7 @@ import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
+  addObjects,
   setHoverdMesh,
   setSelectedChildObject,
   toggleMeasurement,
@@ -210,6 +211,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData | any) => {
+    console.log('handleCabinetItemSelect', item);
     // Check if it's a GLB model (has path property)
     if (item.path) {
       if (!threeDView || !threeDView.scene) return;
@@ -247,6 +249,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         }
 
         const model = await GLBLoader(item.path, item.name, targetSize);
+        let position: THREE.Vector3 | null = null;
 
         if (model) {
           model.userData.objectId = item.id;
@@ -266,8 +269,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
           // Proactively start dragging the new model for better placement
           if (threeDView.moveHandler) {
-            threeDView.moveHandler.startDragging(model);
+            hideFullScreenLoader();
+            position = await threeDView.moveHandler.startDragging(model);
           }
+
+          const itemData = {
+            ...item,
+            id: crypto.randomUUID(),
+            type: OBJECT_TYPES.MODEL,
+            name: item.name,
+            dimensions: targetSize,
+            position: position || { x: 0, y: 0, z: 0 },
+            material: []
+          }
+          store.dispatch(addObjects([itemData]));
 
           if (threeDView.renderer && threeDView.camera) {
             threeDView.renderer.render(threeDView.scene, threeDView.camera);

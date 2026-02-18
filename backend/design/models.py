@@ -43,6 +43,7 @@ class CatalogTypeChoices(models.TextChoices):
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
     WALL = "wall"
+    MODEL = "model"
 
     UNKNOWN = "unknown"
 
