@@ -166,11 +166,7 @@ const Login = () => {
 
             {/* 🔒 BUTTON WRAPPER UNCHANGED */}
             <div className={styles.buttonContainer}>
-              <button
-                className={styles.loginButton}
-                onClick={handleLogin}
-                disabled={isLoading}
-              >
+              <button className={styles.loginButton} onClick={handleLogin} disabled={isLoading}>
                 Login
               </button>
             </div>
@@ -184,7 +180,6 @@ const Login = () => {
                 </p>
               </div>
             </div>
-
           </form>
         </div>
       </div>

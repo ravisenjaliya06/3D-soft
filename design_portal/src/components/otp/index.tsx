@@ -68,15 +68,10 @@ const Otp = () => {
       email: email as string,
     };
 
-    await handleVerify(
-      otppayload,
-      setError,
-      router,
-      setIsLoading,
-      () =>
-        setSuccessMessage(
-          'Registration successful! Your request has been sent to the administrator for approval.'
-        )
+    await handleVerify(otppayload, setError, router, setIsLoading, () =>
+      setSuccessMessage(
+        'Registration successful! Your request has been sent to the administrator for approval.'
+      )
     );
   };
 

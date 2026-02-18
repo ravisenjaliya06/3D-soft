@@ -63,7 +63,13 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   if (!activeCategory || !CATEGORY_TABS[activeCategory]) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-[0.75rem] rounded-2xl border border-[rgba(124,92,191,0.12)] bg-gradient-to-b from-[#ffffff] to-[#f8f5ff] shadow-[0_4px_24px_rgba(57,37,121,0.06)]">
-        <svg className="h-[2rem] w-[2rem] text-[#c9b8f0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <svg
+          className="h-[2rem] w-[2rem] text-[#c9b8f0]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
           <rect x="3" y="3" width="18" height="18" rx="3" />
           <path d="M3 9h18M9 21V9" />
         </svg>
@@ -122,7 +128,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`sticky top-0 z-10 border-b border-[rgba(124,92,191,0.08)] bg-gradient-to-b from-[#f8f5ff] to-[#f3eeff] px-[1.25rem] py-[0.7rem] text-[0.68rem] font-bold whitespace-nowrap text-[#7c5cbf] uppercase tracking-[0.08em] ${column.sortable ? 'cursor-pointer select-none transition-all duration-200 hover:bg-[#ece5ff] hover:text-[#4b2aad]' : ''}`}
+                  className={`sticky top-0 z-10 border-b border-[rgba(124,92,191,0.08)] bg-gradient-to-b from-[#f8f5ff] to-[#f3eeff] px-[1.25rem] py-[0.7rem] text-[0.68rem] font-bold tracking-[0.08em] whitespace-nowrap text-[#7c5cbf] uppercase ${column.sortable ? 'cursor-pointer transition-all duration-200 select-none hover:bg-[#ece5ff] hover:text-[#4b2aad]' : ''}`}
                   onClick={() => column.sortable && onSort(column.key)}
                 >
                   <div className="flex items-center gap-[0.3rem]">
@@ -137,7 +143,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
                         <img
                           src={MENU_DOWN_SVG.menu_down}
                           alt="Sort"
-                          className="ml-[0.2rem] mt-[-5px] h-[1rem] w-[1rem]"
+                          className="mt-[-5px] ml-[0.2rem] h-[1rem] w-[1rem]"
                         />
                       </div>
                     )}
@@ -183,10 +189,14 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           <div className="flex justify-center border-t border-[rgba(124,92,191,0.08)] bg-gradient-to-b from-transparent to-[#faf8ff] py-[0.85rem]">
             <button
               onClick={() => setVisibleCount((prev) => prev + initVisibleCount)}
-              className="flex items-center gap-[0.5rem] rounded-xl border border-[rgba(124,92,191,0.15)] bg-gradient-to-r from-[#faf8ff] to-[#f0ebff] px-[1.25rem] py-[0.45rem] text-[0.78rem] font-semibold text-[#4b2aad] shadow-[0_2px_8px_rgba(57,37,121,0.06)] transition-all duration-200 hover:border-[#7c5cbf] hover:shadow-[0_4px_16px_rgba(57,37,121,0.12)] hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-[0.5rem] rounded-xl border border-[rgba(124,92,191,0.15)] bg-gradient-to-r from-[#faf8ff] to-[#f0ebff] px-[1.25rem] py-[0.45rem] text-[0.78rem] font-semibold text-[#4b2aad] shadow-[0_2px_8px_rgba(57,37,121,0.06)] transition-all duration-200 hover:scale-[1.02] hover:border-[#7c5cbf] hover:shadow-[0_4px_16px_rgba(57,37,121,0.12)] active:scale-[0.98]"
             >
               <span>Load More</span>
-              <img src={assets.loadMore || '/placeholder.svg'} alt="" className="h-[0.75rem] w-[0.75rem]" />
+              <img
+                src={assets.loadMore || '/placeholder.svg'}
+                alt=""
+                className="h-[0.75rem] w-[0.75rem]"
+              />
             </button>
           </div>
         )}
