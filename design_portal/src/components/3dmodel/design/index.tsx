@@ -17,6 +17,7 @@ import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
+import { MATERIAL_TYPES } from '../sceneCreator/interface';
 
 export const gettingDesignID = () => {
   /** Retrieves the current design ID from the URL path. */
@@ -371,7 +372,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       // Extract texture URL from floor material
       let textureUrl = '/textures/wood_7.jpg'; // Default
       if (obj.material && Array.isArray(obj.material)) {
-        const floorMaterial = obj.material.find((mat) => mat.type === 'Floor');
+        const floorMaterial = obj.material.find((mat) => mat.type === MATERIAL_TYPES.MISCELLANEOUS);
         if (floorMaterial?.textures && floorMaterial.textures.length > 0) {
           const textureDetail = floorMaterial.textures[0].textureDetail;
           if (textureDetail?.image) {

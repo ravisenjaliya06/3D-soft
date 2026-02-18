@@ -9,13 +9,13 @@ import { Position, Rotation } from '../store/interface';
 export const FLOOR_PLAN_TYPES = {
   WALL: 'wall',
   CWALL: 'cwall',
+  FLOOR: 'floor',
 };
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
-  SINK: 'sink',
-  FLOOR: 'floor',
+  SINK: 'sink'
 };
 
 export const PART_TYPES = {
