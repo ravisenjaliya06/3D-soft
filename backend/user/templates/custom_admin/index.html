@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Bravento Admin</title>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    {% load static %}
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'custom_admin/style.css' %}" />
+  </head>
+
+  <body>
+    <div class="login-container">
+      <div class="login-card glass-effect shadow-premium">
+        <div class="text-center mb-4">
+          <img
+            src="{% static 'custom_admin/assets/logo-login.svg' %}"
+            alt="Bravento Logo"
+            class="mb-4"
+            style="max-height: 3.75rem"
+          />
+          <h3 class="fw-bold text-dark">Welcome Back</h3>
+          <p class="text-muted small">Sign in to access your dashboard</p>
+        </div>
+        <div id="loginError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+        <form id="loginForm" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label small fw-semibold text-muted"
+              >Email Address</label
+            >
+            <div class="input-group">
+              <span
+                class="input-group-text bg-white border-end-0 border-muted text-muted"
+                ><i class="bi bi-envelope"></i
+              ></span>
+              <input
+                type="email"
+                class="form-control form-control-custom border-start-0 ps-0"
+                id="email"
+                placeholder="name@company.com"
+                required
+              />
+              <div class="invalid-feedback">
+                Please enter a valid email address.
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label
+              for="password"
+              class="form-label small fw-semibold text-muted"
+              >Password</label
+            >
+            <div class="input-group">
+              <span
+                class="input-group-text bg-white border-end-0 border-muted text-muted"
+                ><i class="bi bi-key"></i
+              ></span>
+              <input
+                type="password"
+                class="form-control form-control-custom border-start-0 ps-0"
+                id="password"
+                placeholder="•••••••"
+                required
+              />
+              <button
+                class="btn btn-outline-secondary border-start-0 border-muted bg-white text-muted"
+                type="button"
+                id="togglePassword"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+              <div class="invalid-feedback">Password is required.</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="rememberMe" />
+              <label class="form-check-label small text-muted" for="rememberMe"
+                >Remember me</label
+              >
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-2">
+            Sign In <i class="bi bi-arrow-right ms-2"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Script -->
+    <script src="{% static 'custom_admin/script.js' %}"></script>
+    <script>
+      const loginForm = document.getElementById("loginForm");
+      const errorBox = document.getElementById("loginError");
+
+      const newLoginForm = loginForm.cloneNode(true);
+      loginForm.parentNode.replaceChild(newLoginForm, loginForm);
+
+      newLoginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // hide previous error
+        errorBox.classList.add("d-none");
+        errorBox.innerText = "";
+
+        if (!newLoginForm.checkValidity()) {
+          newLoginForm.classList.add("was-validated");
+          return;
+        }
+
+        const btn = newLoginForm.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm"></span> Signing In...';
+        btn.disabled = true;
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+              cookie = cookie.trim();
+              if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+
+        fetch('{% url "admin_login" %}', {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ email, password }),
+        })
+          .then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw data;
+            }
+
+            window.location.href = data.redirect;
+          })
+          .catch((error) => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            errorBox.innerText =
+              error.error ||
+              error.detail ||
+              "Invalid email or password";
+
+            errorBox.classList.remove("d-none");
+          });
+
+        newLoginForm.classList.add("was-validated");
+      });
+    </script>
+
+  </body>
+</html>

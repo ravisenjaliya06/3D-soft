@@ -55,7 +55,10 @@ class APIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), user_count_before + 1)
-        self.assertEqual(response.data["message"], "User registered")
+        self.assertEqual(
+            response.data["message"],
+            "User Registration Is Successful. Wait For Admin Approval.",
+        )
 
     def test_user_registration_with_short_password(self: "APIViewTestCase") -> None:
         data = {
@@ -205,7 +208,10 @@ class APIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), user_count_before + 1)
-        self.assertEqual(response.data["message"], "User registered")
+        self.assertEqual(
+            response.data["message"],
+            "User Registration Is Successful. Wait For Admin Approval.",
+        )
 
     def test_send_otp(self: "APIViewTestCase") -> None:
         response = self.client.post(
@@ -323,7 +329,7 @@ class APIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.data["non_field_errors"][0],
-            "Account is not verified. Please verify account with the OTP.",
+            "Account is not verified. Please verify account with Admin.",
         )
 
     def test_send_forgot_password_mail(self: "APIViewTestCase") -> None:

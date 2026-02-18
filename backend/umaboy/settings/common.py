@@ -137,6 +137,10 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME_LATE_USER": timedelta(days=30),
 }
 
+# Admin Session Settings
+ADMIN_JWT_COOKIE_NAME = "admin_access_token"
+ADMIN_SESSION_TIMEOUT_MINUTES = 30
+
 # set logging
 LOGGING = {
     "version": 1,
@@ -241,6 +245,8 @@ CELERY_BEAT_SCHEDULE = {
         "args": ("umaboy/media/output",),
     },
 }
+
+ADMIN_URL = os.environ.get("ADMIN_URL", "")
 
 # SERVER_URL
 SERVER_URL = os.environ.get("SERVER_URL", "")

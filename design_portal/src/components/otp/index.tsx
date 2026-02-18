@@ -1,8 +1,9 @@
 import styles from '@/components/otp/otp.module.css';
 import { handleResendOtp, handleVerify } from '@/components/otp/utils';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const Otp = () => {
   const otpLength = 5;
@@ -17,7 +18,6 @@ const Otp = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
-
     if (!/^\d?$/.test(value)) return;
 
     const newOtp = [...otp];
@@ -29,24 +29,33 @@ const Otp = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (timer > 0) {
-      const countdown = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-
+      const countdown = setInterval(() => setTimer((prev) => prev - 1), 1000);
       return () => clearInterval(countdown);
     }
-    if (timer === 0) {
-      setSetResend(false);
-    }
+    if (timer === 0) setSetResend(false);
   }, [timer]);
 
-  React.useEffect(() => {
-    if (message) {
-      setError(message as string);
-    }
+  useEffect(() => {
+    if (message) setError(message as string);
   }, []);
+
+  // Redirect after success message
+  useEffect(() => {
+    if (success) {
+      const timeout = setTimeout(() => {
+        router.push({
+          pathname: REDIRECT.LOGIN,
+          query: {
+            message: 'Your Account has been verified. To access login now.',
+          },
+        });
+      }, 4000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [success]);
 
   const handleOTPVerify = async () => {
     if (otp.includes('')) {
@@ -59,7 +68,16 @@ const Otp = () => {
       email: email as string,
     };
 
-    await handleVerify(otppayload, setError, router, setIsLoading);
+    await handleVerify(
+      otppayload,
+      setError,
+      router,
+      setIsLoading,
+      () =>
+        setSuccessMessage(
+          'Registration successful! Your request has been sent to the administrator for approval.'
+        )
+    );
   };
 
   const handleResend = async () => {
@@ -79,18 +97,12 @@ const Otp = () => {
     e.preventDefault();
 
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, otpLength);
-
     if (!pastedData) return;
 
     const newOtp = [...otp];
-
-    pastedData.split('').forEach((digit, index) => {
-      newOtp[index] = digit;
-    });
-
+    pastedData.split('').forEach((digit, index) => (newOtp[index] = digit));
     setOtp(newOtp);
 
-    // Focus last filled input
     document.getElementById(`otp-${pastedData.length - 1}`)?.focus();
   };
 
@@ -121,6 +133,7 @@ const Otp = () => {
             Please enter the 6-digit code sent to your registered email <a>{email}</a> for
             verification.
           </p>
+
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.otpContainer}>
               {otp.map((value, index) => (
@@ -138,22 +151,26 @@ const Otp = () => {
                 />
               ))}
             </div>
+
             <div className={styles.timerText}>
               {Math.floor(timer / 60)
                 .toString()
                 .padStart(2, '0')}
               :{(timer % 60).toString().padStart(2, '0')}
-            </div>{' '}
+            </div>
+
             <div className={styles.otpError}>
               {error && <p className={styles.otpErrorMessage}>{error}</p>}
               {success && <p className={styles.otpSuccessMessage}>{success}</p>}
             </div>
+
             <div className={styles.buttonContainer}>
               <button className={styles.otpButton} onClick={handleOTPVerify} disabled={isLoading}>
                 CONTINUE
               </button>
             </div>
           </form>
+
           <div className={styles.resendText}>If you didn&apos;t receive a code!</div>
           <button
             disabled={setResend}

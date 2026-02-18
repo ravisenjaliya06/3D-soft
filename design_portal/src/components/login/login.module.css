@@ -125,6 +125,7 @@
   border-radius: 0.2rem;
   padding: 0.3rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
     color: var(--primary-color);
@@ -195,6 +196,7 @@
   font-family: var(--font-family);
   font-size: 0.8rem;
   cursor: pointer;
+
   &:hover {
     background-color: var(--primary-hover);
   }
@@ -205,6 +207,7 @@
   margin-left: 0.3rem;
   margin-right: 0.3rem;
 }
+
 .googleButton p {
   font-family: var(--font-family);
 }
@@ -216,6 +219,7 @@
   width: 23rem;
   border-radius: 1rem;
 }
+
 .form {
   display: block;
 }
@@ -226,6 +230,7 @@
   margin-bottom: 0.7rem;
   max-width: 25.5rem;
 }
+
 .googleIcon {
   margin-right: 0.5rem;
 }
@@ -246,6 +251,7 @@
   align-items: center;
   height: 1.4rem;
 }
+
 .closeIcon {
   display: flex;
   justify-content: flex-end;
@@ -277,6 +283,7 @@
   margin-left: 6rem;
   font-weight: 600;
 }
+
 .resetText {
   font-size: 1rem;
   margin-bottom: 2rem;
@@ -290,9 +297,11 @@
   margin-bottom: 1rem;
   font-size: 1.3rem;
 }
+
 .forgotPasswordPopup img {
   width: 23rem;
 }
+
 .popup_reset_button {
   width: 10rem;
   background-color: var(--primary-color);
@@ -412,7 +421,14 @@
   width: 1.3rem;
 }
 
-.loginerrorMessage {
+.errorContainer{
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  margin-left: 5rem;
+  margin-right: 5rem;
+}
+
+.errorMessage {
   font-family: var(--font-family) !important;
   font-size: 0.6rem !important;
   text-align: center;
@@ -440,6 +456,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -471,4 +488,8 @@
   z-index: 1000;
   font-size: 1rem;
   animation: fadeIn 0.5s ease-out;
+}
+
+.messageBox{
+  width: 80%;
 }

@@ -187,7 +187,7 @@ class LoginSerializer(serializers.Serializer):
                 view._send_otp_email(user, otp)
 
             raise exceptions.ValidationError(
-                _("Account is not verified. Please verify account with the OTP.")
+                _("Account is not verified. Please verify account with Admin.")
             )
         user.otp = None
         user.otp_expiration_time = None
@@ -212,7 +212,7 @@ class OtpSerializer(serializers.Serializer):
         Save the user as verified after OTP validation.
         """
         user = self.validated_data["user"]
-        user.is_verified = True
+        user.is_verified = False
         user.save()
 
         return user
@@ -433,3 +433,23 @@ class OrganizationSerializer(serializers.ModelSerializer):
         instance.logo = validated_data.get("logo", instance.logo)
         instance.save()
         return instance
+
+
+class AdminLoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+
+    def validate(self: "AdminLoginSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        user = User.objects.filter(email=email).first()
+
+        if not user or not user.check_password(password):
+            raise serializers.ValidationError("Invalid email or password")
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("You do not have admin access")
+
+        attrs["user"] = user
+        return attrs

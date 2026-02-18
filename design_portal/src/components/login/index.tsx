@@ -16,29 +16,23 @@ const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [loginerror, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Toggle password visibility
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
 
-  /* Login function */
   const handleLogin = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setEmailError(null);
     setPasswordError(null);
+    setError(null);
 
-    const loginPayload: LoginForm = {
-      email,
-      password,
-    };
-
+    const loginPayload: LoginForm = { email, password };
     const { formData, errors } = handleFormData<LoginForm>(loginPayload, setError);
 
     setEmailError(errors.email);
@@ -51,28 +45,41 @@ const Login = () => {
 
     localStorage.clear();
     Cookies.remove('token');
+
     const response = await CommonService.post(API_ENDPOINT.LOGIN, formData);
+
     if (response.status === 200) {
       localStorage.setItem('token', response.data.payload.access);
       Cookies.set('token', response.data.payload.access);
-      router.push({
-        pathname: REDIRECT.PROJECTDASHBOARD,
-      });
-    } else {
-      const errorMessage =
-        response.data?.email?.[0] ||
-        response.data?.non_field_errors?.[0] ||
-        response.data?.message ||
-        'Login failed. Please try again.';
-      if (errorMessage === 'Account is not verified. Please verify account with the OTP.') {
-        router.push({
-          pathname: REDIRECT.OTP,
-          query: { email: email, message: errorMessage },
-        });
-      }
-      setLoginError(errorMessage);
-      setIsLoading(false);
+      router.push({ pathname: REDIRECT.PROJECTDASHBOARD });
+      return;
     }
+
+    const errorMessage =
+      response.data?.email?.[0] ||
+      response.data?.non_field_errors?.[0] ||
+      response.data?.message ||
+      response.data?.error ||
+      'Login failed. Please try again.';
+
+    if (errorMessage === 'Account is not verified. Please verify account with the OTP.') {
+      router.push({
+        pathname: REDIRECT.OTP,
+        query: { email, message: errorMessage },
+      });
+      return;
+    }
+
+    if (errorMessage === 'Account is not verified. Please verify account with Admin.') {
+      setError(
+        'Approval Pending: Your account is not yet approved. Please contact the Bravento Administration.'
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    setError(errorMessage);
+    setIsLoading(false);
   };
 
   const fields = [
@@ -103,8 +110,8 @@ const Login = () => {
           <p>Loading...</p>
         </div>
       )}
+
       <div className={styles.card}>
-        {/* Left Section */}
         <div className={styles.left_side}>
           <div className={styles.popup_logo}>
             <img src={assets.popup_logo} alt="Popup Logo" />
@@ -121,10 +128,10 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Right Section */}
         <div className={styles.right_side}>
           <h2>Login</h2>
           <p>Login to access your Bravento account</p>
+
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.inputGroup}>
               {fields.map((field, index) => (
@@ -136,8 +143,11 @@ const Login = () => {
                 />
               ))}
             </div>
-            {loginerror && <p className={styles.loginerrorMessage}>{loginerror}</p>}
-            {error && <p className={styles.errorMessage}>{error}</p>}
+
+            <div className={styles.errorContainer}>
+              {error && <p className={styles.errorMessage}>{error}</p>}
+            </div>
+
             <div className={styles.forgotContainer}>
               <div className={styles.remembermeContainer}>
                 <input type="checkbox" id="rememberMe" className={styles.rememberMeCheckbox} />
@@ -153,11 +163,19 @@ const Login = () => {
                 </a>
               </div>
             </div>
+
+            {/* 🔒 BUTTON WRAPPER UNCHANGED */}
             <div className={styles.buttonContainer}>
-              <button className={styles.loginButton} onClick={handleLogin} disabled={isLoading}>
+              <button
+                className={styles.loginButton}
+                onClick={handleLogin}
+                disabled={isLoading}
+              >
                 Login
               </button>
             </div>
+
+            {/* 🔒 LINK WRAPPER UNCHANGED */}
             <div className={styles.linkContainer}>
               <div className={styles.registerLinkContainer}>
                 <p>
@@ -166,6 +184,7 @@ const Login = () => {
                 </p>
               </div>
             </div>
+
           </form>
         </div>
       </div>
