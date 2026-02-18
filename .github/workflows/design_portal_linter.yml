@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
       
       - name: Install Dependencies
         run: npm install
@@ -57,8 +57,10 @@ jobs:
           PR_URL="${{ github.event.pull_request.html_url }}"
           REPO="${{ github.repository }}"
 
+          # We use a variable to avoid escaping hell
+          TEXT_CONTENT="*$STATUS_MSG*\n\n👤 *Author:* $AUTHOR\n� *Project:* Design Portal\n�🌿 *Branch:* $BRANCH\n📂 *Repo:* $REPO\n🔗 <$PR_URL|View Pull Request>"
+
+          # Single quotes around the URL are CRITICAL to protect the &token= part
           curl -X POST -H "Content-Type: application/json" \
-            -d "{
-                  \"text\": \"*$STATUS_MSG* \n\n👤 *Author:* $AUTHOR \n🎨 *Project:* Design Portal \n🌿 *Branch:* $BRANCH \n🔗 <$PR_URL|View Pull Request>\"
-                }" \
-            ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+            -d "{\"text\": \"$TEXT_CONTENT\"}" \
+            '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'
