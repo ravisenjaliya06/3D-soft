@@ -252,7 +252,6 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
             points: points,
             walls: room.map((wall) => wall.id),
           },
-          // textureUrl: '/textures/wood_7.jpg',
         };
       });
 
