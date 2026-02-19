@@ -141,7 +141,11 @@ export class SelectObjectController {
 
     // Trigger HelperTool display
     if (this.onShowHelperTool) {
-      if (Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type)) {
+      if (
+        Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type) ||
+        [PART_TYPES.L_SHAPE_OBJECT, PART_TYPES.U_SHAPE_OBJECT].includes(object.userData.type)
+      ) {
+        this.onShowHelperTool(null);
         return;
       }
       this.onShowHelperTool(object);
