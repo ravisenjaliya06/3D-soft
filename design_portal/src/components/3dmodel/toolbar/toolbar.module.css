@@ -1239,7 +1239,7 @@
   font-weight: 600;
   height: 1.7rem;
   background-color: var(--toolbarhover-color);
-  color: #A8A8A8;
+  color: #a8a8a8;
 
   &:hover {
     border: 0.01rem solid var(--primary-color);
@@ -1253,7 +1253,7 @@
 .disableArrowButton {
   cursor: not-allowed;
   opacity: 0.5;
-  color: #A8A8A8;
+  color: #a8a8a8;
   background-color: var(--toolbarhover-color);
 
   &:hover {
@@ -1274,11 +1274,8 @@
 }
 
 .arrowButtons:hover img {
-  filter: brightness(0) saturate(100%) 
-          invert(16%) sepia(40%) 
-          saturate(1800%) 
-          hue-rotate(233deg) 
-          brightness(95%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg)
+    brightness(95%) contrast(95%);
 }
 
 .createpopupLShape {

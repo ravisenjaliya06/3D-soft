@@ -131,8 +131,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
         {/* Icon */}
         <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-            }`}
+          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
+            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
+          }`}
         >
           <span className="text-[0.85rem] font-bold text-white select-none">!</span>
         </div>
@@ -775,8 +776,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                    }`}
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -839,8 +841,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {furnitureTools.map(({ option, icon, isExpandable }) => (
                     <React.Fragment key={option}>
                       <div
-                        className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''
-                          } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        className={`${styles.furnitureItemslist} ${
+                          selectedFurnitureCategory === option ? styles.activeItem : ''
+                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
                         onClick={() => handleFurnitureCategoryClick(option)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -872,8 +875,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           {modelSubmenuItems.map((subItem) => (
                             <div
                               key={subItem.option}
-                              className={`${styles.dropdownItem} ${selectedFurnitureCategory === subItem.option ? styles.active : ''
-                                }`}
+                              className={`${styles.dropdownItem} ${
+                                selectedFurnitureCategory === subItem.option ? styles.active : ''
+                              }`}
                               onClick={() => handleFurnitureCategoryClick(subItem.option)}
                             >
                               <div className={styles.activegroup_tools}>
@@ -951,14 +955,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
                         ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
                         : iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
-                        ]) ||
+                            item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                          ]) ||
                       assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =
                         iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                          item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                         ] || assets.cabinet;
                       e.currentTarget.src = fallback;
                       e.currentTarget.onerror = null;
@@ -983,8 +987,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           className={styles.createpopupOverlay}
           style={{ top: popupPosition.y, left: popupPosition.x }}
         >
-          <div className={selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? styles.createpopupLShape : styles.createpopup}>
+          <div
+            className={
+              selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
+              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
+                ? styles.createpopupLShape
+                : styles.createpopup
+            }
+          >
             <img
               src={assets.createicon || '/placeholder.svg'}
               className={styles.createicon}
@@ -998,7 +1008,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               onClick={closePopup}
             />
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
+            selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
               <div className={styles.arrowContainer}>
                 <div className={styles.arrowButtonsContainer}>
                   <button
@@ -1008,10 +1018,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                     <img src={assets.uparrow} alt="uparrow" />
                     Up
                   </button>
-                  <button
-                  className={styles.disableArrowButton}
-                    disabled={true}
-                  >
+                  <button className={styles.disableArrowButton} disabled={true}>
                     <img src={assets.downarrow} alt="downarrow" />
                     Down
                   </button>
