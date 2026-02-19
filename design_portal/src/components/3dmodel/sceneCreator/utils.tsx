@@ -37,15 +37,16 @@ export const findXY = (renderer: THREE.WebGLRenderer, event: MouseEvent) => {
   return { x, y };
 };
 
+// Singleton TextureLoader instance
+export const globalTextureLoader = new THREE.TextureLoader();
+
 export const textureLoader = (
   url: string,
   repeatX: number = 1,
   repeatY: number = 1
 ): Promise<THREE.Texture> => {
-  const loader = new THREE.TextureLoader();
-
   return new Promise((resolve, reject) => {
-    loader.load(
+    globalTextureLoader.load(
       url,
       (texture) => {
         texture.wrapS = THREE.RepeatWrapping;
@@ -273,11 +274,19 @@ export function deepUpdateIds<T>(value: T, idMap: Map<string, string>): T {
   return result as T;
 }
 
+// Cache for extracted colors: URL -> Hex Color
+const colorCache = new Map<string, number>();
+
 /**
  * Extract dominant/average color from an image URL
  * Returns a hex color value
  */
 export async function extractColorFromImage(imageUrl: string): Promise<number> {
+  // Check cache first
+  if (colorCache.has(imageUrl)) {
+    return colorCache.get(imageUrl)!;
+  }
+
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -318,6 +327,10 @@ export async function extractColorFromImage(imageUrl: string): Promise<number> {
         b = Math.floor(b / count);
 
         const hexColor = (r << 16) | (g << 8) | b;
+
+        // Cache the result
+        colorCache.set(imageUrl, hexColor);
+
         resolve(hexColor);
       } catch (error) {
         console.warn('Failed to extract color from image:', error);

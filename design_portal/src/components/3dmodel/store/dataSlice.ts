@@ -74,6 +74,36 @@ const dataSlice = createSlice({
         state.objects[index] = mergedObject;
       }
     },
+    updateObjects: (state, action: PayloadAction<(Partial<MeshObjectData> & { id: string })[]>) => {
+      action.payload.forEach((updatedObject) => {
+        const index = state.objects.findIndex((obj) => obj.id === updatedObject.id);
+        if (index !== -1) {
+          const existingObject = state.objects[index];
+          // Deep merge for nested objects like edgeBanding
+          const mergedObject: MeshObjectData = {
+            ...existingObject,
+            ...updatedObject,
+            // Merge nested properties properly
+            dimensions: updatedObject.dimensions
+              ? { ...existingObject.dimensions, ...updatedObject.dimensions }
+              : existingObject.dimensions,
+            position: updatedObject.position
+              ? { ...existingObject.position, ...updatedObject.position }
+              : existingObject.position,
+            rotation: updatedObject.rotation
+              ? { ...existingObject.rotation, ...updatedObject.rotation }
+              : existingObject.rotation,
+            edgeBanding: updatedObject.edgeBanding
+              ? { ...existingObject.edgeBanding, ...updatedObject.edgeBanding }
+              : existingObject.edgeBanding,
+            grooves: updatedObject.grooves
+              ? updatedObject.grooves // Replace array entirely, do not merge
+              : existingObject.grooves,
+          };
+          state.objects[index] = mergedObject;
+        }
+      });
+    },
     updateObjectId: (state, action: PayloadAction<{ oldId: string; newId: string }>) => {
       const { oldId, newId } = action.payload;
       const index = state.objects.findIndex((obj) => obj.id === oldId);
@@ -200,6 +230,7 @@ export const {
   setobjectSelected,
   setSelectedChildObject,
   updateObject,
+  updateObjects,
   updateObjectId,
   updateObjectPosition,
   removeObject,

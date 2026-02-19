@@ -15,12 +15,14 @@ export class DesignBuilder {
   private data: MeshObjectData[];
   private meshMap: Map<string, THREE.Mesh>;
   private builderMap: Map<string, MeshBuilder>;
+  private dataMap: Map<string, MeshObjectData>;
 
   constructor(data: MeshObjectData[], scene?: THREE.Scene) {
     this.data = data;
     this.scene = scene || store.getState().scene?.scene;
     this.meshMap = new Map<string, THREE.Mesh>();
     this.builderMap = new Map<string, MeshBuilder>();
+    this.dataMap = new Map(data.map((item) => [item.id, item]));
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
@@ -59,7 +61,7 @@ export class DesignBuilder {
         if (meshData.edgeBanding) {
           promises.push(builder.applyBandingFromState());
         } else if (meshData.parent) {
-          const parentData = this.data.find((d) => d.id === meshData.parent);
+          const parentData = this.dataMap.get(meshData.parent);
           if (!parentData) return;
 
           const parentBandingMaterial = this._findBandingMaterial(parentData.material);
@@ -98,7 +100,7 @@ export class DesignBuilder {
         promises.push(builder.applyBandingFromState());
       } else if (meshData.parent) {
         // Otherwise, check parent for banding material
-        const parentData = this.data.find((d) => d.id === meshData.parent);
+        const parentData = this.dataMap.get(meshData.parent);
         if (!parentData) return;
 
         const parentBandingMaterial = this._findBandingMaterial(parentData.material);

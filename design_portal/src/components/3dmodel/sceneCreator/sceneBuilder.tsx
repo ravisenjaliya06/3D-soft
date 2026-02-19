@@ -175,9 +175,6 @@ export class SceneBuilder {
 
   private setupEventListeners(): void {
     window.addEventListener('resize', () => this.handleResize());
-    this.controls.addEventListener('change', () => {
-      this.renderer.render(this.scene, this.camera);
-    });
   }
 
   private handleResize(): void {

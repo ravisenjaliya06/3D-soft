@@ -13,7 +13,7 @@ import {
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
-import { convertKeysToCamel } from './utils';
+import { convertKeysToCamel, globalTextureLoader } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -21,7 +21,7 @@ export class MeshBuilder {
   private parentMesh: THREE.Mesh | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
-  private textureLoader = new THREE.TextureLoader();
+  private textureLoader = globalTextureLoader;
 
   constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);

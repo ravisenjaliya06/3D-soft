@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { TEXTURES_URLS } from '../constants';
+import { globalTextureLoader } from '../sceneCreator/utils';
 
 export interface RealisticMaterialOptions {
   textures?: {
@@ -22,7 +23,7 @@ export async function createRealisticMaterial(
 ): Promise<THREE.MeshStandardMaterial> {
   const { textures = {}, repeatX = 1, repeatY = 1 } = options;
 
-  const textureLoader = new THREE.TextureLoader();
+  const textureLoader = globalTextureLoader;
   const hdrPath = TEXTURES_URLS.HDR;
 
   // --- Load HDR Environment ---

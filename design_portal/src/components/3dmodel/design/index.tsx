@@ -262,8 +262,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     const selector = design3D.selector;
     if (!selector) return;
 
+    // Use a ref to debounce the dispatch
+    const hoverTimeoutRef = { current: null as NodeJS.Timeout | null };
+
     selector.onHover = (mesh) => {
-      dispatch(setHoverdMesh(mesh));
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+      hoverTimeoutRef.current = setTimeout(() => {
+        dispatch(setHoverdMesh(mesh));
+      }, 50); // 50ms debounce
     };
 
     selector.onSelect = (mesh) => {

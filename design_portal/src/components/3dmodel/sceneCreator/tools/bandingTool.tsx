@@ -134,8 +134,15 @@ export class BandingTool {
 
     // Get all sibling planks
     const siblings: THREE.Mesh[] = [];
+    const currentCenter = new THREE.Vector3();
+    currentBox.getCenter(currentCenter);
+
     targetParent.traverse((child) => {
       if (child !== mesh && child instanceof THREE.Mesh && this.isPlank(child)) {
+        if (child.geometry && child.geometry.boundingSphere) {
+          // Only if boundingSphere is up to date, which might not be.
+          // Rely on Box3 (safer)
+        }
         siblings.push(child);
       }
     });
@@ -204,6 +211,10 @@ export class BandingTool {
 
       sibling.updateMatrixWorld(true);
       const siblingBox = new THREE.Box3().setFromObject(sibling);
+
+      // Fast Rejection: Check if boxes intersect at all (with slight threshold)
+      if (!currentBox.intersectsBox(siblingBox)) continue;
+
       const siblingMin = siblingBox.min;
       const siblingMax = siblingBox.max;
 
