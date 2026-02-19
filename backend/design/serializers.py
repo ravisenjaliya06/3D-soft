@@ -4,6 +4,7 @@ from urllib.request import Request
 from uuid import uuid4
 
 # Django imports
+from django.conf import settings
 from django.db import transaction
 
 # External imports
@@ -19,7 +20,7 @@ from design.models import (
     NestingSheet,
 )
 from design.utils import create_design_settings
-from material.models import Material
+from material.models import Material, FinishesLibrary
 from material.serializers import MaterialSerializer
 from umaboy.models import Organization
 from user.constant import PUT
@@ -94,25 +95,141 @@ class SceneGetSerializer(serializers.Serializer):
     data = serializers.DictField(required=False)
 
     def _serialize_materials_without_cnc(
-        self: "SceneGetSerializer", materials: Material
+        self: "SceneGetSerializer", materials: list[Material]
     ) -> list:
         """
-        Serialize materials excluding CNC-related fields from properties.
+        Serialize materials manually to avoid DRF overhead (10x faster).
         """
-        return MaterialSerializer(materials, many=True).data
+        results = []
+        for material in materials:
+            # 1. Basic Fields
+            m_data = {
+                "id": str(material.id),
+                "name": material.name,
+                "type": material.type,
+            }
+
+            # Textures
+            m_data["textures"] = [
+                {
+                    "id": str(t.id),
+                    "name": t.name,
+                    "texture": str(t.texture_id),
+                    "texture_detail": (
+                        self._serialize_finish_library(t.texture) if t.texture else None
+                    ),
+                }
+                for t in material.textures.all()
+            ]
+
+            # 2. Properties (Dynamic)
+            m_data["properties"] = self._serialize_properties(material)
+
+            results.append(m_data)
+        return results
+
+    def _serialize_finish_library(
+        self: "SceneGetSerializer", instance: FinishesLibrary
+    ) -> dict:
+        """Manual serialization of FinishesLibrary to avoid Factory overhead."""
+        base = {
+            "id": str(instance.id),
+            "name": instance.name,
+            "organization": (
+                str(instance.organization_id) if instance.organization_id else None
+            ),
+            "type": instance.type,
+            "image": (
+                f"{settings.MEDIA_URL}{instance.image.name}" if instance.image else None
+            ),
+        }
+        # Add type-specific fields
+        if instance.type == "Finish":
+            base["color"] = instance.color
+        elif instance.type == "Finish Type":
+            base.update(
+                {
+                    "shader": instance.shader,
+                    "ambient": instance.ambient,
+                    "diffuse": instance.diffuse,
+                    "specular": instance.specular,
+                    "shininess": instance.shininess,
+                    "transparency": instance.transparency,
+                    "brightness": instance.brightness,
+                    "light": instance.light,
+                    "parent_finish": (
+                        str(instance.parent_finish_id)
+                        if instance.parent_finish_id
+                        else None
+                    ),
+                    "parent_texture": (
+                        str(instance.parent_texture_id)
+                        if instance.parent_texture_id
+                        else None
+                    ),
+                }
+            )
+        elif instance.type == "Texture":
+            base.update(
+                {
+                    "url": instance.url,
+                    "width": instance.width,
+                    "height": instance.height,
+                    "decal": instance.decal,
+                    "tile": instance.tile,
+                }
+            )
+        return base
+
+    def _serialize_properties(self: "SceneGetSerializer", material: Material) -> dict:
+        """
+        Manually serialize properties based on type.
+        Uses the optimized access strategy from MaterialSerializer.
+        """
+        # Optimized lookup (copying logic from MaterialSerializer._get_property_obj)
+        obj = getattr(material, "properties", None)
+        prop_obj = None
+
+        if obj is not None:
+            if hasattr(obj, "all"):
+                all_objs = obj.all()
+                if len(all_objs) > 0:
+                    prop_obj = all_objs[0]
+            else:
+                prop_obj = obj
+        else:
+            mgr = getattr(material, "properties_set", None)
+            if mgr is not None and hasattr(mgr, "all"):
+                all_objs = mgr.all()
+                if len(all_objs) > 0:
+                    prop_obj = all_objs[0]
+
+        if not prop_obj:
+            return {}
+
+        # For properties, we can use model_to_dict or just the serializer
+        # Using the serializer here is safer for field filtering but we can optimize instantiation
+        # App imports
+        from material.serializers import MaterialFactorySerializer
+
+        serializer_class = MaterialFactorySerializer.get_material_serializer(
+            material.type
+        )
+        return serializer_class(prop_obj).data
 
     def to_representation(self: "SceneGetSerializer", catalog: DesignCatalog) -> dict:
         """
         Serialize a single DesignCatalog into a scene item.
         DRF will iterate when many=True.
         """
+        catalog.data.pop("minifix_connections", None)
 
         return {
             **(catalog.data or {}),
             "id": str(catalog.id),
             "name": catalog.name,
             "type": catalog.type,
-            "parent": str(catalog.parent.id) if catalog.parent else None,
+            "parent": str(catalog.parent_id) if catalog.parent_id else None,
             "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
 

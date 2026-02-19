@@ -6,7 +6,7 @@ ruff_output=$(pipenv run ruff check $CWD 2>&1)
 echo "$ruff_output"
 error_count=$(echo "$ruff_output" | grep -oE 'Found ([0-9]+) error(s?)' | awk '{print $2}')
 
-max_allowed_errors=30
+max_allowed_errors=0
 if [ -z "$error_count" ]; then
     error_count=0
 fi

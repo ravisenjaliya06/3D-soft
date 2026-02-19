@@ -3,180 +3,109 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 // Cache to store the loaded GLB models (promises returning the scene) - Runtime Cache
-const glbCache = new Map<string, Promise<THREE.Object3D>>();
+const glbParseCache = new Map<string, Promise<THREE.Object3D>>();
 
 // Browser Cache Name
 const CACHE_NAME = 'bravento-glb-cache-v1';
 
-const preloadQueue: string[] = [];
-let activeRequests = 0;
-const MAX_CONCURRENCY = 1;
-
 /**
- * Process the queue with concurrency limit
+ * Fetches and Caches the GLB Blob. Does NOT parse it.
+ * This is safe to run in parallel in the background.
  */
-const processQueue = async () => {
-  if (preloadQueue.length === 0) return;
-
-  while (activeRequests < MAX_CONCURRENCY && preloadQueue.length > 0) {
-    const url = preloadQueue.shift();
-    if (url) {
-      activeRequests++;
-      // We don't await here so we can start multiple requests
-      loadAndCacheGLB(url).finally(() => {
-        activeRequests--;
-        processQueue(); // Trigger next item when one finishes
-      });
+const fetchAndCacheBlob = async (url: string): Promise<void> => {
+  try {
+    // 1. Check if already in Browser Cache
+    if ('caches' in window) {
+      const cache = await caches.open(CACHE_NAME);
+      const cachedResponse = await cache.match(url);
+      if (cachedResponse) {
+        return; // Already cached
+      }
     }
+
+    // 2. Fetch from Network
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+    const blob = await response.blob();
+
+    // 3. Save to Browser Cache
+    if ('caches' in window) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(url, new Response(blob));
+    }
+  } catch (e) {
+    console.warn(`Failed to prefetch ${url}`, e);
   }
 };
 
 /**
- * Load GLB from Browser Cache or Network
+ * Load GLB from Browser Cache (if available) or Network, then Parse.
  */
-const loadAndCacheGLB = async (url: string): Promise<THREE.Object3D> => {
-  // 1. Check Runtime Cache first (fastest)
-  if (glbCache.has(url)) {
-    return glbCache.get(url)!;
+const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
+  // 1. Check Runtime Parse Cache (Fastest)
+  if (glbParseCache.has(url)) {
+    return glbParseCache.get(url)!;
   }
 
-  // Create a promise for this load
-  const loadPromise = new Promise<THREE.Object3D>(async (resolve, reject) => {
+  const promise = new Promise<THREE.Object3D>(async (resolve, reject) => {
     try {
       let objectUrl = url;
       let isFromCache = false;
 
-      // 2. Check Browser Cache (Persistence)
-      if ('caches' in window) {
-        try {
-          const cache = await caches.open(CACHE_NAME);
-          const cachedResponse = await cache.match(url);
-
-          if (cachedResponse) {
-            const blob = await cachedResponse.blob();
-            objectUrl = URL.createObjectURL(blob);
-            isFromCache = true;
-          }
-        } catch (e) {
-          console.warn('Cache API error:', e);
-        }
-      }
-
-      // 3. Load with GLTFLoader (from Network or ObjectURL)
-      const loader = new GLTFLoader();
-      loader.load(
-        objectUrl,
-        async (glb) => {
-          // Clean up ObjectURL if used
-          if (isFromCache) {
-            URL.revokeObjectURL(objectUrl);
-          }
-
-          resolve(glb.scene);
-        },
-        undefined,
-        (error) => {
-          console.error(`Error loading GLB ${url}:`, error);
-          if (isFromCache) URL.revokeObjectURL(objectUrl);
-          glbCache.delete(url); // Remove failed promise from cache
-          reject(error);
-        }
-      );
-    } catch (error) {
-      glbCache.delete(url);
-      reject(error);
-    }
-  });
-
-  // Store in runtime cache
-  glbCache.set(url, loadPromise);
-  return loadPromise;
-};
-
-/**
- * Advanced Loader that Fetches Blob, Caches it, then Parses
- */
-const fetchAndLoadGLB = async (url: string): Promise<THREE.Object3D> => {
-  // 1. Runtime Cache
-  if (glbCache.has(url)) return glbCache.get(url)!;
-
-  const promise = new Promise<THREE.Object3D>(async (resolve, reject) => {
-    try {
-      let blob: Blob | null = null;
-
-      // 2. Browser Cache
+      // 2. Try to get Blob from Browser Cache
       if ('caches' in window) {
         try {
           const cache = await caches.open(CACHE_NAME);
           const response = await cache.match(url);
           if (response) {
-            blob = await response.blob();
+            const blob = await response.blob();
+            objectUrl = URL.createObjectURL(blob);
+            isFromCache = true;
           }
         } catch (e) {
-          console.warn('Cache Check failed', e);
+          console.warn('Cache check failed', e);
         }
       }
 
-      // 3. Network Fetch (if no blob)
-      if (!blob) {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-          blob = await response.blob();
-
-          // Save to Cache
-          if ('caches' in window) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(url, new Response(blob));
-          }
-        } catch (e) {
-          // Fallback to normal loader if fetch fails (cors, etc)
-          console.warn('Fetch failed, falling back to GLTFLoader direct', e);
-          const loader = new GLTFLoader();
-          loader.load(url, (g) => resolve(g.scene), undefined, reject);
-          return;
+      // 3. Parse with GLTFLoader
+      const loader = new GLTFLoader();
+      loader.load(
+        objectUrl,
+        (glb) => {
+          if (isFromCache) URL.revokeObjectURL(objectUrl);
+          resolve(glb.scene);
+        },
+        undefined,
+        (err) => {
+          if (isFromCache) URL.revokeObjectURL(objectUrl);
+          console.error(`Error loading GLB ${url}:`, err);
+          reject(err);
         }
-      }
-
-      // 4. Load from Blob
-      if (blob) {
-        const objectUrl = URL.createObjectURL(blob);
-        const loader = new GLTFLoader();
-        loader.load(
-          objectUrl,
-          (glb) => {
-            URL.revokeObjectURL(objectUrl);
-            resolve(glb.scene);
-          },
-          undefined,
-          (err) => {
-            URL.revokeObjectURL(objectUrl);
-            reject(err);
-          }
-        );
-      }
+      );
     } catch (error) {
       reject(error);
     }
   });
 
-  glbCache.set(url, promise);
+  glbParseCache.set(url, promise);
   return promise;
 };
 
-export const scheduleGLBPreload = (url: string): void => {
-  if (glbCache.has(url)) return;
-
-  // Avoid duplicates in queue
-  if (!preloadQueue.includes(url)) {
-    preloadQueue.push(url);
-  }
-
-  processQueue();
+/**
+ * Prefetch a single URL (Fire and Forget)
+ */
+export const prefetchGLB = (url: string): void => {
+  fetchAndCacheBlob(url);
 };
 
-export const preloadGLB = (url: string): void => {
-  fetchAndLoadGLB(url).catch((e) => console.error('Preload failed', e));
+/**
+ * Prefetch multiple URLs in parallel
+ */
+export const prefetchAll = (urls: string[]): void => {
+  // We don't await this, we want it to run in the background
+  Promise.all(urls.map((url) => fetchAndCacheBlob(url)))
+    .then(() => console.log(`Finished prefetching ${urls.length} models`))
+    .catch((e) => console.error('Error during batch prefetch', e));
 };
 
 export const GLBLoader = (
@@ -186,44 +115,22 @@ export const GLBLoader = (
 ): Promise<THREE.Object3D> => {
   /**
    * Loads a GLB model with caching.
-   * If the model is already loading or loaded, it reuses the promise/result.
    * Returns a clone of the cached model, scaled to the target dimensions.
    */
 
-  // Ensure loading is started via queue
-  scheduleGLBPreload(url);
-
-  // Return a promise that waits for the cache to be populated by the queue
-  const loadPromise = new Promise<THREE.Object3D>((resolve, reject) => {
-    // Check if already in cache
-    if (glbCache.has(url)) {
-      glbCache.get(url)!.then(resolve).catch(reject);
-      return;
-    }
-
-    // If not in cache, we need to wait until the queue processes it.
-    // We can poll or use a more sophisticated event emitter.
-    // For simplicity, we'll poll the cache every 100ms
-    const interval = setInterval(() => {
-      if (glbCache.has(url)) {
-        clearInterval(interval);
-        glbCache.get(url)!.then(resolve).catch(reject);
-      }
-    }, 100);
-  });
+  // Ensure parsing starts
+  const loadPromise = loadAndParseGLB(url);
 
   // Return a new promise that resolves to a *clone* of the cached model
   return loadPromise.then((cachedModel) => {
     // Clone the model so we can modify it (scale, position) without affecting the cache
     const model = SkeletonUtils.clone(cachedModel) as THREE.Object3D;
 
-    // --- Apply Scaling and Centering Logic (Same as before) ---
+    // --- Apply Scaling and Centering Logic ---
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
 
-    // Initial uniform scale based on bounding box
-    // Avoid division by zero if size is 0 (unlikely for valid models)
     if (size.x > 0 && size.y > 0 && size.z > 0) {
       const uniformScale = Math.min(
         target.width / size.x,
@@ -259,8 +166,6 @@ export const GLBLoader = (
       if (n instanceof THREE.Mesh) {
         n.castShadow = true;
         n.receiveShadow = true;
-        // Ensure materials are cloned if necessary for independent modification
-        // For now, sharing materials is usually fine unless we change color per instance
       }
     });
 

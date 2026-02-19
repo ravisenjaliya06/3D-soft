@@ -1,4 +1,7 @@
+# Django imports
 from django.urls import path
+
+# App imports
 from user.views import AdminView, ApproveUserView
 
 urlpatterns = [

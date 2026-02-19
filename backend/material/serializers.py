@@ -72,14 +72,6 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         model = Properties
         fields = [
             "id",
-            "unit_of_issue",
-            "default_cost",
-            "sell_price",
-            "default_markup",
-            "sales_tax",
-            "default_tax_rate",
-            "waste",
-            "estimate",
             "model_file",
         ]
         read_only_fields = ["material"]
@@ -611,7 +603,6 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer_class = MaterialFactorySerializer.get_material_serializer(
                 instance.type
             )
-
             data["properties"] = serializer_class(prop_obj).data
         else:
             data["properties"] = {}
@@ -626,14 +617,27 @@ class MaterialSerializer(serializers.ModelSerializer):
         - ForeignKey with default reverse name (material.properties_set -> manager)
         """
         obj = getattr(instance, "properties", None)
-        if obj is not None and not hasattr(obj, "all") and not hasattr(obj, "first"):
+
+        if obj is not None:
+            # Case 1: RelatedManager/QuerySet (Reverse FK with related_name="properties")
+            if hasattr(obj, "all"):
+                # Use .all() to leverage prefetch_related cache.
+                # .first() would trigger a new DB query with LIMIT 1.
+                all_objs = obj.all()
+                if len(all_objs) > 0:
+                    return all_objs[0]
+                return None
+
+            # Case 2: OneToOneField or direct object (no .all() method)
             return obj
 
-        if hasattr(obj, "first"):
-            return obj.first()
+        # Case 3: Fallback to properties_set (default reverse name)
         mgr = getattr(instance, "properties_set", None)
-        if hasattr(mgr, "first"):
-            return mgr.first()
+        if mgr is not None and hasattr(mgr, "all"):
+            all_objs = mgr.all()
+            if len(all_objs) > 0:
+                return all_objs[0]
+            return None
 
         return None
 

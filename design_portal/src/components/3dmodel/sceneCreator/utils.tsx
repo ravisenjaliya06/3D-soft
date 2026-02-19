@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { gettingDesignID } from '../design';
 import { UpdateDimensionsParams } from '../handler/interface';
+import { prefetchGLB } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
@@ -14,16 +15,71 @@ import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
 
 export const getDesignCatalogs = async () => {
+  console.time('Total_Catalog_Loading_Time');
   const response: { status: number; data: { catalogs: MeshObjectData[] } } =
     await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+
   if (response.status !== 200) {
     console.error('Error fetching catalogs');
+    console.timeEnd('Total_Catalog_Loading_Time');
     return;
   }
-  response.data.catalogs.forEach((catalog: MeshObjectData) => {
-    const builder = new SyncManager(catalog);
-    builder.syncData();
+
+  const catalogs = response.data.catalogs;
+
+  if (!catalogs || catalogs.length === 0) {
+    console.timeEnd('Total_Catalog_Loading_Time');
+    return;
+  }
+
+  // 1. Early Prefetch: Trigger downloads immediately
+  const uniqueUrls = new Set<string>();
+  catalogs.forEach((item) => {
+    // GLB Paths
+    if (item.path) {
+      uniqueUrls.add(item.path);
+    }
+
+    // Material Textures
+    if (item.material) {
+      const mats = Array.isArray(item.material) ? item.material : [item.material];
+      mats.forEach((m) => {
+        m?.textures?.forEach((t) => {
+          if (t.textureDetail?.image) {
+            // Match MeshBuilder URL construction for cache hit
+            uniqueUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
+          }
+        });
+      });
+    }
   });
+
+  // Fire and forget prefetch
+  uniqueUrls.forEach((url) => prefetchGLB(url));
+
+  // 2. Batch Processing: Yield to main thread to stop UI freezing
+  const BATCH_SIZE = 50;
+  let currentIndex = 0;
+
+  const processBatch = () => {
+    const batch = catalogs.slice(currentIndex, currentIndex + BATCH_SIZE);
+
+    batch.forEach((catalog: MeshObjectData) => {
+      const builder = new SyncManager(catalog);
+      builder.syncData();
+    });
+
+    currentIndex += BATCH_SIZE;
+
+    if (currentIndex < catalogs.length) {
+      // Schedule next batch
+      requestAnimationFrame(processBatch);
+    } else {
+      console.timeEnd('Total_Catalog_Loading_Time');
+    }
+  };
+
+  processBatch();
 };
 /**
  * Get the X and Y positions whenever a mouse event is called.

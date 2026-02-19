@@ -1,3 +1,4 @@
+import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
 import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
@@ -33,6 +34,7 @@ const poppinsSemiBold = localFont({
 });
 
 export default function MyApp({ Component, pageProps }: AppProps) {
+  useGLBPreloader(); // Start preloading 3D assets in background
   const router = useRouter();
   const isDesignPage = router.pathname.startsWith('/design/');
   const isCatalogPage = router.pathname.startsWith('/catalogmanager');
