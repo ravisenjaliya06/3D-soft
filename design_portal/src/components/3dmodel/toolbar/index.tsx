@@ -330,6 +330,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       }
     } else {
       if (['door', 'Sliding Door'].includes(item.type)) {
+        console.log('item', item);
         setSelectedCabinetItem(item);
         onAddItems(item, 1);
       } else {
@@ -442,7 +443,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
     const scene = threeDView!.scene;
     let targetBox: THREE.Mesh | null = null;
-    const selectedChildObject = store.getState().data.selectedChildObject;
+    const selectedChildObject = store.getState().data.selectedChildObject ? store.getState().data.selectedChildObject : store.getState().data.selectedObject;
 
     scene.traverse((obj) => {
       if (obj.userData.objectId === selectedChildObject) {
@@ -470,7 +471,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       );
     };
 
-    if ((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) {
+    if (((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) && 
+        !([PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType))) {
       showErrorToast('Please select a blank box');
       return;
     }
@@ -480,10 +482,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       return;
     }
 
-    if (['door', 'Sliding Door'].includes(itemType)) {
-      if (itemType === 'door' && itemName === 'DOUBLE_DOOR') {
+    if ([PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType)) {
+      if (itemType === PART_TYPES.DOOR && itemName === 'DOUBLE_DOOR') {
         const fullGroup = cabinetItems.find((group) =>
-          group.some((g) => g.id === selectedCabinetItem?.id)
+          group.some((g) => g.id === overrideItem?.id)
         );
         await addDoubleDoorOnInvisibleBox(scene, targetBox, fullGroup ? fullGroup : []);
       } else {

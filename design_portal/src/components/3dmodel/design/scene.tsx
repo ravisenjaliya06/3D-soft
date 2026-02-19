@@ -10,11 +10,14 @@ import { GLBLoader } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import {
   DIRECTION_TYPES,
+  DOUBLE_DOOR_PLANK_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   GEOMETRY,
+  INVISIBLE_BOXES,
   Material,
   MeshObjectData,
+  OBJECT_TYPES,
   PART_TYPES,
 } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
@@ -265,6 +268,32 @@ export const addDoorOnInvisibleBox = async (
   const w = size.x;
   const h = size.y;
 
+  // Check if boxMesh is a cupboard (main or otherwise, but acting as parent container)
+  const isCupboard =
+    boxMesh.userData.type === OBJECT_TYPES.CUPBOARD ||
+    boxMesh.userData.isMain ||
+    (boxMesh.parent &&
+      boxMesh.parent.userData.type === OBJECT_TYPES.CUPBOARD &&
+      boxMesh.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX);
+
+  if (isCupboard) {
+    const existingDoor = boxMesh.children.find(
+      (child) =>
+        child.userData.type === PART_TYPES.DOOR || child.userData.type === PART_TYPES.DOUBLE_DOOR
+    );
+    if (existingDoor) {
+      hideFullScreenLoader();
+      toast(({ closeToast }) => (
+        <CustomToast
+          appearance="error"
+          message="Already have a whole cupboard door"
+          closeToast={closeToast}
+        />
+      ));
+      return;
+    }
+  }
+
   const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
     ? boxMesh
     : (boxMesh.parent as THREE.Mesh);
@@ -288,14 +317,32 @@ export const addDoorOnInvisibleBox = async (
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
   const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
 
+  // Adjust for Cupboard context vs InvisibleBox context
+  let finalPosition = {
+    x: parentLocalDoorPos.x,
+    y: parentLocalDoorPos.y,
+    z: parentLocalDoorPos.z,
+  };
+
+  if (
+    boxMesh.userData.type === OBJECT_TYPES.CUPBOARD ||
+    (boxMesh.userData.isMain && boxMesh.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX)
+  ) {
+    finalPosition = {
+      x: boxCenterLocal.x,
+      y: boxCenterLocal.y,
+      z: geometryBoundingBox.max.z + doorDimensions.depth / 2,
+    };
+  }
+
   await meshBuilder({
     ...selectedCabinetItem,
     id: crypto.randomUUID(),
     dimensions: doorDimensions,
     position: {
-      x: parentLocalDoorPos.x,
-      y: parentLocalDoorPos.y,
-      z: parentLocalDoorPos.z,
+      x: finalPosition.x,
+      y: finalPosition.y,
+      z: finalPosition.z,
     },
     isMain: false,
     openDirection: DIRECTION_TYPES.RIGHT,
@@ -366,20 +413,64 @@ export const addDoubleDoorOnInvisibleBox = async (
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
   const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
 
+  // Check if boxMesh is a cupboard (main or otherwise, but acting as parent container)
+  const isCupboard =
+    boxMesh.userData.type === OBJECT_TYPES.CUPBOARD ||
+    boxMesh.userData.isMain ||
+    (boxMesh.parent &&
+      boxMesh.parent.userData.type === OBJECT_TYPES.CUPBOARD &&
+      boxMesh.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX);
+
+  if (isCupboard) {
+    const existingDoor = boxMesh.children.find(
+      (child) =>
+        child.userData.type === PART_TYPES.DOOR || child.userData.type === PART_TYPES.DOUBLE_DOOR
+    );
+    if (existingDoor) {
+      hideFullScreenLoader();
+      toast(({ closeToast }) => (
+        <CustomToast
+          appearance="error"
+          message="Already have a whole cupboard door"
+          closeToast={closeToast}
+        />
+      ));
+      return;
+    }
+  }
+
+  // Adjust for Cupboard context vs InvisibleBox context
+  let finalPosition = {
+    x: parentLocalDoorPos.x,
+    y: parentLocalDoorPos.y,
+    z: parentLocalDoorPos.z,
+  };
+
+  if (
+    boxMesh.userData.type === OBJECT_TYPES.CUPBOARD ||
+    (boxMesh.userData.isMain && boxMesh.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX)
+  ) {
+    finalPosition = {
+      x: boxCenterLocal.x,
+      y: boxCenterLocal.y,
+      z: geometryBoundingBox.max.z + doorDimensions.depth / 2,
+    };
+  }
+
   const doubleDoorGroupId = crypto.randomUUID();
 
   // Create Parent Double Door Group (Container)
   const doubleDoorGroup: MeshObjectData = {
-    ...selectedCabinetItem,
+    ...selectedCabinetItem[0],
     id: doubleDoorGroupId,
     name: 'DOUBLE_DOOR',
     type: PART_TYPES.DOUBLE_DOOR,
     geometryType: GEOMETRY.BOX_GEOMETRY,
     dimensions: doorDimensions,
     position: {
-      x: parentLocalDoorPos.x,
-      y: parentLocalDoorPos.y,
-      z: parentLocalDoorPos.z,
+      x: finalPosition.x,
+      y: finalPosition.y,
+      z: finalPosition.z,
     },
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
@@ -393,11 +484,11 @@ export const addDoubleDoorOnInvisibleBox = async (
 
   // Left Door
   const leftDoor: MeshObjectData = {
-    ...selectedCabinetItem,
+    ...selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK),
     id: crypto.randomUUID(),
-    name: 'DOUBLE_DOOR_LEFT_PLANK',
+    name: DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK,
     type:
-      selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_LEFT_PLANK')?.type ||
+      selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)?.type ||
       PART_TYPES.DOOR, // As per user request "type": "plank" in JSON
     geometryType: GEOMETRY.BOX_GEOMETRY,
     parent: doubleDoorGroupId,
@@ -410,16 +501,16 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.LEFT,
-    material: selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_LEFT_PLANK')?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)?.material,
   };
 
   // Right Door
   const rightDoor: MeshObjectData = {
-    ...selectedCabinetItem,
+    ...selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK),
     id: crypto.randomUUID(),
-    name: 'DOUBLE_DOOR_RIGHT_PLANK',
+    name: DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK,
     type:
-      selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_RIGHT_PLANK')?.type ||
+      selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)?.type ||
       PART_TYPES.DOOR,
     geometryType: GEOMETRY.BOX_GEOMETRY,
     parent: doubleDoorGroupId,
@@ -432,7 +523,7 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.RIGHT,
-    material: selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_RIGHT_PLANK')?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)?.material,
   };
 
   // Build the group and children
