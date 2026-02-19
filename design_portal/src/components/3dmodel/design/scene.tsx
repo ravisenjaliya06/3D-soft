@@ -1482,12 +1482,13 @@ export const addSideObjectToCupboard = async (
     relX: number,
     relY: number,
     relZ: number,
-    name: string
+    name: string,
+    dir: string
   ): MeshObjectData => {
     return {
       id: crypto.randomUUID(),
       name: name,
-      type: PART_TYPES.L_SHAPE_OBJECT ? PART_TYPES.L_SHAPE_OBJECT : PART_TYPES.U_SHAPE_OBJECT,
+      type: isU ? PART_TYPES.U_SHAPE_OBJECT : PART_TYPES.L_SHAPE_OBJECT,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: { width: w, height: h, depth: d },
       position: { x: relX, y: relY, z: relZ },
@@ -1495,6 +1496,7 @@ export const addSideObjectToCupboard = async (
       parent: cupboardMesh.userData.objectId,
       material: material,
       isMain: false,
+      direction: direction,
     };
   };
 
@@ -1515,7 +1517,8 @@ export const addSideObjectToCupboard = async (
           0,
           height / 2 + currentStripWidth / 2,
           depth / 2 - thickness / 2,
-          'L_Front'
+          'L_Front',
+          direction
         ),
         createPlank(
           width,
@@ -1524,7 +1527,8 @@ export const addSideObjectToCupboard = async (
           0,
           height / 2 + thickness / 2,
           depth / 2 - thickness - currentStripWidth / 2,
-          'L_Top'
+          'L_Top',
+          direction
         )
       );
     } else {
@@ -1538,7 +1542,8 @@ export const addSideObjectToCupboard = async (
           0,
           height / 2 + thickness / 2,
           depth / 2 - currentStripWidth / 2,
-          'U_Top'
+          'U_Top',
+          direction
         ),
         createPlank(
           width,
@@ -1547,7 +1552,8 @@ export const addSideObjectToCupboard = async (
           0,
           height / 2 + currentStripWidth / 2,
           depth / 2 - thickness / 2,
-          'U_Front'
+          'U_Front',
+          direction
         ),
         createPlank(
           width,
@@ -1556,7 +1562,8 @@ export const addSideObjectToCupboard = async (
           0,
           height / 2 + currentStripWidth - thickness / 2,
           depth / 2 - currentStripWidth / 2,
-          'U_Inner_Top'
+          'U_Inner_Top',
+          direction
         )
       );
     }
@@ -1574,7 +1581,8 @@ export const addSideObjectToCupboard = async (
           sign * (width / 2 + currentStripWidth / 2),
           0,
           depth / 2 - thickness / 2,
-          'L_Front'
+          'L_Front',
+          direction
         ),
         createPlank(
           thickness,
@@ -1583,7 +1591,8 @@ export const addSideObjectToCupboard = async (
           sign * (width / 2 + thickness / 2),
           0,
           depth / 2 - thickness - currentStripWidth / 2,
-          'L_Side'
+          'L_Side',
+          direction
         )
       );
     } else {
@@ -1597,7 +1606,8 @@ export const addSideObjectToCupboard = async (
           sign * (width / 2 + thickness / 2),
           0,
           depth / 2 - currentStripWidth / 2,
-          'U_Side_Outer'
+          'U_Side_Outer',
+          direction
         ),
         createPlank(
           innerGap,
@@ -1606,7 +1616,8 @@ export const addSideObjectToCupboard = async (
           sign * (width / 2 + currentStripWidth / 2),
           0,
           depth / 2 - thickness / 2,
-          'U_Front'
+          'U_Front',
+          direction
         ),
         createPlank(
           thickness,
@@ -1615,7 +1626,8 @@ export const addSideObjectToCupboard = async (
           sign * (width / 2 + currentStripWidth - thickness / 2),
           0,
           depth / 2 - currentStripWidth / 2,
-          'U_Side_Inner'
+          'U_Side_Inner',
+          direction
         )
       );
     }

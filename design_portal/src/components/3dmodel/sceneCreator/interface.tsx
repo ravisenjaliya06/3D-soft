@@ -199,6 +199,7 @@ export interface MeshObjectData {
     points: { id?: string; x: number; y: number }[];
     walls: string[];
   };
+  direction?: string;
 }
 
 export interface GrooveData {

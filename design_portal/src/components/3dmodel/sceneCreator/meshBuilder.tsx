@@ -264,6 +264,7 @@ export class MeshBuilder {
     mesh.userData.isMain = this.meshData.isMain;
     mesh.userData.openDirection = this.meshData.openDirection;
     mesh.userData.drawerType = this.meshData.drawerType;
+    mesh.userData.direction = this.meshData.direction;
   }
 
   private _setName(mesh: THREE.Mesh) {
