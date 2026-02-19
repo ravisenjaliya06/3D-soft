@@ -16,12 +16,11 @@ from design.models import (
     DesignCatalog,
     DesignSetting,
     DesignVersion,
-    FinishesLibrary,
     NestingFile,
     NestingSheet,
 )
 from design.utils import create_design_settings
-from material.models import Material
+from material.models import Material, FinishesLibrary
 from material.serializers import MaterialSerializer
 from umaboy.models import Organization
 from user.constant import PUT
