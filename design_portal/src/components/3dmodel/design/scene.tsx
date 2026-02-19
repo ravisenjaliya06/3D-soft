@@ -13,6 +13,7 @@ import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   GEOMETRY,
+  Material,
   MeshObjectData,
   PART_TYPES,
 } from '../sceneCreator/interface';
@@ -299,6 +300,12 @@ export const addDoorOnInvisibleBox = async (
     isMain: false,
     openDirection: DIRECTION_TYPES.RIGHT,
     parent: parent.userData.objectId,
+    material: [
+      ...(Array.isArray(selectedCabinetItem.material)
+        ? selectedCabinetItem.material
+        : [selectedCabinetItem.material]
+      ).filter((m): m is Material => !!m),
+    ],
   });
 
   // await ensureHandleLoaded();
@@ -537,7 +544,12 @@ export const addDrawersOnInvisibleBox = async (
       parent: parent.userData.objectId,
       openDirection: DIRECTION_TYPES.RIGHT,
       drawerType: drawerType,
-      material: selectedCabinetItem[0].material,
+      material: [
+        ...(Array.isArray(selectedCabinetItem[0].material)
+          ? selectedCabinetItem[0].material
+          : [selectedCabinetItem[0].material]
+        ).filter((m): m is Material => !!m),
+      ],
     };
 
     drawerGroupWithAllPlank.push(drawerGroup);

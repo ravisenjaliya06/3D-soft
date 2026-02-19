@@ -655,6 +655,7 @@ MATERIAL = [
             "length": 660.4,
             "extension": 660.4,
             "screw_center_to_box_reference": 44,
+            "model_file": "/glb/chennal_close2.glb",
         },
     },
     {
@@ -1086,6 +1087,7 @@ MATERIAL = [
             "maximum_spacing": 762,
             "opening_angle": 120.00,
             "door_edge_to_reference_point": 20.5,
+            "model_file": "/glb/hinge_close.glb",
         },
     },
     {
