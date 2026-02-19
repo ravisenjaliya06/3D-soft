@@ -1,7 +1,6 @@
 # Python imports
 import secrets
 from datetime import timedelta
-from django.utils.timezone import now
 from typing import Tuple
 
 # Django imports
@@ -17,6 +16,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.timezone import now
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
@@ -768,7 +768,9 @@ class AdminView(viewsets.ViewSet):
     def dashboard(self: "AdminView", request: Request) -> render:
         total_users = User.objects.count()
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
-        total_pending_users = User.objects.filter(is_verified=False, is_superuser=False).count()
+        total_pending_users = User.objects.filter(
+            is_verified=False, is_superuser=False
+        ).count()
         active_users = User.objects.filter(
             last_login__gte=now() - timedelta(minutes=10)
         ).count()
@@ -795,7 +797,7 @@ class ApproveUserView(AdminRequiredMixin, View):
     def post(self: "ApproveUserView", request: Request, user_id: str) -> JsonResponse:
         # Check both POST/data and GET for flexibility, but prefer POST for state-changing actions
         is_approved = request.POST.get("is_approved") or request.GET.get("is_approved")
-        
+
         user = User.objects.filter(id=user_id).first()
         if not user:
             return JsonResponse({"error": "User not found"}, status=404)

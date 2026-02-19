@@ -427,8 +427,9 @@ class DesignCatalogViewSet(ModelViewSet):
                     is_library=True,
                 )
                 .prefetch_related(
-                    "materials__finishes",
-                    "materials__finish_types",
+                    "materials",
+                    "materials__finishes__finish",
+                    "materials__finish_types__finish_type",
                     "materials__textures__texture",
                     "materials__properties",
                 )
@@ -453,13 +454,26 @@ class DesignCatalogViewSet(ModelViewSet):
                 status=404,
             )
 
-        catalogs = self.get_queryset().filter(
-            version=version,
-            organization=request.user.selected_organization,
+        catalogs = (
+            self.get_queryset()
+            .filter(
+                version=version,
+                organization=request.user.selected_organization,
+            )
+            .prefetch_related(
+                "materials",
+                "materials__finishes__finish",
+                "materials__finish_types__finish_type",
+                "materials__textures__texture",
+                "materials__properties",
+            )
         )
 
+        # catalog_list = list(catalogs)
+
         serializer = SceneGetSerializer(catalogs, many=True)
-        items = group_catalogs_as_lists(serializer.data)
+        data = serializer.data
+        items = group_catalogs_as_lists(data)
         return Response({"version": version.id, "catalogs": items}, status=HTTP_200_OK)
 
     def create(

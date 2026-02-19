@@ -5,11 +5,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # App imports
-from user.views import (
-    AddUserInOrganizationViewset,
-
-    UserAuthViewset,
-)
+from user.views import AddUserInOrganizationViewset, UserAuthViewset
 
 urlpatterns = [
     path("register/", UserAuthViewset.as_view({"post": "register"}), name="register"),
