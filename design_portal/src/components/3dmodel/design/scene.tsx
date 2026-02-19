@@ -305,6 +305,137 @@ export const addDoorOnInvisibleBox = async (
   hideFullScreenLoader();
 };
 
+export const addDoubleDoorOnInvisibleBox = async (
+  scene: THREE.Scene,
+  boxMesh: THREE.Mesh,
+  selectedCabinetItem: MeshObjectData[] | null = null
+) => {
+  if (!selectedCabinetItem) {
+    console.error('No cabinet item selected');
+    return;
+  }
+  showFullScreenLoader('Loading design objects.');
+
+  if (!boxMesh) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  const geometryBoundingBox = geometry.boundingBox;
+
+  if (!geometryBoundingBox) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const size = new THREE.Vector3();
+  geometryBoundingBox.getSize(size);
+
+  const w = size.x;
+  const h = size.y;
+
+  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+    ? boxMesh
+    : (boxMesh.parent as THREE.Mesh);
+
+  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
+
+  const doorDepth = 18;
+
+  const doorDimensions = {
+    width: w,
+    height: h,
+    depth: doorDepth,
+  };
+
+  const localDoorPos = new THREE.Vector3(
+    boxCenterLocal.x,
+    boxCenterLocal.y,
+    geometryBoundingBox.max.z + doorDimensions.depth / 2
+  );
+
+  const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
+  const parentLocalDoorPos = parent.worldToLocal(worldDoorPos.clone());
+
+  const doubleDoorGroupId = crypto.randomUUID();
+
+  // Create Parent Double Door Group (Container)
+  const doubleDoorGroup: MeshObjectData = {
+    ...selectedCabinetItem,
+    id: doubleDoorGroupId,
+    name: 'DOUBLE_DOOR',
+    type: PART_TYPES.DOUBLE_DOOR,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    dimensions: doorDimensions,
+    position: {
+      x: parentLocalDoorPos.x,
+      y: parentLocalDoorPos.y,
+      z: parentLocalDoorPos.z,
+    },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+    isMain: true,
+    parent: parent.userData.objectId, // Parent is the cupboard/box
+    material: [], // Material handled by children usually, or passed empty
+  };
+
+  const gapMM = 2;
+  const doorWidth = (w - gapMM) / 2;
+
+  // Left Door
+  const leftDoor: MeshObjectData = {
+    ...selectedCabinetItem,
+    id: crypto.randomUUID(),
+    name: 'DOUBLE_DOOR_LEFT_PLANK',
+    type:
+      selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_LEFT_PLANK')?.type ||
+      PART_TYPES.DOOR, // As per user request "type": "plank" in JSON
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    parent: doubleDoorGroupId,
+    dimensions: { width: doorWidth, height: h, depth: doorDepth },
+    position: {
+      x: -w / 2 + doorWidth / 2, // Relative to DoubleDoor Group center
+      y: 0,
+      z: 0,
+    },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+    openDirection: DIRECTION_TYPES.LEFT,
+    material: selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_LEFT_PLANK')?.material,
+  };
+
+  // Right Door
+  const rightDoor: MeshObjectData = {
+    ...selectedCabinetItem,
+    id: crypto.randomUUID(),
+    name: 'DOUBLE_DOOR_RIGHT_PLANK',
+    type:
+      selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_RIGHT_PLANK')?.type ||
+      PART_TYPES.DOOR,
+    geometryType: GEOMETRY.BOX_GEOMETRY,
+    parent: doubleDoorGroupId,
+    dimensions: { width: doorWidth, height: h, depth: doorDepth },
+    position: {
+      x: w / 2 - doorWidth / 2, // Relative to DoubleDoor Group center
+      y: 0,
+      z: 0,
+    },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+    openDirection: DIRECTION_TYPES.RIGHT,
+    material: selectedCabinetItem.find((item) => item.name === 'DOUBLE_DOOR_RIGHT_PLANK')?.material,
+  };
+
+  // Build the group and children
+  // We need to pass the array of objects to meshBuilder
+  await meshBuilder([doubleDoorGroup, leftDoor, rightDoor]);
+
+  // await ensureHandleLoaded();
+  hideFullScreenLoader();
+};
+
 export const addDrawersOnInvisibleBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,

@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
 import {
   addDoorOnInvisibleBox,
+  addDoubleDoorOnInvisibleBox,
   addDrawersOnInvisibleBox,
   addHorizontalPlanksInsideBox,
   addLShapeObjectToBox,
@@ -480,7 +481,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     if (['door', 'Sliding Door'].includes(itemType)) {
-      await addDoorOnInvisibleBox(scene, targetBox, itemToAdd);
+      if (itemType === 'door' && itemName === 'DOUBLE_DOOR') {
+        const fullGroup = cabinetItems.find((group) =>
+          group.some((g) => g.id === selectedCabinetItem?.id)
+        );
+        await addDoubleDoorOnInvisibleBox(scene, targetBox, fullGroup ? fullGroup : []);
+      } else {
+        await addDoorOnInvisibleBox(scene, targetBox, itemToAdd);
+      }
     } else if (itemType === 'drawer') {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === itemToAdd.id));
       await addDrawersOnInvisibleBox(scene, targetBox, num, fullGroup ? fullGroup : []);

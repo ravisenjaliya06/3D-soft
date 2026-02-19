@@ -24,6 +24,7 @@ export const PART_TYPES = {
   BACK_PLANK: 'backPlank',
   DRAWER: 'drawer',
   DOOR: 'door',
+  DOUBLE_DOOR: 'doubleDoor',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
   L_SHAPE_OBJECT: 'lShapeObject',
@@ -47,6 +48,11 @@ export const DRAWER_PLANK_TYPES = {
   BOTTOM_DRAWER_PLANK: 'DRAWER_BOTTOM_PLANK',
   RIGHT_DRAWER_PLANK: 'DRAWER_RIGHT_PLANK',
   LEFT_DRAWER_PLANK: 'DRAWER_LEFT_PLANK',
+};
+
+export const DOUBLE_DOOR_PLANK_TYPES = {
+  DOUBLE_DOOR_RIGHT_PLANK: 'DOUBLE_DOOR_RIGHT_PLANK',
+  DOUBLE_DOOR_LEFT_PLANK: 'DOUBLE_DOOR_LEFT_PLANK',
 };
 
 export const GEOMETRY = {
