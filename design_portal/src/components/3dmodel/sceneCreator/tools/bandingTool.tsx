@@ -139,10 +139,6 @@ export class BandingTool {
 
     targetParent.traverse((child) => {
       if (child !== mesh && child instanceof THREE.Mesh && this.isPlank(child)) {
-        if (child.geometry && child.geometry.boundingSphere) {
-          // Only if boundingSphere is up to date, which might not be.
-          // Rely on Box3 (safer)
-        }
         siblings.push(child);
       }
     });
