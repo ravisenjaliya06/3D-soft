@@ -470,8 +470,7 @@ class DesignCatalogViewSet(ModelViewSet):
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)
-        data = serializer.data
-        items = group_catalogs_as_lists(data)
+        items = group_catalogs_as_lists(serializer.data)
         return Response({"version": version.id, "catalogs": items}, status=HTTP_200_OK)
 
     def create(
