@@ -716,7 +716,9 @@ const Settings = () => {
 
   return (
     <div className={styles.container}>
-      <Sidebar />
+      <div className={styles.sidebarWrapper}>
+        <Sidebar />
+      </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
         <div className={styles.mainContent}>
@@ -1011,13 +1013,9 @@ const Settings = () => {
                     <p style={{ margin: 0 }}>Edge Banding</p>
                     <div
                       onClick={handleEdgeBandingToggle}
-                      className={`relative h-[1.5rem] w-[3rem] cursor-pointer rounded-full border border-gray-300 transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[#392579]' : 'bg-gray-100'}`}
+                      className={`${styles.toggleSwitch} ${edgeBandingEnabled ? styles.active : ''} ${edgeBandingDisabled ? styles.disabled : ''}`}
                     >
-                      <div
-                        className={`absolute top-[0.15rem] left-[0.2rem] h-[1.1rem] w-[1.1rem] rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${
-                          edgeBandingEnabled ? 'translate-x-[1.4rem]' : 'translate-x-0'
-                        }`}
-                      />
+                      <div className={styles.toggleKnob} />
                     </div>
                   </div>
                   
