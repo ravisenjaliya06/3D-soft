@@ -5,6 +5,60 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 // Cache to store the loaded GLB models (promises returning the scene)
 const glbCache = new Map<string, Promise<THREE.Object3D>>();
 
+const preloadQueue: string[] = [];
+let isQueueRunning = false;
+
+const processQueue = async () => {
+  if (preloadQueue.length === 0) {
+    isQueueRunning = false;
+    return;
+  }
+
+  const url = preloadQueue.shift();
+  if (url && !glbCache.has(url)) {
+    try {
+      // Load the model and wait for it to finish
+      await new Promise<void>((resolve, reject) => {
+        const loader = new GLTFLoader();
+        loader.load(
+          url,
+          (glb) => {
+            glbCache.set(url, Promise.resolve(glb.scene));
+            resolve();
+          },
+          undefined,
+          (error) => {
+            console.error(`Error preloading GLB ${url}:`, error);
+            reject(error);
+          }
+        );
+      });
+    } catch (e) {
+      console.error(e);
+      // Ignore errors so queue keeps processing
+    }
+  }
+
+  // Schedule next item with a delay to yield to main thread
+  setTimeout(() => {
+    processQueue();
+  }, 200);
+};
+
+export const scheduleGLBPreload = (url: string): void => {
+  if (glbCache.has(url)) return;
+
+  // Avoid duplicates in queue
+  if (!preloadQueue.includes(url)) {
+    preloadQueue.push(url);
+  }
+
+  if (!isQueueRunning) {
+    isQueueRunning = true;
+    processQueue();
+  }
+};
+
 export const preloadGLB = (url: string): void => {
   if (!glbCache.has(url)) {
     const loader = new GLTFLoader();
