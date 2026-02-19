@@ -1,18 +1,19 @@
-name: Design Portal Linter
+name: Design Portal CI (Lint, Format, Build)
 
 on:
   pull_request:
     branches: [main]
-    types:
-      - opened
-      - synchronize
+    types: [opened, synchronize]
     paths:
       - 'design_portal/**'
 
 jobs:
-  lint:
-    name: Lint Frontend Code
+  lint-frontend:
+    name: Frontend Quality & Build
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./design_portal
 
     steps:
       - name: Checkout Code
@@ -20,34 +21,46 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Frontend Dependencies
-        working-directory: ./design_portal
-        run: |
-          npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Run Frontend Linter
-        working-directory: ./design_portal
+      - name: Run Linter (ESLint)
         run: |
-          npm run lint  # Run the ESLint linter
-          if [ $? -ne 0 ]; then
-            echo "Design_portal linting failed. Please fix the linting issues."
-            exit 1  # Fail the job if there are linting issues
+          npm run lint
+          # Note: npm run lint usually exits with 1 on error automatically
+
+      - name: Run Formatter Check (Prettier)
+        run: |
+          # Ideally, run 'prettier --check .' so it doesn't just write files but fails if unformatted
+          npm run format || { echo "❌ Prettier check failed"; exit 1; }
+
+      - name: Build Next.js Application
+        run: |
+          npm run build || { echo "❌ Next.js Build failed"; exit 1; }
+
+      - name: Notify Google Chat
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS_MSG="✅ Frontend Validation Passed"
+          else
+            STATUS_MSG="❌ Frontend Validation Failed"
           fi
 
-      - name: Run Frontend Formatter Check
-        working-directory: ./design_portal
-        run: |
-          npm run format  # Run the Prettier formatter
-          if [ $? -ne 0 ]; then
-            echo "Design_portal formatter check failed. Please fix the formatting issues."
-            exit 1  # Fail the job if there are formatting issues
-          fi
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          BRANCH="${{ github.head_ref }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          REPO="${{ github.repository }}"
 
-      - name: Build Next.js
-        working-directory: ./design_portal
-        run: |
-          npm run build
-          if [ $? -ne 0 ]; then
-            echo "Design_portal build failed. Please fix the build issues."
-            exit 1  # Fail the job if there are build issues
-          fi
+          # We use a variable to avoid escaping hell
+          TEXT_CONTENT="*$STATUS_MSG*\n\n👤 *Author:* $AUTHOR\n🎨 *Project:* Design Portal\n🌿 *Branch:* $BRANCH\n📂 *Repo:* $REPO\n🔗 <$PR_URL|View Pull Request>"
+
+          # Single quotes around the URL are CRITICAL to protect the &token= part
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"text\": \"$TEXT_CONTENT\"}" \
+            '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'

@@ -25,6 +25,7 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls),
         path("v1/user/", include("user.urls")),
+        path("v1/admin_portal/", include("user.admin_urls")),
         path("v1/design/", include("design.urls")),
         path("v1/mes_portal/", include("mes_portal.urls")),
         path("v1/material/", include("material.urls")),

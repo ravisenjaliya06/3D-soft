@@ -1,4 +1,5 @@
 import { _3DMODEL, assets } from '@/svgPaths';
+import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,6 +19,7 @@ import { Dimensions } from '../interface';
 import {
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  INVISIBLE_BOXES,
   Material,
   MeshObjectData,
   MeshObjectPatch,
@@ -80,6 +82,7 @@ const Sidebar: React.FC = () => {
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
+  const [isInvisibleBox, setIsIncisibleBox] = useState<boolean>(false);
   const [textureData, setTextureData] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(40);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
@@ -97,7 +100,6 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
-  const selectedInvisibleBoxId = useSelector((state: RootState) => state.data.selectedInvisibleBox);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
@@ -129,6 +131,14 @@ const Sidebar: React.FC = () => {
     if (selectedObjectId || selectedChildObjectId) {
       setSettingOpen(true);
       setNavOpen(false);
+
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh || child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX) {
+          setIsIncisibleBox(true);
+        } else {
+          setIsIncisibleBox(false);
+        }
+      });
     } else {
       setSettingOpen(false);
       setNavOpen(true);
@@ -479,15 +489,35 @@ const Sidebar: React.FC = () => {
     setNavOpen(true);
   };
 
-  // (Harsh): Temporary placement — will move to updateHandler once door selection is ready.
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    scene.traverse((child) => {
-      if (child.userData.objectId === selectedObject?.id) {
-        child.userData.openDirection = position.toLowerCase();
-      }
-    });
+    if (selectedObject) {
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
+          const controller = new CabinetMotionController();
+          const wasOpen = child.userData.isClosed === false;
+
+          if (wasOpen) {
+            controller.toggleDoor(child);
+
+            const pivotGroup = child.parent;
+            if (pivotGroup?.userData.isPivotGroup) {
+              gsap.killTweensOf(pivotGroup.rotation);
+              pivotGroup.rotation.set(0, 0, 0);
+            }
+          }
+
+          child.userData.openDirection = position.toLowerCase();
+
+          // for re-open
+          if (wasOpen) {
+            controller.toggleDoor(child);
+          }
+        }
+      });
+    }
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
@@ -692,17 +722,19 @@ const Sidebar: React.FC = () => {
 
     const material = selectedObject.material;
     const materialArray = Array.isArray(material) ? material : [material];
-
     //@ts-ignore
     const updatedMaterials: Material[] = materialArray.map((mat) => {
       // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
-      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK || mat?.type === 'Floor') {
+      if (
+        mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK ||
+        mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS
+      ) {
         return {
           ...mat,
           textures: [
             {
-              id: mat?.textures?.[0].id,
-              name: mat?.textures?.[0].name,
+              id: mat?.textures?.[0]?.id || crypto.randomUUID(),
+              name: mat?.textures?.[0]?.name || 'Texture',
               texture: textureData.id,
               textureDetail: textureData,
             },
@@ -913,7 +945,6 @@ const Sidebar: React.FC = () => {
 
   // Check if invisible box is selected
   const isInvisibleBoxSelected =
-    !!selectedInvisibleBoxId ||
     selectedObject?.type === 'INVISIBLEBOX' ||
     selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
     selectedObject?.name?.toLowerCase().includes('invisible_box') ||
@@ -1491,20 +1522,22 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isSettingOpen
                   ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isNavOpen
                   ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              } `}
             >
               Navigation
             </button>
@@ -1520,8 +1553,15 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* ================= NO SELECTION ================= */}
-          {isSettingOpen && !selectedObject && (
+          {isSettingOpen && !selectedObject && !isInvisibleBox && (
             <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
+          )}
+
+          {/* ================= INVISIBLE BOX ================= */}
+          {isSettingOpen && isInvisibleBox && (
+            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">
+              Add parts to see properties
+            </p>
           )}
 
           {/* ================= SETTINGS ================= */}
@@ -1557,10 +1597,11 @@ const Sidebar: React.FC = () => {
                             >
                               {/* Knob */}
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                  minifixEnabled
                                     ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                     : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                  }`}
+                                }`}
                               />
                             </div>
                             <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -1587,12 +1628,7 @@ const Sidebar: React.FC = () => {
                                       <CustomToast
                                         appearance="error"
                                         message="Distance must be in multiple of 32"
-                                        closeToast={closeToast} // Pass closeToast if CustomToast expects it, though my extracted one didn't have it in props interface but let me check.
-                                      // My extracted component: CustomToast = ({ appearance, message }: { appearance: string; message: string; })
-                                      // It does NOT assume closeToast.
-                                      // Wait, the one in Toolbar DID have closeToast.
-                                      // I should probably update CustomToast to optionally accept it or just ignore it.
-                                      // Let's check CustomToast again.
+                                        closeToast={closeToast}
                                       />
                                     ),
                                     {
@@ -1894,12 +1930,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                        | 'top'
-                                        | 'bottom'
-                                        | 'left'
-                                        | 'right'
-                                        | 'front'
-                                        | 'back',
+                                          | 'top'
+                                          | 'bottom'
+                                          | 'left'
+                                          | 'right'
+                                          | 'front'
+                                          | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -1984,10 +2020,11 @@ const Sidebar: React.FC = () => {
                                                 key={idx}
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
-                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
+                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                  isActive
                                                     ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
                                                     : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                  } `}
+                                                } `}
                                               >
                                                 <img
                                                   src={icon}
@@ -2208,10 +2245,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                topPlankEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              }`}
                             />
                           </div>
 
@@ -2260,10 +2298,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
+                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                baseheightEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              }`}
                             />
                           </div>
 
@@ -2284,10 +2323,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                frontpanelEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              }`}
                             />
                           </div>
 
@@ -2552,8 +2592,9 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />

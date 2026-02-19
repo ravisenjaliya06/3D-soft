@@ -21,6 +21,7 @@ export class MeshBuilder {
   private parentMesh: THREE.Mesh | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
+  private textureLoader = new THREE.TextureLoader();
 
   constructor(data: MeshObjectData, scene?: THREE.Scene) {
     this.meshData = convertKeysToCamel(data);
@@ -140,15 +141,13 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-      texture = new THREE.TextureLoader().load(
+      texture = this.textureLoader.load(
         `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
       );
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.repeat.set(1, 1);
-      texture.center.set(0, 0);
-      texture.offset.set(0, 0);
     });
     return texture;
   }
@@ -173,13 +172,13 @@ export class MeshBuilder {
     materialArray.forEach((materialData) => {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
-      } else if (materialData.type === 'Floor') {
-        // Support floor material type - use same texture loading as Panel Stock
-        createdMaterial = this._createTextureMaterial(materialData);
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
         });
+      } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
+        // Support floor material type - use same texture loading as Panel Stock
+        createdMaterial = this._createTextureMaterial(materialData);
       }
 
       if (this.meshData.type === OBJECT_TYPES.PLATFORM) {
@@ -188,7 +187,7 @@ export class MeshBuilder {
         });
       }
 
-      if (this.meshData.type === OBJECT_TYPES.SINK) {
+      if (this.meshData.type === OBJECT_TYPES.SINK || this.meshData.type === OBJECT_TYPES.MODEL) {
         createdMaterial = new THREE.MeshStandardMaterial({
           visible: false,
         });
@@ -397,6 +396,29 @@ export class MeshBuilder {
     mesh.add(sinkModel);
   }
 
+  private async _loadModel(mesh: THREE.Mesh) {
+    const url = this.meshData.path || '';
+    if (!url) return;
+
+    const backendUrl = url;
+
+    try {
+      const model = await GLBLoader(backendUrl, 'Model', {
+        width: this.meshData.dimensions.width,
+        height: this.meshData.dimensions.height,
+        depth: this.meshData.dimensions.depth,
+      });
+
+      model.name = `Model_for_${mesh.name}`;
+      model.userData.type = OBJECT_TYPES.MODEL;
+      model.userData.objectId = this.meshData.id;
+
+      mesh.add(model);
+    } catch (error) {
+      console.error('Failed to load model:', error);
+    }
+  }
+
   /**
    * Remove all banding meshes from a plank
    */
@@ -581,6 +603,8 @@ export class MeshBuilder {
 
     if (this.meshData.type === OBJECT_TYPES.SINK) {
       this._loadSink(this.mesh!);
+    } else if (this.meshData.type === OBJECT_TYPES.MODEL) {
+      this._loadModel(this.mesh!);
     }
   }
 

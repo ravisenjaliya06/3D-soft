@@ -9,7 +9,8 @@ export const handleVerify = async (
   registerOTPPayload: OTPVerifyForm,
   setError: (message: string | null) => void,
   router: NextRouter,
-  setIsLoading: (loading: boolean) => void
+  setIsLoading: (loading: boolean) => void,
+  onSuccess?: () => void
 ) => {
   setIsLoading(true);
   const { formData } = handleFormData<OTPVerifyForm>(registerOTPPayload, setError);
@@ -21,12 +22,16 @@ export const handleVerify = async (
 
   if (response.status === 200) {
     setIsLoading(false);
-    router.push({
-      pathname: REDIRECT.LOGIN,
-      query: {
-        message: 'Your Account has been verified. To access login now.',
-      },
-    });
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      router.push({
+        pathname: REDIRECT.LOGIN,
+        query: {
+          message: 'Your Account has been verified. To access login now.',
+        },
+      });
+    }
   } else {
     setError(response.data?.message || 'Invalid OTP. Please try again.');
     setIsLoading(false);

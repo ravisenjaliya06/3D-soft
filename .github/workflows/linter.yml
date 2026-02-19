@@ -1,10 +1,9 @@
-name: Backend Cleanup and Run TestCase, Formatter Check, Type Checker, and Migration Check
+name: Backend CI (Test, TypeCheck, Format)
+
 on:
   pull_request:
     branches: [main]
-    types:
-      - opened
-      - synchronize
+    types: [opened, synchronize]
     paths:
       - 'backend/**'
 
@@ -14,9 +13,12 @@ permissions:
   pull-requests: read
 
 jobs:
-  ci:
-    name: Backend Cleanup and Run TestCase
+  ci-backend:
+    name: Backend Quality & Tests
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: Checkout Code
@@ -24,69 +26,79 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python 
-        uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install Pipenv
+      - name: Install Pipenv & Dependencies
         run: |
           pip install pipenv
-
-      - name: Install Backend Dependencies
-        working-directory: ./backend
-        run: |
           pipenv install --dev --deploy --ignore-pipfile
 
-      - name: Verify Backend Script Exists
+      - name: Run Type Checker (Mypy/Pyright)
         run: |
-          cd backend/scripts
-          ls -a
+          chmod +x scripts/type-checker.sh
+          ./scripts/type-checker.sh
 
-      # - name: Run Backend Type Checker
-      #   working-directory: ./backend
-      #   run: |
-      #     chmod +x scripts/type-checker.sh
-      #     ./scripts/type-checker.sh
+      - name: Run Formatter Check (Black/Isort)
+        run: |
+          chmod +x scripts/formatter.sh
+          ./scripts/formatter.sh
+          # Note: If this fails, the script should exit with non-zero code
 
-      # - name: Backend Formatter Check
-      #   working-directory: ./backend
-      #   run: |
-      #     chmod +x scripts/formatter.sh
-      #     ./scripts/formatter.sh
-      #     if [ $? -ne 0 ]; then
-      #       echo "Formatter check failed. Please fix the formatting issues."
-      #       exit 1
-      #     fi
-
-      - name: Run Backend Migrations Checker
-        working-directory: ./backend
+      - name: Run Migrations Checker
         run: |
           chmod +x scripts/check_migrations.sh
           ./scripts/check_migrations.sh
           if [ $? -ne 0 ]; then
-            echo "Migration check failed. Please ensure only one migration file exists per app."
-            exit 1
+             echo "❌ Migration Issue: Ensure only one migration file exists per app."
+             exit 1
           fi
 
-      # - name: Run Backend Tests
-      #   working-directory: ./backend
-      #   env:
-      #     SECRET_KEY: '1'
-      #   run: |
-      #     pipenv run coverage run -m pytest
+      - name: Run Pytest
+        env:
+          SECRET_KEY: 'testing-secret-key'
+        run: |
+          pipenv run coverage run -m pytest
 
-      # - name: Check Backend Coverage
-      #   working-directory: ./backend
-      #   run: |
-      #     pipenv run coverage report
-      #     coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
-      #     if (( $(echo "$coverage_percentage < 70" | bc -l) )); then
-      #       echo "Coverage is below 90%: $coverage_percentage%. Please add more tests to improve coverage."
-      #       exit 1
-      #     else
-      #       echo "Coverage is sufficient: $coverage_percentage%."
-      #     fi
+      - name: Check Code Coverage
+        id: coverage
+        run: |
+          pipenv run coverage report
+          
+          # Extract percentage number
+          coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          
+          echo "Current Coverage: $coverage_percentage%"
+          
+          # Logic: Fail if coverage is below 75%
+          if (( $(echo "$coverage_percentage < 75" | bc -l) )); then
+            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 75%)"
+            echo "Please add more tests."
+            exit 1
+          else
+            echo "✅ Coverage is sufficient: $coverage_percentage%."
+          fi
 
-      - name: Finalize CI Success
-        run: echo "All checks passed successfully!"
+      - name: Notify Google Chat
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS_MSG="✅ Backend Validation Passed"
+          else
+            STATUS_MSG="❌ Backend Validation Failed"
+          fi
+
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          BRANCH="${{ github.head_ref }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          REPO="${{ github.repository }}"
+
+          # We use a variable to avoid escaping hell
+          TEXT_CONTENT="*$STATUS_MSG*\n\n👤 *Author:* $AUTHOR\n🌿 *Branch:* $BRANCH\n📂 *Repo:* $REPO\n🔗 <$PR_URL|View Pull Request>"
+
+          # Single quotes around the URL are CRITICAL to protect the &token= part
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"text\": \"$TEXT_CONTENT\"}" \
+            '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'

@@ -9,13 +9,14 @@ import { Position, Rotation } from '../store/interface';
 export const FLOOR_PLAN_TYPES = {
   WALL: 'wall',
   CWALL: 'cwall',
+  FLOOR: 'floor',
 };
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
   SINK: 'sink',
-  FLOOR: 'floor',
+  MODEL: 'model',
 };
 
 export const PART_TYPES = {
@@ -27,6 +28,7 @@ export const PART_TYPES = {
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
   L_SHAPE_OBJECT: 'lShapeObject',
+  U_SHAPE_OBJECT: 'uShapeObject',
   HANDLE: 'handle',
 };
 
@@ -166,6 +168,7 @@ export interface MeshObjectData {
   dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
+  path?: string;
 
   //optional properties
   description?: string;

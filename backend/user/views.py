@@ -1,28 +1,40 @@
 # Python imports
 import secrets
 from datetime import timedelta
+from django.utils.timezone import now
 from typing import Tuple
 
 # Django imports
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 # External imports
 import jwt
+from dotenv import load_dotenv
 from jwt import decode as jwt_decode
+from rest_framework import viewsets
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
+    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
 )
 from rest_framework.viewsets import ModelViewSet
@@ -34,6 +46,7 @@ from umaboy.models import Organization, User, UserOrganizationPermission
 
 # Local Imports
 from user.constant import (
+    ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
     FORGOT_EMAIL_SUBJECT,
     FORGOT_PASSWORD_TOKEN_EXPIRE_TIME,
     OTP_VERIFICATION_EMAIL_SUBJECT,
@@ -42,6 +55,7 @@ from user.constant import (
 from user.logger import UserLogger as Logger
 from user.serializers import (
     AddUserInOrganizationSerializer,
+    AdminLoginSerializer,
     EditUserInOrganizationSerializer,
     LoginSerializer,
     OrganizationSerializer,
@@ -53,10 +67,12 @@ from user.serializers import (
     UserProfileSerializer,
 )
 from user.typing import EmailData
-from user.utils import send_email
+from user.utils import send_email, send_google_chat_notification
 
 # Local imports
 from .permissions import AccountManager
+
+load_dotenv()
 
 
 class UserAuthViewset(ModelViewSet):
@@ -81,6 +97,9 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.save()
 
         refresh = RefreshToken.for_user(user)
+        user.is_verified = False
+        user.save()
+
         otp, expiration_time = self._generate_otp()
         self._set_user_otp(user, otp, expiration_time)
         Logger.info(
@@ -92,9 +111,21 @@ class UserAuthViewset(ModelViewSet):
             | common_info_logger
         )
         self._send_otp_email(user, otp)
+        registration_message = (
+            "🟢 *New User Registered*\n"
+            "----------------------------------\n"
+            f"📧 *Email:* `{user.email}`\n"
+            f"👤 *Username:* {user.username}\n"
+            f"📅 *Joined:* {user.date_joined.strftime('%Y-%m-%d %H:%M')}\n"
+            "----------------------------------"
+        )
+        send_google_chat_notification(
+            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
+            message=registration_message,
+        )
         return Response(
             {
-                "message": "User registered",
+                "message": "User Registration Is Successful. Wait For Admin Approval.",
                 "payload": {
                     "user_id": user.id,
                     "email": user.email,
@@ -127,10 +158,20 @@ class UserAuthViewset(ModelViewSet):
         serializer = OtpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        self._send_registration_notification_to_admin(request, user)
+
         Logger.info(
-            {"message": "User verified", "email": user.email} | common_info_logger
+            {
+                "message": "User verified with otp wait for admin approval.",
+                "email": user.email,
+            }
+            | common_info_logger
         )
-        return Response({"message": "User verified"}, status=HTTP_200_OK)
+        return Response(
+            {"message": "User verified with otp wait for admin approval."},
+            status=HTTP_200_OK,
+        )
 
     def login(self: "UserAuthViewset", request: Request) -> Response:
         """
@@ -143,6 +184,14 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         user: User = serializer.validated_data["user"]
+
+        # Block Login Untill Verified by Admin
+        if not user.is_verified:
+            return Response(
+                {"error": "Your account is pending admin approval."},
+                status=HTTP_403_FORBIDDEN,
+            )
+
         refresh = RefreshToken.for_user(user)
 
         Logger.info(
@@ -152,6 +201,19 @@ class UserAuthViewset(ModelViewSet):
             }
             | common_info_logger
         )
+        login_message = (
+            "🔑 *User Login*\n"
+            "----------------------------------\n"
+            f"👤 *Name:* {user.get_full_name() or user.username}\n"
+            f"📧 *User:* `{user.email}`\n"
+            f"🆔 *ID:* `{user.id}`\n"
+            "----------------------------------\n"
+        )
+        send_google_chat_notification(
+            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
+            message=login_message,
+        )
+
         connected_organizations = [
             {"id": org.id, "name": org.name} for org in user.organizations.all()
         ]
@@ -359,6 +421,33 @@ class UserAuthViewset(ModelViewSet):
         user.otp = otp
         user.otp_expiration_time = expiration_time
         user.save()
+
+    def _send_registration_notification_to_admin(
+        self: "UserAuthViewset", request: Request, user: User
+    ) -> None:
+        """
+        Private method to send registration notification to admin.
+        """
+        context = {
+            "user_name": user.name or user.username,
+            "user_email": user.email,
+            "username": user.username,
+            "user_phone": user.phone,
+            "date_joined": user.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
+            "admin_dashboard_url": request.build_absolute_uri(
+                reverse("admin_dashboard")
+            ),
+        }
+        email_content = render_to_string("admin_notification.html", context)
+        email_data = EmailData(
+            sender_email=settings.SENDER_EMAIL,
+            sender_password=settings.SENDER_PASSWORD,
+            receiver_email=settings.ADMIN_URL,
+            subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
+            html=email_content,
+        )
+
+        return send_email(email_data)
 
     def _send_forgot_password_email(
         self: "UserAuthViewset", user: User, email: str, token: str
@@ -583,3 +672,139 @@ class AddUserInOrganizationViewset(ModelViewSet):
         organization = Organization.objects.filter(user=request.user).first()
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data, status=HTTP_200_OK)
+
+
+class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    login_url = "admin_login"
+
+    def dispatch(
+        self: "AdminRequiredMixin", request: Request, *args, **kwargs
+    ) -> Response:
+        if request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+
+        token = request.COOKIES.get(settings.ADMIN_JWT_COOKIE_NAME)
+        if token:
+            access_token = AccessToken(token)
+
+            user_id = access_token.get("user_id")
+            if not user_id:
+                return HttpResponseRedirect(reverse(self.login_url))
+
+            user = User.objects.filter(id=user_id, is_superuser=True).first()
+            if not user:
+                return HttpResponseRedirect(reverse(self.login_url))
+
+            request.user = user
+            Logger.info(
+                {
+                    "message": "Admin authenticated via JWT",
+                    "user_id": user.id,
+                    "function": "AdminRequiredMixin.dispatch",
+                }
+            )
+            return super().dispatch(request, *args, **kwargs)
+
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return HttpResponseRedirect(reverse(self.login_url))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self: "AdminRequiredMixin") -> bool:
+        return self.request.user.is_superuser
+
+
+class AdminView(viewsets.ViewSet):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [AllowAny]
+    renderer_classes = [TemplateHTMLRenderer]
+
+    def login_get(self: "AdminView", request: Request) -> render:
+        if request.user.is_authenticated and request.user.is_superuser:
+            return HttpResponseRedirect(reverse("admin_dashboard"))
+        return render(request, "custom_admin/index.html")
+
+    def login_post(self: "AdminView", request: Request) -> Response:
+        serializer = AdminLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user"]
+
+        if not user.is_superuser:
+            return JsonResponse({"error": "Admin access only"}, status=403)
+
+        login(request._request, user)
+
+        access_token = AccessToken.for_user(user)
+
+        response = JsonResponse(
+            {
+                "message": "Login successful",
+                "redirect": reverse("admin_dashboard"),
+            },
+            status=200,
+        )
+
+        response.set_cookie(
+            key=settings.ADMIN_JWT_COOKIE_NAME,
+            value=str(access_token),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+            max_age=settings.ADMIN_SESSION_TIMEOUT_MINUTES * 60,
+        )
+
+        return response
+
+    def logout(self: "AdminView", request: Request) -> Response:
+        logout(request)
+        response = HttpResponseRedirect(reverse("admin_login"))
+        response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
+        Logger.info(
+            {"message": "Admin logged out successfully", "function": "AdminView.logout"}
+        )
+        return response
+
+    def dashboard(self: "AdminView", request: Request) -> render:
+        total_users = User.objects.count()
+        pending_users = User.objects.filter(is_verified=False, is_superuser=False)
+        total_pending_users = User.objects.filter(is_verified=False, is_superuser=False).count()
+        active_users = User.objects.filter(
+            last_login__gte=now() - timedelta(minutes=10)
+        ).count()
+
+        context = {
+            "pending_users": pending_users,
+            "total_users": total_users,
+            "total_pending_users": total_pending_users,
+            "active_users": active_users,
+        }
+        return render(request, "custom_admin/dashboard.html", context)
+
+    def users(self: "AdminView", request: Request) -> render:
+        approved_users = User.objects.filter(
+            is_verified=True, is_superuser=False
+        ).order_by("-date_joined")
+        return render(
+            request, "custom_admin/users.html", {"approved_users": approved_users}
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ApproveUserView(AdminRequiredMixin, View):
+    def post(self: "ApproveUserView", request: Request, user_id: str) -> JsonResponse:
+        # Check both POST/data and GET for flexibility, but prefer POST for state-changing actions
+        is_approved = request.POST.get("is_approved") or request.GET.get("is_approved")
+        
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return JsonResponse({"error": "User not found"}, status=404)
+
+        if is_approved == "true":
+            user.is_verified = True
+            user.save()
+            # Send notification email if needed here
+            return HttpResponseRedirect(reverse("admin_dashboard"))
+
+        user.delete()
+        return HttpResponseRedirect(reverse("admin_dashboard"))

@@ -36,6 +36,11 @@ export const _3DMODEL = {
   searchIcon: '/assets/3dmodel/toolbar/searchIcon.svg',
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
+  lshape: '/assets/3dmodel/toolbar/lshape.svg',
+  downarrow: '/assets/3dmodel/toolbar/downarrow.svg',
+  uparrow: '/assets/3dmodel/toolbar/uparrow.svg',
+  rightarrow: '/assets/3dmodel/toolbar/rightarrow.svg',
+  leftarrow: '/assets/3dmodel/toolbar/leftarrow.svg',
   wall: '/assets/3dmodel/toolbar/wall.svg',
   directionIcon: '/assets/3dmodel/sidebar/directionarrow.svg',
   swapHorizontalIcon: '/assets/3dmodel/sidebar/swap-horizontal.svg',
@@ -353,7 +358,7 @@ export const TITLELOGO_SVG = {
 export const TOOLBAR = {
   _5996079: '/assets/toolbar/5996079.png',
   cabinet: '/assets/toolbar/cabinet.svg',
-  cabinet_svg: '/assets/toolbar/cabinet_svg.svg',
+  cabinet_svg: '/assets/toolbar/wardropbe.svg',
   door_icon: '/assets/toolbar/door-icon.svg',
   door: '/assets/toolbar/door.svg',
   double_door: '/assets/toolbar/double_door.svg',
@@ -468,6 +473,12 @@ export const UP_DOWN_ARROW = {
   up_down_arrow: '/assets/updown_arrow.svg',
 };
 
+export const FEATURED_ICON = {
+  featured_icon: '/assets/featured_icon.svg',
+  alert_circle_outline: '/assets/alert_circle_outline.svg',
+  alert: '/assets/alert.svg',
+};
+
 export const assets = {
   ...PROPERTY_IMG,
   ..._3DMODEL,
@@ -511,4 +522,5 @@ export const assets = {
   ...TOOLBAR,
   ...LOAD_MORE,
   ...UP_DOWN_ARROW,
+  ...FEATURED_ICON,
 };

@@ -44,7 +44,9 @@
   gap: 1.25rem;
   box-shadow: 0 0.5rem 1.5625rem rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -107,7 +109,6 @@
   margin: 0.2rem 0 0 0;
   line-height: 1;
 }
-
 
 /* Navigation / Features Grid */
 .featuresGrid {
@@ -215,7 +216,6 @@
 }
 
 @media (max-width: 1024px) {
-
   .statsGrid,
   .featuresGrid {
     grid-template-columns: repeat(2, 1fr);

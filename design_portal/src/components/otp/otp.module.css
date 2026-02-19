@@ -177,6 +177,7 @@
     color: var(--primary-color);
     border: 0.063rem solid var(--primary-color);
   }
+
   &:disabled {
     background-color: var(--primary-color-grey-2);
     color: var(--primary-white);

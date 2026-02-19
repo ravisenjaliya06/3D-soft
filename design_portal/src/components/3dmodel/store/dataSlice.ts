@@ -20,6 +20,7 @@ const initialState: DataState = {
   points: [],
   walls: [],
   floor: [],
+  globalDoorsOpen: false,
 };
 
 const dataSlice = createSlice({
@@ -40,6 +41,9 @@ const dataSlice = createSlice({
     },
     setSelectedChildObject: (state, action: PayloadAction<string | null>) => {
       state.selectedChildObject = action.payload;
+    },
+    setGlobalDoorsOpen: (state, action: PayloadAction<boolean>) => {
+      state.globalDoorsOpen = action.payload;
     },
     updateObject: (state, action: PayloadAction<Partial<MeshObjectData> & { id: string }>) => {
       const updatedObject = action.payload;
@@ -91,9 +95,17 @@ const dataSlice = createSlice({
       }
     },
     removeObject: (state, action: PayloadAction<string>) => {
-      const id = action.payload;
-      state.objects = state.objects.filter((obj) => obj.id !== id);
-      state.objects = state.objects.filter((obj) => obj.parent !== id);
+      const idToRemove = action.payload;
+
+      const collectIdsToRemove = (id: string): string[] => {
+        const children = state.objects.filter((obj) => obj.parent === id).map((obj) => obj.id);
+
+        return [id, ...children.flatMap((childId) => collectIdsToRemove(childId))];
+      };
+
+      const idsToRemove = collectIdsToRemove(idToRemove);
+
+      state.objects = state.objects.filter((obj) => !idsToRemove.includes(obj.id));
     },
     toggleQuickHide: (state, action: PayloadAction<boolean>) => {
       state.isQuickHideActive = action.payload;
@@ -178,6 +190,7 @@ export const {
   setUnitType,
   setCreationCancelHint,
   togglAlignment,
+  setGlobalDoorsOpen,
 } = dataSlice.actions;
 
 export const {
