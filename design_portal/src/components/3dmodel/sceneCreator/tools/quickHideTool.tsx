@@ -204,6 +204,19 @@ export class OutlineManager {
       return;
     }
 
+    // Fix for GLB Models (Doors/Drawers)
+    if (clonedGeo.attributes) {
+      Object.keys(clonedGeo.attributes).forEach((key) => {
+        if (key !== 'position') {
+          clonedGeo.deleteAttribute(key);
+        }
+      });
+    }
+    // Also remove morph attributes if any
+    if (clonedGeo.morphAttributes) {
+      clonedGeo.morphAttributes = {};
+    }
+
     if (child.userData.type !== 'groove') {
       mergedGeometries.push(clonedGeo);
     }

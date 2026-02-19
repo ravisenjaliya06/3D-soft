@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
 import {
+  DIRECTION_TYPES,
   DRAWER_PLANK_TYPES,
   FLOOR_PLAN_TYPES,
   GEOMETRY,
@@ -581,6 +582,11 @@ export class MeshBuilder {
     materialArray.forEach((materialData) => {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
         this._loadHandle(this.mesh!, materialData.properties);
+      } else if (materialData?.type === MATERIAL_TYPES.HINGE) {
+        this._loadHinge(this.mesh!, materialData.properties);
+      } else if (materialData?.type === MATERIAL_TYPES.DRAWER_GUIDE) {
+        // Deprecated: Attach to side planks instead.
+        this._loadDrawerChannel(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.BANDING) {
         if (this.mesh) {
           const tool = this._getOrCreateBandingTool();
@@ -625,7 +631,154 @@ export class MeshBuilder {
     this._setUserData(mesh);
     this._handleMaterial();
     this._createGrooving();
+    this._checkForParentAddons(mesh);
     return mesh;
+  }
+
+  private async _loadHinge(mesh: THREE.Mesh, materialProps: any) {
+    const url = materialProps?.modelFile;
+    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      : '/glb/door_handle.glb';
+
+    const hingeModel = await GLBLoader(backendUrl, 'Hinge', {
+      width: 10,
+      height: 10,
+      depth: 10,
+    });
+
+    if (!hingeModel) return;
+
+    // Hinge positions: 100mm from top and bottom
+    const margin = 100; // 100mm
+    const doorHeight = this.meshData.dimensions.height;
+    const doorWidth = this.meshData.dimensions.width;
+    const doorDepth = this.meshData.dimensions.depth;
+
+    // Determine Side based on Open Direction
+    const isRight = this.meshData.openDirection === DIRECTION_TYPES.RIGHT;
+
+    // X Position: Right or Left edge
+    const xPos = isRight ? doorWidth / 2 : -doorWidth / 2;
+
+    // Z Position: Back of the door
+    const zPos = -doorDepth / 2;
+
+    // Calculate dynamic hinges
+    const standardDistance = 1000; // 1000mm standard distance
+    const numHinges = Math.max(2, Math.ceil(doorHeight / standardDistance) + 1);
+
+    // Y Positions
+    const startY = -doorHeight / 2 + margin; // Bottom-most hinge
+    const endY = doorHeight / 2 - margin; // Top-most hinge
+    const totalSpan = endY - startY;
+
+    for (let i = 0; i < numHinges; i++) {
+      const t = numHinges > 1 ? i / (numHinges - 1) : 0.5;
+      const yPos = startY + t * totalSpan;
+
+      const hinge = hingeModel.clone();
+      hinge.name = `Hinge_${i + 1}`;
+      hinge.position.set(xPos, yPos, zPos);
+      hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
+      hinge.scale.set(1, 1, 1);
+      mesh.add(hinge);
+    }
+  }
+
+  // for channels
+  private async _loadDrawerChannel(mesh: THREE.Mesh, materialProps: any, side?: 'left' | 'right') {
+    const url = materialProps?.modelFile;
+    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+      : '/glb/chennal_close2.glb';
+
+    if (side) {
+      const plankDepth = this.meshData.dimensions.depth;
+
+      const plankPositionX = this.meshData.position.x;
+      const plankPositionY = this.meshData.position.y;
+      const plankPositionZ = this.meshData.position.z;
+
+      const sideGap = 12; // Gap between drawer and cabinet wall
+      const plankThickness = this.meshData.dimensions.width;
+
+      // Calculate offset to move channel from plank center to gap center
+      // Gap center is at (sideGap/2) from the edge
+      // Plank center is at (sideGap + plankThickness/2) from the edge
+      // Distance = (sideGap + plankThickness) / 2
+      const offset = (sideGap + plankThickness) / 2;
+
+      let channelX = plankPositionX;
+      if (side === 'left') {
+        channelX -= offset;
+      } else {
+        channelX += offset;
+      }
+
+      const channelModel = await GLBLoader(backendUrl, 'DrawerChannel', {
+        width: sideGap, // Fill the gap width
+        height: 5,
+        depth: plankDepth,
+      });
+
+      if (!channelModel) return;
+
+      const channel = channelModel.clone();
+      channel.name = `Channel_${side}`;
+
+      channel.position.set(channelX, plankPositionY, plankPositionZ);
+      // Rotation
+      if (side === 'left') {
+        channel.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+        channel.scale.set(1, 1, 1);
+      } else {
+        channel.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+        channel.scale.set(1, 1, -1);
+      }
+
+      // Center the channel in Z-axis
+      // Note: We need to update matrix world for the box to take rotation/scale into account
+      channel.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(channel);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      // Calculate offset needed to align center.z with plankPositionZ
+      const zOffset = plankPositionZ - center.z;
+      channel.position.z += zOffset;
+
+      mesh.parent?.add(channel);
+      return;
+    }
+  }
+  //for channel addons
+  private _checkForParentAddons(mesh: THREE.Mesh) {
+    if (
+      this.meshData.name === DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK ||
+      this.meshData.name === DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK
+    ) {
+      // Find parent object to check for Drawer Guide material
+      const state = store.getState().data.objects;
+      const parentObject = state.find((obj) => obj.id === this.meshData.parent);
+
+      if (parentObject) {
+        const materialArray = Array.isArray(parentObject.material)
+          ? parentObject.material
+          : parentObject.material
+            ? [parentObject.material]
+            : [];
+
+        const channelMaterial = materialArray.find((m) => m?.type === MATERIAL_TYPES.DRAWER_GUIDE);
+
+        if (channelMaterial) {
+          const side =
+            this.meshData.name === DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK ? 'left' : 'right';
+          // Use the main loader with side parameter
+          this._loadDrawerChannel(mesh, channelMaterial.properties, side);
+        }
+      }
+    }
   }
 
   public getMaterial() {
