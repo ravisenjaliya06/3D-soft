@@ -258,7 +258,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           // Position at center and perfectly on top of floor (y = 0)
           // We calculate the bbox to find the exact bottom offset
           const box = new THREE.Box3().setFromObject(model);
-          const bottomY = box.min.y;
+          const bottomY = 0;
           const centerX = (box.max.x + box.min.x) / 2;
           const centerZ = (box.max.z + box.min.z) / 2;
 
@@ -739,8 +739,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     cupboard: assets.cabinet,
     platform: assets.platform_icon,
     sink: assets.sink_icon,
-    lShapeObject: assets.vertical,
-    uShapeObject: assets.vertical,
+    lShapeObject: assets.lshape,
+    uShapeObject: assets.lshape,
   };
 
   return (
@@ -987,7 +987,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           className={styles.createpopupOverlay}
           style={{ top: popupPosition.y, left: popupPosition.x }}
         >
-          <div className={styles.createpopup}>
+          <div
+            className={
+              selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
+              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
+                ? styles.createpopupLShape
+                : styles.createpopup
+            }
+          >
             <img
               src={assets.createicon || '/placeholder.svg'}
               className={styles.createicon}
@@ -1002,35 +1009,36 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             />
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
             selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '10px',
-                  marginTop: '10px',
-                  justifyContent: 'center',
-                }}
-              >
-                <button
-                  className={styles.createcontinueButton}
-                  style={{ width: 'auto', padding: '5px 15px' }}
-                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}
-                >
-                  Up
-                </button>
-                <button
-                  className={styles.createcontinueButton}
-                  style={{ width: 'auto', padding: '5px 15px' }}
-                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}
-                >
-                  Left
-                </button>
-                <button
-                  className={styles.createcontinueButton}
-                  style={{ width: 'auto', padding: '5px 15px' }}
-                  onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}
-                >
-                  Right
-                </button>
+              <div className={styles.arrowContainer}>
+                <div className={styles.arrowButtonsContainer}>
+                  <button
+                    className={styles.arrowButtons}
+                    onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}
+                  >
+                    <img src={assets.uparrow} alt="uparrow" />
+                    Up
+                  </button>
+                  <button className={styles.disableArrowButton} disabled={true}>
+                    <img src={assets.downarrow} alt="downarrow" />
+                    Down
+                  </button>
+                </div>
+                <div className={styles.arrowButtonsContainer}>
+                  <button
+                    className={styles.arrowButtons}
+                    onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}
+                  >
+                    <img src={assets.leftarrow} alt="leftarrow" />
+                    Left
+                  </button>
+                  <button
+                    className={styles.arrowButtons}
+                    onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}
+                  >
+                    <img src={assets.rightarrow} alt="rightarrow" />
+                    Right
+                  </button>
+                </div>
               </div>
             ) : (
               <>

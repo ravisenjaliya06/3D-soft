@@ -827,7 +827,8 @@
   z-index: 999;
 }
 
-.createpopup {
+.createpopup,
+.createpopupLShape {
   background: white;
   width: 12rem;
   border-radius: 0.8rem;
@@ -840,7 +841,8 @@
   position: absolute;
 }
 
-.createpopup::before {
+.createpopup::before,
+.createpopupLShape::before {
   content: '';
   position: absolute;
   left: -0.75rem;
@@ -862,7 +864,7 @@
   width: 1rem;
   height: 1rem;
   position: absolute;
-  top: 0.5rem;
+  top: 0.8rem;
   right: 0.5rem;
   cursor: pointer;
   color: var(--primary-color);
@@ -880,7 +882,8 @@
   text-align: start;
 }
 
-.createpopup h2 {
+.createpopup h2,
+.createpopupLShape h2 {
   margin: 0 0 0.5rem 0;
   padding-right: 1.5rem;
   font-family: var(--font-family);
@@ -910,7 +913,9 @@
   display: none;
 }
 
-.createcontinueButton {
+.createcontinueButton,
+.arrowButtons,
+.disableArrowButton {
   width: 4rem;
   height: 1.5rem;
   font-family: var(--font-family);
@@ -1213,4 +1218,71 @@
   width: 1.5rem;
   height: 1.5rem;
   transition: transform 0.3s ease;
+}
+
+.arrowContainer {
+  width: auto;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.arrowButtonsContainer {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.arrowButtons {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  height: 1.7rem;
+  background-color: var(--toolbarhover-color);
+  color: #a8a8a8;
+
+  &:hover {
+    border: 0.01rem solid var(--primary-color);
+    color: var(--primary-color);
+    background-color: var(--toolbarhover-color);
+    transform: translateY(-1px);
+    box-shadow: none;
+  }
+}
+
+.disableArrowButton {
+  cursor: not-allowed;
+  opacity: 0.5;
+  color: #a8a8a8;
+  background-color: var(--toolbarhover-color);
+
+  &:hover {
+    border: none;
+    color: none;
+    background-color: var(--toolbarhover-color);
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.arrowButtons img,
+.disableArrowButton img {
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-left: 0.2rem;
+  margin-right: 0.4rem;
+}
+
+.arrowButtons:hover img {
+  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg)
+    brightness(95%) contrast(95%);
+}
+
+.createpopupLShape {
+  width: 9rem !important;
+  border-radius: 0.3rem !important;
+}
+
+.createpopupLShape h2 {
+  padding: 0rem !important;
 }
