@@ -3,7 +3,7 @@ import { ThreeDView } from '../design/interface';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
-import { addObjects, updateObject } from '../store/dataSlice';
+import { addObjects, updateObjects } from '../store/dataSlice';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
 import {
@@ -178,8 +178,9 @@ export class SyncManager {
 
     if (toAdd.length) {
       store.dispatch(addObjects(toAdd));
-    } else {
-      toUpdate.forEach((obj) => store.dispatch(updateObject(obj)));
+    } else if (toUpdate.length) {
+      // Use batch update instead of loop
+      store.dispatch(updateObjects(toUpdate as (Partial<MeshObjectData> & { id: string })[]));
     }
   }
 
@@ -419,6 +420,8 @@ export class SyncManager {
     const scaleY = newHeight / (oldHeight + MIN_DIM);
     const scaleZ = newDepth / (oldDepth + MIN_DIM);
 
+    const updates: (Partial<MeshObjectData> & { id: string })[] = [];
+
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
 
@@ -566,24 +569,26 @@ export class SyncManager {
         const childData = this.storeObjectMap.get(child.userData.objectId);
 
         if (childData) {
-          store.dispatch(
-            updateObject({
-              id: child.userData.objectId,
-              dimensions: {
-                width: nextWidth,
-                height: nextHeight,
-                depth: nextDepth,
-              },
-              position: {
-                x: nextX,
-                y: nextY,
-                z: nextZ,
-              },
-            })
-          );
+          updates.push({
+            id: child.userData.objectId,
+            dimensions: {
+              width: nextWidth,
+              height: nextHeight,
+              depth: nextDepth,
+            },
+            position: {
+              x: nextX,
+              y: nextY,
+              z: nextZ,
+            },
+          });
         }
       }
     });
+
+    if (updates.length > 0) {
+      store.dispatch(updateObjects(updates));
+    }
   }
 
   private async _applyDrag(mesh: THREE.Mesh) {
@@ -621,6 +626,8 @@ export class SyncManager {
    * Includes drawer planks but excludes drawer groups, doors, handles, and other non-plank types
    */
   private _syncBandingFromScene(list: MeshObjectData[]): void {
+    const updates: (Partial<MeshObjectData> & { id: string })[] = [];
+
     list.forEach((meshData) => {
       const name = meshData.name || '';
 
@@ -690,16 +697,18 @@ export class SyncManager {
           );
 
           if (hasChanges || Object.keys(existingBanding).length === 0) {
-            store.dispatch(
-              updateObject({
-                id: meshData.id,
-                edgeBanding: detectedBanding,
-              })
-            );
+            updates.push({
+              id: meshData.id,
+              edgeBanding: detectedBanding,
+            });
           }
         }
       }
     });
+
+    if (updates.length > 0) {
+      store.dispatch(updateObjects(updates));
+    }
   }
 
   private async _handleSingle(item: MeshObjectData) {

@@ -25,6 +25,7 @@ export class SelectObjectController {
   private cachedTargets: THREE.Mesh[] = [];
   private lastCacheUpdate: number = 0;
   private readonly CACHE_DURATION = 500; // ms
+  private lastRaycastTime: number = 0;
 
   // optional callbacks for React
   public onHover: ((obj: THREE.Mesh | null) => void) | null = null;
@@ -65,7 +66,13 @@ export class SelectObjectController {
     const cameraRotated = !this.camera.quaternion.equals(this.lastCameraQuaternion);
 
     if (mouseChanged || cameraMoved || cameraRotated) {
-      this._handleHover();
+      // Throttle raycasting to max 30fps (approx 33ms)
+      const now = Date.now();
+      if (now - this.lastRaycastTime > 33) {
+        this._handleHover();
+        this.lastRaycastTime = now;
+      }
+
       // Update last known states
       this.lastMouse.copy(this.mouse);
       this.lastCameraPosition.copy(this.camera.position);
