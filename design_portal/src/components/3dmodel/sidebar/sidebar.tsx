@@ -764,8 +764,7 @@ const Sidebar: React.FC = () => {
           obj.type === PART_TYPES.PLANK ||
           obj.type === PART_TYPES.VERTICAL_PLANK ||
           obj.type === PART_TYPES.HORIZONTAL_PLANK ||
-          obj.type === PART_TYPES.BACK_PLANK ||
-          Object.values(DRAWER_PLANK_TYPES).includes(obj.type)
+          obj.type === PART_TYPES.BACK_PLANK
         );
       });
 
