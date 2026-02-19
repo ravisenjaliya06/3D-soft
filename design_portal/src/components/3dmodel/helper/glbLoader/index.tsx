@@ -67,20 +67,6 @@ const loadAndCacheGLB = async (url: string): Promise<THREE.Object3D> => {
       loader.load(
         objectUrl,
         async (glb) => {
-          // If we loaded from network, save to cache
-          if (!isFromCache && 'caches' in window && objectUrl === url) {
-            try {
-              // We need to fetch the blob again to store it, or use a custom loader manager?
-              // GLTFLoader doesn't give us the blob directly.
-              // To properly cache, we should fetch first, then load from blob.
-              // However, since we already loaded it via GLTFLoader, fetching again might be double traffic
-              // UNLESS we change strategy: Fetch Blob -> Cache Blob -> Load from Blob.
-              // Let's do that for correct caching.
-            } catch (e) {
-              console.warn('Failed to cache GLB:', e);
-            }
-          }
-
           // Clean up ObjectURL if used
           if (isFromCache) {
             URL.revokeObjectURL(objectUrl);
