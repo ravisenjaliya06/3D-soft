@@ -469,8 +469,6 @@ class DesignCatalogViewSet(ModelViewSet):
             )
         )
 
-        # catalog_list = list(catalogs)
-
         serializer = SceneGetSerializer(catalogs, many=True)
         data = serializer.data
         items = group_catalogs_as_lists(data)
