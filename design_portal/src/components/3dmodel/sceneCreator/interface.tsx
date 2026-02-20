@@ -193,6 +193,8 @@ export interface MeshObjectData {
   camHeight?: number;
   handleMode?: 'handle' | 'handleless';
   grooves?: GrooveData[];
+  nailerEnabled?: boolean;
+  nailerModel?: string;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {

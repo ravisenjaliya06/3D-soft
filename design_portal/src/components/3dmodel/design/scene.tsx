@@ -1722,3 +1722,281 @@ export const addSideObjectToCupboard = async (
 
   hideFullScreenLoader();
 };
+
+export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh) => {
+  if (!cupboardMesh) return;
+  const toRemove: THREE.Object3D[] = [];
+  cupboardMesh.children.forEach((child) => {
+    if (child.userData.isNailer) {
+      toRemove.push(child);
+    }
+  });
+
+  if (toRemove.length > 0) {
+    toRemove.forEach((child) => {
+      cupboardMesh.remove(child);
+    });
+
+    const shiftHeight = cupboardMesh.userData.nailerShift || 0;
+    cupboardMesh.position.y -= shiftHeight;
+    cupboardMesh.userData.nailerShift = 0;
+
+    const cupboardId = cupboardMesh.userData.objectId;
+    if (cupboardId) {
+      const currentObjects = store.getState().data.objects;
+      const cupboardData = currentObjects.find((o) => o.id === cupboardId);
+      if (cupboardData) {
+        store.dispatch(
+          updateObject({
+            ...cupboardData,
+            position: {
+              ...cupboardData.position,
+              y: cupboardMesh.position.y,
+            },
+            nailerEnabled: false,
+          })
+        );
+      }
+    }
+
+    // Restore side planks if they were adjusted
+    const currentObjects = store.getState().data.objects;
+    cupboardMesh.children.forEach((child) => {
+      if (child instanceof THREE.Mesh && child.userData.originalHeight !== undefined) {
+        const originalHeight = child.userData.originalHeight;
+        const originalY = child.userData.originalY;
+
+        child.geometry.dispose();
+        child.geometry = new THREE.BoxGeometry(
+          (child.geometry as THREE.BoxGeometry).parameters.width,
+          originalHeight,
+          (child.geometry as THREE.BoxGeometry).parameters.depth
+        );
+        child.position.y = originalY;
+
+        const childData = currentObjects.find((o) => o.id === child.userData.objectId);
+        if (childData) {
+          store.dispatch(
+            updateObject({
+              ...childData,
+              dimensions: { ...childData.dimensions, height: originalHeight },
+              position: { ...childData.position, y: originalY },
+            })
+          );
+
+          const builder = new MeshBuilder(childData, scene);
+          builder.setParentMesh(cupboardMesh);
+          builder.updateBanding(child, { isDimensionUpdate: true });
+        }
+
+        delete child.userData.originalHeight;
+        delete child.userData.originalY;
+      }
+    });
+  }
+};
+
+const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) => {
+  const geometry = cupboardMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  if (!geometry.boundingBox) return null;
+
+  const cupboardSize = new THREE.Vector3();
+  geometry.boundingBox.getSize(cupboardSize);
+  const w = cupboardSize.x;
+  const h = cupboardSize.y;
+  const d = cupboardSize.z;
+
+  const nailerHeight = 100;
+  const nailerW = 50;
+  const nailerD = 50;
+  const insetX = 40;
+  const insetZ = 40;
+
+  let url = `/glb/${modelName}.glb`;
+  if (process.env.NEXT_PUBLIC_PUBLIC_API && !url.startsWith('http') && !url.startsWith('/glb')) {
+    url = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
+  }
+
+  let bottomPlank: THREE.Mesh | null = null;
+  const verticalPlanks: THREE.Mesh[] = [];
+
+  cupboardMesh.children.forEach((child) => {
+    if (child instanceof THREE.Mesh) {
+      const name = child.name || '';
+      if (name === 'BOTTOM_PLANK' || name.includes('BOTTOM_PLANK')) {
+        if (!bottomPlank || child.position.y < bottomPlank.position.y) bottomPlank = child;
+      } else if (
+        name === 'LEFT_PLANK' ||
+        name === 'RIGHT_PLANK' ||
+        name.includes('LEFT_PLANK') ||
+        name.includes('RIGHT_PLANK') ||
+        child.userData.type === PART_TYPES.VERTICAL_PLANK
+      ) {
+        verticalPlanks.push(child);
+      }
+    }
+  });
+
+  const bp = bottomPlank as THREE.Mesh | null;
+  const actualBottomY = bp
+    ? bp.position.y +
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+    : -h / 2;
+
+  const positions = [
+    { x: -w / 2 + nailerW / 2 + insetX, z: -d / 2 + nailerD / 2 + insetZ },
+    { x: w / 2 - nailerW / 2 - insetX, z: -d / 2 + nailerD / 2 + insetZ },
+    { x: -w / 2 + nailerW / 2 + insetX, z: d / 2 - nailerD / 2 - insetZ },
+    { x: w / 2 - nailerW / 2 - insetX, z: d / 2 - nailerD / 2 - insetZ },
+  ];
+
+  let baseNailerModel: THREE.Object3D | null = null;
+  let physicalHeight = nailerHeight;
+
+  try {
+    baseNailerModel = await GLBLoader(url, `Nailer_Base`, {
+      width: nailerW,
+      height: nailerHeight,
+      depth: nailerD,
+    });
+
+    baseNailerModel.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(baseNailerModel);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    physicalHeight = size.y;
+  } catch (err) {
+    console.error('Failed to load base nailer', err);
+    return null;
+  }
+
+  for (let i = 0; i < 4; i++) {
+    try {
+      const nailer = baseNailerModel.clone();
+      nailer.name = `Nailer_${i}`;
+
+      const nailerGroup = new THREE.Group();
+      nailerGroup.add(nailer);
+      nailerGroup.userData.isNailer = true;
+      nailerGroup.userData.type = 'nailer';
+      nailerGroup.userData.nailerHeight = nailerHeight;
+      nailerGroup.userData.physicalHeight = physicalHeight;
+
+      nailerGroup.position.set(positions[i].x, actualBottomY - physicalHeight / 2, positions[i].z);
+      cupboardMesh.add(nailerGroup);
+    } catch (err) {
+      console.error('Failed to parse nailer clone', err);
+    }
+  }
+
+  return { bottomPlank, verticalPlanks, actualBottomY, physicalHeight };
+};
+
+export const addNailers = async (
+  scene: THREE.Scene,
+  cupboardMesh: THREE.Mesh,
+  modelName: string = 'stand_1'
+) => {
+  if (!cupboardMesh) return;
+  showFullScreenLoader('Adding nailers...');
+
+  await removeNailers(scene, cupboardMesh);
+
+  const nailerData = await buildNailerMeshes(cupboardMesh, modelName);
+
+  if (!nailerData) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const { bottomPlank, verticalPlanks, actualBottomY } = nailerData;
+
+  let lowestVpMinY: number | null = null;
+  const currentObjectsForPlanks = store.getState().data.objects;
+
+  if (bottomPlank) {
+    verticalPlanks.forEach((vp) => {
+      const vpGeo = vp.geometry as THREE.BoxGeometry;
+      const vpMinY = vp.position.y - vpGeo.parameters.height / 2;
+      const vpMaxY = vp.position.y + vpGeo.parameters.height / 2;
+
+      if (vpMinY < actualBottomY - 1) {
+        if (lowestVpMinY === null || vpMinY < lowestVpMinY) {
+          lowestVpMinY = vpMinY;
+        }
+
+        const newHeight = vpMaxY - actualBottomY;
+        if (newHeight > 0) {
+          const newCenterY = actualBottomY + newHeight / 2;
+
+          if (vp.userData.originalHeight === undefined) {
+            vp.userData.originalHeight = vpGeo.parameters.height;
+            vp.userData.originalY = vp.position.y;
+          }
+
+          vp.geometry.dispose();
+          vp.geometry = new THREE.BoxGeometry(
+            vpGeo.parameters.width,
+            newHeight,
+            vpGeo.parameters.depth
+          );
+          vp.position.y = newCenterY;
+
+          const vpData = currentObjectsForPlanks.find((obj) => obj.id === vp.userData.objectId);
+          if (vpData) {
+            store.dispatch(
+              updateObject({
+                ...vpData,
+                dimensions: { ...vpData.dimensions, height: newHeight },
+                position: { ...vpData.position, y: newCenterY },
+              })
+            );
+
+            const builder = new MeshBuilder(vpData, scene);
+            builder.setParentMesh(cupboardMesh);
+            builder.updateBanding(vp, { isDimensionUpdate: true });
+          }
+        }
+      }
+    });
+
+    if (lowestVpMinY === null) {
+      console.log('[Scene] lowestVpMinY', lowestVpMinY);
+      const amountToShift = 0.1;
+
+      cupboardMesh.position.y += amountToShift;
+      cupboardMesh.userData.nailerShift = amountToShift;
+    } else {
+      cupboardMesh.userData.nailerShift = 0;
+    }
+  }
+
+  const cupboardId = cupboardMesh.userData.objectId;
+  const finalObjects = store.getState().data.objects;
+
+  if (cupboardId) {
+    const cupboardData = finalObjects.find((obj) => obj.id === cupboardId);
+    if (cupboardData) {
+      store.dispatch(
+        updateObject({
+          ...cupboardData,
+          position: {
+            ...cupboardData.position,
+            y: cupboardMesh.position.y,
+          },
+          nailerEnabled: true,
+          nailerModel: modelName,
+        })
+      );
+    }
+  }
+
+  hideFullScreenLoader();
+};
+
+export const hydrateNailers = async (cupboardMesh: THREE.Mesh, modelName: string = 'stand_1') => {
+  if (!cupboardMesh) return;
+  await buildNailerMeshes(cupboardMesh, modelName);
+};

@@ -8,8 +8,10 @@ import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import {
   addLShapeToDrawersAndDoors,
+  addNailers,
   addSkirtingPlanks,
   removeLShapeObjects,
+  removeNailers,
   removeSkirtingPlanks,
   updateDrawerType,
 } from '../design/scene';
@@ -1078,8 +1080,6 @@ const Sidebar: React.FC = () => {
   const [minifixDisabled, setMinifixDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
-  const [baseheightEnabled, setBaseheightEnabled] = useState(true);
-  const [baseheightDisabled, setBaseheightDisabled] = useState(false);
   const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
   const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
 
@@ -1110,7 +1110,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setTopPlankDisabled(false);
-    setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
   }, []);
 
@@ -1270,11 +1269,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handleBaseheightToggle = () => {
-    if (baseheightDisabled) return;
-    setBaseheightEnabled((prev) => !prev);
-  };
-
   const handleFrontpanelToggle = () => {
     if (frontpanelDisabled) return;
 
@@ -1297,6 +1291,42 @@ const Sidebar: React.FC = () => {
       } else {
         removeSkirtingPlanks(targetMesh);
       }
+    }
+  };
+
+  const handleNailerToggle = async () => {
+    if (!scene || !selectedObject || !isFullCupboard) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      const isEnabled = !selectedObject.nailerEnabled;
+      if (isEnabled) {
+        const defaultModel = selectedObject.nailerModel || 'stand_1';
+        await addNailers(scene, targetMesh, defaultModel);
+      } else {
+        await removeNailers(scene, targetMesh);
+      }
+    }
+  };
+
+  const handleNailerModelChange = async (model: string) => {
+    if (!scene || !selectedObject || !isFullCupboard) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh && selectedObject.nailerEnabled) {
+      await addNailers(scene, targetMesh, model);
     }
   };
 
@@ -2331,30 +2361,35 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.base && (
                       <>
-                        <div className="flex items-center gap-[0rem]">
+                        <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
                           <div
-                            onClick={handleBaseheightToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            onClick={handleNailerToggle}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
                           >
-                            {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                baseheightEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.nailerEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Base Height
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
+                            Nailer
                           </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
+                          {selectedObject?.nailerEnabled && (
+                            <div className="ml-[3.4rem] flex items-center gap-[0rem]">
+                              <select
+                                value={selectedObject?.nailerModel || 'stand_1'}
+                                onChange={(e) => handleNailerModelChange(e.target.value)}
+                                className="mt-[0.5rem] ml-[0.65rem] flex h-[1.3rem] w-[4.25rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                              >
+                                <option value="stand_1">Stand 1</option>
+                                <option value="stand_2">Stand 2</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-[0rem]">
                           <div
