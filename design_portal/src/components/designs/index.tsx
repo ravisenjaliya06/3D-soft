@@ -27,7 +27,8 @@ const Designs = () => {
   const [designStatus, setDesingStatus] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const filterDropdownRef = useRef<HTMLDivElement | null>(null);
+  const actionDropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
   const [showEditPopup, setshowEditPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
@@ -261,13 +262,20 @@ const Designs = () => {
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      // If clicking outside the current menu
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setActiveDropdownId(null);
-      }
-      // Handle the filter dropdown too
-      if (dropdownButtonRef.current && !dropdownButtonRef.current.contains(event.target as Node)) {
+      // Handle Filter Dropdown
+      if (
+        isDropdownOpen &&
+        filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node) &&
+        dropdownButtonRef.current && !dropdownButtonRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
+      }
+      // Handle Action Menu
+      if (
+        activeDropdownId &&
+        actionDropdownRef.current && !actionDropdownRef.current.contains(event.target as Node)
+      ) {
+        setActiveDropdownId(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -370,7 +378,7 @@ const Designs = () => {
                     className={activeFilter ? styles.activeView : ''}
                   />
                   {isDropdownOpen && (
-                    <div className={styles.dropdownMenuProfile} ref={dropdownRef}>
+                    <div className={styles.dropdownMenuProfile} ref={filterDropdownRef}>
                       {filterStatusOptions.map((opt) => (
                         <div
                           key={opt.label}
@@ -442,7 +450,7 @@ const Designs = () => {
                           onClick={(e) => handlathreedot(e, design.id, design.status)}
                         />
                         {activeDropdownId === design.id && (
-                          <div className={styles.three_dots} ref={dropdownRef}>
+                          <div className={styles.three_dots} ref={actionDropdownRef}>
                             <ul className={styles.three_dots_dropdown}>
                               <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
                                 <img src={assets.editicon} alt="" className="w-4" /> Edit Details
@@ -478,7 +486,7 @@ const Designs = () => {
                             onClick={(e) => handlathreedot(e, design.id, design.status)}
                           />
                           {activeDropdownId === design.id && (
-                            <div className={styles.gridthree_dots} ref={dropdownRef}>
+                            <div className={styles.gridthree_dots} ref={actionDropdownRef}>
                               <ul className={styles.three_dots_dropdown}>
                                 <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
                                   <img src={assets.editicon} alt="" className="w-4" /> Edit

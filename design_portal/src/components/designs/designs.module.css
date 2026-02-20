@@ -54,6 +54,7 @@
   box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* Ensures the card never gets smaller when list grows */
 }
 
 .createdesigns::after {
@@ -73,7 +74,7 @@
 }
 
 .createdesignstext {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #170F49;
   margin-bottom: 0.5rem;
@@ -81,7 +82,7 @@
 }
 
 .createdesignssubtext {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #6F6C8F;
   max-width: 20rem;
   line-height: 1.5;
@@ -90,12 +91,15 @@
 .createdesignButton {
   flex: 0 0 auto;
   z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0; /* Prevents the button area from compressing */
 }
 
 .createdesignButtoncontent {
   background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
   border-radius: 1.25rem;
-  padding: 1rem 1.75rem;
+  padding: 1.25rem 2rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -129,14 +133,14 @@
 
 .createdesingtext p {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   max-width: 15rem;
 }
 
 .createbuttonimage img {
-  width: 3.25rem;
+  width: 2.75rem;
   height: auto;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* ─── Designs Section ─── */
