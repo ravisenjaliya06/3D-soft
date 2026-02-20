@@ -1573,12 +1573,12 @@ export const addSideObjectToCupboard = async (
     relX: number,
     relY: number,
     relZ: number,
-    name: string
+    name: string,
   ): MeshObjectData => {
     return {
       id: crypto.randomUUID(),
       name: name,
-      type: PART_TYPES.L_SHAPE_OBJECT ? PART_TYPES.L_SHAPE_OBJECT : PART_TYPES.U_SHAPE_OBJECT,
+      type: isU ? PART_TYPES.U_SHAPE_OBJECT : PART_TYPES.L_SHAPE_OBJECT,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: { width: w, height: h, depth: d },
       position: { x: relX, y: relY, z: relZ },
@@ -1586,6 +1586,7 @@ export const addSideObjectToCupboard = async (
       parent: cupboardMesh.userData.objectId,
       material: material,
       isMain: false,
+      direction: direction,
     };
   };
 
