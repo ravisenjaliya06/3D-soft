@@ -4,6 +4,7 @@ import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../han
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObjects } from '../store/dataSlice';
+import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
 import {
@@ -387,6 +388,10 @@ export class SyncManager {
       }
       updateMinifixesForCupboard(mesh);
     }
+
+    if (mesh.userData.type === OBJECT_TYPES.SINK) {
+      updatePlatformHolesForSink(this.scene, mesh);
+    }
   }
 
   // Updates children dimensions when parent dimensions change
@@ -731,6 +736,9 @@ export class SyncManager {
 
     if (this._isObjectType(item.type)) {
       this.scene.add(mesh);
+      if (item.type === OBJECT_TYPES.SINK) {
+        updatePlatformHolesForSink(this.scene, mesh);
+      }
       await this._applyDrag(mesh);
       if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
     } else {

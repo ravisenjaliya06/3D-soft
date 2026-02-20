@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
+import { applyCSGHoles } from '../utils/csgUtils';
 import {
   DIRECTION_TYPES,
   DRAWER_PLANK_TYPES,
@@ -228,15 +229,35 @@ export class MeshBuilder {
     return new THREE.ExtrudeGeometry(shape, extrudeSettings);
   }
 
-  private _getGeometry() {
+  private _getGeometry(mesh?: THREE.Mesh) {
+    let geometry: THREE.BufferGeometry;
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
-        return this._createBoxGeometry();
+        geometry = this._createBoxGeometry();
+        break;
       case GEOMETRY.EXTRUDE_GEOMETRY:
-        return this._createExtrudeGeometry();
+        geometry = this._createExtrudeGeometry();
+        break;
       default:
-        return this._createBoxGeometry();
+        geometry = this._createBoxGeometry();
+        break;
     }
+
+    if (
+      mesh &&
+      this.meshData.type === OBJECT_TYPES.PLATFORM &&
+      this.meshData.holes &&
+      this.meshData.holes.length > 0
+    ) {
+      try {
+        const csgGeometry = applyCSGHoles(mesh, this.meshData.holes);
+        return csgGeometry;
+      } catch (error) {
+        console.error('Failed to apply CSG holes:', error);
+      }
+    }
+
+    return geometry;
   }
 
   private _setPosition(mesh: THREE.Mesh) {
@@ -616,14 +637,17 @@ export class MeshBuilder {
   }
 
   public createMesh(): THREE.Mesh {
-    const geometry = this._getGeometry();
     const material = this._getMaterial();
 
     const mesh = new THREE.Mesh(
-      geometry,
+      new THREE.BufferGeometry(), // Temporary geometry
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
+
     this.mesh = mesh;
+
+    // Now compute the real geometry (possibly with CSG)
+    mesh.geometry = this._getGeometry(mesh);
 
     this._setName(mesh);
     this._setPosition(mesh);
@@ -886,9 +910,9 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions) {
+    if (changes.dimensions || changes.holes) {
       mesh.geometry.dispose();
-      mesh.geometry = this._getGeometry();
+      mesh.geometry = this._getGeometry(mesh);
     }
   }
 

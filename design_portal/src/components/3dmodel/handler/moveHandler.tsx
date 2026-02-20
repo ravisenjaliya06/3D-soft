@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OBJECT_TYPES } from '../sceneCreator/interface';
 import { store } from '../store';
 import { removeObject, updateObject } from '../store/dataSlice';
+import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { removeAllOutlines } from '../utils/outlineHelpers';
 import { MoveHandlerOptions } from './interface';
 
@@ -143,6 +144,10 @@ export class MoveHandler implements IMoveHandler {
             scale: { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z },
           })
         );
+
+        if (mesh.userData.type === OBJECT_TYPES.SINK) {
+          this.updatePlatformHoles(mesh);
+        }
       }
 
       this.isDragging = false;
@@ -292,5 +297,9 @@ export class MoveHandler implements IMoveHandler {
 
   public startDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
     return this.enableDragging(object);
+  }
+
+  private updatePlatformHoles(sink: THREE.Mesh) {
+    updatePlatformHolesForSink(this.scene, sink);
   }
 }

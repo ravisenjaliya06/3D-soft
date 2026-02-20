@@ -70,6 +70,9 @@ const dataSlice = createSlice({
           grooves: updatedObject.grooves
             ? updatedObject.grooves // Replace array entirely, do not merge
             : existingObject.grooves,
+          holes: updatedObject.holes
+            ? updatedObject.holes // Replace array entirely, do not merge
+            : existingObject.holes,
         };
         state.objects[index] = mergedObject;
       }
@@ -99,6 +102,9 @@ const dataSlice = createSlice({
             grooves: updatedObject.grooves
               ? updatedObject.grooves // Replace array entirely, do not merge
               : existingObject.grooves,
+            holes: updatedObject.holes
+              ? updatedObject.holes // Replace array entirely, do not merge
+              : existingObject.holes,
           };
           state.objects[index] = mergedObject;
         }

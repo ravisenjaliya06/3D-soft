@@ -12,6 +12,7 @@ import {
   setobjectSelected,
   setSelectedChildObject,
 } from '../../store/dataSlice';
+import { updatePlatformHolesForSink } from '../../utils/holeManager';
 import { removeAllOutlines } from '../../utils/outlineHelpers';
 import { DRAWER_PLANK_TYPES, FLOOR_PLAN_TYPES, OBJECT_TYPES, PART_TYPES } from '../interface';
 
@@ -42,6 +43,9 @@ export class ObjectsRemoverFromScene {
         Object.values(OBJECT_TYPES).includes(object.parent.userData.type)
       ) {
         this.removedObjectParent = object.parent;
+      }
+      if (object.userData.type === OBJECT_TYPES.SINK) {
+        updatePlatformHolesForSink(this.scene, null, object.userData.objectId);
       }
       object.parent?.remove(object);
       store.dispatch(removeObject(object.userData.objectId));
