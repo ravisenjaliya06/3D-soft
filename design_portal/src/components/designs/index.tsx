@@ -280,7 +280,7 @@ const Designs = () => {
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
+  }, [isDropdownOpen, activeDropdownId]);
 
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -453,10 +453,10 @@ const Designs = () => {
                           <div className={styles.three_dots} ref={actionDropdownRef}>
                             <ul className={styles.three_dots_dropdown}>
                               <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                <img src={assets.editicon} alt="" className="w-4" /> Edit Details
+                                <img src={assets.editicon} alt="" className={styles.actionIcon} /> Edit Details
                               </li>
                               <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
-                                <img src={assets.deleteicon} alt="" className="w-4" /> Move to Trash
+                                <img src={assets.deleteicon} alt="" className={styles.actionIcon} /> Move to Trash
                               </li>
                             </ul>
                           </div>
@@ -488,26 +488,24 @@ const Designs = () => {
                           {activeDropdownId === design.id && (
                             <div className={styles.gridthree_dots} ref={actionDropdownRef}>
                               <ul className={styles.three_dots_dropdown}>
-                                <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                  <img src={assets.editicon} alt="" className="w-4" /> Edit
-                                </li>
-                                <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
-                                  <img src={assets.deleteicon} alt="" className="w-4" /> Trash
-                                </li>
-                              </ul>
+                                 <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
+                                   <img src={assets.editicon} alt="" className={styles.actionIcon} /> Edit
+                                 </li>
+                                 <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
+                                   <img src={assets.deleteicon} alt="" className={styles.actionIcon} /> Trash
+                                 </li>
+                               </ul>
                             </div>
                           )}
                         </div>
                       </div>
                       <div className={styles.gridBottom}>
+                        <p className={styles.gridDesignTime}>UPDATED</p>
                         <div className={`${styles.gridStatus} ${statusStyles['GRID'][design.status]}`}>
                           <img src={statusStyles['SVG'][design.status]} alt="" />
                           {design.status}
                         </div>
-                        <div className={styles.gridDesignUpdateAt}>
-                           <p className={styles.geidDesignTime}>Updated</p>
-                           <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
-                        </div>
+                        <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
                       </div>
                     </div>
                   ))}

@@ -50,7 +50,7 @@
   width: 100%;
   max-width: 65rem;
   padding: 1.25rem 2rem;
-  border-radius: 1.5rem;
+  border-radius: 0.85rem;
   border: 1px solid rgba(57, 37, 121, 0.08);
   box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
   position: relative;
@@ -95,7 +95,7 @@
 
 .createdesignButtoncontent {
   background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
-  border-radius: 1.25rem;
+  border-radius: 0.6rem;
   padding: 0.85rem 1.75rem;
   display: flex;
   align-items: center;
@@ -167,7 +167,7 @@
   padding: 0 1rem 0 2.75rem;
   background: #fff;
   border: 1px solid rgba(57, 37, 121, 0.1);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   font-size: 0.9rem;
   color: #170F49;
   transition: all 0.2s ease;
@@ -190,7 +190,7 @@
 
 .templateBoxContent {
   background: #fff;
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   border: 1px solid rgba(57, 37, 121, 0.05);
   overflow: hidden;
   position: relative;
@@ -237,7 +237,7 @@
   color: #392579;
   border: none;
   padding: 0.7rem 1.4rem;
-  border-radius: 0.75rem;
+  border-radius: 0.4rem;
   font-weight: 700;
   font-size: 0.85rem;
   transition: all 0.3s ease;
@@ -277,7 +277,7 @@
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(4px);
   padding: 0.4rem 0.8rem;
-  border-radius: 2rem;
+  border-radius: 0.4rem;
   font-size: 0.65rem;
   font-weight: 700;
   color: #392579;
