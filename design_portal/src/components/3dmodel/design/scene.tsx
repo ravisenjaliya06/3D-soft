@@ -501,7 +501,8 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.LEFT,
-    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)
+      ?.material,
   };
 
   // Right Door
@@ -523,7 +524,8 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.RIGHT,
-    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)
+      ?.material,
   };
 
   // Build the group and children
@@ -1573,7 +1575,7 @@ export const addSideObjectToCupboard = async (
     relX: number,
     relY: number,
     relZ: number,
-    name: string,
+    name: string
   ): MeshObjectData => {
     return {
       id: crypto.randomUUID(),
