@@ -142,13 +142,17 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-      texture = this.textureLoader.load(
-        `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
-      );
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.repeat.set(1, 1);
+      const imgPath = textureData.textureDetail?.image;
+      if (imgPath) {
+        const fullUrl = imgPath.startsWith('http')
+          ? imgPath
+          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imgPath}`;
+        texture = this.textureLoader.load(fullUrl);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.repeat.set(1, 1);
+      }
     });
     return texture;
   }
@@ -366,8 +370,10 @@ export class MeshBuilder {
 
   private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
@@ -402,7 +408,10 @@ export class MeshBuilder {
     const url = this.meshData.path || '';
     if (!url) return;
 
-    const backendUrl = url;
+    const backendUrl =
+      url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
 
     try {
       const model = await GLBLoader(backendUrl, 'Model', {
@@ -638,8 +647,10 @@ export class MeshBuilder {
 
   private async _loadHinge(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps?.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';
 
     const hingeModel = await GLBLoader(backendUrl, 'Hinge', {
@@ -720,11 +731,12 @@ export class MeshBuilder {
     }
   }
 
-  // for channels
   private async _loadDrawerChannel(mesh: THREE.Mesh, materialProps: any, side?: 'left' | 'right') {
     const url = materialProps?.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/chennal_close2.glb';
 
     if (side) {
