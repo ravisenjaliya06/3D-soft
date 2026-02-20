@@ -103,7 +103,7 @@ const Settings = () => {
   useEffect(() => {
     handalGetmember();
   }, []);
-  const handleRoleAddClick = (event: React.MouseEvent<HTMLImageElement>, memberId: string) => {
+  const handleRoleAddClick = (event: React.MouseEvent<HTMLElement>, memberId: string) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setDropdownPosition({
       x: rect.left + window.scrollX,
@@ -716,82 +716,60 @@ const Settings = () => {
 
   return (
     <div className={styles.container}>
-      <Sidebar />
+      <div className={styles.sidebarWrapper}>
+        <Sidebar />
+      </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
         <div className={styles.mainContent}>
+          {/* ─── Sidebar Menu ─── */}
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
-              <img src={assets.account_profile} className={styles.accountprofile} alt="profile" />
-              <p className={styles.useremail}> {UserDetails?.email}</p>
+              <img
+                src={assets.account_profile}
+                className={styles.accountprofile}
+                alt="profile"
+              />
+              <p className={styles.useremail}>{UserDetails?.email}</p>
             </div>
-            <div className={styles.menuImg}>
-              <img src={assets.simple_line} alt="line" />
-            </div>
+            
             <div
               className={activeMenu === 'profile' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('profile')}
             >
-              {activeMenu === 'profile' ? (
-                <img src={assets.account_svg} alt="profile" />
-              ) : (
-                <img src={assets.account_not_selected} alt="profile" />
-              )}
-              {activeMenu === 'profile' ? (
-                <p className={styles.activeMenuTitle}>Profile</p>
-              ) : (
-                <p className={styles.menuTitle}>Profile</p>
-              )}
+              <img src={activeMenu === 'profile' ? assets.account_svg : assets.account_not_selected} alt="profile" />
+              <p className={activeMenu === 'profile' ? styles.activeMenuTitle : styles.menuTitle}>Profile</p>
             </div>
+
             <div
               className={activeMenu === 'team' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('team')}
             >
-              {activeMenu === 'team' ? (
-                <img src={assets.team_not_selected} alt="team" />
-              ) : (
-                <img src={assets.team_svg} alt="team" />
-              )}
-              {activeMenu === 'team' ? (
-                <p className={styles.activeMenuTitle}>Team</p>
-              ) : (
-                <p className={styles.menuTitle}>Team</p>
-              )}
+              <img src={activeMenu === 'team' ? assets.team_svg : assets.team_not_selected} alt="team" />
+              <p className={activeMenu === 'team' ? styles.activeMenuTitle : styles.menuTitle}>Team</p>
             </div>
+
             <div
               className={activeMenu === 'organizations' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('organizations')}
             >
-              {activeMenu === 'organizations' ? (
-                <img src={assets.organization_not_selected} alt="organizations" />
-              ) : (
-                <img src={assets.organizations_svg} alt="organizations" />
-              )}
-              {activeMenu === 'organizations' ? (
-                <p className={styles.activeMenuTitle}>Organizations</p>
-              ) : (
-                <p className={styles.menuTitle}>Organizations</p>
-              )}
+              <img src={activeMenu === 'organizations' ? assets.organizations_svg : assets.organization_not_selected} alt="organizations" />
+              <p className={activeMenu === 'organizations' ? styles.activeMenuTitle : styles.menuTitle}>Organizations</p>
             </div>
-            {/* Design setting menu */}
-            <div
+
+             <div
               className={activeMenu === 'Design setting' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('Design setting')}
             >
-              {activeMenu === 'Design setting' ? (
-                <img src={assets.designmenuicon_not} alt="Design setting'" />
-              ) : (
-                <img src={assets.designmenuicon_not} alt="Design setting'" />
-              )}
-              {activeMenu === 'Design setting' ? (
-                <p className={styles.activeMenuTitle}>Design setting</p>
-              ) : (
-                <p className={styles.menuTitle}>Design setting</p>
-              )}
+              <img src={assets.designmenuicon_not} alt="Design setting" style={{ opacity: activeMenu === 'Design setting' ? 1 : 0.6 }} />
+              <p className={activeMenu === 'Design setting' ? styles.activeMenuTitle : styles.menuTitle}>Design setting</p>
             </div>
           </div>
 
+          
+          {/* ─── Main Content Area ─── */}
           <div className={styles.profile}>
+            {/* 1. Profile Tab */}
             {activeMenu === 'profile' && (
               <>
                 <div className={styles.profileImage}>
@@ -810,19 +788,18 @@ const Settings = () => {
                     id="fileInput"
                     style={{ display: 'none' }}
                     accept="image/*"
-                    onChange={(e) => {
-                      handleProfileImageChange(e);
-                    }}
+                    onChange={handleProfileImageChange}
                   />
                   <p>{UserDetails?.username}</p>
                 </div>
+
                 <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.inputGroup}>
                     {firstfieldsgroup.map((field, index) => (
                       <InputField
                         key={index}
                         {...field}
-                        borderColor="var(--primary-color-grey-2 )"
+                        borderColor="#e2e8f0" 
                       />
                     ))}
                   </div>
@@ -831,14 +808,15 @@ const Settings = () => {
                       <InputField
                         key={index}
                         {...field}
-                        borderColor="var(--primary-color-grey-2 )"
+                        borderColor="#e2e8f0"
                       />
                     ))}
                   </div>
                   <button className={styles.saveButton} onClick={handleSave}>
-                    Save
+                    Save Changes
                   </button>
                 </form>
+                
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -853,10 +831,11 @@ const Settings = () => {
                 )}
               </>
             )}
+
+            {/* 2. Organizations Tab */}
             {activeMenu === 'organizations' && (
               <>
                 <div className={styles.organizationupperpart}>
-                  <div className={styles.organizationsfirstImage}>
                     <div className={styles.organizationImage}>
                       <img
                         src={
@@ -875,31 +854,36 @@ const Settings = () => {
                         onChange={handleOrganizationImageChange}
                       />
                     </div>
-                  </div>
 
-                  <input
-                    type="text"
-                    className={`${styles.organizationInputfild} ${
-                      organizationNameError ? styles.errorInput : ''
-                    }`}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                      setOrganizationName(e.target.value);
-                      setOrganizationNameError(null);
-                    }}
-                    value={organizationName}
-                  />
-
-                  <button
+                    <div style={{ width: '100%' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Organization Name</label>
+                      <input
+                        type="text"
+                        className={`${styles.organizationInputfild} ${
+                          organizationNameError ? styles.errorInput : ''
+                        }`}
+                        placeholder="Enter Organization Name"
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                          setOrganizationName(e.target.value);
+                          setOrganizationNameError(null);
+                        }}
+                        value={organizationName}
+                      />
+                    </div>
+                  
+                   <button
                     className={styles.organizationTitleButton}
                     onClick={handalInputOrganization}
-                  >
-                    save
-                  </button>
+                   >
+                    Save Details
+                   </button>
                 </div>
+                
                 {organizationNameError && (
-                  <p className={styles.errorMessage}>{organizationNameError}</p>
+                  <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.5rem' }}>{organizationNameError}</p>
                 )}
-                <p className={styles.commingsoon}>Coming Soon............</p>
+                <p className={styles.commingsoon}>More organization settings coming soon...</p>
+                
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -909,43 +893,42 @@ const Settings = () => {
               </>
             )}
 
-            {/* Design Setting menu active */}
+            {/* 3. Design Setting Tab */}
             {activeMenu === 'Design setting' && (
               <>
                 <div className={styles.heading_containar}>
-                  <h4>Set your default design</h4>
+                  <h4>Set your default design preferences</h4>
                 </div>
-                <img src={assets.design_line} alt="design" className={styles.designline} />
-
+                
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
-                    <p>Nesting Sheet size</p>
+                    <p>Nesting Sheet Size</p>
                     <div className={styles.firstfieldsgroupdesign}>
                       {designFirstInputFields.map((field, index) => (
                         <InputField
                           key={index}
                           {...field}
-                          borderColor="var(--primary-color-grey-2 )"
+                          borderColor="#e2e8f0"
                         />
                       ))}
                     </div>
                   </div>
+                  
                   <div className={styles.firstbox}>
-                    <p>3D view design size</p>
+                    <p>3D View Design Size</p>
                     <div className={styles.firstfieldsgroupdesign}>
                       {designSecondInputFields.map((field, index) => (
                         <InputField
                           key={index}
                           {...field}
-                          borderColor="var(--primary-color-grey-2 )"
+                          borderColor="#e2e8f0"
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-                <img src={assets.design_line} alt="design" className={styles.designline} />
 
-                <h4 className={styles.design_unit_size}>Design Unit Size</h4>
+                <div className={styles.design_unit_size}>Design Unit Size</div>
                 <div className={styles.rediogroup}>
                   <label className={styles.label}>
                     <input
@@ -996,8 +979,7 @@ const Settings = () => {
                     Feet
                   </label>
                 </div>
-                <img src={assets.design_line} alt="design" className={styles.designline} />
-                {/*Minifix setting and grooving data */}
+                
                 <div className={styles.mainContentminifix}>
                   <div className={styles.firstbox}>
                     <p>Minifix Setting</p>
@@ -1006,12 +988,12 @@ const Settings = () => {
                         <InputField
                           key={index}
                           {...field}
-                          borderColor="var(--primary-color-grey-2 )"
+                          borderColor="#e2e8f0"
                         />
                       ))}
                     </div>
                   </div>
-                  <img src={assets.design_line} alt="design" className={styles.designline} />
+                  
                   <div className={styles.firstbox}>
                     <p>Camlock Screw Hole</p>
                     <div className={styles.minifixfieldsgroupdesign}>
@@ -1019,37 +1001,31 @@ const Settings = () => {
                         <InputField
                           key={index}
                           {...field}
-                          borderColor="var(--primary-color-grey-2 )"
+                          borderColor="#e2e8f0"
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-                <img src={assets.design_line} alt="design" className={styles.designline} />
+                
                 <div className={styles.lastbox}>
-                  <div className="flex items-center gap-[2rem]">
-                    <p>Edge Banding</p>
+                  <div className="flex items-center gap-[2rem]" style={{ marginBottom: '1rem' }}>
+                    <p style={{ margin: 0 }}>Edge Banding</p>
                     <div
                       onClick={handleEdgeBandingToggle}
-                      className={`relative mb-[0.5rem] h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${edgeBandingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${edgeBandingDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                      className={`${styles.toggleSwitch} ${edgeBandingEnabled ? styles.active : ''} ${edgeBandingDisabled ? styles.disabled : ''}`}
                     >
-                      {/* Knob */}
-                      <div
-                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                          edgeBandingEnabled
-                            ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                            : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                        }`}
-                      />
+                      <div className={styles.toggleKnob} />
                     </div>
                   </div>
-                  <div className={styles.lastboxindiv}>
+                  
+                  <div className={styles.lastboxindiv} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '2rem' }}>
                     <div className={styles.minifixfieldsgroupdesign}>
                       {EdgeBandingInputFields.map((field, index) => (
                         <InputField
                           key={index}
                           {...field}
-                          borderColor="var(--primary-color-grey-2 )"
+                          borderColor="#e2e8f0"
                         />
                       ))}
                     </div>
@@ -1057,10 +1033,11 @@ const Settings = () => {
                       className={styles.design_profile_save_button}
                       onClick={handleSaveDesignSettings}
                     >
-                      save
+                      Save Settings
                     </button>
                   </div>
                 </div>
+                
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -1070,28 +1047,22 @@ const Settings = () => {
               </>
             )}
 
-            {/* Team Active Page */}
-
+            {/* 4. Team Tab */}
             {activeMenu === 'team' && (
               <>
-                <div className={styles.team}>
-                  {/* Title Section */}
+                 <div className={styles.team}>
                   <div className={styles.designsettingTitle}>
-                    <p className={styles.designsettingTitleText}>Team Members</p>
+                    <p className={styles.designsettingTitleText} style={{ marginBottom: '0.5rem' }}>Team Management</p>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Manage your team members and their roles here.</p>
                   </div>
+                  
                   <div className={styles.teamTopBar}>
-                    <button
-                      className={styles.teantopbarleftButton}
-                      onClick={() => setAddMambarPopup(true)}
-                    >
-                      <img src={assets.addmembar} alt="addmember" /> Add Member
-                    </button>
-                    <div className={styles.toggleContainer}>
+                     <div className={styles.toggleContainer}>
                       <button
                         className={`${styles.toggleButton} ${activeTab === 'active' ? styles.active : ''}`}
                         onClick={() => setActiveTab('active')}
                       >
-                        Active
+                        Active Members
                       </button>
                       <button
                         className={`${styles.toggleButton} ${activeTab === 'invited' ? styles.active : ''}`}
@@ -1100,14 +1071,21 @@ const Settings = () => {
                         Invited
                       </button>
                     </div>
+
+                    <button
+                      className={styles.teantopbarleftButton}
+                      onClick={() => setAddMambarPopup(true)}
+                    >
+                      <img src={assets.addmembar} alt="addmember" /> 
+                      Invite New Member
+                    </button>
                   </div>
+                  
                   <div className={styles.tableContainer} ref={tableContainerRef}>
                     <table>
                       <thead>
                         <tr>
-                          <th>
-                            <div style={{ marginLeft: '1rem' }}>Name</div>
-                          </th>
+                          <th>Name</th>
                           <th>Email</th>
                           <th>Role</th>
                           <th className={styles.actioncolumn}>Action</th>
@@ -1116,52 +1094,28 @@ const Settings = () => {
                       <tbody>
                         {filteredMembers.map((member) => (
                           <tr key={member.id}>
-                            <td>
-                              <div style={{ marginLeft: '1rem' }}>{member.name}</div>
-                            </td>
+                            <td style={{ fontWeight: 500 }}>{member.name}</td>
                             <td className={styles.emailbox}>{member.email}</td>
                             <td className={styles.rolebox}>
                               <div className={styles.roleContainer}>
                                 {member.groups.map((role, index) => (
                                   <span key={index} className={styles.roleBadge}>
-                                    <div>
-                                      <img
+                                     {role}
+                                     <img
                                         src={assets.close}
                                         alt="close"
                                         className={styles.closeteam}
-                                        onClick={() => {
-                                          handleRoleRemove(role, member.id);
-                                        }}
+                                        onClick={() => handleRoleRemove(role, member.id)}
                                       />
-
-                                      <img
-                                        src={
-                                          role === 'Account Manager'
-                                            ? assets.admindot
-                                            : role === 'Mes Editor'
-                                              ? assets.mesdot
-                                              : role === 'Designer'
-                                                ? assets.designdot
-                                                : role === 'Catalog Manager'
-                                                  ? assets.catalogdot
-                                                  : ''
-                                        }
-                                        alt="dot"
-                                        className={styles.dot}
-                                        onClick={() => {
-                                          handleRoleRemove(role, member.id);
-                                        }}
-                                      />
-                                    </div>
-                                    {role}
                                   </span>
                                 ))}
-                                <img
-                                  src={assets.roleaddicon}
-                                  alt="role add"
-                                  className={styles.roleaddicon}
-                                  onClick={(e) => handleRoleAddClick(e, member.id)}
-                                />
+                                <div className={styles.roleaddicon} onClick={(e) => handleRoleAddClick(e, member.id)}>
+                                    <img
+                                      src={assets.roleaddicon}
+                                      alt="add role"
+                                      style={{ width: '100%', height: '100%', filter: 'invert(1) brightness(2)' }}
+                                    />
+                                </div>
                               </div>
                             </td>
                             <td className={styles.actioncolumn}>
@@ -1171,7 +1125,7 @@ const Settings = () => {
                                     ? assets.deleteteamicon
                                     : assets.delete_not_icon
                                 }
-                                alt="team delete"
+                                alt="delete"
                                 className={styles.teamdeleteicon}
                                 onClick={() => handleDeleteMember(member.id)}
                                 onMouseEnter={() => handleMouseEnter(member.id)}
@@ -1208,21 +1162,7 @@ const Settings = () => {
                         className={styles.dropdownItem}
                         onClick={() => selectedMemberId && handleRoleSelect(role, selectedMemberId)}
                       >
-                        <img
-                          src={
-                            role === 'Account Manager'
-                              ? assets.admindot
-                              : role === 'Mes Editor'
-                                ? assets.mesdot
-                                : role === 'Designer'
-                                  ? assets.designdot
-                                  : role === 'Catalog Manager'
-                                    ? assets.catalogdot
-                                    : ''
-                          }
-                          alt="dot"
-                          className={styles.dot}
-                        />
+                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#392579', display: 'inline-block' }}></span>
                         {role}
                       </div>
                     ))}
@@ -1231,11 +1171,12 @@ const Settings = () => {
               </>
             )}
 
+            {/* Add Member Popup */}
             {addMambarPopup && (
               <div className={styles.createpopupOverlay}>
                 <div className={styles.createpopup}>
-                  <div className={styles.firstpart}>
-                    <h5 className={styles.addmembartitle}> Add member</h5>
+                  <div className={styles.firstpart} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h5 className={styles.addmembartitle} style={{ margin: 0 }}>Invite New Member</h5>
                     <img
                       src={assets.addmemberclose}
                       className={styles.createclose}
@@ -1250,55 +1191,49 @@ const Settings = () => {
                   <div className={styles.create_right_side}>
                     <form
                       className={styles.form}
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                      }}
+                      onSubmit={(e) => e.preventDefault()}
                     >
                       <div className={styles.createinputGroup}>
                         {addmemberfields.map((field, index) => (
                           <InputField
                             className={styles.inputField}
                             key={index}
-                            borderColor="var(--primary-color-grey-2)"
+                            borderColor="#e2e8f0"
                             {...field}
                             error=""
+                            mediumField={true}
                           />
                         ))}
                       </div>
-                      <p className={styles.erroemessage}>{errorMessage}</p>
-                      <h5 className={styles.membertitle}>Member role</h5>
+                      
+                      {errorMessage && <p className={styles.erroemessage} style={{ color: 'red', fontSize: '0.85rem' }}>{errorMessage}</p>}
+                      
+                      <h5 className={styles.membertitle}>Assign Roles</h5>
 
                       <div className={styles.checkboxgroup}>
-                        <input
-                          type="checkbox"
-                          id="Account Manager"
-                          onChange={handleCheckboxChange}
-                        />
-                        <label htmlFor="admin">Admin</label>
-
-                        <input type="checkbox" id="Mes Editor" onChange={handleCheckboxChange} />
-                        <label htmlFor="mes">MES</label>
-
-                        <input type="checkbox" id="Designer" onChange={handleCheckboxChange} />
-                        <label htmlFor="designer">Designer</label>
-
-                        <input
-                          type="checkbox"
-                          id="Catalog Manager"
-                          onChange={handleCheckboxChange}
-                        />
-                        <label htmlFor="catalog-manager">Catalog Manager</label>
+                        {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map((role) => (
+                             <div key={role} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <input
+                                  type="checkbox"
+                                  id={role}
+                                  onChange={handleCheckboxChange}
+                                  style={{ width: '1rem', height: '1rem', accentColor: '#392579' }}
+                                />
+                                <label htmlFor={role} style={{ marginLeft: '0.5rem' }}>{role}</label>
+                             </div>
+                        ))}
                       </div>
                     </form>
                   </div>
                   <div className={styles.createButtonGrop}>
                     <button className={styles.invitebutton} onClick={handleAddMemberClick}>
-                      Invite Member
+                      Send Invitation
                     </button>
                   </div>
                 </div>
               </div>
             )}
+            
           </div>
         </div>
       </div>
