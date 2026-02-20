@@ -443,7 +443,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
     const scene = threeDView!.scene;
     let targetBox: THREE.Mesh | null = null;
-    const selectedChildObject = store.getState().data.selectedChildObject ? store.getState().data.selectedChildObject : store.getState().data.selectedObject;
+    const selectedChildObject = store.getState().data.selectedChildObject
+      ? store.getState().data.selectedChildObject
+      : store.getState().data.selectedObject;
 
     scene.traverse((obj) => {
       if (obj.userData.objectId === selectedChildObject) {
@@ -471,8 +473,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       );
     };
 
-    if (((targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX) && 
-        !([PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType))) {
+    if (
+      (targetBox! as THREE.Mesh)?.userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX &&
+      ![PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType)
+    ) {
       showErrorToast('Please select a blank box');
       return;
     }
