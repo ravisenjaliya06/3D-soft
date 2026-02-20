@@ -3,7 +3,7 @@
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
-  background-color: #f8faff;
+  background-color: var(--designpage-background-color);
 }
 
 .rightside {
@@ -23,7 +23,7 @@
   padding: 2.5rem;
   overflow-y: auto;
   gap: 2.5rem;
-  background: radial-gradient(circle at top right, rgba(75, 42, 173, 0.05) 0%, transparent 40%),
+  background: radial-gradient(circle at top right, rgba(57, 37, 121, 0.05) 0%, transparent 40%),
               radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
 }
 
@@ -36,7 +36,7 @@
 }
 
 .maincontent::-webkit-scrollbar-thumb {
-  background: rgba(57, 37, 121, 0.1);
+  background: var(--border-color);
   border-radius: 10px;
 }
 
@@ -45,13 +45,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--primary-white);
   width: 100%;
   max-width: 65rem;
   padding: 1.25rem 2rem;
   border-radius: 0.85rem;
-  border: 1px solid rgba(57, 37, 121, 0.08);
-  box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--table-title-border-color);
+  box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px var(--box-shadow-color);
   position: relative;
   overflow: hidden;
   flex-shrink: 0; /* Ensures the card never gets smaller when list grows */
@@ -76,14 +76,14 @@
 .createdesignstext {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #170F49;
+  color: var(--common-text-color);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .createdesignssubtext {
   font-size: 0.9rem;
-  color: #6F6C8F;
+  color: var(--subtext-color);
   max-width: 20rem;
   line-height: 1.5;
 }
@@ -97,7 +97,7 @@
 }
 
 .createdesignButtoncontent {
-  background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
+  background: var(--gradient-primary);
   border-radius: 0.6rem;
   padding: 1.25rem 2rem;
   display: flex;
@@ -105,12 +105,13 @@
   gap: 1.5rem;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(57, 37, 121, 0.2);
+  box-shadow: 0 12px 24px var(--box-shadow-color);
 }
 
 .createdesignButtoncontent:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 18px 36px rgba(57, 37, 121, 0.3);
+  background: var(--gradient-primary-hover);
+  box-shadow: 0 18px 36px var(--box-shadow-color);
 }
 
 .createdesing {
@@ -125,7 +126,7 @@
 }
 
 .createdesingtext h4 {
-  color: #fff;
+  color: var(--primary-white);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
@@ -180,31 +181,31 @@
   width: 100%;
   height: 3rem;
   padding: 0 1rem 0 3rem;
-  background: #fff;
-  border: 1px solid rgba(57, 37, 121, 0.1);
+  background: var(--primary-white);
+  border: 1px solid var(--table-title-border-color);
   border-radius: 0.5rem;
   font-size: 0.9rem;
-  color: #170F49;
+  color: var(--common-text-color);
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 6px var(--box-shadow-color);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #392579;
-  box-shadow: 0 8px 16px rgba(57, 37, 121, 0.08);
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 16px var(--box-shadow-color);
 }
 
 .designsIcon {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  background: #fff;
+  background: var(--primary-white);
   padding: 0 0.5rem;
   height: 3rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(57, 37, 121, 0.08);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--table-title-border-color);
+  box-shadow: 0 4px 6px var(--box-shadow-color);
 }
 
 .filterWrapper {
@@ -242,10 +243,10 @@
 }
 
 .designview {
-  background: #fff;
+  background: var(--primary-white);
   padding: 1rem 1.5rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(57, 37, 121, 0.06);
+  border: 1px solid var(--table-title-border-color);
   display: flex;
   align-items: center;
   transition: all 0.25s ease;
@@ -267,7 +268,7 @@
 .design_list_icon {
   width: 2.5rem;
   height: 2.5rem;
-  background: #f8f9ff;
+  background: var(--primary-dark-white);
   padding: 0.6rem;
   border-radius: 0.75rem;
   margin-right: 1.5rem;
@@ -284,7 +285,7 @@
 .designName {
   font-size: 1rem;
   font-weight: 700;
-  color: #170F49;
+  color: var(--common-text-color);
 }
 
 .designsdetailsontime {
@@ -300,7 +301,7 @@
 
 .designTime {
   font-size: 0.7rem;
-  color: #6F6C8F;
+  color: var(--subtext-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -337,9 +338,9 @@
 }
 
 .gridItemContainer {
-  background: #fff;
+  background: var(--primary-white);
   border-radius: 1rem;
-  border: 1px solid rgba(57, 37, 121, 0.06);
+  border: 1px solid var(--table-title-border-color);
   padding: 1.5rem;
   transition: all 0.3s ease;
   position: relative;
@@ -440,11 +441,11 @@
 }
 
 /* ─── Status Styles ─── */
-.statusDraft, .gridStatusDraft { background: #EBF3FF; color: #1E5CAF; }
-.statusCompleted, .gridStatusCompleted { background: #E7F9ED; color: #15803D; }
-.statusReady, .gridStatusReady { background: #F0EBFF; color: #392579; }
-.statusDelete, .gridStatusDelete { background: #FFF1F1; color: #DC2626; }
-.statusNesting, .gridStatusNesting { background: #FEF3C7; color: #92400E; }
+.statusDraft, .gridStatusDraft { background: var(--draft-color); color: var(--draft-text-color); }
+.statusCompleted, .gridStatusCompleted { background: var(--completed-color); color: var(--completed-text-color); }
+.statusReady, .gridStatusReady { background: var(--ready-color); color: var(--ready-text-color); }
+.statusDelete, .gridStatusDelete { background: var(--delete-color); color: var(--delete-text-color); }
+.statusNesting, .gridStatusNesting { background: var(--nesting-color); color: var(--nesting-text-color); }
 
 /* ─── Dropdowns & Three Dots ─── */
 .threedot_container {
