@@ -2363,7 +2363,7 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
                             Nailer
                           </p>
                           {selectedObject?.nailerEnabled && (
@@ -2371,37 +2371,13 @@ const Sidebar: React.FC = () => {
                               <select
                                 value={selectedObject?.nailerModel || 'stand_1'}
                                 onChange={(e) => handleNailerModelChange(e.target.value)}
-                                className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                className="ml-[0.65rem] mt-[0.5rem] flex h-[1.3rem] w-[4.25rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                                 >
                                 <option value="stand_1">Stand 1</option>
                                 <option value="stand_2">Stand 2</option>
                               </select>
                             </div>
                           )}
-                        </div>
-                        <div className="flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleBaseheightToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
-                            <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                            />
-                          </div>
-
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Base Height
-                          </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
                         </div>
                         <div className="flex items-center gap-[0rem]">
                           <div
