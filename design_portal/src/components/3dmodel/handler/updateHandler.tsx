@@ -48,6 +48,16 @@ export class UpdateObjectInScene {
     if (updates.textureRotation !== undefined) {
       this.updateTextureRotation(mesh, updates.textureRotation);
     }
+    if (updates.openDirection) {
+      mesh.userData.openDirection = updates.openDirection;
+      if (currentObject) {
+        // We need to re-initialize MeshBuilder to update hinges
+        // Create a temporary MeshObjectData with updated direction
+        const updatedData = { ...currentObject, openDirection: updates.openDirection as any };
+        const builder = new MeshBuilder(updatedData, this.scene);
+        builder.updateHinges(mesh);
+      }
+    }
 
     if (currentObject) {
       this.updateRedux(objectId, updates, currentObject);
@@ -420,6 +430,10 @@ export class UpdateObjectInScene {
 
         //@ts-ignore
         material: updates.material ?? currentObject.material,
+
+        openDirection: updates.openDirection
+          ? (updates.openDirection as any)
+          : currentObject.openDirection,
       })
     );
   }

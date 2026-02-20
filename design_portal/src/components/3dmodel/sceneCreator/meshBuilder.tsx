@@ -650,40 +650,73 @@ export class MeshBuilder {
 
     if (!hingeModel) return;
 
-    // Hinge positions: 100mm from top and bottom
+    // Hinge positions: 100mm from ends
     const margin = 100; // 100mm
     const doorHeight = this.meshData.dimensions.height;
     const doorWidth = this.meshData.dimensions.width;
     const doorDepth = this.meshData.dimensions.depth;
 
-    // Determine Side based on Open Direction
-    const isRight = this.meshData.openDirection === DIRECTION_TYPES.RIGHT;
-
-    // X Position: Right or Left edge
-    const xPos = isRight ? doorWidth / 2 : -doorWidth / 2;
-
-    // Z Position: Back of the door
-    const zPos = -doorDepth / 2;
+    // Determine Open Direction
+    const openDirection = this.meshData.openDirection || DIRECTION_TYPES.RIGHT;
+    const isVertical =
+      openDirection === DIRECTION_TYPES.LEFT || openDirection === DIRECTION_TYPES.RIGHT;
 
     // Calculate dynamic hinges
     const standardDistance = 1000; // 1000mm standard distance
-    const numHinges = Math.max(2, Math.ceil(doorHeight / standardDistance) + 1);
+    // Use height for vertical opening, width for horizontal opening
+    const relevantDimension = isVertical ? doorHeight : doorWidth;
+    const numHinges = Math.max(2, Math.ceil(relevantDimension / standardDistance) + 1);
 
-    // Y Positions
-    const startY = -doorHeight / 2 + margin; // Bottom-most hinge
-    const endY = doorHeight / 2 - margin; // Top-most hinge
-    const totalSpan = endY - startY;
+    const startPos = -relevantDimension / 2 + margin;
+    const endPos = relevantDimension / 2 - margin;
+    const totalSpan = endPos - startPos;
 
     for (let i = 0; i < numHinges; i++) {
       const t = numHinges > 1 ? i / (numHinges - 1) : 0.5;
-      const yPos = startY + t * totalSpan;
+      const varyPos = startPos + t * totalSpan;
 
       const hinge = hingeModel.clone();
       hinge.name = `Hinge_${i + 1}`;
-      hinge.position.set(xPos, yPos, zPos);
-      hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
+
+      if (openDirection === DIRECTION_TYPES.RIGHT) {
+        hinge.position.set(doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
+      } else if (openDirection === DIRECTION_TYPES.LEFT) {
+        hinge.position.set(-doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.rotation.set(0, -Math.PI / 2, Math.PI / 2);
+      } else if (openDirection === DIRECTION_TYPES.TOP) {
+        hinge.position.set(varyPos, doorHeight / 2, -doorDepth / 2);
+        hinge.rotation.set(Math.PI / 2, 0, Math.PI);
+      } else if (openDirection === DIRECTION_TYPES.BOTTOM) {
+        hinge.position.set(varyPos, -doorHeight / 2, -doorDepth / 2);
+        hinge.rotation.set(-Math.PI / 2, 0, 0);
+      }
+
       hinge.scale.set(1, 1, 1);
       mesh.add(hinge);
+    }
+  }
+
+  public async updateHinges(mesh: THREE.Mesh): Promise<void> {
+    // Remove existing hinges
+    for (let i = mesh.children.length - 1; i >= 0; i--) {
+      const child = mesh.children[i];
+      if (child.name.startsWith('Hinge')) {
+        mesh.remove(child);
+      }
+    }
+
+    // Find Query Hinge Material
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+
+    const hingeMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.HINGE);
+
+    if (hingeMaterial) {
+      await this._loadHinge(mesh, hingeMaterial.properties);
     }
   }
 

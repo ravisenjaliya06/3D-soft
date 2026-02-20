@@ -496,6 +496,16 @@ const Sidebar: React.FC = () => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
     if (selectedObject) {
+      if (updateObjectRef.current) {
+        updateObjectRef.current.update(
+          selectedObject.id,
+          {
+            openDirection: position.toLowerCase(),
+          },
+          selectedObject
+        );
+      }
+
       scene.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
         if (child.userData.objectId === selectedObject.id) {

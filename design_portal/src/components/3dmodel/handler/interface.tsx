@@ -308,6 +308,7 @@ export interface UpdatePayload {
   rotation?: Partial<Rotation>;
   material?: Material;
   textureRotation?: number;
+  openDirection?: string;
 }
 
 export interface UpdateDimensionsParams {
