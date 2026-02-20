@@ -501,7 +501,8 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.LEFT,
-    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)
+      ?.material,
   };
 
   // Right Door
@@ -523,7 +524,8 @@ export const addDoubleDoorOnInvisibleBox = async (
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     openDirection: DIRECTION_TYPES.RIGHT,
-    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)?.material,
+    material: selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)
+      ?.material,
   };
 
   // Build the group and children
@@ -1573,7 +1575,7 @@ export const addSideObjectToCupboard = async (
     relX: number,
     relY: number,
     relZ: number,
-    name: string,
+    name: string
   ): MeshObjectData => {
     return {
       id: crypto.randomUUID(),
@@ -1724,14 +1726,14 @@ export const addSideObjectToCupboard = async (
 export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh) => {
   if (!cupboardMesh) return;
   const toRemove: THREE.Object3D[] = [];
-  cupboardMesh.children.forEach(child => {
+  cupboardMesh.children.forEach((child) => {
     if (child.userData.isNailer) {
       toRemove.push(child);
     }
   });
 
   if (toRemove.length > 0) {
-    toRemove.forEach(child => {
+    toRemove.forEach((child) => {
       cupboardMesh.remove(child);
     });
 
@@ -1759,7 +1761,7 @@ export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh
 
     // Restore side planks if they were adjusted
     const currentObjects = store.getState().data.objects;
-    cupboardMesh.children.forEach(child => {
+    cupboardMesh.children.forEach((child) => {
       if (child instanceof THREE.Mesh && child.userData.originalHeight !== undefined) {
         const originalHeight = child.userData.originalHeight;
         const originalY = child.userData.originalY;
@@ -1772,13 +1774,15 @@ export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh
         );
         child.position.y = originalY;
 
-        const childData = currentObjects.find(o => o.id === child.userData.objectId);
+        const childData = currentObjects.find((o) => o.id === child.userData.objectId);
         if (childData) {
-          store.dispatch(updateObject({
-            ...childData,
-            dimensions: { ...childData.dimensions, height: originalHeight },
-            position: { ...childData.position, y: originalY }
-          }));
+          store.dispatch(
+            updateObject({
+              ...childData,
+              dimensions: { ...childData.dimensions, height: originalHeight },
+              position: { ...childData.position, y: originalY },
+            })
+          );
 
           const builder = new MeshBuilder(childData, scene);
           builder.setParentMesh(cupboardMesh);
@@ -1792,10 +1796,7 @@ export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh
   }
 };
 
-const buildNailerMeshes = async (
-  cupboardMesh: THREE.Mesh,
-  modelName: string
-) => {
+const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) => {
   const geometry = cupboardMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
   if (!geometry.boundingBox) return null;
@@ -1820,19 +1821,29 @@ const buildNailerMeshes = async (
   let bottomPlank: THREE.Mesh | null = null;
   const verticalPlanks: THREE.Mesh[] = [];
 
-  cupboardMesh.children.forEach(child => {
+  cupboardMesh.children.forEach((child) => {
     if (child instanceof THREE.Mesh) {
       const name = child.name || '';
       if (name === 'BOTTOM_PLANK' || name.includes('BOTTOM_PLANK')) {
         if (!bottomPlank || child.position.y < bottomPlank.position.y) bottomPlank = child;
-      } else if (name === 'LEFT_PLANK' || name === 'RIGHT_PLANK' || name.includes('LEFT_PLANK') || name.includes('RIGHT_PLANK') || child.userData.type === PART_TYPES.VERTICAL_PLANK) {
+      } else if (
+        name === 'LEFT_PLANK' ||
+        name === 'RIGHT_PLANK' ||
+        name.includes('LEFT_PLANK') ||
+        name.includes('RIGHT_PLANK') ||
+        child.userData.type === PART_TYPES.VERTICAL_PLANK
+      ) {
         verticalPlanks.push(child);
       }
     }
   });
 
   const bp = bottomPlank as THREE.Mesh | null;
-  const actualBottomY = bp ? bp.position.y + ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y || -(bp.geometry as THREE.BoxGeometry).parameters.height / 2) : -h / 2;
+  const actualBottomY = bp
+    ? bp.position.y +
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+    : -h / 2;
 
   const positions = [
     { x: -w / 2 + nailerW / 2 + insetX, z: -d / 2 + nailerD / 2 + insetZ },
@@ -1845,7 +1856,11 @@ const buildNailerMeshes = async (
   let physicalHeight = nailerHeight;
 
   try {
-    baseNailerModel = await GLBLoader(url, `Nailer_Base`, { width: nailerW, height: nailerHeight, depth: nailerD });
+    baseNailerModel = await GLBLoader(url, `Nailer_Base`, {
+      width: nailerW,
+      height: nailerHeight,
+      depth: nailerD,
+    });
 
     baseNailerModel.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(baseNailerModel);
@@ -1896,13 +1911,13 @@ export const addNailers = async (
     return;
   }
 
-  const { bottomPlank, verticalPlanks, actualBottomY, physicalHeight } = nailerData;
+  const { bottomPlank, verticalPlanks, actualBottomY } = nailerData;
 
   let lowestVpMinY: number | null = null;
   const currentObjectsForPlanks = store.getState().data.objects;
 
   if (bottomPlank) {
-    verticalPlanks.forEach(vp => {
+    verticalPlanks.forEach((vp) => {
       const vpGeo = vp.geometry as THREE.BoxGeometry;
       const vpMinY = vp.position.y - vpGeo.parameters.height / 2;
       const vpMaxY = vp.position.y + vpGeo.parameters.height / 2;
@@ -1929,13 +1944,15 @@ export const addNailers = async (
           );
           vp.position.y = newCenterY;
 
-          const vpData = currentObjectsForPlanks.find(obj => obj.id === vp.userData.objectId);
+          const vpData = currentObjectsForPlanks.find((obj) => obj.id === vp.userData.objectId);
           if (vpData) {
-            store.dispatch(updateObject({
-              ...vpData,
-              dimensions: { ...vpData.dimensions, height: newHeight },
-              position: { ...vpData.position, y: newCenterY }
-            }));
+            store.dispatch(
+              updateObject({
+                ...vpData,
+                dimensions: { ...vpData.dimensions, height: newHeight },
+                position: { ...vpData.position, y: newCenterY },
+              })
+            );
 
             const builder = new MeshBuilder(vpData, scene);
             builder.setParentMesh(cupboardMesh);
@@ -1970,7 +1987,7 @@ export const addNailers = async (
             y: cupboardMesh.position.y,
           },
           nailerEnabled: true,
-          nailerModel: modelName
+          nailerModel: modelName,
         })
       );
     }
@@ -1979,10 +1996,7 @@ export const addNailers = async (
   hideFullScreenLoader();
 };
 
-export const hydrateNailers = async (
-  cupboardMesh: THREE.Mesh,
-  modelName: string = 'stand_1'
-) => {
+export const hydrateNailers = async (cupboardMesh: THREE.Mesh, modelName: string = 'stand_1') => {
   if (!cupboardMesh) return;
   await buildNailerMeshes(cupboardMesh, modelName);
 };
