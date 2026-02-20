@@ -3526,7 +3526,11 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {/* Left Side: Fields */}
                 <div className={styles.fieldsContainer}>
                   {currentPopup?.fields.map((field, index) => {
-                    const isFullWidth = field.type !== 'toggle';
+                    const isPricingStep = currentPopup?.title === 'Pricing Details';
+                    // Allow 2 fields per row in pricing step, but make 'waste' full-width 
+                    // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
+                    const isFullWidth = field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
+                    
                     return (
                       <div
                         key={field.key || index}
