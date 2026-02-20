@@ -213,7 +213,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const size = box.getSize(new THREE.Vector3());
 
       label.position.copy(center);
-      label.position.y += size.y / 2 + 0.12;
+      label.position.y += size.y / 2 + 0.55;
 
       design3D.scene.add(label);
       helperToolRef.current = label;
@@ -243,7 +243,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
 
-      helperToolRef.current.position.set(center.x, center.y + size.y / 2 + 0.12, center.z);
+      helperToolRef.current.position.set(center.x, center.y + size.y / 2 + 0.55, center.z);
 
       rendererRef.current?.render(design3D.scene, design3D.camera);
       requestAnimationFrame(update);

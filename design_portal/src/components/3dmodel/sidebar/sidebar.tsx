@@ -28,6 +28,7 @@ import {
   PART_TYPES,
   MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
   TextureDetails,
+  OBJECT_TYPES,
 } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -684,20 +685,33 @@ const Sidebar: React.FC = () => {
     const config = axisConfig[field];
 
     if (config) {
+      const scaleValue = selectedObject.scale?.[config.axis] ?? 1;
       if (config.side === config.negative) {
-        positionShift[config.axis] = -delta / 2;
-      } else if (config.side === config.positive) {
-        positionShift[config.axis] = delta / 2;
+        positionShift[config.axis] = -(delta / 2) * scaleValue;
+      }
+      else if (config.side === config.positive) {
+        positionShift[config.axis] = (delta / 2) * scaleValue;
       }
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
+    const currentRot = selectedObject.rotation ?? { x: 0, y: 0, z: 0 };
+
+    // Apply rotation to the shift vector to ensure it moves along the local axis
+    const shiftVector = new THREE.Vector3(
+      positionShift.x,
+      positionShift.y,
+      positionShift.z
+    );
+    const euler = new THREE.Euler(currentRot.x, currentRot.y, currentRot.z);
+    shiftVector.applyEuler(euler);
+
     applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
-        x: currentPos.x + positionShift.x,
-        y: currentPos.y + positionShift.y,
-        z: currentPos.z + positionShift.z,
+        x: currentPos.x + shiftVector.x,
+        y: currentPos.y + shiftVector.y,
+        z: currentPos.z + shiftVector.z,
       },
     });
 
@@ -842,6 +856,8 @@ const Sidebar: React.FC = () => {
     depth: ['/icons/front.svg', '/icons/back.svg'],
   };
 
+  const isPlatformSelected = selectedObject?.type === OBJECT_TYPES.PLATFORM;
+
   const sideBarMenuConfig = [
     {
       subMenu: 'layout',
@@ -865,7 +881,7 @@ const Sidebar: React.FC = () => {
           options: isHorizontalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.height,
-          disabled: isHorizontalPlank ? false : isVerticalPlank || isDisabled,
+          disabled: isHorizontalPlank ? false : isVerticalPlank || isDisabled || isPlatformSelected,
           onValueChange: (value: number) => handleDimensionChange('height', value),
           controls: isHorizontalPlank ? null : ['Top', 'Bottom'],
         },
@@ -936,8 +952,6 @@ const Sidebar: React.FC = () => {
     selectedObject?.type === PART_TYPES.HORIZONTAL_PLANK ||
     selectedObject?.type === PART_TYPES.BACK_PLANK ||
     Object.values(DRAWER_PLANK_TYPES).includes(selectedObject?.type || '');
-  selectedObject?.name?.toLowerCase().includes('planks');
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const getTopPlank = () => {
     if (!selectedObject) return undefined;
@@ -966,7 +980,7 @@ const Sidebar: React.FC = () => {
     ].includes(selectedObject.type);
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
-  const isFullCupboardorPlankSelected = isFullCupboard || isPlankSelected;
+  const isFullCupboardorPlankSelected = isFullCupboard || isPlankSelected || isPlatformSelected;
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
@@ -2039,7 +2053,7 @@ const Sidebar: React.FC = () => {
                         {!collapsed.layout && (
                           <>
                             {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
-                            {isPlankSelected && (
+                            {(isPlankSelected || isPlatformSelected) && (
                               <div className="flex flex-col gap-[0.6rem]">
                                 {menu.fields.map((field) => (
                                   <div
@@ -2129,7 +2143,7 @@ const Sidebar: React.FC = () => {
                             )}
 
                             {/* CUPBOARD LAYOUT - 2x2 GRID */}
-                            {!isPlankSelected && (
+                            {!isPlankSelected && !isPlatformSelected && (
                               <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
                                 {/* Width */}
                                 <div className="flex flex-col gap-[0.2rem]">
