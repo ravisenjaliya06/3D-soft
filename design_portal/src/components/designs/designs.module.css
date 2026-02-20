@@ -685,27 +685,60 @@
 
 .dropdownMenuProfile {
   position: absolute;
-  top: 3.5rem;
-  right: 0;
+  top: calc(100% + 10px);
+  right: -5px;
   background: #fff;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(57, 37, 121, 0.1);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  border: 1px solid rgba(57, 37, 121, 0.08);
+  box-shadow: 0 10px 30px rgba(23, 15, 73, 0.15), 0 0 0 1px rgba(57, 37, 121, 0.05);
   z-index: 1000;
-  padding: 0.75rem;
-  min-width: 14rem;
+  padding: 0.4rem;
+  min-width: 10rem;
+  animation: slideInUp 0.2s ease-out;
+}
+
+.dropdownMenuProfile::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  transform: rotate(45deg);
+  border-top: 1px solid rgba(57, 37, 121, 0.08);
+  border-left: 1px solid rgba(57, 37, 121, 0.08);
 }
 
 .dropdownItem {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 1rem;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #170F49;
 }
 
 .dropdownItem:hover {
   background: #f8f9ff;
+  color: #392579;
+}
+
+.activeDropdownItem {
+  background: #f0ebff;
+  color: #392579;
+}
+
+.dropdownStatusIcon {
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.7;
+}
+
+.activeDropdownItem .dropdownStatusIcon {
+  opacity: 1;
 }
