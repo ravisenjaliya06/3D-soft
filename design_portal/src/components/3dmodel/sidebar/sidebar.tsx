@@ -25,10 +25,10 @@ import {
   Material,
   MeshObjectData,
   MeshObjectPatch,
+  OBJECT_TYPES,
   PART_TYPES,
   MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
   TextureDetails,
-  OBJECT_TYPES,
 } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -688,8 +688,7 @@ const Sidebar: React.FC = () => {
       const scaleValue = selectedObject.scale?.[config.axis] ?? 1;
       if (config.side === config.negative) {
         positionShift[config.axis] = -(delta / 2) * scaleValue;
-      }
-      else if (config.side === config.positive) {
+      } else if (config.side === config.positive) {
         positionShift[config.axis] = (delta / 2) * scaleValue;
       }
     }
@@ -698,11 +697,7 @@ const Sidebar: React.FC = () => {
     const currentRot = selectedObject.rotation ?? { x: 0, y: 0, z: 0 };
 
     // Apply rotation to the shift vector to ensure it moves along the local axis
-    const shiftVector = new THREE.Vector3(
-      positionShift.x,
-      positionShift.y,
-      positionShift.z
-    );
+    const shiftVector = new THREE.Vector3(positionShift.x, positionShift.y, positionShift.z);
     const euler = new THREE.Euler(currentRot.x, currentRot.y, currentRot.z);
     shiftVector.applyEuler(euler);
 

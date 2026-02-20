@@ -705,9 +705,6 @@ export class MeshBuilder {
       const plankThickness = this.meshData.dimensions.width;
 
       // Calculate offset to move channel from plank center to gap center
-      // Gap center is at (sideGap/2) from the edge
-      // Plank center is at (sideGap + plankThickness/2) from the edge
-      // Distance = (sideGap + plankThickness) / 2
       const offset = (sideGap + plankThickness) / 2;
 
       let channelX = plankPositionX;
@@ -717,10 +714,13 @@ export class MeshBuilder {
         channelX += offset;
       }
 
+      // dynamic depth
+      const depthChange = Math.max(plankDepth - 10, 100);
+
       const channelModel = await GLBLoader(backendUrl, 'DrawerChannel', {
-        width: sideGap, // Fill the gap width
-        height: 5,
-        depth: plankDepth,
+        width: 5,
+        height: sideGap,
+        depth: depthChange,
       });
 
       if (!channelModel) return;
@@ -728,8 +728,15 @@ export class MeshBuilder {
       const channel = channelModel.clone();
       channel.name = `Channel_${side}`;
 
+      // force depth scaling change
+      // After rotation (Math.PI/2 on X and Y), local Z might map differently
+      channel.updateMatrixWorld(true);
+      const bBox = new THREE.Box3().setFromObject(channel);
+      const currentSize = new THREE.Vector3();
+      bBox.getSize(currentSize);
+
       channel.position.set(channelX, plankPositionY, plankPositionZ);
-      // Rotation
+      // Rotation matches user logic
       if (side === 'left') {
         channel.rotation.set(Math.PI / 2, Math.PI / 2, 0);
         channel.scale.set(1, 1, 1);
@@ -738,9 +745,17 @@ export class MeshBuilder {
         channel.scale.set(1, 1, -1);
       }
 
-      // Center the channel in Z-axis
-      // Note: We need to update matrix world for the box to take rotation/scale into account
+      // Final adjustment to ensure it doesn't protrude
       channel.updateMatrixWorld(true);
+      const finalBBox = new THREE.Box3().setFromObject(channel);
+      const finalSize = new THREE.Vector3();
+      finalBBox.getSize(finalSize);
+
+      if (finalSize.z > depthChange) {
+        const scaleFactor = depthChange / finalSize.z;
+        channel.scale.y *= scaleFactor; // because of PI/2 rotations, Y local to World Z
+      }
+
       const box = new THREE.Box3().setFromObject(channel);
       const center = new THREE.Vector3();
       box.getCenter(center);

@@ -16,6 +16,7 @@ import {
   GEOMETRY,
   INVISIBLE_BOXES,
   Material,
+  MATERIAL_TYPES,
   MeshObjectData,
   OBJECT_TYPES,
   PART_TYPES,
@@ -545,252 +546,272 @@ export const addDrawersOnInvisibleBox = async (
 ) => {
   if (!boxMesh || drawers <= 0) return;
 
-  const geometry = boxMesh.geometry as THREE.BufferGeometry;
-  geometry.computeBoundingBox();
-  const geometryBoundingBox = geometry.boundingBox;
+  showFullScreenLoader('Adding Drawer...');
+  try {
+    const geometry = boxMesh.geometry as THREE.BufferGeometry;
+    geometry.computeBoundingBox();
+    const geometryBoundingBox = geometry.boundingBox;
 
-  if (!geometryBoundingBox) return;
+    if (!geometryBoundingBox) return;
 
-  const size = new THREE.Vector3();
-  geometryBoundingBox.getSize(size);
+    const size = new THREE.Vector3();
+    geometryBoundingBox.getSize(size);
 
-  const w = size.x;
-  const d = size.z;
+    const w = size.x;
+    const d = size.z;
 
-  const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
+    const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const thickness = 18;
-  const drawerConstructionType = 'fivePlank';
+    const thickness = 18;
+    const drawerConstructionType = 'fivePlank';
 
-  const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
-    ? boxMesh
-    : (boxMesh.parent as THREE.Mesh);
+    const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
+      ? boxMesh
+      : (boxMesh.parent as THREE.Mesh);
 
-  // Update matrices once before calculating positions
-  boxMesh.updateMatrixWorld(true);
-  parent.updateMatrixWorld(true);
+    // Update matrices once before calculating positions
+    boxMesh.updateMatrixWorld(true);
+    parent.updateMatrixWorld(true);
 
-  // Calculate boxMesh bounding box corners in parent's local space ONCE
-  const boxMinLocal = new THREE.Vector3(
-    geometryBoundingBox.min.x,
-    geometryBoundingBox.min.y,
-    geometryBoundingBox.min.z
-  );
-  const boxMaxLocal = new THREE.Vector3(
-    geometryBoundingBox.max.x,
-    geometryBoundingBox.max.y,
-    geometryBoundingBox.max.z
-  );
-  const boxCenterWorld = boxMesh.localToWorld(boxCenterLocal.clone());
-  const boxMinWorld = boxMesh.localToWorld(boxMinLocal.clone());
-  const boxMaxWorld = boxMesh.localToWorld(boxMaxLocal.clone());
-
-  const boxCenterParent = parent.worldToLocal(boxCenterWorld.clone());
-  const boxMinParent = parent.worldToLocal(boxMinWorld.clone());
-  const boxMaxParent = parent.worldToLocal(boxMaxWorld.clone());
-
-  // Calculate box dimensions in parent's local space
-  const boxSizeParent = new THREE.Vector3();
-  boxSizeParent.subVectors(boxMaxParent, boxMinParent);
-  const wParent = Math.abs(boxSizeParent.x);
-  const hParent = Math.abs(boxSizeParent.y);
-  const dParent = Math.abs(boxSizeParent.z);
-
-  // Calculate drawer height in parent space
-  const eachH = hParent / drawers;
-
-  for (let i = 0; i < drawers; i++) {
-    // Calculate y position in parent's local space directly
-    const yParent = boxMinParent.y + eachH * (i + 0.5);
-
-    // Inset: fits inside. Overlay: covers front.
-    const isOverlay = drawerType === DRAWER_TYPES.OVERLAY;
-
-    // Face dimensions
-    // User requested 30mm increase in width for Overlay. Height remains consistent with Inset.
-    const faceW = isOverlay ? w + 30 : w - 10;
-    const faceH = eachH - 5;
-    const faceD = 20;
-
-    const drawerDimensions = {
-      width: w - 10,
-      height: eachH - 5,
-      depth: faceD,
-    };
-
-    const drawerGroupId = crypto.randomUUID();
-    const drawerGroupWithAllPlank: MeshObjectData[] = [];
-
-    // Calculate the group's position directly in parent's local space
-    const parentGroupPos = new THREE.Vector3(boxCenterParent.x, yParent, boxCenterParent.z);
-
-    const drawerGroup: MeshObjectData = {
-      id: drawerGroupId,
-      name: `Drawer`,
-      type: PART_TYPES.DRAWER,
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: drawerDimensions,
-      position: { x: parentGroupPos.x, y: parentGroupPos.y, z: parentGroupPos.z },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1, z: 1 },
-      isMain: true,
-      parent: parent.userData.objectId,
-      openDirection: DIRECTION_TYPES.RIGHT,
-      drawerType: drawerType,
-      material: [
-        ...(Array.isArray(selectedCabinetItem[0].material)
-          ? selectedCabinetItem[0].material
-          : [selectedCabinetItem[0].material]
-        ).filter((m): m is Material => !!m),
-      ],
-    };
-
-    drawerGroupWithAllPlank.push(drawerGroup);
-
-    // Calculate face position in parent's local space
-    const faceZParent =
-      boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
-    const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
-
-    const facePlank = selectedCabinetItem.find(
-      (item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE
+    // Calculate boxMesh bounding box corners in parent's local space ONCE
+    const boxMinLocal = new THREE.Vector3(
+      geometryBoundingBox.min.x,
+      geometryBoundingBox.min.y,
+      geometryBoundingBox.min.z
     );
-    const face: MeshObjectData = {
-      id: crypto.randomUUID(),
-      name: DRAWER_PLANK_TYPES.DRAWER_FACE,
-      type: DRAWER_PLANK_TYPES.DRAWER_FACE || PART_TYPES.DRAWER,
-      parent: drawerGroupId,
-      geometryType: GEOMETRY.BOX_GEOMETRY,
-      dimensions: { width: faceW, height: faceH, depth: faceD },
-      position: {
-        x: parentFacePos.x - parentGroupPos.x,
-        y: parentFacePos.y - parentGroupPos.y,
-        z: parentFacePos.z - parentGroupPos.z,
-      },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1, z: 1 },
-      material: facePlank?.material,
-    };
+    const boxMaxLocal = new THREE.Vector3(
+      geometryBoundingBox.max.x,
+      geometryBoundingBox.max.y,
+      geometryBoundingBox.max.z
+    );
+    const boxCenterWorld = boxMesh.localToWorld(boxCenterLocal.clone());
+    const boxMinWorld = boxMesh.localToWorld(boxMinLocal.clone());
+    const boxMaxWorld = boxMesh.localToWorld(boxMaxLocal.clone());
 
-    drawerGroupWithAllPlank.push(face);
+    const boxCenterParent = parent.worldToLocal(boxCenterWorld.clone());
+    const boxMinParent = parent.worldToLocal(boxMinWorld.clone());
+    const boxMaxParent = parent.worldToLocal(boxMaxWorld.clone());
 
-    if (drawerConstructionType === 'fivePlank') {
-      const sideGap = 12; // REQUIRED 12mm spacing for standard drawer
-      const drawerOuterW = w;
-      const drawerOuterD = d;
+    // Calculate box dimensions in parent's local space
+    const boxSizeParent = new THREE.Vector3();
+    boxSizeParent.subVectors(boxMaxParent, boxMinParent);
+    const wParent = Math.abs(boxSizeParent.x);
+    const hParent = Math.abs(boxSizeParent.y);
+    const dParent = Math.abs(boxSizeParent.z);
 
-      //Correct inner dimensions
-      const innerW = Math.max(drawerOuterW - 2 * sideGap - 2 * thickness, 1);
-      // Increase depth for overlay as it's not recessed
-      const innerD = isOverlay
-        ? Math.max(drawerOuterD - 40, 200)
-        : Math.max(drawerOuterD - 60, 200);
+    // Calculate drawer height in parent space
+    const eachH = hParent / drawers;
 
-      // Heights
-      const innerH = Math.max(eachH - 50, 1);
+    for (let i = 0; i < drawers; i++) {
+      // Calculate y position in parent's local space directly
+      const yParent = boxMinParent.y + eachH * (i + 0.5);
 
-      // Vertical alignment (bottom aligned) - calculate in parent's local space
-      const baseYParent = yParent;
-      const innerPartCenterYParent = baseYParent - (eachH - innerH) / 2;
-      const boxFrontZRelParent = isOverlay ? dParent / 2 : dParent / 2 - faceD;
+      // Inset: fits inside. Overlay: covers front.
+      const isOverlay = drawerType === DRAWER_TYPES.OVERLAY;
 
-      const createInnerPartData = (
-        name: string,
-        dims: Dimensions,
-        xOffset: number,
-        yPos: number,
-        zPos: number
-      ) => {
-        // Calculate position directly in parent's local space
-        const partPosParent = new THREE.Vector3(
-          boxCenterParent.x + xOffset,
-          yPos,
-          boxCenterParent.z + zPos
-        );
+      // Face dimensions
+      // User requested 30mm increase in width for Overlay. Height remains consistent with Inset.
+      const faceW = isOverlay ? w + 30 : w - 10;
+      const faceH = eachH - 5;
+      const faceD = 20;
 
-        const part: MeshObjectData = {
-          id: crypto.randomUUID(),
-          name,
-          type: Object.values(DRAWER_PLANK_TYPES).includes(name) ? name : PART_TYPES.DRAWER,
-          parent: drawerGroupId,
-          geometryType: GEOMETRY.BOX_GEOMETRY,
-          dimensions: dims,
-          position: {
-            x: partPosParent.x - parentGroupPos.x,
-            y: partPosParent.y - parentGroupPos.y,
-            z: partPosParent.z - parentGroupPos.z,
-          },
-          rotation: { x: 0, y: 0, z: 0 },
-          scale: { x: 1, y: 1, z: 1 },
-          material: selectedCabinetItem.find((item) => item.name === name)?.material,
-        };
-        drawerGroupWithAllPlank.push(part);
+      const drawerDimensions = {
+        width: w - 10,
+        height: eachH - 5,
+        depth: faceD,
       };
 
-      // LEFT plank position (12mm from left) - positions relative to box center in parent space
-      createInnerPartData(
-        DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
-        { width: thickness, height: innerH, depth: innerD },
-        -wParent / 2 + sideGap + thickness / 2,
-        innerPartCenterYParent,
-        boxFrontZRelParent - innerD / 2
+      const drawerGroupId = crypto.randomUUID();
+      const drawerGroupWithAllPlank: MeshObjectData[] = [];
+
+      // Calculate the group's position directly in parent's local space
+      const parentGroupPos = new THREE.Vector3(boxCenterParent.x, yParent, boxCenterParent.z);
+
+      const drawerGroup: MeshObjectData = {
+        id: drawerGroupId,
+        name: `Drawer`,
+        type: PART_TYPES.DRAWER,
+        geometryType: GEOMETRY.BOX_GEOMETRY,
+        dimensions: drawerDimensions,
+        position: { x: parentGroupPos.x, y: parentGroupPos.y, z: parentGroupPos.z },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        isMain: true,
+        parent: parent.userData.objectId,
+        openDirection: DIRECTION_TYPES.RIGHT,
+        drawerType: drawerType,
+        material: [
+          ...(Array.isArray(selectedCabinetItem[0].material)
+            ? selectedCabinetItem[0].material
+            : [selectedCabinetItem[0].material]
+          ).filter((m): m is Material => !!m && m.type !== MATERIAL_TYPES.PULL),
+        ],
+      };
+
+      drawerGroupWithAllPlank.push(drawerGroup);
+
+      // Calculate face position in parent's local space
+      const faceZParent =
+        boxCenterParent.z + (isOverlay ? dParent / 2 : dParent / 2 - faceD) + faceD / 2;
+      const parentFacePos = new THREE.Vector3(boxCenterParent.x, yParent, faceZParent);
+
+      const facePlank = selectedCabinetItem.find(
+        (item) => item.name === DRAWER_PLANK_TYPES.DRAWER_FACE
       );
 
-      // RIGHT plank position (12mm from right)
-      createInnerPartData(
-        DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
-        { width: thickness, height: innerH, depth: innerD },
-        wParent / 2 - sideGap - thickness / 2,
-        innerPartCenterYParent,
-        boxFrontZRelParent - innerD / 2
-      );
+      // handle material for face
+      const handleMaterial = (
+        Array.isArray(selectedCabinetItem[0].material)
+          ? selectedCabinetItem[0].material
+          : [selectedCabinetItem[0].material]
+      ).filter((m): m is Material => !!m && m.type === MATERIAL_TYPES.PULL);
 
-      // BACK plank
-      createInnerPartData(
-        DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
-        { width: innerW, height: innerH, depth: thickness },
-        0,
-        innerPartCenterYParent,
-        boxFrontZRelParent - innerD + thickness / 2
-      );
+      const face: MeshObjectData = {
+        id: crypto.randomUUID(),
+        name: DRAWER_PLANK_TYPES.DRAWER_FACE,
+        type: DRAWER_PLANK_TYPES.DRAWER_FACE || PART_TYPES.DRAWER,
+        parent: drawerGroupId,
+        geometryType: GEOMETRY.BOX_GEOMETRY,
+        dimensions: { width: faceW, height: faceH, depth: faceD },
+        position: {
+          x: parentFacePos.x - parentGroupPos.x,
+          y: parentFacePos.y - parentGroupPos.y,
+          z: parentFacePos.z - parentGroupPos.z,
+        },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        material: [
+          ...(Array.isArray(facePlank?.material)
+            ? facePlank.material
+            : facePlank?.material
+              ? [facePlank.material]
+              : []),
+          ...handleMaterial,
+        ],
+      };
 
-      // FRONT plank
-      createInnerPartData(
-        DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
-        { width: innerW, height: innerH, depth: thickness },
-        0,
-        innerPartCenterYParent,
-        boxFrontZRelParent - thickness / 2
-      );
+      drawerGroupWithAllPlank.push(face);
 
-      // BOTTOM plank
-      createInnerPartData(
-        DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
-        { width: innerW, height: thickness, depth: innerD },
-        0,
-        baseYParent - eachH / 2 + thickness / 2,
-        boxFrontZRelParent - innerD / 2
-      );
+      if (drawerConstructionType === 'fivePlank') {
+        const sideGap = 12; // REQUIRED 12mm spacing for standard drawer
+        const drawerOuterW = w;
+        const drawerOuterD = d;
+
+        //Correct inner dimensions
+        const innerW = Math.max(drawerOuterW - 2 * sideGap - 2 * thickness, 1);
+        // Increase depth for overlay as it's not recessed
+        const innerD = isOverlay
+          ? Math.max(drawerOuterD - 40, 200)
+          : Math.max(drawerOuterD - 60, 200);
+
+        // Heights
+        const innerH = Math.max(eachH - 50, 1);
+
+        // Vertical alignment (bottom aligned) - calculate in parent's local space
+        const baseYParent = yParent;
+        const innerPartCenterYParent = baseYParent - (eachH - innerH) / 2;
+        const boxFrontZRelParent = isOverlay ? dParent / 2 : dParent / 2 - faceD;
+
+        const createInnerPartData = (
+          name: string,
+          dims: Dimensions,
+          xOffset: number,
+          yPos: number,
+          zPos: number
+        ) => {
+          // Calculate position directly in parent's local space
+          const partPosParent = new THREE.Vector3(
+            boxCenterParent.x + xOffset,
+            yPos,
+            boxCenterParent.z + zPos
+          );
+
+          const part: MeshObjectData = {
+            id: crypto.randomUUID(),
+            name,
+            type: Object.values(DRAWER_PLANK_TYPES).includes(name) ? name : PART_TYPES.DRAWER,
+            parent: drawerGroupId,
+            geometryType: GEOMETRY.BOX_GEOMETRY,
+            dimensions: dims,
+            position: {
+              x: partPosParent.x - parentGroupPos.x,
+              y: partPosParent.y - parentGroupPos.y,
+              z: partPosParent.z - parentGroupPos.z,
+            },
+            rotation: { x: 0, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+            material: selectedCabinetItem.find((item) => item.name === name)?.material,
+          };
+          drawerGroupWithAllPlank.push(part);
+        };
+
+        // LEFT plank position (12mm from left) - positions relative to box center in parent space
+        createInnerPartData(
+          DRAWER_PLANK_TYPES.LEFT_DRAWER_PLANK,
+          { width: thickness, height: innerH, depth: innerD },
+          -wParent / 2 + sideGap + thickness / 2,
+          innerPartCenterYParent,
+          boxFrontZRelParent - innerD / 2
+        );
+
+        // RIGHT plank position (12mm from right)
+        createInnerPartData(
+          DRAWER_PLANK_TYPES.RIGHT_DRAWER_PLANK,
+          { width: thickness, height: innerH, depth: innerD },
+          wParent / 2 - sideGap - thickness / 2,
+          innerPartCenterYParent,
+          boxFrontZRelParent - innerD / 2
+        );
+
+        // BACK plank
+        createInnerPartData(
+          DRAWER_PLANK_TYPES.BACK_DRAWER_PLANK,
+          { width: innerW, height: innerH, depth: thickness },
+          0,
+          innerPartCenterYParent,
+          boxFrontZRelParent - innerD + thickness / 2
+        );
+
+        // FRONT plank
+        createInnerPartData(
+          DRAWER_PLANK_TYPES.FRONT_DRAWER_PLANK,
+          { width: innerW, height: innerH, depth: thickness },
+          0,
+          innerPartCenterYParent,
+          boxFrontZRelParent - thickness / 2
+        );
+
+        // BOTTOM plank
+        createInnerPartData(
+          DRAWER_PLANK_TYPES.BOTTOM_DRAWER_PLANK,
+          { width: innerW, height: thickness, depth: innerD },
+          0,
+          baseYParent - eachH / 2 + thickness / 2,
+          boxFrontZRelParent - innerD / 2
+        );
+      }
+
+      await meshBuilder(drawerGroupWithAllPlank);
+
+      store.dispatch(setobjectSelected(parent.userData.objectId));
+      store.dispatch(setSelectedChildObject(drawerGroupId));
+
+      // Find the drawer mesh we just created to update its own minifixes
+      let createdDrawerMesh: THREE.Mesh | undefined;
+      if (parent.children) {
+        createdDrawerMesh = parent.children.find(
+          (child) => child.userData.objectId === drawerGroupId && child instanceof THREE.Mesh
+        ) as THREE.Mesh | undefined;
+      }
+
+      if (createdDrawerMesh) {
+        updateMinifixesForCupboard(createdDrawerMesh);
+      }
     }
-
-    await meshBuilder(drawerGroupWithAllPlank);
-
-    store.dispatch(setobjectSelected(parent.userData.objectId));
-    store.dispatch(setSelectedChildObject(drawerGroupId));
-
-    // Find the drawer mesh we just created to update its own minifixes
-    let createdDrawerMesh: THREE.Mesh | undefined;
-    if (parent.children) {
-      createdDrawerMesh = parent.children.find(
-        (child) => child.userData.objectId === drawerGroupId && child instanceof THREE.Mesh
-      ) as THREE.Mesh | undefined;
-    }
-
-    if (createdDrawerMesh) {
-      updateMinifixesForCupboard(createdDrawerMesh);
-    }
+    updateMinifixesForCupboard(parent);
+  } finally {
+    hideFullScreenLoader();
   }
-  updateMinifixesForCupboard(parent);
 };
 
 export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newType: string) => {
@@ -1142,7 +1163,7 @@ export const ensureHandleLoaded = async (model?: string) => {
   if (cachedHandleModel) return;
   let url = '/glb/door_model.glb';
   if (model) {
-    url = `${process.env.NEXT_PUBLIC_PUBLIC_API}` + model;
+    url = `${process.env.NEXT_PUBLIC_PUBLIC_API} ` + model;
   }
   cachedHandleModel = await GLBLoader(url, 'DoorHandleGLB', {
     width: 20,
@@ -1551,7 +1572,7 @@ export const addSideObjectToCupboard = async (
     return;
   }
 
-  showFullScreenLoader(`Adding ${type === PART_TYPES.U_SHAPE_OBJECT ? 'U' : 'L'}-Shape object`);
+  showFullScreenLoader(`Adding ${type === PART_TYPES.U_SHAPE_OBJECT ? 'U' : 'L'} -Shape object`);
 
   const geometry = cupboardMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
