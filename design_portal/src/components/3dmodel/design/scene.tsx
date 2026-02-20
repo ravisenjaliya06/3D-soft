@@ -1792,22 +1792,13 @@ export const removeNailers = async (scene: THREE.Scene, cupboardMesh: THREE.Mesh
   }
 };
 
-export const addNailers = async (
-  scene: THREE.Scene,
+const buildNailerMeshes = async (
   cupboardMesh: THREE.Mesh,
-  modelName: string = 'stand_1'
+  modelName: string
 ) => {
-  if (!cupboardMesh) return;
-  showFullScreenLoader('Adding nailers...');
-
-  await removeNailers(scene, cupboardMesh);
-
   const geometry = cupboardMesh.geometry as THREE.BufferGeometry;
   geometry.computeBoundingBox();
-  if (!geometry.boundingBox) {
-    hideFullScreenLoader();
-    return;
-  }
+  if (!geometry.boundingBox) return null;
 
   const cupboardSize = new THREE.Vector3();
   geometry.boundingBox.getSize(cupboardSize);
@@ -1826,7 +1817,6 @@ export const addNailers = async (
     url = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
   }
 
-  // Find bottom plank for precise Y positioning & width bounds
   let bottomPlank: THREE.Mesh | null = null;
   const verticalPlanks: THREE.Mesh[] = [];
 
@@ -1864,8 +1854,7 @@ export const addNailers = async (
     physicalHeight = size.y;
   } catch (err) {
     console.error('Failed to load base nailer', err);
-    hideFullScreenLoader();
-    return;
+    return null;
   }
 
   for (let i = 0; i < 4; i++) {
@@ -1886,6 +1875,28 @@ export const addNailers = async (
       console.error('Failed to parse nailer clone', err);
     }
   }
+
+  return { bottomPlank, verticalPlanks, actualBottomY, physicalHeight };
+};
+
+export const addNailers = async (
+  scene: THREE.Scene,
+  cupboardMesh: THREE.Mesh,
+  modelName: string = 'stand_1'
+) => {
+  if (!cupboardMesh) return;
+  showFullScreenLoader('Adding nailers...');
+
+  await removeNailers(scene, cupboardMesh);
+
+  const nailerData = await buildNailerMeshes(cupboardMesh, modelName);
+
+  if (!nailerData) {
+    hideFullScreenLoader();
+    return;
+  }
+
+  const { bottomPlank, verticalPlanks, actualBottomY, physicalHeight } = nailerData;
 
   let lowestVpMinY: number | null = null;
   const currentObjectsForPlanks = store.getState().data.objects;
@@ -1966,4 +1977,12 @@ export const addNailers = async (
   }
 
   hideFullScreenLoader();
+};
+
+export const hydrateNailers = async (
+  cupboardMesh: THREE.Mesh,
+  modelName: string = 'stand_1'
+) => {
+  if (!cupboardMesh) return;
+  await buildNailerMeshes(cupboardMesh, modelName);
 };
