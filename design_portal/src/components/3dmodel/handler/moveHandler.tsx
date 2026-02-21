@@ -60,7 +60,7 @@ export class MoveHandler implements IMoveHandler {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     if (this.draggedObject) {
-      this.planePoint.copy(this.draggedObject.position);
+      this.draggedObject.getWorldPosition(this.planePoint);
       this.plane.setFromNormalAndCoplanarPoint(this.planeNormal, this.planePoint);
     }
 
@@ -69,7 +69,9 @@ export class MoveHandler implements IMoveHandler {
       if (!this.isDragging) {
         this.initialClickPosition.copy(intersection);
         if (this.draggedObject) {
-          this.dragOffset.copy(this.draggedObject.position).sub(intersection);
+          const worldPos = new THREE.Vector3();
+          this.draggedObject.getWorldPosition(worldPos);
+          this.dragOffset.copy(worldPos).sub(intersection);
         }
       }
       return intersection;
@@ -78,9 +80,13 @@ export class MoveHandler implements IMoveHandler {
   };
 
   private clampToGrid = (position: THREE.Vector3): THREE.Vector3 => {
+    const worldPos = new THREE.Vector3();
+    if (this.draggedObject) {
+      this.draggedObject.getWorldPosition(worldPos);
+    }
     return new THREE.Vector3(
       Math.max(this.gridBounds?.minX ?? -10, Math.min(this.gridBounds?.maxX ?? 10, position.x)),
-      this.draggedObject?.position.y ?? 0,
+      worldPos.y,
       Math.max(this.gridBounds?.minZ ?? -10, Math.min(this.gridBounds?.maxZ ?? 10, position.z))
     );
   };
@@ -92,8 +98,15 @@ export class MoveHandler implements IMoveHandler {
     const position = this.getMousePositionOnPlane(event);
 
     if (position) {
+      position.add(this.dragOffset);
       clampedPosition = this.clampToGrid(position);
-      this.draggedObject.position.copy(clampedPosition);
+
+      const targetLocal = clampedPosition.clone();
+      if (this.draggedObject.parent) {
+        this.draggedObject.parent.worldToLocal(targetLocal);
+      }
+      this.draggedObject.position.copy(targetLocal);
+
       this.snapManager.snapObject(this.draggedObject, this.raycaster);
     }
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -217,7 +230,9 @@ export class MoveHandler implements IMoveHandler {
         const position = this.getMousePositionOnPlane(event);
         if (position) {
           this.initialClickPosition.copy(position);
-          this.dragOffset.copy(targetObject.position).sub(position);
+          const worldPos = new THREE.Vector3();
+          targetObject.getWorldPosition(worldPos);
+          this.dragOffset.copy(worldPos).sub(position);
         }
         this.isDragging = true;
         window.addEventListener('mousemove', this.onMouseMove);
@@ -244,6 +259,7 @@ export class MoveHandler implements IMoveHandler {
     }
 
     this.draggedObject = object;
+    this.dragOffset.set(0, 0, 0); // Reset drag offset so object snaps perfectly to mouse when started from UI
     this.isDragging = true;
 
     return new Promise((resolve) => {

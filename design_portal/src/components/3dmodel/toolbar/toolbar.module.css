@@ -211,6 +211,7 @@
 .activegroup_tools_container::-webkit-scrollbar-track {
   background: var(--primary-white);
   border-radius: 0.7rem;
+  margin-block: 1rem;
 }
 
 .activegroup_tools_container::-webkit-scrollbar-thumb {

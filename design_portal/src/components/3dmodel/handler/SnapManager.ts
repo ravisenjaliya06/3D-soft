@@ -209,10 +209,22 @@ export class SnapManager {
     object.quaternion.copy(originalQuaternion);
     object.updateMatrixWorld(true);
 
-    object.position.copy(hit.point.clone().addScaledVector(wallNormal, size.z / 2));
+    // Keep the object's current world Y to prevent it from sinking or floating unexpectedly
+    const worldTarget = hit.point.clone().addScaledVector(wallNormal, size.z / 2);
+    const objectWorldPos = new THREE.Vector3();
+    object.getWorldPosition(objectWorldPos);
+    worldTarget.y = objectWorldPos.y;
 
     if (object.userData.type === OBJECT_TYPES.CUPBOARD) {
-      object.position.y = Math.max(object.position.y, size.y / 2);
+      worldTarget.y = Math.max(worldTarget.y, size.y / 2);
+    }
+
+    if (object.parent) {
+      object.parent.worldToLocal(worldTarget);
+    }
+    object.position.copy(worldTarget);
+
+    if (object.userData.type === OBJECT_TYPES.CUPBOARD) {
       this.snapCupboardToWallEdges(object, wall, size);
     }
 
