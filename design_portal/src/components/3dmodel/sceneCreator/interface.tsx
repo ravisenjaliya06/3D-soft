@@ -202,6 +202,14 @@ export interface MeshObjectData {
     walls: string[];
   };
   direction?: string;
+  holes?: HoleData[];
+}
+
+export interface HoleData {
+  id: string; // ID of the object creating the hole (e.g., sink ID)
+  position: Position; // Local position relative to the platform
+  dimensions: Dimensions;
+  rotation: Rotation;
 }
 
 export interface GrooveData {
