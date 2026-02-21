@@ -446,6 +446,14 @@ export class MeshBuilder {
       model.userData.type = OBJECT_TYPES.MODEL;
       model.userData.objectId = this.meshData.id;
 
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.userData.type = OBJECT_TYPES.MODEL;
+          child.userData.objectId = this.meshData.id;
+          child.name = `Model_Child_${child.id}`;
+        }
+      });
+
       mesh.add(model);
     } catch (error) {
       console.error('Failed to load model:', error);

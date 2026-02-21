@@ -256,6 +256,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           model.userData.objectId = item.id;
           model.userData.isGLB = true;
 
+          model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.userData.objectId = item.id;
+              child.userData.isGLB = true;
+              child.userData.type = OBJECT_TYPES.MODEL;
+              child.name = `Model_Child_${child.id}`;
+            }
+          });
+
           // Position at center and perfectly on top of floor (y = 0)
           // We calculate the bbox to find the exact bottom offset
           const box = new THREE.Box3().setFromObject(model);

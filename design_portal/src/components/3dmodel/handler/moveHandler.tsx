@@ -176,16 +176,43 @@ export class MoveHandler implements IMoveHandler {
     const intersects = this.raycaster.intersectObjects(this.movableObjects, true);
 
     if (intersects.length > 0) {
-      let targetObject = intersects[0].object;
+      let targetObject: THREE.Object3D | null = intersects[0].object;
       let depth = 0;
       const maxDepth = 10;
 
-      while (targetObject && !targetObject.userData.object_id && depth < maxDepth) {
+      while (
+        targetObject &&
+        !targetObject.userData.object_id &&
+        !targetObject.userData.objectId &&
+        depth < maxDepth
+      ) {
         targetObject = targetObject.parent ?? targetObject;
         depth++;
       }
 
-      if (targetObject && targetObject.userData.object_id && targetObject.name !== 'grid') {
+      // If we found an object and it is a MODEL, ascend further to its root wrapper
+      // this matches the SelectTool logic to move the whole item at once.
+      if (
+        targetObject &&
+        (targetObject.userData.object_id || targetObject.userData.objectId) &&
+        targetObject.userData.type === 'model' // Matches OBJECT_TYPES.MODEL
+      ) {
+        const id = targetObject.userData.object_id || targetObject.userData.objectId;
+        while (
+          targetObject &&
+          targetObject.parent &&
+          (targetObject.parent.userData.object_id === id ||
+            targetObject.parent.userData.objectId === id)
+        ) {
+          targetObject = targetObject.parent;
+        }
+      }
+
+      if (
+        targetObject &&
+        (targetObject.userData.object_id || targetObject.userData.objectId) &&
+        targetObject.name !== 'grid'
+      ) {
         this.draggedObject = targetObject;
         const position = this.getMousePositionOnPlane(event);
         if (position) {
@@ -288,7 +315,9 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public getObjectPosition(objectId: string): THREE.Vector3 | null {
-    const targetObject = this.movableObjects.find((obj) => obj.userData.object_id === objectId);
+    const targetObject = this.movableObjects.find(
+      (obj) => obj.userData.object_id === objectId || obj.userData.objectId === objectId
+    );
     if (targetObject) {
       return targetObject.position.clone();
     }
