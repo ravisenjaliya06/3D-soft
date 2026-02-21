@@ -294,13 +294,21 @@ export const addDoorOnInvisibleBox = async (
 
     if (existingDoor) {
       hideFullScreenLoader();
-      toast(({ closeToast }) => (
-        <CustomToast
-          appearance="error"
-          message="Already have a whole cupboard door"
-          closeToast={closeToast}
-        />
-      ));
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message="Already have a whole cupboard door"
+            closeToast={closeToast}
+          />
+        ),
+        {
+          position: 'top-center',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+          style: { padding: 0, minHeight: 'auto' },
+        }
+      );
       return;
     }
   }
@@ -356,13 +364,28 @@ export const addDoorOnInvisibleBox = async (
       z: finalPosition.z,
     },
     isMain: false,
-    openDirection: DIRECTION_TYPES.RIGHT,
+    openDirection: DIRECTION_TYPES.LEFT,
     parent: parent.userData.objectId,
     material: [
       ...(Array.isArray(selectedCabinetItem.material)
         ? selectedCabinetItem.material
         : [selectedCabinetItem.material]
-      ).filter((m): m is Material => !!m),
+      )
+        .map((m: any) => {
+          if (m && m.type === MATERIAL_TYPES.PULL) {
+            return {
+              ...m,
+              properties: {
+                ...m.properties,
+                horizontalInset: 90,
+                verticalInset: 50,
+                rotation: 90,
+              },
+            };
+          }
+          return m;
+        })
+        .filter((m): m is Material => !!m),
     ],
   });
 
@@ -459,13 +482,21 @@ export const addDoubleDoorOnInvisibleBox = async (
 
     if (existingDoor) {
       hideFullScreenLoader();
-      toast(({ closeToast }) => (
-        <CustomToast
-          appearance="error"
-          message="Already have a whole cupboard door"
-          closeToast={closeToast}
-        />
-      ));
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message="Object is not a valid Parent"
+            closeToast={closeToast}
+          />
+        ),
+        {
+          position: 'top-center',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+          style: { padding: 0, minHeight: 'auto' },
+        }
+      );
       return;
     }
   }
@@ -526,9 +557,23 @@ export const addDoubleDoorOnInvisibleBox = async (
     scale: { x: 1, y: 1, z: 1 },
     isMain: false,
     openDirection: DIRECTION_TYPES.LEFT,
-    material:
+    material: (
       selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK)
-        ?.material || [],
+        ?.material || []
+    ).map((m: any) => {
+      if (m && m.type === MATERIAL_TYPES.PULL) {
+        return {
+          ...m,
+          properties: {
+            ...m.properties,
+            horizontalInset: 90,
+            verticalInset: 50,
+            rotation: 90,
+          },
+        };
+      }
+      return m;
+    }),
   };
 
   // Right Door
@@ -551,9 +596,23 @@ export const addDoubleDoorOnInvisibleBox = async (
     scale: { x: 1, y: 1, z: 1 },
     isMain: false,
     openDirection: DIRECTION_TYPES.RIGHT,
-    material:
+    material: (
       selectedCabinetItem.find((item) => item.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK)
-        ?.material || [],
+        ?.material || []
+    ).map((m: any) => {
+      if (m && m.type === MATERIAL_TYPES.PULL) {
+        return {
+          ...m,
+          properties: {
+            ...m.properties,
+            horizontalInset: 10,
+            verticalInset: 50,
+            rotation: 90,
+          },
+        };
+      }
+      return m;
+    }),
   };
 
   // Build the group and children
@@ -1589,11 +1648,10 @@ export const addSideObjectToCupboard = async (
         />
       ),
       {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeButton: false,
-        className: '!bg-transparent !shadow-none !p-0',
+        position: 'top-center',
+        className:
+          '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+        style: { padding: 0, minHeight: 'auto' },
       }
     );
     return;

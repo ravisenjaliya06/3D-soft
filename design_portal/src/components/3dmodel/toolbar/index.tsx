@@ -51,6 +51,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
+import { CustomToast } from '../utils/CustomToast';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
@@ -117,44 +118,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     setActiveOption(option);
   };
 
-  const CustomToast = ({
-    appearance,
-    message,
-    closeToast,
-  }: {
-    appearance: string;
-    message: string;
-    closeToast: () => void;
-  }) => {
-    const isError = appearance === 'error';
-
-    return (
-      <div className="relative flex h-[1rem] w-[25rem] items-center gap-[0.75rem] px-[1rem] py-[0.6rem]">
-        {/* Icon */}
-        <div
-          className={`flex h-[1.5rem] w-[1.5rem] items-center justify-center rounded-full ${
-            isError ? 'bg-[#D32F2F]' : 'bg-[#FFA000]'
-          }`}
-        >
-          <span className="text-[0.85rem] font-bold text-white select-none">!</span>
-        </div>
-
-        {/* Message */}
-        <p className="flex-1 truncate font-[poppins] text-[0.9rem] leading-[1.2rem] text-white">
-          {message}
-        </p>
-
-        {/* Close button (white close svg) */}
-        <img
-          src={assets.close_white}
-          alt="close"
-          className="absolute top-[0rem] right-[0rem] h-[1.25rem] w-[1.25rem] cursor-pointer"
-          onClick={() => closeToast && closeToast()}
-          aria-label="close notification"
-        />
-      </div>
-    );
-  };
   /** Set popup position based on submenu button click */
   const handleSubmenuClick = (event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -376,13 +339,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           />
         ),
         {
-          position: 'top-right',
+          position: 'top-center',
           autoClose: 5000,
           hideProgressBar: false,
           closeButton: false,
           icon: false,
-          className: '!p-0 !bg-black !shadow-none !mb-4',
-          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0 !min-h-0',
+          style: { padding: 0, minHeight: 'auto' },
         }
       );
       return;
@@ -404,13 +368,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           />
         ),
         {
-          position: 'top-right',
+          position: 'top-center',
           autoClose: 5000,
           hideProgressBar: false,
           closeButton: false,
           icon: false,
-          className: '!p-0 !bg-black !shadow-none !mb-4',
-          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0 !min-h-0',
+          style: { padding: 0, minHeight: 'auto' },
         }
       );
       return;
@@ -473,13 +438,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           <CustomToast appearance="error" message={message} closeToast={closeToast} />
         ),
         {
-          position: 'top-right',
+          position: 'top-center',
           autoClose: 5000,
           hideProgressBar: false,
           closeButton: false,
           icon: false,
-          className: '!p-0 !bg-black !shadow-none !mb-4',
-          progressClassName: '!bg-[#D32F2F] !h-[3px]',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0 !min-h-0',
+          style: { padding: 0, minHeight: 'auto' },
         }
       );
     };
@@ -786,8 +752,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   return (
     <>
-      {/* Toolbar Container */}
-      <aside className={styles.aside}>
+      <aside
+        className={styles.aside}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+      >
         <div style={{ flexDirection: 'column', display: 'flex' }}>
           <div className={styles.group}>
             <img
@@ -951,7 +930,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         {/* Submenu Panel */}
 
         {selectedFurnitureCategory && isToolOpen && (
-          <div className={styles.submenuPanel}>
+          <div
+            className={styles.submenuPanel}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+          >
             <div className={styles.submenuHeader}>
               <div className={styles.submenuHeaderTitle}>
                 <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
@@ -1027,6 +1020,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         <div
           className={styles.createpopupOverlay}
           style={{ top: popupPosition.y, left: popupPosition.x }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
         >
           <div
             className={

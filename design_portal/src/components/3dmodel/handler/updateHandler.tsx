@@ -53,9 +53,18 @@ export class UpdateObjectInScene {
       if (currentObject) {
         // We need to re-initialize MeshBuilder to update hinges
         // Create a temporary MeshObjectData with updated direction
-        const updatedData = { ...currentObject, openDirection: updates.openDirection as any };
+        const updatedData = {
+          ...currentObject,
+          openDirection: updates.openDirection as any,
+          material: Array.isArray(updates.material)
+            ? updates.material
+            : updates.material
+              ? [updates.material as any]
+              : currentObject.material,
+        } as any;
         const builder = new MeshBuilder(updatedData, this.scene);
         builder.updateHinges(mesh);
+        builder.updateHandle(mesh);
       }
     }
 

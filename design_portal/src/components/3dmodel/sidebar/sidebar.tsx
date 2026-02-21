@@ -146,10 +146,20 @@ const Sidebar: React.FC = () => {
       setSettingOpen(false);
       setNavOpen(true);
     }
+
+    if (selectedObject && selectedObject.type === PART_TYPES.DOOR) {
+      if (selectedObject.openDirection) {
+        const dir = selectedObject.openDirection;
+        setDoorPosition(dir.charAt(0).toUpperCase() + dir.slice(1).toLowerCase());
+      } else {
+        setDoorPosition('None');
+      }
+    }
+
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
-  }, [selectedObjectId, selectedChildObjectId]);
+  }, [selectedObjectId, selectedChildObjectId, selectedObject]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -496,11 +506,74 @@ const Sidebar: React.FC = () => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
     if (selectedObject) {
+      const newPos = position.toLowerCase();
+      const materialArray = Array.isArray(selectedObject.material)
+        ? [...selectedObject.material]
+        : selectedObject.material
+          ? [selectedObject.material]
+          : [];
+
+      const updatedMaterials = materialArray.map((mat) => {
+        if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+        let h = mat.properties?.horizontalInset ?? 50;
+        let v = mat.properties?.verticalInset ?? 50;
+        let r = mat.properties?.rotation ?? 90;
+
+        if (newPos === 'left') {
+          h = 90;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'right') {
+          h = 10;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'top') {
+          h = 50;
+          v = 90;
+          r = 0;
+        } else if (newPos === 'bottom') {
+          h = 50;
+          v = 10;
+          r = 0;
+        }
+
+        return {
+          ...mat,
+          properties: {
+            ...mat.properties,
+            horizontalInset: h,
+            verticalInset: v,
+            rotation: r,
+          },
+        };
+      });
+
+      // Close the door BEFORE updating the object so MeshBuilder calculations use closed coordinates
+      let wasOpen = false;
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
+          wasOpen = child.userData.isClosed === false;
+          if (wasOpen) {
+            const controller = new CabinetMotionController();
+            controller.toggleDoor(child);
+            const pivotGroup = child.parent;
+            if (pivotGroup?.userData.isPivotGroup) {
+              gsap.killTweensOf(pivotGroup.rotation);
+              pivotGroup.rotation.set(0, 0, 0);
+              pivotGroup.updateMatrixWorld(true);
+            }
+          }
+        }
+      });
+
       if (updateObjectRef.current) {
         updateObjectRef.current.update(
           selectedObject.id,
           {
             openDirection: position.toLowerCase(),
+            material: updatedMaterials as any,
           },
           selectedObject
         );
@@ -509,23 +582,11 @@ const Sidebar: React.FC = () => {
       scene.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
         if (child.userData.objectId === selectedObject.id) {
-          const controller = new CabinetMotionController();
-          const wasOpen = child.userData.isClosed === false;
-
-          if (wasOpen) {
-            controller.toggleDoor(child);
-
-            const pivotGroup = child.parent;
-            if (pivotGroup?.userData.isPivotGroup) {
-              gsap.killTweensOf(pivotGroup.rotation);
-              pivotGroup.rotation.set(0, 0, 0);
-            }
-          }
-
           child.userData.openDirection = position.toLowerCase();
 
           // for re-open
           if (wasOpen) {
+            const controller = new CabinetMotionController();
             controller.toggleDoor(child);
           }
         }
@@ -1707,12 +1768,14 @@ const Sidebar: React.FC = () => {
                                       />
                                     ),
                                     {
-                                      position: 'top-right',
+                                      position: 'top-center',
                                       autoClose: 3000,
                                       hideProgressBar: true, // as per user pref or default
                                       closeButton: false,
                                       icon: false,
-                                      className: '!p-0 !bg-transparent !shadow-none !mb-2',
+                                      className:
+                                        '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                      style: { padding: 0, minHeight: 'auto' },
                                     }
                                   );
                                   // We allow setting the state so user can type, but maybe we shouldn't dispatch update?

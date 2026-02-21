@@ -22,13 +22,19 @@ export class ObjectsSaver {
 
   private _showError(message: string) {
     toast(<CustomToast appearance="error" message={message} />, {
-      style: { background: 'transparent', boxShadow: 'none', padding: 0 },
+      position: 'top-center',
+      className:
+        '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+      style: { padding: 0, minHeight: 'auto' },
     });
   }
 
   private _showSuccess(message: string) {
     toast(<CustomToast appearance="success" message={message} />, {
-      style: { background: 'transparent', boxShadow: 'none', padding: 0 },
+      position: 'top-center',
+      className:
+        '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+      style: { padding: 0, minHeight: 'auto' },
     });
   }
 

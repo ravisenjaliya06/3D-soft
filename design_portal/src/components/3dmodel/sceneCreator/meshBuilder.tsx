@@ -764,6 +764,28 @@ export class MeshBuilder {
     }
   }
 
+  public async updateHandle(mesh: THREE.Mesh): Promise<void> {
+    // Remove existing handle
+    for (let i = mesh.children.length - 1; i >= 0; i--) {
+      const child = mesh.children[i];
+      if (child.userData.type === 'handle') {
+        mesh.remove(child);
+      }
+    }
+
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+
+    const pullMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.PULL);
+
+    if (pullMaterial) {
+      await this._loadHandle(mesh, pullMaterial.properties);
+    }
+  }
+
   private async _loadDrawerChannel(mesh: THREE.Mesh, materialProps: any, side?: 'left' | 'right') {
     const url = materialProps?.modelFile;
     const backendUrl = url
