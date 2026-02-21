@@ -46,11 +46,14 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isRenderDropdownOpen, setIsRenderDropdownOpen] = useState(false);
   const [designName, setDesignName] = useState<Design[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
+  const renderDropdownRef = useRef<HTMLDivElement | null>(null);
+  const renderDropdownButtonRef = useRef<HTMLDivElement | null>(null);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [minifixDistance, setMinifixDistance] = useState(resolvedMinifixDistance);
   const [minifixDiameterHole, setMinifixDiameterHole] = useState(resolvedMinifixDiameterHole);
@@ -152,6 +155,15 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         !dropdownButtonRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+      }
+
+      if (
+        renderDropdownRef.current &&
+        !renderDropdownRef.current.contains(event.target as Node) &&
+        renderDropdownButtonRef.current &&
+        !renderDropdownButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsRenderDropdownOpen(false);
       }
     };
 
@@ -478,8 +490,12 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           {designName.length > 0 && (designName[0] as any).rendering_project_id ? (
             <div className={styles.nestingbutton} style={{ display: 'flex', alignItems: 'center', padding: '0px' }}>
               <p onClick={handleGoToRender} style={{ padding: '8px 12px', margin: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>View Render</p>
-              <div onClick={handleRender} style={{ padding: '8px 12px', margin: 0 }} title="Generate new render">
-                <span style={{ fontSize: '12px' }}>▼</span>
+              <div 
+                ref={renderDropdownButtonRef}
+                onClick={() => setIsRenderDropdownOpen((prev) => !prev)} 
+                style={{ padding: '8px 12px', margin: 0, color: 'white', display: 'flex', alignItems: 'center' }} 
+                title="Render options">
+                <span style={{ fontSize: '12px', color: 'white' }}>▼</span>
               </div>
             </div>
           ) : (
@@ -541,6 +557,20 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
               className={styles.edit_delete_line}
             />
             <li onClick={handleLogout}>Logout</li>
+          </ul>
+        </div>
+      )}
+
+      {isRenderDropdownOpen && (
+        <div className={styles.dropdownMenuRender} ref={renderDropdownRef}>
+          <ul className={styles.ProfiledropdownList}>
+            <li onClick={() => { setIsRenderDropdownOpen(false); handleGoToRender(); }}>View Render</li>
+            <img
+              src={assets.edit_delete_line || '/placeholder.svg'}
+              alt="edit-delete-line"
+              className={styles.edit_delete_line}
+            />
+            <li onClick={() => { setIsRenderDropdownOpen(false); handleRender(); }}>Generate New Render</li>
           </ul>
         </div>
       )}
