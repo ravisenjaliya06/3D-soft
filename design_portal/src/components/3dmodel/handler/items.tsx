@@ -66,7 +66,9 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   // --- Remove previous invisible boxes ---
   const toRemove: THREE.Object3D[] = [];
   boxMesh.traverse((child) => {
-    if (child.userData.isInvisibleBox) toRemove.push(child);
+    if (child.userData.isInvisibleBox && child.userData.type !== PART_TYPES.DOUBLE_DOOR) {
+      toRemove.push(child);
+    }
   });
   toRemove.forEach((c) => boxMesh.remove(c));
 

@@ -132,7 +132,7 @@ export class DesignBuilder {
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
 
-      if (meshData.parent && meshData.isMain !== true) {
+      if (meshData.parent && this.meshMap.has(meshData.parent)) {
         const parentMesh = this.meshMap.get(meshData.parent);
 
         if (parentMesh) {
@@ -176,7 +176,8 @@ export class DesignBuilder {
     }
 
     if (!rootMesh) {
-      throw new Error('Root mesh not found. Your data must contain one item with no parent.');
+      console.warn('Root mesh not explicitly found by parent isolation. Defaulting to first item.');
+      rootMesh = meshList[0];
     }
 
     this._createInitialCompartments(rootMesh);
