@@ -161,15 +161,19 @@ export const GLBLoader = (
     finalBox.getCenter(center);
     model.position.sub(center);
 
+    // Wrap the model in a group so that position changes in toolbar don't overwrite the centering translation
+    const wrapper = new THREE.Group();
+    wrapper.add(model);
+    wrapper.name = name;
+
     // Shadow properties
-    model.traverse((n: THREE.Object3D) => {
+    wrapper.traverse((n: THREE.Object3D) => {
       if (n instanceof THREE.Mesh) {
         n.castShadow = true;
         n.receiveShadow = true;
       }
     });
 
-    model.name = name;
-    return model;
+    return wrapper;
   });
 };
