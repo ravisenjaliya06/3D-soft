@@ -147,7 +147,7 @@ const Settings = () => {
       : [...selectedMember.groups, role];
 
     const formData = new FormData();
-    updatedRoles.forEach((r) => formData.append('groups[]', r));
+    updatedRoles.forEach((r) => formData.append('groups', r));
 
     CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response: { status: number; data: TeamRole; memberId: number }) => {
@@ -198,7 +198,7 @@ const Settings = () => {
 
     // Prepare FormData
     const formData = new FormData();
-    updatedRoles.forEach((r) => formData.append('groups[]', r));
+    updatedRoles.forEach((r) => formData.append('groups', r));
 
     CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response) => {
@@ -221,13 +221,13 @@ const Settings = () => {
     {
       label: 'Name',
       type: 'name',
-      placeholder: 'Enter design name',
+      placeholder: 'Enter name',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberName(e.target.value),
     },
     {
       label: 'Email',
       type: 'email',
-      placeholder: 'Enter design name',
+      placeholder: 'Enter email',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberEmail(e.target.value),
     },
   ];
@@ -266,7 +266,7 @@ const Settings = () => {
     const formData = new FormData();
     formData.append('username', newMember.username);
     formData.append('email', newMember.email);
-    newMember.groups.forEach((groups) => formData.append('groups[]', groups));
+    newMember.groups.forEach((groups) => formData.append('groups', groups));
 
     const response: { status: number; data: addmember } = await CommonService.post(
       API_ENDPOINT.ADD_ORGANIZATION_USER,
@@ -286,7 +286,9 @@ const Settings = () => {
       setAddMambarPopup(false);
       setErrorMessage('');
     } else {
-      setErrorMessage(response.data.email || 'Failed to add member');
+      setErrorMessage(
+        response.data.username?.[0] || response.data.email?.[0] || 'Failed to add member'
+      );
     }
   };
 
@@ -1243,6 +1245,15 @@ const Settings = () => {
 
                   <div className={styles.create_right_side}>
                     <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                      {errorMessage && (
+                        <p
+                          className={styles.erroemessage}
+                          style={{ color: 'red', fontSize: '0.85rem' }}
+                        >
+                          {errorMessage}
+                        </p>
+                      )}
+
                       <div className={styles.createinputGroup}>
                         {addmemberfields.map((field, index) => (
                           <InputField
@@ -1256,16 +1267,7 @@ const Settings = () => {
                         ))}
                       </div>
 
-                      {errorMessage && (
-                        <p
-                          className={styles.erroemessage}
-                          style={{ color: 'red', fontSize: '0.85rem' }}
-                        >
-                          {errorMessage}
-                        </p>
-                      )}
-
-                      <h5 className={styles.membertitle}>Assign Roles</h5>
+                      <p className={styles.membertitle}>Assign Roles</p>
 
                       <div className={styles.checkboxgroup}>
                         {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map(

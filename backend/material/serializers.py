@@ -73,6 +73,14 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "model_file",
+            "unit_of_issue",
+            "waste",
+            "default_cost",
+            "sales_tax",
+            "sell_price",
+            "default_tax_rate",
+            "default_markup",
+            "estimate"
         ]
         read_only_fields = ["material"]
 

@@ -11,22 +11,22 @@ export const CustomToast = ({
   const isError = appearance === 'error';
 
   return (
-    <div className="relative flex w-full items-center gap-[0.75rem] rounded-md !border !border-[#444] !bg-[#2C2C2C] px-[1rem] py-[0.8rem] !shadow-lg">
+    <div className="relative flex w-full items-center gap-[0.75rem] bg-transparent px-[0.75rem] py-[0.5rem]">
       {/* Icon */}
       <div
-        className={`flex h-[1.5rem] w-[1.5rem] flex-shrink-0 items-center justify-center rounded-full ${
-          isError ? '!bg-[#D32F2F]' : '!bg-[#4CAF50]'
+        className={`flex h-[1.25rem] w-[1.25rem] flex-shrink-0 items-center justify-center rounded-full ${
+          isError ? 'bg-red-500/20' : 'bg-green-500/20'
         }`}
       >
         {isError ? (
-          <FaExclamation className="text-[0.85rem] text-white" />
+          <FaExclamation className="text-[0.65rem] text-red-500" />
         ) : (
-          <FaCheck className="text-[0.85rem] text-white" />
+          <FaCheck className="text-[0.65rem] text-green-500" />
         )}
       </div>
 
       {/* Message */}
-      <p className="flex-1 font-[poppins] text-[0.9rem] leading-[1.3rem] !break-words !whitespace-normal text-white">
+      <p className="m-0 flex-1 font-[poppins] text-[0.75rem] leading-[1rem] font-medium tracking-wide text-gray-800">
         {message}
       </p>
     </div>
