@@ -237,6 +237,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'TABLE',
     'PLATFORM',
     'FLOOR',
+    'MODEL',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
