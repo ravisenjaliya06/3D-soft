@@ -24,6 +24,7 @@ from rest_framework.status import (
 
 # Django Imports
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
 
 # App imports
 from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
@@ -36,6 +37,7 @@ from design.models import (
     NestingFile,
     NestingSheet,
     Organization,
+    RenderImage,
 )
 from design.nest import nest
 from design.serializers import (
@@ -46,6 +48,7 @@ from design.serializers import (
     NestingSheetSerializer,
     SceneGetSerializer,
     ScenePayloadSerializer,
+    RenderImageSerializer,
 )
 from design.utils import group_catalogs_as_lists, parse_catalog_data
 from umaboy.constant import DELETE, GET, POST, PUT
@@ -649,3 +652,33 @@ class NestingFileViewSet(ModelViewSet):
 
         serializer = self.serializer_class(files, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
+
+
+class RenderImageViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RenderImageSerializer
+    http_method_names = ["get", "post", "delete"]
+
+    def get_queryset(self):
+        design_id = self.kwargs.get("design_id")
+        return RenderImage.objects.filter(design_id=design_id, design__organization=self.request.user.selected_organization)
+
+    def create(self, request, design_id=None, *args, **kwargs):
+        design = Design.objects.filter(id=design_id, organization=request.user.selected_organization).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+        
+        request.data["design"] = design.id
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"])
+    def clear(self, request, design_id=None):
+        design = Design.objects.filter(id=design_id, organization=request.user.selected_organization).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+            
+        RenderImage.objects.filter(design=design).delete()
+        return Response({"message": "Clear successful"}, status=HTTP_200_OK)

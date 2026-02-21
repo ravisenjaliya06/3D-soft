@@ -54,6 +54,8 @@ export const API_ENDPOINT = {
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
   CREATE_DESIGN_NESTING: (designID: string) => `design/${designID}/nesting/`,
+  CLEAR_RENDER_IMAGES: (designID: string) => `design/${designID}/render-images/clear/`,
+  UPLOAD_RENDER_IMAGE: (designID: string) => `design/${designID}/render-images/`,
 
   //PUT
   UPDATE_USER_DETAILS: 'user/',

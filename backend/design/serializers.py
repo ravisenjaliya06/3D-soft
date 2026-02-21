@@ -18,6 +18,7 @@ from design.models import (
     DesignVersion,
     NestingFile,
     NestingSheet,
+    RenderImage,
 )
 from design.utils import create_design_settings
 from material.models import Material, FinishesLibrary
@@ -37,6 +38,7 @@ class DesignSerializer(serializers.ModelSerializer):
             "is_custom",
             "custom_design_picture",
             "is_custom",
+            "rendering_project_id",
             "created_at",
             "updated_at",
             "organization",
@@ -384,3 +386,11 @@ class NestingSheetSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class RenderImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RenderImage
+        fields = ["id", "design", "image", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+

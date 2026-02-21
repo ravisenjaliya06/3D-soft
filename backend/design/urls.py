@@ -11,6 +11,7 @@ from design.views import (
     NestingFileViewSet,
     NestingSheetViewSet,
     OrganizationDesignSettingViewSet,
+    RenderImageViewSet,
 )
 
 urlpatterns = [
@@ -77,5 +78,15 @@ urlpatterns = [
             {"get": "retrieve", "put": "update", "delete": "destroy"}
         ),
         name="get_put_and_delete_design",
+    ),
+    path(
+        "<str:design_id>/render-images/",
+        RenderImageViewSet.as_view({"get": "list", "post": "create"}),
+        name="render_images",
+    ),
+    path(
+        "<str:design_id>/render-images/clear/",
+        RenderImageViewSet.as_view({"post": "clear"}),
+        name="render_images_clear",
     ),
 ]
