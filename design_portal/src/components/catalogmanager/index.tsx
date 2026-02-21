@@ -350,12 +350,12 @@ const CatalogManager = () => {
   return (
     <div className="flex h-screen flex-row overflow-hidden">
       <Sidebar />
-      <div className="max-w-[85rem] flex-[3]">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
         <Header isBorderRadius={true} dashboardName="Catalog Manager" />
 
         <div className="justify-between">
           {/* TOP TOOLBAR */}
-          <div className="mx-auto w-[90rem] max-w-[90rem]">
+          <div className="mx-auto w-full max-w-[90rem]">
             <div className="mt-[3rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[7rem]">
               <div className="mb-[1rem] flex items-center gap-[0.5rem] rounded-[0.6rem] border-[0.063rem] border-[var(--border-color)] bg-[linear-gradient(90deg,var(--primary-white)_0%,var(--primary-light-pink)_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
                 <div className="flex items-center">
