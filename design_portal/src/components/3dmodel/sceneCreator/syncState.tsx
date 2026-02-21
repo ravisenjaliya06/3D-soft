@@ -914,7 +914,8 @@ export class SyncManager {
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
-    const rootItem = list.find((i) => !i.parent);
+    const listIds = new Set(list.map((i) => i.id));
+    const rootItem = list.find((i) => !i.parent || !listIds.has(i.parent));
 
     if (list.length > 1) {
       await this._handleMultiple(list, rootItem);

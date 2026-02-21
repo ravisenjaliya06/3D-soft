@@ -331,7 +331,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         await syncManager.syncData();
       }
     } else {
-      if (['door', 'Sliding Door'].includes(item.type)) {
+      if (['door', 'Sliding Door', PART_TYPES.DOUBLE_DOOR].includes(item.type)) {
         console.log('item', item);
         setSelectedCabinetItem(item);
         onAddItems(item, 1);
@@ -488,11 +488,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       return;
     }
 
+    // If we're adding a door and the selected object isn't an invisible box (compartment),
+    // try to add the door to the whole cupboard instead of the specific child plank they clicked on.
+    if (
+      [PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType) &&
+      (targetBox as THREE.Mesh).userData.type !== INVISIBLE_BOXES.INVISIBLE_BOX
+    ) {
+      let cupboardMesh: any = targetBox;
+      while (cupboardMesh && !cupboardMesh.userData?.isMain && cupboardMesh.parent) {
+        cupboardMesh = cupboardMesh.parent;
+      }
+      if (cupboardMesh && cupboardMesh.userData?.isMain) {
+        targetBox = cupboardMesh as THREE.Mesh;
+      }
+    }
+
     if ([PART_TYPES.DOOR, PART_TYPES.DOUBLE_DOOR, 'Sliding Door'].includes(itemType)) {
-      if (itemType === PART_TYPES.DOOR && itemName === 'DOUBLE_DOOR') {
-        const fullGroup = cabinetItems.find((group) =>
-          group.some((g) => g.id === overrideItem?.id)
-        );
+      if (
+        itemType === PART_TYPES.DOUBLE_DOOR ||
+        (itemType === PART_TYPES.DOOR && itemName === 'DOUBLE_DOOR')
+      ) {
+        const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === itemToAdd?.id));
         await addDoubleDoorOnInvisibleBox(scene, targetBox, fullGroup ? fullGroup : []);
       } else {
         await addDoorOnInvisibleBox(scene, targetBox, itemToAdd);
