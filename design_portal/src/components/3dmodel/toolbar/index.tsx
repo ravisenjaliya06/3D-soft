@@ -248,13 +248,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             position = await threeDView.moveHandler.startDragging(model);
           }
 
+          const finalPos = position || { x: 0, y: model.position.y, z: 0 };
+
+          // CRITICAL FIX FOR REFRESH OFFSET:
+          // GLBLoader may have shifted its internal geometry center or scaled non-uniformly,
+          // meaning `model.position.y` or actual BBox center might NOT equal `targetSize.height / 2`.
+          // However, on refresh, SyncManager creates a BoxGeometry EXACTLY sized `targetSize`,
+          // whose strict mathematical center is what determines floor placement.
+          // To ensure perfect identical alignment on refresh, we MUST save `Y` as strictly
+          // the center of that future BoxGeometry (which is `targetSize.height / 2` + floor height 0.01).
+          const syncCenterY = 0.01 + targetSize.height / 2;
+
           const itemData = {
             ...item,
             id: crypto.randomUUID(),
             type: OBJECT_TYPES.MODEL,
             name: item.name,
             dimensions: targetSize,
-            position: position || { x: 0, y: 0, z: 0 },
+            position: {
+              x: finalPos.x,
+              // Strictly lock to SyncManager's expected Box center!
+              y: syncCenterY,
+              z: finalPos.z,
+            },
             material: [],
           };
           store.dispatch(addObjects([itemData]));

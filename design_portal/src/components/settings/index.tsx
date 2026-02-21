@@ -1339,14 +1339,18 @@ const Settings = () => {
                       style={{ marginTop: 0, position: 'relative', top: 0, right: 0 }}
                     />
                   </div>
-                  
+
                   <div className={styles.create_right_side}>
                     <p style={{ margin: '0 0 1.5rem 0', color: '#475569', fontSize: '1rem' }}>
-                      Are you sure you want to remove this team member? This action cannot be undone and they will lose access to the organization immediately.
+                      Are you sure you want to remove this team member? This action cannot be undone
+                      and they will lose access to the organization immediately.
                     </p>
                   </div>
 
-                  <div className={styles.createButtonGrop} style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', padding: 0 }}>
+                  <div
+                    className={styles.createButtonGrop}
+                    style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', padding: 0 }}
+                  >
                     <button
                       className={styles.cancelButton}
                       onClick={() => setMemberToDelete(null)}
@@ -1358,7 +1362,7 @@ const Settings = () => {
                         border: '1px solid #cbd5e1',
                         color: '#475569',
                         fontWeight: 600,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                       }}
                     >
                       Cancel
@@ -1375,7 +1379,7 @@ const Settings = () => {
                         color: 'white',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
                       }}
                     >
                       Yes, Remove Member
