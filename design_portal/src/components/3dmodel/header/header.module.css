@@ -160,6 +160,21 @@
   border: 1px solid var(--border-color);
 }
 
+.dropdownMenuRender {
+  position: absolute;
+  background-color: var(--primary-white);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 0.4rem;
+  width: 12rem;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  top: 3.8rem;
+  right: 11rem;
+  z-index: 1000;
+  border: 1px solid var(--border-color);
+}
+
 .ProfiledropdownList {
   display: flex;
   flex-direction: column;
@@ -170,9 +185,11 @@
   margin: 0;
 }
 
-.dropdownMenuProfile li {
+.dropdownMenuProfile li,
+.dropdownMenuRender li {
   padding: 0.6rem;
   width: 100%;
+  box-sizing: border-box;
   text-align: center;
   cursor: pointer;
   color: var(--primary-color);
@@ -183,7 +200,8 @@
   transition: background-color 0.2s ease;
 }
 
-.dropdownMenuProfile li:hover {
+.dropdownMenuProfile li:hover,
+.dropdownMenuRender li:hover {
   background-color: var(--toolbarhover-color, rgba(57, 37, 121, 0.05));
 }
 

@@ -9,9 +9,11 @@
 /* Right side main content part */
 
 .rightside {
-  flex: 3;
-  max-width: 85rem;
-  min-width: none;
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Right side main content part */

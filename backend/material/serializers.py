@@ -80,7 +80,7 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "sell_price",
             "default_tax_rate",
             "default_markup",
-            "estimate"
+            "estimate",
         ]
         read_only_fields = ["material"]
 

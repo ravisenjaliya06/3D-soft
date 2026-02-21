@@ -159,6 +159,7 @@ def add_user_to_organization(
 
         permission_instance.groups.add(group)
     permission_instance.is_invited = is_invited
+    permission_instance.is_deleted = False
     permission_instance.save()
 
 

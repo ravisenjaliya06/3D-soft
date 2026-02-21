@@ -15,7 +15,7 @@ import {
   removeSkirtingPlanks,
   updateDrawerType,
 } from '../design/scene';
-import { updateMinifixesForCupboard } from '../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
@@ -208,6 +208,7 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject && scene) {
+      if (isUpdatingPositionRef.current) return;
       let targetMesh: THREE.Mesh | null = null;
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
@@ -623,12 +624,15 @@ const Sidebar: React.FC = () => {
     let currentDistanceM = 0;
     let axis: 'x' | 'y' | 'z' = 'x';
 
+    const tMesh = targetMesh as THREE.Mesh;
+    const isThinZ = distanceToolRef.current?.analyzePlankGeometry(tMesh).isThinZ;
+
     if (side === 'left' && currentDistances.left !== null) {
       currentDistanceM = currentDistances.left;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'right' && currentDistances.right !== null) {
       currentDistanceM = currentDistances.right;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'top' && currentDistances.top !== null) {
       currentDistanceM = currentDistances.top;
       axis = 'y';
@@ -641,16 +645,29 @@ const Sidebar: React.FC = () => {
     }
 
     // Calculate delta (how much to move)
-    const delta = newDistanceM - currentDistanceM;
+    let delta = 0;
+    if (side === 'left' || side === 'bottom') {
+      delta = newDistanceM - currentDistanceM;
+    } else if (side === 'right' || side === 'top') {
+      delta = currentDistanceM - newDistanceM;
+    }
 
     // Apply position change using DistanceTool's method
-    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+    distanceToolRef.current.applyPositionDelta(tMesh, axis, delta);
+
+    // Regenerate internal logic
+    if (typeof generateCompartmentsFromMesh === 'function' && tMesh.parent instanceof THREE.Mesh) {
+      generateCompartmentsFromMesh(tMesh.parent);
+    }
+    if (tMesh.parent instanceof THREE.Mesh) {
+      updateMinifixesForCupboard(tMesh.parent);
+    }
 
     // Update Redux store
     const newPosition = {
-      x: (targetMesh as THREE.Mesh).position.x,
-      y: (targetMesh as THREE.Mesh).position.y,
-      z: (targetMesh as THREE.Mesh).position.z,
+      x: tMesh.position.x,
+      y: tMesh.position.y,
+      z: tMesh.position.z,
     };
 
     dispatch(
@@ -659,10 +676,6 @@ const Sidebar: React.FC = () => {
         position: newPosition,
       })
     );
-
-    // Recalculate distances after position change
-    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
-    setPositionDistances(updatedDistances);
 
     // Sync to scene
     if (updateObjectRef.current) {
@@ -674,6 +687,13 @@ const Sidebar: React.FC = () => {
         undefined
       ).syncData();
     }
+
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(tMesh);
+    setPositionDistances(updatedDistances);
+
+    // Also redraw the visual 3D distance lines
+    distanceToolRef.current.showDistances(tMesh);
 
     isUpdatingPositionRef.current = false;
   };
