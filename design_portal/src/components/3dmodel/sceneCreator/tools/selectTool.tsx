@@ -462,7 +462,7 @@ export class SelectObjectController {
 
     // Here we create the mesh without MeshBuilder because in the future we may need to apply draggable behavior
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = 'outline_box';
+    mesh.name = obj.userData.objectId ? `outline_box-${obj.userData.objectId}` : 'outline_box';
 
     if (obj.geometry) {
       mesh.matrixAutoUpdate = false;

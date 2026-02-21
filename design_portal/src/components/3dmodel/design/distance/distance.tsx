@@ -32,7 +32,7 @@ export class DistanceTool {
   }
 
   private applyDistances(
-    axis: 'x' | 'y',
+    axis: 'x' | 'y' | 'z',
     map: {
       min: 'left' | 'bottom';
       max: 'right' | 'top';
@@ -86,7 +86,7 @@ export class DistanceTool {
     } else if (isThinX) {
       this.applyDistances('x', { min: 'left', max: 'right' }, result);
     } else if (isThinZ) {
-      this.applyDistances('x', { min: 'left', max: 'right' }, result);
+      this.applyDistances('z', { min: 'left', max: 'right' }, result);
       this.applyDistances('y', { min: 'bottom', max: 'top' }, result);
     }
 
@@ -329,16 +329,33 @@ export class DistanceTool {
     return size;
   }
 
-  private analyzePlankGeometry() {
-    if (!this.selectedMesh || !this.selectedBox)
+  public analyzePlankGeometry(mesh?: THREE.Mesh) {
+    const targetMesh = mesh || this.selectedMesh;
+    const targetBox = mesh ? this.computeBoundingBox(mesh) : this.selectedBox;
+
+    if (!targetMesh || !targetBox)
       return { width: 0, height: 0, depth: 0, isHorizontal: false, isThinX: false, isThinZ: false };
 
-    const params = (this.selectedMesh.geometry as THREE.BoxGeometry).parameters || {};
-    const size = this.getBoxSize(this.selectedBox);
+    // Get the core geometry bounding box in world space, ignoring children like handles/banding
+    targetMesh.updateMatrixWorld(true);
+    const coreBox = new THREE.Box3();
 
-    const width = params.width ?? size.x;
-    const height = params.height ?? size.y;
-    const depth = params.depth ?? size.z;
+    // Check if we have a valid geometry to compute bounds from
+    if (targetMesh.geometry && targetMesh.geometry.boundingBox === null) {
+      targetMesh.geometry.computeBoundingBox();
+    }
+
+    if (targetMesh.geometry && targetMesh.geometry.boundingBox) {
+      coreBox.copy(targetMesh.geometry.boundingBox);
+      coreBox.applyMatrix4(targetMesh.matrixWorld);
+    } else {
+      coreBox.copy(targetBox); // fallback to full object box
+    }
+
+    const size = this.getBoxSize(coreBox);
+    const width = size.x;
+    const height = size.y;
+    const depth = size.z;
 
     // Height comparison determines if it's a horizontal plank (flat) vs vertical/upright
     const isHorizontal = height < width && height < depth;
@@ -488,12 +505,15 @@ export class DistanceTool {
   // check if two boxes overlap on given axes
   private overlapsOnAxes(a: THREE.Box3, b: THREE.Box3, axes: Array<Axis>): boolean {
     for (const axis of axes) {
-      if (axis === 'x' && (a.max.x <= b.min.x + this.EPS || a.min.x >= b.max.x - this.EPS))
+      if (axis === 'x' && (a.max.x <= b.min.x + this.EPS || a.min.x >= b.max.x - this.EPS)) {
         return false;
-      if (axis === 'y' && (a.max.y <= b.min.y + this.EPS || a.min.y >= b.max.y - this.EPS))
+      }
+      if (axis === 'y' && (a.max.y <= b.min.y + this.EPS || a.min.y >= b.max.y - this.EPS)) {
         return false;
-      if (axis === 'z' && (a.max.z <= b.min.z + this.EPS || a.min.z >= b.max.z - this.EPS))
+      }
+      if (axis === 'z' && (a.max.z <= b.min.z + this.EPS || a.min.z >= b.max.z - this.EPS)) {
         return false;
+      }
     }
     return true;
   }
@@ -542,15 +562,18 @@ export class DistanceTool {
       if (size.x < MIN_THICKNESS || size.y < MIN_THICKNESS || size.z < MIN_THICKNESS) {
         return;
       }
+
       if (!this.overlapsOnAxes(this.selectedBox!, box, overlapAxes)) return;
 
-      // Negative direction (find max pos < selfMin)
-      if (box.max[axis] <= selfMin - this.EPS) {
+      // Negative direction (find max pos <= selfMin)
+      if (box.max[axis] <= selfMin + 0.005) {
+        // allow 5mm touching/penetration tolerance
         negative = this.updateNearestReference(negative, priority, box.max[axis], box, true);
       }
 
-      // Positive direction (find min pos > selfMax)
-      if (box.min[axis] >= selfMax + this.EPS) {
+      // Positive direction (find min pos >= selfMax)
+      if (box.min[axis] >= selfMax - 0.005) {
+        // allow 5mm touching/penetration tolerance
         positive = this.updateNearestReference(positive, priority, box.min[axis], box, false);
       }
     });
