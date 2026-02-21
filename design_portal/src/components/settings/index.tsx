@@ -79,6 +79,7 @@ const Settings = () => {
   const rolesList = ['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
 
   const handalGetmember = async () => {
     try {
@@ -572,23 +573,25 @@ const Settings = () => {
     return UserDetails?.email;
   };
 
-  const handleDeleteMember = async (memberId: string) => {
+  const handleDeleteMember = (memberId: string) => {
     const currentUserEmailId = getCurrentUserEmailId();
     if (members.find((member) => member.id === memberId)?.email === currentUserEmailId) {
       alert('You cannot remove yourself from the team.');
       return;
     }
 
-    const confirmDelete = window.confirm('Are you sure you want to remove this team member?');
-    if (!confirmDelete) return;
+    setMemberToDelete(memberId);
+  };
 
+  const confirmDelete = async (memberId: string) => {
     try {
       const response: { status: number } = await CommonService.delete(
         API_ENDPOINT.REMOVE_USER_FROM_ORGANIZATION(memberId)
       );
       if (response.status === 200) {
         setMembers((prevMembers) => prevMembers.filter((member) => member.id !== memberId));
-        alert('Team member removed successfully!');
+        setSuccessMessage('Team member removed successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000);
         await handalGetmember();
       } else {
         setErrorMessage('Failed to remove team member');
@@ -598,6 +601,8 @@ const Settings = () => {
       const errorMsg =
         error instanceof Error ? error.message : 'An error occurred while removing member';
       setErrorMessage(errorMsg);
+    } finally {
+      setMemberToDelete(null);
     }
   };
 
@@ -1298,6 +1303,82 @@ const Settings = () => {
                   <div className={styles.createButtonGrop}>
                     <button className={styles.invitebutton} onClick={handleAddMemberClick}>
                       Send Invitation
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {memberToDelete && (
+              <div className={styles.createpopupOverlay}>
+                <div className={styles.deletepopup}>
+                  <div
+                    className={styles.firstpart}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <img
+                        src={assets.deleteteamicon}
+                        alt="delete user"
+                        style={{ width: '24px', height: '24px', margin: 0 }}
+                      />
+                      <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
+                        Remove Team Member
+                      </h5>
+                    </div>
+                    <img
+                      src={assets.addmemberclose}
+                      className={styles.createclose}
+                      alt="close"
+                      onClick={() => setMemberToDelete(null)}
+                      style={{ marginTop: 0, position: 'relative', top: 0, right: 0 }}
+                    />
+                  </div>
+                  
+                  <div className={styles.create_right_side}>
+                    <p style={{ margin: '0 0 1.5rem 0', color: '#475569', fontSize: '1rem' }}>
+                      Are you sure you want to remove this team member? This action cannot be undone and they will lose access to the organization immediately.
+                    </p>
+                  </div>
+
+                  <div className={styles.createButtonGrop} style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', padding: 0 }}>
+                    <button
+                      className={styles.cancelButton}
+                      onClick={() => setMemberToDelete(null)}
+                      style={{
+                        flex: 1,
+                        padding: '0.85rem',
+                        borderRadius: '12px',
+                        background: 'white',
+                        border: '1px solid #cbd5e1',
+                        color: '#475569',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className={styles.confirmDeleteButton}
+                      onClick={() => confirmDelete(memberToDelete)}
+                      style={{
+                        flex: 1,
+                        padding: '0.85rem',
+                        borderRadius: '12px',
+                        background: '#ef4444',
+                        border: 'none',
+                        color: 'white',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                      }}
+                    >
+                      Yes, Remove Member
                     </button>
                   </div>
                 </div>

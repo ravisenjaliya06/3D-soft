@@ -355,10 +355,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     // Check if cupboard is main
     const mesh = targetBox as THREE.Mesh;
     const isMain = mesh.userData.isMain || mesh.userData.type === 'cupboard';
+    // Explicitly reject walls and floors which also share isMain=true
+    const isWallOrFloor = mesh.userData.type === 'wall' || mesh.userData.type === 'floor';
     // User said: "These objects should work only when a cupboard (is_main: true) is selected."
     // Also: "Do not show the 'Please select a blank box' error"
 
-    if (!isMain) {
+    if (!isMain || isWallOrFloor) {
       toast(
         ({ closeToast }) => (
           <CustomToast

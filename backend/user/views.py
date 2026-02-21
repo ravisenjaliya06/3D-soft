@@ -622,7 +622,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
                 {"error": "Organization not found."}, status=HTTP_404_NOT_FOUND
             )
         organization_all_users = UserOrganizationPermission.objects.filter(
-            organization=organization
+            organization=organization, is_deleted=False
         ).select_related("user")
         users_data = [
             {
