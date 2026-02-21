@@ -52,7 +52,7 @@ class GroupValidationSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one group must be provided.")
 
-        group_names = value
+        group_names = list(set(value))
         groups = Group.objects.filter(name__in=group_names)
         if len(groups) != len(group_names):
             raise serializers.ValidationError("One or more group names are invalid.")
@@ -130,7 +130,7 @@ class SignupSerializer(PhoneValidationSerializer):
 
         user.selected_organization = organization
         user.save()
-        add_user_to_organization(user, organization, group_names)
+        add_user_to_organization(user, organization, group_names, is_invited=False)
         duplicate_default_textures(organization)
         default_material_data(organization)
         duplicate_default_catalogs_for_organization(organization)
