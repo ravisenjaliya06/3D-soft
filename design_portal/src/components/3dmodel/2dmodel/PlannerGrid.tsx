@@ -155,7 +155,7 @@ export default function PlannerGrid() {
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
-                  {(preview.length / 10).toFixed(2)} cm
+                  {(preview.length / 30.48).toFixed(2)} ft
                 </text>
               </g>
             )}
