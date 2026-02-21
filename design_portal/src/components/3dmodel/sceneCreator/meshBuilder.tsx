@@ -144,9 +144,10 @@ export class MeshBuilder {
     materialData?.textures?.forEach((textureData) => {
       const imgPath = textureData.textureDetail?.image;
       if (imgPath) {
-        const fullUrl = imgPath.startsWith('http')
-          ? imgPath
-          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imgPath}`;
+        const fullUrl =
+          imgPath.startsWith('http') || imgPath.startsWith('https')
+            ? imgPath
+            : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imgPath}`;
         texture = this.textureLoader.load(fullUrl);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
@@ -371,7 +372,7 @@ export class MeshBuilder {
   private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps.modelFile;
     const backendUrl = url
-      ? url.startsWith('http') || url.startsWith('/glb/')
+      ? url.startsWith('http') || url.startsWith('https') || url.startsWith('/glb/')
         ? url
         : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';

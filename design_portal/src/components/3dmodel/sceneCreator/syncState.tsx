@@ -69,7 +69,7 @@ export class SyncManager {
    * Processes an array of catalogs (which may be single items or grouped arrays like cupboards)
    * as a single batch to maximize rendering performance.
    */
-  public async syncGroupedBatch(catalogs: any[]): Promise<void> {
+  public async syncGroupedBatch(catalogs: MeshObjectData[]): Promise<void> {
     if (!this.scene) return;
 
     this._initializeMaps();
@@ -77,7 +77,7 @@ export class SyncManager {
     // Flatten logic precisely for Redux & 2D maps
     // This allows us to dispatch to the store exactly once
     const flatList: MeshObjectData[] = [];
-    const flatten = (items: any[]) => {
+    const flatten = (items: MeshObjectData[]) => {
       items.forEach((item) => {
         if (Array.isArray(item)) {
           flatten(item);
