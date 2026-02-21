@@ -147,7 +147,9 @@ class RenderImage(models.Model):
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, primary_key=True, unique=True
     )
-    design = models.ForeignKey(Design, on_delete=models.CASCADE, related_name="render_images")
+    design = models.ForeignKey(
+        Design, on_delete=models.CASCADE, related_name="render_images"
+    )
     image = models.ImageField(upload_to="project/render_images")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
