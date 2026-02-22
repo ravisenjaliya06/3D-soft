@@ -607,14 +607,6 @@ const Nesting = () => {
                   >
                     {isGeneratingBOM ? 'Generating...' : 'BOM Data'}
                   </button>
-
-                  {/* ✅ View Details Button */}
-                  <button
-                    onClick={() => router.push(`/design/${design_id}/nesting-details`)}
-                    className={styles.viewDetailsButton}
-                  >
-                    View Details
-                  </button>
                   <button
                     onClick={() => {
                       const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/xml_files.zip`;
@@ -626,9 +618,16 @@ const Nesting = () => {
                       a.remove();
                     }}
                     className={styles.viewDetailsButton}
-                    style={{ marginLeft: '1rem' }}
+                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
                     XMLs
+                  </button>
+                  {/* ✅ View Details Button */}
+                  <button
+                    onClick={() => router.push(`/design/${design_id}/nesting-details`)}
+                    className={styles.viewDetailsButton}
+                  >
+                    View Details
                   </button>
                 </div>
               </div>
