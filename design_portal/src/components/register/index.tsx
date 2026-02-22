@@ -159,17 +159,17 @@ const Register = () => {
             <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
               <div className={styles.inputGroup1}>
                 {firstfieldsgroup.map((field, index) => (
-                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
+                  <InputField className={styles.inputField} key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               <div className={styles.inputGroup1}>
                 {secondfieldsgroup.map((field, index) => (
-                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
+                  <InputField className={styles.inputField} key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               <div className={styles.inputGroup}>
                 {thirdfieldsgroup.map((field, index) => (
-                  <InputField key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
+                  <InputField className={styles.inputField} key={index} {...field} borderColor="var(--primary-color-grey-2 )" />
                 ))}
               </div>
               {error && <p className={styles.registererrorMessage}>{error}</p>}
