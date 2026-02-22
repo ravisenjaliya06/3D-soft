@@ -424,7 +424,7 @@ class NestingService:
                 {
                     "Part ID": item.get(KEY_UNIQUE_ID, ""),
                     "Part Name": item.get(KEY_NAME, item.get(KEY_ID, "")),
-                    "Cabinet/Assembly": "-",
+                    "Cabinet/Assembly": item.get("parent_name", ""),
                     "Material": item.get("material_name", ""),
                     "Thickness": thval,
                     "Length": length_val,
