@@ -1,5 +1,7 @@
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
+import { API_ENDPOINT } from '@/services/ApiEndPoints';
+import CommonService from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
 import styles from './nestingDetails.module.css';
 
@@ -17,26 +19,19 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Get the JSON file path from backend
-        const token = localStorage.getItem('token');
-        const apiUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${process.env.NEXT_PUBLIC_APP_VERSION}`;
-
-        const response = await fetch(`${apiUrl}/design/${designId}/nesting/download/`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ format: 'json' }),
+        // 1. Get the JSON file path from backend using CommonService
+        const response: any = await CommonService.put(API_ENDPOINT.DOWNLOAD_NESTING_PDF(designId), {
+          format: 'json',
         });
 
-        if (!response.ok) {
+        if (response?.status !== 200 || !response?.data) {
           throw new Error(
-            'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
+            response?.data?.error ||
+              'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
           );
         }
 
-        const layoutData = await response.json();
+        const layoutData = response.data;
 
         if (layoutData.error) {
           throw new Error(layoutData.error);
