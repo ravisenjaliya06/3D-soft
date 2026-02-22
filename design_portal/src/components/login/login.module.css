@@ -111,7 +111,7 @@
   margin-left: auto;
   margin-right: auto;
   width: 23rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .loginButton {
@@ -448,6 +448,7 @@
 .inputField {
   width: 25rem;
   height: 3rem;
+  margin-bottom: 0.7rem !important;
   padding: 0;
 }
 

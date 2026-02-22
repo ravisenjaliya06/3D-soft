@@ -138,7 +138,7 @@ const InputField = ({
               '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
                 fontSize: '0.9rem',
                 color: error ? 'red' : 'var(--text-gray)',
-                transform: 'translate(0.6rem, -0.65rem) scale(0.7)',
+                transform: 'translate(0.7rem, -0.4rem) scale(0.7)',
               },
               '& .MuiInputBase-root': {
                 width: props.fullWidth
