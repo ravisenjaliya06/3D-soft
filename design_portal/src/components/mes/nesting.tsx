@@ -76,7 +76,9 @@ const Nesting = () => {
     setIsGeneratingBOM(true);
     try {
       // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
+      const designResponse: any = await CommonService.get(
+        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
+      );
       const design = designResponse.data;
 
       // 2. Fetch Nesting Data (Layout with holes/grooves/edgebands)
