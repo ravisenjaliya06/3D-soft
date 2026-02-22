@@ -285,6 +285,7 @@ export function convertKeysToCamel<T>(obj: Object): T {
 }
 
 function camelToSnake(key: string): string {
+  if (key === 'edgeBanding') return 'edgeband';
   return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 

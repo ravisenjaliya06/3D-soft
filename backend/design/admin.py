@@ -27,6 +27,7 @@ class DesignAdmin(admin.ModelAdmin):
 
 class DesignCatalogObjectAdmin(admin.ModelAdmin):
     list_display = ("id", "design", "catalog")
+    search_fields = ("design__design_name", "catalog__name", "id")
 
 
 class CatalogItemAdmin(admin.ModelAdmin):
@@ -65,6 +66,8 @@ admin.site.register(Design, DesignAdmin)
 admin.site.register(DesignSetting, DesignSettingsAdmin)
 admin.site.register(DesignScreenshot)
 admin.site.register(DesignVersion, DesignVersionAdmin)
-admin.site.register(DesignCatalog)
+admin.site.register(
+    DesignCatalog, list_display=["id", "name", "parent"], search_fields=["name", "id"]
+)
 admin.site.register(NestingSheet)
 admin.site.register(NestingFile)

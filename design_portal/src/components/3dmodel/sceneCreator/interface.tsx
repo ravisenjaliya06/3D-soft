@@ -174,6 +174,7 @@ export interface MeshObjectData {
   position: Position;
   rotation: Rotation;
   path?: string;
+  unique_id?: string;
 
   //optional properties
   description?: string;
