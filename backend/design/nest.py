@@ -296,7 +296,6 @@ class NestingService:
                             KEY_UNIQUE_ID: unique_id,
                             KEY_WIDTH: safe_w,  # Width of Face
                             KEY_HEIGHT: safe_h,  # Height of Face
-                            "parent_name": item_details.get("parent_name", ""),
                             "x": safe_x
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
