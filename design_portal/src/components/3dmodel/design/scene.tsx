@@ -2121,8 +2121,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [
