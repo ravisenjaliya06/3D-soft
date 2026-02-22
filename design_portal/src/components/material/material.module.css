@@ -1,11 +1,10 @@
 /* ─── Page Layout ─── */
 .maincontainer {
+  flex: 1;
   display: flex;
   flex-direction: row;
   gap: 1.25rem;
   padding: 1rem 1.5rem;
-  margin: 3rem;
-  height: calc(100vh - 5rem);
   overflow: hidden;
 }
 
@@ -178,20 +177,61 @@
     0 4px 16px rgba(57, 37, 121, 0.08);
   border: 1px solid rgba(124, 92, 191, 0.12);
   height: auto;
-  align-items: start;
-  padding: 0.5rem;
+  align-items: center; /* FIXED FROM start */
+  padding: 0.5rem 1rem; /* FIXED PADDING */
+  border-radius: 2rem; /* ROUNDED EDGES */
+  background: white;
   animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.createicon {
-  margin-top: 0.3rem;
-  margin-left: 0.7rem;
-  width: 2.7rem;
-  height: 2.7rem;
+.stepCircle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.stepItem.active {
+  border-color: var(--primary-color);
+  background: #f8f6ff;
+}
+
+.stepItem.active .stepCircle {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(57, 37, 121, 0.2);
+}
+
+.stepItem.completed {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.stepItem.completed .stepCircle {
+  background: #22c55e;
+  color: white;
+}
+
+.stepLabel {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #64748b;
+  transition: color 0.3s ease;
 }
 
 .stepItem.active .stepLabel {
   color: var(--primary-color);
+}
+
+.stepItem.completed .stepLabel {
+  color: #16a34a;
 }
 
 .stepConnector {
@@ -213,6 +253,14 @@
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
+}
+
+.formContentScroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 2.5rem;
+  min-height: 0;
 }
 
 .formGrid {
