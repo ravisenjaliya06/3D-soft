@@ -8,10 +8,10 @@
 
 .rightside {
   flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative;
 }
 
 /* ─── Main Content ─── */
@@ -24,7 +24,7 @@
   overflow-y: auto;
   gap: 2.5rem;
   background: radial-gradient(circle at top right, rgba(75, 42, 173, 0.05) 0%, transparent 40%),
-              radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
+    radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
 }
 
 .maincontent::-webkit-scrollbar {
@@ -54,7 +54,8 @@
   box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
-  flex-shrink: 0; /* Ensures the card never gets smaller when list grows */
+  flex-shrink: 0;
+  /* Ensures the card never gets smaller when list grows */
 }
 
 .createdesigns::after {
@@ -93,7 +94,8 @@
   z-index: 1;
   display: flex;
   justify-content: flex-end;
-  flex-shrink: 0; /* Prevents the button area from compressing */
+  flex-shrink: 0;
+  /* Prevents the button area from compressing */
 }
 
 .createdesignButtoncontent {
@@ -292,7 +294,8 @@
   gap: 3rem;
 }
 
-.designCreatedAt, .designUpdateAt {
+.designCreatedAt,
+.designUpdateAt {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -306,7 +309,9 @@
   font-weight: 600;
 }
 
-.userSubtitle, .userName, .griduserName {
+.userSubtitle,
+.userName,
+.griduserName {
   font-size: 0.85rem;
   color: #170F49;
   font-weight: 500;
@@ -405,7 +410,8 @@
   width: 0.8rem;
 }
 
-.gridDesignCreatedAt, .gridDesignUpdateAt {
+.gridDesignCreatedAt,
+.gridDesignUpdateAt {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -425,11 +431,35 @@
 }
 
 /* ─── Status Styles ─── */
-.statusDraft, .gridStatusDraft { background: #EBF3FF; color: #1E5CAF; }
-.statusCompleted, .gridStatusCompleted { background: #E7F9ED; color: #15803D; }
-.statusReady, .gridStatusReady { background: #F0EBFF; color: #392579; }
-.statusDelete, .gridStatusDelete { background: #FFF1F1; color: #DC2626; }
-.statusNesting, .gridStatusNesting { background: #FEF3C7; color: #92400E; }
+.statusDraft,
+.gridStatusDraft {
+  background: #EBF3FF;
+  color: #1E5CAF;
+}
+
+.statusCompleted,
+.gridStatusCompleted {
+  background: #E7F9ED;
+  color: #15803D;
+}
+
+.statusReady,
+.gridStatusReady {
+  background: #F0EBFF;
+  color: #392579;
+}
+
+.statusDelete,
+.gridStatusDelete {
+  background: #FFF1F1;
+  color: #DC2626;
+}
+
+.statusNesting,
+.gridStatusNesting {
+  background: #FEF3C7;
+  color: #92400E;
+}
 
 /* ─── Dropdowns & Three Dots ─── */
 .threedot_container {
@@ -461,7 +491,8 @@
   animation: slideInUp 0.2s ease-out;
 }
 
-.three_dots::before, .gridthree_dots::before {
+.three_dots::before,
+.gridthree_dots::before {
   content: '';
   position: absolute;
   top: -5px;
@@ -532,7 +563,9 @@
 }
 
 /* ─── Popups ─── */
-.createpopupOverlay, .popupOverlay, .deletepopupOverlay {
+.createpopupOverlay,
+.popupOverlay,
+.deletepopupOverlay {
   position: fixed;
   inset: 0;
   background: rgba(23, 15, 73, 0.4);
@@ -544,7 +577,9 @@
   animation: fadeIn 0.3s ease;
 }
 
-.createpopup, .popup, .deletepopup {
+.createpopup,
+.popup,
+.deletepopup {
   background: #fff;
   width: 23rem;
   border-radius: 2rem;
@@ -554,13 +589,17 @@
   animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.createicon, .editpopupicon, .deletepopupicon {
+.createicon,
+.editpopupicon,
+.deletepopupicon {
   width: 3.5rem;
   height: 3.5rem;
   margin-bottom: 1.5rem;
 }
 
-.createclose, .editclose, .close {
+.createclose,
+.editclose,
+.close {
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
@@ -570,35 +609,46 @@
   transition: all 0.2s ease;
 }
 
-.createclose:hover, .editclose:hover, .close:hover {
+.createclose:hover,
+.editclose:hover,
+.close:hover {
   opacity: 1;
   transform: rotate(90deg);
 }
 
-.create_right_side h2, .edit_right_side h3, .right_side h2 {
+.create_right_side h2,
+.edit_right_side h3,
+.right_side h2 {
   font-size: 1.75rem;
   font-weight: 700;
   color: #170F49;
   margin-bottom: 0.75rem;
 }
 
-.create_right_side p, .edit_right_side p, .right_side p {
+.create_right_side p,
+.edit_right_side p,
+.right_side p {
   font-size: 0.95rem;
   color: #6F6C8F;
   margin-bottom: 2rem;
 }
 
-.createinputGroup, .inputGroup {
+.createinputGroup,
+.inputGroup {
   margin-bottom: 2rem;
 }
 
-.createButtonGrop, .editButtonGrop, .deleteButtonGrop {
+.createButtonGrop,
+.editButtonGrop,
+.deleteButtonGrop {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
   gap: 1rem;
 }
 
-.createcontinueButton, .continueButton, .deleteButton {
+.createcontinueButton,
+.continueButton,
+.deleteButton {
   height: 3.25rem;
   border-radius: 1rem;
   border: none;
@@ -608,7 +658,8 @@
   transition: all 0.3s ease;
 }
 
-.createcontinueButton, .continueButton {
+.createcontinueButton,
+.continueButton {
   background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
   color: #fff;
   box-shadow: 0 8px 20px rgba(57, 37, 121, 0.2);
@@ -620,7 +671,9 @@
   box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
 }
 
-.cancelcreateButton, .canceleditButton, .cancelButton {
+.cancelcreateButton,
+.canceleditButton,
+.cancelButton {
   height: 3.25rem;
   border-radius: 1rem;
   border: 1px solid rgba(57, 37, 121, 0.1);
@@ -632,7 +685,9 @@
   transition: all 0.3s ease;
 }
 
-.cancelcreateButton:hover, .canceleditButton:hover, .cancelButton:hover {
+.cancelcreateButton:hover,
+.canceleditButton:hover,
+.cancelButton:hover {
   background: #f8f9ff;
   border-color: #392579;
   color: #392579;
@@ -669,13 +724,25 @@
 
 /* ─── Animations ─── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .cursorNotAllowed {

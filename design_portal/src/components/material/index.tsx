@@ -157,7 +157,7 @@ const Material: React.FC = () => {
       <div className="relative flex flex-1 flex-col overflow-hidden">
         <Header isBorderRadius={true} dashboardName="Material" />
 
-        {!addMaterialPopup && (
+        {!addMaterialPopup ? (
           <div className={styles.maincontainer}>
             <MaterialSidebar
               materialCategories={materialCategories}
@@ -197,15 +197,15 @@ const Material: React.FC = () => {
               />
             </div>
           </div>
+        ) : (
+          <AddMaterialPopup
+            setCreateWorkOrderPopup={setAddMaterialPopup}
+            companyId={companyID}
+            handleGetCompanyMaterials={fetchCompanyMaterials}
+            selectedType={expandedCategory}
+          />
         )}
       </div>
-
-      {/* <ContextMenus
-        contextMenu={contextMenu}
-        contextMaterialMenu={contextMaterialMenu}
-        onAddCompany={handleAddCompany}
-        onAddMaterial={handleAddMaterial}
-      /> */}
 
       {createCompanyPopup && (
         <CreateCompanyPopup
@@ -214,15 +214,6 @@ const Material: React.FC = () => {
           onCompanyNameChange={setCompanyName}
           onCreateCompany={handleCreateCompany}
           onClose={() => setCreateCompanyPopup(false)}
-        />
-      )}
-
-      {addMaterialPopup && (
-        <AddMaterialPopup
-          setCreateWorkOrderPopup={setAddMaterialPopup}
-          companyId={companyID}
-          handleGetCompanyMaterials={fetchCompanyMaterials}
-          selectedType={expandedCategory}
         />
       )}
     </div>

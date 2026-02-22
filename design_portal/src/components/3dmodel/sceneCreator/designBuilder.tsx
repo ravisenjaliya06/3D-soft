@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { hydrateNailers } from '../design/scene';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { store } from '../store';
 import {
@@ -131,7 +132,7 @@ export class DesignBuilder {
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
 
-      if (meshData.parent && meshData.isMain !== true) {
+      if (meshData.parent && this.meshMap.has(meshData.parent)) {
         const parentMesh = this.meshMap.get(meshData.parent);
 
         if (parentMesh) {
@@ -162,8 +163,21 @@ export class DesignBuilder {
     // Apply parent's banding material to child planks (async - waits for color extraction)
     await this._applyParentBandingToPlanks();
 
+    const nailerPromises: Promise<void>[] = [];
+    this.data.forEach((meshData) => {
+      const mesh = this.meshMap.get(meshData.id);
+      if (mesh && meshData.nailerEnabled) {
+        nailerPromises.push(hydrateNailers(mesh, meshData.nailerModel));
+      }
+    });
+
+    if (nailerPromises.length > 0) {
+      await Promise.all(nailerPromises);
+    }
+
     if (!rootMesh) {
-      throw new Error('Root mesh not found. Your data must contain one item with no parent.');
+      console.warn('Root mesh not explicitly found by parent isolation. Defaulting to first item.');
+      rootMesh = meshList[0];
     }
 
     this._createInitialCompartments(rootMesh);

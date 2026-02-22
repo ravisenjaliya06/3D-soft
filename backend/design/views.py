@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Django imports
 from django.db.models import QuerySet
@@ -11,6 +11,7 @@ from django.db.models import QuerySet
 # External imports
 import pandas as pd
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -36,6 +37,7 @@ from design.models import (
     NestingFile,
     NestingSheet,
     Organization,
+    RenderImage,
 )
 from design.nest import nest
 from design.serializers import (
@@ -44,6 +46,7 @@ from design.serializers import (
     DesignVersionSerializer,
     NestingFileSerializer,
     NestingSheetSerializer,
+    RenderImageSerializer,
     SceneGetSerializer,
     ScenePayloadSerializer,
 )
@@ -649,3 +652,48 @@ class NestingFileViewSet(ModelViewSet):
 
         serializer = self.serializer_class(files, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
+
+
+class RenderImageViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RenderImageSerializer
+    http_method_names = ["get", "post", "delete"]
+
+    def get_queryset(self: "RenderImageViewSet") -> QuerySet[RenderImage]:
+        design_id = self.kwargs.get("design_id")
+        return RenderImage.objects.filter(
+            design_id=design_id,
+            design__organization=self.request.user.selected_organization,
+        )
+
+    def create(
+        self: "RenderImageViewSet",
+        request: Request,
+        design_id: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> Response:
+        design = Design.objects.filter(
+            id=design_id, organization=request.user.selected_organization
+        ).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+
+        request.data["design"] = design.id
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"])
+    def clear(
+        self: "RenderImageViewSet", request: Request, design_id: Optional[str] = None
+    ) -> Response:
+        design = Design.objects.filter(
+            id=design_id, organization=request.user.selected_organization
+        ).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+
+        RenderImage.objects.filter(design=design).delete()
+        return Response({"message": "Clear successful"}, status=HTTP_200_OK)

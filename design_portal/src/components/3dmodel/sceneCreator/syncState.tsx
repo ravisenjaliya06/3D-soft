@@ -4,6 +4,7 @@ import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../han
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObjects } from '../store/dataSlice';
+import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
 import {
@@ -63,6 +64,60 @@ export class SyncManager {
     this._syncState(list);
     this._sync2D(list);
     await this._sync3D(list);
+  }
+
+  /**
+   * Processes an array of catalogs (which may be single items or grouped arrays like cupboards)
+   * as a single batch to maximize rendering performance.
+   */
+  public async syncGroupedBatch(catalogs: MeshObjectData[]): Promise<void> {
+    if (!this.scene) return;
+
+    this._initializeMaps();
+
+    // Flatten logic precisely for Redux & 2D maps
+    // This allows us to dispatch to the store exactly once
+    const flatList: MeshObjectData[] = [];
+    const flatten = (items: MeshObjectData[]) => {
+      items.forEach((item) => {
+        if (Array.isArray(item)) {
+          flatten(item);
+        } else {
+          flatList.push(convertKeysToCamel(item));
+        }
+      });
+    };
+    flatten(catalogs);
+
+    // Dispatch Redux batch update
+    this._syncState(flatList);
+    this._sync2D(flatList);
+
+    const originalData = this.data;
+    const originalIsArray = this.isArray;
+    const originalMeshBuilder = this.meshBuilder;
+
+    // Process each catalog independent of Redux overhead
+    for (const catalog of catalogs) {
+      this.data = convertKeysToCamel(catalog);
+      this.isArray = Array.isArray(this.data);
+
+      if (!this.isArray) {
+        this.meshBuilder = new MeshBuilder(this.data as MeshObjectData, this.scene);
+        const existing = this.storeObjectMap.get((this.data as MeshObjectData).id);
+        this.oldData = existing ? structuredClone(existing) : null;
+      } else {
+        this.meshBuilder = null;
+        this.oldData = null;
+      }
+
+      const list = this._normalizeData(this.data);
+      await this._sync3D(list);
+    }
+
+    this.data = originalData;
+    this.isArray = originalIsArray;
+    this.meshBuilder = originalMeshBuilder;
   }
 
   private _initializeMaps(): void {
@@ -386,6 +441,10 @@ export class SyncManager {
         await this.meshBuilder.applyBandingFromState();
       }
       updateMinifixesForCupboard(mesh);
+    }
+
+    if (mesh.userData.type === OBJECT_TYPES.SINK) {
+      updatePlatformHolesForSink(this.scene, mesh);
     }
   }
 
@@ -731,6 +790,9 @@ export class SyncManager {
 
     if (this._isObjectType(item.type)) {
       this.scene.add(mesh);
+      if (item.type === OBJECT_TYPES.SINK) {
+        updatePlatformHolesForSink(this.scene, mesh);
+      }
       await this._applyDrag(mesh);
       if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
     } else {
@@ -852,7 +914,8 @@ export class SyncManager {
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
-    const rootItem = list.find((i) => !i.parent);
+    const listIds = new Set(list.map((i) => i.id));
+    const rootItem = list.find((i) => !i.parent || !listIds.has(i.parent));
 
     if (list.length > 1) {
       await this._handleMultiple(list, rootItem);

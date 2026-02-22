@@ -159,7 +159,11 @@ export const GLBLoader = (
     const finalBox = new THREE.Box3().setFromObject(model);
     const center = new THREE.Vector3();
     finalBox.getCenter(center);
+
+    // Instead of wrapping in a Group, we just apply the centering subtract
+    // and remember how much it was shifted so the toolbar logic can calculate bottom alignment!
     model.position.sub(center);
+    model.userData.centerOffset = center.clone(); // store original offset to compute actual bottom accurately
 
     // Shadow properties
     model.traverse((n: THREE.Object3D) => {

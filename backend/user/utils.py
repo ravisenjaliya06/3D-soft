@@ -146,7 +146,7 @@ def verify_otp(email: str | None, otp: str | None) -> User:
 
 
 def add_user_to_organization(
-    user: User, organization: Organization, groups: List[str]
+    user: User, organization: Organization, groups: List[str], is_invited: bool = True
 ) -> None:
     permission_instance, created = UserOrganizationPermission.objects.get_or_create(
         user=user, organization=organization
@@ -158,7 +158,8 @@ def add_user_to_organization(
             group = Group.objects.get(name=group_name)
 
         permission_instance.groups.add(group)
-    permission_instance.is_invited = True
+    permission_instance.is_invited = is_invited
+    permission_instance.is_deleted = False
     permission_instance.save()
 
 

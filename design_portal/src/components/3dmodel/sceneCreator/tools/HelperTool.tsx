@@ -7,7 +7,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
-import { HelperToolProps } from '../interface';
+import { HelperToolProps, OBJECT_TYPES } from '../interface';
 import {
   collectSceneObjectIds,
   createCopiedStoreObjects,
@@ -149,7 +149,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
-    return [
+    const baseActions = [
       {
         id: 'move',
         icon: assets.moveObject,
@@ -181,7 +181,17 @@ const HelperTool: React.FC<HelperToolProps> = ({
         onClick: handleSave,
       },
     ];
-  }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);
+
+    const isModel =
+      selectedObject?.userData?.type === 'model' ||
+      selectedObject?.userData?.type === OBJECT_TYPES.MODEL;
+
+    if (isModel) {
+      return baseActions.filter((a) => a.id !== 'panel-design');
+    }
+
+    return baseActions;
+  }, [selectedObject, handleMove, handleDelete, handlePanelDesign, handleCopy, handleSave]);
 
   const createTool = useCallback(
     (object: THREE.Mesh) => {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLBLoader } from '../helper/glbLoader';
 import { store } from '../store';
+import { applyCSGHoles } from '../utils/csgUtils';
 import {
   DIRECTION_TYPES,
   DRAWER_PLANK_TYPES,
@@ -142,13 +143,18 @@ export class MeshBuilder {
   private _createTexture(materialData: Material): THREE.Texture | null {
     let texture: THREE.Texture | null = null;
     materialData?.textures?.forEach((textureData) => {
-      texture = this.textureLoader.load(
-        `${process.env.NEXT_PUBLIC_PUBLIC_API}` + textureData.textureDetail.image || ''
-      );
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.repeat.set(1, 1);
+      const imgPath = textureData.textureDetail?.image;
+      if (imgPath) {
+        const fullUrl =
+          imgPath.startsWith('http') || imgPath.startsWith('https')
+            ? imgPath
+            : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imgPath}`;
+        texture = this.textureLoader.load(fullUrl);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.repeat.set(1, 1);
+      }
     });
     return texture;
   }
@@ -228,15 +234,35 @@ export class MeshBuilder {
     return new THREE.ExtrudeGeometry(shape, extrudeSettings);
   }
 
-  private _getGeometry() {
+  private _getGeometry(mesh?: THREE.Mesh) {
+    let geometry: THREE.BufferGeometry;
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
-        return this._createBoxGeometry();
+        geometry = this._createBoxGeometry();
+        break;
       case GEOMETRY.EXTRUDE_GEOMETRY:
-        return this._createExtrudeGeometry();
+        geometry = this._createExtrudeGeometry();
+        break;
       default:
-        return this._createBoxGeometry();
+        geometry = this._createBoxGeometry();
+        break;
     }
+
+    if (
+      mesh &&
+      this.meshData.type === OBJECT_TYPES.PLATFORM &&
+      this.meshData.holes &&
+      this.meshData.holes.length > 0
+    ) {
+      try {
+        const csgGeometry = applyCSGHoles(mesh, this.meshData.holes);
+        return csgGeometry;
+      } catch (error) {
+        console.error('Failed to apply CSG holes:', error);
+      }
+    }
+
+    return geometry;
   }
 
   private _setPosition(mesh: THREE.Mesh) {
@@ -366,8 +392,10 @@ export class MeshBuilder {
 
   private async _loadHandle(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('https') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';
 
     const handleModel = await GLBLoader(backendUrl, mesh.name, {
@@ -402,7 +430,10 @@ export class MeshBuilder {
     const url = this.meshData.path || '';
     if (!url) return;
 
-    const backendUrl = url;
+    const backendUrl =
+      url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
 
     try {
       const model = await GLBLoader(backendUrl, 'Model', {
@@ -414,6 +445,14 @@ export class MeshBuilder {
       model.name = `Model_for_${mesh.name}`;
       model.userData.type = OBJECT_TYPES.MODEL;
       model.userData.objectId = this.meshData.id;
+
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.userData.type = OBJECT_TYPES.MODEL;
+          child.userData.objectId = this.meshData.id;
+          child.name = `Model_Child_${child.id}`;
+        }
+      });
 
       mesh.add(model);
     } catch (error) {
@@ -616,14 +655,17 @@ export class MeshBuilder {
   }
 
   public createMesh(): THREE.Mesh {
-    const geometry = this._getGeometry();
     const material = this._getMaterial();
 
     const mesh = new THREE.Mesh(
-      geometry,
+      new THREE.BufferGeometry(), // Temporary geometry
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
+
     this.mesh = mesh;
+
+    // Now compute the real geometry (possibly with CSG)
+    mesh.geometry = this._getGeometry(mesh);
 
     this._setName(mesh);
     this._setPosition(mesh);
@@ -638,8 +680,10 @@ export class MeshBuilder {
 
   private async _loadHinge(mesh: THREE.Mesh, materialProps: any) {
     const url = materialProps?.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';
 
     const hingeModel = await GLBLoader(backendUrl, 'Hinge', {
@@ -650,48 +694,104 @@ export class MeshBuilder {
 
     if (!hingeModel) return;
 
-    // Hinge positions: 100mm from top and bottom
+    // Hinge positions: 100mm from ends
     const margin = 100; // 100mm
     const doorHeight = this.meshData.dimensions.height;
     const doorWidth = this.meshData.dimensions.width;
     const doorDepth = this.meshData.dimensions.depth;
 
-    // Determine Side based on Open Direction
-    const isRight = this.meshData.openDirection === DIRECTION_TYPES.RIGHT;
-
-    // X Position: Right or Left edge
-    const xPos = isRight ? doorWidth / 2 : -doorWidth / 2;
-
-    // Z Position: Back of the door
-    const zPos = -doorDepth / 2;
+    // Determine Open Direction
+    const openDirection = this.meshData.openDirection || DIRECTION_TYPES.RIGHT;
+    const isVertical =
+      openDirection === DIRECTION_TYPES.LEFT || openDirection === DIRECTION_TYPES.RIGHT;
 
     // Calculate dynamic hinges
     const standardDistance = 1000; // 1000mm standard distance
-    const numHinges = Math.max(2, Math.ceil(doorHeight / standardDistance) + 1);
+    // Use height for vertical opening, width for horizontal opening
+    const relevantDimension = isVertical ? doorHeight : doorWidth;
+    const numHinges = Math.max(2, Math.ceil(relevantDimension / standardDistance) + 1);
 
-    // Y Positions
-    const startY = -doorHeight / 2 + margin; // Bottom-most hinge
-    const endY = doorHeight / 2 - margin; // Top-most hinge
-    const totalSpan = endY - startY;
+    const startPos = -relevantDimension / 2 + margin;
+    const endPos = relevantDimension / 2 - margin;
+    const totalSpan = endPos - startPos;
 
     for (let i = 0; i < numHinges; i++) {
       const t = numHinges > 1 ? i / (numHinges - 1) : 0.5;
-      const yPos = startY + t * totalSpan;
+      const varyPos = startPos + t * totalSpan;
 
       const hinge = hingeModel.clone();
       hinge.name = `Hinge_${i + 1}`;
-      hinge.position.set(xPos, yPos, zPos);
-      hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
+
+      if (openDirection === DIRECTION_TYPES.RIGHT) {
+        hinge.position.set(doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
+      } else if (openDirection === DIRECTION_TYPES.LEFT) {
+        hinge.position.set(-doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.rotation.set(0, -Math.PI / 2, Math.PI / 2);
+      } else if (openDirection === DIRECTION_TYPES.TOP) {
+        hinge.position.set(varyPos, doorHeight / 2, -doorDepth / 2);
+        hinge.rotation.set(Math.PI / 2, 0, Math.PI);
+      } else if (openDirection === DIRECTION_TYPES.BOTTOM) {
+        hinge.position.set(varyPos, -doorHeight / 2, -doorDepth / 2);
+        hinge.rotation.set(-Math.PI / 2, 0, 0);
+      }
+
       hinge.scale.set(1, 1, 1);
       mesh.add(hinge);
     }
   }
 
-  // for channels
+  public async updateHinges(mesh: THREE.Mesh): Promise<void> {
+    // Remove existing hinges
+    for (let i = mesh.children.length - 1; i >= 0; i--) {
+      const child = mesh.children[i];
+      if (child.name.startsWith('Hinge')) {
+        mesh.remove(child);
+      }
+    }
+
+    // Find Query Hinge Material
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+
+    const hingeMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.HINGE);
+
+    if (hingeMaterial) {
+      await this._loadHinge(mesh, hingeMaterial.properties);
+    }
+  }
+
+  public async updateHandle(mesh: THREE.Mesh): Promise<void> {
+    // Remove existing handle
+    for (let i = mesh.children.length - 1; i >= 0; i--) {
+      const child = mesh.children[i];
+      if (child.userData.type === 'handle') {
+        mesh.remove(child);
+      }
+    }
+
+    const materialArray = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+
+    const pullMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.PULL);
+
+    if (pullMaterial) {
+      await this._loadHandle(mesh, pullMaterial.properties);
+    }
+  }
+
   private async _loadDrawerChannel(mesh: THREE.Mesh, materialProps: any, side?: 'left' | 'right') {
     const url = materialProps?.modelFile;
-    const backendUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
+    const backendUrl = url
+      ? url.startsWith('http') || url.startsWith('/glb/')
+        ? url
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/chennal_close2.glb';
 
     if (side) {
@@ -705,9 +805,6 @@ export class MeshBuilder {
       const plankThickness = this.meshData.dimensions.width;
 
       // Calculate offset to move channel from plank center to gap center
-      // Gap center is at (sideGap/2) from the edge
-      // Plank center is at (sideGap + plankThickness/2) from the edge
-      // Distance = (sideGap + plankThickness) / 2
       const offset = (sideGap + plankThickness) / 2;
 
       let channelX = plankPositionX;
@@ -717,10 +814,13 @@ export class MeshBuilder {
         channelX += offset;
       }
 
+      // dynamic depth
+      const depthChange = Math.max(plankDepth - 10, 100);
+
       const channelModel = await GLBLoader(backendUrl, 'DrawerChannel', {
-        width: sideGap, // Fill the gap width
-        height: 5,
-        depth: plankDepth,
+        width: 5,
+        height: sideGap,
+        depth: depthChange,
       });
 
       if (!channelModel) return;
@@ -728,8 +828,15 @@ export class MeshBuilder {
       const channel = channelModel.clone();
       channel.name = `Channel_${side}`;
 
+      // force depth scaling change
+      // After rotation (Math.PI/2 on X and Y), local Z might map differently
+      channel.updateMatrixWorld(true);
+      const bBox = new THREE.Box3().setFromObject(channel);
+      const currentSize = new THREE.Vector3();
+      bBox.getSize(currentSize);
+
       channel.position.set(channelX, plankPositionY, plankPositionZ);
-      // Rotation
+      // Rotation matches user logic
       if (side === 'left') {
         channel.rotation.set(Math.PI / 2, Math.PI / 2, 0);
         channel.scale.set(1, 1, 1);
@@ -738,9 +845,17 @@ export class MeshBuilder {
         channel.scale.set(1, 1, -1);
       }
 
-      // Center the channel in Z-axis
-      // Note: We need to update matrix world for the box to take rotation/scale into account
+      // Final adjustment to ensure it doesn't protrude
       channel.updateMatrixWorld(true);
+      const finalBBox = new THREE.Box3().setFromObject(channel);
+      const finalSize = new THREE.Vector3();
+      finalBBox.getSize(finalSize);
+
+      if (finalSize.z > depthChange) {
+        const scaleFactor = depthChange / finalSize.z;
+        channel.scale.y *= scaleFactor; // because of PI/2 rotations, Y local to World Z
+      }
+
       const box = new THREE.Box3().setFromObject(channel);
       const center = new THREE.Vector3();
       box.getCenter(center);
@@ -838,9 +953,9 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions) {
+    if (changes.dimensions || changes.holes) {
       mesh.geometry.dispose();
-      mesh.geometry = this._getGeometry();
+      mesh.geometry = this._getGeometry(mesh);
     }
   }
 

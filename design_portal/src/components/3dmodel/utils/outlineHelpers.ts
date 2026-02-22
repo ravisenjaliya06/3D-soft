@@ -81,4 +81,39 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     solid.quaternion.set(0, 0, 0, 1);
     solid.scale.set(1, 1, 1);
   }
+
+  // Box Selection Outline
+  const boxName = `outline_box-${mesh.userData.objectId}`;
+  const boxOutline = scene.getObjectByName(boxName) as THREE.Mesh;
+
+  if (boxOutline) {
+    boxOutline.geometry.dispose();
+
+    let box: THREE.Box3;
+    if (mesh.geometry) {
+      if (!mesh.geometry.boundingBox) {
+        mesh.geometry.computeBoundingBox();
+      }
+      box = mesh.geometry.boundingBox!.clone();
+    } else {
+      box = new THREE.Box3().setFromObject(mesh);
+    }
+
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    geometry.translate(center.x, center.y, center.z);
+    boxOutline.geometry = geometry;
+
+    if (mesh.geometry) {
+      boxOutline.matrixAutoUpdate = false;
+      boxOutline.matrix.copy(mesh.matrixWorld);
+    } else {
+      boxOutline.matrixAutoUpdate = true;
+      boxOutline.position.copy(center);
+    }
+  }
 };

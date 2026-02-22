@@ -79,6 +79,7 @@ class Design(models.Model):
         upload_to="project/custom_designs", null=True
     )
     is_custom = models.BooleanField(default=False)
+    rendering_project_id = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -138,6 +139,18 @@ class DesignScreenshot(models.Model):
     screenshot = models.ImageField(
         upload_to="project/screenshot", default=None, null=True
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class RenderImage(models.Model):
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    design = models.ForeignKey(
+        Design, on_delete=models.CASCADE, related_name="render_images"
+    )
+    image = models.ImageField(upload_to="project/render_images")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

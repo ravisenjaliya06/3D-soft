@@ -8,12 +8,14 @@ import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import {
   addLShapeToDrawersAndDoors,
+  addNailers,
   addSkirtingPlanks,
   removeLShapeObjects,
+  removeNailers,
   removeSkirtingPlanks,
   updateDrawerType,
 } from '../design/scene';
-import { updateMinifixesForCupboard } from '../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
@@ -23,10 +25,10 @@ import {
   Material,
   MeshObjectData,
   MeshObjectPatch,
+  OBJECT_TYPES,
   PART_TYPES,
   MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
   TextureDetails,
-  OBJECT_TYPES,
 } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -144,10 +146,20 @@ const Sidebar: React.FC = () => {
       setSettingOpen(false);
       setNavOpen(true);
     }
+
+    if (selectedObject && selectedObject.type === PART_TYPES.DOOR) {
+      if (selectedObject.openDirection) {
+        const dir = selectedObject.openDirection;
+        setDoorPosition(dir.charAt(0).toUpperCase() + dir.slice(1).toLowerCase());
+      } else {
+        setDoorPosition('None');
+      }
+    }
+
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
-  }, [selectedObjectId, selectedChildObjectId]);
+  }, [selectedObjectId, selectedChildObjectId, selectedObject]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -196,6 +208,7 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject && scene) {
+      if (isUpdatingPositionRef.current) return;
       let targetMesh: THREE.Mesh | null = null;
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
@@ -494,26 +507,87 @@ const Sidebar: React.FC = () => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
     if (selectedObject) {
+      const newPos = position.toLowerCase();
+      const materialArray = Array.isArray(selectedObject.material)
+        ? [...selectedObject.material]
+        : selectedObject.material
+          ? [selectedObject.material]
+          : [];
+
+      const updatedMaterials = materialArray.map((mat) => {
+        if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+        let h = mat.properties?.horizontalInset ?? 50;
+        let v = mat.properties?.verticalInset ?? 50;
+        let r = mat.properties?.rotation ?? 90;
+
+        if (newPos === 'left') {
+          h = 90;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'right') {
+          h = 10;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'top') {
+          h = 50;
+          v = 90;
+          r = 0;
+        } else if (newPos === 'bottom') {
+          h = 50;
+          v = 10;
+          r = 0;
+        }
+
+        return {
+          ...mat,
+          properties: {
+            ...mat.properties,
+            horizontalInset: h,
+            verticalInset: v,
+            rotation: r,
+          },
+        };
+      });
+
+      // Close the door BEFORE updating the object so MeshBuilder calculations use closed coordinates
+      let wasOpen = false;
       scene.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
         if (child.userData.objectId === selectedObject.id) {
-          const controller = new CabinetMotionController();
-          const wasOpen = child.userData.isClosed === false;
-
+          wasOpen = child.userData.isClosed === false;
           if (wasOpen) {
+            const controller = new CabinetMotionController();
             controller.toggleDoor(child);
-
             const pivotGroup = child.parent;
             if (pivotGroup?.userData.isPivotGroup) {
               gsap.killTweensOf(pivotGroup.rotation);
               pivotGroup.rotation.set(0, 0, 0);
+              pivotGroup.updateMatrixWorld(true);
             }
           }
+        }
+      });
 
+      if (updateObjectRef.current) {
+        updateObjectRef.current.update(
+          selectedObject.id,
+          {
+            openDirection: position.toLowerCase(),
+            material: updatedMaterials as any,
+          },
+          selectedObject
+        );
+      }
+
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
           child.userData.openDirection = position.toLowerCase();
 
           // for re-open
           if (wasOpen) {
+            const controller = new CabinetMotionController();
             controller.toggleDoor(child);
           }
         }
@@ -550,12 +624,15 @@ const Sidebar: React.FC = () => {
     let currentDistanceM = 0;
     let axis: 'x' | 'y' | 'z' = 'x';
 
+    const tMesh = targetMesh as THREE.Mesh;
+    const isThinZ = distanceToolRef.current?.analyzePlankGeometry(tMesh).isThinZ;
+
     if (side === 'left' && currentDistances.left !== null) {
       currentDistanceM = currentDistances.left;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'right' && currentDistances.right !== null) {
       currentDistanceM = currentDistances.right;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'top' && currentDistances.top !== null) {
       currentDistanceM = currentDistances.top;
       axis = 'y';
@@ -568,16 +645,29 @@ const Sidebar: React.FC = () => {
     }
 
     // Calculate delta (how much to move)
-    const delta = newDistanceM - currentDistanceM;
+    let delta = 0;
+    if (side === 'left' || side === 'bottom') {
+      delta = newDistanceM - currentDistanceM;
+    } else if (side === 'right' || side === 'top') {
+      delta = currentDistanceM - newDistanceM;
+    }
 
     // Apply position change using DistanceTool's method
-    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+    distanceToolRef.current.applyPositionDelta(tMesh, axis, delta);
+
+    // Regenerate internal logic
+    if (typeof generateCompartmentsFromMesh === 'function' && tMesh.parent instanceof THREE.Mesh) {
+      generateCompartmentsFromMesh(tMesh.parent);
+    }
+    if (tMesh.parent instanceof THREE.Mesh) {
+      updateMinifixesForCupboard(tMesh.parent);
+    }
 
     // Update Redux store
     const newPosition = {
-      x: (targetMesh as THREE.Mesh).position.x,
-      y: (targetMesh as THREE.Mesh).position.y,
-      z: (targetMesh as THREE.Mesh).position.z,
+      x: tMesh.position.x,
+      y: tMesh.position.y,
+      z: tMesh.position.z,
     };
 
     dispatch(
@@ -586,10 +676,6 @@ const Sidebar: React.FC = () => {
         position: newPosition,
       })
     );
-
-    // Recalculate distances after position change
-    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
-    setPositionDistances(updatedDistances);
 
     // Sync to scene
     if (updateObjectRef.current) {
@@ -601,6 +687,13 @@ const Sidebar: React.FC = () => {
         undefined
       ).syncData();
     }
+
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(tMesh);
+    setPositionDistances(updatedDistances);
+
+    // Also redraw the visual 3D distance lines
+    distanceToolRef.current.showDistances(tMesh);
 
     isUpdatingPositionRef.current = false;
   };
@@ -686,8 +779,7 @@ const Sidebar: React.FC = () => {
       const scaleValue = selectedObject.scale?.[config.axis] ?? 1;
       if (config.side === config.negative) {
         positionShift[config.axis] = -(delta / 2) * scaleValue;
-      }
-      else if (config.side === config.positive) {
+      } else if (config.side === config.positive) {
         positionShift[config.axis] = (delta / 2) * scaleValue;
       }
     }
@@ -696,11 +788,7 @@ const Sidebar: React.FC = () => {
     const currentRot = selectedObject.rotation ?? { x: 0, y: 0, z: 0 };
 
     // Apply rotation to the shift vector to ensure it moves along the local axis
-    const shiftVector = new THREE.Vector3(
-      positionShift.x,
-      positionShift.y,
-      positionShift.z
-    );
+    const shiftVector = new THREE.Vector3(positionShift.x, positionShift.y, positionShift.z);
     const euler = new THREE.Euler(currentRot.x, currentRot.y, currentRot.z);
     shiftVector.applyEuler(euler);
 
@@ -1078,8 +1166,6 @@ const Sidebar: React.FC = () => {
   const [minifixDisabled, setMinifixDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
-  const [baseheightEnabled, setBaseheightEnabled] = useState(true);
-  const [baseheightDisabled, setBaseheightDisabled] = useState(false);
   const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
   const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
 
@@ -1110,7 +1196,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setTopPlankDisabled(false);
-    setBaseheightDisabled(false);
     setFrontpanelDisabled(false);
   }, []);
 
@@ -1270,11 +1355,6 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handleBaseheightToggle = () => {
-    if (baseheightDisabled) return;
-    setBaseheightEnabled((prev) => !prev);
-  };
-
   const handleFrontpanelToggle = () => {
     if (frontpanelDisabled) return;
 
@@ -1297,6 +1377,42 @@ const Sidebar: React.FC = () => {
       } else {
         removeSkirtingPlanks(targetMesh);
       }
+    }
+  };
+
+  const handleNailerToggle = async () => {
+    if (!scene || !selectedObject || !isFullCupboard) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh) {
+      const isEnabled = !selectedObject.nailerEnabled;
+      if (isEnabled) {
+        const defaultModel = selectedObject.nailerModel || 'stand_1';
+        await addNailers(scene, targetMesh, defaultModel);
+      } else {
+        await removeNailers(scene, targetMesh);
+      }
+    }
+  };
+
+  const handleNailerModelChange = async (model: string) => {
+    if (!scene || !selectedObject || !isFullCupboard) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (targetMesh && selectedObject.nailerEnabled) {
+      await addNailers(scene, targetMesh, model);
     }
   };
 
@@ -1672,12 +1788,14 @@ const Sidebar: React.FC = () => {
                                       />
                                     ),
                                     {
-                                      position: 'top-right',
+                                      position: 'top-center',
                                       autoClose: 3000,
                                       hideProgressBar: true, // as per user pref or default
                                       closeButton: false,
                                       icon: false,
-                                      className: '!p-0 !bg-transparent !shadow-none !mb-2',
+                                      className:
+                                        '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                      style: { padding: 0, minHeight: 'auto' },
                                     }
                                   );
                                   // We allow setting the state so user can type, but maybe we shouldn't dispatch update?
@@ -2331,30 +2449,35 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.base && (
                       <>
-                        <div className="flex items-center gap-[0rem]">
+                        <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
                           <div
-                            onClick={handleBaseheightToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            onClick={handleNailerToggle}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
                           >
-                            {/* Knob */}
                             <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                baseheightEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.nailerEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Base Height
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
+                            Nailer
                           </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
+                          {selectedObject?.nailerEnabled && (
+                            <div className="ml-[3.4rem] flex items-center gap-[0rem]">
+                              <select
+                                value={selectedObject?.nailerModel || 'stand_1'}
+                                onChange={(e) => handleNailerModelChange(e.target.value)}
+                                className="mt-[0.5rem] ml-[0.65rem] flex h-[1.3rem] w-[4.25rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                              >
+                                <option value="stand_1">Stand 1</option>
+                                <option value="stand_2">Stand 2</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-[0rem]">
                           <div

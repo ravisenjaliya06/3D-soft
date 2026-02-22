@@ -61,25 +61,25 @@ export const getDesignCatalogs = async () => {
   const BATCH_SIZE = 50;
   let currentIndex = 0;
 
-  const processBatch = () => {
+  const processBatch = async () => {
     const batch = catalogs.slice(currentIndex, currentIndex + BATCH_SIZE);
 
-    batch.forEach((catalog: MeshObjectData) => {
-      const builder = new SyncManager(catalog);
-      builder.syncData();
-    });
+    const builder = new SyncManager(batch);
+    await builder.syncGroupedBatch(batch);
 
     currentIndex += BATCH_SIZE;
 
     if (currentIndex < catalogs.length) {
       // Schedule next batch
-      requestAnimationFrame(processBatch);
+      requestAnimationFrame(() => {
+        processBatch().catch((err) => console.error(err));
+      });
     } else {
       console.timeEnd('Total_Catalog_Loading_Time');
     }
   };
 
-  processBatch();
+  processBatch().catch((err) => console.error(err));
 };
 /**
  * Get the X and Y positions whenever a mouse event is called.

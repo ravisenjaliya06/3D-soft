@@ -15,7 +15,7 @@
   height: 100vh;
   overflow: visible; /* Allow fixed elements to show */
   position: relative;
-  z-index: 50; 
+  z-index: 50;
 }
 
 /* Right side main content part */
@@ -38,7 +38,6 @@
   padding: 0 2rem 2rem 2rem;
   overflow-y: auto;
 }
-
 
 /* ─── Profile/Menu Sidebar ─── */
 .profileMenu {
@@ -109,7 +108,8 @@
   color: #392579;
 }
 
-.activeMenu p, .menuItems p {
+.activeMenu p,
+.menuItems p {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 500;
@@ -141,8 +141,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Profile Tab Styles */
@@ -240,7 +246,7 @@
   object-fit: cover;
 }
 .organizationsfirstImage {
-    margin: 0;
+  margin: 0;
 }
 
 .organizationInputfild {
@@ -281,7 +287,6 @@
   width: 100%;
 }
 
-
 /* ─── Design Settings Tab ─── */
 .heading_containar h4 {
   font-size: 1.25rem;
@@ -296,7 +301,7 @@
   display: none; /* Hide separation lines for cleaner look */
 }
 
-.mainContentdesign, 
+.mainContentdesign,
 .mainContentminifix {
   display: flex;
   flex-wrap: wrap;
@@ -306,7 +311,7 @@
 .firstbox {
   margin: 0;
 }
-.firstbox p, 
+.firstbox p,
 .lastbox p {
   font-weight: 600;
   color: #475569;
@@ -370,56 +375,54 @@
   display: block;
 }
 .option {
-    display: none;
+  display: none;
 }
-
 
 /* Toggle Switch (Edge Banding) */
 .toggleSwitch {
-    position: relative;
-    width: 3.2rem;
-    height: 1.7rem;
-    background-color: #e2e8f0;
-    border-radius: 9999px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    border: 1px solid #cbd5e1;
+  position: relative;
+  width: 3.2rem;
+  height: 1.7rem;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border: 1px solid #cbd5e1;
 }
 .toggleSwitch.active {
-    background-color: #392579;
-    border-color: #392579;
+  background-color: #392579;
+  border-color: #392579;
 }
 .toggleKnob {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: calc(1.6rem - 6px);
-    height: calc(1.6rem - 6px);
-    background-color: white;
-    border-radius: 50%;
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(1.6rem - 6px);
+  height: calc(1.6rem - 6px);
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 .toggleSwitch.active .toggleKnob {
-    transform: translateX(1.5rem);
+  transform: translateX(1.5rem);
 }
 .toggleSwitch.disabled {
-    opacity: 0.5;
-    pointer-events: none;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .lastbox {
-    margin-top: 2rem;
+  margin-top: 2rem;
 }
 
 .lastboxindiv {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 2rem;
 }
-
 
 .design_profile_save_button {
   background: linear-gradient(135deg, #392579 0%, #7c5cbf 100%);
@@ -449,7 +452,8 @@
   margin-bottom: 1.5rem;
 }
 
-.teantopbarleftButton { /* Add Member Button */
+.teantopbarleftButton {
+  /* Add Member Button */
   background: white;
   color: #392579;
   border: 1px solid #392579;
@@ -470,8 +474,8 @@
   background: #f3f0ff;
 }
 .teantopbarleftButton img {
-    width: 1rem;
-    height: 1rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* Toggle (Active/Invited) */
@@ -498,7 +502,7 @@
 .toggleButton.active {
   background: white;
   color: #392579;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Table Styles */
@@ -539,10 +543,10 @@
 
 /* Role Badges */
 .roleContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 .roleBadge {
   background: #f3f0ff;
@@ -557,42 +561,45 @@
   height: auto;
 }
 .closeteam {
-    cursor: pointer;
-    width: 0.7rem;
-    height: 0.7rem;
-    opacity: 0.6;
+  cursor: pointer;
+  width: 0.7rem;
+  height: 0.7rem;
+  opacity: 0.6;
 }
-.closeteam:hover { opacity: 1; }
+.closeteam:hover {
+  opacity: 1;
+}
 
 .teamdeleteicon {
-    width: 1.5rem;
-    height: 1.5rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-    margin: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin: 0;
 }
 .teamdeleteicon:hover {
-    transform: scale(1.1);
+  transform: scale(1.1);
 }
 .roleaddicon {
-    width: 1.6rem;
-    height: 1.6rem;
-    padding: 2px;
-    background: #f1f5f9;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 2px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
-.roleaddicon:hover { 
-  background: #e2e8f0; 
+.roleaddicon:hover {
+  background: #e2e8f0;
   transform: scale(1.1);
 }
 
 /* ─── Popups (Success/Error) ─── */
-.successPopup, .errorPopup {
+.successPopup,
+.errorPopup {
   position: fixed;
   bottom: 2rem; /* Move to bottom right */
   top: auto;
@@ -600,7 +607,7 @@
   background: white;
   padding: 1rem 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -610,16 +617,22 @@
   width: auto;
   animation: fadeIn 0.3s;
 }
-.successPopup { border-color: #bbf7d0; }
-.errorPopup { border-color: #fecaca; }
-
-.successPopup img, .errorPopup img {
-    margin: 0;
-    width: 24px;
-    height: 24px;
+.successPopup {
+  border-color: #bbf7d0;
+}
+.errorPopup {
+  border-color: #fecaca;
 }
 
-.successPopup p, .errorPopup p {
+.successPopup img,
+.errorPopup img {
+  margin: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.successPopup p,
+.errorPopup p {
   margin: 0;
   font-weight: 500;
   font-size: 0.9rem;
@@ -627,68 +640,115 @@
 
 /* ─── Create User Popup ─── */
 .createpopupOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 200;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
 }
 .createpopup {
-    background: white;
-    width: 100%;
-    max-width: 400px;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  background: white;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .addmembartitle {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 0 1.5rem 0;
-    color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
 }
 .createclose {
-    cursor: pointer;
-    float: right;
-    width: 1.5rem;
-    opacity: 0.6;
+  cursor: pointer;
+  float: right;
+  width: 1.5rem;
+  opacity: 0.6;
+  transition: all 0.2s;
 }
-.createclose:hover { opacity: 1; }
+
+.createclose:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.deletepopup {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+  text-align: left;
+}
 
 .createinputGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
+
 .membertitle {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1e293b;
 }
+
 .checkboxgroup {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
 }
 .checkboxgroup label {
-    margin-right: 0.5rem;
-    margin-left: 0.2rem;
-    font-size: 0.9rem;
+  margin-right: 0.5rem;
+  margin-left: 0.2rem;
+  font-size: 0.95rem;
+  color: #334155;
+  cursor: pointer;
+}
+.checkboxgroup div {
+  transition: transform 0.2s;
+}
+.checkboxgroup div:hover {
+  transform: translateY(-1px);
 }
 .invitebutton {
-    width: 100%;
-    margin-top: 1.5rem;
-    background: linear-gradient(135deg, #392579 0%, #7c5cbf 100%);
-    color: white;
-    padding: 0.8rem;
-    border-radius: 8px;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
+  width: 100%;
+  margin-top: 2rem;
+  background: linear-gradient(135deg, #392579 0%, #7c5cbf 100%);
+  color: white;
+  padding: 0.85rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(57, 37, 121, 0.2);
+}
+.invitebutton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(57, 37, 121, 0.3);
+  opacity: 0.95;
+}
+.invitebutton:active {
+  transform: translateY(0);
 }
 
 /* Scrollbars */
@@ -704,29 +764,29 @@
 
 /* Role Dropdown */
 .roleDropdownPopup {
-    position: fixed; /* Fixed position as requested */
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15); /* Improved shadow */
-    padding: 0.5rem;
-    z-index: 1050; /* Ensure over other content */
-    min-width: 180px;
-    animation: fadeIn 0.2s ease-out;
+  position: fixed; /* Fixed position as requested */
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Improved shadow */
+  padding: 0.5rem;
+  z-index: 1050; /* Ensure over other content */
+  min-width: 180px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .dropdownItem {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
-    color: #334155;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 .dropdownItem:hover {
-    background-color: #f1f5f9;
+  background-color: #f1f5f9;
 }

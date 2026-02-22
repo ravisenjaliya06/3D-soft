@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { FLOOR_PLAN_TYPES, INVISIBLE_BOXES, PART_TYPES } from '../interface';
+import { FLOOR_PLAN_TYPES, INVISIBLE_BOXES, OBJECT_TYPES, PART_TYPES } from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -225,6 +225,11 @@ export class SelectObjectController {
       return;
     }
 
+    // 1.5 Intercept GLB MODELs from entering part-selection mode
+    if (topParent.userData.type === OBJECT_TYPES.MODEL) {
+      return;
+    }
+
     // 2. Level 1 (Cupboard) is selected. Check for Groups (Drawer/Door)
     const groupParent = this._getGroupParent(object);
 
@@ -317,6 +322,30 @@ export class SelectObjectController {
 
     if (hits.length > 0) {
       newHover = hits[0].object as THREE.Mesh;
+
+      // Ascend to the highest parent sharing the exact same objectId
+      // This protects GLB wrappers from being split if clicked on a submesh.
+      const hoverId = newHover.userData.objectId || newHover.userData.object_id;
+      if (hoverId) {
+        let current: THREE.Object3D | null = newHover;
+        while (
+          current &&
+          current.parent &&
+          (current.parent.userData.objectId === hoverId ||
+            current.parent.userData.object_id === hoverId)
+        ) {
+          current = current.parent;
+        }
+
+        // Ensure newHover receives the root level object to force massive Outline selection boxes
+        if (
+          current instanceof THREE.Mesh ||
+          current instanceof THREE.Group ||
+          current instanceof THREE.Object3D
+        ) {
+          newHover = current as THREE.Mesh;
+        }
+      }
     } else {
       newHover = null;
     }
@@ -433,7 +462,7 @@ export class SelectObjectController {
 
     // Here we create the mesh without MeshBuilder because in the future we may need to apply draggable behavior
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = 'outline_box';
+    mesh.name = obj.userData.objectId ? `outline_box-${obj.userData.objectId}` : 'outline_box';
 
     if (obj.geometry) {
       mesh.matrixAutoUpdate = false;

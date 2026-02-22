@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OBJECT_TYPES } from '../sceneCreator/interface';
 import { store } from '../store';
 import { removeObject, updateObject } from '../store/dataSlice';
+import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { removeAllOutlines } from '../utils/outlineHelpers';
 import { MoveHandlerOptions } from './interface';
 
@@ -59,7 +60,7 @@ export class MoveHandler implements IMoveHandler {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     if (this.draggedObject) {
-      this.planePoint.copy(this.draggedObject.position);
+      this.draggedObject.getWorldPosition(this.planePoint);
       this.plane.setFromNormalAndCoplanarPoint(this.planeNormal, this.planePoint);
     }
 
@@ -68,7 +69,9 @@ export class MoveHandler implements IMoveHandler {
       if (!this.isDragging) {
         this.initialClickPosition.copy(intersection);
         if (this.draggedObject) {
-          this.dragOffset.copy(this.draggedObject.position).sub(intersection);
+          const worldPos = new THREE.Vector3();
+          this.draggedObject.getWorldPosition(worldPos);
+          this.dragOffset.copy(worldPos).sub(intersection);
         }
       }
       return intersection;
@@ -77,9 +80,13 @@ export class MoveHandler implements IMoveHandler {
   };
 
   private clampToGrid = (position: THREE.Vector3): THREE.Vector3 => {
+    const worldPos = new THREE.Vector3();
+    if (this.draggedObject) {
+      this.draggedObject.getWorldPosition(worldPos);
+    }
     return new THREE.Vector3(
       Math.max(this.gridBounds?.minX ?? -10, Math.min(this.gridBounds?.maxX ?? 10, position.x)),
-      this.draggedObject?.position.y ?? 0,
+      worldPos.y,
       Math.max(this.gridBounds?.minZ ?? -10, Math.min(this.gridBounds?.maxZ ?? 10, position.z))
     );
   };
@@ -91,8 +98,15 @@ export class MoveHandler implements IMoveHandler {
     const position = this.getMousePositionOnPlane(event);
 
     if (position) {
+      position.add(this.dragOffset);
       clampedPosition = this.clampToGrid(position);
-      this.draggedObject.position.copy(clampedPosition);
+
+      const targetLocal = clampedPosition.clone();
+      if (this.draggedObject.parent) {
+        this.draggedObject.parent.worldToLocal(targetLocal);
+      }
+      this.draggedObject.position.copy(targetLocal);
+
       this.snapManager.snapObject(this.draggedObject, this.raycaster);
     }
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -143,6 +157,10 @@ export class MoveHandler implements IMoveHandler {
             scale: { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z },
           })
         );
+
+        if (mesh.userData.type === OBJECT_TYPES.SINK) {
+          this.updatePlatformHoles(mesh);
+        }
       }
 
       this.isDragging = false;
@@ -171,21 +189,50 @@ export class MoveHandler implements IMoveHandler {
     const intersects = this.raycaster.intersectObjects(this.movableObjects, true);
 
     if (intersects.length > 0) {
-      let targetObject = intersects[0].object;
+      let targetObject: THREE.Object3D | null = intersects[0].object;
       let depth = 0;
       const maxDepth = 10;
 
-      while (targetObject && !targetObject.userData.object_id && depth < maxDepth) {
+      while (
+        targetObject &&
+        !targetObject.userData.object_id &&
+        !targetObject.userData.objectId &&
+        depth < maxDepth
+      ) {
         targetObject = targetObject.parent ?? targetObject;
         depth++;
       }
 
-      if (targetObject && targetObject.userData.object_id && targetObject.name !== 'grid') {
+      // If we found an object and it is a MODEL, ascend further to its root wrapper
+      // this matches the SelectTool logic to move the whole item at once.
+      if (
+        targetObject &&
+        (targetObject.userData.object_id || targetObject.userData.objectId) &&
+        targetObject.userData.type === 'model' // Matches OBJECT_TYPES.MODEL
+      ) {
+        const id = targetObject.userData.object_id || targetObject.userData.objectId;
+        while (
+          targetObject &&
+          targetObject.parent &&
+          (targetObject.parent.userData.object_id === id ||
+            targetObject.parent.userData.objectId === id)
+        ) {
+          targetObject = targetObject.parent;
+        }
+      }
+
+      if (
+        targetObject &&
+        (targetObject.userData.object_id || targetObject.userData.objectId) &&
+        targetObject.name !== 'grid'
+      ) {
         this.draggedObject = targetObject;
         const position = this.getMousePositionOnPlane(event);
         if (position) {
           this.initialClickPosition.copy(position);
-          this.dragOffset.copy(targetObject.position).sub(position);
+          const worldPos = new THREE.Vector3();
+          targetObject.getWorldPosition(worldPos);
+          this.dragOffset.copy(worldPos).sub(position);
         }
         this.isDragging = true;
         window.addEventListener('mousemove', this.onMouseMove);
@@ -212,6 +259,7 @@ export class MoveHandler implements IMoveHandler {
     }
 
     this.draggedObject = object;
+    this.dragOffset.set(0, 0, 0); // Reset drag offset so object snaps perfectly to mouse when started from UI
     this.isDragging = true;
 
     return new Promise((resolve) => {
@@ -283,7 +331,9 @@ export class MoveHandler implements IMoveHandler {
   }
 
   public getObjectPosition(objectId: string): THREE.Vector3 | null {
-    const targetObject = this.movableObjects.find((obj) => obj.userData.object_id === objectId);
+    const targetObject = this.movableObjects.find(
+      (obj) => obj.userData.object_id === objectId || obj.userData.objectId === objectId
+    );
     if (targetObject) {
       return targetObject.position.clone();
     }
@@ -292,5 +342,9 @@ export class MoveHandler implements IMoveHandler {
 
   public startDragging(object: THREE.Object3D): Promise<THREE.Vector3 | null> {
     return this.enableDragging(object);
+  }
+
+  private updatePlatformHoles(sink: THREE.Mesh) {
+    updatePlatformHolesForSink(this.scene, sink);
   }
 }

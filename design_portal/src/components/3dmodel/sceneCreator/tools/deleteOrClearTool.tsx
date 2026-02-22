@@ -12,6 +12,7 @@ import {
   setobjectSelected,
   setSelectedChildObject,
 } from '../../store/dataSlice';
+import { updatePlatformHolesForSink } from '../../utils/holeManager';
 import { removeAllOutlines } from '../../utils/outlineHelpers';
 import { DRAWER_PLANK_TYPES, FLOOR_PLAN_TYPES, OBJECT_TYPES, PART_TYPES } from '../interface';
 
@@ -42,6 +43,9 @@ export class ObjectsRemoverFromScene {
         Object.values(OBJECT_TYPES).includes(object.parent.userData.type)
       ) {
         this.removedObjectParent = object.parent;
+      }
+      if (object.userData.type === OBJECT_TYPES.SINK) {
+        updatePlatformHolesForSink(this.scene, null, object.userData.objectId);
       }
       object.parent?.remove(object);
       store.dispatch(removeObject(object.userData.objectId));
@@ -74,9 +78,10 @@ export class ObjectsRemoverFromScene {
   }
 
   private _findByUserDataObjectId(targetId: string) {
-    let found: THREE.Mesh | null = null;
+    let found: THREE.Object3D | null = null;
 
     this.scene.traverse((object) => {
+      if (found) return;
       if (!(object instanceof THREE.Mesh)) return;
 
       const objectId = object.userData;
@@ -90,7 +95,20 @@ export class ObjectsRemoverFromScene {
       }
     });
 
-    return found;
+    // Ascend to the highest parent that shares this exact objectId (the root wrapper)
+    if (found) {
+      let current: THREE.Object3D = found;
+      while (
+        current.parent &&
+        current.parent.userData &&
+        current.parent.userData.objectId === targetId
+      ) {
+        current = current.parent;
+      }
+      found = current;
+    }
+
+    return found as unknown as THREE.Mesh;
   }
 
   private _clearOutline() {

@@ -9,6 +9,7 @@ import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import * as THREE from 'three';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -45,11 +46,14 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isRenderDropdownOpen, setIsRenderDropdownOpen] = useState(false);
   const [designName, setDesignName] = useState<Design[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
+  const renderDropdownRef = useRef<HTMLDivElement | null>(null);
+  const renderDropdownButtonRef = useRef<HTMLDivElement | null>(null);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [minifixDistance, setMinifixDistance] = useState(resolvedMinifixDistance);
   const [minifixDiameterHole, setMinifixDiameterHole] = useState(resolvedMinifixDiameterHole);
@@ -152,6 +156,15 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       ) {
         setIsDropdownOpen(false);
       }
+
+      if (
+        renderDropdownRef.current &&
+        !renderDropdownRef.current.contains(event.target as Node) &&
+        renderDropdownButtonRef.current &&
+        !renderDropdownButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsRenderDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
@@ -226,6 +239,117 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     } finally {
       setIsLoading(false); // ✅ Hide loading spinner
     }
+  };
+
+  const handleRender = async () => {
+    if (!design3D || !design3D.renderer || !designId) return;
+
+    setIsLoading(true);
+    try {
+      await commonService.post(API_ENDPOINT.CLEAR_RENDER_IMAGES(designId), {});
+
+      const box = new THREE.Box3().setFromObject(design3D.scene);
+      if (box.isEmpty()) {
+        alert('Scene is empty');
+        setIsLoading(false);
+        return;
+      }
+
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const isPersp = (design3D.camera as any).isPerspectiveCamera;
+      const fov = isPersp
+        ? (design3D.camera as THREE.PerspectiveCamera).fov * (Math.PI / 180)
+        : Math.PI / 4;
+
+      // Changed to bring camera closer
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+      cameraZ *= 1.2;
+
+      const originalPosition = design3D.camera.position.clone();
+      const originalTarget = design3D.controls.target.clone();
+
+      design3D.controls.target.copy(center);
+
+      const angles = [
+        { name: 'front', pos: new THREE.Vector3(center.x, center.y, center.z + cameraZ) },
+        { name: 'back', pos: new THREE.Vector3(center.x, center.y, center.z - cameraZ) },
+        { name: 'left', pos: new THREE.Vector3(center.x - cameraZ, center.y, center.z) },
+        { name: 'right', pos: new THREE.Vector3(center.x + cameraZ, center.y, center.z) },
+        { name: 'top', pos: new THREE.Vector3(center.x, center.y + cameraZ, center.z) },
+        {
+          name: 'isometric',
+          pos: new THREE.Vector3(
+            center.x + cameraZ * 0.7,
+            center.y + cameraZ * 0.7,
+            center.z + cameraZ * 0.7
+          ),
+        },
+      ];
+
+      const raycaster = new THREE.Raycaster();
+      let capturedAnglesCount = 0;
+
+      for (let i = 0; i < angles.length; i++) {
+        const angle = angles[i];
+        design3D.camera.position.copy(angle.pos);
+        design3D.camera.lookAt(center);
+        design3D.controls.update();
+
+        // Check for wall interference
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), design3D.camera);
+        const intersects = raycaster.intersectObjects(design3D.scene.children, true);
+
+        let isBlockedByWall = false;
+        if (intersects.length > 0) {
+          const firstHit = intersects[0].object;
+          if (firstHit.userData?.type === 'wall' || firstHit.name.toLowerCase().includes('wall')) {
+            isBlockedByWall = true;
+          }
+        }
+
+        if (isBlockedByWall) {
+          console.log(`Skipping ${angle.name} angle due to wall interference.`);
+          continue;
+        }
+
+        design3D.renderer.render(design3D.scene, design3D.camera);
+
+        const dataURL = design3D.renderer.domElement.toDataURL('image/png');
+        const res = await fetch(dataURL);
+        const blob = await res.blob();
+
+        const formData = new FormData();
+        formData.append('image', blob, `${angle.name}.png`);
+
+        await commonService.post(API_ENDPOINT.UPLOAD_RENDER_IMAGE(designId), formData);
+        capturedAnglesCount++;
+      }
+
+      design3D.camera.position.copy(originalPosition);
+      design3D.controls.target.copy(originalTarget);
+      design3D.controls.update();
+
+      if (capturedAnglesCount === 0) {
+        alert(
+          'Could not capture any angles clearly (all blocked by walls). Please adjust walls or scene.'
+        );
+      } else {
+        router.push(`/rendering/?designId=${designId}`);
+      }
+    } catch (error) {
+      console.error('Error during rendering', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoToRender = () => {
+    router.push(`/rendering/?designId=${designId}`);
   };
 
   const handleScreenshot = () => {
@@ -374,6 +498,41 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
 
         <div className={styles.header_rightmenu}>
+          {designName.length > 0 && (designName[0] as any).rendering_project_id ? (
+            <div
+              className={styles.nestingbutton}
+              style={{ display: 'flex', alignItems: 'center', padding: '0px' }}
+            >
+              <p
+                onClick={handleGoToRender}
+                style={{
+                  padding: '8px 12px',
+                  margin: 0,
+                  borderRight: '1px solid rgba(255,255,255,0.2)',
+                }}
+              >
+                View Render
+              </p>
+              <div
+                ref={renderDropdownButtonRef}
+                onClick={() => setIsRenderDropdownOpen((prev) => !prev)}
+                style={{
+                  padding: '8px 12px',
+                  margin: 0,
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title="Render options"
+              >
+                <span style={{ fontSize: '12px', color: 'white' }}>▼</span>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.nestingbutton} onClick={handleRender}>
+              <p>Render</p>
+            </div>
+          )}
           <div className={styles.nestingbutton} onClick={handleNesting}>
             <p>Nesting</p>
           </div>
@@ -428,6 +587,34 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
               className={styles.edit_delete_line}
             />
             <li onClick={handleLogout}>Logout</li>
+          </ul>
+        </div>
+      )}
+
+      {isRenderDropdownOpen && (
+        <div className={styles.dropdownMenuRender} ref={renderDropdownRef}>
+          <ul className={styles.ProfiledropdownList}>
+            <li
+              onClick={() => {
+                setIsRenderDropdownOpen(false);
+                handleGoToRender();
+              }}
+            >
+              View Render
+            </li>
+            <img
+              src={assets.edit_delete_line || '/placeholder.svg'}
+              alt="edit-delete-line"
+              className={styles.edit_delete_line}
+            />
+            <li
+              onClick={() => {
+                setIsRenderDropdownOpen(false);
+                handleRender();
+              }}
+            >
+              Generate New Render
+            </li>
           </ul>
         </div>
       )}

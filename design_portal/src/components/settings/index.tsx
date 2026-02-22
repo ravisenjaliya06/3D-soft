@@ -79,6 +79,7 @@ const Settings = () => {
   const rolesList = ['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'];
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
 
   const handalGetmember = async () => {
     try {
@@ -147,7 +148,7 @@ const Settings = () => {
       : [...selectedMember.groups, role];
 
     const formData = new FormData();
-    updatedRoles.forEach((r) => formData.append('groups[]', r));
+    updatedRoles.forEach((r) => formData.append('groups', r));
 
     CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response: { status: number; data: TeamRole; memberId: number }) => {
@@ -198,7 +199,7 @@ const Settings = () => {
 
     // Prepare FormData
     const formData = new FormData();
-    updatedRoles.forEach((r) => formData.append('groups[]', r));
+    updatedRoles.forEach((r) => formData.append('groups', r));
 
     CommonService.put(API_ENDPOINT.EDIT_ORGANIZATION_USER(memberId), formData)
       .then((response) => {
@@ -221,13 +222,13 @@ const Settings = () => {
     {
       label: 'Name',
       type: 'name',
-      placeholder: 'Enter design name',
+      placeholder: 'Enter name',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberName(e.target.value),
     },
     {
       label: 'Email',
       type: 'email',
-      placeholder: 'Enter design name',
+      placeholder: 'Enter email',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setAddMemberEmail(e.target.value),
     },
   ];
@@ -266,7 +267,7 @@ const Settings = () => {
     const formData = new FormData();
     formData.append('username', newMember.username);
     formData.append('email', newMember.email);
-    newMember.groups.forEach((groups) => formData.append('groups[]', groups));
+    newMember.groups.forEach((groups) => formData.append('groups', groups));
 
     const response: { status: number; data: addmember } = await CommonService.post(
       API_ENDPOINT.ADD_ORGANIZATION_USER,
@@ -286,7 +287,9 @@ const Settings = () => {
       setAddMambarPopup(false);
       setErrorMessage('');
     } else {
-      setErrorMessage(response.data.email || 'Failed to add member');
+      setErrorMessage(
+        response.data.username?.[0] || response.data.email?.[0] || 'Failed to add member'
+      );
     }
   };
 
@@ -570,23 +573,25 @@ const Settings = () => {
     return UserDetails?.email;
   };
 
-  const handleDeleteMember = async (memberId: string) => {
+  const handleDeleteMember = (memberId: string) => {
     const currentUserEmailId = getCurrentUserEmailId();
     if (members.find((member) => member.id === memberId)?.email === currentUserEmailId) {
       alert('You cannot remove yourself from the team.');
       return;
     }
 
-    const confirmDelete = window.confirm('Are you sure you want to remove this team member?');
-    if (!confirmDelete) return;
+    setMemberToDelete(memberId);
+  };
 
+  const confirmDelete = async (memberId: string) => {
     try {
       const response: { status: number } = await CommonService.delete(
         API_ENDPOINT.REMOVE_USER_FROM_ORGANIZATION(memberId)
       );
       if (response.status === 200) {
         setMembers((prevMembers) => prevMembers.filter((member) => member.id !== memberId));
-        alert('Team member removed successfully!');
+        setSuccessMessage('Team member removed successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000);
         await handalGetmember();
       } else {
         setErrorMessage('Failed to remove team member');
@@ -596,6 +601,8 @@ const Settings = () => {
       const errorMsg =
         error instanceof Error ? error.message : 'An error occurred while removing member';
       setErrorMessage(errorMsg);
+    } finally {
+      setMemberToDelete(null);
     }
   };
 
@@ -725,48 +732,76 @@ const Settings = () => {
           {/* ─── Sidebar Menu ─── */}
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
-              <img
-                src={assets.account_profile}
-                className={styles.accountprofile}
-                alt="profile"
-              />
+              <img src={assets.account_profile} className={styles.accountprofile} alt="profile" />
               <p className={styles.useremail}>{UserDetails?.email}</p>
             </div>
-            
+
             <div
               className={activeMenu === 'profile' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('profile')}
             >
-              <img src={activeMenu === 'profile' ? assets.account_svg : assets.account_not_selected} alt="profile" />
-              <p className={activeMenu === 'profile' ? styles.activeMenuTitle : styles.menuTitle}>Profile</p>
+              <img
+                src={activeMenu === 'profile' ? assets.account_svg : assets.account_not_selected}
+                alt="profile"
+              />
+              <p className={activeMenu === 'profile' ? styles.activeMenuTitle : styles.menuTitle}>
+                Profile
+              </p>
             </div>
 
             <div
               className={activeMenu === 'team' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('team')}
             >
-              <img src={activeMenu === 'team' ? assets.team_svg : assets.team_not_selected} alt="team" />
-              <p className={activeMenu === 'team' ? styles.activeMenuTitle : styles.menuTitle}>Team</p>
+              <img
+                src={activeMenu === 'team' ? assets.team_svg : assets.team_not_selected}
+                alt="team"
+              />
+              <p className={activeMenu === 'team' ? styles.activeMenuTitle : styles.menuTitle}>
+                Team
+              </p>
             </div>
 
             <div
               className={activeMenu === 'organizations' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('organizations')}
             >
-              <img src={activeMenu === 'organizations' ? assets.organizations_svg : assets.organization_not_selected} alt="organizations" />
-              <p className={activeMenu === 'organizations' ? styles.activeMenuTitle : styles.menuTitle}>Organizations</p>
+              <img
+                src={
+                  activeMenu === 'organizations'
+                    ? assets.organizations_svg
+                    : assets.organization_not_selected
+                }
+                alt="organizations"
+              />
+              <p
+                className={
+                  activeMenu === 'organizations' ? styles.activeMenuTitle : styles.menuTitle
+                }
+              >
+                Organizations
+              </p>
             </div>
 
-             <div
+            <div
               className={activeMenu === 'Design setting' ? styles.activeMenu : styles.menuItems}
               onClick={() => handleActiveMenu('Design setting')}
             >
-              <img src={assets.designmenuicon_not} alt="Design setting" style={{ opacity: activeMenu === 'Design setting' ? 1 : 0.6 }} />
-              <p className={activeMenu === 'Design setting' ? styles.activeMenuTitle : styles.menuTitle}>Design setting</p>
+              <img
+                src={assets.designmenuicon_not}
+                alt="Design setting"
+                style={{ opacity: activeMenu === 'Design setting' ? 1 : 0.6 }}
+              />
+              <p
+                className={
+                  activeMenu === 'Design setting' ? styles.activeMenuTitle : styles.menuTitle
+                }
+              >
+                Design setting
+              </p>
             </div>
           </div>
 
-          
           {/* ─── Main Content Area ─── */}
           <div className={styles.profile}>
             {/* 1. Profile Tab */}
@@ -796,27 +831,19 @@ const Settings = () => {
                 <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.inputGroup}>
                     {firstfieldsgroup.map((field, index) => (
-                      <InputField
-                        key={index}
-                        {...field}
-                        borderColor="#e2e8f0" 
-                      />
+                      <InputField key={index} {...field} borderColor="#e2e8f0" />
                     ))}
                   </div>
                   <div className={styles.inputGroup}>
                     {secordfieldsgroup.map((field, index) => (
-                      <InputField
-                        key={index}
-                        {...field}
-                        borderColor="#e2e8f0"
-                      />
+                      <InputField key={index} {...field} borderColor="#e2e8f0" />
                     ))}
                   </div>
                   <button className={styles.saveButton} onClick={handleSave}>
                     Save Changes
                   </button>
                 </form>
-                
+
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -836,54 +863,69 @@ const Settings = () => {
             {activeMenu === 'organizations' && (
               <>
                 <div className={styles.organizationupperpart}>
-                    <div className={styles.organizationImage}>
-                      <img
-                        src={
-                          organizationUrl ||
-                          (organization?.logo &&
-                            `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organization.logo}`) ||
-                          assets.organization_blank_image
-                        }
-                        alt="organization"
-                        onClick={handleOrganizationImageFile}
-                      />
-                      <input
-                        type="file"
-                        id="organizationImageFile"
-                        style={{ display: 'none' }}
-                        onChange={handleOrganizationImageChange}
-                      />
-                    </div>
+                  <div className={styles.organizationImage}>
+                    <img
+                      src={
+                        organizationUrl ||
+                        (organization?.logo &&
+                          `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organization.logo}`) ||
+                        assets.organization_blank_image
+                      }
+                      alt="organization"
+                      onClick={handleOrganizationImageFile}
+                    />
+                    <input
+                      type="file"
+                      id="organizationImageFile"
+                      style={{ display: 'none' }}
+                      onChange={handleOrganizationImageChange}
+                    />
+                  </div>
 
-                    <div style={{ width: '100%' }}>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Organization Name</label>
-                      <input
-                        type="text"
-                        className={`${styles.organizationInputfild} ${
-                          organizationNameError ? styles.errorInput : ''
-                        }`}
-                        placeholder="Enter Organization Name"
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                          setOrganizationName(e.target.value);
-                          setOrganizationNameError(null);
-                        }}
-                        value={organizationName}
-                      />
-                    </div>
-                  
-                   <button
+                  <div style={{ width: '100%' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '0.5rem',
+                        fontWeight: 600,
+                        color: '#475569',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      Organization Name
+                    </label>
+                    <input
+                      type="text"
+                      className={`${styles.organizationInputfild} ${
+                        organizationNameError ? styles.errorInput : ''
+                      }`}
+                      placeholder="Enter Organization Name"
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        setOrganizationName(e.target.value);
+                        setOrganizationNameError(null);
+                      }}
+                      value={organizationName}
+                    />
+                  </div>
+
+                  <button
                     className={styles.organizationTitleButton}
                     onClick={handalInputOrganization}
-                   >
+                  >
                     Save Details
-                   </button>
+                  </button>
                 </div>
-                
+
                 {organizationNameError && (
-                  <p className={styles.errorMessage} style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.5rem' }}>{organizationNameError}</p>
+                  <p
+                    className={styles.errorMessage}
+                    style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.5rem' }}
+                  >
+                    {organizationNameError}
+                  </p>
                 )}
                 <p className={styles.commingsoon}>More organization settings coming soon...</p>
-                
+
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -899,30 +941,22 @@ const Settings = () => {
                 <div className={styles.heading_containar}>
                   <h4>Set your default design preferences</h4>
                 </div>
-                
+
                 <div className={styles.mainContentdesign}>
                   <div className={styles.firstbox}>
                     <p>Nesting Sheet Size</p>
                     <div className={styles.firstfieldsgroupdesign}>
                       {designFirstInputFields.map((field, index) => (
-                        <InputField
-                          key={index}
-                          {...field}
-                          borderColor="#e2e8f0"
-                        />
+                        <InputField key={index} {...field} borderColor="#e2e8f0" />
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className={styles.firstbox}>
                     <p>3D View Design Size</p>
                     <div className={styles.firstfieldsgroupdesign}>
                       {designSecondInputFields.map((field, index) => (
-                        <InputField
-                          key={index}
-                          {...field}
-                          borderColor="#e2e8f0"
-                        />
+                        <InputField key={index} {...field} borderColor="#e2e8f0" />
                       ))}
                     </div>
                   </div>
@@ -979,35 +1013,27 @@ const Settings = () => {
                     Feet
                   </label>
                 </div>
-                
+
                 <div className={styles.mainContentminifix}>
                   <div className={styles.firstbox}>
                     <p>Minifix Setting</p>
                     <div className={styles.minifixfieldsgroupdesign}>
                       {designMinifixInputFields.map((field, index) => (
-                        <InputField
-                          key={index}
-                          {...field}
-                          borderColor="#e2e8f0"
-                        />
+                        <InputField key={index} {...field} borderColor="#e2e8f0" />
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className={styles.firstbox}>
                     <p>Camlock Screw Hole</p>
                     <div className={styles.minifixfieldsgroupdesign}>
                       {designCamlockInputFields.map((field, index) => (
-                        <InputField
-                          key={index}
-                          {...field}
-                          borderColor="#e2e8f0"
-                        />
+                        <InputField key={index} {...field} borderColor="#e2e8f0" />
                       ))}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className={styles.lastbox}>
                   <div className="flex items-center gap-[2rem]" style={{ marginBottom: '1rem' }}>
                     <p style={{ margin: 0 }}>Edge Banding</p>
@@ -1018,15 +1044,20 @@ const Settings = () => {
                       <div className={styles.toggleKnob} />
                     </div>
                   </div>
-                  
-                  <div className={styles.lastboxindiv} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '2rem' }}>
+
+                  <div
+                    className={styles.lastboxindiv}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      gap: '2rem',
+                    }}
+                  >
                     <div className={styles.minifixfieldsgroupdesign}>
                       {EdgeBandingInputFields.map((field, index) => (
-                        <InputField
-                          key={index}
-                          {...field}
-                          borderColor="#e2e8f0"
-                        />
+                        <InputField key={index} {...field} borderColor="#e2e8f0" />
                       ))}
                     </div>
                     <button
@@ -1037,7 +1068,7 @@ const Settings = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 {successMessage && (
                   <div className={styles.successPopup}>
                     <img src={assets.success} alt="Success" />
@@ -1050,14 +1081,18 @@ const Settings = () => {
             {/* 4. Team Tab */}
             {activeMenu === 'team' && (
               <>
-                 <div className={styles.team}>
+                <div className={styles.team}>
                   <div className={styles.designsettingTitle}>
-                    <p className={styles.designsettingTitleText} style={{ marginBottom: '0.5rem' }}>Team Management</p>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Manage your team members and their roles here.</p>
+                    <p className={styles.designsettingTitleText} style={{ marginBottom: '0.5rem' }}>
+                      Team Management
+                    </p>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      Manage your team members and their roles here.
+                    </p>
                   </div>
-                  
+
                   <div className={styles.teamTopBar}>
-                     <div className={styles.toggleContainer}>
+                    <div className={styles.toggleContainer}>
                       <button
                         className={`${styles.toggleButton} ${activeTab === 'active' ? styles.active : ''}`}
                         onClick={() => setActiveTab('active')}
@@ -1076,11 +1111,11 @@ const Settings = () => {
                       className={styles.teantopbarleftButton}
                       onClick={() => setAddMambarPopup(true)}
                     >
-                      <img src={assets.addmembar} alt="addmember" /> 
+                      <img src={assets.addmembar} alt="addmember" />
                       Invite New Member
                     </button>
                   </div>
-                  
+
                   <div className={styles.tableContainer} ref={tableContainerRef}>
                     <table>
                       <thead>
@@ -1100,21 +1135,28 @@ const Settings = () => {
                               <div className={styles.roleContainer}>
                                 {member.groups.map((role, index) => (
                                   <span key={index} className={styles.roleBadge}>
-                                     {role}
-                                     <img
-                                        src={assets.close}
-                                        alt="close"
-                                        className={styles.closeteam}
-                                        onClick={() => handleRoleRemove(role, member.id)}
-                                      />
+                                    {role}
+                                    <img
+                                      src={assets.close}
+                                      alt="close"
+                                      className={styles.closeteam}
+                                      onClick={() => handleRoleRemove(role, member.id)}
+                                    />
                                   </span>
                                 ))}
-                                <div className={styles.roleaddicon} onClick={(e) => handleRoleAddClick(e, member.id)}>
-                                    <img
-                                      src={assets.roleaddicon}
-                                      alt="add role"
-                                      style={{ width: '100%', height: '100%', filter: 'invert(1) brightness(2)' }}
-                                    />
+                                <div
+                                  className={styles.roleaddicon}
+                                  onClick={(e) => handleRoleAddClick(e, member.id)}
+                                >
+                                  <img
+                                    src={assets.roleaddicon}
+                                    alt="add role"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      filter: 'invert(1) brightness(2)',
+                                    }}
+                                  />
                                 </div>
                               </div>
                             </td>
@@ -1162,7 +1204,15 @@ const Settings = () => {
                         className={styles.dropdownItem}
                         onClick={() => selectedMemberId && handleRoleSelect(role, selectedMemberId)}
                       >
-                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#392579', display: 'inline-block' }}></span>
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: '#392579',
+                            display: 'inline-block',
+                          }}
+                        ></span>
                         {role}
                       </div>
                     ))}
@@ -1175,8 +1225,18 @@ const Settings = () => {
             {addMambarPopup && (
               <div className={styles.createpopupOverlay}>
                 <div className={styles.createpopup}>
-                  <div className={styles.firstpart} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h5 className={styles.addmembartitle} style={{ margin: 0 }}>Invite New Member</h5>
+                  <div
+                    className={styles.firstpart}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '1.5rem',
+                    }}
+                  >
+                    <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
+                      Invite New Member
+                    </h5>
                     <img
                       src={assets.addmemberclose}
                       className={styles.createclose}
@@ -1189,10 +1249,16 @@ const Settings = () => {
                   </div>
 
                   <div className={styles.create_right_side}>
-                    <form
-                      className={styles.form}
-                      onSubmit={(e) => e.preventDefault()}
-                    >
+                    <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                      {errorMessage && (
+                        <p
+                          className={styles.erroemessage}
+                          style={{ color: 'red', fontSize: '0.85rem' }}
+                        >
+                          {errorMessage}
+                        </p>
+                      )}
+
                       <div className={styles.createinputGroup}>
                         {addmemberfields.map((field, index) => (
                           <InputField
@@ -1205,23 +1271,32 @@ const Settings = () => {
                           />
                         ))}
                       </div>
-                      
-                      {errorMessage && <p className={styles.erroemessage} style={{ color: 'red', fontSize: '0.85rem' }}>{errorMessage}</p>}
-                      
-                      <h5 className={styles.membertitle}>Assign Roles</h5>
+
+                      <p className={styles.membertitle}>Assign Roles</p>
 
                       <div className={styles.checkboxgroup}>
-                        {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map((role) => (
-                             <div key={role} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <input
-                                  type="checkbox"
-                                  id={role}
-                                  onChange={handleCheckboxChange}
-                                  style={{ width: '1rem', height: '1rem', accentColor: '#392579' }}
-                                />
-                                <label htmlFor={role} style={{ marginLeft: '0.5rem' }}>{role}</label>
-                             </div>
-                        ))}
+                        {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map(
+                          (role) => (
+                            <div
+                              key={role}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                marginBottom: '0.5rem',
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                id={role}
+                                onChange={handleCheckboxChange}
+                                style={{ width: '1rem', height: '1rem', accentColor: '#392579' }}
+                              />
+                              <label htmlFor={role} style={{ marginLeft: '0.5rem' }}>
+                                {role}
+                              </label>
+                            </div>
+                          )
+                        )}
                       </div>
                     </form>
                   </div>
@@ -1233,7 +1308,86 @@ const Settings = () => {
                 </div>
               </div>
             )}
-            
+
+            {memberToDelete && (
+              <div className={styles.createpopupOverlay}>
+                <div className={styles.deletepopup}>
+                  <div
+                    className={styles.firstpart}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <img
+                        src={assets.deleteteamicon}
+                        alt="delete user"
+                        style={{ width: '24px', height: '24px', margin: 0 }}
+                      />
+                      <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
+                        Remove Team Member
+                      </h5>
+                    </div>
+                    <img
+                      src={assets.addmemberclose}
+                      className={styles.createclose}
+                      alt="close"
+                      onClick={() => setMemberToDelete(null)}
+                      style={{ marginTop: 0, position: 'relative', top: 0, right: 0 }}
+                    />
+                  </div>
+
+                  <div className={styles.create_right_side}>
+                    <p style={{ margin: '0 0 1.5rem 0', color: '#475569', fontSize: '1rem' }}>
+                      Are you sure you want to remove this team member? This action cannot be undone
+                      and they will lose access to the organization immediately.
+                    </p>
+                  </div>
+
+                  <div
+                    className={styles.createButtonGrop}
+                    style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', padding: 0 }}
+                  >
+                    <button
+                      className={styles.cancelButton}
+                      onClick={() => setMemberToDelete(null)}
+                      style={{
+                        flex: 1,
+                        padding: '0.85rem',
+                        borderRadius: '12px',
+                        background: 'white',
+                        border: '1px solid #cbd5e1',
+                        color: '#475569',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className={styles.confirmDeleteButton}
+                      onClick={() => confirmDelete(memberToDelete)}
+                      style={{
+                        flex: 1,
+                        padding: '0.85rem',
+                        borderRadius: '12px',
+                        background: '#ef4444',
+                        border: 'none',
+                        color: 'white',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+                      }}
+                    >
+                      Yes, Remove Member
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
