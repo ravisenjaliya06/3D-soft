@@ -25,6 +25,11 @@ const Designs = () => {
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [customerCompany, setCustomerCompany] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerGstin, setCustomerGstin] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -77,7 +82,7 @@ const Designs = () => {
     { value: 'Deleted', label: 'Deleted', icon: assets.delete_svg, color: styles.statusDelete },
   ];
 
-  const fields = [
+  const projectFields = [
     {
       label: 'Design Name',
       id: 'name',
@@ -86,6 +91,16 @@ const Designs = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
     },
     {
+      label: 'Project Type (Optional)',
+      id: 'project_type',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+    },
+  ];
+
+  const customerFields = [
+    {
       label: 'Customer Name (Optional)',
       id: 'customer',
       type: 'text',
@@ -93,11 +108,39 @@ const Designs = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
     },
     {
-      label: 'Project Type (Optional)',
-      id: 'project_type',
+      label: 'Customer Company (Optional)',
+      id: 'customer_company',
       type: 'text',
-      placeholder: 'e.g. Wardrobe, Kitchen...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      placeholder: 'Enter customer company...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerCompany(e.target.value),
+    },
+    {
+      label: 'Customer Address (Optional)',
+      id: 'customer_address',
+      type: 'text',
+      placeholder: 'Enter customer address...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerAddress(e.target.value),
+    },
+    {
+      label: 'Customer GSTIN (Optional)',
+      id: 'customer_gstin',
+      type: 'text',
+      placeholder: 'Enter customer GSTIN...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerGstin(e.target.value),
+    },
+    {
+      label: 'Customer Contact (Optional)',
+      id: 'customer_contact',
+      type: 'text',
+      placeholder: 'Enter customer contact...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerContact(e.target.value),
+    },
+    {
+      label: 'Customer Email (Optional)',
+      id: 'customer_email',
+      type: 'email',
+      placeholder: 'Enter customer email...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value),
     },
   ];
 
@@ -170,6 +213,11 @@ const Designs = () => {
     const formData = new FormData();
     formData.append('design_name', designName);
     if (customerName.trim()) formData.append('customer_name', customerName);
+    if (customerCompany.trim()) formData.append('customer_company', customerCompany);
+    if (customerAddress.trim()) formData.append('customer_address', customerAddress);
+    if (customerGstin.trim()) formData.append('customer_gstin', customerGstin);
+    if (customerContact.trim()) formData.append('customer_contact', customerContact);
+    if (customerEmail.trim()) formData.append('customer_email', customerEmail);
     if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
@@ -350,30 +398,55 @@ const Designs = () => {
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
                 <img src={assets.createicon} className={styles.createicon} alt="Studio" />
-                <img
-                  src={assets.close}
-                  className={styles.createclose}
-                  alt="Close"
-                  onClick={() => setShowPopup(false)}
-                />
                 <div className={styles.create_right_side}>
-                  <h2>New Project</h2>
-                  <p>Give your design a name to get started.</p>
+                  <div className={styles.createheader}>
+                    <img
+                      src={assets.close}
+                      className={styles.createclose}
+                      alt="Close"
+                      onClick={() => setShowPopup(false)}
+                    />
+                    <div>
+                      <h2>New Project</h2>
+                      <p>Give your design a name to get started.</p>
+                    </div>
+                  </div>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleCreateDesign();
                     }}
                   >
-                    <div className={styles.createinputGroup}>
-                      {fields.map((field, i) => (
-                        <InputField
-                          key={i}
-                          borderColor="rgba(57, 37, 121, 0.1)"
-                          {...field}
-                          error=""
-                        />
-                      ))}
+                    <div className={styles.formSection}>
+                      <h3 className={styles.formSectionTitle}>Project Details</h3>
+                      <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                        {projectFields.map((field, i) => (
+                          <InputField
+                            key={i}
+                            className={styles.inputField}
+                            mediumField
+                            borderColor="rgba(57, 37, 121, 0.1)"
+                            {...field}
+                            error=""
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formSection}>
+                      <h3 className={styles.formSectionTitle}>Customer Details</h3>
+                      <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                        {customerFields.map((field, i) => (
+                          <InputField
+                            key={i}
+                            className={styles.inputField}
+                            mediumField
+                            borderColor="rgba(57, 37, 121, 0.1)"
+                            {...field}
+                            error=""
+                          />
+                        ))}
+                      </div>
                     </div>
                   </form>
                 </div>

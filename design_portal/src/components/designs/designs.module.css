@@ -623,6 +623,85 @@
   animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.createpopup {
+  width: 40rem;
+  padding: 1.5rem 1rem;
+}
+
+.formSection {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background-color: #fcfcfd;
+  border: 1px solid rgba(57, 37, 121, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.01);
+}
+
+.formSectionTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #170f49;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.formSectionTitle::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 14px;
+  background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
+  border-radius: 2px;
+}
+
+.customerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  row-gap: 0;
+  height: 10rem;
+}
+
+.inputField {
+  width: 19rem;
+}
+
+.scrollArea {
+  max-height: 40vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.75rem;
+  margin-right: -0.75rem;
+  /* Offset padding */
+}
+
+/* Custom gorgeous scrollbar */
+.scrollArea::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: rgba(57, 37, 121, 0.02);
+  border-radius: 10px;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: rgba(57, 37, 121, 0.15);
+  border-radius: 10px;
+}
+
+.scrollArea::-webkit-scrollbar-thumb:hover {
+  background: rgba(57, 37, 121, 0.3);
+}
+
+.twoColsWrapper {
+  display: flex;
+  height: 4rem;
+  gap: 0.1rem !important;
+}
+
 .createicon,
 .editpopupicon,
 .deletepopupicon {
@@ -650,13 +729,18 @@
   transform: rotate(90deg);
 }
 
+.createheader {
+  display: flex;
+}
+
 .create_right_side h2,
 .edit_right_side h3,
 .right_side h2 {
   font-size: 1.75rem;
   font-weight: 700;
   color: #170f49;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0rem;
+  margin-top: 0rem;
 }
 
 .create_right_side p,

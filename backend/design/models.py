@@ -81,6 +81,11 @@ class Design(models.Model):
     is_custom = models.BooleanField(default=False)
     rendering_project_id = models.CharField(max_length=255, null=True, blank=True)
     customer_name = models.CharField(max_length=255, null=True, blank=True)
+    customer_company = models.CharField(max_length=255, null=True, blank=True)
+    customer_address = models.TextField(null=True, blank=True)
+    customer_gstin = models.CharField(max_length=50, null=True, blank=True)
+    customer_contact = models.CharField(max_length=50, null=True, blank=True)
+    customer_email = models.EmailField(max_length=255, null=True, blank=True)
     project_type = models.CharField(max_length=255, null=True, blank=True)
     project_code = models.CharField(
         max_length=20,
