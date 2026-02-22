@@ -101,12 +101,19 @@ def parse_design_data(data: List[Dict]) -> Dict:
                     "diameter": float(hole.get("diameter", 0)),
                     "depth": float(hole.get("depth", 0)),
                     "length": float(hole.get("length", 0)),  # For dowels
-                    "localPosition2D": hole.get("localPosition2D", {"x": 0, "y": 0}),
+                    "local_position2_d": hole.get("localPosition2D", {"x": 0, "y": 0}),
                     "position": hole.get("position", {"x": 0, "y": 0, "z": 0}),
                     "direction": hole.get("direction", {"x": 0, "y": 0, "z": 0}),
+                    "drill_type": hole.get("drillType", "1"),
+                    "face": hole.get("face", "1"),
                 }
                 processed_holes.append(processed_hole)
             plank_data["minifix_holes"] = processed_holes
+
+        # Extract edgeband data
+        edgebands = item.get("edgeband", [])
+        if edgebands:
+            plank_data["edgebands"] = edgebands
 
         # Extract position and rotation
         plank_data["position"] = item.get("position", {"x": 0, "y": 0, "z": 0})
@@ -168,7 +175,9 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
             plank_data["grooves"] = processed_grooves
 
         # Extract minifix holes
-        minifix_holes = catalog_data.get("minifix_holes", [])
+        minifix_holes = catalog_data.get(
+            "minifix_holes", catalog_data.get("minifixHoles", [])
+        )
         if minifix_holes:
             processed_holes = []
             for hole in minifix_holes:
@@ -191,6 +200,11 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         # Extract position and rotation
         plank_data["position"] = catalog_data.get("position", {"x": 0, "y": 0, "z": 0})
         plank_data["rotation"] = catalog_data.get("rotation", {"x": 0, "y": 0, "z": 0})
+
+        # Extract edgeband data
+        edgebands = catalog_data.get("edgeband", [])
+        if edgebands:
+            plank_data["edgebands"] = edgebands
 
         result[catalog_id] = plank_data
 

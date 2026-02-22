@@ -23,3 +23,5 @@ celerybeat**
 /output_sheet_1.gcode
 /output_sheet**
 
+/nesting_data.json
+/xml/*

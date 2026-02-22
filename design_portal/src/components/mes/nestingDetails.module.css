@@ -1,0 +1,228 @@
+.container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--primary-color-grey-1);
+}
+
+.rightside {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.maincontent {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.loader,
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 1.2rem;
+  color: var(--primary-color-blue);
+}
+
+.error {
+  color: red;
+}
+
+.layoutWrapper {
+  display: flex;
+  height: 100%;
+  gap: 1.5rem;
+}
+
+.sheetList {
+  width: 380px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.listTitle {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: var(--primary-text-color);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--primary-color-grey-2);
+  padding-bottom: 0.5rem;
+}
+
+.sheetItem {
+  padding: 1rem;
+  border: 1px solid var(--primary-color-grey-2);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sheetItem:hover {
+  background-color: var(--primary-color-grey-1);
+  border-color: var(--primary-color-blue);
+}
+
+.activeSheet {
+  background-color: #f0f7ff;
+  border-color: var(--primary-color-blue);
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.15);
+}
+
+.sheetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.partCount {
+  font-size: 0.65rem;
+  color: var(--primary-color-grey-4);
+  background: var(--primary-color-grey-2);
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+
+.visualizationArea {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.canvasContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+}
+
+.canvasHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.canvasHeader h3 {
+  margin: 0;
+  color: var(--primary-text-color);
+  font-size: 0.7rem;
+}
+
+.svgWrapper {
+  flex: 1;
+  background-color: #f8f9fa;
+  border: 1px solid var(--primary-color-grey-2);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.svgCanvas {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.plankOutline {
+  cursor: pointer;
+  transition: fill 0.2s ease;
+}
+
+.plankOutline:hover {
+  fill: #d0e0ff;
+  stroke: #0044cc;
+  stroke-width: 3;
+}
+
+.tableArea {
+  width: 100%;
+  margin-top: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--primary-color-grey-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 400px;
+  margin-bottom: 1rem;
+}
+
+.tableContainer {
+  flex: 1;
+  overflow: auto;
+}
+
+.detailsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.detailsTable th,
+.detailsTable td {
+  padding: 4px;
+  text-align: left;
+  border-bottom: 1px solid var(--primary-color-grey-2);
+  font-size: 0.5rem;
+}
+
+.detailsTable th {
+  background-color: var(--primary-color-grey-1);
+  color: var(--primary-text-color);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.detailsTable tr:hover {
+  background-color: #f8f9fa;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.7rem;
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--primary-color-grey-2);
+}
+
+.hoverTooltip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--primary-color-grey-2);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  pointer-events: none;
+  min-width: 200px;
+}

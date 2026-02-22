@@ -2,15 +2,17 @@ import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { assets } from '@/svgPaths';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import styles from '../mes/nesting.module.css';
 
 const Nesting = () => {
-  const design_id = window.location.pathname.split('/')[2];
+  const router = useRouter();
+  const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
 
-  const [visibleDesigns, setVisibleDesigns] = useState(7);
-  const [selectedOption, setSelectedOption] = useState('pdf');
+  const [visibleDesigns, setVisibleDesigns] = useState(50);
+  const [selectedOption, setSelectedOption] = useState('xlsx');
   const [localData, setLocalData] = useState<any[]>([]);
 
   const { objects } = useSelector((state: RootState) => state.data);
@@ -33,14 +35,21 @@ const Nesting = () => {
     }
   }, [design_id]);
 
-  const data = objects?.length ? objects : localData;
+  const data = (objects?.length ? objects : localData).filter((item) => item.type !== 'model');
 
   const handleLoadMore = () => {
-    setVisibleDesigns((prev) => prev + 5);
+    setVisibleDesigns((prev) => prev + 50);
+  };
+
+  const formatDimension = (value: number, type: string) => {
+    if (value === undefined || value === null) return '-';
+    if (type === 'wall' || type === 'floor') {
+      return `${(value / 304.8).toFixed(2)} ft`;
+    }
+    return `${Math.round(value)} mm`;
   };
 
   const fileUrls: Record<string, string> = {
-    pdf: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.pdf`,
     xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
     gcode: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting_gcodes.zip`,
   };
@@ -68,57 +77,55 @@ const Nesting = () => {
         <div className={styles.maincontent}>
           <div className={styles.designs}>
             <div className={styles.mesdesigncontent}>
-              <h2>Design Data</h2>
+              <div className={styles.headerRow}>
+                <h2>Design Data</h2>
 
-              <div className={styles.toolbarmenu}>
-                <div className={styles.toolbaricon}></div>
+                <div className={styles.toolbarmenu}>
+                  <div className={styles.toolbaricon}></div>
 
-                {/* ✅ Radio Group */}
-                <div className={styles.rediogroup}>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="pdf"
-                      checked={selectedOption === 'pdf'}
-                      className={styles.option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                    />
-                    PDF
-                  </label>
+                  {/* ✅ Radio Group */}
+                  <div className={styles.rediogroup}>
+                    <label className={styles.label}>
+                      <input
+                        type="radio"
+                        name="option"
+                        value="xlsx"
+                        checked={selectedOption === 'xlsx'}
+                        className={styles.option}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                      />
+                      XLSX
+                    </label>
+                    <label className={styles.label}>
+                      <input
+                        type="radio"
+                        name="option"
+                        value="gcode"
+                        checked={selectedOption === 'gcode'}
+                        className={styles.option}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                      />
+                      G-Codes
+                    </label>
+                  </div>
 
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="xlsx"
-                      checked={selectedOption === 'xlsx'}
-                      className={styles.option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                    />
-                    XLSX
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="gcode"
-                      checked={selectedOption === 'gcode'}
-                      className={styles.option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                    />
-                    G-Codes
-                  </label>
+                  {/* ✅ Download Button */}
+                  <img
+                    alt="download"
+                    src={assets.download}
+                    className={styles.download}
+                    onClick={handleDownload}
+                    style={{ cursor: 'pointer', marginRight: '1rem' }}
+                  />
+
+                  {/* ✅ View Details Button */}
+                  <button
+                    onClick={() => router.push(`/design/${design_id}/nesting-details`)}
+                    className={styles.viewDetailsButton}
+                  >
+                    View Details
+                  </button>
                 </div>
-
-                {/* ✅ Download Button */}
-                <img
-                  alt="download"
-                  src={assets.download}
-                  className={styles.download}
-                  onClick={handleDownload}
-                  style={{ cursor: 'pointer' }}
-                />
               </div>
 
               {/* ✅ Table */}
@@ -139,9 +146,9 @@ const Nesting = () => {
                       <tr key={item.id}>
                         <td>{index + 1}</td>
                         <td>{item.name}</td>
-                        <td>{Math.round(item?.dimensions?.width * 1000)}</td>
-                        <td>{Math.round(item?.dimensions?.height * 1000)}</td>
-                        <td>{Math.round(item?.dimensions?.depth * 1000)}</td>
+                        <td>{formatDimension(item?.dimensions?.width, item?.type)}</td>
+                        <td>{formatDimension(item?.dimensions?.height, item?.type)}</td>
+                        <td>{formatDimension(item?.dimensions?.depth, item?.type)}</td>
                       </tr>
                     ))}
                   </tbody>

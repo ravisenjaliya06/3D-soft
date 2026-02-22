@@ -310,6 +310,10 @@ class NestAPIViewset(ModelViewSet):
             design_setting.sheet_height if design_setting else NESTING_SHEET_HEIGHT
         )
 
+        # Force horizontal sheet orientation
+        if main_sheet_width < main_sheet_height:
+            main_sheet_width, main_sheet_height = main_sheet_height, main_sheet_width
+
         # Normalize data for nesting
         normalized = {}
         for rid, item in parsed_data.items():
@@ -381,10 +385,33 @@ class NestAPIViewset(ModelViewSet):
             file_path = f"{base_path}/nesting_sheet_{sheet_number}.svg"
         elif format_type == "xml_zip":
             file_path = f"{base_path}/xml_files.zip"
+        elif format_type == "json":
+            # Auto-trigger nesting to generate the latest layout data
+            nesting_response = self.nesting(request, design_id)
+            if hasattr(
+                nesting_response, "status_code"
+            ) and nesting_response.status_code not in (200, 201):
+                return Response(
+                    {
+                        "error": "Could not generate nesting data. Ensure the design has planks."
+                    },
+                    status=HTTP_400_BAD_REQUEST,
+                )
+
+            json_path = f"{base_path}/nesting_data.json"
+            # File should exist now — read and return it
+            if os.path.exists(json_path):
+                with open(json_path, "r", encoding="utf-8") as f:
+                    return Response(json.load(f), status=HTTP_200_OK)
+            else:
+                return Response(
+                    {"error": "Nesting data not found after generation"},
+                    status=HTTP_404_NOT_FOUND,
+                )
         else:
             return Response(
                 {
-                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip)"
+                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip, json)"
                 },
                 status=HTTP_400_BAD_REQUEST,
             )

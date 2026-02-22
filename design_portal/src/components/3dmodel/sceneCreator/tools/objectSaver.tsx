@@ -114,9 +114,10 @@ export class ObjectsSaver {
   }
 
   private async _createAPICallForDesign() {
+    const snakedItems = convertKeysToSnake(this.payloadData);
     const payload = {
       design_id: window.location.pathname.split('/')[2],
-      items: convertKeysToSnake(this.payloadData),
+      items: snakedItems,
     };
     const response = await CommonService.post(
       API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true),

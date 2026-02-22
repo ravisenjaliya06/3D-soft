@@ -234,9 +234,9 @@ class NestingService:
         sorted_thicknesses = sorted(files_by_depth.keys(), reverse=True)
 
         all_packed_items = []
+        global_sheet_count = 1
 
         for i, thickness in enumerate(sorted_thicknesses):
-            material_code = chr(65 + i)  # A, B, C...
             material_files = files_by_depth[thickness]
 
             remaining_files = dict(material_files)
@@ -281,7 +281,7 @@ class NestingService:
 
                     item_details = files.get(rid, {})
 
-                    unique_id = f"{material_code}{sheet_count}.{item_counter}"
+                    unique_id = f"SHEET{global_sheet_count:02d}{item_counter:02d}"
 
                     all_packed_items.append(
                         {
@@ -298,17 +298,22 @@ class NestingService:
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
                             "is_rotated": is_rotated,
-                            "sheet_num": f"{material_code}{sheet_count}",  # Grouping for visualization
+                            "sheet_num": f"SHEET{global_sheet_count:02d}",  # Grouping for visualization
+                            "sheet_width": self.bin_width,
+                            "sheet_height": self.bin_height,
+                            "sheet_thickness": thickness,
                             "original_height": extras.get("original_height"),
                             "material_name": item_details.get("material_name", ""),
                             "depth": item_details.get(KEY_DEPTH, 17.0),
                             "minifix_holes": item_details.get("minifix_holes", []),
                             "grooves": item_details.get("grooves", []),
+                            "edgebands": item_details.get("edgebands", []),
                         }
                     )
                     item_counter += 1
 
                 sheet_count += 1
+                global_sheet_count += 1
                 remaining_files = best_unplaced
 
         return all_packed_items
@@ -334,6 +339,26 @@ class NestingService:
             return excel_path
         except Exception as e:
             logger.error("Failed to write Excel file: %s", e)
+            raise
+
+    def generate_json(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> str:
+        """
+        Generates and saves the raw nesting layout data as a JSON file.
+        This provides precise data about positioning, rotation, and machining for frontend visualizations.
+        """
+        # Python imports
+        import json
+
+        json_path = os.path.join(os.path.dirname(output_path), "nesting_data.json")
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(packed_items, f, indent=4)
+            logger.info("JSON file generated at: %s", json_path)
+            return json_path
+        except Exception as e:
+            logger.error("Failed to write JSON file: %s", e)
             raise
 
     @staticmethod
@@ -929,6 +954,9 @@ def nest(
         # New: Generate XMLs
         xml_paths = service.generate_xmls(packed_items, output)
 
+        # New: Generate JSON Layout Data
+        json_path = service.generate_json(packed_items, output)
+
         return JsonResponse(
             {
                 "output_file": excel_path,
@@ -936,6 +964,7 @@ def nest(
                 "layout_file": layout_pdf_path,
                 "labels_file": labels_pdf_path,
                 "xml_files": xml_paths,  # Return list of generated XMLs
+                "json_file": json_path,  # Return JSON layout path
                 "message": "Nesting completed successfully.",
                 "total_parts": len(packed_items),
             },

@@ -88,10 +88,14 @@ class NestModuleTestCase(APIBaseTestCase):
 
         self.assertEqual(len(packed_items), 3)
 
-        # Verify IDs logic A/B
+        # Verify IDs logic A/B based on the newly updated format
         ids = [item[KEY_UNIQUE_ID] for item in packed_items]
-        self.assertTrue(any(x.startswith("A1.") for x in ids))  # 18mm
-        self.assertTrue(any(x.startswith("B1.") for x in ids))  # 12mm
+        self.assertTrue(
+            any(x.startswith("SHEET01") for x in ids)
+        )  # 18mm (First thickest)
+        self.assertTrue(
+            any(x.startswith("SHEET02") for x in ids)
+        )  # 12mm (Second thickest)
 
     @patch("pandas.DataFrame.to_excel")
     def test_nesting_service_generate_excel(
@@ -103,7 +107,7 @@ class NestModuleTestCase(APIBaseTestCase):
             {
                 KEY_NAME: "P1",
                 KEY_ID: "1",
-                KEY_UNIQUE_ID: "A1.1",
+                KEY_UNIQUE_ID: "SHEET0101",
                 KEY_DIMENSIONS: "10x10",
             },
         ]
@@ -119,21 +123,21 @@ class NestModuleTestCase(APIBaseTestCase):
         """Test SVG generation returns list of files"""
         packed_items = [
             {
-                KEY_UNIQUE_ID: "A1.1",
+                KEY_UNIQUE_ID: "SHEET0101",
                 KEY_WIDTH: 100,
                 KEY_HEIGHT: 50,
                 "x": 10,
                 "y": 10,
-                "sheet_num": "A1",
+                "sheet_num": "SHEET01",
                 KEY_NAME: "test",
             },
             {
-                KEY_UNIQUE_ID: "B1.1",
+                KEY_UNIQUE_ID: "SHEET0201",
                 KEY_WIDTH: 100,
                 KEY_HEIGHT: 50,
                 "x": 10,
                 "y": 10,
-                "sheet_num": "B1",
+                "sheet_num": "SHEET02",
                 KEY_NAME: "test2",
             },
         ]
@@ -218,7 +222,7 @@ class NestModuleTestCase(APIBaseTestCase):
 
         packed_items = [
             {
-                KEY_UNIQUE_ID: "A1.1",
+                KEY_UNIQUE_ID: "SHEET0101",
                 KEY_NAME: "Part1",
                 KEY_DIMENSIONS: "100x50",
                 KEY_ID: "1",

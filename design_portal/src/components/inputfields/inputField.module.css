@@ -1,5 +1,6 @@
 .main {
-  margin-bottom: 0 !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .main select {
@@ -43,7 +44,7 @@
   height: 2.5rem !important;
   margin-bottom: 0 !important;
   padding: 0 !important;
-  border: 0.063rem solid !important;
+  border: 0.063rem solid var(--primary-color-grey-2) !important;
   border-radius: 0.6rem !important;
   font-size: 0.8rem !important;
 }

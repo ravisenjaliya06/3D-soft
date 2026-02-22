@@ -27,3 +27,54 @@ Ensure the correct `type` flags are set to trigger specific physics and collisio
 - **`MeshBuilder` (`meshBuilder.tsx`)**: Responsible strictly for raw mesh generation from JSON. It handles building `THREE.BoxGeometry`, mapping textures, and painting specific edges with edge banding. 
 - **Scene Assembly (`design/scene.tsx` / `handler/items.tsx`)**: This is where mathematical positioning is done. UI interactions trigger these functions, which calculate exact 3D coordinates based on the selected target, generate the JSON `MeshObjectData`, and pass it to the builders.
 - **Banding & Grooving**: Planks dynamically inherit edge banding materials from their parent cupboards. Never forcefully clear a plank's material array without checking the parent's `MATERIAL_TYPES.BANDING` fallback.
+
+## 5. Nesting System
+
+### Backend (`backend/design/`)
+
+- **Entry Point**: `nest.py` → `NestingService` class. The main flow is:
+  1. `optimize(files)` — packs all parts, returns a flat `all_packed_items` list.
+  2. `generate_excel(packed_items, output_path)` — writes `nesting.xlsx`.
+  3. `generate_svg(packed_items, output_path)` — writes per-sheet SVGs.
+  4. `generate_layout_pdf(svg_paths, output_path)` — writes `nesting_layout.pdf`.
+  5. `generate_json(packed_items, output_path)` — writes `nesting_data.json` for the frontend visualizer.
+
+- **`packed_items` structure** (each item in the list):
+  ```json
+  {
+    "name": "VERTICAL_PLANK",
+    "id": "catalog-uuid",
+    "unique_id": "A1.3",
+    "sheet_num": "A1",
+    "dimensions": "600.00 x 1000.00",
+    "width": 600.0,
+    "height": 1000.0,
+    "x": 12.5,
+    "y": 305.0,
+    "is_rotated": false,
+    "depth": 18.0,
+    "material_name": "White Board",
+    "minifix_holes": [ /* list of hole objects with type, face, local_position2_d, diameter */ ],
+    "grooves": [ /* list of groove objects with x, y, end_x, end_y, width */ ]
+  }
+  ```
+
+- **Download Endpoint**: `PUT design/<design_id>/nesting/download/` with body `{"format": "json"}`.
+  - If `nesting_data.json` doesn't exist on disk, the endpoint **automatically re-runs nesting** first, then returns the data.
+  - For other formats (pdf, xlsx, gcode, etc.) it returns a `{"file": "path"}` response pointing to a static media file.
+
+- **Output files** are stored at: `umaboy/media/output/<design_id>/`
+  - `nesting_layout.pdf`, `nesting.xlsx`, `nesting_gcodes.zip`, `nesting_data.json`
+
+### Frontend (`design_portal/src/`)
+
+- **Pages**: `src/pages/design/[designid]/nesting-details.tsx` — Next.js page wrapper.
+- **Component**: `src/components/mes/nestingDetails.tsx` — Main interactive viewer.
+  - Fetches `nesting_data.json` via `PUT /design/<id>/nesting/download/` with `{ format: "json" }`.
+  - Groups `packed_items` by `sheet_num` and renders a sheet selector sidebar.
+  - Draws each sheet as an SVG with `<rect>` per plank, `<circle>` for face holes, `<rect>` for edge holes, and `<line>` for grooves.
+  - SVG `viewBox` is `"0 0 2540 1320"` (default sheet + 50px margin each side for `2440x1220` sheet).
+- **Nesting page**: `src/components/mes/nesting.tsx`
+  - Removed PDF download option; only XLSX and G-Codes remain.
+  - "View Details" button navigates to `/design/[id]/nesting-details`.
+  - Uses `router.query.designid` to get the current design ID.
