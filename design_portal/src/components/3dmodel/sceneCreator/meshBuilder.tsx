@@ -694,26 +694,30 @@ export class MeshBuilder {
 
     if (!hingeModel) return;
 
-    // Hinge positions: 100mm from ends
-    const margin = 100; // 100mm
+    const hingeBox = new THREE.Box3().setFromObject(hingeModel);
+    const hingeSize = new THREE.Vector3();
+    hingeBox.getSize(hingeSize);
+    const hingeDepth = hingeSize.z;
+
+    const margin = 100; // 100mm from ends
     const doorHeight = this.meshData.dimensions.height;
     const doorWidth = this.meshData.dimensions.width;
     const doorDepth = this.meshData.dimensions.depth;
 
-    // Determine Open Direction
     const openDirection = this.meshData.openDirection || DIRECTION_TYPES.RIGHT;
     const isVertical =
       openDirection === DIRECTION_TYPES.LEFT || openDirection === DIRECTION_TYPES.RIGHT;
 
-    // Calculate dynamic hinges
-    const standardDistance = 1000; // 1000mm standard distance
-    // Use height for vertical opening, width for horizontal opening
+    const standardDistance = 1000;
     const relevantDimension = isVertical ? doorHeight : doorWidth;
     const numHinges = Math.max(2, Math.ceil(relevantDimension / standardDistance) + 1);
 
     const startPos = -relevantDimension / 2 + margin;
     const endPos = relevantDimension / 2 - margin;
     const totalSpan = endPos - startPos;
+
+    // Z position (move hinge inside door properly)
+    const zPos = -doorDepth / 2 + hingeDepth / 2 - 20;
 
     for (let i = 0; i < numHinges; i++) {
       const t = numHinges > 1 ? i / (numHinges - 1) : 0.5;
@@ -723,16 +727,16 @@ export class MeshBuilder {
       hinge.name = `Hinge_${i + 1}`;
 
       if (openDirection === DIRECTION_TYPES.RIGHT) {
-        hinge.position.set(doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.position.set(doorWidth / 2, varyPos, zPos);
         hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
       } else if (openDirection === DIRECTION_TYPES.LEFT) {
-        hinge.position.set(-doorWidth / 2, varyPos, -doorDepth / 2);
+        hinge.position.set(-doorWidth / 2, varyPos, zPos);
         hinge.rotation.set(0, -Math.PI / 2, Math.PI / 2);
       } else if (openDirection === DIRECTION_TYPES.TOP) {
-        hinge.position.set(varyPos, doorHeight / 2, -doorDepth / 2);
+        hinge.position.set(varyPos, doorHeight / 2, zPos);
         hinge.rotation.set(Math.PI / 2, 0, Math.PI);
       } else if (openDirection === DIRECTION_TYPES.BOTTOM) {
-        hinge.position.set(varyPos, -doorHeight / 2, -doorDepth / 2);
+        hinge.position.set(varyPos, -doorHeight / 2, zPos);
         hinge.rotation.set(-Math.PI / 2, 0, 0);
       }
 

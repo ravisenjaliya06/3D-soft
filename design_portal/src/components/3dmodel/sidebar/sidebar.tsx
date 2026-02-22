@@ -13,12 +13,14 @@ import {
   removeLShapeObjects,
   removeNailers,
   removeSkirtingPlanks,
+  updateDoorType,
   updateDrawerType,
 } from '../design/scene';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
+  DOOR_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   INVISIBLE_BOXES,
@@ -57,7 +59,7 @@ import { DistanceTool } from '../design/distance/distance';
 import { getActiveUnit, unitToMeters } from '../handler/unitConversion';
 import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
-import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
+import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
@@ -129,6 +131,8 @@ const Sidebar: React.FC = () => {
 
   const isHorizontalPlank = selectedObject?.name?.includes(itemType.HORIZONTAL_PLANK) ?? false;
   const isVerticalPlank = selectedObject?.name?.includes(itemType.VERTICAL_PLANK) ?? false;
+  // const isDoorSelected = selectedObject?.type === PART_TYPES.DOOR;
+  // const isDrawerSelected = selectedObject?.type === PART_TYPES.DRAWER || selectedObject?.name === 'Drawer';
 
   useEffect(() => {
     if (selectedObjectId || selectedChildObjectId) {
@@ -246,7 +250,7 @@ const Sidebar: React.FC = () => {
   }, []);
 
   // let handleObject = objects.find((obj) => obj.id === targetId);
-  const handleObject = findMeshById(scene, targetId ? targetId : '', true);
+  const handleObject = findMesh(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -806,10 +810,10 @@ const Sidebar: React.FC = () => {
       requestAnimationFrame(() => {
         let cupboardMesh: THREE.Mesh | null = null;
         if (isFullCupboard) {
-          cupboardMesh = findMeshById(scene, selectedObject.id);
+          cupboardMesh = findMesh(scene, selectedObject.id);
         } else if (selectedObject.parent) {
           // If it's a child (plank), find the parent cupboard
-          cupboardMesh = findMeshById(scene, selectedObject.parent);
+          cupboardMesh = findMesh(scene, selectedObject.parent);
         }
 
         if (cupboardMesh && cupboardMesh.userData.isMain) {
@@ -1285,7 +1289,7 @@ const Sidebar: React.FC = () => {
     };
 
     // Find the cupboard mesh using utility function
-    const cupboardMesh = findMeshById(scene, selectedObject.id);
+    const cupboardMesh = findMesh(scene, selectedObject.id);
 
     // Regenerate minifixes with the new settings
     if (cupboardMesh && cupboardMesh.userData.isMain) {
@@ -2572,6 +2576,69 @@ const Sidebar: React.FC = () => {
                             <option value="Right">Right</option>
                             <option value="Top">Top</option>
                             <option value="Bottom">Bottom</option>
+                          </select>
+                        </div>
+
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Open/Close
+                          </p>
+                          <button
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            onClick={handleOpenCloseChange}
+                          >
+                            Open/Close
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Door
+                      </p>
+                      <button
+                        onClick={() => toggleSection('layout')}
+                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                      >
+                        <img
+                          src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
+                      </button>
+                    </div>
+                    {!collapsed.layout && (
+                      <>
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Door Type
+                          </p>
+                          <select
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            value={
+                              selectedObject?.doorType === DOOR_TYPES.INSET
+                                ? DOOR_TYPES.INSET
+                                : DOOR_TYPES.OVERLAY
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (selectedObject?.id) {
+                                updateDoorType(scene, selectedObject.id, value);
+                              }
+                            }}
+                          >
+                            <option value={DOOR_TYPES.INSET}>In to In</option>
+                            <option value={DOOR_TYPES.OVERLAY}>Out to Out</option>
                           </select>
                         </div>
 

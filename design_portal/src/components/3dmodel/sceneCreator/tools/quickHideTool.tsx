@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { hideFullScreenLoader, showFullScreenLoader } from '../../handler/items';
 import { store } from '../../store';
 
 export class OutlineManager {
@@ -34,11 +35,21 @@ export class OutlineManager {
       return;
     }
 
-    if (this.isQuickHideActive) {
-      this._applyQuickHideToAll();
-    } else {
-      this._restoreMesh();
-    }
+    showFullScreenLoader(this.isQuickHideActive ? 'Applying Quick Hide...' : 'Restoring Scene...');
+
+    setTimeout(() => {
+      try {
+        if (this.isQuickHideActive) {
+          this._applyQuickHideToAll();
+        } else {
+          this._restoreMesh();
+        }
+      } catch (error) {
+        console.error('OutlineManager: Error during toggle:', error);
+      } finally {
+        hideFullScreenLoader();
+      }
+    }, 100);
   }
 
   /**

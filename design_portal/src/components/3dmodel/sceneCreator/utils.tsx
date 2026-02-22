@@ -451,7 +451,7 @@ export function getNew(
   return { newGeometry, newPosition };
 }
 
-export function findMeshById(
+export function findMesh(
   scene: THREE.Scene,
   objectId: string,
   isHandle?: boolean
