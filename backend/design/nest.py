@@ -13,6 +13,11 @@ import svgwrite
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
 from rest_framework.status import HTTP_200_OK
 
+import pandas as pd
+from openpyxl.styles import PatternFill, Font, Border, Side
+from openpyxl.utils import get_column_letter
+import zipfile
+
 # Local imports
 from .constant import (
     KEY_DEPTH,
@@ -291,6 +296,7 @@ class NestingService:
                             KEY_UNIQUE_ID: unique_id,
                             KEY_WIDTH: safe_w,  # Width of Face
                             KEY_HEIGHT: safe_h,  # Height of Face
+                            "parent_name": item_details.get("parent_name", ""),
                             "x": safe_x
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
@@ -371,12 +377,29 @@ class NestingService:
         except (ValueError, TypeError):
             return default
 
+    def auto_adjust_column_width(worksheet):
+        for column_cells in worksheet.columns:
+            max_length = 0
+            column = column_cells[0].column  # Get column index
+            column_letter = get_column_letter(column)
+
+            for cell in column_cells:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+
+            adjusted_width = max_length + 2  # Extra padding
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
     def generate_xmls(
         self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
     ) -> List[str]:
         """
         Generates XML files for each panel containing machining data.
         Returns a list of generated XML file paths.
+        Also generates 'Cutting List.xlsx' in the same folder.
         """
         # Python imports
         import xml.etree.ElementTree as ET  # noqa: N817
@@ -389,10 +412,36 @@ class NestingService:
         xml_dir = os.path.join(base_dir, "xml")
         os.makedirs(xml_dir, exist_ok=True)
 
+        sheet1_data = [] # Cutting List
+        sheet2_data = [] # Drilling Data
+
         for item in packed_items:
             # We use the unique ID for the filename
             filename = f"{item[KEY_UNIQUE_ID]}.xml"
             filepath = os.path.join(xml_dir, filename)
+
+            # Sheet 1: Cutting List Extraction
+            width_val = self._safe_float(item.get(KEY_WIDTH))
+            length_val = self._safe_float(item.get(KEY_HEIGHT))
+            thval = self._safe_float(item.get("depth", 17.0))
+            area_sqm = (width_val * length_val) / 1000000.0
+
+            sheet1_data.append({
+                "Part ID": item.get(KEY_UNIQUE_ID, ""),
+                "Part Name": item.get(KEY_NAME, item.get(KEY_ID, "")),
+                "Cabinet/Assembly": "-",
+                "Material": item.get("material_name", ""),
+                "Thickness": thval,
+                "Length": length_val,
+                "Width": width_val,
+                "Qty": 1,
+                "Area (sqm)": round(area_sqm, 4),
+                "Grain Dir": "L",
+                "Edge L1": "",
+                "Edge L2": "",
+                "Edge W1": "",
+                "Edge W2": ""
+            })
 
             # Root Element
             root = ET.Element("Root")
@@ -401,9 +450,8 @@ class NestingService:
 
             # Panel Attributes
 
-            width = f"{self._safe_float(item.get(KEY_WIDTH)):.6f}"
-            length = f"{self._safe_float(item.get(KEY_HEIGHT)):.6f}"
-            thval = self._safe_float(item.get("depth", 17.0))
+            width = f"{width_val:.6f}"
+            length = f"{length_val:.6f}"
             th = f"{thval:.6f}"
 
             panel_attrs = {
@@ -521,6 +569,22 @@ class NestingService:
                         "ToolName": "0",
                         "MacIndex": str(mac_index),
                     }
+                    
+                    # Add to Sheet 2
+                    sheet2_data.append({
+                        "Part ID": item.get(KEY_UNIQUE_ID, ""),
+                        "Part Name": item.get(KEY_NAME, item.get(KEY_ID, "")),
+                        "Hole Type": hole_type,
+                        "X Pos": final_x,
+                        "Y Pos": final_y,
+                        "Face": face_id,
+                        "Diameter": final_diameter,
+                        "Depth": final_depth,
+                        "Qty per Part": 1,
+                        "Tool": "",
+                        "Total Holes": 1,
+                        "Remarks": ""
+                    })
 
                     # If Edge Drill (XML Type 1), we need Z.
                     if xml_type == "1":
@@ -580,6 +644,81 @@ class NestingService:
                 f.write(xml_str)
 
             generated_files.append(filepath)
+
+        # Generate the unified Excel file in the xml directory
+        try:            
+            excel_path = os.path.join(xml_dir, "Cutting List.xlsx")
+
+            cols1 = ["Part ID", "Part Name", "Cabinet/Assembly", "Material", "Thickness", "Length", "Width", "Qty", "Area (sqm)", "Grain Dir", "Edge L1", "Edge L2", "Edge W1", "Edge W2"]
+            df1 = pd.DataFrame(sheet1_data, columns=cols1)
+            
+            cols2 = ["Part ID", "Part Name", "Hole Type", "X Pos", "Y Pos", "Face", "Diameter", "Depth", "Qty per Part", "Tool", "Total Holes", "Remarks"]
+            df2 = pd.DataFrame(sheet2_data, columns=cols2)
+
+            with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+                # Write starting at row 3 (index 2) so row 1 and 2 are free
+                df1.to_excel(writer, sheet_name="Cutting List", index=False, startrow=2)
+                df2.to_excel(writer, sheet_name="Drilling Data (XML)", index=False, startrow=2)
+                
+                workbook = writer.book
+                
+                # Define styles
+                header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+                bold_font = Font(bold=True)
+                title_font = Font(bold=True, size=12)
+                thin_border = Border(left=Side(style='thin'), 
+                                     right=Side(style='thin'), 
+                                     top=Side(style='thin'), 
+                                     bottom=Side(style='thin'))
+                
+                # Format Sheet 1
+                ws1 = writer.sheets["Cutting List"]
+                ws1["A1"] = "CUTTING LIST FOR BEAM SAW"
+                ws1["A1"].font = title_font
+
+                last_col_letter = ws1.cell(row=3, column=ws1.max_column).column_letter
+                ws1.merge_cells(f"A1:{last_col_letter}1")
+                
+                for row_idx, row in enumerate(ws1.iter_rows(min_row=3, max_row=ws1.max_row, min_col=1, max_col=ws1.max_column), start=3):
+                    for cell in row:
+                        cell.border = thin_border
+                        if row_idx == 3: # Header row
+                            cell.fill = header_fill
+                            cell.font = bold_font
+                            
+                # Format Sheet 2
+                ws2 = writer.sheets["Drilling Data (XML)"]
+                ws2["A1"] = "DRILLING DATA - 6-SIDED CNC MACHINE"
+                ws2["A1"].font = title_font
+
+                last_col_letter = ws2.cell(row=3, column=ws2.max_column).column_letter
+                ws2.merge_cells(f"A1:{last_col_letter}1")   
+                
+                for row_idx, row in enumerate(ws2.iter_rows(min_row=3, max_row=ws2.max_row, min_col=1, max_col=ws2.max_column), start=3):
+                    for cell in row:
+                        cell.border = thin_border
+                        if row_idx == 3: # Header row
+                            cell.fill = header_fill
+                            cell.font = bold_font
+                
+                NestingService.auto_adjust_column_width(ws1)
+                NestingService.auto_adjust_column_width(ws2)
+                
+            logger.info("Generated Excel file at: %s", excel_path)
+        except Exception as e:
+            logger.warning(f"Error generating Excel file: {e}")
+
+        zip_path = os.path.join(base_dir, "xml_files.zip")
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root_dir, _, files in os.walk(xml_dir):
+                    for file in files:
+                        file_path = os.path.join(root_dir, file)
+                        arcname = os.path.relpath(file_path, base_dir)
+                        zipf.write(file_path, arcname)
+            logger.info("Generated XML zip file at: %s", zip_path)
+        except Exception as e:
+            logger.warning(f"Error generating XML zip file: {e}")
 
         logger.info("Generated %d XML files.", len(generated_files))
         return generated_files

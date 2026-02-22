@@ -237,7 +237,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     } catch (e) {
       console.error('Error fetching designs:', e);
     } finally {
-      setIsLoading(false); // ✅ Hide loading spinner
+      setIsLoading(false);
     }
   };
 

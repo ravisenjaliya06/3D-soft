@@ -81,49 +81,27 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                  <div className={styles.toolbaricon}></div>
-
-                  {/* ✅ Radio Group */}
-                  <div className={styles.rediogroup}>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="xlsx"
-                        checked={selectedOption === 'xlsx'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      XLSX
-                    </label>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="gcode"
-                        checked={selectedOption === 'gcode'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      G-Codes
-                    </label>
-                  </div>
-
-                  {/* ✅ Download Button */}
-                  <img
-                    alt="download"
-                    src={assets.download}
-                    className={styles.download}
-                    onClick={handleDownload}
-                    style={{ cursor: 'pointer', marginRight: '1rem' }}
-                  />
-
                   {/* ✅ View Details Button */}
                   <button
                     onClick={() => router.push(`/design/${design_id}/nesting-details`)}
                     className={styles.viewDetailsButton}
                   >
                     View Details
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/xml_files.zip`;
+                      const a = document.createElement('a');
+                      a.href = fileUrl;
+                      a.download = 'xml_files.zip';
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                    }}
+                    className={styles.viewDetailsButton}
+                    style={{ marginLeft: '1rem' }}
+                  >
+                    XMLs
                   </button>
                 </div>
               </div>

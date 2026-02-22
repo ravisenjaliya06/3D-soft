@@ -5,6 +5,7 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
+import { useRouter } from 'next/router';
 
 interface NestingSheet {
   id: string;
@@ -31,6 +32,7 @@ interface NestingFile {
 type ViewMode = 'designs' | 'sheets' | 'files';
 
 const Mes = () => {
+  const router = useRouter();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
   const [sheets, setSheets] = useState<NestingSheet[]>([]);
@@ -82,18 +84,8 @@ const Mes = () => {
       } catch (nestingErr) {
         console.error('Error triggering nesting:', nestingErr);
       }
-
-      // Then fetch the sheets
-      const response: { status: number; data: NestingSheet[] } = await commonService.get(
-        API_ENDPOINT.GET_NESTING_SHEETS(design.id)
-      );
-
-      if (response.status === 200) {
-        setSheets(response.data);
-        setViewMode('sheets');
-      } else {
-        setError('No sheets found for this design');
-      }
+      
+      router.push(`/design/${design.id}/nesting`);
     } catch (err) {
       setError('No any designs for nesting.');
       console.error('Error fetching sheets:', err);
@@ -299,7 +291,7 @@ const Mes = () => {
                                     className={styles.viewButton}
                                     onClick={() => handleDesignClick(design)}
                                   >
-                                    View Sheets
+                                    View Details
                                   </button>
                                 </td>
                               </tr>
