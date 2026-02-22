@@ -336,6 +336,25 @@ class NestingService:
             logger.error("Failed to write Excel file: %s", e)
             raise
 
+    def generate_json(
+        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+    ) -> str:
+        """
+        Generates and saves the raw nesting layout data as a JSON file.
+        This provides precise data about positioning, rotation, and machining for frontend visualizations.
+        """
+        import json
+
+        json_path = os.path.join(os.path.dirname(output_path), "nesting_data.json")
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(packed_items, f, indent=4)
+            logger.info("JSON file generated at: %s", json_path)
+            return json_path
+        except Exception as e:
+            logger.error("Failed to write JSON file: %s", e)
+            raise
+
     @staticmethod
     def _safe_float(value: Any, default: float = 0.0) -> float:  # noqa: ANN401
         """Helper to safely convert any value to float, handling dicts/None gracefully."""
@@ -929,6 +948,9 @@ def nest(
         # New: Generate XMLs
         xml_paths = service.generate_xmls(packed_items, output)
 
+        # New: Generate JSON Layout Data
+        json_path = service.generate_json(packed_items, output)
+
         return JsonResponse(
             {
                 "output_file": excel_path,
@@ -936,6 +958,7 @@ def nest(
                 "layout_file": layout_pdf_path,
                 "labels_file": labels_pdf_path,
                 "xml_files": xml_paths,  # Return list of generated XMLs
+                "json_file": json_path,  # Return JSON layout path
                 "message": "Nesting completed successfully.",
                 "total_parts": len(packed_items),
             },
