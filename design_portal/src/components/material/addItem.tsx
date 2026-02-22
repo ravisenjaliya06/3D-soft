@@ -1,7 +1,7 @@
 import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { assets, DESIGN } from '@/svgPaths';
+import { assets } from '@/svgPaths';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import React, { Fragment, Suspense, useEffect, useState } from 'react';
@@ -3522,15 +3522,18 @@ const AddMaterialPopup: React.FC<Props> = ({
             const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
 
             return (
-              <div className={`${styles.formGrid} ${!hasImageFields && !isModelStep ? styles.fullWidthGrid : ''}`}>
+              <div
+                className={`${styles.formGrid} ${!hasImageFields && !isModelStep ? styles.fullWidthGrid : ''}`}
+              >
                 {/* Left Side: Fields */}
                 <div className={styles.fieldsContainer}>
                   {currentPopup?.fields.map((field, index) => {
                     const isPricingStep = currentPopup?.title === 'Pricing Details';
-                    // Allow 2 fields per row in pricing step, but make 'waste' full-width 
+                    // Allow 2 fields per row in pricing step, but make 'waste' full-width
                     // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
-                    const isFullWidth = field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
-                    
+                    const isFullWidth =
+                      field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
+
                     return (
                       <div
                         key={field.key || index}
@@ -3546,7 +3549,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                 {(hasImageFields || isModelStep) && (
                   <div className={styles.previewArea}>
                     {(() => {
-                      const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
+                      const activeField = currentPopup?.fields.find(
+                        (f) => f.key === activeFieldKey
+                      );
                       const modelFieldInStep = currentPopup?.fields.find(
                         (f) => f.key === 'model_file'
                       );
@@ -3591,7 +3596,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                       }
 
                       return (
-                        <div className="text-slate-400 italic text-sm">
+                        <div className="text-sm text-slate-400 italic">
                           Select a field to see visual guide
                         </div>
                       );
@@ -3610,13 +3615,10 @@ const AddMaterialPopup: React.FC<Props> = ({
           </div>
 
           <div className={styles.buttonGroup}>
-            <button
-              className={styles.btnSecondary}
-              onClick={() => setCreateWorkOrderPopup(false)}
-            >
+            <button className={styles.btnSecondary} onClick={() => setCreateWorkOrderPopup(false)}>
               Cancel
             </button>
-            
+
             {!isFirstStep && (
               <button className={styles.btnSecondary} onClick={handleBack}>
                 Back
@@ -3640,8 +3642,8 @@ const AddMaterialPopup: React.FC<Props> = ({
                   Finish
                 </button>
                 {errorMessage && (
-                  <div className="absolute bottom-full right-0 mb-4 w-64 bg-red-50 border border-red-200 p-3 rounded-lg shadow-xl animate-bounce">
-                    <p className="text-xs text-red-600 font-medium">{errorMessage}</p>
+                  <div className="absolute right-0 bottom-full mb-4 w-64 animate-bounce rounded-lg border border-red-200 bg-red-50 p-3 shadow-xl">
+                    <p className="text-xs font-medium text-red-600">{errorMessage}</p>
                   </div>
                 )}
               </div>
