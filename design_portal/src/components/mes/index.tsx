@@ -3,9 +3,9 @@ import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
-import { useRouter } from 'next/router';
 
 interface NestingSheet {
   id: string;
@@ -84,7 +84,7 @@ const Mes = () => {
       } catch (nestingErr) {
         console.error('Error triggering nesting:', nestingErr);
       }
-      
+
       router.push(`/design/${design.id}/nesting`);
     } catch (err) {
       setError('No any designs for nesting.');

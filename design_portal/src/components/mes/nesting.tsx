@@ -1,7 +1,6 @@
 import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
-import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -12,7 +11,6 @@ const Nesting = () => {
   const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
 
   const [visibleDesigns, setVisibleDesigns] = useState(50);
-  const [selectedOption, setSelectedOption] = useState('xlsx');
   const [localData, setLocalData] = useState<any[]>([]);
 
   const { objects } = useSelector((state: RootState) => state.data);
@@ -47,24 +45,6 @@ const Nesting = () => {
       return `${(value / 304.8).toFixed(2)} ft`;
     }
     return `${Math.round(value)} mm`;
-  };
-
-  const fileUrls: Record<string, string> = {
-    xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
-    gcode: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting_gcodes.zip`,
-  };
-
-  const handleDownload = () => {
-    const fileUrl = fileUrls[selectedOption];
-
-    if (!fileUrl) return;
-
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = fileUrl.split('/').pop() || 'file';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
   };
 
   return (
