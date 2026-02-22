@@ -598,43 +598,6 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                  <div className={styles.toolbaricon}></div>
-
-                  {/* ✅ Radio Group */}
-                  <div className={styles.rediogroup}>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="xlsx"
-                        checked={selectedOption === 'xlsx'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      XLSX
-                    </label>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="gcode"
-                        checked={selectedOption === 'gcode'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      G-Codes
-                    </label>
-                  </div>
-
-                  {/* ✅ Download Button */}
-                  <img
-                    alt="download"
-                    src={assets.download}
-                    className={styles.download}
-                    onClick={handleDownload}
-                    style={{ cursor: 'pointer', marginRight: '1rem' }}
-                  />
-
                   {/* ✅ BOM Data Button */}
                   <button
                     onClick={handleGenerateBOM}
