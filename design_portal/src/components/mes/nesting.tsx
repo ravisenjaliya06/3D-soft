@@ -2,14 +2,14 @@ import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { assets } from '@/svgPaths';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useRouter } from 'next/router';
 import styles from '../mes/nesting.module.css';
 
 const Nesting = () => {
   const router = useRouter();
-  const design_id = router.query.designid as string || window.location.pathname.split('/')[2];
+  const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
 
   const [visibleDesigns, setVisibleDesigns] = useState(50);
   const [selectedOption, setSelectedOption] = useState('xlsx');
@@ -81,34 +81,33 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                <div className={styles.toolbaricon}></div>
+                  <div className={styles.toolbaricon}></div>
 
-                {/* ✅ Radio Group */}
-                <div className={styles.rediogroup}>
-
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="xlsx"
-                      checked={selectedOption === 'xlsx'}
-                      className={styles.option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                    />
-                    XLSX
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="gcode"
-                      checked={selectedOption === 'gcode'}
-                      className={styles.option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                    />
-                    G-Codes
-                  </label>
-                </div>
+                  {/* ✅ Radio Group */}
+                  <div className={styles.rediogroup}>
+                    <label className={styles.label}>
+                      <input
+                        type="radio"
+                        name="option"
+                        value="xlsx"
+                        checked={selectedOption === 'xlsx'}
+                        className={styles.option}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                      />
+                      XLSX
+                    </label>
+                    <label className={styles.label}>
+                      <input
+                        type="radio"
+                        name="option"
+                        value="gcode"
+                        checked={selectedOption === 'gcode'}
+                        className={styles.option}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                      />
+                      G-Codes
+                    </label>
+                  </div>
 
                   {/* ✅ Download Button */}
                   <img

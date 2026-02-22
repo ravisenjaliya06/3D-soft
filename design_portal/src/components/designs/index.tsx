@@ -481,7 +481,8 @@ const Designs = () => {
                           <div className={styles.three_dots} ref={actionDropdownRef}>
                             <ul className={styles.three_dots_dropdown}>
                               <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                <img src={assets.editicon} alt="" className={styles.actionIcon} /> Edit Details
+                                <img src={assets.editicon} alt="" className={styles.actionIcon} />{' '}
+                                Edit Details
                               </li>
                               <li
                                 className={styles.delete}

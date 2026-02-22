@@ -175,7 +175,9 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
             plank_data["grooves"] = processed_grooves
 
         # Extract minifix holes
-        minifix_holes = catalog_data.get("minifix_holes", catalog_data.get("minifixHoles", []))
+        minifix_holes = catalog_data.get(
+            "minifix_holes", catalog_data.get("minifixHoles", [])
+        )
         if minifix_holes:
             processed_holes = []
             for hole in minifix_holes:

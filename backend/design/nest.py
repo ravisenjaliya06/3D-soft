@@ -237,7 +237,6 @@ class NestingService:
         global_sheet_count = 1
 
         for i, thickness in enumerate(sorted_thicknesses):
-            material_code = chr(65 + i)  # A, B, C...
             material_files = files_by_depth[thickness]
 
             remaining_files = dict(material_files)
@@ -349,6 +348,7 @@ class NestingService:
         Generates and saves the raw nesting layout data as a JSON file.
         This provides precise data about positioning, rotation, and machining for frontend visualizations.
         """
+        # Python imports
         import json
 
         json_path = os.path.join(os.path.dirname(output_path), "nesting_data.json")

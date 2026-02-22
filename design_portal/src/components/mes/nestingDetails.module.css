@@ -20,7 +20,8 @@
   flex-direction: column;
 }
 
-.loader, .error {
+.loader,
+.error {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -225,4 +226,3 @@
   pointer-events: none;
   min-width: 200px;
 }
-

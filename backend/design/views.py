@@ -388,9 +388,13 @@ class NestAPIViewset(ModelViewSet):
         elif format_type == "json":
             # Auto-trigger nesting to generate the latest layout data
             nesting_response = self.nesting(request, design_id)
-            if hasattr(nesting_response, "status_code") and nesting_response.status_code not in (200, 201):
+            if hasattr(
+                nesting_response, "status_code"
+            ) and nesting_response.status_code not in (200, 201):
                 return Response(
-                    {"error": "Could not generate nesting data. Ensure the design has planks."},
+                    {
+                        "error": "Could not generate nesting data. Ensure the design has planks."
+                    },
                     status=HTTP_400_BAD_REQUEST,
                 )
 
@@ -400,7 +404,10 @@ class NestAPIViewset(ModelViewSet):
                 with open(json_path, "r", encoding="utf-8") as f:
                     return Response(json.load(f), status=HTTP_200_OK)
             else:
-                return Response({"error": "Nesting data not found after generation"}, status=HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "Nesting data not found after generation"},
+                    status=HTTP_404_NOT_FOUND,
+                )
         else:
             return Response(
                 {
