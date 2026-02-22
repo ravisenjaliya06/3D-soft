@@ -280,7 +280,6 @@ class NestingService:
                     safe_h = self._safe_float(h)
 
                     item_details = files.get(rid, {})
-
                     unique_id = f"SHEET{global_sheet_count:02d}{item_counter:02d}"
 
                     all_packed_items.append(
@@ -308,6 +307,7 @@ class NestingService:
                             "minifix_holes": item_details.get("minifix_holes", []),
                             "grooves": item_details.get("grooves", []),
                             "edgebands": item_details.get("edgebands", []),
+                            "parent_name": item_details.get("parent_name", ""),
                         }
                     )
                     item_counter += 1

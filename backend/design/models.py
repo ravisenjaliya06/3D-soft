@@ -80,8 +80,28 @@ class Design(models.Model):
     )
     is_custom = models.BooleanField(default=False)
     rendering_project_id = models.CharField(max_length=255, null=True, blank=True)
+    customer_name = models.CharField(max_length=255, null=True, blank=True)
+    project_type = models.CharField(max_length=255, null=True, blank=True)
+    project_code = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="Auto-generated readable project ID, e.g. BRV-2026-0001",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self: "Design", *args, **kwargs) -> None:
+        if not self.project_code:
+            # Django imports
+            from django.utils import timezone
+
+            year = timezone.now().year
+            # Count existing designs this year to get the next sequence number
+            count = Design.objects.filter(created_at__year=year).count() + 1
+            self.project_code = f"BRV-{year}-{count:04d}"
+        super().save(*args, **kwargs)
 
     def __str__(self: "Design") -> str:
         return self.design_name

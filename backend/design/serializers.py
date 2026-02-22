@@ -37,14 +37,16 @@ class DesignSerializer(serializers.ModelSerializer):
             "status",
             "is_custom",
             "custom_design_picture",
-            "is_custom",
             "rendering_project_id",
+            "customer_name",
+            "project_type",
+            "project_code",
             "created_at",
             "updated_at",
             "organization",
             "created_by",
         ]
-        read_only_fields = ["id", "organization", "created_by"]
+        read_only_fields = ["id", "organization", "created_by", "project_code"]
 
     def __init__(self: "DesignSerializer", *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
