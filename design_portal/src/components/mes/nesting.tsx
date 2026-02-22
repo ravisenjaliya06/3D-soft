@@ -76,7 +76,7 @@ const Nesting = () => {
     setIsGeneratingBOM(true);
     try {
       // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(`design/${design_id}/`);
+      const designResponse: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
       const design = designResponse.data;
 
       // 2. Fetch Nesting Data (Layout with holes/grooves/edgebands)
@@ -119,19 +119,6 @@ const Nesting = () => {
         const reduxPart = data.find(
           (d: any) =>
             d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
-        );
-
-        console.log(
-          'Processing part:',
-          p.id || p.ID,
-          'layoutData ID:',
-          layoutUniqueId,
-          'Matched Redux Type:',
-          reduxPart?.type,
-          'Redux unique_id:',
-          reduxPart?.unique_id,
-          'Redux EdgeBanding:',
-          reduxPart?.edgeBanding
         );
 
         let eBands = p.edgebands || [];
