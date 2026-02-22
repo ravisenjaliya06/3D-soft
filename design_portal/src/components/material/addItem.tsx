@@ -1,11 +1,10 @@
 import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { assets, DESIGN } from '@/svgPaths';
+import { assets } from '@/svgPaths';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import type React from 'react';
-import { Suspense, useEffect, useState } from 'react';
+import React, { Fragment, Suspense, useEffect, useState } from 'react';
 import { formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import styles from './material.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
@@ -3346,7 +3345,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               onFocus={onActivate}
               placeholder={field.placeholder}
               className="text-[#392579]"
-              mediumField={true}
+              fullWidth={true}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 handleInputChange(field.key, e.target.value)
               }
@@ -3360,7 +3359,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       case 'toggle':
         return (
-          <label className="flex cursor-pointer content-around items-center gap-2 select-none">
+          <label className={styles.toggleLabel}>
             <div className="relative">
               <input
                 type="checkbox"
@@ -3369,17 +3368,11 @@ const AddMaterialPopup: React.FC<Props> = ({
                 onChange={(e) => handleInputChange(field.key, e.target.checked)}
                 disabled={field.disabled}
               />
-
-              <div
-                className={`relative h-[1.5625rem] w-[2.8125rem] rounded-[1.25rem] border border-[#D5D5D5] transition-colors duration-300 ${value ? 'bg-[#392579]' : 'bg-[#fff]'}`}
-              >
-                <div
-                  className={`absolute top-[0.1875rem] left-[0.1875rem] h-[1.125rem] w-[1.125rem] rounded-full border border-[#D5D5D5] ring-2 transition-all transition-transform duration-300 ease-in-out ${value ? 'translate-x-[1.25rem] bg-[#fff] ring-[#392579]' : 'bg-[#392579] ring-[#fff]'}`}
-                ></div>
+              <div className={`${styles.toggleSwitch} ${value ? styles.active : ''}`}>
+                <div className={styles.toggleThumb} />
               </div>
             </div>
-
-            <span className="pl-[1rem] text-sm font-medium text-[#392579]">{field.label}</span>
+            <span className={styles.toggleText}>{field.label}</span>
           </label>
         );
 
@@ -3388,7 +3381,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           <div title={field.label}>
             <InputField
               label={field.label}
-              minField={true}
+              fullWidth={true}
               type="number"
               value={value}
               onFocus={onActivate}
@@ -3411,6 +3404,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               value={value}
               onFocus={onActivate}
               placeholder={field.placeholder}
+              fullWidth={true}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleInputChange(field.key, e.target.files ? e.target.files[0] : null)
               }
@@ -3430,6 +3424,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type="text"
               value={value}
               onFocus={onActivate}
+              fullWidth={true}
               placeholder={field.placeholder}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleInputChange(field.key, e.target.value)
@@ -3477,216 +3472,182 @@ const AddMaterialPopup: React.FC<Props> = ({
   }, [currentStep]);
 
   return (
-    <div className="fixed inset-0 m-[1rem] mt-[5.75rem] mr-[13rem] ml-[21rem] grid flex-1 grid-rows-1 items-center justify-center gap-[0rem] gap-[1.5rem] pt-[0rem] pl-[2.5rem]">
-      <div className="flex h-[4.94rem] w-[65vw] max-w-[90%] items-center justify-center rounded-[0.5rem] border border-[#d8cffc] bg-gradient-to-r from-[rgba(255,255,255,1)] to-[rgba(245,229,255,1)] px-[1.5rem] py-4 shadow-sm">
-        <div className="flex items-center justify-center gap-[0.5rem]">
+    <div className={styles.addMaterialPageWrapper}>
+      <div className={styles.addMaterialCard}>
+        {/* Header Section */}
+        <div className={styles.formHeader}>
+          <div className={styles.formTitleSection}>
+            <h3>{currentPopup?.title || 'Add New Material'}</h3>
+            <p className={styles.formSubtitle}>
+              Fill in the details and choose the materials that perfectly match your needs.
+            </p>
+          </div>
+        </div>
+
+        {/* Step Indicator Section */}
+        <div className={styles.stepIndicatorWrapper}>
           {steps.map((label, index) => {
             const isCurrent = index === uiStep;
             const isCompleted = index < uiStep;
 
             return (
-              <div
-                key={label}
-                className="flex cursor-pointer items-center gap-[0.5rem] transition-all"
-                onClick={() => handleStepClick(index)}
-              >
-                {/* STEP BOX */}
+              <Fragment key={label}>
                 <div
-                  className={`flex h-[1.94rem] w-[1.94rem] shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-all ${
-                    isCurrent || isCompleted
-                      ? 'border-[#4b2aad] bg-[#4b2aad]'
-                      : 'border-[#b8aef3] bg-white'
-                  }`}
+                  className={`${styles.stepItem} ${isCurrent ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}
+                  onClick={() => handleStepClick(index)}
                 >
-                  {isCurrent ? (
-                    <img
-                      src="/assets/material/Checkcircle.svg"
-                      alt="Current Step"
-                      className="h-[1.3rem] w-[1.3rem]"
-                    />
-                  ) : (
-                    <span
-                      className={`text-sm font-semibold ${
-                        isCompleted ? 'text-[var(--primary-white)]' : 'text-[var(--primary-color)]'
-                      }`}
-                    >
-                      {index + 1}
-                    </span>
-                  )}
+                  <div className={styles.stepCircle}>
+                    {isCompleted ? (
+                      <img
+                        src="/assets/material/Checkcircle.svg"
+                        alt="Completed"
+                        className="h-5 w-5"
+                      />
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <span className={styles.stepLabel}>{label}</span>
                 </div>
-
-                {/* LABEL */}
-                <span
-                  className={`text-sm font-medium ${
-                    isCurrent || isCompleted
-                      ? 'text-[var(--primary-color)]'
-                      : 'text-[var(--primary-color)]'
-                  }`}
-                >
-                  {label}
-                </span>
-
-                {/* CONNECTOR */}
-                {index < steps.length - 1 && (
-                  <div
-                    className={`h-[0.25rem] w-[9rem] rounded-[0.2rem] ${
-                      index < uiStep ? 'bg-[#4b2aad]' : 'bg-[#d8cffc]'
-                    }`}
-                  />
-                )}
-              </div>
+                {index < steps.length - 1 && <div className={styles.stepConnector} />}
+              </Fragment>
             );
           })}
         </div>
-      </div>
 
-      <div
-        className={`${styles.custom_scrollbar} flex h-[70vh] max-h-[90vh] w-[65vw] max-w-[90%] rounded-[0.8rem] border border-[#6F6C8F]/50 bg-[#fff] px-[1.5rem] pt-[1.5rem]`}
-      >
-        <div className="relative flex h-full flex-2 flex-col p-8">
-          <div className="relative mb-8 shrink-0">
-            <div className="font-[var(--font-family)]">
-              <h3 className="mb-[0.5rem] text-[1.5rem] font-[400] text-[#170F49]">
-                {currentPopup?.title || 'Add New Material'}
-              </h3>
-              <p className="mt-[0rem] text-sm font-normal text-[#6F6C8F]">
-                Fill in the details and choose the materials that perfectly match your needs.
-              </p>
-            </div>
-          </div>
-
+        {/* Form Body Section */}
+        <div className={`${styles.formContentScroll} ${styles.custom_scrollbar}`}>
           {(() => {
-            // Check if any field in the current popup has an image
             const hasImageFields = currentPopup?.fields.some((field) => field.img);
+            const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
 
             return (
-              <div className="mb-8 flex w-[95%] flex-1 flex-row gap-6 overflow-hidden lg:flex-col">
-                <div
-                  className={`${hasImageFields ? 'w-1/2' : 'w-full'} overflow-x-hidden overflow-y-auto pr-2 ${styles.custom_scrollbar}`}
-                >
-                  {hasImageFields ? (
-                    <div className="flex flex-wrap gap-2">
-                      {currentPopup?.fields.map((field, index) => {
-                        const isSmall = field.type === 'toggle' || field.type === 'number';
-                        return (
-                          <div
-                            key={field.key || index}
-                            className={`m-[1rem] pt-3 pb-2 ${
-                              isSmall ? 'max-w-[100%] min-w-[12.5rem] flex-1' : 'w-full'
-                            }`}
-                          >
-                            {renderField(field, () => setActiveFieldKey(field.key))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-x-4">
-                      {currentPopup?.fields.map((field, index) => {
-                        const isSmall = field.type === 'toggle' || field.type === 'number';
-                        return (
-                          <div
-                            key={field.key || index}
-                            className={`m-[1rem] pt-3 pb-2 ${
-                              isSmall ? 'max-w-[48%] min-w-[12.5rem] flex-1' : 'w-[48%]'
-                            } ${isSmall ? 'flex h-[2.5rem] flex-wrap gap-3' : ''}`}
-                          >
-                            {renderField(field)}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+              <div
+                className={`${styles.formGrid} ${!hasImageFields && !isModelStep ? styles.fullWidthGrid : ''}`}
+              >
+                {/* Left Side: Fields */}
+                <div className={styles.fieldsContainer}>
+                  {currentPopup?.fields.map((field, index) => {
+                    const isPricingStep = currentPopup?.title === 'Pricing Details';
+                    // Allow 2 fields per row in pricing step, but make 'waste' full-width
+                    // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
+                    const isFullWidth =
+                      field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
+
+                    return (
+                      <div
+                        key={field.key || index}
+                        className={`${styles.fieldWrapper} ${isFullWidth ? styles.fieldWrapperFull : ''}`}
+                      >
+                        {renderField(field, () => setActiveFieldKey(field.key))}
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {hasImageFields &&
-                  (() => {
-                    const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
-                    const modelFieldInStep = currentPopup?.fields.find(
-                      (f) => f.key === 'model_file'
-                    );
-
-                    if (activeFieldKey === 'model_file' && modelFieldInStep) {
-                      return (
-                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
-                          <ModelViewer file={(formData.model_file as File) || null} />
-                        </div>
+                {/* Right Side: Preview (Sticky) */}
+                {(hasImageFields || isModelStep) && (
+                  <div className={styles.previewArea}>
+                    {(() => {
+                      const activeField = currentPopup?.fields.find(
+                        (f) => f.key === activeFieldKey
                       );
-                    }
+                      const modelFieldInStep = currentPopup?.fields.find(
+                        (f) => f.key === 'model_file'
+                      );
 
-                    if (activeField?.img) {
-                      return (
-                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
+                      if (activeFieldKey === 'model_file' && modelFieldInStep) {
+                        return (
+                          <div className={styles.modelViewerContainer}>
+                            <ModelViewer file={(formData.model_file as File) || null} />
+                          </div>
+                        );
+                      }
+
+                      if (activeField?.img) {
+                        return (
                           <img
                             src={activeField.img}
-                            className="ml-[3rem] max-h-full w-[21rem] max-w-full rounded-[0.5rem] border-2 border-[#6F6C8F] object-contain shadow-md"
-                            alt="Field Preview"
+                            className={styles.previewImage}
+                            alt="Visual Guide"
                           />
-                        </div>
-                      );
-                    }
+                        );
+                      }
 
-                    // Fallback to model viewer if we are on the model upload step and a model exists
-                    if (!activeFieldKey && formData.model_file && modelFieldInStep) {
+                      // Default to model viewer if on model step
+                      if (isModelStep && formData.model_file) {
+                        return (
+                          <div className={styles.modelViewerContainer}>
+                            <ModelViewer file={formData.model_file as File} />
+                          </div>
+                        );
+                      }
+
+                      // If no active field with image, show a placeholder if we have ANY image fields in this step
+                      const firstImgField = currentPopup?.fields.find((f) => f.img);
+                      if (firstImgField?.img) {
+                        return (
+                          <img
+                            src={firstImgField.img}
+                            className={styles.previewImage}
+                            alt="Visual Guide"
+                          />
+                        );
+                      }
+
                       return (
-                        <div className="flex w-[30rem] shrink-0 items-center justify-center overflow-hidden">
-                          <ModelViewer file={formData.model_file as File} />
+                        <div className="text-sm text-slate-400 italic">
+                          Select a field to see visual guide
                         </div>
                       );
-                    }
-
-                    return null;
-                  })()}
+                    })()}
+                  </div>
+                )}
               </div>
             );
           })()}
+        </div>
 
-          <div className="mt-auto flex shrink-0 items-center justify-between border-[#f0f0f0] pt-4 pb-[1rem]">
-            <p className="text-[0.9rem] text-[#666]">
-              Step {currentStep + 1} of {currentSequence.length}
-            </p>
+        {/* Footer Section */}
+        <div className={styles.formFooter}>
+          <div className={styles.stepProgressText}>
+            Step {currentStep + 1} of {currentSequence.length}
+          </div>
 
-            <div className="mr-[3rem] flex gap-[1rem]">
-              <button
-                className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#392579] transition-all duration-200 hover:bg-[#e5e5e5]"
-                onClick={() => setCreateWorkOrderPopup(false)}
-              >
-                Cancel
+          <div className={styles.buttonGroup}>
+            <button className={styles.btnSecondary} onClick={() => setCreateWorkOrderPopup(false)}>
+              Cancel
+            </button>
+
+            {!isFirstStep && (
+              <button className={styles.btnSecondary} onClick={handleBack}>
+                Back
               </button>
-              {!isFirstStep && (
-                <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border border-[#A0AEC0] bg-[#fff] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#392579] transition-all duration-200 hover:bg-[#f8f9ff]"
-                  onClick={handleBack}
-                >
-                  Back
-                </button>
-              )}
+            )}
 
-              {!isLastStep ? (
+            {!isLastStep ? (
+              <button
+                className={styles.btnPrimary}
+                onClick={handleNext}
+                disabled={!formData.name && currentStep === 0}
+              >
+                Next
+              </button>
+            ) : (
+              <div className="relative">
                 <button
-                  className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)] disabled:cursor-not-allowed disabled:bg-[#ccc]"
-                  onClick={handleNext}
-                  disabled={!formData.name && currentStep === 0}
+                  className={`${styles.btnPrimary} ${styles.btnFinish}`}
+                  onClick={handleFinish}
                 >
-                  Next
+                  Finish
                 </button>
-              ) : (
-                <>
-                  <button
-                    className="h-[2rem] w-[7rem] cursor-pointer rounded-[0.3125rem] border-0 bg-[#392579] px-6 py-3 font-['Comfortaa'] text-[0.7rem] text-[#fff] transition-all duration-200 hover:bg-[var(--primary-color)]"
-                    onClick={handleFinish}
-                  >
-                    Finish
-                  </button>
-                  {errorMessage && (
-                    <div className={styles.errorPopup}>
-                      <img src={DESIGN.error} alt="Error" />
-                      <p className="mt-[1rem] text-sm text-red-600">{errorMessage}</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                {errorMessage && (
+                  <div className="absolute right-0 bottom-full mb-4 w-64 animate-bounce rounded-lg border border-red-200 bg-red-50 p-3 shadow-xl">
+                    <p className="text-xs font-medium text-red-600">{errorMessage}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
