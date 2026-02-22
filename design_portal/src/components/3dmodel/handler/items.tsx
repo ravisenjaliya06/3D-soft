@@ -317,14 +317,10 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
             depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
           };
 
-      const worldPosition = new THREE.Vector3();
-      child.getWorldPosition(worldPosition);
-      const localPosition = cupboardMesh.worldToLocal(worldPosition);
-
       planks.push({
         id: child.userData.objectId || child.uuid,
         name: child.name,
-        position: { x: localPosition.x, y: localPosition.y, z: localPosition.z },
+        position: { x: child.position.x, y: child.position.y, z: child.position.z },
         width: width,
         height: height,
         depth: depth,

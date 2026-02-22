@@ -234,6 +234,7 @@ class NestingService:
         sorted_thicknesses = sorted(files_by_depth.keys(), reverse=True)
 
         all_packed_items = []
+        global_sheet_count = 1
 
         for i, thickness in enumerate(sorted_thicknesses):
             material_code = chr(65 + i)  # A, B, C...
@@ -281,7 +282,7 @@ class NestingService:
 
                     item_details = files.get(rid, {})
 
-                    unique_id = f"{material_code}{sheet_count}.{item_counter}"
+                    unique_id = f"SHEET{global_sheet_count:02d}{item_counter:02d}"
 
                     all_packed_items.append(
                         {
@@ -298,17 +299,22 @@ class NestingService:
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
                             "is_rotated": is_rotated,
-                            "sheet_num": f"{material_code}{sheet_count}",  # Grouping for visualization
+                            "sheet_num": f"SHEET{global_sheet_count:02d}",  # Grouping for visualization
+                            "sheet_width": self.bin_width,
+                            "sheet_height": self.bin_height,
+                            "sheet_thickness": thickness,
                             "original_height": extras.get("original_height"),
                             "material_name": item_details.get("material_name", ""),
                             "depth": item_details.get(KEY_DEPTH, 17.0),
                             "minifix_holes": item_details.get("minifix_holes", []),
                             "grooves": item_details.get("grooves", []),
+                            "edgebands": item_details.get("edgebands", []),
                         }
                     )
                     item_counter += 1
 
                 sheet_count += 1
+                global_sheet_count += 1
                 remaining_files = best_unplaced
 
         return all_packed_items

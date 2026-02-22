@@ -310,6 +310,10 @@ class NestAPIViewset(ModelViewSet):
             design_setting.sheet_height if design_setting else NESTING_SHEET_HEIGHT
         )
 
+        # Force horizontal sheet orientation
+        if main_sheet_width < main_sheet_height:
+            main_sheet_width, main_sheet_height = main_sheet_height, main_sheet_width
+
         # Normalize data for nesting
         normalized = {}
         for rid, item in parsed_data.items():
@@ -382,16 +386,15 @@ class NestAPIViewset(ModelViewSet):
         elif format_type == "xml_zip":
             file_path = f"{base_path}/xml_files.zip"
         elif format_type == "json":
-            json_path = f"{base_path}/nesting_data.json"
-            if not os.path.exists(json_path):
-                # Auto-trigger nesting to generate the file
-                nesting_response = self.nesting(request, design_id)
-                if hasattr(nesting_response, "status_code") and nesting_response.status_code not in (200, 201):
-                    return Response(
-                        {"error": "Could not generate nesting data. Ensure the design has planks."},
-                        status=HTTP_400_BAD_REQUEST,
-                    )
+            # Auto-trigger nesting to generate the latest layout data
+            nesting_response = self.nesting(request, design_id)
+            if hasattr(nesting_response, "status_code") and nesting_response.status_code not in (200, 201):
+                return Response(
+                    {"error": "Could not generate nesting data. Ensure the design has planks."},
+                    status=HTTP_400_BAD_REQUEST,
+                )
 
+            json_path = f"{base_path}/nesting_data.json"
             # File should exist now — read and return it
             if os.path.exists(json_path):
                 with open(json_path, "r", encoding="utf-8") as f:
