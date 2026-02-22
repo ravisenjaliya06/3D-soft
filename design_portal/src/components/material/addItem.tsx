@@ -56,6 +56,7 @@ type Props = {
   companyId: string;
   handleGetCompanyMaterials: (companyId: string) => void;
   selectedType: string | null;
+  initialData?: any;
 };
 
 interface PopupStep {
@@ -88,6 +89,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   companyId,
   handleGetCompanyMaterials,
   selectedType,
+  initialData,
 }) => {
   if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
     console.log(companyId);
@@ -98,7 +100,12 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [errorMessage, setFinishError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedType) {
+    if (initialData) {
+      setFormData(initialData);
+      if (initialData.type) {
+        setSelectedMaterialType(initialData.type);
+      }
+    } else if (selectedType) {
       const formattedType = formatEnumLabel(selectedType);
 
       setFormData((prev) => ({
@@ -108,7 +115,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       setSelectedMaterialType(formattedType);
     }
-  }, [selectedType]);
+  }, [selectedType, initialData]);
+
+  const currentTypeForSequence = selectedMaterialType || (selectedType ? formatEnumLabel(selectedType) : '');
 
   // Material type options
   const materialTypes = [
@@ -2945,7 +2954,11 @@ const AddMaterialPopup: React.FC<Props> = ({
     return sequence;
   };
 
-  const currentSequence = getPopupSequence(formatEnumLabel(selectedType ? selectedType : ''));
+  useEffect(() => {
+    setCurrentStep(0);
+  }, [currentTypeForSequence]);
+
+  const currentSequence = getPopupSequence(currentTypeForSequence);
   const currentPopup = currentSequence[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === currentSequence.length - 1;
@@ -3313,16 +3326,22 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
 
     try {
-      const response = await commonService.post(
-        API_ENDPOINT.CREATE_COMPANY_MATERIAL(companyId),
-        finalData
-      );
+      const isEdit = !!initialData?.id;
+      const endpoint = isEdit
+        ? companyId
+          ? API_ENDPOINT.UPDATE_COMPANY_MATERIAL_DETAIL(companyId, initialData.id)
+          : API_ENDPOINT.UPDATE_MATERIAL(initialData.id)
+        : API_ENDPOINT.CREATE_COMPANY_MATERIAL(companyId);
+
+      const response = isEdit
+        ? await commonService.put(endpoint, finalData)
+        : await commonService.post(endpoint, finalData);
 
       if (response.status === 201 || response.status === 200) {
         setCreateWorkOrderPopup(false);
         handleGetCompanyMaterials(companyId);
       } else {
-        setFinishError('Failed to create material. Please try again.');
+        setFinishError(`Failed to ${isEdit ? 'update' : 'create'} material. Please try again.`);
       }
     } catch (error) {
       setFinishError('Finish action failed. Please check your inputs or try again.');
@@ -3341,7 +3360,7 @@ const AddMaterialPopup: React.FC<Props> = ({
             <InputField
               label={field.label}
               type="select"
-              value={field.key === 'type' && selectedType ? formatEnumLabel(selectedType) : value}
+              value={field.key === 'type' && currentStep === 0 ? selectedMaterialType : value}
               onFocus={onActivate}
               placeholder={field.placeholder}
               className="text-[#392579]"
