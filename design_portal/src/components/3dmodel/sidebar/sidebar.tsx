@@ -13,12 +13,14 @@ import {
   removeLShapeObjects,
   removeNailers,
   removeSkirtingPlanks,
+  updateDoorType,
   updateDrawerType,
 } from '../design/scene';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
+  DOOR_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
   INVISIBLE_BOXES,
@@ -57,7 +59,7 @@ import { DistanceTool } from '../design/distance/distance';
 import { getActiveUnit, unitToMeters } from '../handler/unitConversion';
 import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
-import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
+import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
@@ -129,6 +131,8 @@ const Sidebar: React.FC = () => {
 
   const isHorizontalPlank = selectedObject?.name?.includes(itemType.HORIZONTAL_PLANK) ?? false;
   const isVerticalPlank = selectedObject?.name?.includes(itemType.VERTICAL_PLANK) ?? false;
+  // const isDoorSelected = selectedObject?.type === PART_TYPES.DOOR;
+  // const isDrawerSelected = selectedObject?.type === PART_TYPES.DRAWER || selectedObject?.name === 'Drawer';
 
   useEffect(() => {
     if (selectedObjectId || selectedChildObjectId) {
@@ -246,7 +250,7 @@ const Sidebar: React.FC = () => {
   }, []);
 
   // let handleObject = objects.find((obj) => obj.id === targetId);
-  const handleObject = findMeshById(scene, targetId ? targetId : '', true);
+  const handleObject = findMesh(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -806,10 +810,10 @@ const Sidebar: React.FC = () => {
       requestAnimationFrame(() => {
         let cupboardMesh: THREE.Mesh | null = null;
         if (isFullCupboard) {
-          cupboardMesh = findMeshById(scene, selectedObject.id);
+          cupboardMesh = findMesh(scene, selectedObject.id);
         } else if (selectedObject.parent) {
           // If it's a child (plank), find the parent cupboard
-          cupboardMesh = findMeshById(scene, selectedObject.parent);
+          cupboardMesh = findMesh(scene, selectedObject.parent);
         }
 
         if (cupboardMesh && cupboardMesh.userData.isMain) {
@@ -1285,7 +1289,7 @@ const Sidebar: React.FC = () => {
     };
 
     // Find the cupboard mesh using utility function
-    const cupboardMesh = findMeshById(scene, selectedObject.id);
+    const cupboardMesh = findMesh(scene, selectedObject.id);
 
     // Regenerate minifixes with the new settings
     if (cupboardMesh && cupboardMesh.userData.isMain) {
@@ -1678,22 +1682,20 @@ const Sidebar: React.FC = () => {
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
             <button
               onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isSettingOpen
+              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
                   ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+                } `}
             >
               Setting
             </button>
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
                   ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+                } `}
             >
               Navigation
             </button>
@@ -1753,11 +1755,10 @@ const Sidebar: React.FC = () => {
                             >
                               {/* Knob */}
                               <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  minifixEnabled
+                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
                                     ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                     : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                }`}
+                                  }`}
                               />
                             </div>
                             <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -2088,12 +2089,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                          | 'top'
-                                          | 'bottom'
-                                          | 'left'
-                                          | 'right'
-                                          | 'front'
-                                          | 'back',
+                                        | 'top'
+                                        | 'bottom'
+                                        | 'left'
+                                        | 'right'
+                                        | 'front'
+                                        | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -2178,11 +2179,10 @@ const Sidebar: React.FC = () => {
                                                 key={idx}
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
-                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                                  isActive
+                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
                                                     ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
                                                     : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                } `}
+                                                  } `}
                                               >
                                                 <img
                                                   src={icon}
@@ -2403,11 +2403,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                topPlankEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2455,11 +2454,10 @@ const Sidebar: React.FC = () => {
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
                           >
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.nailerEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.nailerEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2486,11 +2484,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                frontpanelEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2572,6 +2569,69 @@ const Sidebar: React.FC = () => {
                             <option value="Right">Right</option>
                             <option value="Top">Top</option>
                             <option value="Bottom">Bottom</option>
+                          </select>
+                        </div>
+
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Open/Close
+                          </p>
+                          <button
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            onClick={handleOpenCloseChange}
+                          >
+                            Open/Close
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
+              {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Door
+                      </p>
+                      <button
+                        onClick={() => toggleSection('layout')}
+                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                      >
+                        <img
+                          src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
+                      </button>
+                    </div>
+                    {!collapsed.layout && (
+                      <>
+                        <div className="relative flex items-center justify-between pl-[0rem]">
+                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                            Door Type
+                          </p>
+                          <select
+                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isQuickHideActive}
+                            value={
+                              selectedObject?.doorType === DOOR_TYPES.INSET
+                                ? DOOR_TYPES.INSET
+                                : DOOR_TYPES.OVERLAY
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (selectedObject?.id) {
+                                updateDoorType(scene, selectedObject.id, value);
+                              }
+                            }}
+                          >
+                            <option value={DOOR_TYPES.INSET}>In to In</option>
+                            <option value={DOOR_TYPES.OVERLAY}>Out to Out</option>
                           </select>
                         </div>
 
@@ -2755,9 +2815,8 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />

@@ -285,6 +285,7 @@ export function convertKeysToCamel<T>(obj: Object): T {
 }
 
 function camelToSnake(key: string): string {
+  if (key === 'edgeBanding') return 'edgeband';
   return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 
@@ -451,7 +452,7 @@ export function getNew(
   return { newGeometry, newPosition };
 }
 
-export function findMeshById(
+export function findMesh(
   scene: THREE.Scene,
   objectId: string,
   isHandle?: boolean

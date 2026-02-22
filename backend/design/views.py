@@ -328,6 +328,7 @@ class NestAPIViewset(ModelViewSet):
                 "minifix_holes": item.get("minifix_holes", []),
                 "position": item.get("position", {}),
                 "rotation": item.get("rotation", {}),
+                "parent_name": item.get("parent_name", ""),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")

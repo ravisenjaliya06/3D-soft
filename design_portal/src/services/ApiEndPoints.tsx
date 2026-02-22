@@ -62,6 +62,7 @@ export const API_ENDPOINT = {
   UPDATE_ORGANIZATION_DETAILS: 'user/organization/update/',
   UPDATE_DESIGN_SETTING: 'design/setting/',
   EDIT_ORGANIZATION_USER: (userID: string) => `user/organization/edit_user/${userID}/`,
+  GET_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,
   UPDATE_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,
   UPDATE_OBJECT_DATA: (designID: string) => `design/${designID}/object/`,
   UPDATE_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,

@@ -24,6 +24,8 @@ const Designs = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -82,6 +84,20 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter a creative name...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
+    },
+    {
+      label: 'Customer Name (Optional)',
+      id: 'customer',
+      type: 'text',
+      placeholder: 'Enter customer name...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
+    },
+    {
+      label: 'Project Type (Optional)',
+      id: 'project_type',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
     },
   ];
 
@@ -153,6 +169,8 @@ const Designs = () => {
     setLoading(true);
     const formData = new FormData();
     formData.append('design_name', designName);
+    if (customerName.trim()) formData.append('customer_name', customerName);
+    if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
       const response: { status: number; data: Design } = await CommonService.post(

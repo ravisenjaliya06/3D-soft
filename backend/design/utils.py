@@ -40,6 +40,13 @@ def parse_design_data(data: List[Dict]) -> Dict:
 
     result = {}
 
+    # Build a lookup of id → name so we can resolve parent cabinet names
+    id_to_name: Dict[str, str] = {}
+    for item in data:
+        item_id = str(item.get("id", ""))
+        item_name = item.get("name", "") or item.get("type", "") or item_id
+        id_to_name[item_id] = item_name
+
     for item in data:
         if item.get("isMain"):
             continue
@@ -111,9 +118,27 @@ def parse_design_data(data: List[Dict]) -> Dict:
             plank_data["minifix_holes"] = processed_holes
 
         # Extract edgeband data
-        edgebands = item.get("edgeband", [])
+        edgebands_raw = item.get("edgeband", [])
+        # Handle both object format {left: true, top: false, ...} and array format ["LEFT", ...]
+        if isinstance(edgebands_raw, dict):
+            edge_key_map = {
+                "left": "LEFT",
+                "right": "RIGHT",
+                "top": "TOP",
+                "bottom": "BOTTOM",
+                "front": "LEFT",
+                "back": "RIGHT",  # front/back are alternative names for left/right
+            }
+            edgebands = [v for k, v in edge_key_map.items() if edgebands_raw.get(k)]
+            edgebands = list(set(edgebands))  # deduplicate
+        else:
+            edgebands = edgebands_raw
         if edgebands:
             plank_data["edgebands"] = edgebands
+
+        # Store parent cabinet name for BOM Cabinet/Assembly column
+        parent_id = str(item.get("parent", ""))
+        plank_data["parent_name"] = id_to_name.get(parent_id, "") if parent_id else ""
 
         # Extract position and rotation
         plank_data["position"] = item.get("position", {"x": 0, "y": 0, "z": 0})
@@ -156,6 +181,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
             "grooves": [],
             "minifix_holes": [],
             "catalog_id": catalog_id,
+            "parent_name": catalog.parent.name if catalog.parent else "",
         }
 
         # Handle orientation based on plank name
@@ -202,7 +228,21 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         plank_data["rotation"] = catalog_data.get("rotation", {"x": 0, "y": 0, "z": 0})
 
         # Extract edgeband data
-        edgebands = catalog_data.get("edgeband", [])
+        edgebands_raw = catalog_data.get("edgeband", [])
+        # Handle both object format {left: true, top: false, ...} and array format ["LEFT", ...]
+        if isinstance(edgebands_raw, dict):
+            edge_key_map = {
+                "left": "LEFT",
+                "right": "RIGHT",
+                "top": "TOP",
+                "bottom": "BOTTOM",
+                "front": "LEFT",
+                "back": "RIGHT",  # front/back are alternative names for left/right
+            }
+            edgebands = [v for k, v in edge_key_map.items() if edgebands_raw.get(k)]
+            edgebands = list(set(edgebands))  # deduplicate
+        else:
+            edgebands = edgebands_raw
         if edgebands:
             plank_data["edgebands"] = edgebands
 

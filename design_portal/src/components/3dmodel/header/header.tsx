@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
-import { deleteObject } from '../sceneCreator/utils';
+import { convertKeysToSnake, deleteObject } from '../sceneCreator/utils';
 import { RootState, store } from '../store';
 import {
   setActiveDesignCamDepth,
@@ -22,7 +22,7 @@ import {
   setActiveDesignMinifixDiameterHole,
   setActiveDesignMinifixDistance,
 } from '../store/activeDesignSlice';
-import { setGlobalDoorsOpen } from '../store/dataSlice';
+import { setGlobalDoorsOpen, setObjects } from '../store/dataSlice';
 import {
   selectHeaderCamDepth,
   selectHeaderCamDiameter,
@@ -225,11 +225,49 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     /** Fetches nesting data for the current design and navigates to the MES screen. */
 
     setIsLoading(true);
-    const data = store.getState().data.objects;
+    let data = store.getState().data.objects;
+
+    // Generate unique Part IDs for wooden parts
+    let partCounter = 1;
+    const partsToID = [
+      'plank',
+      'backPlank',
+      'drawer',
+      'door',
+      'doubleDoor',
+      'verticalPlank',
+      'horizontalPlank',
+      'lShapeObject',
+      'uShapeObject',
+      'drawer_fascia',
+    ];
+
+    let hasChanges = false;
+    const updatedData = data.map((obj) => {
+      if (partsToID.includes(obj.type || '')) {
+        let unique_id = obj.unique_id;
+        if (!unique_id || !unique_id.startsWith('P')) {
+          unique_id = `P${String(partCounter).padStart(3, '0')}`;
+          hasChanges = true;
+        }
+        partCounter++;
+        return { ...obj, unique_id };
+      }
+      return obj;
+    });
+
+    if (hasChanges) {
+      dispatch(setObjects(updatedData));
+      data = store.getState().data.objects;
+    }
+
+    // Convert camelCase keys to snake_case (e.g. edgeBanding -> edgeband) before sending
+    const snakeData = convertKeysToSnake(data);
+
     try {
       const response: { status: number; data: Design[] } = await commonService.post(
         API_ENDPOINT.CREATE_DESIGN_NESTING(designId),
-        data
+        snakeData
       );
       if (response.status === 200) {
         router.push(`/design/${designId}/nesting`);

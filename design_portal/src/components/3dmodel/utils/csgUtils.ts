@@ -2,22 +2,27 @@ import * as THREE from 'three';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { HoleData } from '../sceneCreator/interface';
 
-export const applyCSGHoles = (baseMesh: THREE.Mesh, holes: HoleData[]): THREE.BufferGeometry => {
+export const applyCSGHoles = (
+  baseGeometry: THREE.BufferGeometry,
+  holes: HoleData[]
+): THREE.BufferGeometry => {
   if (!holes || holes.length === 0) {
-    return baseMesh.geometry.clone();
+    return baseGeometry.clone();
   }
 
   const evaluator = new Evaluator();
 
-  //its csg parts of the base mesh
-  let resultBrush = new Brush(baseMesh.geometry.clone());
+  // Initialize result brush from the clean base geometry
+  let resultBrush = new Brush(baseGeometry.clone());
 
   // Brush uses the object's matrix.
   resultBrush.updateMatrixWorld();
-  console.log(holes, 'holes');
+
   holes.forEach((hole) => {
-    const holeGeometry = new THREE.BoxGeometry(40, 60, 40);
-    console.log(holeGeometry, 'holeGeometry');
+    // Create hole geometry based on sink dimensions
+    const holeGeometry = new THREE.BoxGeometry(
+      40, 60, 40
+    );
     const holeBrush = new Brush(holeGeometry);
 
     // Set hole position and rotation relative to base mesh

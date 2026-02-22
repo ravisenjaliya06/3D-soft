@@ -10,6 +10,7 @@ import { GLBLoader } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import {
   DIRECTION_TYPES,
+  DOOR_TYPES,
   DOUBLE_DOOR_PLANK_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
@@ -24,12 +25,14 @@ import {
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { SyncManager } from '../sceneCreator/syncState';
 import { LShapeObjectManager } from '../sceneCreator/tools/lShapeObjectTool';
+import { findMesh } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
   removeObject,
   setobjectSelected,
   setSelectedChildObject,
   updateObject,
+  updateObjects,
 } from '../store/dataSlice';
 import { CustomToast } from '../utils/CustomToast';
 
@@ -320,17 +323,32 @@ export const addDoorOnInvisibleBox = async (
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const doorDepth = 18;
+  const doorType = DOOR_TYPES.INSET; // Default to Inset (In-to-In) as per request
 
-  const doorDimensions = {
-    width: w,
-    height: h,
+  let doorDimensions = {
+    width: w - 4, // Inset: Opening - 4mm gap
+    height: h - 4,
     depth: doorDepth,
   };
+
+  if (doorType === DOOR_TYPES.OVERLAY) {
+    doorDimensions = {
+      width: w + 30, // Overlay: Opening + 30mm coverage
+      height: h + 30,
+      depth: doorDepth,
+    };
+  }
+
+  // Z positioning relative to the front face (max.z):
+  // Inset: Recessed inside the frame. Center = max.z - depth/2
+  // Overlay: On top of the frame. Center = max.z + depth/2
+  const zPosOffset =
+    doorType === DOOR_TYPES.INSET ? -doorDimensions.depth / 2 : doorDimensions.depth / 2;
 
   const localDoorPos = new THREE.Vector3(
     boxCenterLocal.x,
     boxCenterLocal.y,
-    geometryBoundingBox.max.z + doorDimensions.depth / 2
+    geometryBoundingBox.max.z + zPosOffset
   );
 
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
@@ -350,7 +368,7 @@ export const addDoorOnInvisibleBox = async (
     finalPosition = {
       x: boxCenterLocal.x,
       y: boxCenterLocal.y,
-      z: geometryBoundingBox.max.z + doorDimensions.depth / 2,
+      z: geometryBoundingBox.max.z + zPosOffset,
     };
   }
 
@@ -366,6 +384,8 @@ export const addDoorOnInvisibleBox = async (
     isMain: false,
     openDirection: DIRECTION_TYPES.LEFT,
     parent: parent.userData.objectId,
+    doorType: doorType,
+    compartmentDimensions: { width: w, height: h, depth: size.z },
     material: [
       ...(Array.isArray(selectedCabinetItem.material)
         ? selectedCabinetItem.material
@@ -432,24 +452,34 @@ export const addDoubleDoorOnInvisibleBox = async (
   boxMesh.updateMatrixWorld(true);
   parent.updateMatrixWorld(true);
 
-  // Update matrices to ensure accurate positioning
-  boxMesh.updateMatrixWorld(true);
-  parent.updateMatrixWorld(true);
-
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   const doorDepth = 18;
+  const doorType = DOOR_TYPES.INSET; // Default to Inset (In-to-In)
 
-  const doorDimensions = {
-    width: w,
-    height: h,
+  let doorDimensions = {
+    width: w - 4, // Inset: Opening - 4mm gap
+    height: h - 4,
     depth: doorDepth,
   };
+
+  if (doorType === DOOR_TYPES.OVERLAY) {
+    doorDimensions = {
+      width: w + 30,
+      height: h + 30,
+      depth: doorDepth,
+    };
+  }
+
+  // Z positioning relative to the front face (max.z):
+  // Inset: Recessed inside the frame. Center = max.z - depth/2
+  // Overlay: On top of the frame. Center = max.z + depth/2
+  const zPosOffset = doorType === DOOR_TYPES.INSET ? -doorDepth / 2 : doorDepth / 2;
 
   const localDoorPos = new THREE.Vector3(
     boxCenterLocal.x,
     boxCenterLocal.y,
-    geometryBoundingBox.max.z + doorDimensions.depth / 2
+    geometryBoundingBox.max.z + zPosOffset
   );
 
   const worldDoorPos = boxMesh.localToWorld(localDoorPos.clone());
@@ -508,7 +538,7 @@ export const addDoubleDoorOnInvisibleBox = async (
     finalPosition = {
       x: boxCenterLocal.x,
       y: boxCenterLocal.y,
-      z: geometryBoundingBox.max.z + doorDimensions.depth / 2,
+      z: geometryBoundingBox.max.z + zPosOffset,
     };
   }
 
@@ -532,10 +562,12 @@ export const addDoubleDoorOnInvisibleBox = async (
     isMain: false,
     parent: parent.userData.objectId, // Parent is the cupboard/box
     material: [], // Material handled by children usually, or passed empty
+    doorType: doorType,
+    compartmentDimensions: { width: w, height: h, depth: size.z },
   };
 
-  const gapMM = 2;
-  const doorWidth = (doorDimensions.width - gapMM) / 2;
+  const gapBetweenDoors = 2;
+  const doorWidth = (doorDimensions.width - gapBetweenDoors) / 2;
 
   // Left Door
   const leftDoor: MeshObjectData = {
@@ -1167,6 +1199,148 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
     ? parentBox
     : (parentBox.parent as THREE.Mesh);
   updateMinifixesForCupboard(root);
+};
+
+export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, newType: string) => {
+  const doorMesh = findMesh(scene, doorGroupId);
+
+  if (!doorMesh || !doorMesh.parent) return;
+
+  const doorData = store.getState().data.objects.find((obj) => obj.id === doorGroupId);
+  if (!doorData) return;
+
+  const parentId = doorData.parent || '';
+  const boxMesh = findMesh(scene, parentId);
+
+  if (!boxMesh) return;
+
+  const geometry = boxMesh.geometry as THREE.BufferGeometry;
+  geometry.computeBoundingBox();
+  if (!geometry.boundingBox) return;
+
+  const size = new THREE.Vector3();
+  geometry.boundingBox.getSize(size);
+
+  const w = size.x;
+  const h = size.y;
+
+  const doorDepth = 18; // Standard door thickness
+
+  // Try to get base dimensions from stored compartment data
+  // Fallback to current dimensions + inference if missing (for legacy)
+  let baseW = w;
+  let baseH = h;
+
+  if (doorData.compartmentDimensions) {
+    baseW = doorData.compartmentDimensions.width;
+    baseH = doorData.compartmentDimensions.height;
+  } else {
+    // Fallback: This is risky as we might be looking at the Cupboard Mesh (w=CupboardWidth)
+    // If we are here, it means doorData does NOT have compartmentDimensions.
+    const isMesh = doorMesh instanceof THREE.Mesh;
+    const currentW =
+      isMesh && (doorMesh as THREE.Mesh).geometry instanceof THREE.BoxGeometry
+        ? ((doorMesh as THREE.Mesh).geometry as THREE.BoxGeometry).parameters.width
+        : doorData.dimensions.width;
+
+    const currentType = doorData.doorType || DOOR_TYPES.OVERLAY;
+
+    if (currentType === DOOR_TYPES.OVERLAY) {
+      baseW = currentW - 30;
+    } else {
+      // INSET
+      baseW = currentW + 10;
+    }
+
+    baseH =
+      isMesh && (doorMesh as THREE.Mesh).geometry instanceof THREE.BoxGeometry
+        ? ((doorMesh as THREE.Mesh).geometry as THREE.BoxGeometry).parameters.height
+        : doorData.dimensions.height;
+  }
+
+  // Calculate Target Dimensions and Position based on Type
+  // take 4 mm margin from each side
+  let targetWidth = baseW - 4; // Default Inset
+  let targetHeight = baseH - 4;
+  let zOffset = -doorDepth / 2; // Default Inset: recessed
+
+  if (newType === DOOR_TYPES.OVERLAY) {
+    targetWidth = baseW + 30; // Overlay: protruded
+    targetHeight = baseH + 30; // Overlay: protruded
+    zOffset = doorDepth / 2; // Overlay: on top
+  }
+
+  // Calculate New Z relative to the box front face
+  const boxFrontZ = geometry.boundingBox.max.z;
+  const targetZ = boxFrontZ + zOffset;
+
+  // Update Store and Scene
+  const updates: (Partial<MeshObjectData> & { id: string })[] = [];
+
+  // 1. Update Parent (Single Door or Double Door Group)
+  const updatedParentData = {
+    ...doorData,
+    id: doorData.id,
+    dimensions: {
+      ...doorData.dimensions,
+      width: targetWidth,
+      height: targetHeight,
+      depth: doorDepth,
+    },
+    position: { ...doorData.position, z: targetZ },
+    doorType: newType,
+  };
+  updates.push(updatedParentData);
+
+  // 2. Handle Double Door children
+  if (doorData.type === PART_TYPES.DOUBLE_DOOR) {
+    const gapBetweenDoors = 2;
+    const childWidth = (targetWidth - gapBetweenDoors) / 2;
+
+    // Find children in store
+    const currentObjectsInStore = store.getState().data.objects;
+    const children = currentObjectsInStore.filter((obj) => obj.parent === doorGroupId);
+
+    children.forEach((child) => {
+      const isLeft = child.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK;
+      const childX = isLeft ? -targetWidth / 2 + childWidth / 2 : targetWidth / 2 - childWidth / 2;
+
+      updates.push({
+        ...child,
+        id: child.id,
+        dimensions: {
+          ...child.dimensions,
+          width: childWidth,
+          height: targetHeight,
+          depth: doorDepth,
+        },
+        position: { ...child.position, x: childX, z: 0 }, // Relative to group center
+      });
+    });
+  }
+
+  // 3. Dispatch Batch Update
+  store.dispatch(updateObjects(updates));
+
+  // 4. Synchronize 3D Scene
+  for (const update of updates) {
+    const mesh = findMesh(scene, update.id);
+
+    if (mesh) {
+      const builder = new MeshBuilder(update as MeshObjectData, scene);
+      builder.updateMesh(mesh as THREE.Mesh, update, doorData.material);
+
+      // Refresh hinges and handles for door planks
+      if (
+        update.type === PART_TYPES.DOOR ||
+        update.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK ||
+        update.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK
+      ) {
+        await builder.updateHandle(mesh as THREE.Mesh);
+        await builder.updateHinges(mesh as THREE.Mesh);
+      }
+    }
+  }
 };
 
 export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
@@ -1947,8 +2121,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [

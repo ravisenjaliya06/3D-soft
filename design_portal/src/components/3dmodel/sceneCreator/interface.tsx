@@ -41,6 +41,11 @@ export const DRAWER_TYPES = {
   OVERLAY: 'overlay',
 };
 
+export const DOOR_TYPES = {
+  INSET: 'inset',
+  OVERLAY: 'overlay',
+};
+
 export const DRAWER_PLANK_TYPES = {
   DRAWER_FACE: 'DRAWER_FACE_PLANK',
   FRONT_DRAWER_PLANK: 'DRAWER_FRONT_PLANK',
@@ -169,6 +174,7 @@ export interface MeshObjectData {
   position: Position;
   rotation: Rotation;
   path?: string;
+  unique_id?: string;
 
   //optional properties
   description?: string;
@@ -181,9 +187,11 @@ export interface MeshObjectData {
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  doorType?: string;
   minifixHoles?: MinifixHole[];
   minifixConnections?: MinifixConnection[];
   edgeBanding?: EdgeBandingState;
+  compartmentDimensions?: Dimensions;
 
   // Per-cupboard minifix settings (stored when cupboard is created)
   minifixDistance?: number;
