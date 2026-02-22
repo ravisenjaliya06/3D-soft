@@ -24,8 +24,9 @@
   padding: 2rem;
   overflow-y: auto;
   gap: 2rem;
-  background: radial-gradient(circle at top right, rgba(75, 42, 173, 0.05) 0%, transparent 40%),
-              radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
+  background:
+    radial-gradient(circle at top right, rgba(75, 42, 173, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
 }
 
 .maincontent::-webkit-scrollbar {
@@ -52,7 +53,9 @@
   padding: 1.25rem 2rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(57, 37, 121, 0.08);
-  box-shadow: 0 10px 30px rgba(58, 41, 124, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 10px 30px rgba(58, 41, 124, 0.04),
+    0 4px 10px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
 }
@@ -76,14 +79,14 @@
 .createdesignstext {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #170F49;
+  color: #170f49;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .createdesignssubtext {
   font-size: 0.85rem;
-  color: #6F6C8F;
+  color: #6f6c8f;
   max-width: 25rem;
   line-height: 1.5;
 }
@@ -169,7 +172,7 @@
   border: 1px solid rgba(57, 37, 121, 0.1);
   border-radius: 1rem;
   font-size: 0.9rem;
-  color: #170F49;
+  color: #170f49;
   transition: all 0.2s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 }
@@ -261,12 +264,12 @@
 .templateInfo h5 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #170F49;
+  color: #170f49;
 }
 
 .templateInfo p {
   font-size: 0.8rem;
-  color: #6F6C8F;
+  color: #6f6c8f;
   line-height: 1.4;
 }
 

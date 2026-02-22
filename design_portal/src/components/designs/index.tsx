@@ -6,7 +6,7 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
-import React, { ChangeEvent, useEffect, useRef, useState, Fragment } from 'react';
+import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { resetStoreForNewDesign, store } from '../3dmodel/store';
 import { Design, DesignResponse, User } from './interface';
 
@@ -19,7 +19,6 @@ const Designs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [activeView, setActiveView] = useState('list');
   const [visibleDesigns, setVisibleDesigns] = useState(6);
   const [showPopup, setShowPopup] = useState(false);
@@ -67,7 +66,12 @@ const Designs = () => {
     { value: 'Draft', label: 'Draft', icon: assets.draft_svg, color: styles.statusDraft },
     { value: 'Ready', label: 'Ready', icon: assets.ready_svg, color: styles.statusReady },
     { value: 'Nesting', label: 'Nesting', icon: assets.nesting_svg, color: styles.statusNesting },
-    { value: 'Completed', label: 'Completed', icon: assets.complate_svg, color: styles.statusCompleted },
+    {
+      value: 'Completed',
+      label: 'Completed',
+      icon: assets.complate_svg,
+      color: styles.statusCompleted,
+    },
     { value: 'Deleted', label: 'Deleted', icon: assets.delete_svg, color: styles.statusDelete },
   ];
 
@@ -112,14 +116,9 @@ const Designs = () => {
       } = await CommonService.get(API_ENDPOINT.GET_NON_CUSTOM_DESIGNS);
       if (response.status === 200) {
         setDesigns(response.data as Design[]);
-      } else if (response.status === 403) {
-        setError((response.data as DesignResponse).detail);
-      } else {
-        setError('Something went wrong');
       }
     } catch (e) {
       console.error('Error fetching designs:', e);
-      setError('Unauthorized Access');
     } finally {
       setLoading(false);
     }
@@ -221,11 +220,7 @@ const Designs = () => {
     }
   };
 
-  const handlathreedot = (
-    event: React.MouseEvent,
-    designId: string,
-    designStatus: string
-  ) => {
+  const handlathreedot = (event: React.MouseEvent, designId: string, designStatus: string) => {
     if (designStatus === 'Deleted') return;
     event.stopPropagation();
     setActiveDropdownId((prevId) => (prevId === designId ? null : designId));
@@ -265,15 +260,18 @@ const Designs = () => {
       // Handle Filter Dropdown
       if (
         isDropdownOpen &&
-        filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node) &&
-        dropdownButtonRef.current && !dropdownButtonRef.current.contains(event.target as Node)
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node) &&
+        dropdownButtonRef.current &&
+        !dropdownButtonRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
       }
       // Handle Action Menu
       if (
         activeDropdownId &&
-        actionDropdownRef.current && !actionDropdownRef.current.contains(event.target as Node)
+        actionDropdownRef.current &&
+        !actionDropdownRef.current.contains(event.target as Node)
       ) {
         setActiveDropdownId(null);
       }
@@ -302,7 +300,7 @@ const Designs = () => {
       <Sidebar />
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Design Studio" />
-        
+
         <div className={styles.maincontent}>
           {/* Welcome Section */}
           <div className={styles.createdesigns}>
@@ -312,7 +310,7 @@ const Designs = () => {
                 Bring your ideas to life with our advanced 3D modeling and visualization suite.
               </p>
             </div>
-            
+
             <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
@@ -334,21 +332,40 @@ const Designs = () => {
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
                 <img src={assets.createicon} className={styles.createicon} alt="Studio" />
-                <img src={assets.close} className={styles.createclose} alt="Close" onClick={() => setShowPopup(false)} />
+                <img
+                  src={assets.close}
+                  className={styles.createclose}
+                  alt="Close"
+                  onClick={() => setShowPopup(false)}
+                />
                 <div className={styles.create_right_side}>
                   <h2>New Project</h2>
                   <p>Give your design a name to get started.</p>
-                  <form onSubmit={(e) => { e.preventDefault(); handleCreateDesign(); }}>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleCreateDesign();
+                    }}
+                  >
                     <div className={styles.createinputGroup}>
                       {fields.map((field, i) => (
-                        <InputField key={i} borderColor="rgba(57, 37, 121, 0.1)" {...field} error="" />
+                        <InputField
+                          key={i}
+                          borderColor="rgba(57, 37, 121, 0.1)"
+                          {...field}
+                          error=""
+                        />
                       ))}
                     </div>
                   </form>
                 </div>
                 <div className={styles.createButtonGrop}>
-                  <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>Cancel</button>
-                  <button className={styles.createcontinueButton} onClick={handleCreateDesign}>Start Design</button>
+                  <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>
+                    Cancel
+                  </button>
+                  <button className={styles.createcontinueButton} onClick={handleCreateDesign}>
+                    Start Design
+                  </button>
                 </div>
               </div>
             </div>
@@ -369,7 +386,7 @@ const Designs = () => {
               </div>
 
               <div className={styles.designsIcon}>
-              <div className={styles.filterWrapper}>
+                <div className={styles.filterWrapper}>
                   <img
                     src={assets.sort_searching}
                     alt="Filter"
@@ -383,9 +400,16 @@ const Designs = () => {
                         <div
                           key={opt.label}
                           className={`${styles.dropdownItem} ${activeFilter === opt.value ? styles.activeDropdownItem : ''}`}
-                          onClick={() => { setActiveFilter(opt.value); setIsDropdownOpen(false); }}
+                          onClick={() => {
+                            setActiveFilter(opt.value);
+                            setIsDropdownOpen(false);
+                          }}
                         >
-                          <img src={opt.icon} alt={opt.label} className={styles.dropdownStatusIcon} />
+                          <img
+                            src={opt.icon}
+                            alt={opt.label}
+                            className={styles.dropdownStatusIcon}
+                          />
                           {opt.label}
                         </div>
                       ))}
@@ -410,7 +434,7 @@ const Designs = () => {
             <div className={styles.designviewpart}>
               {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
               {!loading && filteredDesigns.length === 0 && (
-                <div className="p-12 text-center text-slate-400 font-medium bg-white rounded-3xl border border-dashed">
+                <div className="rounded-3xl border border-dashed bg-white p-12 text-center font-medium text-slate-400">
                   No projects found matching your criteria.
                 </div>
               )}
@@ -423,7 +447,11 @@ const Designs = () => {
                       className={`${styles.designview} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
                       onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
                     >
-                      <img src={assets.design_list_icon} className={styles.design_list_icon} alt="D" />
+                      <img
+                        src={assets.design_list_icon}
+                        className={styles.design_list_icon}
+                        alt="D"
+                      />
                       <div className={styles.designviewcontent}>
                         <h4 className={styles.designName}>{design.design_name}</h4>
                         <div className={styles.designsdetailsontime}>
@@ -441,7 +469,7 @@ const Designs = () => {
                           {design.status}
                         </div>
                       </div>
-                      
+
                       <div className={styles.threedot_container}>
                         <img
                           src={assets.three_dots}
@@ -455,7 +483,10 @@ const Designs = () => {
                               <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
                                 <img src={assets.editicon} alt="" className="w-4" /> Edit Details
                               </li>
-                              <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
+                              <li
+                                className={styles.delete}
+                                onClick={(e) => handleDeleteClickPopUp(e, design.id)}
+                              >
                                 <img src={assets.deleteicon} alt="" className="w-4" /> Move to Trash
                               </li>
                             </ul>
@@ -491,7 +522,10 @@ const Designs = () => {
                                 <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
                                   <img src={assets.editicon} alt="" className="w-4" /> Edit
                                 </li>
-                                <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
+                                <li
+                                  className={styles.delete}
+                                  onClick={(e) => handleDeleteClickPopUp(e, design.id)}
+                                >
                                   <img src={assets.deleteicon} alt="" className="w-4" /> Trash
                                 </li>
                               </ul>
@@ -500,13 +534,15 @@ const Designs = () => {
                         </div>
                       </div>
                       <div className={styles.gridBottom}>
-                        <div className={`${styles.gridStatus} ${statusStyles['GRID'][design.status]}`}>
+                        <div
+                          className={`${styles.gridStatus} ${statusStyles['GRID'][design.status]}`}
+                        >
                           <img src={statusStyles['SVG'][design.status]} alt="" />
                           {design.status}
                         </div>
                         <div className={styles.gridDesignUpdateAt}>
-                           <p className={styles.geidDesignTime}>Updated</p>
-                           <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
+                          <p className={styles.geidDesignTime}>Updated</p>
+                          <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
                         </div>
                       </div>
                     </div>
@@ -517,7 +553,10 @@ const Designs = () => {
 
             {visibleDesigns < filteredDesigns.length && (
               <div className={styles.designsLoadMore}>
-                <div className={styles.loadmore} onClick={() => setVisibleDesigns(prev => prev + 6)}>
+                <div
+                  className={styles.loadmore}
+                  onClick={() => setVisibleDesigns((prev) => prev + 6)}
+                >
                   <p>View More Projects</p>
                   <img src={assets.progress_upload} alt="" className={styles.process_upload} />
                 </div>
@@ -531,7 +570,12 @@ const Designs = () => {
           <div className={styles.popupOverlay} onClick={() => setshowEditPopup(false)}>
             <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
               <img src={assets.editpopupicon} className={styles.editpopupicon} alt="Edit" />
-              <img src={assets.close} className={styles.editclose} alt="X" onClick={() => setshowEditPopup(false)} />
+              <img
+                src={assets.close}
+                className={styles.editclose}
+                alt="X"
+                onClick={() => setshowEditPopup(false)}
+              />
               <div className={styles.edit_right_side}>
                 <h3>Project Settings</h3>
                 <p>Update your design name or status below.</p>
@@ -544,8 +588,12 @@ const Designs = () => {
                 </div>
               </form>
               <div className={styles.editButtonGrop}>
-                <button className={styles.canceleditButton} onClick={() => setshowEditPopup(false)}>Cancel</button>
-                <button className={styles.continueButton} onClick={handleEditClick}>Save Changes</button>
+                <button className={styles.canceleditButton} onClick={() => setshowEditPopup(false)}>
+                  Cancel
+                </button>
+                <button className={styles.continueButton} onClick={handleEditClick}>
+                  Save Changes
+                </button>
               </div>
             </div>
           </div>
@@ -556,14 +604,23 @@ const Designs = () => {
           <div className={styles.deletepopupOverlay} onClick={() => setshowDeletePopup(false)}>
             <div className={styles.deletepopup} onClick={(e) => e.stopPropagation()}>
               <img src={assets.deletepopup} className={styles.deletepopupicon} alt="Delete" />
-              <img src={assets.close} className={styles.close} alt="X" onClick={() => setshowDeletePopup(false)} />
+              <img
+                src={assets.close}
+                className={styles.close}
+                alt="X"
+                onClick={() => setshowDeletePopup(false)}
+              />
               <div className={styles.right_side}>
                 <h2>Discard Design?</h2>
                 <p>This will move the design to the trash. You can restore it later if needed.</p>
               </div>
               <div className={styles.deleteButtonGrop}>
-                <button className={styles.cancelButton} onClick={() => setshowDeletePopup(false)}>No, Keep it</button>
-                <button className={styles.deleteButton} onClick={handleDeleteClick}>Yes, Move to Trash</button>
+                <button className={styles.cancelButton} onClick={() => setshowDeletePopup(false)}>
+                  No, Keep it
+                </button>
+                <button className={styles.deleteButton} onClick={handleDeleteClick}>
+                  Yes, Move to Trash
+                </button>
               </div>
             </div>
           </div>
