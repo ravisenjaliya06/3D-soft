@@ -278,7 +278,7 @@ const Designs = () => {
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
+  }, [isDropdownOpen, activeDropdownId]);
 
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -481,7 +481,7 @@ const Designs = () => {
                           <div className={styles.three_dots} ref={actionDropdownRef}>
                             <ul className={styles.three_dots_dropdown}>
                               <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                <img src={assets.editicon} alt="" className="w-4" /> Edit Details
+                                <img src={assets.editicon} alt="" className={styles.actionIcon} /> Edit Details
                               </li>
                               <li
                                 className={styles.delete}
@@ -541,7 +541,7 @@ const Designs = () => {
                           {design.status}
                         </div>
                         <div className={styles.gridDesignUpdateAt}>
-                          <p className={styles.geidDesignTime}>Updated</p>
+                          <p className={styles.gridDesignTime}>Updated</p>
                           <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
                         </div>
                       </div>

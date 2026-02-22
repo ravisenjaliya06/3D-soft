@@ -3,7 +3,7 @@
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
-  background-color: #f8faff;
+  background-color: var(--designpage-background-color);
 }
 
 .rightside {
@@ -37,7 +37,7 @@
 }
 
 .maincontent::-webkit-scrollbar-thumb {
-  background: rgba(57, 37, 121, 0.1);
+  background: var(--border-color);
   border-radius: 10px;
 }
 
@@ -46,7 +46,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--primary-white);
   width: 100%;
   max-width: 65rem;
   padding: 1.25rem 2rem;
@@ -102,20 +102,21 @@
 }
 
 .createdesignButtoncontent {
-  background: linear-gradient(135deg, #392579 0%, #4b2aad 100%);
-  border-radius: 1.25rem;
+  background: var(--gradient-primary);
+  border-radius: 0.6rem;
   padding: 1.25rem 2rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(57, 37, 121, 0.2);
+  box-shadow: 0 12px 24px var(--box-shadow-color);
 }
 
 .createdesignButtoncontent:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 18px 36px rgba(57, 37, 121, 0.3);
+  background: var(--gradient-primary-hover);
+  box-shadow: 0 18px 36px var(--box-shadow-color);
 }
 
 .createdesing {
@@ -130,7 +131,7 @@
 }
 
 .createdesingtext h4 {
-  color: #fff;
+  color: var(--primary-white);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
@@ -185,31 +186,31 @@
   width: 100%;
   height: 3rem;
   padding: 0 1rem 0 3rem;
-  background: #fff;
-  border: 1px solid rgba(57, 37, 121, 0.1);
-  border-radius: 1rem;
+  background: var(--primary-white);
+  border: 1px solid var(--table-title-border-color);
+  border-radius: 0.5rem;
   font-size: 0.9rem;
   color: #170f49;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 6px var(--box-shadow-color);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #392579;
-  box-shadow: 0 8px 16px rgba(57, 37, 121, 0.08);
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 16px var(--box-shadow-color);
 }
 
 .designsIcon {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  background: #fff;
+  background: var(--primary-white);
   padding: 0 0.5rem;
   height: 3rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(57, 37, 121, 0.08);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  border-radius: 0.5rem;
+  border: 1px solid var(--table-title-border-color);
+  box-shadow: 0 4px 6px var(--box-shadow-color);
 }
 
 .filterWrapper {
@@ -247,10 +248,10 @@
 }
 
 .designview {
-  background: #fff;
+  background: var(--primary-white);
   padding: 1rem 1.5rem;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(57, 37, 121, 0.06);
+  border-radius: 0.75rem;
+  border: 1px solid var(--table-title-border-color);
   display: flex;
   align-items: center;
   transition: all 0.25s ease;
@@ -272,7 +273,7 @@
 .design_list_icon {
   width: 2.5rem;
   height: 2.5rem;
-  background: #f8f9ff;
+  background: var(--primary-dark-white);
   padding: 0.6rem;
   border-radius: 0.75rem;
   margin-right: 1.5rem;
@@ -325,7 +326,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.8rem;
-  border-radius: 2rem;
+  border-radius: 0.45rem;
   width: 7.5rem;
   justify-content: center;
   font-weight: 600;
@@ -345,9 +346,9 @@
 }
 
 .gridItemContainer {
-  background: #fff;
-  border-radius: 1.5rem;
-  border: 1px solid rgba(57, 37, 121, 0.06);
+  background: var(--primary-white);
+  border-radius: 1rem;
+  border: 1px solid var(--table-title-border-color);
   padding: 1.5rem;
   transition: all 0.3s ease;
   position: relative;
@@ -391,22 +392,24 @@
 .gridBottom {
   margin-top: auto;
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-end;
   padding-top: 1.25rem;
   border-top: 1px solid rgba(57, 37, 121, 0.05);
 }
 
 .gridStatus {
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 2rem;
-  width: 6.5rem;
+  border-radius: 0.4rem;
+  width: 4.5rem;
   justify-content: center;
   font-weight: 600;
   font-size: 0.7rem;
+  justify-self: center;
 }
 
 .gridStatus img {
@@ -420,17 +423,26 @@
   align-items: center;
 }
 
-.geidDesignTime {
-  font-size: 0.65rem;
-  color: #6f6c8f;
+.gridDesignUpdateAt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.gridDesignTime {
+  font-size: 0.6rem;
+  color: #a0aec0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .gridUserSubtitle {
-  font-size: 0.75rem;
-  color: #170f49;
+  font-size: 0.8rem;
+  color: #1a202c;
+  font-weight: 600;
 }
 
 /* ─── Status Styles ─── */
@@ -477,7 +489,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.25rem;
+  z-index: 10;
 }
 
 .three_dots {
@@ -559,6 +574,18 @@
   transition: all 0.2s ease;
 }
 
+.actionIcon {
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.6;
+  filter: brightness(0.2);
+}
+
+.three_dots_dropdown li:hover .actionIcon {
+  opacity: 1;
+  filter: brightness(0);
+}
+
 .three_dots_dropdown li:hover {
   background: #f8f9ff;
   color: #392579;
@@ -589,7 +616,7 @@
 .deletepopup {
   background: #fff;
   width: 23rem;
-  border-radius: 2rem;
+  border-radius: 1rem;
   padding: 2.5rem;
   position: relative;
   box-shadow: 0 30px 60px rgba(23, 15, 73, 0.2);
@@ -657,7 +684,7 @@
 .continueButton,
 .deleteButton {
   height: 3.25rem;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   border: none;
   font-weight: 600;
   font-size: 1rem;
@@ -682,7 +709,7 @@
 .canceleditButton,
 .cancelButton {
   height: 3.25rem;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   border: 1px solid rgba(57, 37, 121, 0.1);
   background: #fff;
   color: #6f6c8f;
@@ -762,7 +789,7 @@
   top: calc(100% + 10px);
   right: -5px;
   background: #fff;
-  border-radius: 1rem;
+  border-radius: 0.6rem;
   border: 1px solid rgba(57, 37, 121, 0.08);
   box-shadow:
     0 10px 30px rgba(23, 15, 73, 0.15),
@@ -810,8 +837,8 @@
 }
 
 .dropdownStatusIcon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   opacity: 0.7;
 }
 
