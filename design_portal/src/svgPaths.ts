@@ -37,6 +37,7 @@ export const _3DMODEL = {
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
   lshape: '/assets/3dmodel/toolbar/lshape.svg',
+  ushape: '/assets/3dmodel/toolbar/ushape.svg',
   downarrow: '/assets/3dmodel/toolbar/downarrow.svg',
   uparrow: '/assets/3dmodel/toolbar/uparrow.svg',
   rightarrow: '/assets/3dmodel/toolbar/rightarrow.svg',

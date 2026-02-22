@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import shutil
 import traceback
 from typing import Any, Dict, Optional
 
@@ -331,6 +332,8 @@ class NestAPIViewset(ModelViewSet):
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
+        if os.path.exists(output_folder):
+            shutil.rmtree(output_folder, ignore_errors=True)
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, "nesting.svg")
 

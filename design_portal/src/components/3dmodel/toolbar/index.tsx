@@ -765,7 +765,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     platform: assets.platform_icon,
     sink: assets.sink_icon,
     lShapeObject: assets.lshape,
-    uShapeObject: assets.lshape,
+    uShapeObject: assets.ushape,
   };
 
   return (

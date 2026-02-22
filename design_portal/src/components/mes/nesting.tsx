@@ -3,7 +3,6 @@ import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
-import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -15,7 +14,6 @@ const Nesting = () => {
   const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
 
   const [visibleDesigns, setVisibleDesigns] = useState(50);
-  const [selectedOption, setSelectedOption] = useState('xlsx');
   const [localData, setLocalData] = useState<any[]>([]);
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
 
@@ -51,24 +49,6 @@ const Nesting = () => {
       return `${(value / 304.8).toFixed(2)} ft`;
     }
     return `${Math.round(value)} mm`;
-  };
-
-  const fileUrls: Record<string, string> = {
-    xlsx: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting.xlsx`,
-    gcode: `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/nesting_gcodes.zip`,
-  };
-
-  const handleDownload = () => {
-    const fileUrl = fileUrls[selectedOption];
-
-    if (!fileUrl) return;
-
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = fileUrl.split('/').pop() || 'file';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
   };
 
   const handleGenerateBOM = async () => {
@@ -620,43 +600,6 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                  <div className={styles.toolbaricon}></div>
-
-                  {/* ✅ Radio Group */}
-                  <div className={styles.rediogroup}>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="xlsx"
-                        checked={selectedOption === 'xlsx'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      XLSX
-                    </label>
-                    <label className={styles.label}>
-                      <input
-                        type="radio"
-                        name="option"
-                        value="gcode"
-                        checked={selectedOption === 'gcode'}
-                        className={styles.option}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                      />
-                      G-Codes
-                    </label>
-                  </div>
-
-                  {/* ✅ Download Button */}
-                  <img
-                    alt="download"
-                    src={assets.download}
-                    className={styles.download}
-                    onClick={handleDownload}
-                    style={{ cursor: 'pointer', marginRight: '1rem' }}
-                  />
-
                   {/* ✅ BOM Data Button */}
                   <button
                     onClick={handleGenerateBOM}
@@ -666,7 +609,21 @@ const Nesting = () => {
                   >
                     {isGeneratingBOM ? 'Generating...' : 'BOM Data'}
                   </button>
-
+                  <button
+                    onClick={() => {
+                      const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/xml_files.zip`;
+                      const a = document.createElement('a');
+                      a.href = fileUrl;
+                      a.download = 'xml_files.zip';
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                    }}
+                    className={styles.viewDetailsButton}
+                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                  >
+                    XMLs
+                  </button>
                   {/* ✅ View Details Button */}
                   <button
                     onClick={() => router.push(`/design/${design_id}/nesting-details`)}

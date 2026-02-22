@@ -3,6 +3,7 @@ import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
 
@@ -31,11 +32,10 @@ interface NestingFile {
 type ViewMode = 'designs' | 'sheets' | 'files';
 
 const Mes = () => {
+  const router = useRouter();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
-  const [sheets, setSheets] = useState<NestingSheet[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<NestingSheet | null>(null);
-  const [files, setFiles] = useState<NestingFile[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('designs');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,17 +83,7 @@ const Mes = () => {
         console.error('Error triggering nesting:', nestingErr);
       }
 
-      // Then fetch the sheets
-      const response: { status: number; data: NestingSheet[] } = await commonService.get(
-        API_ENDPOINT.GET_NESTING_SHEETS(design.id)
-      );
-
-      if (response.status === 200) {
-        setSheets(response.data);
-        setViewMode('sheets');
-      } else {
-        setError('No sheets found for this design');
-      }
+      router.push(`/design/${design.id}/nesting`);
     } catch (err) {
       setError('No any designs for nesting.');
       console.error('Error fetching sheets:', err);
@@ -102,88 +92,15 @@ const Mes = () => {
     }
   };
 
-  const handleSheetClick = async (sheet: NestingSheet) => {
-    if (!selectedDesign) {
-      setError('No design selected');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      setSelectedSheet(sheet);
-
-      const response: { status: number; data: NestingFile[] } = await commonService.get(
-        API_ENDPOINT.GET_NESTING_FILES_BY_SHEET(selectedDesign.id, sheet.sheet_number)
-      );
-
-      if (response.status === 200) {
-        setFiles(response.data);
-        setViewMode('files');
-      } else {
-        setError('No files found for this sheet');
-      }
-    } catch (err) {
-      setError('Failed to fetch files');
-      console.error('Error fetching files:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleBackToDesigns = () => {
     setViewMode('designs');
     setSelectedDesign(null);
-    setSheets([]);
     setSelectedSheet(null);
-    setFiles([]);
   };
 
   const handleBackToSheets = () => {
     setViewMode('sheets');
     setSelectedSheet(null);
-    setFiles([]);
-  };
-
-  const handleFileDownload = (file: NestingFile) => {
-    const filePath = file.file_path.replace('umaboy', '');
-    const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${filePath}`;
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = file.file_name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  };
-
-  const handleDownload = async (format: string) => {
-    if (!selectedDesign) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const response: { status: number; data: { file: string } } = await commonService.put(
-        API_ENDPOINT.DOWNLOAD_NESTING_PDF(selectedDesign.id),
-        { format }
-      );
-
-      if (response.status === 200 && response.data.file) {
-        const filePath = response.data.file.replace('umaboy', '');
-        const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${filePath}`;
-        const a = document.createElement('a');
-        a.href = fileUrl;
-        a.download = response.data.file.split('/').pop() || 'download';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      } else {
-        setError('Failed to download file');
-      }
-    } catch (err) {
-      setError('Error downloading file');
-      console.error('Download error:', err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -242,19 +159,6 @@ const Mes = () => {
                   {viewMode === 'sheets' && `Sheets - ${selectedDesign?.design_name || ''}`}
                   {viewMode === 'files' && `Files - Sheet ${selectedSheet?.sheet_number || ''}`}
                 </h2>
-                {viewMode === 'sheets' && (
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className={styles.viewButton} onClick={() => handleDownload('xlsx')}>
-                      Download XLSX
-                    </button>
-                    <button className={styles.viewButton} onClick={() => handleDownload('pdf')}>
-                      Download PDF
-                    </button>
-                    <button className={styles.viewButton} onClick={() => handleDownload('xml_zip')}>
-                      Download XML Zip
-                    </button>
-                  </div>
-                )}
               </div>
 
               {error && <div className={styles.errorMessage}>{error}</div>}
@@ -299,105 +203,7 @@ const Mes = () => {
                                     className={styles.viewButton}
                                     onClick={() => handleDesignClick(design)}
                                   >
-                                    View Sheets
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Sheets View */}
-                  {viewMode === 'sheets' && (
-                    <div className={styles.tablecontainer}>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Sheet #</th>
-                            <th>Width (mm)</th>
-                            <th>Height (mm)</th>
-                            <th>Efficiency (%)</th>
-                            <th>Parts Count</th>
-                            <th>Created At</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sheets.length === 0 ? (
-                            <tr>
-                              <td colSpan={7} className={styles.noData}>
-                                No sheets found for this design
-                              </td>
-                            </tr>
-                          ) : (
-                            sheets.map((sheet) => (
-                              <tr key={sheet.id}>
-                                <td>{sheet.sheet_number}</td>
-                                <td>{sheet.width}</td>
-                                <td>{sheet.height}</td>
-                                <td>
-                                  {sheet.efficiency !== null
-                                    ? `${sheet.efficiency.toFixed(2)}%`
-                                    : 'N/A'}
-                                </td>
-                                <td>{sheet.file_ids?.length || 0}</td>
-                                <td>{formatDate(sheet.created_at)}</td>
-                                <td>
-                                  <button
-                                    className={styles.viewButton}
-                                    onClick={() => handleSheetClick(sheet)}
-                                  >
-                                    View Files
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Files View */}
-                  {viewMode === 'files' && (
-                    <div className={styles.tablecontainer}>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>File Name</th>
-                            <th>File Type</th>
-                            <th>Sheet Specific</th>
-                            <th>Created At</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {files.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className={styles.noData}>
-                                No files found for this sheet
-                              </td>
-                            </tr>
-                          ) : (
-                            files.map((file) => (
-                              <tr key={file.id}>
-                                <td>{file.file_name}</td>
-                                <td>
-                                  <span className={styles.fileType}>
-                                    {file.file_type.toUpperCase()}
-                                  </span>
-                                </td>
-                                <td>{file.is_sheet_specific ? 'Yes' : 'No'}</td>
-                                <td>{formatDate(file.created_at)}</td>
-                                <td>
-                                  <button
-                                    className={styles.downloadButton}
-                                    onClick={() => handleFileDownload(file)}
-                                  >
-                                    Download
+                                    View Details
                                   </button>
                                 </td>
                               </tr>
