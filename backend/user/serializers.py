@@ -123,6 +123,7 @@ class SignupSerializer(PhoneValidationSerializer):
 
         request = self.context.get("request")
         ip_address = None
+        location = None
         if request:
             x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
             if x_forwarded_for:
@@ -130,7 +131,19 @@ class SignupSerializer(PhoneValidationSerializer):
             else:
                 ip_address = request.META.get("REMOTE_ADDR")
         
+        if ip_address and ip_address != "127.0.0.1":
+            try:
+                import urllib.request
+                import json
+                with urllib.request.urlopen(f"http://ip-api.com/json/{ip_address}", timeout=3) as response:
+                    data = json.loads(response.read().decode())
+                    if data.get("status") == "success":
+                        location = f"{data.get('city', '')}, {data.get('regionName', '')}, {data.get('country', '')}".strip(", ")
+            except Exception:
+                pass
+
         user.ip_address = ip_address
+        user.location = location
         user.save()
 
         organization, _ = Organization.objects.get_or_create(
