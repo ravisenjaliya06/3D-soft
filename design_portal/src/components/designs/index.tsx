@@ -222,30 +222,47 @@ const Designs = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const buildDesignFormData = (includeStatus = false) => {
+    const formData = new FormData();
+
+    formData.append('design_name', designName);
+
+    if (includeStatus) {
+      formData.append('status', designStatus);
+    }
+
+    const fields: Record<string, string> = {
+      customer_name: customerName,
+      customer_company: customerCompany,
+      customer_address: customerAddress,
+      customer_gstin: customerGstin,
+      customer_contact: customerContact,
+      customer_email: customerEmail,
+      project_type: projectType,
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value?.trim()) {
+        formData.append(key, value.trim());
+      }
+    });
+
+    return formData;
+  };
+
   const handleCreateDesign = async () => {
     if (!designName.trim()) return;
+
     setLoading(true);
-    const formData = new FormData();
-    formData.append('design_name', designName);
-    if (customerName.trim()) formData.append('customer_name', customerName);
-    if (customerCompany.trim()) formData.append('customer_company', customerCompany);
-    if (customerAddress.trim()) formData.append('customer_address', customerAddress);
-    if (customerGstin.trim()) formData.append('customer_gstin', customerGstin);
-    if (customerContact.trim()) formData.append('customer_contact', customerContact);
-    if (customerEmail.trim()) formData.append('customer_email', customerEmail);
-    if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
-      const response: { status: number; data: Design } = await CommonService.post(
+      const response = await CommonService.post(
         API_ENDPOINT.CREATE_DESIGN,
-        formData
+        buildDesignFormData()
       );
+
       if (response.status === 201) {
         router.push(`/template/${response.data.id}`);
-      } else {
-        setApiErrorMessage(response.data.detail);
-        setErrorPopup(true);
-        setTimeout(() => setErrorPopup(false), 3000);
       }
     } catch (err) {
       console.error(err);
@@ -257,23 +274,15 @@ const Designs = () => {
 
   const handleEditClick = async () => {
     if (!selectedDesign) return;
+
     setLoading(true);
-    const formData = new FormData();
-    formData.append('design_name', designName);
-    formData.append('status', designStatus);
-    if (customerName.trim()) formData.append('customer_name', customerName);
-    if (customerCompany.trim()) formData.append('customer_company', customerCompany);
-    if (customerAddress.trim()) formData.append('customer_address', customerAddress);
-    if (customerGstin.trim()) formData.append('customer_gstin', customerGstin);
-    if (customerContact.trim()) formData.append('customer_contact', customerContact);
-    if (customerEmail.trim()) formData.append('customer_email', customerEmail);
-    if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
-      const response: { status: number; data: Design } = await CommonService.put(
+      const response = await CommonService.put(
         API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id),
-        formData
+        buildDesignFormData(true)
       );
+
       if (response.status === 200) {
         setshowEditPopup(false);
         await fetchDesigns();

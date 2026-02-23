@@ -1017,8 +1017,8 @@ const Settings = () => {
               <img
                 src={
                   activeMenu === 'billing'
-                    ? assets.organization_not_selected
-                    : assets.organizations_svg
+                    ? assets.activemoney
+                    : assets.money
                 }
                 alt="billing"
               />
