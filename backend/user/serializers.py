@@ -1,7 +1,7 @@
 # Python imports
 import secrets
 import string
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # Django imports
 from django.contrib.auth.models import Group
