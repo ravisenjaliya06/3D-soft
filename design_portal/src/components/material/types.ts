@@ -45,6 +45,8 @@ export interface MaterialState {
   contextMaterialMenu: MaterialContextMenu | null;
   createCompanyPopup: boolean;
   companyName: string;
+  editingMaterial: TableRow | null;
+  deletingMaterial: TableRow | null;
   error: string | null;
 }
 

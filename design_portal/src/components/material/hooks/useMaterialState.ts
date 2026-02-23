@@ -16,6 +16,8 @@ const initialState: Omit<MaterialState, 'companyMaterials' | 'materialCategories
   contextMaterialMenu: null,
   createCompanyPopup: false,
   companyName: '',
+  editingMaterial: null,
+  deletingMaterial: null,
 };
 
 // * Update manage material state
@@ -93,5 +95,7 @@ export const useMaterialState = () => {
     setContextMaterialMenu,
     setCreateCompanyPopup,
     setCompanyName,
+    setEditingMaterial: (material: any) => updateState({ editingMaterial: material }),
+    setDeletingMaterial: (material: any) => updateState({ deletingMaterial: material }),
   };
 };

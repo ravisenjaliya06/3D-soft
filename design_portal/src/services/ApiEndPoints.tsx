@@ -67,10 +67,16 @@ export const API_ENDPOINT = {
   UPDATE_OBJECT_DATA: (designID: string) => `design/${designID}/object/`,
   UPDATE_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   UPDATE_PART_MATERIAL: (partID: string) => `material/catalog/part/${partID}/`,
+  UPDATE_MATERIAL: (materialID: string) => `material/${materialID}/`,
+  UPDATE_COMPANY_MATERIAL_DETAIL: (companyID: string, materialID: string) =>
+    `material/company/${companyID}/material/${materialID}/`,
   DOWNLOAD_NESTING_PDF: (designID: string) => `design/${designID}/nesting/download/`,
 
   //DELETE
   REMOVE_USER_FROM_ORGANIZATION: (userID: string) => `user/organization/remove_user/${userID}/`,
   DELETE_ALL_OBJECTS: (designID: string) => `material/catalog/design/${designID}/`,
   DELETE_OBJECT: (designID: string) => `design/${designID}/object/`,
+  DELETE_MATERIAL: (materialID: string) => `material/${materialID}/`,
+  DELETE_COMPANY_MATERIAL_DETAIL: (companyID: string, materialID: string) =>
+    `material/company/${companyID}/material/${materialID}/`,
 };

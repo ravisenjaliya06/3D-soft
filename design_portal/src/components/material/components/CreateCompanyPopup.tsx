@@ -70,3 +70,55 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
     </div>
   );
 };
+
+interface ConfirmDeletePopupProps {
+  onConfirm: () => void;
+  onClose: () => void;
+  itemName?: string;
+}
+
+export const ConfirmDeletePopup: React.FC<ConfirmDeletePopupProps> = ({
+  onConfirm,
+  onClose,
+  itemName,
+}) => {
+  return (
+    <div className={styles.createpopupOverlay} onClick={onClose}>
+      <div className={styles.createpopup} onClick={(e) => e.stopPropagation()}>
+        <img
+          src={assets.deletepopup || '/placeholder.svg'}
+          className={styles.createicon}
+          alt="Delete"
+        />
+        <img
+          src={assets.close || '/placeholder.svg'}
+          className={styles.createclose}
+          alt="Close"
+          onClick={onClose}
+        />
+        <div className={styles.create_right_side}>
+          <h2>Discard Material?</h2>
+          <p>
+            Are you sure you want to delete <strong>{itemName || 'this material'}</strong>? This
+            will move it to the trash.
+          </p>
+        </div>
+        <div className={styles.createButtonGrop}>
+          <button className={styles.cancelcreateButton} onClick={onClose}>
+            No, Keep it
+          </button>
+          <button
+            className={styles.createcontinueButton}
+            style={{
+              background: 'var(--primary-red)',
+              boxShadow: '0 8px 20px var(--box-shadow-color)',
+            }}
+            onClick={onConfirm}
+          >
+            Yes, Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
