@@ -11,8 +11,8 @@ import { MaterialToolbar } from './components/MaterialToolbar';
 import { CATEGORY_TABS } from './constants';
 import { useMaterialData } from './hooks/useMaterialData';
 import { useMaterialState } from './hooks/useMaterialState';
-import { flattenMaterial } from './utils/materialMapper';
 import styles from './material.module.css';
+import { flattenMaterial } from './utils/materialMapper';
 const Material: React.FC = () => {
   const {
     companyMaterials,
@@ -232,22 +232,22 @@ const Material: React.FC = () => {
               <MaterialTable
                 materials={getFilteredMaterials()}
                 activeCategory={activeCategory}
-                 activeTab={activeTab}
-                 onTabChange={setActiveTab}
-                 onSort={setSortColumn}
-                 onEdit={handleEditMaterial}
-                 onDelete={handleDeleteMaterial}
-               />
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onSort={setSortColumn}
+                onEdit={handleEditMaterial}
+                onDelete={handleDeleteMaterial}
+              />
             </div>
           </div>
         ) : (
           <AddMaterialPopup
             setCreateWorkOrderPopup={setAddMaterialPopup}
-             companyId={companyID}
-             handleGetCompanyMaterials={fetchCompanyMaterials}
-             selectedType={expandedCategory}
-             initialData={editingMaterial}
-           />
+            companyId={companyID}
+            handleGetCompanyMaterials={fetchCompanyMaterials}
+            selectedType={expandedCategory}
+            initialData={editingMaterial}
+          />
         )}
       </div>
 

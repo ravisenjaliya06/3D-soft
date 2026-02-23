@@ -101,7 +101,7 @@ export const useMaterialData = () => {
     },
     [fetchCompanies]
   );
- 
+
   /** Delete a material and refresh the list */
   const deleteMaterial = useCallback(
     async (materialId: string, companyId?: string, type?: string) => {
@@ -128,7 +128,7 @@ export const useMaterialData = () => {
     },
     [fetchCompanyMaterials, fetchMaterialsByType]
   );
- 
+
   return {
     companyMaterials,
     materialCategories,

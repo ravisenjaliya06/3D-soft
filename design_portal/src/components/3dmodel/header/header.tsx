@@ -11,12 +11,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
-import { CustomToast } from '../utils/CustomToast';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
-import { convertKeysToSnake, deleteObject } from '../sceneCreator/utils';
-import { RootState, store } from '../store';
+import { deleteObject } from '../sceneCreator/utils';
+import { RootState } from '../store';
 import {
   setActiveDesignCamDepth,
   setActiveDesignCamDiameter,
@@ -24,7 +23,7 @@ import {
   setActiveDesignMinifixDiameterHole,
   setActiveDesignMinifixDistance,
 } from '../store/activeDesignSlice';
-import { setGlobalDoorsOpen, setObjects } from '../store/dataSlice';
+import { setGlobalDoorsOpen } from '../store/dataSlice';
 import {
   selectHeaderCamDepth,
   selectHeaderCamDiameter,
@@ -32,6 +31,7 @@ import {
   selectHeaderMinifixDiameterHole,
   selectHeaderMinifixDistance,
 } from '../store/selectors';
+import { CustomToast } from '../utils/CustomToast';
 import styles from './header.module.css';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
@@ -236,27 +236,23 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       if (response.status === 200) {
         router.push(`/design/${designId}/nesting`);
       } else {
-        toast(
-          ({ closeToast }) => (
-            <CustomToast
-              appearance="error"
-              message={response?.data?.message || 'Error occurred while generating nesting data.'}
-              closeToast={closeToast}
-            />
-          )
-        );
+        toast(({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message={response?.data?.message || 'Error occurred while generating nesting data.'}
+            closeToast={closeToast}
+          />
+        ));
       }
     } catch (e: any) {
       console.error('Error fetching designs:', e);
-      toast(
-        ({ closeToast }) => (
-          <CustomToast
-            appearance="error"
-            message={e?.response?.data?.message || e?.message || 'An error occurred.'}
-            closeToast={closeToast}
-          />
-        )
-      );
+      toast(({ closeToast }) => (
+        <CustomToast
+          appearance="error"
+          message={e?.response?.data?.message || e?.message || 'An error occurred.'}
+          closeToast={closeToast}
+        />
+      ));
     } finally {
       setIsLoading(false);
     }

@@ -77,7 +77,9 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
           <rect x="3" y="3" width="18" height="18" rx="3" />
           <path d="M3 9h18M9 21V9" />
         </svg>
-        <span className="text-[0.8rem] font-medium text-[var(--soft-dark-grey)]">Please select a category</span>
+        <span className="text-[0.8rem] font-medium text-[var(--soft-dark-grey)]">
+          Please select a category
+        </span>
       </div>
     );
   }

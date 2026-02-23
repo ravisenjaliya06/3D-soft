@@ -78,17 +78,23 @@ export default function RenderingPage() {
             const imgBlob = await imgRes.blob();
             remainingFormData.append('files', imgBlob, `${i + 1}.png`);
           }
-          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/images`, {
-            method: 'POST',
-            body: remainingFormData,
-          });
+          const uploadRes = await fetch(
+            `${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/images`,
+            {
+              method: 'POST',
+              body: remainingFormData,
+            }
+          );
           if (!uploadRes.ok) throw new Error('Failed to upload remaining images');
         }
 
         setLoadingText('Starting processing...');
-        const processRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/process`, {
-          method: 'POST',
-        });
+        const processRes = await fetch(
+          `${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/process`,
+          {
+            method: 'POST',
+          }
+        );
         if (!processRes.ok) throw new Error('Failed to start processing');
       }
 
@@ -96,7 +102,9 @@ export default function RenderingPage() {
       // Polling
       const pollInterval = setInterval(async () => {
         try {
-          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/status`);
+          const statusRes = await fetch(
+            `${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/status`
+          );
           const statusData = await statusRes.json();
 
           if (statusData.error_message) {
