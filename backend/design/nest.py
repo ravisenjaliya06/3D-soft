@@ -391,7 +391,10 @@ class NestingService:
             worksheet.column_dimensions[column_letter].width = adjusted_width
 
     def generate_xmls(
-        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str, design_name: str = "files"
+        self: "NestingService",
+        packed_items: List[Dict[str, Any]],
+        output_path: str,
+        design_name: str = "files",
     ) -> List[str]:
         """
         Generates XML files for each panel containing machining data.
@@ -750,7 +753,9 @@ class NestingService:
 
         logger.info("Generated Excel file at: %s", excel_path)
 
+        # Python imports
         import re
+
         safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design_name)
         zip_path = os.path.join(base_dir, f"xml_{safe_design_name}.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:

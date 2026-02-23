@@ -275,8 +275,8 @@ class UserProfileEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "name", 
-            "phone", 
+            "name",
+            "phone",
             "profile_picture",
             "company_name",
             "company_address",

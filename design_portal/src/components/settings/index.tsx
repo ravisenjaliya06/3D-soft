@@ -984,12 +984,14 @@ const Settings = () => {
               onClick={() => handleActiveMenu('billing')}
             >
               <img
-                src={activeMenu === 'billing' ? assets.organization_not_selected : assets.organizations_svg}
+                src={
+                  activeMenu === 'billing'
+                    ? assets.organization_not_selected
+                    : assets.organizations_svg
+                }
                 alt="billing"
               />
-              <p
-                className={activeMenu === 'billing' ? styles.activeMenuTitle : styles.menuTitle}
-              >
+              <p className={activeMenu === 'billing' ? styles.activeMenuTitle : styles.menuTitle}>
                 Billing Details
               </p>
             </div>
@@ -1062,22 +1064,41 @@ const Settings = () => {
                   </p>
                 </div>
                 <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-                  <div className={styles.inputGroup} style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}>
+                  <div
+                    className={styles.inputGroup}
+                    style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}
+                  >
                     {companyDetailsFields.map((field, index) => (
-                      <InputField key={index} className={styles.inputField} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.inputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
 
-                  <div className={styles.heading_containar} style={{ marginBottom: '1.5rem', marginTop: '2.5rem' }}>
+                  <div
+                    className={styles.heading_containar}
+                    style={{ marginBottom: '1.5rem', marginTop: '2.5rem' }}
+                  >
                     <h4>Banking Details</h4>
                     <p className={styles.description}>
                       These banking details will appear at the bottom of your Quotations.
                     </p>
                   </div>
 
-                  <div className={styles.inputGroup} style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}>
+                  <div
+                    className={styles.inputGroup}
+                    style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}
+                  >
                     {bankingDetailsFields1.map((field, index) => (
-                      <InputField key={index} className={styles.inputField} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.inputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
 
@@ -1138,8 +1159,9 @@ const Settings = () => {
                     </label>
                     <input
                       type="text"
-                      className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
-                        }`}
+                      className={`${styles.organizationInputfild} ${
+                        organizationNameError ? styles.errorInput : ''
+                      }`}
                       placeholder="Enter Organization Name"
                       onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         setOrganizationName(e.target.value);

@@ -46,7 +46,7 @@ class User(AbstractUser):
     company_website = models.CharField(max_length=255, null=True, blank=True)
     company_gstin = models.CharField(max_length=50, null=True, blank=True)
     company_pan = models.CharField(max_length=50, null=True, blank=True)
-    
+
     bank_name = models.CharField(max_length=255, null=True, blank=True)
     account_name = models.CharField(max_length=255, null=True, blank=True)
     account_number = models.CharField(max_length=100, null=True, blank=True)

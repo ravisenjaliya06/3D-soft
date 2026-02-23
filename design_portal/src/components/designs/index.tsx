@@ -406,18 +406,21 @@ const Designs = () => {
               </p>
             </div>
 
-            <div className={styles.createdesignButton} onClick={() => {
-              setDesingName('');
-              setDesingStatus('');
-              setCustomerName('');
-              setCustomerCompany('');
-              setCustomerAddress('');
-              setCustomerGstin('');
-              setCustomerContact('');
-              setCustomerEmail('');
-              setProjectType('');
-              setShowPopup(true);
-            }}>
+            <div
+              className={styles.createdesignButton}
+              onClick={() => {
+                setDesingName('');
+                setDesingStatus('');
+                setCustomerName('');
+                setCustomerCompany('');
+                setCustomerAddress('');
+                setCustomerGstin('');
+                setCustomerContact('');
+                setCustomerEmail('');
+                setProjectType('');
+                setShowPopup(true);
+              }}
+            >
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
                   <img src={assets.plus_icon} alt="+" />
@@ -750,7 +753,10 @@ const Designs = () => {
                 </form>
               </div>
               <div className={styles.createButtonGrop}>
-                <button className={styles.cancelcreateButton} onClick={() => setshowEditPopup(false)}>
+                <button
+                  className={styles.cancelcreateButton}
+                  onClick={() => setshowEditPopup(false)}
+                >
                   Cancel
                 </button>
                 <button className={styles.createcontinueButton} onClick={handleEditClick}>

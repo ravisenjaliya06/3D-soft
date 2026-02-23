@@ -2,10 +2,9 @@
 import uuid
 
 # Django imports
-from django.db import models
-from django.utils import timezone
-from django.db import IntegrityError
+from django.db import IntegrityError, models
 from django.db.models import Max
+from django.utils import timezone
 
 # App imports
 from umaboy.models import Organization, User
@@ -100,7 +99,7 @@ class Design(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
+    def save(self: "Design", *args, **kwargs) -> None:
         if self.project_code:
             return super().save(*args, **kwargs)
 
@@ -109,8 +108,7 @@ class Design(models.Model):
         for _ in range(3):  # 3 retries is enough
             # Get highest project_code for this year
             last_code = (
-                Design.objects
-                .filter(created_at__year=year)
+                Design.objects.filter(created_at__year=year)
                 .aggregate(max_code=Max("project_code"))
                 .get("max_code")
             )

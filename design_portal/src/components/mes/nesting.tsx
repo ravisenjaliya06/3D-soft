@@ -58,7 +58,9 @@ const Nesting = () => {
     setIsGeneratingBOM(true);
     try {
       // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
+      const designResponse: any = await CommonService.get(
+        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
+      );
       const design = designResponse.data;
 
       // 2. Fetch Nesting Data (Layout with holes/grooves/edgebands)
@@ -600,7 +602,9 @@ const Nesting = () => {
       }
 
       // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
+      const designResponse: any = await CommonService.get(
+        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
+      );
       const design = designResponse.data;
 
       // 2. Fetch Nesting Data
@@ -639,7 +643,8 @@ const Nesting = () => {
       const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
         const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
         const reduxPart = data.find(
-          (d: any) => d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
+          (d: any) =>
+            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
         );
 
         let eBands = p.edgebands || [];
@@ -666,7 +671,7 @@ const Nesting = () => {
       // 5. Group Parts by Assembly (Unit)
       const unitsMap: Record<string, any> = {};
 
-      partsList.forEach((part: any, index: number) => {
+      partsList.forEach((part: any) => {
         const h = parseFloat(part.height || part?.dimensions?.height || 0);
         const w = parseFloat(part.width || part?.dimensions?.width || 0);
         const d = part.sheet_thickness || part.depth || part?.dimensions?.depth || 18;
@@ -674,9 +679,13 @@ const Nesting = () => {
         let assemblyName = part.parent_name || 'Individual Components';
         if (!assemblyName || assemblyName === '-') {
           // Find parent using redux parent tree
-          const rPart = data.find(
-            (d: any) => d.id === part.id || d.id === part.ID || (d.unique_id && d.unique_id === part.unique_id)
-          ) || part;
+          const rPart =
+            data.find(
+              (d: any) =>
+                d.id === part.id ||
+                d.id === part.ID ||
+                (d.unique_id && d.unique_id === part.unique_id)
+            ) || part;
 
           if (rPart.parent_id) {
             const parent = data.find((d: any) => d.id === rPart.parent_id);
@@ -697,7 +706,7 @@ const Nesting = () => {
             panels: [],
             hingeCount: 0,
             camCount: 0,
-            dowelCount: 0
+            dowelCount: 0,
           };
         }
 
@@ -710,18 +719,23 @@ const Nesting = () => {
         unit.materialNames.add(`${d}mm ${matName}`);
 
         // Material Cost
-        const rPart = data.find(
-          (d: any) => d.id === part.id || d.id === part.ID || (d.unique_id && d.unique_id === part.unique_id)
-        ) || part;
+        const rPart =
+          data.find(
+            (d: any) =>
+              d.id === part.id ||
+              d.id === part.ID ||
+              (d.unique_id && d.unique_id === part.unique_id)
+          ) || part;
 
-        const mat = rPart.material && Array.isArray(rPart.material) ? rPart.material[0] : rPart.material;
+        const mat =
+          rPart.material && Array.isArray(rPart.material) ? rPart.material[0] : rPart.material;
         const matId = mat?.id || mat;
         const sheetCost = materialPriceMap[matId] || 1500;
 
-        const areaReq = ((h * w) / 1000000);
+        const areaReq = (h * w) / 1000000;
         // approx cost per sqm = sheetCost / (2.44*1.22)
         const costPerSqm = sheetCost / 2.9768;
-        unit.totalMaterialCost += (areaReq * costPerSqm * (part.quantity || 1));
+        unit.totalMaterialCost += areaReq * costPerSqm * (part.quantity || 1);
 
         // Edgebanding cost
         let len = 0;
@@ -729,14 +743,17 @@ const Nesting = () => {
         const eW = w / 1000;
         if (part.edgebands && part.edgebands.length > 0) {
           part.edgebands.forEach((e: any) => {
-            let eStr = typeof e === 'object' && e?.face ? String(e.face).toUpperCase() : String(e).toUpperCase();
+            let eStr =
+              typeof e === 'object' && e?.face
+                ? String(e.face).toUpperCase()
+                : String(e).toUpperCase();
             if (['LEFT', 'L', '5', 'FRONT'].includes(eStr)) len += eH;
             if (['RIGHT', 'R', '3', 'BACK'].includes(eStr)) len += eH;
             if (['TOP', 'T', '4', '1'].includes(eStr)) len += eW;
             if (['BOTTOM', 'B', '2', '6'].includes(eStr)) len += eW;
           });
         }
-        unit.totalEdgeCost += (len * 25); // 25 rs per meter
+        unit.totalEdgeCost += len * 25; // 25 rs per meter
 
         // Hardware
         if (part.minifix_holes && part.minifix_holes.length > 0) {
@@ -757,12 +774,14 @@ const Nesting = () => {
       let subTotal = 0;
 
       const formatCurrency = (num: number) => {
-        return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (
+          '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        );
       };
 
       Object.values(unitsMap).forEach((u) => {
         // Add hardware cost
-        const hwCost = (u.hingeCount * 150) + (u.camCount * 20) + (u.dowelCount * 10);
+        const hwCost = u.hingeCount * 150 + u.camCount * 20 + u.dowelCount * 10;
         const rawCost = u.totalMaterialCost + u.totalEdgeCost + hwCost;
         const laborCost = rawCost * 0.2; // 20% labor
         const estCost = rawCost + laborCost;
@@ -791,11 +810,11 @@ const Nesting = () => {
           desc,
           dimStr,
           matStr.substring(0, 30),
-          u.qty,            // Qty
-          formatCurrency(ratePerUnit),      // Rate/Unit
-          formatCurrency(amount),           // Amount
-          "9403",           // HSN
-          18                // GST%
+          u.qty, // Qty
+          formatCurrency(ratePerUnit), // Rate/Unit
+          formatCurrency(amount), // Amount
+          '9403', // HSN
+          18, // GST%
         ]);
       });
 
@@ -803,14 +822,14 @@ const Nesting = () => {
       const installationCost = Math.round(subTotal * 0.05); // 5% installation
       quoteRows.push([
         srNo++,
-        "Installation & Fitting Charges\n(On-site assembly, alignment, testing)",
-        "Complete Job",
-        "Labor",
+        'Installation & Fitting Charges\n(On-site assembly, alignment, testing)',
+        'Complete Job',
+        'Labor',
         1,
         formatCurrency(installationCost),
         formatCurrency(installationCost),
-        "9954",
-        18
+        '9954',
+        18,
       ]);
       subTotal += installationCost;
 
@@ -819,8 +838,40 @@ const Nesting = () => {
       const grandTotal = Math.round(subTotal + cgst + sgst);
 
       const numberToWords = (num: number) => {
-        const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        const a = [
+          '',
+          'One',
+          'Two',
+          'Three',
+          'Four',
+          'Five',
+          'Six',
+          'Seven',
+          'Eight',
+          'Nine',
+          'Ten',
+          'Eleven',
+          'Twelve',
+          'Thirteen',
+          'Fourteen',
+          'Fifteen',
+          'Sixteen',
+          'Seventeen',
+          'Eighteen',
+          'Nineteen',
+        ];
+        const b = [
+          '',
+          '',
+          'Twenty',
+          'Thirty',
+          'Forty',
+          'Fifty',
+          'Sixty',
+          'Seventy',
+          'Eighty',
+          'Ninety',
+        ];
 
         const inWords = (n: number): string => {
           if (n === 0) return 'Zero';
@@ -851,29 +902,83 @@ const Nesting = () => {
           return str.trim();
         };
 
-        return "Rupees " + inWords(num) + " Only";
+        return 'Rupees ' + inWords(num) + ' Only';
       };
 
       const wb = XLSX.utils.book_new();
-
-      // Excel Styles matching sample
-      const sH1 = { font: { name: 'Calibri', sz: 14, bold: true }, alignment: { wrapText: true } };
-      const sH2 = { font: { name: 'Calibri', sz: 10, italic: true }, alignment: { wrapText: true } };
       const sP = { font: { name: 'Calibri', sz: 10 }, alignment: { wrapText: true } };
-      const sTitle = { font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '392579' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+      const sTitle = {
+        font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '392579' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
 
       const sKey = { font: { name: 'Calibri', sz: 10, bold: true } };
       const sVal = { font: { name: 'Calibri', sz: 10 } };
-      const sProj = { font: { name: 'Calibri', sz: 11, bold: true }, fill: { fgColor: { rgb: 'F2F2F2' } } };
+      const sProj = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'F2F2F2' } },
+      };
 
-      const sTh = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '000000' } }, alignment: { vertical: 'center', horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-      const sTdNum = { font: { name: 'Calibri', sz: 10 }, alignment: { vertical: 'top', horizontal: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-      const sTdText = { font: { name: 'Calibri', sz: 10 }, alignment: { vertical: 'top', horizontal: 'left', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+      const sTh = {
+        font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '000000' } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sTdNum = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { vertical: 'top', horizontal: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sTdText = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { vertical: 'top', horizontal: 'left', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
 
-      const sSubKey = { font: { name: 'Calibri', sz: 10, bold: true }, alignment: { horizontal: 'right' }, border: { left: { style: 'thin' }, right: { style: 'thin' } } };
-      const sSubVal = { font: { name: 'Calibri', sz: 10 }, alignment: { horizontal: 'right' }, border: { right: { style: 'thin' } } };
-      const sGTKey = { font: { name: 'Calibri', sz: 11, bold: true }, fill: { fgColor: { rgb: 'E0E0E0' } }, alignment: { horizontal: 'right' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-      const sGTVal = { font: { name: 'Calibri', sz: 11, bold: true }, fill: { fgColor: { rgb: 'E0E0E0' } }, alignment: { horizontal: 'right' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } } };
+      const sSubKey = {
+        font: { name: 'Calibri', sz: 10, bold: true },
+        alignment: { horizontal: 'right' },
+        border: { left: { style: 'thin' }, right: { style: 'thin' } },
+      };
+      const sSubVal = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { horizontal: 'right' },
+        border: { right: { style: 'thin' } },
+      };
+      const sGTKey = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'E0E0E0' } },
+        alignment: { horizontal: 'right' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sGTVal = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'E0E0E0' } },
+        alignment: { horizontal: 'right' },
+        border: { top: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+      };
 
       const sTermH = { font: { name: 'Calibri', sz: 10, bold: true, underline: true } };
       const sTermC = { font: { name: 'Calibri', sz: 9 }, alignment: { wrapText: true } };
@@ -887,13 +992,27 @@ const Nesting = () => {
       const pushR = (arr: any[]) => qData.push(padArr(arr, 9, ''));
 
       // 1. Headers
-      const sH1C = { font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: '003366' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
-      const sH2C = { font: { name: 'Calibri', sz: 10, italic: true }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
-      const sPC = { font: { name: 'Calibri', sz: 10 }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
-      const sPBoldC = { font: { name: 'Calibri', sz: 10, bold: true }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+      const sH1C = {
+        font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: '003366' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sH2C = {
+        font: { name: 'Calibri', sz: 10, italic: true },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sPC = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sPBoldC = {
+        font: { name: 'Calibri', sz: 10, bold: true },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
 
-      const companyName = userDetails?.company_name || "BRAVENTO FURNITURE SOLUTIONS";
-      const companyAddress = userDetails?.company_address || "Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India";
+      const companyName = userDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+      const companyAddress =
+        userDetails?.company_address ||
+        'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
 
       let contactLine = '';
       if (userDetails?.company_phone) contactLine += `Phone: ${userDetails.company_phone} | `;
@@ -913,131 +1032,366 @@ const Nesting = () => {
       else taxLine += `PAN: XXXXX1234X`;
 
       pushR([{ v: companyName, s: sH1C }]);
-      pushR([{ v: "Custom Furniture Design & Manufacturing", s: sH2C }]);
+      pushR([{ v: 'Custom Furniture Design & Manufacturing', s: sH2C }]);
       pushR([{ v: companyAddress, s: sPC }]);
       pushR([{ v: contactLine, s: sPC }]);
       pushR([{ v: taxLine, s: sPBoldC }]);
       pushR([]);
-      pushR([{ v: "QUOTATION", s: sTitle }]);
+      pushR([{ v: 'QUOTATION', s: sTitle }]);
       pushR([]);
 
       // 2. Info Block
       const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
-      const quoteDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
-      const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+      const quoteDate = new Date()
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        .replace(/ /g, '-');
+      const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        .replace(/ /g, '-');
 
-      pushR([{ v: "Quotation No:", s: sKey }, { v: quoteNo, s: sVal }, '', '', { v: "Customer Name:", s: sKey }, { v: design.customer_name || 'Customer', s: sVal }]);
-      pushR([{ v: "Date:", s: sKey }, { v: quoteDate, s: sVal }, '', '', { v: "Company:", s: sKey }, { v: design.customer_company || '-', s: sVal }]);
-      pushR([{ v: "Valid Till:", s: sKey }, { v: validDate, s: sVal }, '', '', { v: "Address:", s: sKey }, { v: design.customer_address || '-', s: sVal }]);
-      pushR([{ v: "Project ID:", s: sKey }, { v: design.project_code || design.id, s: sVal }, '', '', { v: "GSTIN:", s: sKey }, { v: design.customer_gstin || '-', s: sVal }]);
-      pushR(['', '', '', '', { v: "Contact:", s: sKey }, { v: design.customer_contact || '-', s: sVal }]);
-      pushR(['', '', '', '', { v: "Email:", s: sKey }, { v: design.customer_email || '-', s: sVal }]);
+      pushR([
+        { v: 'Quotation No:', s: sKey },
+        { v: quoteNo, s: sVal },
+        '',
+        '',
+        { v: 'Customer Name:', s: sKey },
+        { v: design.customer_name || 'Customer', s: sVal },
+      ]);
+      pushR([
+        { v: 'Date:', s: sKey },
+        { v: quoteDate, s: sVal },
+        '',
+        '',
+        { v: 'Company:', s: sKey },
+        { v: design.customer_company || '-', s: sVal },
+      ]);
+      pushR([
+        { v: 'Valid Till:', s: sKey },
+        { v: validDate, s: sVal },
+        '',
+        '',
+        { v: 'Address:', s: sKey },
+        { v: design.customer_address || '-', s: sVal },
+      ]);
+      pushR([
+        { v: 'Project ID:', s: sKey },
+        { v: design.project_code || design.id, s: sVal },
+        '',
+        '',
+        { v: 'GSTIN:', s: sKey },
+        { v: design.customer_gstin || '-', s: sVal },
+      ]);
+      pushR([
+        '',
+        '',
+        '',
+        '',
+        { v: 'Contact:', s: sKey },
+        { v: design.customer_contact || '-', s: sVal },
+      ]);
+      pushR([
+        '',
+        '',
+        '',
+        '',
+        { v: 'Email:', s: sKey },
+        { v: design.customer_email || '-', s: sVal },
+      ]);
       pushR([]);
 
-      pushR([{ v: `PROJECT: ${design.project_type || 'Custom Furniture'} - ${design.design_name}`, s: sProj }]);
+      pushR([
+        {
+          v: `PROJECT: ${design.project_type || 'Custom Furniture'} - ${design.design_name}`,
+          s: sProj,
+        },
+      ]);
       pushR([]);
 
       // 3. Table Headers
       pushR([
-        { v: "Sr.", s: sTh }, { v: "Unit/Component Description", s: sTh }, { v: "Dimensions (L×W×H)", s: sTh },
-        { v: "Material", s: sTh }, { v: "Qty", s: sTh }, { v: "Rate/Unit", s: sTh },
-        { v: "Amount", s: sTh }, { v: "HSN", s: sTh }, { v: "GST%", s: sTh }
+        { v: 'Sr.', s: sTh },
+        { v: 'Unit/Component Description', s: sTh },
+        { v: 'Dimensions (L×W×H)', s: sTh },
+        { v: 'Material', s: sTh },
+        { v: 'Qty', s: sTh },
+        { v: 'Rate/Unit', s: sTh },
+        { v: 'Amount', s: sTh },
+        { v: 'HSN', s: sTh },
+        { v: 'GST%', s: sTh },
       ]);
 
       // 4. Table Rows
       const tblStart = qData.length; // Row index is 16 (0-indexed)
-      quoteRows.forEach(row => {
+      quoteRows.forEach((row) => {
         const formattedRow = [
-          { v: row[0], s: sTdNum }, { v: row[1], s: sTdText }, { v: row[2], s: sTdText },
-          { v: row[3], s: sTdText }, { v: row[4], s: sTdNum }, { v: row[5], s: sTdNum },
-          { v: row[6], s: sTdNum }, { v: row[7], s: sTdNum }, { v: row[8], s: sTdNum }
+          { v: row[0], s: sTdNum },
+          { v: row[1], s: sTdText },
+          { v: row[2], s: sTdText },
+          { v: row[3], s: sTdText },
+          { v: row[4], s: sTdNum },
+          { v: row[5], s: sTdNum },
+          { v: row[6], s: sTdNum },
+          { v: row[7], s: sTdNum },
+          { v: row[8], s: sTdNum },
         ];
         pushR(formattedRow);
       });
 
       // 5. Totals
       const tblEnd = qData.length;
-      pushR([{ v: "SUBTOTAL (Before GST)", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(subTotal), s: sSubVal }, '', '']);
-      pushR([{ v: "Add: CGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(cgst), s: sSubVal }, '', '']);
-      pushR([{ v: "Add: SGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(sgst), s: sSubVal }, '', '']);
-      pushR([{ v: "Round Off", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(0), s: sSubVal }, '', '']);
-      pushR([{ v: "GRAND TOTAL (Inclusive of all taxes)", s: sGTKey }, '', '', '', '', '', { v: formatCurrency(grandTotal), s: sGTVal }, '', '']);
+      pushR([
+        { v: 'SUBTOTAL (Before GST)', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(subTotal), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Add: CGST @ 9%', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(cgst), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Add: SGST @ 9%', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(sgst), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Round Off', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(0), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'GRAND TOTAL (Inclusive of all taxes)', s: sGTKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(grandTotal), s: sGTVal },
+        '',
+        '',
+      ]);
       pushR([]);
-      pushR([{ v: "Amount in Words:", s: sKey }, { v: numberToWords(grandTotal), s: sH1C }]); // actually bold left-aligned, but reusing font
+      pushR([
+        { v: 'Amount in Words:', s: sKey },
+        { v: numberToWords(grandTotal), s: sH1C },
+      ]); // actually bold left-aligned, but reusing font
       pushR([]);
 
       // 6. Terms and Conditions block matching sample
       const tcLines = [
-        [{ v: "TERMS AND CONDITIONS:", s: sTermH }],
-        [{ v: "1. PAYMENT TERMS:", s: sKey }],
-        [{ v: "   • 40% advance payment with purchase order confirmation", s: sTermC }],
-        [{ v: "   • 30% payment upon material delivery and start of manufacturing", s: sTermC }],
-        [{ v: "   • 20% payment upon installation completion", s: sTermC }],
-        [{ v: "   • 10% final payment after client sign-off and handover", s: sTermC }],
+        [{ v: 'TERMS AND CONDITIONS:', s: sTermH }],
+        [{ v: '1. PAYMENT TERMS:', s: sKey }],
+        [{ v: '   • 40% advance payment with purchase order confirmation', s: sTermC }],
+        [{ v: '   • 30% payment upon material delivery and start of manufacturing', s: sTermC }],
+        [{ v: '   • 20% payment upon installation completion', s: sTermC }],
+        [{ v: '   • 10% final payment after client sign-off and handover', s: sTermC }],
         [],
-        [{ v: "2. DELIVERY & INSTALLATION:", s: sKey }],
-        [{ v: "   • Manufacturing time: 15-20 working days from order confirmation and advance payment", s: sTermC }],
-        [{ v: "   • Installation time: 3-4 working days (subject to site readiness)", s: sTermC }],
-        [{ v: "   • Site should be ready with completed flooring, painting, electrical points, and civil work", s: sTermC }],
-        [{ v: "   • Customer to provide necessary permissions for material delivery and installation access", s: sTermC }],
+        [{ v: '2. DELIVERY & INSTALLATION:', s: sKey }],
+        [
+          {
+            v: '   • Manufacturing time: 15-20 working days from order confirmation and advance payment',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Installation time: 3-4 working days (subject to site readiness)', s: sTermC }],
+        [
+          {
+            v: '   • Site should be ready with completed flooring, painting, electrical points, and civil work',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Customer to provide necessary permissions for material delivery and installation access',
+            s: sTermC,
+          },
+        ],
         [],
-        [{ v: "3. WARRANTY:", s: sKey }],
-        [{ v: "   • 1 year comprehensive warranty on manufacturing defects and workmanship", s: sTermC }],
-        [{ v: "   • 5 years warranty on branded hardware (Blum/Hettich/Hafele/Ebco) as per manufacturer terms", s: sTermC }],
-        [{ v: "   • Warranty does not cover misuse, mishandling, accidents, or natural wear and tear", s: sTermC }],
-        [{ v: "   • Annual maintenance contract available separately after warranty period", s: sTermC }],
+        [{ v: '3. WARRANTY:', s: sKey }],
+        [
+          {
+            v: '   • 1 year comprehensive warranty on manufacturing defects and workmanship',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • 5 years warranty on branded hardware (Blum/Hettich/Hafele/Ebco) as per manufacturer terms',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Warranty does not cover misuse, mishandling, accidents, or natural wear and tear',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Annual maintenance contract available separately after warranty period',
+            s: sTermC,
+          },
+        ],
         [],
-        [{ v: "4. INCLUSIONS:", s: sKey }],
-        [{ v: "   • All materials as per detailed specifications mentioned above", s: sTermC }],
-        [{ v: "   • Complete manufacturing with CNC cutting, drilling, edge banding, and finishing", s: sTermC }],
-        [{ v: "   • Transportation to site within Ahmedabad city limits (25 km radius)", s: sTermC }],
-        [{ v: "   • Complete on-site installation, assembly, fitting, and alignment", s: sTermC }],
-        [{ v: "   • Final cleaning and handover with care & maintenance instructions", s: sTermC }],
+        [{ v: '4. INCLUSIONS:', s: sKey }],
+        [{ v: '   • All materials as per detailed specifications mentioned above', s: sTermC }],
+        [
+          {
+            v: '   • Complete manufacturing with CNC cutting, drilling, edge banding, and finishing',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Transportation to site within Ahmedabad city limits (25 km radius)',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Complete on-site installation, assembly, fitting, and alignment', s: sTermC }],
+        [{ v: '   • Final cleaning and handover with care & maintenance instructions', s: sTermC }],
         [],
-        [{ v: "5. EXCLUSIONS:", s: sKey }],
-        [{ v: "   • Any civil work, masonry work, electrical work, plumbing, or painting work", s: sTermC }],
-        [{ v: "   • Structural modifications or wall preparation work", s: sTermC }],
-        [{ v: "   • Loading/unloading charges at site (if elevator not available above 2nd floor)", s: sTermC }],
-        [{ v: "   • Transportation beyond 25 km from our factory (extra charges applicable)", s: sTermC }],
-        [{ v: "   • Any items not specifically mentioned in this quotation", s: sTermC }],
+        [{ v: '5. EXCLUSIONS:', s: sKey }],
+        [
+          {
+            v: '   • Any civil work, masonry work, electrical work, plumbing, or painting work',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Structural modifications or wall preparation work', s: sTermC }],
+        [
+          {
+            v: '   • Loading/unloading charges at site (if elevator not available above 2nd floor)',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Transportation beyond 25 km from our factory (extra charges applicable)',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Any items not specifically mentioned in this quotation', s: sTermC }],
         [],
-        [{ v: "6. DESIGN & CHANGES:", s: sKey }],
-        [{ v: "   • Design approval to be taken before manufacturing starts", s: sTermC }],
-        [{ v: "   • Any design changes after approval will attract additional charges (minimum 15% of changed items)", s: sTermC }],
-        [{ v: "   • Material/hardware changes subject to availability and price revision", s: sTermC }],
-        [{ v: "   • Final measurements to be taken at site before manufacturing", s: sTermC }],
+        [{ v: '6. DESIGN & CHANGES:', s: sKey }],
+        [{ v: '   • Design approval to be taken before manufacturing starts', s: sTermC }],
+        [
+          {
+            v: '   • Any design changes after approval will attract additional charges (minimum 15% of changed items)',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Material/hardware changes subject to availability and price revision',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Final measurements to be taken at site before manufacturing', s: sTermC }],
         [],
-        [{ v: "7. GENERAL TERMS:", s: sKey }],
-        [{ v: "   • This quotation is valid for 30 days from date of issue", s: sTermC }],
-        [{ v: "   • Prices are subject to change without notice after validity period", s: sTermC }],
-        [{ v: "   • All disputes subject to Ahmedabad jurisdiction only", s: sTermC }],
-        [{ v: "   • GST will be charged as per prevailing government rates at the time of billing", s: sTermC }],
-        [{ v: "   • Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent", s: sTermC }],
-        [{ v: "   • Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'", s: sTermC }],
-        [{ v: "   • Any additional work or items requested during installation will be charged separately", s: sTermC }],
+        [{ v: '7. GENERAL TERMS:', s: sKey }],
+        [{ v: '   • This quotation is valid for 30 days from date of issue', s: sTermC }],
+        [
+          {
+            v: '   • Prices are subject to change without notice after validity period',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • All disputes subject to Ahmedabad jurisdiction only', s: sTermC }],
+        [
+          {
+            v: '   • GST will be charged as per prevailing government rates at the time of billing',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: "   • Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Any additional work or items requested during installation will be charged separately',
+            s: sTermC,
+          },
+        ],
         [],
-        [{ v: "BANKING DETAILS FOR PAYMENT:", s: sTermH }],
+        [{ v: 'BANKING DETAILS FOR PAYMENT:', s: sTermH }],
         [{ v: `Bank Name: ${userDetails?.bank_name || 'HDFC Bank Ltd.'}`, s: sP }],
-        [{ v: `Account Name: ${userDetails?.account_name || 'Bravento Furniture Solutions'}`, s: sP }],
+        [
+          {
+            v: `Account Name: ${userDetails?.account_name || 'Bravento Furniture Solutions'}`,
+            s: sP,
+          },
+        ],
         [{ v: `Account Number: ${userDetails?.account_number || '50200012345678'}`, s: sP }],
         [{ v: `Account Type: ${userDetails?.account_type || 'Current Account'}`, s: sP }],
         [{ v: `IFSC Code: ${userDetails?.ifsc_code || 'HDFC0001234'}`, s: sP }],
         [{ v: `Branch: ${userDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`, s: sP }],
-        [{ v: `UPI ID: ${userDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`, s: sP }],
+        [
+          {
+            v: `UPI ID: ${userDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`,
+            s: sP,
+          },
+        ],
         [],
-        [{ v: "NOTE:", s: sKey }, { v: "Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.", s: sVal }],
-        [], [],
+        [
+          { v: 'NOTE:', s: sKey },
+          {
+            v: 'Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.',
+            s: sVal,
+          },
+        ],
+        [],
+        [],
         ['', '', '', '', '', '', { v: `For ${companyName}`, s: sKey }],
-        [], [], [],
-        ['', '', '', '', '', '', { v: "____________________", s: sP }],
-        ['', '', '', '', '', '', { v: "Authorized Signatory", s: sP }],
+        [],
+        [],
+        [],
+        ['', '', '', '', '', '', { v: '____________________', s: sP }],
+        ['', '', '', '', '', '', { v: 'Authorized Signatory', s: sP }],
         ['', '', '', '', '', '', { v: `Date: ${quoteDate}`, s: sP }],
         [],
-        [{ v: "Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!", s: sH2C }]
+        [
+          {
+            v: 'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!',
+            s: sH2C,
+          },
+        ],
       ];
 
       const tcStartRow = qData.length;
-      tcLines.forEach(l => pushR(l));
+      tcLines.forEach((l) => pushR(l));
 
       const ws = XLSX.utils.aoa_to_sheet(qData);
 
@@ -1069,13 +1423,19 @@ const Nesting = () => {
       // Merge all rows for T&C up to the signature
       for (let i = 0; i < tcLines.length; i++) {
         const cell: any = tcLines[i][0];
-        if (tcLines[i].length > 0 && cell && cell.v !== "NOTE:" && cell.v !== "") {
-          if (cell.v.startsWith("Bank Name") || cell.v.startsWith("Account ") || cell.v.startsWith("IFSC") || cell.v.startsWith("Branch:") || cell.v.startsWith("UPI")) {
+        if (tcLines[i].length > 0 && cell && cell.v !== 'NOTE:' && cell.v !== '') {
+          if (
+            cell.v.startsWith('Bank Name') ||
+            cell.v.startsWith('Account ') ||
+            cell.v.startsWith('IFSC') ||
+            cell.v.startsWith('Branch:') ||
+            cell.v.startsWith('UPI')
+          ) {
             ws['!merges'].push({ s: { r: tcStartRow + i, c: 0 }, e: { r: tcStartRow + i, c: 3 } });
           } else {
             ws['!merges'].push({ s: { r: tcStartRow + i, c: 0 }, e: { r: tcStartRow + i, c: 8 } });
           }
-        } else if (cell && cell.v === "NOTE:") {
+        } else if (cell && cell.v === 'NOTE:') {
           ws['!merges'].push({ s: { r: tcStartRow + i, c: 1 }, e: { r: tcStartRow + i, c: 8 } });
         } else if (tcLines[i].length > 6 && tcLines[i][6]) {
           // Signature area block merges (G:I)
@@ -1084,7 +1444,15 @@ const Nesting = () => {
       }
 
       ws['!cols'] = [
-        { wch: 5.0 }, { wch: 32.0 }, { wch: 18.0 }, { wch: 14.0 }, { wch: 6.0 }, { wch: 12.0 }, { wch: 14.0 }, { wch: 8.0 }, { wch: 8.0 }
+        { wch: 5.0 },
+        { wch: 32.0 },
+        { wch: 18.0 },
+        { wch: 14.0 },
+        { wch: 6.0 },
+        { wch: 12.0 },
+        { wch: 14.0 },
+        { wch: 8.0 },
+        { wch: 8.0 },
       ];
 
       // Row heights (optional, to make it look matching)
@@ -1092,9 +1460,8 @@ const Nesting = () => {
       ws['!rows'][6] = { hpx: 30 }; // QUOTATION
       for (let i = 0; i < quoteRows.length; i++) ws['!rows'][tblStart + i] = { hpx: 45 }; // multi-line cells
 
-      XLSX.utils.book_append_sheet(wb, ws, "Quotation");
+      XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
       XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
-
     } catch (err) {
       console.error(err);
       alert('Failed to generate Quotation Data.');

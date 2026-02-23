@@ -20,9 +20,7 @@ export const applyCSGHoles = (
 
   holes.forEach((hole) => {
     // Create hole geometry based on sink dimensions
-    const holeGeometry = new THREE.BoxGeometry(
-      40, 60, 40
-    );
+    const holeGeometry = new THREE.BoxGeometry(40, 60, 40);
     const holeBrush = new Brush(holeGeometry);
 
     // Set hole position and rotation relative to base mesh

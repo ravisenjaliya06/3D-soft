@@ -393,7 +393,9 @@ class NestAPIViewset(ModelViewSet):
                 id=design_id, organization=request.user.selected_organization
             ).first()
             if design:
+                # Python imports
                 import re
+
                 safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design.design_name)
                 file_path = f"{base_path}/xml_{safe_design_name}.zip"
             else:
