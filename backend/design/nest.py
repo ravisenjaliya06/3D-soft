@@ -8,13 +8,6 @@ import zipfile
 from typing import Any, Dict, List, Optional, Tuple
 from xml.dom import minidom
 
-# Reportlab imports
-from reportlab.graphics import renderPDF
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPDF
-
 # Django imports
 from django.http import JsonResponse
 
@@ -25,7 +18,13 @@ from openpyxl.styles import Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
+
+# Reportlab imports
+from reportlab.graphics import renderPDF
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK
+from svglib.svglib import svg2rlg
 
 # Local imports
 from .constant import (
