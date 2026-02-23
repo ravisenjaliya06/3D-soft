@@ -25,6 +25,11 @@ const Designs = () => {
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [customerCompany, setCustomerCompany] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerGstin, setCustomerGstin] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -35,8 +40,6 @@ const Designs = () => {
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
-  const [apiErrorMessage, setApiErrorMessage] = useState('');
-  const [errorPopup, setErrorPopup] = useState(false);
   const [userdetails, setUserDetails] = useState<User | null>(null);
 
   const statusStyles: StatusStylesType = {
@@ -77,20 +80,14 @@ const Designs = () => {
     { value: 'Deleted', label: 'Deleted', icon: assets.delete_svg, color: styles.statusDelete },
   ];
 
-  const fields = [
+  const projectFields = [
     {
       label: 'Design Name',
       id: 'name',
       type: 'text',
       placeholder: 'Enter a creative name...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
-    },
-    {
-      label: 'Customer Name (Optional)',
-      id: 'customer',
-      type: 'text',
-      placeholder: 'Enter customer name...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
+      value: designName,
     },
     {
       label: 'Project Type (Optional)',
@@ -98,10 +95,62 @@ const Designs = () => {
       type: 'text',
       placeholder: 'e.g. Wardrobe, Kitchen...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
-  const editFields = [
+  const customerFields = [
+    {
+      label: 'Customer Name (Optional)',
+      id: 'customer',
+      type: 'text',
+      placeholder: 'Enter customer name...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
+      value: customerName,
+    },
+    {
+      label: 'Customer Company (Optional)',
+      id: 'customer_company',
+      type: 'text',
+      placeholder: 'Enter customer company...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerCompany(e.target.value),
+      value: customerCompany,
+    },
+    {
+      label: 'Customer Address (Optional)',
+      id: 'customer_address',
+      type: 'text',
+      placeholder: 'Enter customer address...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerAddress(e.target.value),
+      value: customerAddress,
+    },
+    {
+      label: 'Customer GSTIN (Optional)',
+      id: 'customer_gstin',
+      type: 'text',
+      placeholder: 'Enter customer GSTIN...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerGstin(e.target.value),
+      value: customerGstin,
+    },
+    {
+      label: 'Customer Contact (Optional)',
+      id: 'customer_contact',
+      type: 'text',
+      placeholder: 'Enter customer contact...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerContact(e.target.value),
+      value: customerContact,
+    },
+    {
+      label: 'Customer Email (Optional)',
+      id: 'customer_email',
+      type: 'email',
+      placeholder: 'Enter customer email...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value),
+      value: customerEmail,
+    },
+  ];
+
+  const editProjectFields = [
     {
       label: 'Design Name',
       type: 'text',
@@ -120,6 +169,13 @@ const Designs = () => {
         { value: 'Completed', label: 'Completed' },
       ],
       value: designStatus,
+    },
+    {
+      label: 'Project Type (Optional)',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
@@ -164,25 +220,47 @@ const Designs = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const buildDesignFormData = (includeStatus = false) => {
+    const formData = new FormData();
+
+    formData.append('design_name', designName);
+
+    if (includeStatus) {
+      formData.append('status', designStatus);
+    }
+
+    const fields: Record<string, string> = {
+      customer_name: customerName,
+      customer_company: customerCompany,
+      customer_address: customerAddress,
+      customer_gstin: customerGstin,
+      customer_contact: customerContact,
+      customer_email: customerEmail,
+      project_type: projectType,
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value?.trim()) {
+        formData.append(key, value.trim());
+      }
+    });
+
+    return formData;
+  };
+
   const handleCreateDesign = async () => {
     if (!designName.trim()) return;
+
     setLoading(true);
-    const formData = new FormData();
-    formData.append('design_name', designName);
-    if (customerName.trim()) formData.append('customer_name', customerName);
-    if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
-      const response: { status: number; data: Design } = await CommonService.post(
+      const response = await CommonService.post(
         API_ENDPOINT.CREATE_DESIGN,
-        formData
+        buildDesignFormData()
       );
+
       if (response.status === 201) {
         router.push(`/template/${response.data.id}`);
-      } else {
-        setApiErrorMessage(response.data.detail);
-        setErrorPopup(true);
-        setTimeout(() => setErrorPopup(false), 3000);
       }
     } catch (err) {
       console.error(err);
@@ -194,16 +272,15 @@ const Designs = () => {
 
   const handleEditClick = async () => {
     if (!selectedDesign) return;
+
     setLoading(true);
-    const formData = new FormData();
-    formData.append('design_name', designName);
-    formData.append('status', designStatus);
 
     try {
-      const response: { status: number; data: Design } = await CommonService.put(
+      const response = await CommonService.put(
         API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id),
-        formData
+        buildDesignFormData(true)
       );
+
       if (response.status === 200) {
         setshowEditPopup(false);
         await fetchDesigns();
@@ -249,8 +326,15 @@ const Designs = () => {
     const design = designs.find((d) => d.id === designId);
     if (design) {
       setSelectedDesign(design);
-      setDesingName(design.design_name);
-      setDesingStatus(design.status);
+      setDesingName(design.design_name || '');
+      setDesingStatus(design.status || '');
+      setCustomerName(design.customer_name || '');
+      setCustomerCompany(design.customer_company || '');
+      setCustomerAddress(design.customer_address || '');
+      setCustomerGstin(design.customer_gstin || '');
+      setCustomerContact(design.customer_contact || '');
+      setCustomerEmail(design.customer_email || '');
+      setProjectType(design.project_type || '');
       setshowEditPopup(true);
       setActiveDropdownId(null);
     }
@@ -308,13 +392,6 @@ const Designs = () => {
 
   return (
     <div className={styles.container}>
-      {errorPopup && (
-        <div className={styles.errorPopup}>
-          <img src={assets.error} alt="Error" />
-          <p>{apiErrorMessage}</p>
-        </div>
-      )}
-
       <Sidebar />
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Design Studio" />
@@ -329,7 +406,21 @@ const Designs = () => {
               </p>
             </div>
 
-            <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
+            <div
+              className={styles.createdesignButton}
+              onClick={() => {
+                setDesingName('');
+                setDesingStatus('');
+                setCustomerName('');
+                setCustomerCompany('');
+                setCustomerAddress('');
+                setCustomerGstin('');
+                setCustomerContact('');
+                setCustomerEmail('');
+                setProjectType('');
+                setShowPopup(true);
+              }}
+            >
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
                   <img src={assets.plus_icon} alt="+" />
@@ -350,30 +441,55 @@ const Designs = () => {
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
                 <img src={assets.createicon} className={styles.createicon} alt="Studio" />
-                <img
-                  src={assets.close}
-                  className={styles.createclose}
-                  alt="Close"
-                  onClick={() => setShowPopup(false)}
-                />
                 <div className={styles.create_right_side}>
-                  <h2>New Project</h2>
-                  <p>Give your design a name to get started.</p>
+                  <div className={styles.createheader}>
+                    <img
+                      src={assets.close}
+                      className={styles.createclose}
+                      alt="Close"
+                      onClick={() => setShowPopup(false)}
+                    />
+                    <div>
+                      <h2>New Project</h2>
+                      <p>Give your design a name to get started.</p>
+                    </div>
+                  </div>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleCreateDesign();
                     }}
                   >
-                    <div className={styles.createinputGroup}>
-                      {fields.map((field, i) => (
-                        <InputField
-                          key={i}
-                          borderColor="rgba(57, 37, 121, 0.1)"
-                          {...field}
-                          error=""
-                        />
-                      ))}
+                    <div className={styles.formSection}>
+                      <h3 className={styles.formSectionTitle}>Project Details</h3>
+                      <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                        {projectFields.map((field, i) => (
+                          <InputField
+                            key={i}
+                            className={styles.inputField}
+                            mediumField
+                            borderColor="rgba(57, 37, 121, 0.1)"
+                            {...field}
+                            error=""
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formSection}>
+                      <h3 className={styles.formSectionTitle}>Customer Details</h3>
+                      <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                        {customerFields.map((field, i) => (
+                          <InputField
+                            key={i}
+                            className={styles.inputField}
+                            mediumField
+                            borderColor="rgba(57, 37, 121, 0.1)"
+                            {...field}
+                            error=""
+                          />
+                        ))}
+                      </div>
                     </div>
                   </form>
                 </div>
@@ -586,31 +702,64 @@ const Designs = () => {
 
         {/* Edit Popup */}
         {showEditPopup && (
-          <div className={styles.popupOverlay} onClick={() => setshowEditPopup(false)}>
-            <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
-              <img src={assets.editpopupicon} className={styles.editpopupicon} alt="Edit" />
-              <img
-                src={assets.close}
-                className={styles.editclose}
-                alt="X"
-                onClick={() => setshowEditPopup(false)}
-              />
-              <div className={styles.edit_right_side}>
-                <h3>Project Settings</h3>
-                <p>Update your design name or status below.</p>
-              </div>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className={styles.inputGroup}>
-                  {editFields.map((field, i) => (
-                    <InputField key={i} borderColor="rgba(57, 37, 121, 0.1)" {...field} error="" />
-                  ))}
+          <div className={styles.createpopupOverlay} onClick={() => setshowEditPopup(false)}>
+            <div className={styles.createpopup} onClick={(e) => e.stopPropagation()}>
+              <img src={assets.editpopupicon} className={styles.createicon} alt="Edit" />
+              <div className={styles.create_right_side}>
+                <div className={styles.createheader}>
+                  <img
+                    src={assets.close}
+                    className={styles.createclose}
+                    alt="X"
+                    onClick={() => setshowEditPopup(false)}
+                  />
+                  <div>
+                    <h2>Edit Project</h2>
+                    <p>Update your project and customer details.</p>
+                  </div>
                 </div>
-              </form>
-              <div className={styles.editButtonGrop}>
-                <button className={styles.canceleditButton} onClick={() => setshowEditPopup(false)}>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Project Details</h3>
+                    <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                      {editProjectFields.map((field, i) => (
+                        <InputField
+                          key={i}
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(57, 37, 121, 0.1)"
+                          {...field}
+                          error=""
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Customer Details</h3>
+                    <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                      {customerFields.map((field, i) => (
+                        <InputField
+                          key={i}
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(57, 37, 121, 0.1)"
+                          {...field}
+                          error=""
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className={styles.createButtonGrop}>
+                <button
+                  className={styles.cancelcreateButton}
+                  onClick={() => setshowEditPopup(false)}
+                >
                   Cancel
                 </button>
-                <button className={styles.continueButton} onClick={handleEditClick}>
+                <button className={styles.createcontinueButton} onClick={handleEditClick}>
                   Save Changes
                 </button>
               </div>

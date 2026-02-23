@@ -1,7 +1,7 @@
 # Python imports
 import secrets
 import string
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # Django imports
 from django.contrib.auth.models import Group
@@ -260,7 +260,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name", "phone", "profile_picture"]
+        fields = [
+            "name",
+            "phone",
+            "profile_picture",
+        ]
 
     def validate_phone(self: "UserProfileEditSerializer", value: str) -> str:
         """
@@ -420,19 +424,25 @@ class SetPasswordSerializer(serializers.Serializer):
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ["id", "display_name", "logo"]
-
-    def update(
-        self: "OrganizationSerializer",
-        instance: Organization,
-        validated_data: Dict[str, Any],
-    ) -> Organization:
-        instance.display_name = validated_data.get(
-            "display_name", instance.display_name
-        )
-        instance.logo = validated_data.get("logo", instance.logo)
-        instance.save()
-        return instance
+        fields = [
+            "id",
+            "display_name",
+            "logo",
+            "company_name",
+            "company_address",
+            "company_email",
+            "company_phone",
+            "company_website",
+            "company_gstin",
+            "company_pan",
+            "bank_name",
+            "account_name",
+            "account_number",
+            "account_type",
+            "ifsc_code",
+            "branch_name",
+            "upi_id",
+        ]
 
 
 class AdminLoginSerializer(serializers.Serializer):

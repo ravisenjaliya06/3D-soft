@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 import traceback
 from typing import Any, Dict, Optional
@@ -344,6 +345,7 @@ class NestAPIViewset(ModelViewSet):
             main_sheet_height,
             enclosing_rectangle=True,
             design_setting=design_setting,
+            design_name=design.design_name if design else "files",
         )
 
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")
@@ -388,7 +390,14 @@ class NestAPIViewset(ModelViewSet):
         elif format_type == "svg":
             file_path = f"{base_path}/nesting_sheet_{sheet_number}.svg"
         elif format_type == "xml_zip":
-            file_path = f"{base_path}/xml_files.zip"
+            design = Design.objects.filter(
+                id=design_id, organization=request.user.selected_organization
+            ).first()
+            if design:
+                safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design.design_name)
+                file_path = f"{base_path}/xml_{safe_design_name}.zip"
+            else:
+                file_path = f"{base_path}/xml_files.zip"
         elif format_type == "json":
             # Auto-trigger nesting to generate the latest layout data
             nesting_response = self.nesting(request, design_id)

@@ -16,6 +16,8 @@ const Nesting = () => {
   const [visibleDesigns, setVisibleDesigns] = useState(50);
   const [localData, setLocalData] = useState<any[]>([]);
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isDownloadingXML, setIsDownloadingXML] = useState(false);
 
   const { objects } = useSelector((state: RootState) => state.data);
 
@@ -586,6 +588,902 @@ const Nesting = () => {
     }
   };
 
+  const handleGenerateQuotation = async () => {
+    if (isGeneratingQuote) return;
+    setIsGeneratingQuote(true);
+    try {
+      // 0. Fetch Organization Details for Company/Banking Info
+      let organizationDetails: any = null;
+      try {
+        const orgResp: any = await CommonService.get(API_ENDPOINT.GET_ORGANIZATION_DETAILS);
+        if (orgResp.status === 200) organizationDetails = orgResp.data;
+      } catch (e) {
+        console.warn('Failed to fetch organization details for quotation styling', e);
+      }
+
+      // 1. Fetch Design Details
+      const designResponse: any = await CommonService.get(
+        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
+      );
+      const design = designResponse.data;
+
+      // 2. Fetch Nesting Data
+      let layoutData: any[] = [];
+      try {
+        const layoutResponse: any = await CommonService.put(
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+          { format: 'json' }
+        );
+        if (layoutResponse?.data && !layoutResponse.data.error) {
+          layoutData = layoutResponse.data;
+        }
+      } catch (e) {
+        console.warn('Nesting layout data not available', e);
+      }
+
+      // 3. Fetch Materials
+      let allMaterials: any[] = [];
+      try {
+        const materialResponse: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
+        if (materialResponse?.data?.results) {
+          allMaterials = materialResponse.data.results;
+        } else if (Array.isArray(materialResponse?.data)) {
+          allMaterials = materialResponse.data;
+        }
+      } catch (e) {
+        console.warn('Material catalog data not available', e);
+      }
+
+      const materialPriceMap: Record<string, number> = {};
+      allMaterials.forEach((m) => {
+        materialPriceMap[m.id] = parseFloat(m.properties?.sell_price || m.sell_price || 0);
+      });
+
+      // 4. Merge Data (from BOM logic)
+      const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
+        const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
+        const reduxPart = data.find(
+          (d: any) =>
+            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
+        );
+
+        let eBands = p.edgebands || [];
+        if (eBands.length === 0) {
+          const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
+          if (rEdge) {
+            eBands = [];
+            if (rEdge.left) eBands.push('LEFT');
+            if (rEdge.right) eBands.push('RIGHT');
+            if (rEdge.top) eBands.push('TOP');
+            if (rEdge.bottom) eBands.push('BOTTOM');
+            if (rEdge.front) eBands.push('LEFT');
+            if (rEdge.back) eBands.push('RIGHT');
+            eBands = [...new Set(eBands)];
+          }
+        }
+        return {
+          ...p,
+          unique_id: reduxPart?.unique_id || layoutUniqueId,
+          edgebands: eBands,
+        };
+      });
+
+      // 5. Group Parts by Assembly (Unit)
+      const unitsMap: Record<string, any> = {};
+
+      partsList.forEach((part: any) => {
+        const h = parseFloat(part.height || part?.dimensions?.height || 0);
+        const w = parseFloat(part.width || part?.dimensions?.width || 0);
+        const d = part.sheet_thickness || part.depth || part?.dimensions?.depth || 18;
+
+        let assemblyName = part.parent_name || 'Individual Components';
+        if (!assemblyName || assemblyName === '-') {
+          // Find parent using redux parent tree
+          const rPart =
+            data.find(
+              (d: any) =>
+                d.id === part.id ||
+                d.id === part.ID ||
+                (d.unique_id && d.unique_id === part.unique_id)
+            ) || part;
+
+          if (rPart.parent_id) {
+            const parent = data.find((d: any) => d.id === rPart.parent_id);
+            if (parent) assemblyName = parent.name || parent.type || 'Assembly';
+          }
+        }
+
+        if (!unitsMap[assemblyName]) {
+          unitsMap[assemblyName] = {
+            name: assemblyName,
+            maxLength: 0,
+            maxWidth: 0,
+            maxHeight: 0,
+            materialNames: new Set<string>(),
+            qty: 1,
+            totalMaterialCost: 0,
+            totalEdgeCost: 0,
+            panels: [],
+            hingeCount: 0,
+            camCount: 0,
+            dowelCount: 0,
+          };
+        }
+
+        const unit = unitsMap[assemblyName];
+        unit.maxLength = Math.max(unit.maxLength, h, w);
+        unit.maxWidth = Math.max(unit.maxWidth, h, w); // simplified
+        unit.maxHeight = Math.max(unit.maxHeight, d);
+
+        const matName = part.material_name || 'Plywood';
+        unit.materialNames.add(`${d}mm ${matName}`);
+
+        // Material Cost
+        const rPart =
+          data.find(
+            (d: any) =>
+              d.id === part.id ||
+              d.id === part.ID ||
+              (d.unique_id && d.unique_id === part.unique_id)
+          ) || part;
+
+        const mat =
+          rPart.material && Array.isArray(rPart.material) ? rPart.material[0] : rPart.material;
+        const matId = mat?.id || mat;
+        const sheetCost = materialPriceMap[matId] || 1500;
+
+        const areaReq = (h * w) / 1000000;
+        // approx cost per sqm = sheetCost / (2.44*1.22)
+        const costPerSqm = sheetCost / 2.9768;
+        unit.totalMaterialCost += areaReq * costPerSqm * (part.quantity || 1);
+
+        // Edgebanding cost
+        let len = 0;
+        const eH = h / 1000;
+        const eW = w / 1000;
+        if (part.edgebands && part.edgebands.length > 0) {
+          part.edgebands.forEach((e: any) => {
+            let eStr =
+              typeof e === 'object' && e?.face
+                ? String(e.face).toUpperCase()
+                : String(e).toUpperCase();
+            if (['LEFT', 'L', '5', 'FRONT'].includes(eStr)) len += eH;
+            if (['RIGHT', 'R', '3', 'BACK'].includes(eStr)) len += eH;
+            if (['TOP', 'T', '4', '1'].includes(eStr)) len += eW;
+            if (['BOTTOM', 'B', '2', '6'].includes(eStr)) len += eW;
+          });
+        }
+        unit.totalEdgeCost += len * 25; // 25 rs per meter
+
+        // Hardware
+        if (part.minifix_holes && part.minifix_holes.length > 0) {
+          part.minifix_holes.forEach((h: any) => {
+            const type = (h.type || '').toUpperCase();
+            if (type === 'CAM') unit.camCount++;
+            if (type === 'DOWEL' || type === 'MINIFIX DOWEL') unit.dowelCount++;
+            if (type === 'HINGE') unit.hingeCount++;
+          });
+        }
+
+        unit.panels.push(part.name || 'Panel');
+      });
+
+      // 6. Calculate Final Cost per Unit
+      const quoteRows: any[] = [];
+      let srNo = 1;
+      let subTotal = 0;
+
+      const formatCurrency = (num: number) => {
+        return (
+          '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        );
+      };
+
+      Object.values(unitsMap).forEach((u) => {
+        // Add hardware cost
+        const hwCost = u.hingeCount * 150 + u.camCount * 20 + u.dowelCount * 10;
+        const rawCost = u.totalMaterialCost + u.totalEdgeCost + hwCost;
+        const laborCost = rawCost * 0.2; // 20% labor
+        const estCost = rawCost + laborCost;
+
+        let ratePerUnit = Math.round(estCost * 1.5); // 50% markup
+        if (ratePerUnit < 1000) ratePerUnit = 1500; // minimum boundary
+
+        const amount = ratePerUnit * u.qty;
+        subTotal += amount;
+
+        // Determine description
+        let desc = u.name;
+        if (u.name.toLowerCase().includes('drawer')) {
+          desc += `\n(Front, Back, 2 Sides, Bottom)\n  - Includes hardware and channels`;
+        } else if (u.name.toLowerCase().includes('door')) {
+          desc += `\n(Panel with soft-close hinges)\n  - Edge banded on sides`;
+        } else {
+          desc += `\n(Constructed Box Assembly)\n  - Complete with necessary hardware`;
+        }
+
+        const dimStr = `${Math.round(u.maxLength)}×${Math.round(u.maxWidth)}×${Math.round(u.maxHeight)} mm`;
+        const matStr = Array.from(u.materialNames).join(' / ');
+
+        quoteRows.push([
+          srNo++,
+          desc,
+          dimStr,
+          matStr.substring(0, 30),
+          u.qty, // Qty
+          formatCurrency(ratePerUnit), // Rate/Unit
+          formatCurrency(amount), // Amount
+          '9403', // HSN
+          18, // GST%
+        ]);
+      });
+
+      // Add standard items like installation
+      const installationCost = Math.round(subTotal * 0.05); // 5% installation
+      quoteRows.push([
+        srNo++,
+        'Installation & Fitting Charges\n(On-site assembly, alignment, testing)',
+        'Complete Job',
+        'Labor',
+        1,
+        formatCurrency(installationCost),
+        formatCurrency(installationCost),
+        '9954',
+        18,
+      ]);
+      subTotal += installationCost;
+
+      const cgst = subTotal * 0.09;
+      const sgst = subTotal * 0.09;
+      const grandTotal = Math.round(subTotal + cgst + sgst);
+
+      const numberToWords = (num: number) => {
+        const a = [
+          '',
+          'One',
+          'Two',
+          'Three',
+          'Four',
+          'Five',
+          'Six',
+          'Seven',
+          'Eight',
+          'Nine',
+          'Ten',
+          'Eleven',
+          'Twelve',
+          'Thirteen',
+          'Fourteen',
+          'Fifteen',
+          'Sixteen',
+          'Seventeen',
+          'Eighteen',
+          'Nineteen',
+        ];
+        const b = [
+          '',
+          '',
+          'Twenty',
+          'Thirty',
+          'Forty',
+          'Fifty',
+          'Sixty',
+          'Seventy',
+          'Eighty',
+          'Ninety',
+        ];
+
+        const inWords = (n: number): string => {
+          if (n === 0) return 'Zero';
+          let str = '';
+          if (n > 9999999) {
+            str += inWords(Math.floor(n / 10000000)) + ' Crore ';
+            n %= 10000000;
+          }
+          if (n > 99999) {
+            str += inWords(Math.floor(n / 100000)) + ' Lakh ';
+            n %= 100000;
+          }
+          if (n > 999) {
+            str += inWords(Math.floor(n / 1000)) + ' Thousand ';
+            n %= 1000;
+          }
+          if (n > 99) {
+            str += inWords(Math.floor(n / 100)) + ' Hundred ';
+            n %= 100;
+          }
+          if (n > 0) {
+            if (n < 20) str += a[n] + ' ';
+            else {
+              str += b[Math.floor(n / 10)] + ' ';
+              if (n % 10 > 0) str += a[n % 10] + ' ';
+            }
+          }
+          return str.trim();
+        };
+
+        return 'Rupees ' + inWords(num) + ' Only';
+      };
+
+      const wb = XLSX.utils.book_new();
+      const sP = { font: { name: 'Calibri', sz: 10 }, alignment: { wrapText: true } };
+      const sTitle = {
+        font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '392579' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
+
+      const sKey = { font: { name: 'Calibri', sz: 10, bold: true } };
+      const sVal = { font: { name: 'Calibri', sz: 10 } };
+      const sProj = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'F2F2F2' } },
+      };
+
+      const sTh = {
+        font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '000000' } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sTdNum = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { vertical: 'top', horizontal: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sTdText = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { vertical: 'top', horizontal: 'left', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const sSubKey = {
+        font: { name: 'Calibri', sz: 10, bold: true },
+        alignment: { horizontal: 'right' },
+        border: { left: { style: 'thin' }, right: { style: 'thin' } },
+      };
+      const sSubVal = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { horizontal: 'right' },
+        border: { right: { style: 'thin' } },
+      };
+      const sGTKey = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'E0E0E0' } },
+        alignment: { horizontal: 'right' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+      const sGTVal = {
+        font: { name: 'Calibri', sz: 11, bold: true },
+        fill: { fgColor: { rgb: 'E0E0E0' } },
+        alignment: { horizontal: 'right' },
+        border: { top: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+      };
+
+      const sTermH = { font: { name: 'Calibri', sz: 10, bold: true, underline: true } };
+      const sTermC = { font: { name: 'Calibri', sz: 9 }, alignment: { wrapText: true } };
+
+      const padArr = <T,>(arr: T[], len: number, fill: T): T[] => {
+        while (arr.length < len) arr.push(fill);
+        return arr;
+      };
+
+      const qData: any[] = [];
+      const pushR = (arr: any[]) => qData.push(padArr(arr, 9, ''));
+
+      // 1. Headers
+      const sH1C = {
+        font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: '003366' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sH2C = {
+        font: { name: 'Calibri', sz: 10, italic: true },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sPC = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+      const sPBoldC = {
+        font: { name: 'Calibri', sz: 10, bold: true },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      };
+
+      const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+      const companyAddress =
+        organizationDetails?.company_address ||
+        'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
+
+      let contactLine = '';
+      if (organizationDetails?.company_phone)
+        contactLine += `Phone: ${organizationDetails.company_phone} | `;
+      else contactLine += `Phone: +91 79 1234 5678 | `;
+
+      if (organizationDetails?.company_email)
+        contactLine += `Email: ${organizationDetails.company_email} | `;
+      else contactLine += `Email: sales@bravento.com | `;
+
+      if (organizationDetails?.company_website)
+        contactLine += `Website: ${organizationDetails.company_website}`;
+      else contactLine += `Website: www.bravento.com`;
+
+      let taxLine = '';
+      if (organizationDetails?.company_gstin)
+        taxLine += `GSTIN: ${organizationDetails.company_gstin} | `;
+      else taxLine += `GSTIN: 24XXXXX1234X1Z5 | `;
+
+      if (organizationDetails?.company_pan) taxLine += `PAN: ${organizationDetails.company_pan}`;
+      else taxLine += `PAN: XXXXX1234X`;
+
+      pushR([{ v: companyName, s: sH1C }]);
+      pushR([{ v: 'Custom Furniture Design & Manufacturing', s: sH2C }]);
+      pushR([{ v: companyAddress, s: sPC }]);
+      pushR([{ v: contactLine, s: sPC }]);
+      pushR([{ v: taxLine, s: sPBoldC }]);
+      pushR([]);
+      pushR([{ v: 'QUOTATION', s: sTitle }]);
+      pushR([]);
+
+      // 2. Info Block
+      const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
+      const quoteDate = new Date()
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        .replace(/ /g, '-');
+      const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        .replace(/ /g, '-');
+
+      pushR([
+        { v: 'Quotation No:', s: sKey },
+        { v: quoteNo, s: sVal },
+        '',
+        '',
+        { v: 'Customer Name:', s: sKey },
+        { v: design.customer_name || 'Customer', s: sVal },
+      ]);
+      pushR([
+        { v: 'Date:', s: sKey },
+        { v: quoteDate, s: sVal },
+        '',
+        '',
+        { v: 'Company:', s: sKey },
+        { v: design.customer_company || '-', s: sVal },
+      ]);
+      pushR([
+        { v: 'Valid Till:', s: sKey },
+        { v: validDate, s: sVal },
+        '',
+        '',
+        { v: 'Address:', s: sKey },
+        { v: design.customer_address || '-', s: sVal },
+      ]);
+      pushR([
+        { v: 'Project ID:', s: sKey },
+        { v: design.project_code || design.id, s: sVal },
+        '',
+        '',
+        { v: 'GSTIN:', s: sKey },
+        { v: design.customer_gstin || '-', s: sVal },
+      ]);
+      pushR([
+        '',
+        '',
+        '',
+        '',
+        { v: 'Contact:', s: sKey },
+        { v: design.customer_contact || '-', s: sVal },
+      ]);
+      pushR([
+        '',
+        '',
+        '',
+        '',
+        { v: 'Email:', s: sKey },
+        { v: design.customer_email || '-', s: sVal },
+      ]);
+      pushR([]);
+
+      pushR([
+        {
+          v: `PROJECT: ${design.project_type || 'Custom Furniture'} - ${design.design_name}`,
+          s: sProj,
+        },
+      ]);
+      pushR([]);
+
+      // 3. Table Headers
+      pushR([
+        { v: 'Sr.', s: sTh },
+        { v: 'Unit/Component Description', s: sTh },
+        { v: 'Dimensions (L×W×H)', s: sTh },
+        { v: 'Material', s: sTh },
+        { v: 'Qty', s: sTh },
+        { v: 'Rate/Unit', s: sTh },
+        { v: 'Amount', s: sTh },
+        { v: 'HSN', s: sTh },
+        { v: 'GST%', s: sTh },
+      ]);
+
+      // 4. Table Rows
+      const tblStart = qData.length; // Row index is 16 (0-indexed)
+      quoteRows.forEach((row) => {
+        const formattedRow = [
+          { v: row[0], s: sTdNum },
+          { v: row[1], s: sTdText },
+          { v: row[2], s: sTdText },
+          { v: row[3], s: sTdText },
+          { v: row[4], s: sTdNum },
+          { v: row[5], s: sTdNum },
+          { v: row[6], s: sTdNum },
+          { v: row[7], s: sTdNum },
+          { v: row[8], s: sTdNum },
+        ];
+        pushR(formattedRow);
+      });
+
+      // 5. Totals
+      const tblEnd = qData.length;
+      pushR([
+        { v: 'SUBTOTAL (Before GST)', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(subTotal), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Add: CGST @ 9%', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(cgst), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Add: SGST @ 9%', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(sgst), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'Round Off', s: sSubKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(0), s: sSubVal },
+        '',
+        '',
+      ]);
+      pushR([
+        { v: 'GRAND TOTAL (Inclusive of all taxes)', s: sGTKey },
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: formatCurrency(grandTotal), s: sGTVal },
+        '',
+        '',
+      ]);
+      pushR([]);
+      pushR([
+        { v: 'Amount in Words:', s: sKey },
+        { v: numberToWords(grandTotal), s: sH1C },
+      ]); // actually bold left-aligned, but reusing font
+      pushR([]);
+
+      // 6. Terms and Conditions block matching sample
+      const tcLines = [
+        [{ v: 'TERMS AND CONDITIONS:', s: sTermH }],
+        [{ v: '1. PAYMENT TERMS:', s: sKey }],
+        [{ v: '   • 40% advance payment with purchase order confirmation', s: sTermC }],
+        [{ v: '   • 30% payment upon material delivery and start of manufacturing', s: sTermC }],
+        [{ v: '   • 20% payment upon installation completion', s: sTermC }],
+        [{ v: '   • 10% final payment after client sign-off and handover', s: sTermC }],
+        [],
+        [{ v: '2. DELIVERY & INSTALLATION:', s: sKey }],
+        [
+          {
+            v: '   • Manufacturing time: 15-20 working days from order confirmation and advance payment',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Installation time: 3-4 working days (subject to site readiness)', s: sTermC }],
+        [
+          {
+            v: '   • Site should be ready with completed flooring, painting, electrical points, and civil work',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Customer to provide necessary permissions for material delivery and installation access',
+            s: sTermC,
+          },
+        ],
+        [],
+        [{ v: '3. WARRANTY:', s: sKey }],
+        [
+          {
+            v: '   • 1 year comprehensive warranty on manufacturing defects and workmanship',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • 5 years warranty on branded hardware (Blum/Hettich/Hafele/Ebco) as per manufacturer terms',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Warranty does not cover misuse, mishandling, accidents, or natural wear and tear',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Annual maintenance contract available separately after warranty period',
+            s: sTermC,
+          },
+        ],
+        [],
+        [{ v: '4. INCLUSIONS:', s: sKey }],
+        [{ v: '   • All materials as per detailed specifications mentioned above', s: sTermC }],
+        [
+          {
+            v: '   • Complete manufacturing with CNC cutting, drilling, edge banding, and finishing',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Transportation to site within Ahmedabad city limits (25 km radius)',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Complete on-site installation, assembly, fitting, and alignment', s: sTermC }],
+        [{ v: '   • Final cleaning and handover with care & maintenance instructions', s: sTermC }],
+        [],
+        [{ v: '5. EXCLUSIONS:', s: sKey }],
+        [
+          {
+            v: '   • Any civil work, masonry work, electrical work, plumbing, or painting work',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Structural modifications or wall preparation work', s: sTermC }],
+        [
+          {
+            v: '   • Loading/unloading charges at site (if elevator not available above 2nd floor)',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Transportation beyond 25 km from our factory (extra charges applicable)',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Any items not specifically mentioned in this quotation', s: sTermC }],
+        [],
+        [{ v: '6. DESIGN & CHANGES:', s: sKey }],
+        [{ v: '   • Design approval to be taken before manufacturing starts', s: sTermC }],
+        [
+          {
+            v: '   • Any design changes after approval will attract additional charges (minimum 15% of changed items)',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Material/hardware changes subject to availability and price revision',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • Final measurements to be taken at site before manufacturing', s: sTermC }],
+        [],
+        [{ v: '7. GENERAL TERMS:', s: sKey }],
+        [{ v: '   • This quotation is valid for 30 days from date of issue', s: sTermC }],
+        [
+          {
+            v: '   • Prices are subject to change without notice after validity period',
+            s: sTermC,
+          },
+        ],
+        [{ v: '   • All disputes subject to Ahmedabad jurisdiction only', s: sTermC }],
+        [
+          {
+            v: '   • GST will be charged as per prevailing government rates at the time of billing',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent',
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: "   • Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
+            s: sTermC,
+          },
+        ],
+        [
+          {
+            v: '   • Any additional work or items requested during installation will be charged separately',
+            s: sTermC,
+          },
+        ],
+        [],
+        [{ v: 'BANKING DETAILS FOR PAYMENT:', s: sTermH }],
+        [{ v: `Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`, s: sP }],
+        [
+          {
+            v: `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
+            s: sP,
+          },
+        ],
+        [
+          {
+            v: `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
+            s: sP,
+          },
+        ],
+        [{ v: `Account Type: ${organizationDetails?.account_type || 'Current Account'}`, s: sP }],
+        [{ v: `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`, s: sP }],
+        [
+          {
+            v: `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
+            s: sP,
+          },
+        ],
+        [
+          {
+            v: `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`,
+            s: sP,
+          },
+        ],
+        [],
+        [
+          { v: 'NOTE:', s: sKey },
+          {
+            v: 'Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.',
+            s: sVal,
+          },
+        ],
+        [],
+        [],
+        ['', '', '', '', '', '', { v: `For ${companyName}`, s: sKey }],
+        [],
+        [],
+        [],
+        ['', '', '', '', '', '', { v: '____________________', s: sP }],
+        ['', '', '', '', '', '', { v: 'Authorized Signatory', s: sP }],
+        ['', '', '', '', '', '', { v: `Date: ${quoteDate}`, s: sP }],
+        [],
+        [
+          {
+            v: 'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!',
+            s: sH2C,
+          },
+        ],
+      ];
+
+      const tcStartRow = qData.length;
+      tcLines.forEach((l) => pushR(l));
+
+      const ws = XLSX.utils.aoa_to_sheet(qData);
+
+      // Merges based strictly on python extracted sample layout
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }); // BRAVENTO FURNITURE SOLUTIONS
+      ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }); // Custom Furniture...
+      ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }); // Address...
+      ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 8 } }); // Phone...
+      ws['!merges'].push({ s: { r: 4, c: 0 }, e: { r: 4, c: 8 } }); // GSTIN...
+      ws['!merges'].push({ s: { r: 6, c: 0 }, e: { r: 6, c: 8 } }); // QUOTATION
+
+      // Info block merges F9:I9 etc
+      ws['!merges'].push({ s: { r: 8, c: 5 }, e: { r: 8, c: 8 } });
+      ws['!merges'].push({ s: { r: 9, c: 5 }, e: { r: 9, c: 8 } });
+      ws['!merges'].push({ s: { r: 10, c: 5 }, e: { r: 10, c: 8 } });
+      ws['!merges'].push({ s: { r: 13, c: 5 }, e: { r: 13, c: 8 } });
+      ws['!merges'].push({ s: { r: 15, c: 0 }, e: { r: 15, c: 8 } }); // PROJECT
+
+      // Totals
+      ws['!merges'].push({ s: { r: tblEnd, c: 0 }, e: { r: tblEnd, c: 5 } }); // SUBTOTAL
+      ws['!merges'].push({ s: { r: tblEnd + 1, c: 0 }, e: { r: tblEnd + 1, c: 5 } });
+      ws['!merges'].push({ s: { r: tblEnd + 2, c: 0 }, e: { r: tblEnd + 2, c: 5 } });
+      ws['!merges'].push({ s: { r: tblEnd + 3, c: 0 }, e: { r: tblEnd + 3, c: 5 } });
+      ws['!merges'].push({ s: { r: tblEnd + 4, c: 0 }, e: { r: tblEnd + 4, c: 5 } }); // GRAND TOTAL
+
+      ws['!merges'].push({ s: { r: tblEnd + 6, c: 1 }, e: { r: tblEnd + 6, c: 8 } }); // Amount in Words (B:I)
+
+      // Merge all rows for T&C up to the signature
+      for (let i = 0; i < tcLines.length; i++) {
+        const cell: any = tcLines[i][0];
+        if (tcLines[i].length > 0 && cell && cell.v !== 'NOTE:' && cell.v !== '') {
+          if (
+            cell.v.startsWith('Bank Name') ||
+            cell.v.startsWith('Account ') ||
+            cell.v.startsWith('IFSC') ||
+            cell.v.startsWith('Branch:') ||
+            cell.v.startsWith('UPI')
+          ) {
+            ws['!merges'].push({ s: { r: tcStartRow + i, c: 0 }, e: { r: tcStartRow + i, c: 3 } });
+          } else {
+            ws['!merges'].push({ s: { r: tcStartRow + i, c: 0 }, e: { r: tcStartRow + i, c: 8 } });
+          }
+        } else if (cell && cell.v === 'NOTE:') {
+          ws['!merges'].push({ s: { r: tcStartRow + i, c: 1 }, e: { r: tcStartRow + i, c: 8 } });
+        } else if (tcLines[i].length > 6 && tcLines[i][6]) {
+          // Signature area block merges (G:I)
+          ws['!merges'].push({ s: { r: tcStartRow + i, c: 6 }, e: { r: tcStartRow + i, c: 8 } });
+        }
+      }
+
+      ws['!cols'] = [
+        { wch: 5.0 },
+        { wch: 32.0 },
+        { wch: 18.0 },
+        { wch: 14.0 },
+        { wch: 6.0 },
+        { wch: 12.0 },
+        { wch: 14.0 },
+        { wch: 8.0 },
+        { wch: 8.0 },
+      ];
+
+      // Row heights (optional, to make it look matching)
+      if (!ws['!rows']) ws['!rows'] = [];
+      ws['!rows'][6] = { hpx: 30 }; // QUOTATION
+      for (let i = 0; i < quoteRows.length; i++) ws['!rows'][tblStart + i] = { hpx: 45 }; // multi-line cells
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
+      XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate Quotation Data.');
+    } finally {
+      setIsGeneratingQuote(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <Sidebar />
@@ -600,6 +1498,15 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
+                  {/* ✅ Quotation Button */}
+                  <button
+                    onClick={handleGenerateQuotation}
+                    disabled={isGeneratingQuote}
+                    className={styles.viewDetailsButton}
+                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                  >
+                    {isGeneratingQuote ? 'Generating...' : 'Quotation'}
+                  </button>
                   {/* ✅ BOM Data Button */}
                   <button
                     onClick={handleGenerateBOM}
@@ -610,19 +1517,36 @@ const Nesting = () => {
                     {isGeneratingBOM ? 'Generating...' : 'BOM Data'}
                   </button>
                   <button
-                    onClick={() => {
-                      const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/xml_files.zip`;
-                      const a = document.createElement('a');
-                      a.href = fileUrl;
-                      a.download = 'xml_files.zip';
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
+                    onClick={async () => {
+                      if (isDownloadingXML) return;
+                      setIsDownloadingXML(true);
+                      try {
+                        const response: any = await CommonService.put(
+                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+                          { format: 'xml_zip' }
+                        );
+                        if (response?.data?.file) {
+                          const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${response.data.file.replace('umaboy/', '')}`;
+                          const fileName = response.data.file.split('/').pop() || 'xml_files.zip';
+                          const a = document.createElement('a');
+                          a.href = fileUrl;
+                          a.download = fileName;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                        }
+                      } catch (e) {
+                        console.error(e);
+                        alert('Failed to download XMLs');
+                      } finally {
+                        setIsDownloadingXML(false);
+                      }
                     }}
+                    disabled={isDownloadingXML}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
-                    XMLs
+                    {isDownloadingXML ? 'Gathering XMLs...' : 'XMLs'}
                   </button>
                   {/* ✅ View Details Button */}
                   <button

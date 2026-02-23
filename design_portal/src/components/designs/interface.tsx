@@ -5,6 +5,13 @@ export interface Design {
   updated_at: string;
   status: string;
   detail: string;
+  customer_name?: string;
+  customer_company?: string;
+  customer_address?: string;
+  customer_gstin?: string;
+  customer_contact?: string;
+  customer_email?: string;
+  project_type?: string;
 }
 
 export interface DesignResponse {

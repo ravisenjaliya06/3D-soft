@@ -2,7 +2,9 @@
 import uuid
 
 # Django imports
-from django.db import models
+from django.db import IntegrityError, models
+from django.db.models import Max
+from django.utils import timezone
 
 # App imports
 from umaboy.models import Organization, User
@@ -81,6 +83,11 @@ class Design(models.Model):
     is_custom = models.BooleanField(default=False)
     rendering_project_id = models.CharField(max_length=255, null=True, blank=True)
     customer_name = models.CharField(max_length=255, null=True, blank=True)
+    customer_company = models.CharField(max_length=255, null=True, blank=True)
+    customer_address = models.TextField(null=True, blank=True)
+    customer_gstin = models.CharField(max_length=50, null=True, blank=True)
+    customer_contact = models.CharField(max_length=50, null=True, blank=True)
+    customer_email = models.EmailField(max_length=255, null=True, blank=True)
     project_type = models.CharField(max_length=255, null=True, blank=True)
     project_code = models.CharField(
         max_length=20,
@@ -93,15 +100,32 @@ class Design(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self: "Design", *args, **kwargs) -> None:
-        if not self.project_code:
-            # Django imports
-            from django.utils import timezone
+        if self.project_code:
+            return super().save(*args, **kwargs)
 
-            year = timezone.now().year
-            # Count existing designs this year to get the next sequence number
-            count = Design.objects.filter(created_at__year=year).count() + 1
-            self.project_code = f"BRV-{year}-{count:04d}"
-        super().save(*args, **kwargs)
+        year = timezone.now().year
+
+        for _ in range(3):  # 3 retries is enough
+            # Get highest project_code for this year
+            last_code = (
+                Design.objects.filter(created_at__year=year)
+                .aggregate(max_code=Max("project_code"))
+                .get("max_code")
+            )
+
+            next_number = 1
+            if last_code:
+                next_number = int(last_code.rsplit("-", 1)[-1]) + 1
+
+            self.project_code = f"BRV-{year}-{next_number:04d}"
+
+            try:
+                return super().save(*args, **kwargs)
+            except IntegrityError:
+                # retry if collision happens
+                continue
+
+        raise IntegrityError("Failed to generate unique project_code after retries")
 
     def __str__(self: "Design") -> str:
         return self.design_name

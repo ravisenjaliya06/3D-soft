@@ -1,6 +1,7 @@
 # Python imports
 import logging
 import os
+import re
 import secrets
 import xml.etree.ElementTree as ET  # noqa: N817
 import zipfile
@@ -17,7 +18,13 @@ from openpyxl.styles import Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 from rectpack import SORT_AREA, SORT_PERI, SORT_RATIO, SORT_SSIDE, newPacker
+
+# Reportlab imports
+from reportlab.graphics import renderPDF
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK
+from svglib.svglib import svg2rlg
 
 # Local imports
 from .constant import (
@@ -391,7 +398,10 @@ class NestingService:
             worksheet.column_dimensions[column_letter].width = adjusted_width
 
     def generate_xmls(
-        self: "NestingService", packed_items: List[Dict[str, Any]], output_path: str
+        self: "NestingService",
+        packed_items: List[Dict[str, Any]],
+        output_path: str,
+        design_name: str = "files",
     ) -> List[str]:
         """
         Generates XML files for each panel containing machining data.
@@ -750,7 +760,8 @@ class NestingService:
 
         logger.info("Generated Excel file at: %s", excel_path)
 
-        zip_path = os.path.join(base_dir, "xml_files.zip")
+        safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design_name)
+        zip_path = os.path.join(base_dir, f"xml_{safe_design_name}.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root_dir, _, files in os.walk(xml_dir):
                 for file in files:
@@ -985,11 +996,6 @@ class NestingService:
         """
         Combines generated SVGs into a single Layout PDF.
         """
-        # External imports
-        from reportlab.graphics import renderPDF
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-        from svglib.svglib import svg2rlg
 
         pdf_path = os.path.splitext(output_path)[0] + "_layout.pdf"
         c = canvas.Canvas(pdf_path, pagesize=A4)
@@ -1069,9 +1075,6 @@ class NestingService:
             d = Drawing(45, 45, transform=[25 / width, 0, 0, 25 / height, 0, 0])
             d.add(qr_code)
 
-            # External imports
-            from reportlab.graphics import renderPDF
-
             renderPDF.draw(d, c, x + 2 * mm, y + 2 * mm)
 
             # Draw Text
@@ -1108,6 +1111,7 @@ def nest(
     allow_rotation: bool = True,
     spacing: float = 5.0,
     design_setting: Optional[object] = None,
+    design_name: str = "files",
 ) -> JsonResponse:
     """
     Wrapper function to use the NestingService.
@@ -1128,7 +1132,7 @@ def nest(
         labels_pdf_path = service.generate_labels(packed_items, output)
 
         # New: Generate XMLs
-        xml_paths = service.generate_xmls(packed_items, output)
+        xml_paths = service.generate_xmls(packed_items, output, design_name)
 
         # New: Generate JSON Layout Data
         json_path = service.generate_json(packed_items, output)
