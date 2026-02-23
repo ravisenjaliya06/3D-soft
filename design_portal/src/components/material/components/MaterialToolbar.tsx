@@ -24,7 +24,9 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
           <>
             <div className="flex items-center gap-[0.35rem]">
               <div className="h-[0.5rem] w-[0.5rem] rounded-full bg-gradient-to-br from-[var(--wizardstepbox-bg-color)] to-[var(--primary-color)]" />
-              <span className="font-bold tracking-wide text-[var(--primary-color)]">{selectedType}</span>
+              <span className="font-bold tracking-wide text-[var(--primary-color)]">
+                {selectedType}
+              </span>
             </div>
             {selectedName && (
               <>

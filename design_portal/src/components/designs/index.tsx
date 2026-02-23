@@ -254,10 +254,7 @@ const Designs = () => {
     setLoading(true);
 
     try {
-      const response = await CommonService.post(
-        API_ENDPOINT.CREATE_DESIGN,
-        buildDesignFormData()
-      );
+      const response = await CommonService.post(API_ENDPOINT.CREATE_DESIGN, buildDesignFormData());
 
       if (response.status === 201) {
         router.push(`/template/${response.data.id}`);

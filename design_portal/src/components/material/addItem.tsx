@@ -117,7 +117,8 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   }, [selectedType, initialData]);
 
-  const currentTypeForSequence = selectedMaterialType || (selectedType ? formatEnumLabel(selectedType) : '');
+  const currentTypeForSequence =
+    selectedMaterialType || (selectedType ? formatEnumLabel(selectedType) : '');
 
   // Material type options
   const materialTypes = [

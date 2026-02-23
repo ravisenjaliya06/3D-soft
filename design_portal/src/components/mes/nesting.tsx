@@ -1501,7 +1501,7 @@ const Nesting = () => {
                   {/* ✅ Quotation Button */}
                   <button
                     onClick={handleGenerateQuotation}
-                    disabled={isGeneratingQuote}
+                    disabled={isGeneratingQuote || data.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1510,7 +1510,7 @@ const Nesting = () => {
                   {/* ✅ BOM Data Button */}
                   <button
                     onClick={handleGenerateBOM}
-                    disabled={isGeneratingBOM}
+                    disabled={isGeneratingBOM || data.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1542,7 +1542,7 @@ const Nesting = () => {
                         setIsDownloadingXML(false);
                       }
                     }}
-                    disabled={isDownloadingXML}
+                    disabled={isDownloadingXML || data.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1552,6 +1552,7 @@ const Nesting = () => {
                   <button
                     onClick={() => router.push(`/design/${design_id}/nesting-details`)}
                     className={styles.viewDetailsButton}
+                    disabled={data.length === 0}
                   >
                     View Details
                   </button>
@@ -1572,15 +1573,23 @@ const Nesting = () => {
                   </thead>
 
                   <tbody>
-                    {data.slice(0, visibleDesigns).map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td>{item.name}</td>
-                        <td>{formatDimension(item?.dimensions?.width, item?.type)}</td>
-                        <td>{formatDimension(item?.dimensions?.height, item?.type)}</td>
-                        <td>{formatDimension(item?.dimensions?.depth, item?.type)}</td>
+                    {data.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
+                          No data available for nesting please create design first.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      data.slice(0, visibleDesigns).map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>{item.name}</td>
+                          <td>{formatDimension(item?.dimensions?.width, item?.type)}</td>
+                          <td>{formatDimension(item?.dimensions?.height, item?.type)}</td>
+                          <td>{formatDimension(item?.dimensions?.depth, item?.type)}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
 

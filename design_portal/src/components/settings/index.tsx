@@ -1015,11 +1015,7 @@ const Settings = () => {
               onClick={() => handleActiveMenu('billing')}
             >
               <img
-                src={
-                  activeMenu === 'billing'
-                    ? assets.activemoney
-                    : assets.money
-                }
+                src={activeMenu === 'billing' ? assets.activemoney : assets.money}
                 alt="billing"
               />
               <p className={activeMenu === 'billing' ? styles.activeMenuTitle : styles.menuTitle}>
