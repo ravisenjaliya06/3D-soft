@@ -1,5 +1,7 @@
 .env
 
+**/static/admin*
+**/static/rest*
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
