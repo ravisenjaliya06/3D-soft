@@ -120,6 +120,17 @@ class SignupSerializer(PhoneValidationSerializer):
         password = validated_data.pop("password")
         user = User(**validated_data)
         user.set_password(password)
+
+        request = self.context.get("request")
+        ip_address = None
+        if request:
+            x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(",")[0]
+            else:
+                ip_address = request.META.get("REMOTE_ADDR")
+        
+        user.ip_address = ip_address
         user.save()
 
         organization, _ = Organization.objects.get_or_create(

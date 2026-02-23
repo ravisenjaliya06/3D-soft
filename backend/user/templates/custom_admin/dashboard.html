@@ -135,6 +135,7 @@
                                 <th>Email</th>
                                 <th>Username</th>
                                 <th>Phone Number</th>
+                                <th>IP Address</th>
                                 <th>Password</th>
                                 <th class="text-end">Action</th>
                             </tr>
@@ -153,6 +154,7 @@
                                 <td>{{ user.email }}</td>
                                 <td>{{ user.username }}</td>
                                 <td>{{ user.phone_number }}</td>
+                                <td>{{ user.ip_address|default:"-" }}</td>
                                 <td class="text-muted">••••••••</td>
                                 <td class="text-end">
                                     <button class="action-btn btn-approve" data-user-id="{{ user.id }}"
