@@ -301,7 +301,7 @@ export class SnapManager {
 
     // 3. Snap Y to platform surface
     // Position sink center exactly at platform top surface + offset
-    finalPos.y = metrics.topY + 0.2;
+    finalPos.y = metrics.topY + 0.03;
 
     object.position.copy(finalPos);
   }
