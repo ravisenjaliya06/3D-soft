@@ -26,6 +26,8 @@ from user.utils import (
     default_material_data,
     duplicate_default_catalogs_for_organization,
     duplicate_default_textures,
+    get_client_ip,
+    get_ip_location,
     verify_otp,
 )
 
@@ -111,25 +113,37 @@ class SignupSerializer(PhoneValidationSerializer):
         return data
 
     def create(self: "SignupSerializer", validated_data: Dict[str, str]) -> User:
-        """
-        Create and return a new User instance.
-        """
         validated_data.pop("confirm_password", None)
 
         group_names = self.context.get("group_names")
         password = validated_data.pop("password")
+
         user = User(**validated_data)
         user.set_password(password)
+
+        request = self.context.get("request")
+
+        ip_address = None
+        location = None
+
+        if request:
+            ip_address = get_client_ip(request)
+            if ip_address:
+                location = get_ip_location(ip_address)
+
+        user.ip_address = ip_address
+        user.location = location
         user.save()
 
         organization, _ = Organization.objects.get_or_create(
             name=f"{user.username}'s Organization"
         )
+
         organization.user.add(user)
-        organization.save()
 
         user.selected_organization = organization
         user.save()
+
         add_user_to_organization(user, organization, group_names, is_invited=False)
         duplicate_default_textures(organization)
         default_material_data(organization)

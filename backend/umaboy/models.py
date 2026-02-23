@@ -38,6 +38,8 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, blank=True)
     is_verified = models.BooleanField(default=False)
     profile_picture = models.ImageField(upload_to="profile_pictures", null=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
 
     REQUIRED_FIELDS = ["email"]
 
