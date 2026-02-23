@@ -1,11 +1,19 @@
 # Python imports
 import logging
 import os
+import re
 import secrets
 import xml.etree.ElementTree as ET  # noqa: N817
 import zipfile
 from typing import Any, Dict, List, Optional, Tuple
 from xml.dom import minidom
+
+# Reportlab imports
+from reportlab.graphics import renderPDF
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPDF
 
 # Django imports
 from django.http import JsonResponse
@@ -753,9 +761,6 @@ class NestingService:
 
         logger.info("Generated Excel file at: %s", excel_path)
 
-        # Python imports
-        import re
-
         safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design_name)
         zip_path = os.path.join(base_dir, f"xml_{safe_design_name}.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -992,11 +997,6 @@ class NestingService:
         """
         Combines generated SVGs into a single Layout PDF.
         """
-        # External imports
-        from reportlab.graphics import renderPDF
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-        from svglib.svglib import svg2rlg
 
         pdf_path = os.path.splitext(output_path)[0] + "_layout.pdf"
         c = canvas.Canvas(pdf_path, pagesize=A4)
@@ -1075,9 +1075,6 @@ class NestingService:
             # Scale to 25x25mm area
             d = Drawing(45, 45, transform=[25 / width, 0, 0, 25 / height, 0, 0])
             d.add(qr_code)
-
-            # External imports
-            from reportlab.graphics import renderPDF
 
             renderPDF.draw(d, c, x + 2 * mm, y + 2 * mm)
 
