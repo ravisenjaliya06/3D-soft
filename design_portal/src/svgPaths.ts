@@ -302,6 +302,8 @@ export const PROFILE = {
   team_not_selected: '/assets/profile/team-not-selected.svg',
   team_svg: '/assets/profile/team-svg.svg',
   user: '/assets/profile/user.png',
+  money: '/assets/money.svg',
+  activemoney: '/assets/activemoney.svg',
 };
 
 export const SEARCH_SVG = {

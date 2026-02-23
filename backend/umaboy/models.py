@@ -68,6 +68,22 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization/logos", null=True, blank=True)
     user = models.ManyToManyField(User, related_name="organizations")
 
+    company_name = models.CharField(max_length=255, null=True, blank=True)
+    company_address = models.TextField(null=True, blank=True)
+    company_email = models.EmailField(null=True, blank=True)
+    company_phone = models.CharField(max_length=20, null=True, blank=True)
+    company_website = models.CharField(max_length=255, null=True, blank=True)
+    company_gstin = models.CharField(max_length=50, null=True, blank=True)
+    company_pan = models.CharField(max_length=50, null=True, blank=True)
+
+    bank_name = models.CharField(max_length=255, null=True, blank=True)
+    account_name = models.CharField(max_length=255, null=True, blank=True)
+    account_number = models.CharField(max_length=100, null=True, blank=True)
+    account_type = models.CharField(max_length=100, null=True, blank=True)
+    ifsc_code = models.CharField(max_length=50, null=True, blank=True)
+    branch_name = models.CharField(max_length=255, null=True, blank=True)
+    upi_id = models.CharField(max_length=100, null=True, blank=True)
+
     def __str__(self: "Organization") -> str:
         return self.name
 
