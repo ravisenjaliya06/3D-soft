@@ -247,20 +247,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "selected_organization_name",
             "user_groups",
             "profile_picture",
-            "company_name",
-            "company_address",
-            "company_email",
-            "company_phone",
-            "company_website",
-            "company_gstin",
-            "company_pan",
-            "bank_name",
-            "account_name",
-            "account_number",
-            "account_type",
-            "ifsc_code",
-            "branch_name",
-            "upi_id",
         ]
 
     def get_selected_organization_name(
@@ -278,20 +264,6 @@ class UserProfileEditSerializer(serializers.ModelSerializer):
             "name",
             "phone",
             "profile_picture",
-            "company_name",
-            "company_address",
-            "company_email",
-            "company_phone",
-            "company_website",
-            "company_gstin",
-            "company_pan",
-            "bank_name",
-            "account_name",
-            "account_number",
-            "account_type",
-            "ifsc_code",
-            "branch_name",
-            "upi_id",
         ]
 
     def validate_phone(self: "UserProfileEditSerializer", value: str) -> str:
@@ -452,7 +424,25 @@ class SetPasswordSerializer(serializers.Serializer):
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ["id", "display_name", "logo"]
+        fields = [
+            "id",
+            "display_name",
+            "logo",
+            "company_name",
+            "company_address",
+            "company_email",
+            "company_phone",
+            "company_website",
+            "company_gstin",
+            "company_pan",
+            "bank_name",
+            "account_name",
+            "account_number",
+            "account_type",
+            "ifsc_code",
+            "branch_name",
+            "upi_id",
+        ]
 
     def update(
         self: "OrganizationSerializer",
@@ -463,6 +453,23 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "display_name", instance.display_name
         )
         instance.logo = validated_data.get("logo", instance.logo)
+        
+        instance.company_name = validated_data.get("company_name", instance.company_name)
+        instance.company_address = validated_data.get("company_address", instance.company_address)
+        instance.company_email = validated_data.get("company_email", instance.company_email)
+        instance.company_phone = validated_data.get("company_phone", instance.company_phone)
+        instance.company_website = validated_data.get("company_website", instance.company_website)
+        instance.company_gstin = validated_data.get("company_gstin", instance.company_gstin)
+        instance.company_pan = validated_data.get("company_pan", instance.company_pan)
+        
+        instance.bank_name = validated_data.get("bank_name", instance.bank_name)
+        instance.account_name = validated_data.get("account_name", instance.account_name)
+        instance.account_number = validated_data.get("account_number", instance.account_number)
+        instance.account_type = validated_data.get("account_type", instance.account_type)
+        instance.ifsc_code = validated_data.get("ifsc_code", instance.ifsc_code)
+        instance.branch_name = validated_data.get("branch_name", instance.branch_name)
+        instance.upi_id = validated_data.get("upi_id", instance.upi_id)
+        
         instance.save()
         return instance
 

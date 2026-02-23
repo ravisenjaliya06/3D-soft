@@ -323,13 +323,8 @@ const Settings = () => {
     updateUserDetails();
   };
 
-  const updateUserDetails = async () => {
+  const updateOrganizationDetails = async () => {
     const formData = new FormData();
-    formData.append('name', name);
-    formData.append('phone', phone);
-    if (profileImage && profileImage instanceof File) {
-      formData.append('profile_picture', profileImage);
-    }
     formData.append('company_name', companyName);
     formData.append('company_address', companyAddress);
     formData.append('company_email', companyEmail);
@@ -345,6 +340,37 @@ const Settings = () => {
     formData.append('branch_name', branchName);
     formData.append('upi_id', upiId);
 
+    try {
+      const response = await CommonService.put(API_ENDPOINT.UPDATE_ORGANIZATION_DETAILS, formData);
+      if (response.status === 200) {
+        setSuccessMessage('Billing details updated successfully!');
+        handalSetOrganization();
+
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
+      } else {
+        setErrorMessage('Failed to update billing details');
+
+        setTimeout(() => {
+          setErrorMessage(null);
+        }, 3000);
+        console.error('Failed to update organization details:', response.status);
+      }
+    } catch (error) {
+      console.error('Error updating organization details:', error);
+      setErrorMessage('Failed to update billing details');
+      setTimeout(() => setErrorMessage(null), 3000);
+    }
+  };
+
+  const updateUserDetails = async () => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('phone', phone);
+    if (profileImage && profileImage instanceof File) {
+      formData.append('profile_picture', profileImage);
+    }
     try {
       const response = await CommonService.put(API_ENDPOINT.UPDATE_USER_DETAILS, formData);
       const data = response.data as User;
@@ -382,22 +408,27 @@ const Settings = () => {
       setName(UserDetails.name || '');
       setEmail(UserDetails.email || '');
       setNumber(UserDetails.phone || '');
-      setCompanyName(UserDetails.company_name || '');
-      setCompanyAddress(UserDetails.company_address || '');
-      setCompanyEmail(UserDetails.company_email || '');
-      setCompanyPhone(UserDetails.company_phone || '');
-      setCompanyWebsite(UserDetails.company_website || '');
-      setCompanyGstin(UserDetails.company_gstin || '');
-      setCompanyPan(UserDetails.company_pan || '');
-      setBankName(UserDetails.bank_name || '');
-      setAccountName(UserDetails.account_name || '');
-      setAccountNumber(UserDetails.account_number || '');
-      setAccountType(UserDetails.account_type || '');
-      setIfscCode(UserDetails.ifsc_code || '');
-      setBranchName(UserDetails.branch_name || '');
-      setUpiId(UserDetails.upi_id || '');
     }
   }, [UserDetails]);
+
+  useEffect(() => {
+    if (organization) {
+      setCompanyName(organization.company_name || '');
+      setCompanyAddress(organization.company_address || '');
+      setCompanyEmail(organization.company_email || '');
+      setCompanyPhone(organization.company_phone || '');
+      setCompanyWebsite(organization.company_website || '');
+      setCompanyGstin(organization.company_gstin || '');
+      setCompanyPan(organization.company_pan || '');
+      setBankName(organization.bank_name || '');
+      setAccountName(organization.account_name || '');
+      setAccountNumber(organization.account_number || '');
+      setAccountType(organization.account_type || '');
+      setIfscCode(organization.ifsc_code || '');
+      setBranchName(organization.branch_name || '');
+      setUpiId(organization.upi_id || '');
+    }
+  }, [organization]);
 
   const designFirstInputFields = [
     {
@@ -1102,7 +1133,7 @@ const Settings = () => {
                     ))}
                   </div>
 
-                  <button className={styles.saveButton} onClick={handleSave}>
+                  <button className={styles.saveButton} onClick={updateOrganizationDetails}>
                     Save Details
                   </button>
                 </form>
@@ -1159,9 +1190,8 @@ const Settings = () => {
                     </label>
                     <input
                       type="text"
-                      className={`${styles.organizationInputfild} ${
-                        organizationNameError ? styles.errorInput : ''
-                      }`}
+                      className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
+                        }`}
                       placeholder="Enter Organization Name"
                       onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         setOrganizationName(e.target.value);
