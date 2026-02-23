@@ -40,8 +40,6 @@ const Designs = () => {
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
-  const [apiErrorMessage, setApiErrorMessage] = useState('');
-  const [errorPopup, setErrorPopup] = useState(false);
   const [userdetails, setUserDetails] = useState<User | null>(null);
 
   const statusStyles: StatusStylesType = {
@@ -394,13 +392,6 @@ const Designs = () => {
 
   return (
     <div className={styles.container}>
-      {errorPopup && (
-        <div className={styles.errorPopup}>
-          <img src={assets.error} alt="Error" />
-          <p>{apiErrorMessage}</p>
-        </div>
-      )}
-
       <Sidebar />
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Design Studio" />
