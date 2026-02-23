@@ -247,6 +247,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "selected_organization_name",
             "user_groups",
             "profile_picture",
+            "company_name",
+            "company_address",
+            "company_email",
+            "company_phone",
+            "company_website",
+            "company_gstin",
+            "company_pan",
+            "bank_name",
+            "account_name",
+            "account_number",
+            "account_type",
+            "ifsc_code",
+            "branch_name",
+            "upi_id",
         ]
 
     def get_selected_organization_name(
@@ -260,7 +274,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name", "phone", "profile_picture"]
+        fields = [
+            "name", 
+            "phone", 
+            "profile_picture",
+            "company_name",
+            "company_address",
+            "company_email",
+            "company_phone",
+            "company_website",
+            "company_gstin",
+            "company_pan",
+            "bank_name",
+            "account_name",
+            "account_number",
+            "account_type",
+            "ifsc_code",
+            "branch_name",
+            "upi_id",
+        ]
 
     def validate_phone(self: "UserProfileEditSerializer", value: str) -> str:
         """

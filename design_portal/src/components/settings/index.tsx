@@ -30,6 +30,24 @@ const Settings = () => {
 
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [UserDetails, setUserDetails] = useState<User | null>(null);
+
+  // --- Company Details ---
+  const [companyName, setCompanyName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyEmail, setCompanyEmail] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
+  const [companyGstin, setCompanyGstin] = useState('');
+  const [companyPan, setCompanyPan] = useState('');
+
+  // --- Banking Details ---
+  const [bankName, setBankName] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountType, setAccountType] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [branchName, setBranchName] = useState('');
+  const [upiId, setUpiId] = useState('');
   const [activeMenu, setActiveMenu] = useState<string>('profile');
   const [activeTab, setActiveTab] = useState('active');
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -312,6 +330,20 @@ const Settings = () => {
     if (profileImage && profileImage instanceof File) {
       formData.append('profile_picture', profileImage);
     }
+    formData.append('company_name', companyName);
+    formData.append('company_address', companyAddress);
+    formData.append('company_email', companyEmail);
+    formData.append('company_phone', companyPhone);
+    formData.append('company_website', companyWebsite);
+    formData.append('company_gstin', companyGstin);
+    formData.append('company_pan', companyPan);
+    formData.append('bank_name', bankName);
+    formData.append('account_name', accountName);
+    formData.append('account_number', accountNumber);
+    formData.append('account_type', accountType);
+    formData.append('ifsc_code', ifscCode);
+    formData.append('branch_name', branchName);
+    formData.append('upi_id', upiId);
 
     try {
       const response = await CommonService.put(API_ENDPOINT.UPDATE_USER_DETAILS, formData);
@@ -347,9 +379,23 @@ const Settings = () => {
   useEffect(() => {
     if (UserDetails) {
       setUsername(UserDetails.username);
-      setName(UserDetails.name);
-      setEmail(UserDetails.email);
-      setNumber(UserDetails.phone);
+      setName(UserDetails.name || '');
+      setEmail(UserDetails.email || '');
+      setNumber(UserDetails.phone || '');
+      setCompanyName(UserDetails.company_name || '');
+      setCompanyAddress(UserDetails.company_address || '');
+      setCompanyEmail(UserDetails.company_email || '');
+      setCompanyPhone(UserDetails.company_phone || '');
+      setCompanyWebsite(UserDetails.company_website || '');
+      setCompanyGstin(UserDetails.company_gstin || '');
+      setCompanyPan(UserDetails.company_pan || '');
+      setBankName(UserDetails.bank_name || '');
+      setAccountName(UserDetails.account_name || '');
+      setAccountNumber(UserDetails.account_number || '');
+      setAccountType(UserDetails.account_type || '');
+      setIfscCode(UserDetails.ifsc_code || '');
+      setBranchName(UserDetails.branch_name || '');
+      setUpiId(UserDetails.upi_id || '');
     }
   }, [UserDetails]);
 
@@ -515,6 +561,138 @@ const Settings = () => {
       value: phone,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setNumber(e.target.value),
       error: phoneError,
+      mediumField: true,
+    },
+  ];
+
+  const companyDetailsFields = [
+    {
+      label: 'Company Name',
+      type: 'text',
+      placeholder: 'Company Name',
+      value: companyName,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyName(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Company Email',
+      type: 'text',
+      placeholder: 'Company Email',
+      value: companyEmail,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyEmail(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Company Phone',
+      type: 'text',
+      placeholder: 'Company Phone',
+      value: companyPhone,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyPhone(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'GSTIN',
+      type: 'text',
+      placeholder: 'Company GSTIN',
+      value: companyGstin,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyGstin(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'PAN',
+      type: 'text',
+      placeholder: 'Company PAN',
+      value: companyPan,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyPan(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Website',
+      type: 'text',
+      placeholder: 'https://example.com',
+      value: companyWebsite,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyWebsite(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Company Address',
+      type: 'text',
+      placeholder: 'Company Address',
+      value: companyAddress,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setCompanyAddress(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+  ];
+
+  const bankingDetailsFields1 = [
+    {
+      label: 'Bank Name',
+      type: 'text',
+      placeholder: 'Bank Name',
+      value: bankName,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setBankName(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Account Name',
+      type: 'text',
+      placeholder: 'Account Name',
+      value: accountName,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setAccountName(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Account Number',
+      type: 'text',
+      placeholder: 'Account Number',
+      value: accountNumber,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setAccountNumber(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Account Type',
+      type: 'text',
+      placeholder: 'e.g. Current, Savings',
+      value: accountType,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setAccountType(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'IFSC Code',
+      type: 'text',
+      placeholder: 'IFSC Code',
+      value: ifscCode,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setIfscCode(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'Branch Name',
+      type: 'text',
+      placeholder: 'Branch Name',
+      value: branchName,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setBranchName(e.target.value),
+      error: '',
+      mediumField: true,
+    },
+    {
+      label: 'UPI ID',
+      type: 'text',
+      placeholder: 'UPI ID',
+      value: upiId,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setUpiId(e.target.value),
+      error: '',
       mediumField: true,
     },
   ];
@@ -754,7 +932,7 @@ const Settings = () => {
               onClick={() => handleActiveMenu('team')}
             >
               <img
-                src={activeMenu === 'team' ? assets.team_svg : assets.team_not_selected}
+                src={activeMenu === 'team' ? assets.team_not_selected : assets.team_svg}
                 alt="team"
               />
               <p className={activeMenu === 'team' ? styles.activeMenuTitle : styles.menuTitle}>
@@ -769,8 +947,8 @@ const Settings = () => {
               <img
                 src={
                   activeMenu === 'organizations'
-                    ? assets.organizations_svg
-                    : assets.organization_not_selected
+                    ? assets.organization_not_selected
+                    : assets.organizations_svg
                 }
                 alt="organizations"
               />
@@ -798,6 +976,21 @@ const Settings = () => {
                 }
               >
                 Design setting
+              </p>
+            </div>
+
+            <div
+              className={activeMenu === 'billing' ? styles.activeMenu : styles.menuItems}
+              onClick={() => handleActiveMenu('billing')}
+            >
+              <img
+                src={activeMenu === 'billing' ? assets.organization_not_selected : assets.organizations_svg}
+                alt="billing"
+              />
+              <p
+                className={activeMenu === 'billing' ? styles.activeMenuTitle : styles.menuTitle}
+              >
+                Billing Details
               </p>
             </div>
           </div>
@@ -859,6 +1052,55 @@ const Settings = () => {
               </>
             )}
 
+            {/* 1.5 Billing Tab */}
+            {activeMenu === 'billing' && (
+              <>
+                <div className={styles.heading_containar}>
+                  <h4>Company Details</h4>
+                  <p className={styles.description}>
+                    These details will be used as the Header context in your Quotation output.
+                  </p>
+                </div>
+                <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                  <div className={styles.inputGroup} style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}>
+                    {companyDetailsFields.map((field, index) => (
+                      <InputField key={index} className={styles.inputField} {...field} borderColor="#e2e8f0" />
+                    ))}
+                  </div>
+
+                  <div className={styles.heading_containar} style={{ marginBottom: '1.5rem', marginTop: '2.5rem' }}>
+                    <h4>Banking Details</h4>
+                    <p className={styles.description}>
+                      These banking details will appear at the bottom of your Quotations.
+                    </p>
+                  </div>
+
+                  <div className={styles.inputGroup} style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}>
+                    {bankingDetailsFields1.map((field, index) => (
+                      <InputField key={index} className={styles.inputField} {...field} borderColor="#e2e8f0" />
+                    ))}
+                  </div>
+
+                  <button className={styles.saveButton} onClick={handleSave}>
+                    Save Details
+                  </button>
+                </form>
+
+                {successMessage && (
+                  <div className={styles.successPopup}>
+                    <img src={assets.success} alt="Success" />
+                    <p>{successMessage}</p>
+                  </div>
+                )}
+                {errorMessage && (
+                  <div className={styles.errorPopup}>
+                    <img src={assets.error} alt="Error" />
+                    <p>{errorMessage}</p>
+                  </div>
+                )}
+              </>
+            )}
+
             {/* 2. Organizations Tab */}
             {activeMenu === 'organizations' && (
               <>
@@ -896,9 +1138,8 @@ const Settings = () => {
                     </label>
                     <input
                       type="text"
-                      className={`${styles.organizationInputfild} ${
-                        organizationNameError ? styles.errorInput : ''
-                      }`}
+                      className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
+                        }`}
                       placeholder="Enter Organization Name"
                       onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         setOrganizationName(e.target.value);

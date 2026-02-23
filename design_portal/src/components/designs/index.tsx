@@ -89,6 +89,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter a creative name...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
+      value: designName,
     },
     {
       label: 'Project Type (Optional)',
@@ -96,6 +97,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'e.g. Wardrobe, Kitchen...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
@@ -106,6 +108,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter customer name...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
+      value: customerName,
     },
     {
       label: 'Customer Company (Optional)',
@@ -113,6 +116,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter customer company...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerCompany(e.target.value),
+      value: customerCompany,
     },
     {
       label: 'Customer Address (Optional)',
@@ -120,6 +124,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter customer address...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerAddress(e.target.value),
+      value: customerAddress,
     },
     {
       label: 'Customer GSTIN (Optional)',
@@ -127,6 +132,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter customer GSTIN...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerGstin(e.target.value),
+      value: customerGstin,
     },
     {
       label: 'Customer Contact (Optional)',
@@ -134,6 +140,7 @@ const Designs = () => {
       type: 'text',
       placeholder: 'Enter customer contact...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerContact(e.target.value),
+      value: customerContact,
     },
     {
       label: 'Customer Email (Optional)',
@@ -141,10 +148,11 @@ const Designs = () => {
       type: 'email',
       placeholder: 'Enter customer email...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value),
+      value: customerEmail,
     },
   ];
 
-  const editFields = [
+  const editProjectFields = [
     {
       label: 'Design Name',
       type: 'text',
@@ -163,6 +171,13 @@ const Designs = () => {
         { value: 'Completed', label: 'Completed' },
       ],
       value: designStatus,
+    },
+    {
+      label: 'Project Type (Optional)',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
@@ -246,6 +261,13 @@ const Designs = () => {
     const formData = new FormData();
     formData.append('design_name', designName);
     formData.append('status', designStatus);
+    if (customerName.trim()) formData.append('customer_name', customerName);
+    if (customerCompany.trim()) formData.append('customer_company', customerCompany);
+    if (customerAddress.trim()) formData.append('customer_address', customerAddress);
+    if (customerGstin.trim()) formData.append('customer_gstin', customerGstin);
+    if (customerContact.trim()) formData.append('customer_contact', customerContact);
+    if (customerEmail.trim()) formData.append('customer_email', customerEmail);
+    if (projectType.trim()) formData.append('project_type', projectType);
 
     try {
       const response: { status: number; data: Design } = await CommonService.put(
@@ -297,8 +319,15 @@ const Designs = () => {
     const design = designs.find((d) => d.id === designId);
     if (design) {
       setSelectedDesign(design);
-      setDesingName(design.design_name);
-      setDesingStatus(design.status);
+      setDesingName(design.design_name || '');
+      setDesingStatus(design.status || '');
+      setCustomerName(design.customer_name || '');
+      setCustomerCompany(design.customer_company || '');
+      setCustomerAddress(design.customer_address || '');
+      setCustomerGstin(design.customer_gstin || '');
+      setCustomerContact(design.customer_contact || '');
+      setCustomerEmail(design.customer_email || '');
+      setProjectType(design.project_type || '');
       setshowEditPopup(true);
       setActiveDropdownId(null);
     }
@@ -377,7 +406,18 @@ const Designs = () => {
               </p>
             </div>
 
-            <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
+            <div className={styles.createdesignButton} onClick={() => {
+              setDesingName('');
+              setDesingStatus('');
+              setCustomerName('');
+              setCustomerCompany('');
+              setCustomerAddress('');
+              setCustomerGstin('');
+              setCustomerContact('');
+              setCustomerEmail('');
+              setProjectType('');
+              setShowPopup(true);
+            }}>
               <div className={styles.createdesignButtoncontent}>
                 <div className={styles.createdesing}>
                   <img src={assets.plus_icon} alt="+" />
@@ -659,31 +699,61 @@ const Designs = () => {
 
         {/* Edit Popup */}
         {showEditPopup && (
-          <div className={styles.popupOverlay} onClick={() => setshowEditPopup(false)}>
-            <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
-              <img src={assets.editpopupicon} className={styles.editpopupicon} alt="Edit" />
-              <img
-                src={assets.close}
-                className={styles.editclose}
-                alt="X"
-                onClick={() => setshowEditPopup(false)}
-              />
-              <div className={styles.edit_right_side}>
-                <h3>Project Settings</h3>
-                <p>Update your design name or status below.</p>
-              </div>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className={styles.inputGroup}>
-                  {editFields.map((field, i) => (
-                    <InputField key={i} borderColor="rgba(57, 37, 121, 0.1)" {...field} error="" />
-                  ))}
+          <div className={styles.createpopupOverlay} onClick={() => setshowEditPopup(false)}>
+            <div className={styles.createpopup} onClick={(e) => e.stopPropagation()}>
+              <img src={assets.editpopupicon} className={styles.createicon} alt="Edit" />
+              <div className={styles.create_right_side}>
+                <div className={styles.createheader}>
+                  <img
+                    src={assets.close}
+                    className={styles.createclose}
+                    alt="X"
+                    onClick={() => setshowEditPopup(false)}
+                  />
+                  <div>
+                    <h2>Edit Project</h2>
+                    <p>Update your project and customer details.</p>
+                  </div>
                 </div>
-              </form>
-              <div className={styles.editButtonGrop}>
-                <button className={styles.canceleditButton} onClick={() => setshowEditPopup(false)}>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Project Details</h3>
+                    <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                      {editProjectFields.map((field, i) => (
+                        <InputField
+                          key={i}
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(57, 37, 121, 0.1)"
+                          {...field}
+                          error=""
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Customer Details</h3>
+                    <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                      {customerFields.map((field, i) => (
+                        <InputField
+                          key={i}
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(57, 37, 121, 0.1)"
+                          {...field}
+                          error=""
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className={styles.createButtonGrop}>
+                <button className={styles.cancelcreateButton} onClick={() => setshowEditPopup(false)}>
                   Cancel
                 </button>
-                <button className={styles.continueButton} onClick={handleEditClick}>
+                <button className={styles.createcontinueButton} onClick={handleEditClick}>
                   Save Changes
                 </button>
               </div>

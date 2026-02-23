@@ -17,6 +17,7 @@ const Nesting = () => {
   const [localData, setLocalData] = useState<any[]>([]);
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isDownloadingXML, setIsDownloadingXML] = useState(false);
 
   const { objects } = useSelector((state: RootState) => state.data);
 
@@ -589,6 +590,15 @@ const Nesting = () => {
     if (isGeneratingQuote) return;
     setIsGeneratingQuote(true);
     try {
+      // 0. Fetch User Details for Company/Banking Info
+      let userDetails: any = null;
+      try {
+        const userResp: any = await CommonService.get(API_ENDPOINT.GET_USER_DETAILS);
+        if (userResp.status === 200) userDetails = userResp.data;
+      } catch (e) {
+        console.warn('Failed to fetch user details for quotation styling', e);
+      }
+
       // 1. Fetch Design Details
       const designResponse: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
       const design = designResponse.data;
@@ -681,7 +691,7 @@ const Nesting = () => {
             maxWidth: 0,
             maxHeight: 0,
             materialNames: new Set<string>(),
-            qty: 1, // Start with 1 unit
+            qty: 1,
             totalMaterialCost: 0,
             totalEdgeCost: 0,
             panels: [],
@@ -746,6 +756,10 @@ const Nesting = () => {
       let srNo = 1;
       let subTotal = 0;
 
+      const formatCurrency = (num: number) => {
+        return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+
       Object.values(unitsMap).forEach((u) => {
         // Add hardware cost
         const hwCost = (u.hingeCount * 150) + (u.camCount * 20) + (u.dowelCount * 10);
@@ -778,8 +792,8 @@ const Nesting = () => {
           dimStr,
           matStr.substring(0, 30),
           u.qty,            // Qty
-          ratePerUnit,      // Rate/Unit
-          amount,           // Amount
+          formatCurrency(ratePerUnit),      // Rate/Unit
+          formatCurrency(amount),           // Amount
           "9403",           // HSN
           18                // GST%
         ]);
@@ -793,8 +807,8 @@ const Nesting = () => {
         "Complete Job",
         "Labor",
         1,
-        installationCost,
-        installationCost,
+        formatCurrency(installationCost),
+        formatCurrency(installationCost),
         "9954",
         18
       ]);
@@ -805,7 +819,39 @@ const Nesting = () => {
       const grandTotal = Math.round(subTotal + cgst + sgst);
 
       const numberToWords = (num: number) => {
-        return "Rupees " + num.toString() + " Only"; // A placeholder, actual implementation requires full library for Indian standard
+        const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        const inWords = (n: number): string => {
+          if (n === 0) return 'Zero';
+          let str = '';
+          if (n > 9999999) {
+            str += inWords(Math.floor(n / 10000000)) + ' Crore ';
+            n %= 10000000;
+          }
+          if (n > 99999) {
+            str += inWords(Math.floor(n / 100000)) + ' Lakh ';
+            n %= 100000;
+          }
+          if (n > 999) {
+            str += inWords(Math.floor(n / 1000)) + ' Thousand ';
+            n %= 1000;
+          }
+          if (n > 99) {
+            str += inWords(Math.floor(n / 100)) + ' Hundred ';
+            n %= 100;
+          }
+          if (n > 0) {
+            if (n < 20) str += a[n] + ' ';
+            else {
+              str += b[Math.floor(n / 10)] + ' ';
+              if (n % 10 > 0) str += a[n % 10] + ' ';
+            }
+          }
+          return str.trim();
+        };
+
+        return "Rupees " + inWords(num) + " Only";
       };
 
       const wb = XLSX.utils.book_new();
@@ -846,11 +892,31 @@ const Nesting = () => {
       const sPC = { font: { name: 'Calibri', sz: 10 }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
       const sPBoldC = { font: { name: 'Calibri', sz: 10, bold: true }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
 
-      pushR([{ v: "BRAVENTO FURNITURE SOLUTIONS", s: sH1C }]);
+      const companyName = userDetails?.company_name || "BRAVENTO FURNITURE SOLUTIONS";
+      const companyAddress = userDetails?.company_address || "Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India";
+
+      let contactLine = '';
+      if (userDetails?.company_phone) contactLine += `Phone: ${userDetails.company_phone} | `;
+      else contactLine += `Phone: +91 79 1234 5678 | `;
+
+      if (userDetails?.company_email) contactLine += `Email: ${userDetails.company_email} | `;
+      else contactLine += `Email: sales@bravento.com | `;
+
+      if (userDetails?.company_website) contactLine += `Website: ${userDetails.company_website}`;
+      else contactLine += `Website: www.bravento.com`;
+
+      let taxLine = '';
+      if (userDetails?.company_gstin) taxLine += `GSTIN: ${userDetails.company_gstin} | `;
+      else taxLine += `GSTIN: 24XXXXX1234X1Z5 | `;
+
+      if (userDetails?.company_pan) taxLine += `PAN: ${userDetails.company_pan}`;
+      else taxLine += `PAN: XXXXX1234X`;
+
+      pushR([{ v: companyName, s: sH1C }]);
       pushR([{ v: "Custom Furniture Design & Manufacturing", s: sH2C }]);
-      pushR([{ v: "Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India", s: sPC }]);
-      pushR([{ v: "Phone: +91 79 1234 5678 | Email: sales@bravento.com | Website: www.bravento.com", s: sPC }]);
-      pushR([{ v: "GSTIN: 24XXXXX1234X1Z5 | PAN: XXXXX1234X", s: sPBoldC }]);
+      pushR([{ v: companyAddress, s: sPC }]);
+      pushR([{ v: contactLine, s: sPC }]);
+      pushR([{ v: taxLine, s: sPBoldC }]);
       pushR([]);
       pushR([{ v: "QUOTATION", s: sTitle }]);
       pushR([]);
@@ -860,7 +926,6 @@ const Nesting = () => {
       const quoteDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
       const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
 
-      pushR([]);
       pushR([{ v: "Quotation No:", s: sKey }, { v: quoteNo, s: sVal }, '', '', { v: "Customer Name:", s: sKey }, { v: design.customer_name || 'Customer', s: sVal }]);
       pushR([{ v: "Date:", s: sKey }, { v: quoteDate, s: sVal }, '', '', { v: "Company:", s: sKey }, { v: design.customer_company || '-', s: sVal }]);
       pushR([{ v: "Valid Till:", s: sKey }, { v: validDate, s: sVal }, '', '', { v: "Address:", s: sKey }, { v: design.customer_address || '-', s: sVal }]);
@@ -892,11 +957,11 @@ const Nesting = () => {
 
       // 5. Totals
       const tblEnd = qData.length;
-      pushR([{ v: "SUBTOTAL (Before GST)", s: sSubKey }, '', '', '', '', '', { v: subTotal, s: sSubVal }, '', '']);
-      pushR([{ v: "Add: CGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: cgst.toFixed(2), s: sSubVal }, '', '']);
-      pushR([{ v: "Add: SGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: sgst.toFixed(2), s: sSubVal }, '', '']);
-      pushR([{ v: "Round Off", s: sSubKey }, '', '', '', '', '', { v: "0.00", s: sSubVal }, '', '']);
-      pushR([{ v: "GRAND TOTAL (Inclusive of all taxes)", s: sGTKey }, '', '', '', '', '', { v: grandTotal, s: sGTVal }, '', '']);
+      pushR([{ v: "SUBTOTAL (Before GST)", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(subTotal), s: sSubVal }, '', '']);
+      pushR([{ v: "Add: CGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(cgst), s: sSubVal }, '', '']);
+      pushR([{ v: "Add: SGST @ 9%", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(sgst), s: sSubVal }, '', '']);
+      pushR([{ v: "Round Off", s: sSubKey }, '', '', '', '', '', { v: formatCurrency(0), s: sSubVal }, '', '']);
+      pushR([{ v: "GRAND TOTAL (Inclusive of all taxes)", s: sGTKey }, '', '', '', '', '', { v: formatCurrency(grandTotal), s: sGTVal }, '', '']);
       pushR([]);
       pushR([{ v: "Amount in Words:", s: sKey }, { v: numberToWords(grandTotal), s: sH1C }]); // actually bold left-aligned, but reusing font
       pushR([]);
@@ -952,17 +1017,17 @@ const Nesting = () => {
         [{ v: "   • Any additional work or items requested during installation will be charged separately", s: sTermC }],
         [],
         [{ v: "BANKING DETAILS FOR PAYMENT:", s: sTermH }],
-        [{ v: "Bank Name: HDFC Bank Ltd.", s: sP }],
-        [{ v: "Account Name: Bravento Furniture Solutions", s: sP }],
-        [{ v: "Account Number: 50200012345678", s: sP }],
-        [{ v: "Account Type: Current Account", s: sP }],
-        [{ v: "IFSC Code: HDFC0001234", s: sP }],
-        [{ v: "Branch: S.G. Highway, Ahmedabad - 380015", s: sP }],
-        [{ v: "UPI ID: bravento@hdfcbank (for advance payments)", s: sP }],
+        [{ v: `Bank Name: ${userDetails?.bank_name || 'HDFC Bank Ltd.'}`, s: sP }],
+        [{ v: `Account Name: ${userDetails?.account_name || 'Bravento Furniture Solutions'}`, s: sP }],
+        [{ v: `Account Number: ${userDetails?.account_number || '50200012345678'}`, s: sP }],
+        [{ v: `Account Type: ${userDetails?.account_type || 'Current Account'}`, s: sP }],
+        [{ v: `IFSC Code: ${userDetails?.ifsc_code || 'HDFC0001234'}`, s: sP }],
+        [{ v: `Branch: ${userDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`, s: sP }],
+        [{ v: `UPI ID: ${userDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`, s: sP }],
         [],
         [{ v: "NOTE:", s: sKey }, { v: "Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.", s: sVal }],
         [], [],
-        ['', '', '', '', '', '', { v: "For BRAVENTO FURNITURE SOLUTIONS", s: sKey }],
+        ['', '', '', '', '', '', { v: `For ${companyName}`, s: sKey }],
         [], [], [],
         ['', '', '', '', '', '', { v: "____________________", s: sP }],
         ['', '', '', '', '', '', { v: "Authorized Signatory", s: sP }],
@@ -1071,19 +1136,36 @@ const Nesting = () => {
                     {isGeneratingBOM ? 'Generating...' : 'BOM Data'}
                   </button>
                   <button
-                    onClick={() => {
-                      const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/media/output/${design_id}/xml_files.zip`;
-                      const a = document.createElement('a');
-                      a.href = fileUrl;
-                      a.download = 'xml_files.zip';
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
+                    onClick={async () => {
+                      if (isDownloadingXML) return;
+                      setIsDownloadingXML(true);
+                      try {
+                        const response: any = await CommonService.put(
+                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+                          { format: 'xml_zip' }
+                        );
+                        if (response?.data?.file) {
+                          const fileUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${response.data.file.replace('umaboy/', '')}`;
+                          const fileName = response.data.file.split('/').pop() || 'xml_files.zip';
+                          const a = document.createElement('a');
+                          a.href = fileUrl;
+                          a.download = fileName;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                        }
+                      } catch (e) {
+                        console.error(e);
+                        alert('Failed to download XMLs');
+                      } finally {
+                        setIsDownloadingXML(false);
+                      }
                     }}
+                    disabled={isDownloadingXML}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
-                    XMLs
+                    {isDownloadingXML ? 'Gathering XMLs...' : 'XMLs'}
                   </button>
                   {/* ✅ View Details Button */}
                   <button

@@ -3,6 +3,9 @@ import uuid
 
 # Django imports
 from django.db import models
+from django.utils import timezone
+from django.db import IntegrityError
+from django.db.models import Max
 
 # App imports
 from umaboy.models import Organization, User
@@ -97,16 +100,34 @@ class Design(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self: "Design", *args, **kwargs) -> None:
-        if not self.project_code:
-            # Django imports
-            from django.utils import timezone
+    def save(self, *args, **kwargs):
+        if self.project_code:
+            return super().save(*args, **kwargs)
 
-            year = timezone.now().year
-            # Count existing designs this year to get the next sequence number
-            count = Design.objects.filter(created_at__year=year).count() + 1
-            self.project_code = f"BRV-{year}-{count:04d}"
-        super().save(*args, **kwargs)
+        year = timezone.now().year
+
+        for _ in range(3):  # 3 retries is enough
+            # Get highest project_code for this year
+            last_code = (
+                Design.objects
+                .filter(created_at__year=year)
+                .aggregate(max_code=Max("project_code"))
+                .get("max_code")
+            )
+
+            next_number = 1
+            if last_code:
+                next_number = int(last_code.rsplit("-", 1)[-1]) + 1
+
+            self.project_code = f"BRV-{year}-{next_number:04d}"
+
+            try:
+                return super().save(*args, **kwargs)
+            except IntegrityError:
+                # retry if collision happens
+                continue
+
+        raise IntegrityError("Failed to generate unique project_code after retries")
 
     def __str__(self: "Design") -> str:
         return self.design_name

@@ -5,6 +5,24 @@ export interface User {
   email: string;
   username: string;
   profile_picture: string | File | null;
+
+  // Company Details
+  company_name?: string;
+  company_address?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_website?: string;
+  company_gstin?: string;
+  company_pan?: string;
+
+  // Banking Details
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  account_type?: string;
+  ifsc_code?: string;
+  branch_name?: string;
+  upi_id?: string;
 }
 
 export interface addmember {
