@@ -1190,8 +1190,9 @@ const Settings = () => {
                     </label>
                     <input
                       type="text"
-                      className={`${styles.organizationInputfild} ${organizationNameError ? styles.errorInput : ''
-                        }`}
+                      className={`${styles.organizationInputfild} ${
+                        organizationNameError ? styles.errorInput : ''
+                      }`}
                       placeholder="Enter Organization Name"
                       onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         setOrganizationName(e.target.value);

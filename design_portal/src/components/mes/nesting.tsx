@@ -1015,17 +1015,21 @@ const Nesting = () => {
         'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
 
       let contactLine = '';
-      if (organizationDetails?.company_phone) contactLine += `Phone: ${organizationDetails.company_phone} | `;
+      if (organizationDetails?.company_phone)
+        contactLine += `Phone: ${organizationDetails.company_phone} | `;
       else contactLine += `Phone: +91 79 1234 5678 | `;
 
-      if (organizationDetails?.company_email) contactLine += `Email: ${organizationDetails.company_email} | `;
+      if (organizationDetails?.company_email)
+        contactLine += `Email: ${organizationDetails.company_email} | `;
       else contactLine += `Email: sales@bravento.com | `;
 
-      if (organizationDetails?.company_website) contactLine += `Website: ${organizationDetails.company_website}`;
+      if (organizationDetails?.company_website)
+        contactLine += `Website: ${organizationDetails.company_website}`;
       else contactLine += `Website: www.bravento.com`;
 
       let taxLine = '';
-      if (organizationDetails?.company_gstin) taxLine += `GSTIN: ${organizationDetails.company_gstin} | `;
+      if (organizationDetails?.company_gstin)
+        taxLine += `GSTIN: ${organizationDetails.company_gstin} | `;
       else taxLine += `GSTIN: 24XXXXX1234X1Z5 | `;
 
       if (organizationDetails?.company_pan) taxLine += `PAN: ${organizationDetails.company_pan}`;
@@ -1354,10 +1358,20 @@ const Nesting = () => {
             s: sP,
           },
         ],
-        [{ v: `Account Number: ${organizationDetails?.account_number || '50200012345678'}`, s: sP }],
+        [
+          {
+            v: `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
+            s: sP,
+          },
+        ],
         [{ v: `Account Type: ${organizationDetails?.account_type || 'Current Account'}`, s: sP }],
         [{ v: `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`, s: sP }],
-        [{ v: `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`, s: sP }],
+        [
+          {
+            v: `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
+            s: sP,
+          },
+        ],
         [
           {
             v: `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`,
