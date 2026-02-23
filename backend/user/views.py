@@ -504,7 +504,8 @@ class AddUserInOrganizationViewset(ModelViewSet):
         token = AccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
         self._send_welcome_email(
-            user, user.id, user.email, user.username, user.groups, token
+            user, user.id, user.email, user.username, user.groups, token,
+            organization_name=request.user.selected_organization.display_name or request.user.selected_organization.name
         )
         return Response(
             {
@@ -521,6 +522,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         username: str,
         groups: QuerySet,
         token: str,
+        organization_name: str,
     ) -> None:
         """
         Private method to send Welcome email.
@@ -543,6 +545,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
             "username": username,
             "group_names": formatted_group_names,
             "server_url": settings.SERVER_URL,
+            "organization_name": organization_name,
         }
         email_content = render_to_string("welcome.html", context)
         email_data = EmailData(
