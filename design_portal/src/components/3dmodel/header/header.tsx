@@ -9,7 +9,9 @@ import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import * as THREE from 'three';
+import { CustomToast } from '../utils/CustomToast';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -225,55 +227,36 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     /** Fetches nesting data for the current design and navigates to the MES screen. */
 
     setIsLoading(true);
-    let data = store.getState().data.objects;
-
-    // Generate unique Part IDs for wooden parts
-    let partCounter = 1;
-    const partsToID = [
-      'plank',
-      'backPlank',
-      'drawer',
-      'door',
-      'doubleDoor',
-      'verticalPlank',
-      'horizontalPlank',
-      'lShapeObject',
-      'uShapeObject',
-      'drawer_fascia',
-    ];
-
-    let hasChanges = false;
-    const updatedData = data.map((obj) => {
-      if (partsToID.includes(obj.type || '')) {
-        let unique_id = obj.unique_id;
-        if (!unique_id || !unique_id.startsWith('P')) {
-          unique_id = `P${String(partCounter).padStart(3, '0')}`;
-          hasChanges = true;
-        }
-        partCounter++;
-        return { ...obj, unique_id };
-      }
-      return obj;
-    });
-
-    if (hasChanges) {
-      dispatch(setObjects(updatedData));
-      data = store.getState().data.objects;
-    }
-
-    // Convert camelCase keys to snake_case (e.g. edgeBanding -> edgeband) before sending
-    const snakeData = convertKeysToSnake(data);
 
     try {
-      const response: { status: number; data: Design[] } = await commonService.post(
+      const response: any = await commonService.post(
         API_ENDPOINT.CREATE_DESIGN_NESTING(designId),
-        snakeData
+        {}
       );
       if (response.status === 200) {
         router.push(`/design/${designId}/nesting`);
+      } else {
+        toast(
+          ({ closeToast }) => (
+            <CustomToast
+              appearance="error"
+              message={response?.data?.message || 'Error occurred while generating nesting data.'}
+              closeToast={closeToast}
+            />
+          )
+        );
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error fetching designs:', e);
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="error"
+            message={e?.response?.data?.message || e?.message || 'An error occurred.'}
+            closeToast={closeToast}
+          />
+        )
+      );
     } finally {
       setIsLoading(false);
     }
