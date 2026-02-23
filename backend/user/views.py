@@ -1,5 +1,4 @@
 # Python imports
-from functools import wraps
 import secrets
 from datetime import timedelta
 from typing import Tuple
@@ -27,7 +26,7 @@ from dotenv import load_dotenv
 from jwt import decode as jwt_decode
 from rest_framework import viewsets
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -74,14 +73,6 @@ from user.utils import send_email, send_google_chat_notification
 from .permissions import AccountManager
 
 load_dotenv()
-
-def superuser_required(view_func):
-    @wraps(view_func)
-    def _wrapped(self, request, *args, **kwargs):
-        if not request.user.is_authenticated or not request.user.is_superuser:
-            return render(request, "custom_admin/index.html")
-        return view_func(self, request, *args, **kwargs)
-    return _wrapped
 
 
 class UserAuthViewset(ModelViewSet):
