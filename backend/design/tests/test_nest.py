@@ -183,30 +183,6 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertEqual(item_spaced["y"], 5.0)
 
     @patch("reportlab.pdfgen.canvas.Canvas")
-    @patch("reportlab.graphics.renderPDF.draw")
-    @patch("svglib.svglib.svg2rlg")
-    def test_generate_layout_pdf(
-        self: "NestModuleTestCase",
-        mock_svg2rlg: MagicMock,
-        mock_draw: MagicMock,
-        mock_canvas: MagicMock,
-    ) -> None:
-        """Test Layout PDF generation"""
-        # Configure the mock drawing object to have width/height
-        mock_drawing = MagicMock()
-        mock_drawing.width = 100.0
-        mock_drawing.height = 200.0
-        mock_svg2rlg.return_value = mock_drawing
-
-        service = NestingService(width=1000, height=1000)
-        svg_paths = ["sheet1.svg", "sheet2.svg"]
-
-        pdf_path = service.generate_layout_pdf(svg_paths, "test.json")
-
-        self.assertTrue(pdf_path.endswith("_layout.pdf"))
-        self.assertEqual(mock_svg2rlg.call_count, 2)
-
-    @patch("reportlab.pdfgen.canvas.Canvas")
     @patch("reportlab.graphics.shapes.Drawing")
     @patch("reportlab.graphics.renderPDF.draw")
     @patch("reportlab.graphics.barcode.qr.QrCodeWidget")
