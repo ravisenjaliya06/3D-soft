@@ -1,8 +1,10 @@
 # Python imports
+import ipaddress
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List
+from typing import List, Optional
+from urllib.request import Request
 
 # Django imports
 from django.conf import settings
@@ -257,3 +259,37 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
             child.parent = parent
             child.data["parent"] = str(parent.id)
             child.save(update_fields=["parent", "data"])
+
+
+def get_client_ip(request: Request) -> Optional[str]:
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
+
+def get_ip_location(ip_address: str) -> Optional[str]:
+    try:
+        ip = ipaddress.ip_address(ip_address)
+
+        # Ignore loopback & private IPs
+        if ip.is_loopback or ip.is_private:
+            return None
+
+        response = requests.get(
+            f"http://ip-api.com/json/{ip}",
+            timeout=3,
+        )
+        data = response.json()
+
+        if data.get("status") == "success":
+            return (
+                f"{data.get('city', '')}, "
+                f"{data.get('regionName', '')}, "
+                f"{data.get('country', '')}"
+            ).strip(", ")
+
+    except (ValueError, requests.RequestException):
+        return None
+
+    return None
