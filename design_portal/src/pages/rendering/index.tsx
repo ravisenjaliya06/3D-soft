@@ -57,7 +57,7 @@ export default function RenderingPage() {
         projectFormData.append('name', `Design ${id}`);
         projectFormData.append('file', firstImageBlob, '1.png');
 
-        const projectRes = await fetch('http://65.0.103.173/api/v1/projects/', {
+        const projectRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/`, {
           method: 'POST',
           body: projectFormData,
         });
@@ -78,7 +78,7 @@ export default function RenderingPage() {
             const imgBlob = await imgRes.blob();
             remainingFormData.append('files', imgBlob, `${i + 1}.png`);
           }
-          const uploadRes = await fetch(`http://65.0.103.173/api/v1/projects/${projectId}/images`, {
+          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/images`, {
             method: 'POST',
             body: remainingFormData,
           });
@@ -86,7 +86,7 @@ export default function RenderingPage() {
         }
 
         setLoadingText('Starting processing...');
-        const processRes = await fetch(`http://65.0.103.173/api/v1/projects/${projectId}/process`, {
+        const processRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/process`, {
           method: 'POST',
         });
         if (!processRes.ok) throw new Error('Failed to start processing');
@@ -96,7 +96,7 @@ export default function RenderingPage() {
       // Polling
       const pollInterval = setInterval(async () => {
         try {
-          const statusRes = await fetch(`http://65.0.103.173/api/v1/projects/${projectId}/status`);
+          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/${projectId}/status`);
           const statusData = await statusRes.json();
 
           if (statusData.error_message) {
