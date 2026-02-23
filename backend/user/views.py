@@ -766,6 +766,9 @@ class AdminView(viewsets.ViewSet):
         return response
 
     def dashboard(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
         total_users = User.objects.count()
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
         total_pending_users = User.objects.filter(
@@ -784,6 +787,9 @@ class AdminView(viewsets.ViewSet):
         return render(request, "custom_admin/dashboard.html", context)
 
     def users(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
         approved_users = User.objects.filter(
             is_verified=True, is_superuser=False
         ).order_by("-date_joined")
