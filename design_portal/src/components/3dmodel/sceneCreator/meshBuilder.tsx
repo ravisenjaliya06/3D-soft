@@ -718,6 +718,9 @@ export class MeshBuilder {
     // Z position (move hinge inside door properly)
     const zPos = -doorDepth / 2 + hingeDepth / 2 - 20;
 
+    // create for ignore hingeW for bounding box
+    const hingeW = hingeSize.x;
+
     for (let i = 0; i < numHinges; i++) {
       const t = numHinges > 1 ? i / (numHinges - 1) : 0.5;
       const varyPos = startPos + t * totalSpan;
@@ -726,16 +729,16 @@ export class MeshBuilder {
       hinge.name = `Hinge_${i + 1}`;
 
       if (openDirection === DIRECTION_TYPES.RIGHT) {
-        hinge.position.set(doorWidth / 2, varyPos, zPos);
+        hinge.position.set(doorWidth / 2 - hingeW / 2, varyPos, zPos);
         hinge.rotation.set(0, Math.PI / 2, -Math.PI / 2);
       } else if (openDirection === DIRECTION_TYPES.LEFT) {
-        hinge.position.set(-doorWidth / 2, varyPos, zPos);
+        hinge.position.set(-doorWidth / 2 + hingeW / 2, varyPos, zPos);
         hinge.rotation.set(0, -Math.PI / 2, Math.PI / 2);
       } else if (openDirection === DIRECTION_TYPES.TOP) {
-        hinge.position.set(varyPos, doorHeight / 2, zPos);
+        hinge.position.set(varyPos, doorHeight / 2 - hingeW / 2, zPos);
         hinge.rotation.set(Math.PI / 2, 0, Math.PI);
       } else if (openDirection === DIRECTION_TYPES.BOTTOM) {
-        hinge.position.set(varyPos, -doorHeight / 2, zPos);
+        hinge.position.set(varyPos, -doorHeight / 2 + hingeW / 2, zPos);
         hinge.rotation.set(-Math.PI / 2, 0, 0);
       }
 

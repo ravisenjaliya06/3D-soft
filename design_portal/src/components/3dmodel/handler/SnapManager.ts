@@ -95,7 +95,16 @@ export class SnapManager {
   private getBoxData(mesh: THREE.Mesh) {
     mesh.updateMatrixWorld(true);
 
-    const box = new THREE.Box3().setFromObject(mesh);
+    // Use geometry-only bounding box so that child objects (hinges, handles, etc.)
+    // not snap to child of glbs
+    let box: THREE.Box3;
+    if (mesh.geometry) {
+      mesh.geometry.computeBoundingBox();
+      box = mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
+    } else {
+      box = new THREE.Box3().setFromObject(mesh);
+    }
+
     const center = new THREE.Vector3();
     const size = new THREE.Vector3();
 

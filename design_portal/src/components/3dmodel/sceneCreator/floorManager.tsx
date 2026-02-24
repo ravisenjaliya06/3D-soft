@@ -70,7 +70,7 @@ class FloorBuilder {
     mesh.receiveShadow = true;
 
     // Position slightly below walls to avoid z-fighting
-    mesh.position.y = 0.01;
+    mesh.position.y = -0.01;
 
     this.floorMesh = mesh;
     return mesh;
