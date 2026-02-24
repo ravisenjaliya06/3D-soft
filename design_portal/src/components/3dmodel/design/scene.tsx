@@ -1346,6 +1346,12 @@ export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, ne
 export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   if (!boxMesh) return;
   if (boxMesh.userData?.noBaseEnabled) return;
+  const boxObject = store.getState().data.objects.find(
+    (obj) => obj.parent === boxMesh.userData.objectId && obj.name.includes("BOTTOM"));
+  if (!boxObject) {
+    console.error('object not found');
+    return;
+  };
 
   const geometry = boxMesh.geometry;
   geometry.computeBoundingBox();
@@ -1358,10 +1364,8 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   const thickness = 18;
   const skirtingHeight = 82;
 
-  // Remove existing first to avoid duplicates
   removeSkirtingPlanks(boxMesh);
 
-  // Add Back Skirting
   const backSkirtingData: MeshObjectData = {
     id: crypto.randomUUID(),
     name: 'BACK_SKIRTING_PLANK',
@@ -1372,7 +1376,7 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     // Back is Z negative. Cupboard is centered at 0 in its local space.
     position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: -depth / 2 + thickness / 2 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: [],
+    material: boxObject.material ?? [],
     isMain: false,
   };
 
@@ -1380,8 +1384,8 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   const back = backSkirting.createMesh();
   back.userData.isSkirting = true;
   boxMesh.add(back);
+  store.dispatch(updateObject(backSkirtingData));
 
-  // Add Front Skirting
   const frontSkirtingData: MeshObjectData = {
     id: crypto.randomUUID(),
     name: 'FRONT_SKIRTING_PLANK',
@@ -1389,10 +1393,9 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     geometryType: GEOMETRY.BOX_GEOMETRY,
     parent: boxMesh.userData.objectId,
     dimensions: { width, height: skirtingHeight, depth: thickness },
-    // Front is Z positive.
     position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: depth / 2 - thickness / 2 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: [],
+    material: boxObject.material ?? [],
     isMain: false,
   };
 
@@ -1400,6 +1403,7 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   const front = frontSkirting.createMesh();
   front.userData.isSkirting = true;
   boxMesh.add(front);
+  store.dispatch(updateObject(frontSkirtingData));
 };
 
 export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {

@@ -231,6 +231,16 @@ const Sidebar: React.FC = () => {
           }
         }
 
+        // Disable front panel toggle if there are natively no extended side planks
+        // OR if "No Base" is enabled
+        // OR if "Nailer" is enabled
+        const hasExtended = hasExtendedSidePlanks(targetMesh);
+        setFrontpanelDisabled(
+          !hasExtended ||
+          selectedObject.noBaseEnabled === true ||
+          selectedObject.nailerEnabled === true
+        );
+
         const hasSkirting = (targetMesh as THREE.Mesh).children.some(
           (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
         );
@@ -1412,6 +1422,12 @@ const Sidebar: React.FC = () => {
       const isEnabled = !selectedObject.nailerEnabled;
       const updatePatch: any = { nailerEnabled: isEnabled };
 
+      if (isEnabled) {
+        // Turning nailer ON -> automatically remove skirting planks.
+        removeSkirtingPlanks(targetMesh);
+        setFrontpanelEnabled(false);
+      }
+
       if (isEnabled && selectedObject.noBaseEnabled) {
         // If turning nailer ON, we must turn off "No Base".
         updatePatch.noBaseEnabled = false;
@@ -1463,6 +1479,7 @@ const Sidebar: React.FC = () => {
       if (isEnabled) {
         // Remove skirting planks immediately
         removeSkirtingPlanks(targetMesh);
+        setFrontpanelEnabled(false);
 
         // Turn off Nailer if it was on
         if (selectedObject.nailerEnabled) {
@@ -2588,33 +2605,36 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                          <p className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}>
                             Front & Back Panel
                           </p>
-                          <div className="flex items-center gap-[0rem]">
+                          <div className={`flex items-center gap-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}>
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
 
-                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]">
+                        <div className={`mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}>
                           <div className="mr-[1rem] px-3 py-2">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                            <p className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}>
                               Back Panel
                             </p>
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                           <div className="mr-[0.5rem] px-[3] py-[2]">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                            <p className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}>
                               Inward Size
                             </p>
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
