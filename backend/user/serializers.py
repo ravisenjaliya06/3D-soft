@@ -1,6 +1,8 @@
 # Python imports
+import contextlib
 import secrets
 import string
+import threading
 from typing import Dict, List, Optional
 
 # Django imports
@@ -135,6 +137,17 @@ class SignupSerializer(PhoneValidationSerializer):
         user.location = location
         user.save()
 
+        def fetch_and_update_location(user_id: int, ip_addr: str) -> None:
+            with contextlib.suppress(Exception):
+                loc = get_ip_location(ip_addr)
+                if loc:
+                    User.objects.filter(id=user_id).update(location=loc)
+
+        if ip_address:
+            threading.Thread(
+                target=fetch_and_update_location, args=(user.id, ip_address)
+            ).start()
+
         organization, _ = Organization.objects.get_or_create(
             name=f"{user.username}'s Organization"
         )
@@ -145,9 +158,13 @@ class SignupSerializer(PhoneValidationSerializer):
         user.save()
 
         add_user_to_organization(user, organization, group_names, is_invited=False)
-        duplicate_default_textures(organization)
-        default_material_data(organization)
-        duplicate_default_catalogs_for_organization(organization)
+
+        def duplicate_data(org: Organization) -> None:
+            duplicate_default_textures(org)
+            default_material_data(org)
+            duplicate_default_catalogs_for_organization(org)
+
+        threading.Thread(target=duplicate_data, args=(organization,)).start()
 
         DesignSetting.objects.get_or_create(
             organization=organization,
