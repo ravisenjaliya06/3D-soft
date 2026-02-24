@@ -29,6 +29,7 @@ def send_email(email_data: EmailData) -> bool:
         "receiver_email": email_data.receiver_email,
         "subject": email_data.subject,
         "function": "send_email",
+        "timestamp": timezone.now().isoformat(),
     }
     Logger.info(
         {
@@ -120,13 +121,14 @@ def send_google_chat_notification(webhook_url: str, message: str) -> None:
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        Logger.info({"message": "Google Chat notification sent", "text": message})
+        Logger.info({"message": "Google Chat notification sent", "text": message, "timestamp": timezone.now().isoformat()})
     except Exception as e:  # noqa: BLE001
         Logger.error(
             {
                 "message": "Failed to send Google Chat notification",
                 "error": str(e),
                 "text": message,
+                "timestamp": timezone.now().isoformat(),
             }
         )
 
@@ -170,6 +172,7 @@ def default_material_data(organization: Organization) -> bool:
     Creates default materials, companies, and their properties
     for a given organization.
     """
+    Logger.info({"message": f"Starting default_material_data for org {organization.id}", "timestamp": timezone.now().isoformat()})
 
     default_companies = Company.objects.filter(organization=None)
     company_map = {}
@@ -206,15 +209,19 @@ def default_material_data(organization: Organization) -> bool:
             }
             Properties.objects.create(**prop_data, material=new_material)
 
+    Logger.info({"message": f"Completed default_material_data for org {organization.id}", "timestamp": timezone.now().isoformat()})
     return True
 
 
 def duplicate_default_textures(organization: Organization) -> None:
+    Logger.info({"message": f"Starting duplicate_default_textures for org {organization.id}", "timestamp": timezone.now().isoformat()})
     default_finishes = FinishesLibrary.objects.filter(organization__isnull=True)
 
     for finish in default_finishes:
         data = model_to_dict(finish, exclude=["id", "organization"])
         FinishesLibrary.objects.create(organization=organization, **data)
+
+    Logger.info({"message": f"Completed duplicate_default_textures for org {organization.id}", "timestamp": timezone.now().isoformat()})
 
 
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:
@@ -222,6 +229,7 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
     Clone all default catalogs (organization IS NULL) into the given organization.
     Preserves parent-child relationships.
     """
+    Logger.info({"message": f"Starting duplicate_default_catalogs_for_organization for org {organization.id}", "timestamp": timezone.now().isoformat()})
 
     default_catalogs = DesignCatalog.objects.filter(organization__isnull=True).order_by(
         "created_at"
@@ -259,6 +267,8 @@ def duplicate_default_catalogs_for_organization(organization: Organization) -> N
             child.parent = parent
             child.data["parent"] = str(parent.id)
             child.save(update_fields=["parent", "data"])
+
+    Logger.info({"message": f"Completed duplicate_default_catalogs_for_organization for org {organization.id}", "timestamp": timezone.now().isoformat()})
 
 
 def get_client_ip(request: Request) -> Optional[str]:
