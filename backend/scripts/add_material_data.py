@@ -4732,6 +4732,7 @@ def create_materials(
             is_catalog=False,
             defaults={"description": material_data.get("description", "")},
         )
+        print(created, "for default material")
 
         Properties.objects.update_or_create(
             material=material,
@@ -4806,6 +4807,7 @@ def create_materials(
                 is_catalog=False,
                 defaults={"description": material_data.get("description", "")},
             )
+            print(created, "for default organization material")
 
             Properties.objects.update_or_create(
                 material=org_material,
