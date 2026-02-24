@@ -4826,13 +4826,19 @@ def create_materials(
                 ).first()
 
                 if not texture:
+                    print(f"Texture {texture_name} not found")
                     continue
 
-                MaterialTexture.objects.update_or_create(
+                update, created = MaterialTexture.objects.update_or_create(
                     material=org_material,
                     texture=texture,
                     defaults={"name": texture_data["name"]},
                 )
+
+                if created:
+                    print(f"Created texture")
+                if update:
+                    print(f"Updated texture")
 
             for finish_data in finishes:
                 finish_name = finish_data["finish"]
