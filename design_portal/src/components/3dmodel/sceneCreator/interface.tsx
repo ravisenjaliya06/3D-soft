@@ -203,6 +203,7 @@ export interface MeshObjectData {
   grooves?: GrooveData[];
   nailerEnabled?: boolean;
   nailerModel?: string;
+  noBaseEnabled?: boolean;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {
