@@ -138,8 +138,13 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObjectId || selectedChildObjectId) {
-      setSettingOpen(true);
-      setNavOpen(false);
+      if (selectedObject?.type === OBJECT_TYPES.MODEL) {
+        setSettingOpen(false);
+        setNavOpen(true);
+      } else {
+        setSettingOpen(true);
+        setNavOpen(false);
+      }
 
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh || child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX) {
@@ -1777,16 +1782,18 @@ const Sidebar: React.FC = () => {
         <>
           {/* ================= SWITCH ================= */}
           <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
-            <button
-              onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isSettingOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
-            >
-              Setting
-            </button>
+            {selectedObject?.type !== OBJECT_TYPES.MODEL && (
+              <button
+                onClick={handleSetting}
+                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  isSettingOpen
+                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
+              >
+                Setting
+              </button>
+            )}
 
             <button
               onClick={handleNavigation}
@@ -1805,7 +1812,26 @@ const Sidebar: React.FC = () => {
           {/* ================= NAV IMAGE ================= */}
           {isNavOpen && (
             <div className="mx-auto mt-4 w-[12rem]">
-              <img src={assets.navigationdetail} className="w-full" />
+              {selectedObject?.type === OBJECT_TYPES.MODEL ? (
+                <div className="rounded-[0.4rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0.6rem] shadow-sm">
+                  <p className="mb-[0.6rem] text-center text-[0.75rem] font-[700] text-[var(--primary-color)]">
+                    Model Tools
+                  </p>
+                  <ul className="space-y-[0.4rem] pl-[0.3rem] text-[0.65rem] text-[var(--primary-color)]">
+                    <li className="flex gap-[0.4rem]">
+                      <b className="w-[3.5rem] text-right">Ctrl + G</b> <span>Position</span>
+                    </li>
+                    <li className="flex gap-[0.4rem]">
+                      <b className="w-[3.5rem] text-right">Ctrl + E</b> <span>Rotation</span>
+                    </li>
+                    <li className="flex gap-[0.4rem]">
+                      <b className="w-[3.5rem] text-right">Ctrl + S</b> <span>Scale</span>
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <img src={assets.navigationdetail} className="w-full" />
+              )}
             </div>
           )}
 

@@ -3,8 +3,8 @@ import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { RegisterForm } from '@/types/formTypes';
 import { NextRouter } from 'next/router';
-import { handleFormData } from '../utils/formDataHandler';
 import { hideFullScreenLoader, showFullScreenLoader } from '../3dmodel/handler/items';
+import { handleFormData } from '../utils/formDataHandler';
 
 // Function to handle sign-in
 export const handleSignIn = async (

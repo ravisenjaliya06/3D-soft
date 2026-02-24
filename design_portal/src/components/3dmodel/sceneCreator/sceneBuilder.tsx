@@ -157,8 +157,14 @@ export class SceneBuilder {
 
   private createTransformControls(): TransformControls {
     const transformControls = new TransformControls(this.camera, this.renderer.domElement);
-    transformControls.size = 0.3;
+    transformControls.size = 0.8;
     transformControls.space = 'world';
+    transformControls.setMode('translate'); // Default to translate
+
+    transformControls.addEventListener('dragging-changed', (event) => {
+      this.controls.enabled = !event.value;
+    });
+
     return transformControls;
   }
 
@@ -171,6 +177,9 @@ export class SceneBuilder {
     // Add lighting
     this.scene.add(this.ambientLight);
     this.scene.add(this.directionalLight);
+
+    // Add transform controls to scene
+    this.scene.add(this.transformControls.getHelper());
   }
 
   private setupEventListeners(): void {

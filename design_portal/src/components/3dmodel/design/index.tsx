@@ -298,12 +298,13 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       }
     }
 
-    const onTransformChange = () => {
+    const onTransformChange = (event: any) => {
+      if (event && event.value) return; // Only sync when dragging stops (mouse released)
+
       if (!selectedObject) return;
 
       const objectId = selectedObject.userData.objectId;
       if (!objectId) return;
-
       // Update Redux store with new position/rotation/scale
       dispatch(
         updateObject({
@@ -327,10 +328,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       );
     };
 
-    transformControls.addEventListener('mouseUp', onTransformChange);
+    transformControls.addEventListener('dragging-changed', onTransformChange);
 
     return () => {
-      transformControls.removeEventListener('mouseUp', onTransformChange);
+      transformControls.removeEventListener('dragging-changed', onTransformChange);
     };
   }, [design3D, selectedObject, dispatch]);
 
@@ -339,12 +340,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       deleteObject();
     }
 
-    if (design3D && design3D.transformControls) {
+    if (design3D && design3D.transformControls && event.ctrlKey) {
       if (event.key.toLowerCase() === 'g') {
+        event.preventDefault();
         design3D.transformControls.setMode('translate');
-      } else if (event.key.toLowerCase() === 'r') {
+      } else if (event.key.toLowerCase() === 's') {
+        event.preventDefault();
         design3D.transformControls.setMode('scale');
       } else if (event.key.toLowerCase() === 'e') {
+        event.preventDefault();
         design3D.transformControls.setMode('rotate');
       }
     }

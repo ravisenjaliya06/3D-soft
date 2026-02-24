@@ -220,9 +220,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           model.userData.isGLB = true;
 
           model.traverse((child) => {
+            child.userData.objectId = item.id;
+            child.userData.isGLB = true;
             if (child instanceof THREE.Mesh) {
-              child.userData.objectId = item.id;
-              child.userData.isGLB = true;
               child.userData.type = OBJECT_TYPES.MODEL;
               child.name = `Model_Child_${child.id}`;
             }
@@ -261,7 +261,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
           const itemData = {
             ...item,
-            id: crypto.randomUUID(),
+            id: item.id,
             type: OBJECT_TYPES.MODEL,
             name: item.name,
             dimensions: targetSize,
