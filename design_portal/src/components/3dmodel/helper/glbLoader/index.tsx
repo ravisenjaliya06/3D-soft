@@ -116,7 +116,7 @@ export const prefetchAll = (urls: string[]): void => {
       }
     }
     console.log(`Finished prefetching ${urls.length} models`);
-  }, 3000); // 3-second initial delay so first page load is prioritized
+  }, 2000); // 3-second initial delay so first page load is prioritized
 };
 
 export const GLBLoader = (

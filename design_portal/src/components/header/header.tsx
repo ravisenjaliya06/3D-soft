@@ -141,14 +141,19 @@ const Header = ({
             {userdetails?.username ? (
               <div className={styles.userInfo}>
                 <p className={styles.userName} title={userdetails.username}>
-                  {userdetails.username.length > 10
-                    ? userdetails.username.substring(0, 10) + '...'
-                    : userdetails.username}
+                  {(userdetails.name ?? userdetails.username ?? '').length > 10
+                    ? `${(userdetails.name ?? userdetails.username ?? '').slice(0, 10)}...`
+                    : (userdetails.name ?? userdetails.username ?? '')}
                 </p>
                 <p className={styles.userSubtitle}>
-                  {userdetails.selected_organization_name.length > 15
-                    ? userdetails.selected_organization_name.substring(0, 15) + '...'
-                    : userdetails.selected_organization_name}
+                  {(userdetails.organization_display_name || userdetails.selected_organization_name)
+                    ?.length > 15
+                    ? (
+                        userdetails.organization_display_name ||
+                        userdetails.selected_organization_name
+                      ).substring(0, 15) + '...'
+                    : userdetails.organization_display_name ||
+                      userdetails.selected_organization_name}
                 </p>
               </div>
             ) : (
