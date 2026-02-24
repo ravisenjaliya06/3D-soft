@@ -89,6 +89,7 @@ class UserAuthViewset(ModelViewSet):
             "function": "register",
             "timestamp": timezone.now().isoformat(),
         }
+        Logger.info({"message": "User registration started"} | common_info_logger)
         groups = Group.objects.all().values_list("id", flat=True)
         group_names = Group.objects.all().values_list("name", flat=True)
         serializer = SignupSerializer(
@@ -125,6 +126,7 @@ class UserAuthViewset(ModelViewSet):
             target=send_google_chat_notification,
             args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, registration_message),
         ).start()
+        Logger.info({"message": "User registration completed"} | common_info_logger)
         return Response(
             {
                 "message": "User Registration Is Successful. Wait For Admin Approval.",
