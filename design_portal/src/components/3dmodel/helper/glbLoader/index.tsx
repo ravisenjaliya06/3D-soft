@@ -24,7 +24,8 @@ const fetchAndCacheBlob = async (url: string): Promise<void> => {
     }
 
     // 2. Fetch from Network
-    const response = await fetch(url);
+    // Use low priority to avoid blocking critical API requests like register/login
+    const response = await fetch(url, { priority: 'low' } as any);
     if (!response.ok) throw new Error(`Failed to fetch ${url}`);
     const blob = await response.blob();
 
@@ -99,13 +100,23 @@ export const prefetchGLB = (url: string): void => {
 };
 
 /**
- * Prefetch multiple URLs in parallel
+ * Prefetch multiple URLs sequentially to avoid network choking
  */
 export const prefetchAll = (urls: string[]): void => {
-  // We don't await this, we want it to run in the background
-  Promise.all(urls.map((url) => fetchAndCacheBlob(url)))
-    .then(() => console.log(`Finished prefetching ${urls.length} models`))
-    .catch((e) => console.error('Error during batch prefetch', e));
+  // We process these sequentially with delays to ensure the network isn't choked,
+  // preventing critical API calls (like Register/Login) from timing out or delaying.
+  setTimeout(async () => {
+    for (const url of urls) {
+      try {
+        await fetchAndCacheBlob(url);
+        // Small pause between fetches to allow other requests to execute
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } catch (e) {
+        console.error('Error during batch prefetch', e);
+      }
+    }
+    console.log(`Finished prefetching ${urls.length} models`);
+  }, 3000); // 3-second initial delay so first page load is prioritized
 };
 
 export const GLBLoader = (
