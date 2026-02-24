@@ -10,6 +10,8 @@ import {
   addLShapeToDrawersAndDoors,
   addNailers,
   addSkirtingPlanks,
+  applyNoBase,
+  hasExtendedSidePlanks,
   removeLShapeObjects,
   removeNailers,
   removeSkirtingPlanks,
@@ -220,6 +222,25 @@ const Sidebar: React.FC = () => {
         }
       });
       if (targetMesh) {
+        if (
+          selectedObject.type === OBJECT_TYPES.CUPBOARD &&
+          selectedObject.noBaseEnabled === undefined
+        ) {
+          if (!hasExtendedSidePlanks(targetMesh)) {
+            applyObjectUpdate(selectedObject, { noBaseEnabled: true });
+          }
+        }
+
+        // Disable front panel toggle if there are natively no extended side planks
+        // OR if "No Base" is enabled
+        // OR if "Nailer" is enabled
+        const hasExtended = hasExtendedSidePlanks(targetMesh);
+        setFrontpanelDisabled(
+          !hasExtended ||
+            selectedObject.noBaseEnabled === true ||
+            selectedObject.nailerEnabled === true
+        );
+
         const hasSkirting = (targetMesh as THREE.Mesh).children.some(
           (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
         );
@@ -455,6 +476,7 @@ const Sidebar: React.FC = () => {
     if (!selectedObject) return;
     const updatedObject: MeshObjectData = {
       ...selectedObject,
+      ...patch,
 
       dimensions: patch.dimensions
         ? { ...selectedObject.dimensions, ...patch.dimensions }
@@ -1385,7 +1407,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleNailerToggle = async () => {
-    if (!scene || !selectedObject || !isFullCupboard) return;
+    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene) return;
 
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
@@ -1394,14 +1416,89 @@ const Sidebar: React.FC = () => {
       }
     });
 
-    if (targetMesh) {
+    if (!targetMesh) return;
+
+    try {
       const isEnabled = !selectedObject.nailerEnabled;
+      const updatePatch: any = { nailerEnabled: isEnabled };
+
+      if (isEnabled) {
+        // Turning nailer ON -> automatically remove skirting planks.
+        removeSkirtingPlanks(targetMesh);
+        setFrontpanelEnabled(false);
+      }
+
+      if (isEnabled && selectedObject.noBaseEnabled) {
+        // If turning nailer ON, we must turn off "No Base".
+        updatePatch.noBaseEnabled = false;
+      } else if (!isEnabled) {
+        // If turning nailer OFF, revert to "No Base" automatically if there are no extended side planks
+        if (!hasExtendedSidePlanks(targetMesh)) {
+          updatePatch.noBaseEnabled = true;
+        }
+      }
+
+      await applyObjectUpdate(selectedObject, updatePatch);
+
+      // Now conditionally execute 3D logic
+      if (updatePatch.noBaseEnabled === false) {
+        await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+
       if (isEnabled) {
         const defaultModel = selectedObject.nailerModel || 'stand_1';
         await addNailers(scene, targetMesh, defaultModel);
       } else {
         await removeNailers(scene, targetMesh);
       }
+    } catch (error) {
+      console.error('Error toggling nailer:', error);
+    }
+  };
+
+  const handleNoBaseToggle = async () => {
+    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+
+    if (!targetMesh) return;
+
+    try {
+      const isEnabled = !selectedObject.noBaseEnabled;
+
+      // We will batch the patch update for boolean changes
+      const updatePatch: any = { noBaseEnabled: isEnabled };
+
+      if (isEnabled) {
+        // Remove skirting planks immediately
+        removeSkirtingPlanks(targetMesh);
+        setFrontpanelEnabled(false);
+
+        // Turn off Nailer if it was on
+        if (selectedObject.nailerEnabled) {
+          updatePatch.nailerEnabled = false;
+        }
+      }
+
+      // Apply boolean toggles to Redux FIRST so it doesn't overwrite coordinate shifts
+      await applyObjectUpdate(selectedObject, updatePatch);
+
+      // THEN apply transformations that will shift the cupboard and update position coordinates
+      if (isEnabled && selectedObject.nailerEnabled) {
+        await removeNailers(scene, targetMesh);
+      }
+
+      // Execute side plank height adjustments based on no base status
+      await applyNoBase(scene, targetMesh, isEnabled);
+    } catch (error) {
+      console.error('Error toggling no base:', error);
     }
   };
 
@@ -2455,6 +2552,24 @@ const Sidebar: React.FC = () => {
                       <>
                         <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
                           <div
+                            onClick={handleNoBaseToggle}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
+                          >
+                            <div
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.noBaseEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
+                            />
+                          </div>
+
+                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
+                            No Base
+                          </p>
+                        </div>
+                        <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
+                          <div
                             onClick={handleNailerToggle}
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
                           >
@@ -2498,33 +2613,46 @@ const Sidebar: React.FC = () => {
                             />
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                          <p
+                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                          >
                             Front & Back Panel
                           </p>
-                          <div className="flex items-center gap-[0rem]">
+                          <div
+                            className={`flex items-center gap-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                          >
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
 
-                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]">
+                        <div
+                          className={`mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                        >
                           <div className="mr-[1rem] px-3 py-2">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                            <p
+                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                            >
                               Back Panel
                             </p>
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                           <div className="mr-[0.5rem] px-[3] py-[2]">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                            <p
+                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                            >
                               Inward Size
                             </p>
                             <input
                               type="number"
+                              disabled={frontpanelDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
