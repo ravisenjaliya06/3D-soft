@@ -4,6 +4,7 @@ import { REDIRECT } from '@/services/CommonStatus';
 import { RegisterForm } from '@/types/formTypes';
 import { NextRouter } from 'next/router';
 import { handleFormData } from '../utils/formDataHandler';
+import { hideFullScreenLoader, showFullScreenLoader } from '../3dmodel/handler/items';
 
 // Function to handle sign-in
 export const handleSignIn = async (
@@ -18,6 +19,7 @@ export const handleSignIn = async (
   setPasswordError: (message: string | null) => void,
   setConfirmPasswordError: (message: string | null) => void
 ) => {
+  showFullScreenLoader();
   setIsLoading(true);
   const { formData, errors } = handleFormData<RegisterForm>(registerPayload, setError);
   setNameError(errors.name);
@@ -33,6 +35,7 @@ export const handleSignIn = async (
   }
   const response = await CommonService.post(API_ENDPOINT.REGISTER, formData);
   if (response.status === 201) {
+    hideFullScreenLoader();
     router.push({
       pathname: REDIRECT.OTP,
       query: { email: registerPayload.email },
@@ -43,5 +46,7 @@ export const handleSignIn = async (
     setUsernameError(response.data.username);
     setPhoneError(response.data.phone);
     setIsLoading(false);
+    hideFullScreenLoader();
   }
+  hideFullScreenLoader();
 };
