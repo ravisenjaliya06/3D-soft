@@ -16,6 +16,7 @@ django.setup()
 # App imports
 from design.models import DesignCatalog
 from material.models import (
+    FinishesLibrary,
     Material,
 )
 from umaboy.models import Organization
@@ -27,6 +28,8 @@ def get_registered_organization() -> QuerySet[Organization]:
 
 def clear_materials():
     organizations = get_registered_organization()
+
+    FinishesLibrary.objects.filter(organization__isnull=True).delete()
     
     default_catalogs = DesignCatalog.objects.filter(
         organization__isnull=True, is_library=True, is_script=True
