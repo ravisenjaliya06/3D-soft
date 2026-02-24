@@ -27,6 +27,17 @@ def get_registered_organization() -> QuerySet[Organization]:
 
 def clear_materials():
     organizations = get_registered_organization()
+    
+    default_catalogs = DesignCatalog.objects.filter(
+        organization__isnull=True, is_library=True, is_script=True
+    )
+
+    for catalog in default_catalogs:
+        for material in catalog.materials.all():
+            Material.objects.filter(id=material.id).delete()
+
+        catalog.materials.clear()
+
     for org in organizations:
         catalogs = DesignCatalog.objects.filter(
             organization=org, is_library=True, is_script=True
