@@ -144,7 +144,9 @@ class SignupSerializer(PhoneValidationSerializer):
                     User.objects.filter(id=user_id).update(location=loc)
 
         if ip_address:
-            threading.Thread(target=fetch_and_update_location, args=(user.id, ip_address)).start()
+            threading.Thread(
+                target=fetch_and_update_location, args=(user.id, ip_address)
+            ).start()
 
         organization, _ = Organization.objects.get_or_create(
             name=f"{user.username}'s Organization"

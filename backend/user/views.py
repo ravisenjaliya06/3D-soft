@@ -165,7 +165,7 @@ class UserAuthViewset(ModelViewSet):
             args=(
                 request.build_absolute_uri(reverse("admin_dashboard")),
                 user,
-            )
+            ),
         ).start()
 
         Logger.info(
@@ -218,7 +218,7 @@ class UserAuthViewset(ModelViewSet):
         )
         threading.Thread(
             target=send_google_chat_notification,
-            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, login_message)
+            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, login_message),
         ).start()
 
         connected_organizations = [
@@ -286,7 +286,9 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.validated_data
         token = AccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
-        threading.Thread(target=self._send_forgot_password_email, args=(user, user.email, token)).start()
+        threading.Thread(
+            target=self._send_forgot_password_email, args=(user, user.email, token)
+        ).start()
 
         Logger.info(
             {
@@ -515,9 +517,15 @@ class AddUserInOrganizationViewset(ModelViewSet):
         threading.Thread(
             target=self._send_welcome_email,
             args=(
-                user, user.id, user.email, user.username, user.groups, token,
-                request.user.selected_organization.display_name or request.user.selected_organization.name
-            )
+                user,
+                user.id,
+                user.email,
+                user.username,
+                user.groups,
+                token,
+                request.user.selected_organization.display_name
+                or request.user.selected_organization.name,
+            ),
         ).start()
         return Response(
             {

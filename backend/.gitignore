@@ -24,6 +24,7 @@ celerybeat**
 /output_sheet_1.svg
 /output_sheet_1.gcode
 /output_sheet**
+/xml*
 
 /nesting_data.json
-/xml/*
+/xml*
