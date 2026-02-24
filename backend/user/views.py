@@ -1,5 +1,6 @@
 # Python imports
 import secrets
+import threading
 from datetime import timedelta
 from typing import Tuple
 
@@ -110,7 +111,7 @@ class UserAuthViewset(ModelViewSet):
             }
             | common_info_logger
         )
-        self._send_otp_email(user, otp)
+        threading.Thread(target=self._send_otp_email, args=(user, otp)).start()
         registration_message = (
             "🟢 *New User Registered*\n"
             "----------------------------------\n"
@@ -119,10 +120,10 @@ class UserAuthViewset(ModelViewSet):
             f"📅 *Joined:* {user.date_joined.strftime('%Y-%m-%d %H:%M')}\n"
             "----------------------------------"
         )
-        send_google_chat_notification(
-            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
-            message=registration_message,
-        )
+        threading.Thread(
+            target=send_google_chat_notification,
+            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, registration_message),
+        ).start()
         return Response(
             {
                 "message": "User Registration Is Successful. Wait For Admin Approval.",
@@ -159,7 +160,13 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        self._send_registration_notification_to_admin(request, user)
+        threading.Thread(
+            target=self._send_registration_notification_to_admin,
+            args=(
+                request.build_absolute_uri(reverse("admin_dashboard")),
+                user,
+            ),
+        ).start()
 
         Logger.info(
             {
@@ -209,10 +216,10 @@ class UserAuthViewset(ModelViewSet):
             f"🆔 *ID:* `{user.id}`\n"
             "----------------------------------\n"
         )
-        send_google_chat_notification(
-            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
-            message=login_message,
-        )
+        threading.Thread(
+            target=send_google_chat_notification,
+            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, login_message),
+        ).start()
 
         connected_organizations = [
             {"id": org.id, "name": org.name} for org in user.organizations.all()
@@ -254,7 +261,7 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.validated_data
         otp, expiration_time = self._generate_otp()
         self._set_user_otp(user, otp, expiration_time)
-        self._send_otp_email(user, otp)
+        threading.Thread(target=self._send_otp_email, args=(user, otp)).start()
 
         Logger.info(
             {
@@ -279,7 +286,9 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.validated_data
         token = AccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
-        self._send_forgot_password_email(user, user.email, token)
+        threading.Thread(
+            target=self._send_forgot_password_email, args=(user, user.email, token)
+        ).start()
 
         Logger.info(
             {
@@ -428,15 +437,17 @@ class UserAuthViewset(ModelViewSet):
         """
         Private method to send registration notification to admin.
         """
+        admin_dashboard_url = getattr(request, "admin_dashboard_url_override", None)
+        if not admin_dashboard_url:
+            admin_dashboard_url = request.build_absolute_uri(reverse("admin_dashboard"))
+
         context = {
             "user_name": user.name or user.username,
             "user_email": user.email,
             "username": user.username,
             "user_phone": user.phone,
             "date_joined": user.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
-            "admin_dashboard_url": request.build_absolute_uri(
-                reverse("admin_dashboard")
-            ),
+            "admin_dashboard_url": admin_dashboard_url,
         }
         email_content = render_to_string("admin_notification.html", context)
         email_data = EmailData(
@@ -503,10 +514,19 @@ class AddUserInOrganizationViewset(ModelViewSet):
         )
         token = AccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
-        self._send_welcome_email(
-            user, user.id, user.email, user.username, user.groups, token,
-            organization_name=request.user.selected_organization.display_name or request.user.selected_organization.name
-        )
+        threading.Thread(
+            target=self._send_welcome_email,
+            args=(
+                user,
+                user.id,
+                user.email,
+                user.username,
+                user.groups,
+                token,
+                request.user.selected_organization.display_name
+                or request.user.selected_organization.name,
+            ),
+        ).start()
         return Response(
             {
                 "message": "User invited in organization",
