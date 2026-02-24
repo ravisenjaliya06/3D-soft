@@ -87,6 +87,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "register",
+            "timestamp": timezone.now().isoformat(),
         }
         groups = Group.objects.all().values_list("id", flat=True)
         group_names = Group.objects.all().values_list("name", flat=True)
@@ -143,6 +144,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "verify_user",
+            "timestamp": timezone.now().isoformat(),
         }
         email = request.data.get("email")
         data_check = User.objects.filter(email=email).first()
@@ -186,6 +188,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "login",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -255,6 +258,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "send_otp",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = RequestEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -280,6 +284,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "send_forgot_password_mail",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = RequestEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -305,6 +310,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "set_password",
+            "timestamp": timezone.now().isoformat(),
         }
 
         if request.method == "GET":
@@ -376,6 +382,7 @@ class UserAuthViewset(ModelViewSet):
                 "message": "User profile retrieved",
                 "user_id": request.user.id,
                 "funcation": "User_profile",
+                "timestamp": timezone.now().isoformat(),
             }
         )
         return Response(serializer.data, status=HTTP_200_OK)
@@ -495,6 +502,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         common_info_logger = {
             "user": request.user,
             "function": "add_organization_user",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = AddUserInOrganizationSerializer(
             data=request.data, context={"request": request}
@@ -724,6 +732,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                     "message": "Admin authenticated via JWT",
                     "user_id": user.id,
                     "function": "AdminRequiredMixin.dispatch",
+                    "timestamp": timezone.now().isoformat(),
                 }
             )
             return super().dispatch(request, *args, **kwargs)
@@ -784,7 +793,11 @@ class AdminView(viewsets.ViewSet):
         response = HttpResponseRedirect(reverse("admin_login"))
         response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
         Logger.info(
-            {"message": "Admin logged out successfully", "function": "AdminView.logout"}
+            {
+                "message": "Admin logged out successfully",
+                "function": "AdminView.logout",
+                "timestamp": timezone.now().isoformat(),
+            }
         )
         return response
 
