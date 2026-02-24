@@ -2185,6 +2185,62 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   return { bottomPlank, verticalPlanks, actualBottomY, physicalHeight };
 };
 
+export const hasExtendedSidePlanks = (cupboardMesh: THREE.Mesh): boolean => {
+  if (!cupboardMesh) return false;
+
+  let bottomPlank: THREE.Mesh | null = null;
+  const verticalPlanks: THREE.Mesh[] = [];
+
+  cupboardMesh.children.forEach((child) => {
+    if (child instanceof THREE.Mesh) {
+      const name = child.name || '';
+      if (name.includes('BOTTOM_PLANK')) {
+        if (!bottomPlank || child.position.y < bottomPlank.position.y) bottomPlank = child;
+      } else if (
+        name.includes('LEFT_PLANK') ||
+        name.includes('RIGHT_PLANK') ||
+        child.userData.type === PART_TYPES.VERTICAL_PLANK
+      ) {
+        verticalPlanks.push(child);
+      }
+    }
+  });
+
+  const bp = bottomPlank as THREE.Mesh | null;
+  if (!bp) return false;
+
+  const bpGeo = bp.geometry as THREE.BoxGeometry;
+  if (!bpGeo.parameters) return false;
+
+  const actualBottomY =
+    bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
+
+  for (const vp of verticalPlanks) {
+    const originalHeight = vp.userData.originalHeight;
+    const originalY = vp.userData.originalY;
+
+    let height = 0;
+    let y = 0;
+
+    if (originalHeight !== undefined && originalHeight !== null) {
+      height = originalHeight;
+      y = originalY;
+    } else {
+      const vpGeo = vp.geometry as THREE.BoxGeometry;
+      if (!vpGeo.parameters) continue;
+      height = vpGeo.parameters.height;
+      y = vp.position.y;
+    }
+
+    const vpMinY = y - height / 2;
+    if (vpMinY < actualBottomY - 1) {
+      return true; // There is at least one plank extending below the bottom plank
+    }
+  }
+
+  return false; // No planks extend below the bottom
+};
+
 export const applyNoBase = async (
   scene: THREE.Scene,
   cupboardMesh: THREE.Mesh,
@@ -2212,11 +2268,12 @@ export const applyNoBase = async (
     }
   });
 
-  if (!bottomPlank) return;
+  const bp = bottomPlank as THREE.Mesh | null;
+  if (!bp) return;
 
-  const bpGeo = bottomPlank.geometry as THREE.BoxGeometry;
+  const bpGeo = bp.geometry as THREE.BoxGeometry;
   const actualBottomY =
-    bottomPlank.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
+    bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
 
   const updatePlankDimension = (vp: THREE.Mesh, height: number, y: number) => {
     const vpGeo = vp.geometry as THREE.BoxGeometry;

@@ -11,6 +11,7 @@ import {
   addNailers,
   addSkirtingPlanks,
   applyNoBase,
+  hasExtendedSidePlanks,
   removeLShapeObjects,
   removeNailers,
   removeSkirtingPlanks,
@@ -221,6 +222,15 @@ const Sidebar: React.FC = () => {
         }
       });
       if (targetMesh) {
+        if (
+          selectedObject.type === OBJECT_TYPES.CUPBOARD &&
+          selectedObject.noBaseEnabled === undefined
+        ) {
+          if (!hasExtendedSidePlanks(targetMesh)) {
+            applyObjectUpdate(selectedObject, { noBaseEnabled: true });
+          }
+        }
+
         const hasSkirting = (targetMesh as THREE.Mesh).children.some(
           (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
         );
@@ -1402,9 +1412,14 @@ const Sidebar: React.FC = () => {
       const isEnabled = !selectedObject.nailerEnabled;
       const updatePatch: any = { nailerEnabled: isEnabled };
 
-      if (selectedObject.noBaseEnabled) {
-        // If "No Base" is on, we can't turn on Nailer unless we turn off "No Base".
+      if (isEnabled && selectedObject.noBaseEnabled) {
+        // If turning nailer ON, we must turn off "No Base".
         updatePatch.noBaseEnabled = false;
+      } else if (!isEnabled) {
+        // If turning nailer OFF, revert to "No Base" automatically if there are no extended side planks
+        if (!hasExtendedSidePlanks(targetMesh)) {
+          updatePatch.noBaseEnabled = true;
+        }
       }
 
       await applyObjectUpdate(selectedObject, updatePatch);
@@ -1412,6 +1427,8 @@ const Sidebar: React.FC = () => {
       // Now conditionally execute 3D logic
       if (updatePatch.noBaseEnabled === false) {
         await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
       }
 
       if (isEnabled) {
@@ -1463,7 +1480,6 @@ const Sidebar: React.FC = () => {
 
       // Execute side plank height adjustments based on no base status
       await applyNoBase(scene, targetMesh, isEnabled);
-
     } catch (error) {
       console.error('Error toggling no base:', error);
     }
