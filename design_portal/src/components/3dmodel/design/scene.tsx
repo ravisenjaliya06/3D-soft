@@ -1346,12 +1346,15 @@ export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, ne
 export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   if (!boxMesh) return;
   if (boxMesh.userData?.noBaseEnabled) return;
-  const boxObject = store.getState().data.objects.find(
-    (obj) => obj.parent === boxMesh.userData.objectId && obj.name.includes("BOTTOM"));
+  const boxObject = store
+    .getState()
+    .data.objects.find(
+      (obj) => obj.parent === boxMesh.userData.objectId && obj.name.includes('BOTTOM')
+    );
   if (!boxObject) {
     console.error('object not found');
     return;
-  };
+  }
 
   const geometry = boxMesh.geometry;
   geometry.computeBoundingBox();
@@ -2136,8 +2139,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [
@@ -2216,8 +2219,7 @@ export const hasExtendedSidePlanks = (cupboardMesh: THREE.Mesh): boolean => {
   const bpGeo = bp.geometry as THREE.BoxGeometry;
   if (!bpGeo.parameters) return false;
 
-  const actualBottomY =
-    bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
+  const actualBottomY = bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
 
   for (const vp of verticalPlanks) {
     const originalHeight = vp.userData.originalHeight;
@@ -2276,8 +2278,7 @@ export const applyNoBase = async (
   if (!bp) return;
 
   const bpGeo = bp.geometry as THREE.BoxGeometry;
-  const actualBottomY =
-    bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
+  const actualBottomY = bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
 
   const updatePlankDimension = (vp: THREE.Mesh, height: number, y: number) => {
     const vpGeo = vp.geometry as THREE.BoxGeometry;

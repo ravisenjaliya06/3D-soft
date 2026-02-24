@@ -50,6 +50,19 @@ if %ERRORLEVEL% NEQ 0 (
     set "format_status=Passed"
 )
 
+:: 2. Build Check
+echo.
+echo === Running Format Check ===
+call npm run build
+if %ERRORLEVEL% NEQ 0 (
+    echo ✗ Build Check failed
+    set "any_failed=1"
+    set "build_status=Failed"
+) else (
+    echo ✓ Build Check passed
+    set "build_status=Passed"
+)
+
 :: Print detailed summary with timestamp
 echo.
 echo === Check Summary ===
@@ -58,6 +71,7 @@ echo Time: %HH%:%Min%:%Sec%
 echo.
 echo ESLint: %lint_status% - Found !error_count! errors (allowed up to 38)
 echo Format: %format_status%
+echo Build: %build_status%
 
 if %any_failed% EQU 1 (
     echo.
