@@ -10,6 +10,7 @@ import { ChangeEvent, useState } from 'react';
 const Register = () => {
   const router = useRouter();
   const [username, setUsername] = useState<string>('');
+  const [organizationName, setOrganizationName] = useState<string>('');
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setNumber] = useState<string>('');
@@ -26,6 +27,7 @@ const Register = () => {
   // error popup
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [organizationNameError, setOrganizationNameError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -39,6 +41,8 @@ const Register = () => {
 
   const handleSignInWrapper = async () => {
     setNameError(null);
+    setOrganizationNameError(null);
+    setEmailError(null);
     setEmailError(null);
     setUsernameError(null);
     setPhoneError(null);
@@ -53,6 +57,7 @@ const Register = () => {
     }
 
     const registerPayload: RegisterForm = {
+      organization_name: organizationName,
       username,
       name,
       email,
@@ -71,7 +76,8 @@ const Register = () => {
       setUsernameError,
       setPhoneError,
       setPasswordError,
-      setConfirmPasswordError
+      setConfirmPasswordError,
+      setOrganizationNameError
     );
   };
 
@@ -114,6 +120,14 @@ const Register = () => {
   ];
 
   const thirdfieldsgroup = [
+    {
+      label: 'Organization Name',
+      type: 'text',
+      placeholder: 'Enter organization name',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value),
+      onClickShowPassword: handleClickShowConfirmPassword,
+      error: organizationNameError,
+    },
     {
       label: 'Password',
       type: 'password',

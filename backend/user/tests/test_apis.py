@@ -49,6 +49,7 @@ class APIViewTestCase(APIBaseTestCase):
                 "password": "new_password@123",
                 "confirm_password": "new_password@123",
                 "phone": "1234567890",
+                "organization_name": "New Workspace",
             },
             format="json",
         )
@@ -68,6 +69,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "123",
             "confirm_password": "123",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -86,6 +88,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": 123456789789,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -105,6 +108,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -119,6 +123,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "tesitng@123",
             "confirm_password": "tesitng123@123",
             "phone": "1234567890",
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -137,6 +142,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "12345678",
             "confirm_password": "12345678",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -152,6 +158,7 @@ class APIViewTestCase(APIBaseTestCase):
             "name": "Test User",
             "confirm_password": "password123",
             "phone": "1234567890",
+            "organization_name": "New Workspace",
         }
         response = self.client.post(reverse("register"), data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -166,6 +173,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -179,6 +187,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -202,6 +211,7 @@ class APIViewTestCase(APIBaseTestCase):
                 "password": "new_password@123",
                 "confirm_password": "new_password@123",
                 "phone": "1234567890",
+                "organization_name": "New Workspace",
             },
             format="json",
         )
@@ -913,6 +923,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "12345678",
             "confirm_password": "12345678",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
         response = self.client.post(reverse("register"), data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

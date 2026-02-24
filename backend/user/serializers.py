@@ -3,7 +3,7 @@ import contextlib
 import secrets
 import string
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # Django imports
 from django.contrib.auth.models import Group
@@ -70,6 +70,7 @@ class SignupSerializer(PhoneValidationSerializer):
     Serializer for User signup
     """
 
+    organization_name = serializers.CharField(required=True)
     email = serializers.EmailField()
     username = serializers.CharField()
     name = serializers.CharField(required=True)
@@ -121,6 +122,7 @@ class SignupSerializer(PhoneValidationSerializer):
 
         group_names = self.context.get("group_names")
         password = validated_data.pop("password")
+        organization_display_name = validated_data.pop("organization_name")
 
         user = User(**validated_data)
         user.set_password(password)
@@ -140,12 +142,22 @@ class SignupSerializer(PhoneValidationSerializer):
         user.save()
 
         def fetch_and_update_location(user_id: int, ip_addr: str) -> None:
-            Logger.info({"message": f"Starting fetch_and_update_location for user {user_id}", "timestamp": timezone.now().isoformat()})
+            Logger.info(
+                {
+                    "message": f"Starting fetch_and_update_location for user {user_id}",
+                    "timestamp": timezone.now().isoformat(),
+                }
+            )
             with contextlib.suppress(Exception):
                 loc = get_ip_location(ip_addr)
                 if loc:
                     User.objects.filter(id=user_id).update(location=loc)
-            Logger.info({"message": f"Completed fetch_and_update_location for user {user_id}", "timestamp": timezone.now().isoformat()})
+            Logger.info(
+                {
+                    "message": f"Completed fetch_and_update_location for user {user_id}",
+                    "timestamp": timezone.now().isoformat(),
+                }
+            )
 
         if ip_address:
             threading.Thread(
@@ -153,7 +165,8 @@ class SignupSerializer(PhoneValidationSerializer):
             ).start()
 
         organization, _ = Organization.objects.get_or_create(
-            name=f"{user.username}'s Organization"
+            name=f"{user.username}'s Organization",
+            defaults={"display_name": organization_display_name},
         )
 
         organization.user.add(user)
@@ -164,11 +177,21 @@ class SignupSerializer(PhoneValidationSerializer):
         add_user_to_organization(user, organization, group_names, is_invited=False)
 
         def duplicate_data(org: Organization) -> None:
-            Logger.info({"message": f"Starting duplicate_data for org {org.id}", "timestamp": timezone.now().isoformat()})
+            Logger.info(
+                {
+                    "message": f"Starting duplicate_data for org {org.id}",
+                    "timestamp": timezone.now().isoformat(),
+                }
+            )
             duplicate_default_textures(org)
             default_material_data(org)
             duplicate_default_catalogs_for_organization(org)
-            Logger.info({"message": f"Completed duplicate_data for org {org.id}", "timestamp": timezone.now().isoformat()})
+            Logger.info(
+                {
+                    "message": f"Completed duplicate_data for org {org.id}",
+                    "timestamp": timezone.now().isoformat(),
+                }
+            )
 
         threading.Thread(target=duplicate_data, args=(organization,)).start()
 
@@ -271,7 +294,12 @@ class RequestEmailSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
-    selected_organization_name = serializers.SerializerMethodField()
+    selected_organization_name = serializers.CharField(
+        source="selected_organization.name", read_only=True
+    )
+    organization_display_name = serializers.CharField(
+        source="selected_organization.display_name", read_only=True
+    )
     user_groups = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -282,16 +310,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "selected_organization_name",
+            "organization_display_name",
             "user_groups",
             "profile_picture",
         ]
-
-    def get_selected_organization_name(
-        self: "UserProfileSerializer", obj: User
-    ) -> Optional[str]:
-        if obj.selected_organization:
-            return obj.selected_organization.name
-        return None
 
 
 class UserProfileEditSerializer(serializers.ModelSerializer):
