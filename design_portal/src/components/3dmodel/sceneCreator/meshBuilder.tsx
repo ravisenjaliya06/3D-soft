@@ -683,7 +683,7 @@ export class MeshBuilder {
       ? url.startsWith('http') || url.startsWith('/glb/')
         ? url
         : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
-      : '/glb/door_handle.glb';
+      : '/glb/hinge_close.glb';
 
     const hingeModel = await GLBLoader(backendUrl, 'Hinge', {
       width: 10,
