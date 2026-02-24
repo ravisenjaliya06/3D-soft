@@ -446,9 +446,10 @@ export class MeshBuilder {
       model.userData.objectId = this.meshData.id;
 
       model.traverse((child) => {
+        child.userData.objectId = this.meshData.id;
+        child.userData.isGLB = true;
         if (child instanceof THREE.Mesh) {
           child.userData.type = OBJECT_TYPES.MODEL;
-          child.userData.objectId = this.meshData.id;
           child.name = `Model_Child_${child.id}`;
         }
       });

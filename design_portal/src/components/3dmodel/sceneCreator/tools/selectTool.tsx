@@ -146,10 +146,13 @@ export class SelectObjectController {
         [PART_TYPES.L_SHAPE_OBJECT, PART_TYPES.U_SHAPE_OBJECT].includes(object.userData.type)
       ) {
         this.onShowHelperTool(null);
+        if (this.onSelect) this.onSelect(object);
         return;
       }
       this.onShowHelperTool(object);
     }
+
+    if (this.onSelect) this.onSelect(object);
 
     return;
   }
@@ -283,6 +286,11 @@ export class SelectObjectController {
     // Traverse scene to find all candidate meshes
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
+        // Skip objects without objectId (like the TransformControls gizmos)
+        if (!object.userData.objectId && !object.userData.object_id) {
+          return;
+        }
+
         // Skip if it's the selected main object itself (we might want to select its parts though)
         if (
           this.selectedMainObject &&
