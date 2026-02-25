@@ -19,11 +19,35 @@ export class DesignBuilder {
   private dataMap: Map<string, MeshObjectData>;
 
   constructor(data: MeshObjectData[], scene?: THREE.Scene) {
-    this.data = data;
+    this.data = this._sortDataHierarchically(data);
     this.scene = scene || store.getState().scene?.scene;
     this.meshMap = new Map<string, THREE.Mesh>();
     this.builderMap = new Map<string, MeshBuilder>();
-    this.dataMap = new Map(data.map((item) => [item.id, item]));
+    this.dataMap = new Map(this.data.map((item) => [item.id, item]));
+  }
+
+  private _sortDataHierarchically(data: MeshObjectData[]): MeshObjectData[] {
+    const sorted: MeshObjectData[] = [];
+    const visited = new Set<string>();
+    const visiting = new Set<string>();
+    const localDataMap = new Map(data.map((item) => [item.id, item]));
+
+    const visit = (item: MeshObjectData) => {
+      if (visited.has(item.id)) return;
+      if (visiting.has(item.id)) return;
+
+      visiting.add(item.id);
+
+      if (item.parent && localDataMap.has(item.parent)) {
+        visit(localDataMap.get(item.parent)!);
+      }
+
+      visited.add(item.id);
+      sorted.push(item);
+    };
+
+    data.forEach(visit);
+    return sorted;
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
@@ -143,7 +167,14 @@ export class DesignBuilder {
           }
         }
       } else {
-        rootMesh = mesh;
+        if (!rootMesh) {
+          rootMesh = mesh;
+        } else if (!meshData.parent) {
+          const currentRootData = this.dataMap.get(rootMesh.userData?.objectId);
+          if (currentRootData && currentRootData.parent) {
+            rootMesh = mesh;
+          }
+        }
       }
     });
 

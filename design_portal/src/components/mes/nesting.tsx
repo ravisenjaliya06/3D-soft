@@ -15,6 +15,8 @@ const Nesting = () => {
 
   const [visibleDesigns, setVisibleDesigns] = useState(50);
   const [localData, setLocalData] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isDownloadingXML, setIsDownloadingXML] = useState(false);
@@ -39,7 +41,29 @@ const Nesting = () => {
     }
   }, [design_id]);
 
+  useEffect(() => {
+    const fetchTableData = async () => {
+      if (!design_id) return;
+      setIsLoadingTable(true);
+      try {
+        const response: any = await CommonService.put(
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+          { format: 'json' }
+        );
+        if (response?.data && !response.data.error) {
+          setTableData(response.data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch table data from backend', e);
+      } finally {
+        setIsLoadingTable(false);
+      }
+    };
+    fetchTableData();
+  }, [design_id]);
+
   const data = (objects?.length ? objects : localData).filter((item) => item.type !== 'model');
+  const displayData = tableData;
 
   const handleLoadMore = () => {
     setVisibleDesigns((prev) => prev + 50);
@@ -1501,7 +1525,7 @@ const Nesting = () => {
                   {/* ✅ Quotation Button */}
                   <button
                     onClick={handleGenerateQuotation}
-                    disabled={isGeneratingQuote || data.length === 0}
+                    disabled={isGeneratingQuote || displayData.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1510,7 +1534,7 @@ const Nesting = () => {
                   {/* ✅ BOM Data Button */}
                   <button
                     onClick={handleGenerateBOM}
-                    disabled={isGeneratingBOM || data.length === 0}
+                    disabled={isGeneratingBOM || displayData.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1542,7 +1566,7 @@ const Nesting = () => {
                         setIsDownloadingXML(false);
                       }
                     }}
-                    disabled={isDownloadingXML || data.length === 0}
+                    disabled={isDownloadingXML || displayData.length === 0}
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
@@ -1552,7 +1576,7 @@ const Nesting = () => {
                   <button
                     onClick={() => router.push(`/design/${design_id}/nesting-details`)}
                     className={styles.viewDetailsButton}
-                    disabled={data.length === 0}
+                    disabled={displayData.length === 0}
                   >
                     View Details
                   </button>
@@ -1573,20 +1597,26 @@ const Nesting = () => {
                   </thead>
 
                   <tbody>
-                    {data.length === 0 ? (
+                    {isLoadingTable ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
+                          Loading cupboard details from backend...
+                        </td>
+                      </tr>
+                    ) : displayData.length === 0 ? (
                       <tr>
                         <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
                           No data available for nesting please create design first.
                         </td>
                       </tr>
                     ) : (
-                      data.slice(0, visibleDesigns).map((item, index) => (
-                        <tr key={item.id}>
-                          <td>{index + 1}</td>
-                          <td>{item.name}</td>
-                          <td>{formatDimension(item?.dimensions?.width, item?.type)}</td>
-                          <td>{formatDimension(item?.dimensions?.height, item?.type)}</td>
-                          <td>{formatDimension(item?.dimensions?.depth, item?.type)}</td>
+                      displayData.slice(0, visibleDesigns).map((item: any, index: number) => (
+                        <tr key={item.id || index}>
+                          <td>{item['Unique ID'] || item.unique_id || item.ID || item.id || index + 1}</td>
+                          <td>{item.name || item.Name || 'Unknown'}</td>
+                          <td>{formatDimension(item?.dimensions?.width ?? item?.width, item?.type)}</td>
+                          <td>{formatDimension(item?.dimensions?.height ?? item?.height, item?.type)}</td>
+                          <td>{formatDimension(item?.dimensions?.depth ?? item?.depth, item?.type)}</td>
                         </tr>
                       ))
                     )}
@@ -1594,7 +1624,7 @@ const Nesting = () => {
                 </table>
 
                 {/* ✅ Load More */}
-                {visibleDesigns < data.length && (
+                {!isLoadingTable && visibleDesigns < displayData.length && (
                   <div className={styles.designsLoadMore}>
                     <div className={styles.loadmore} onClick={handleLoadMore}>
                       <p>Load More</p>
