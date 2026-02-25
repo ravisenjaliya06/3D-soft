@@ -169,6 +169,13 @@ const Sidebar: React.FC = () => {
       }
     }
 
+    if (selectedObject) {
+      // @ts-ignore
+      setTextureRotation(selectedObject.textureRotation ?? 0);
+    } else {
+      setTextureRotation(0);
+    }
+
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
@@ -246,8 +253,8 @@ const Sidebar: React.FC = () => {
         const hasExtended = hasExtendedSidePlanks(targetMesh);
         setFrontpanelDisabled(
           !hasExtended ||
-            selectedObject.noBaseEnabled === true ||
-            selectedObject.nailerEnabled === true
+          selectedObject.noBaseEnabled === true ||
+          selectedObject.nailerEnabled === true
         );
 
         const hasSkirting = (targetMesh as THREE.Mesh).children.some(
@@ -2261,12 +2268,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                          | 'top'
-                                          | 'bottom'
-                                          | 'left'
-                                          | 'right'
-                                          | 'front'
-                                          | 'back',
+                                        | 'top'
+                                        | 'bottom'
+                                        | 'left'
+                                        | 'right'
+                                        | 'front'
+                                        | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -3071,9 +3078,8 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
