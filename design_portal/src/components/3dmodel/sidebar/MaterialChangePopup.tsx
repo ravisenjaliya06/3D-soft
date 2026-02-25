@@ -1,34 +1,113 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { RulePart } from '../handler/interface';
+import { useSelector, useDispatch } from 'react-redux';
 import styles from './MaterialChangePopup.module.css';
 import { MaterialChangePopupProps, MaterialResponse } from './interface';
+import { formatEnumLabel } from '../sceneCreator/utils';
+import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES, PART_TYPES, OBJECT_TYPES, INVISIBLE_BOXES } from '../sceneCreator/interface';
+import { RootState } from '../store';
+import { updateObject } from '../store/dataSlice';
 
-export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
+export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyMaterial?: (part: any, material: any) => void }> = ({
   onClose,
-  onSave,
-  rules = [],
+  onSave, // this is typically not used directly here anymore due to part-specific saving, but kept for interface compliance
+  selectedObject,
+  onApplyMaterial,
 }) => {
-  const initialTab = rules.length > 0 ? rules[0].name : 'Banding';
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
+  const objects = useSelector((state: RootState) => state.data.objects);
+  const dispatch = useDispatch();
+
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [materialData, setMaterialData] = useState<MaterialResponse[]>([]);
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('Banding');
   const [materialSearch, setMaterialSearch] = useState<string>('');
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
 
-  // Derive current rule and parts list from props
-  const currentRule = rules.find((r) => r.name === activeTab) || rules[0];
-  const currentParts: RulePart[] = currentRule?.rule_parts || [];
+  // States for category-wise filtering
+  const [activeRuleType, setActiveRuleType] = useState<string | null>(null);
+  const [ruleMaterialTypes, setRuleMaterialTypes] = useState<string[]>([]);
+  const [ruleParts, setRuleParts] = useState<any[]>([]);
 
-  // Keep editable parts state mirroring current rule parts
-  const [partsData, setPartsData] = useState<RulePart[]>(currentParts);
+  // Determine parts to display
+  const [partsList, setPartsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!selectedObject) return;
+    const isFullCupboard =
+      selectedObject.type === OBJECT_TYPES.MODEL &&
+      !selectedObject.name?.includes('Handle') &&
+      !selectedObject.name?.includes('Leg');
+
+    let newPartsList = [];
+    if (isFullCupboard) {
+      newPartsList = objects.filter(
+        (obj) =>
+          obj.parent === selectedObject.id &&
+          obj.type !== PART_TYPES.HANDLE &&
+          obj.name !== 'Leg' &&
+          obj.type !== INVISIBLE_BOXES.INVISIBLE_BOX &&
+          !obj.name?.toLowerCase().includes('cam') &&
+          !obj.name?.toLowerCase().includes('minifix') &&
+          !obj.name?.toLowerCase().includes('screw') &&
+          !obj.name?.toLowerCase().includes('drawer guide') &&
+          !obj.name?.toLowerCase().includes('leg leveler')
+      );
+    } else {
+      newPartsList = [selectedObject];
+    }
+
+    setPartsList(newPartsList);
+    if (newPartsList.length > 0 && !selectedPartId) {
+      setSelectedPartId(newPartsList[0].id);
+    }
+
+    // Extract all unique material types present in this object and its children
+    const allMaterials = newPartsList.flatMap((p) => {
+      if (Array.isArray(p.material)) return p.material;
+      if (p.material) return [p.material];
+      return [];
+    });
+
+    // Add default types if none exist to ensure categories like Panel Stock appear
+    const types = Array.from(new Set(allMaterials.map((m) => m?.type).filter(Boolean))) as string[];
+    if (!types.includes(SCENE_MATERIAL_TYPES.PANEL_STOCK)) types.unshift(SCENE_MATERIAL_TYPES.PANEL_STOCK);
+    if (!types.includes('Banding')) types.push('Banding');
+
+    setRuleMaterialTypes(types);
+    if (types.length > 0 && !activeRuleType) {
+      setActiveRuleType(types[0]);
+    }
+
+  }, [selectedObject, objects]);
+
+  // Update rule parts when active type or parts list changes
+  useEffect(() => {
+    if (!activeRuleType || partsList.length === 0) return;
+
+    const matchingChildren = partsList.filter((child) => {
+      const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+      // If no material is assigned at all, still show the part so we can assign to it
+      if (activeRuleType === SCENE_MATERIAL_TYPES.PANEL_STOCK) return true; // always show for main type
+      return mats.some((m: any) => m?.type === activeRuleType) || true; // show all parts to allow assigning new types
+    });
+
+    setRuleParts(
+      matchingChildren.map((child) => {
+        const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+        return {
+          ...child,
+          currentMaterial: mats.find((m: any) => m?.type === activeRuleType) || null,
+        };
+      })
+    );
+  }, [partsList, activeRuleType]);
 
   // Fetch materials once
-  React.useEffect(() => {
+  useEffect(() => {
     const getMaterial = async () => {
       const response: { status: number; data: MaterialResponse[] } = await commonService.get(
         API_ENDPOINT.GET_MATERIAL
@@ -40,100 +119,85 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
     getMaterial();
   }, []);
 
-  // Build material type options (fallback to a default list)
-  const defaultMaterialTypes = [
-    'Banding',
-    'Board Stock',
-    'Caster',
-    'Connector',
-    'Drawer Guide',
-    'Hinge',
-    'Hinge Plate',
-    'Laminate',
-    'Leg',
-    'Leg Leveler',
-    'Miscellaneous',
-    'Molding',
-    'Panel Stock',
-    'Pull',
-    'Rod',
-    'Sliding Door Rail',
-    'Sliding Door Roller',
-    'Wire Basket',
-    'Connection',
-  ];
-
-  const [open, setOpen] = useState(false);
-
-  const discoveredTypes = Array.from(
-    new Set((materialData || []).map((m) => m.type).filter(Boolean))
-  ) as string[];
-  const materialTypes = discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
-
   // Filtered materials by type and search
   const filteredMaterials = (materialData || [])
     .filter((m) => (selectedMaterialType ? m.type === selectedMaterialType : true))
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-          (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+        (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
         : true
     );
 
-  // Whenever the active rule changes, refresh partsData
-  React.useEffect(() => {
-    const next = (currentRule?.rule_parts || []) as RulePart[];
-    setPartsData(next);
-    setSelectedPartId(null);
-    setSelectedMaterialId(null);
-  }, [activeTab]);
+  const defaultMaterialTypes = [
+    'Banding', 'Board Stock', 'Caster', 'Connector', 'Drawer Guide',
+    'Hinge', 'Hinge Plate', 'Laminate', 'Leg', 'Leg Leveler',
+    'Miscellaneous', 'Molding', 'Panel Stock', 'Pull', 'Rod',
+    'Sliding Door Rail', 'Sliding Door Roller', 'Wire Basket', 'Connection'
+  ];
 
-  const handleAssignMaterial = async (partId: string, materialId: string) => {
-    /* Update part material */
+  const discoveredTypes = Array.from(
+    new Set((materialData || []).map((m) => m.type).filter(Boolean))
+  ) as string[];
+  const materialTypes = discoveredTypes.length > 0 ? discoveredTypes : defaultMaterialTypes;
 
-    const material = materialData.find((m) => m.id === materialId);
-    if (!material) return;
-
-    // optimistic update
-    setPartsData((prev) =>
-      prev.map((part) =>
-        part.id === partId ? { ...part, material: { id: material.id, name: material.name } } : part
-      )
-    );
-
-    try {
-      const response: { status: number } = await commonService.put(
-        API_ENDPOINT.UPDATE_PART_MATERIAL(partId),
-        { material_id: materialId }
-      );
-      if (response.status === 200) {
-        setSelectedPartId(null);
-        setSelectedMaterialId(null);
-      }
-    } catch {
-      // revert on error
-      setPartsData((prev) =>
-        prev.map((part) => (part.id === partId ? { ...part, material: undefined } : part))
-      );
+  const handleAssignMaterial = (targetPartId: string, assignedMaterialId: string) => {
+    if (!targetPartId || !assignedMaterialId) {
+      alert('Please select a part and a material');
+      return;
     }
-  };
 
-  const handleSave = () => {
-    /* Build list of assigned materials */
+    const materialConfig = materialData.find((m) => m.id === assignedMaterialId);
+    if (!materialConfig) return;
 
-    const assigned = partsData.map((p) => `${p.name || 'Part'}: ${p.material?.name || '-'}`);
-    onSave(assigned);
-    onClose();
+    const targetPart = partsList.find((p) => p.id === targetPartId);
+    if (targetPart) {
+      const materialArray = Array.isArray(targetPart.material)
+        ? [...targetPart.material]
+        : targetPart.material ? [targetPart.material] : [];
+
+      // Update or add the material for the currently active tab type
+      const targetType = activeRuleType || materialConfig.type || SCENE_MATERIAL_TYPES.PANEL_STOCK;
+      const existingTypeIndex = materialArray.findIndex((mat: any) => mat?.type === targetType);
+
+      const newMaterial = { ...materialConfig, type: targetType };
+
+      if (existingTypeIndex !== -1) {
+        materialArray[existingTypeIndex] = { ...materialArray[existingTypeIndex], ...newMaterial };
+      } else {
+        materialArray.push(newMaterial);
+      }
+
+      const updatedPart = {
+        ...targetPart,
+        material: materialArray,
+      };
+
+      // Apply the update locally
+      dispatch(updateObject(updatedPart));
+      if (onApplyMaterial) {
+        onApplyMaterial(targetPart, updatedPart.material);
+      } else {
+        const applyObjUpdate = require('../handler/updateHandler').applyObjectUpdate;
+        if (applyObjUpdate) {
+          applyObjUpdate(targetPart, { material: updatedPart.material });
+        }
+      }
+
+      if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+        console.log('Assigned material to part:', targetPart.name, materialConfig.name);
+      }
+    }
   };
 
   if (typeof window === 'undefined') return null;
 
   const content = (
     <div className={styles.popupOverlay}>
-      <div className={styles.popup}>
+      <div className={styles.popup} style={{ width: '65rem' }}>
         {/* Header */}
         <div className={styles.header}>
-          <h2>Custom Design created</h2>
+          <h2>Assign Materials to Parts</h2>
           <img
             src={assets.close || '/placeholder.svg'}
             className={styles.closeButton}
@@ -143,164 +207,127 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
         </div>
         <hr className={styles.divider} />
 
-        {/* Top Section (Tabs + Dropdown) */}
-        <div className={styles.topSection}>
-          <div className={styles.leftTabs}>
-            <span className={styles.doorLabel}>Rules</span>
-            <div className={styles.tabs}>
-              {(rules.length ? rules.map((r) => r.name) : ['Banding']).map((tab) => (
+        {/* Main Content */}
+        <div className={styles.mainContent}>
+          {/* Left Table (Parts) */}
+          <div className={styles.leftPanel} style={{ flex: '0.45' }}>
+            <div className={styles.lefttopbar} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Target Object: {formatEnumLabel(selectedObject?.name || '')}</span>
+            </div>
+
+            <div className={styles.tabs} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+              {ruleMaterialTypes.map((type) => (
                 <button
-                  key={tab}
-                  className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
-                  onClick={() => setActiveTab(tab)}
+                  key={type}
+                  onClick={() => {
+                    setActiveRuleType(type);
+                    setSelectedMaterialType(type);
+                  }}
+                  className={`${styles.tab} ${activeRuleType === type ? styles.activeTab : ''}`}
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    borderRadius: '0.3rem',
+                    border: '1px solid var(--border-color)',
+                    background: activeRuleType === type ? 'var(--primary-color)' : 'transparent',
+                    color: activeRuleType === type ? 'var(--primary-white)' : 'var(--primary-color)',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
-                  {tab}
+                  {type}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Main Content (Two Tables Side by Side) */}
-        <div className={styles.mainContent}>
-          {/* Left Table (Parts) */}
-          <div className={styles.tableWrapper}>
-            <div className={styles.lefttopbar}>Material Properties</div>
-            <table className={styles.partsTable}>
-              <thead>
-                <tr>
-                  <th>
-                    <div className="flex items-center p-[0rem]">
-                      Part
-                      <img
-                        src={assets.up_down_arrow}
-                        alt="Sort"
-                        className="ml-[0.3rem] h-[0.8rem] w-[0.8rem] p-[0rem]"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    <div className="flex items-center p-[0rem]">
-                      Material
-                      <img
-                        src={assets.up_down_arrow}
-                        alt="Sort"
-                        className="ml-[0.3rem] h-[0.8rem] w-[0.8rem] p-[0rem]"
-                      />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {partsData.map((part) => (
-                  <tr
-                    key={part.id}
-                    className={selectedPartId === part.id ? styles.selectedRow : ''}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      const materialId = e.dataTransfer.getData('materialId');
-                      handleAssignMaterial(part.id, materialId);
-                    }}
-                    onClick={() => setSelectedPartId(part.id)}
-                  >
-                    <td>
-                      <div className={styles.partlItem}>
-                        <img src={assets.tabledata} alt="" />
-                        {part.name || 'Part'}
-                      </div>
-                    </td>
-
-                    <td>{part.material?.name || '-'}</td>
+            <div className={styles.tableScrollArea} style={{ minHeight: '10rem', maxHeight: '25rem' }}>
+              <table className={styles.materialTable}>
+                <thead>
+                  <tr>
+                    <th>Part Name</th>
+                    <th>Current Material</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ruleParts.map((part) => {
+                    let currentMaterialName = part.currentMaterial?.name || '-';
+
+                    return (
+                      <tr
+                        key={part.id}
+                        onClick={() => setSelectedPartId(part.id)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const materialId = e.dataTransfer.getData('materialId');
+                          if (materialId) {
+                            handleAssignMaterial(part.id, materialId);
+                            setSelectedPartId(part.id);
+                            setSelectedMaterialId(materialId);
+                          }
+                        }}
+                        className={selectedPartId === part.id ? styles.selectedRow : styles.tableRow}
+                      >
+                        <td className={styles.cellName}>{formatEnumLabel(part.name || 'Unknown')}</td>
+                        <td className={styles.cellDesc}>{currentMaterialName}</td>
+                      </tr>
+                    );
+                  })}
+                  {ruleParts.length === 0 && (
+                    <tr><td colSpan={2} style={{ textAlign: 'center', padding: '1rem', color: 'var(--subtext-color)' }}>No parts available</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Right Table (Materials) */}
-          <div className="mt-[0.5rem] h-[30rem] max-h-[30rem] w-full max-w-[29rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
+          <div className={styles.rightPanel} style={{ flex: '0.55' }}>
             {/* ================= TOP BAR ================= */}
-            <div className="sticky top-[0rem] m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
+            <div className={styles.righttopbar}>
               {/* DROPDOWN */}
-              <div className="relative sticky top-[0rem] inline-flex items-center">
+              <div className={styles.dropdownWrapper}>
                 <select
-                  onFocus={() => setOpen(true)}
-                  onBlur={() => setOpen(false)}
+                  onFocus={() => setOpenDropdown(true)}
+                  onBlur={() => setOpenDropdown(false)}
                   value={selectedMaterialType}
                   onChange={(e) => setSelectedMaterialType(e.target.value)}
-                  className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none overflow-y-auto rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] pr-[1.5rem] pl-[0.4rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.45rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] [&::-webkit-scrollbar-track]:bg-transparent"
+                  className={styles.typeDropdown}
                 >
                   {materialTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
+                    <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
-                  <img
-                    src={open ? assets.menuup : assets.menudown}
-                    className="m-[0rem] h-[1.5rem] w-[1.5rem] p-[0rem]"
-                  />
+                <div className={styles.dropdownIconWrapper}>
+                  <img src={openDropdown ? assets.menuup : assets.menudown} className={styles.dropdownIcon} />
                 </div>
               </div>
 
               {/* SEARCH */}
-              <div className="relative sticky top-[0rem] flex items-center">
-                <svg
-                  className="pointer-events-none absolute right-3 h-[1.0625rem] p-[0rem] pb-[0.125rem] pl-[0.1875rem] text-[#392579]/50"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1}
-                >
+              <div className={styles.searchWrapper}>
+                <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <circle cx="11" cy="11" r="5" />
                   <path d="m20 20-4.35-4.35" />
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search materials..."
                   value={materialSearch}
                   onChange={(e) => setMaterialSearch(e.target.value)}
-                  className="m-[0rem] h-[1.5rem] w-[15rem] flex-1 rounded-[0.4375rem] border-[0.1rem] border-[#C4BED7]/50 bg-white p-[0rem] pr-9 pl-[1.5rem] text-[0.65rem] text-[#A0AEC0] outline-none focus:border-purple-400 focus:ring-[0.1rem] focus:ring-purple-300"
+                  className={styles.searchInput}
                 />
               </div>
             </div>
 
             {/* ================= TABLE ================= */}
-            <div
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'var(--scrollbar-color-2) transparent',
-              }}
-              className="h-[26.9rem] max-h-[26.9rem] w-full max-w-[29rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
-            >
-              <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
+            <div className={styles.tableScrollArea}>
+              <table className={styles.materialTable}>
                 {/* ================= TABLE HEADER ================= */}
-                <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
-                  <tr className="p-[0rem]">
-                    <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem]"></th>
-
-                    <th className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] py-[0.3rem] text-left text-[0.87rem] font-semibold text-[var(--primary-color)]">
-                      <div className="flex items-center p-[0rem]">
-                        Part
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] h-[0.8rem] w-[0.8rem] p-[0rem]"
-                        />
-                      </div>
-                    </th>
-
-                    <th className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] py-[0.3rem] text-left text-[0.87rem] font-semibold text-[var(--primary-color)]">
-                      <div className="flex items-center p-[0rem]">
-                        Material
-                        <img
-                          src={assets.up_down_arrow}
-                          alt="Sort"
-                          className="ml-[0.3rem] h-[0.8rem] w-[0.8rem]"
-                        />
-                      </div>
-                    </th>
+                <thead>
+                  <tr>
+                    <th className={styles.checkboxTh}></th>
+                    <th>Material</th>
+                    <th>Description</th>
                   </tr>
                 </thead>
 
@@ -310,49 +337,61 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps> = ({
                     <tr
                       key={item.id}
                       draggable
-                      onDragStart={(e) => e.dataTransfer.setData('materialId', item.id)}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('materialId', item.id);
+                        setSelectedMaterialId(item.id);
+                      }}
                       onClick={() => setSelectedMaterialId(item.id)}
-                      className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-table-hover)] ${
-                        selectedMaterialId === item.id
-                          ? 'bg-[var(--primary-hover)]'
-                          : 'bg-[var(--primary-white)]'
-                      } `}
+                      className={selectedMaterialId === item.id ? styles.selectedRow : styles.tableRow}
                     >
                       {/* RADIO */}
-                      <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">
+                      <td className={styles.checkboxTd}>
                         <input
                           type="radio"
                           checked={selectedMaterialId === item.id}
                           onChange={() => setSelectedMaterialId(item.id)}
-                          className="m-[0rem] h-[1.15rem] min-h-[1.15rem] w-[1.15rem] min-w-[1.15rem] cursor-pointer border-[0.1rem] p-[0rem]"
+                          className={styles.radioInput}
                         />
                       </td>
 
                       {/* NAME */}
-                      <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
-                        {item.name}
-                      </td>
+                      <td className={styles.cellName}>{item.name}</td>
 
                       {/* DESCRIPTION */}
-                      <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
-                        {item.description}
-                      </td>
+                      <td className={styles.cellDesc}>{item.description}</td>
                     </tr>
                   ))}
+                  {filteredMaterials.length === 0 && (
+                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '1rem', color: 'var(--subtext-color)' }}>No materials found</td></tr>
+                  )}
                 </tbody>
               </table>
+            </div>
+
+            {/* ACTION FOOTER */}
+            <div style={{ padding: '0.75rem', borderTop: '1px solid var(--table-title-border-color)', backgroundColor: 'var(--primary-white)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  if (selectedPartId && selectedMaterialId) {
+                    handleAssignMaterial(selectedPartId, selectedMaterialId);
+                  } else {
+                    alert('Please select a part from the left and a material from the right.');
+                  }
+                }}
+                className={styles.saveButton}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+              >
+                <img src={assets.addMaterialIcon || assets.addd} alt="Add" style={{ width: '0.9rem', height: '0.9rem', filter: 'brightness(0) invert(1)' }} />
+                Apply to Selected Part
+              </button>
             </div>
           </div>
         </div>
 
         {/* Footer Buttons */}
         <div className={styles.buttonGroup}>
-          <button className={styles.addMaterialButton}>Add to Material</button>
           <button className={styles.cancelButton} onClick={onClose}>
-            Cancel
-          </button>
-          <button className={styles.saveButton} onClick={handleSave}>
-            Save
+            Close
           </button>
         </div>
       </div>

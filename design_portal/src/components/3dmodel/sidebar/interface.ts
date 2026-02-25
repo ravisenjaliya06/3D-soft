@@ -22,8 +22,8 @@ export interface RulePartMaterial {
 
 export interface MaterialChangePopupProps {
   onClose: () => void;
-  onSave: (selectedMaterials: string[]) => void;
-  rules?: CatalogRule[];
+  onSave: (selectedMaterial: any) => void;
+  selectedObject: any;
 }
 
 export type Field = 'width' | 'height' | 'depth';
