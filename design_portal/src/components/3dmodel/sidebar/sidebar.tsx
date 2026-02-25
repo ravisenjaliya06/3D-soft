@@ -94,6 +94,7 @@ const Sidebar: React.FC = () => {
   const [textureData, setTextureData] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(40);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
+  const [isMainObject, setIsMainObject] = useState<boolean>(false);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
@@ -228,6 +229,8 @@ const Sidebar: React.FC = () => {
         }
       });
       if (targetMesh) {
+        setIsMainObject(selectedObject.isMain === true ? true : false);
+
         if (
           selectedObject.type === OBJECT_TYPES.CUPBOARD &&
           selectedObject.noBaseEnabled === undefined
@@ -258,9 +261,11 @@ const Sidebar: React.FC = () => {
           setPositionDistances(distances);
         }
       } else {
+        setIsMainObject(false);
         setPositionDistances({ left: null, right: null, top: null, bottom: null });
       }
     } else {
+      setIsMainObject(false);
       setPositionDistances({ left: null, right: null, top: null, bottom: null });
     }
   }, [selectedObject, scene]);
@@ -728,6 +733,33 @@ const Sidebar: React.FC = () => {
     distanceToolRef.current.showDistances(tMesh);
 
     isUpdatingPositionRef.current = false;
+  };
+
+  const handleMainObjectPositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
+    if (!selectedObject || isDisabled || isUpdatingPositionRef.current) return;
+
+    isUpdatingPositionRef.current = true;
+    const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
+    const newPosition = { ...currentPos, [axis]: value };
+
+    dispatch(
+      updateObject({
+        id: selectedObject.id,
+        position: newPosition,
+      })
+    );
+
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(
+        selectedObject.id,
+        { position: newPosition },
+        selectedObject
+      );
+    }
+
+    setTimeout(() => {
+      isUpdatingPositionRef.current = false;
+    }, 100);
   };
 
   const handleMaterialChange = () => {
@@ -1673,6 +1705,7 @@ const Sidebar: React.FC = () => {
     layout: false,
     shelfs: false,
     positionMove: false,
+    mainPosition: false,
     topPlank: false,
     base: false,
     plankBanding: false,
@@ -1799,8 +1832,8 @@ const Sidebar: React.FC = () => {
               <button
                 onClick={handleSetting}
                 className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                   } `}
               >
                 Setting
@@ -1810,8 +1843,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleNavigation}
               className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Navigation
@@ -1892,8 +1925,8 @@ const Sidebar: React.FC = () => {
                               {/* Knob */}
                               <div
                                 className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                  ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                   }`}
                               />
                             </div>
@@ -2316,8 +2349,8 @@ const Sidebar: React.FC = () => {
                                                 type="button"
                                                 onClick={() => handleControlClick(field.name, idx)}
                                                 className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                  : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
                                                   } `}
                                               >
                                                 <img
@@ -2483,6 +2516,55 @@ const Sidebar: React.FC = () => {
                 </>
               )}
 
+              {/* ================= Main Object Position ================= */}
+              {!isQuickHideActive && isSettingOpen && isMainObject && (
+                <>
+                  <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                    <div className="flex items-center justify-between gap-[0.5rem]">
+                      {/* Title */}
+                      <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Position
+                      </p>
+                      <button
+                        onClick={() => toggleSection('mainPosition')}
+                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                      >
+                        <img
+                          src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
+                          alt={collapsed.mainPosition ? 'Expand' : 'Collapse'}
+                          className="h-[0.8rem] w-[0.8rem]"
+                        />
+                      </button>
+                    </div>
+                    {!collapsed.mainPosition && (
+                      <div className="grid grid-cols-2 gap-[0.4rem]">
+                        {['x', 'y', 'z'].map((axis) => (
+                          <div key={axis} className="flex flex-col gap-[0.2rem]">
+                            <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                              {axis}
+                            </p>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={Number(selectedObject?.position?.[axis as 'x' | 'y' | 'z'] ?? 0).toFixed(2)}
+                              onChange={(e) =>
+                                handleMainObjectPositionChange(
+                                  axis as 'x' | 'y' | 'z',
+                                  Number(e.target.value)
+                                )
+                              }
+                              disabled={isDisabled}
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
+
               {/* ================= Handle/Handleless Selector ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
@@ -2540,8 +2622,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2591,8 +2673,8 @@ const Sidebar: React.FC = () => {
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.noBaseEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2608,8 +2690,8 @@ const Sidebar: React.FC = () => {
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.nailerEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2638,8 +2720,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
