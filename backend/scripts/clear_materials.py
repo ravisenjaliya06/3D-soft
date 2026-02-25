@@ -42,6 +42,7 @@ def clear_materials():
         catalog.materials.clear()
 
     for org in organizations:
+        Material.objects.filter(organization=org).delete()
         catalogs = DesignCatalog.objects.filter(
             organization=org, is_library=True, is_script=True
         )

@@ -4643,10 +4643,6 @@ def create_textures() -> None:
             organization=texture_data["organization"],
             defaults=defaults,
         )
-        if created:
-            print(f"Texture created {texture}")
-        else:
-            print(f"Texture already exists {texture}")
 
         organization = get_registered_organization()
         for org in organization:
@@ -4754,23 +4750,15 @@ def create_materials(
             texture = FinishesLibrary.objects.filter(
                 name=texture_name, type="Texture", organization=None
             ).first()
-            print(texture, "texture")
 
             if not texture:
-                print(f"Texture not found")
                 continue
 
-            update, created = MaterialTexture.objects.update_or_create(
+            MaterialTexture.objects.update_or_create(
                 material=material,
                 texture=texture,
                 defaults={"name": texture_data["name"]},
             )
-
-            if created:
-                print("Texture created")
-            else: 
-                print("Texture already exists")
-            print("Texture added")
 
         for finish_data in finishes:
             finish_name = finish_data["finish"]
@@ -4840,23 +4828,15 @@ def create_materials(
                     type="Texture",
                     organization=org,
                 ).first()
-                print(texture, "texture for organization")
 
                 if not texture:
-                    print(f"Texture not found for organization")
                     continue
 
-                update, created = MaterialTexture.objects.update_or_create(
+                MaterialTexture.objects.update_or_create(
                     material=org_material,
                     texture=texture,
                     defaults={"name": texture_data["name"]},
                 )
-
-                if created:
-                    print("Texture created for organization")
-                else: 
-                    print("Texture already exists for organization")
-                print("Texture added for organization")
 
             for finish_data in finishes:
                 finish_name = finish_data["finish"]
