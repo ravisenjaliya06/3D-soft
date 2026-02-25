@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewerMouseEvent } from 'react-svg-pan-zoom';
 import { WALL_DEFAULT_HEIGHT } from '../../sceneCreator/constants';
-import { FloorManager } from '../../sceneCreator/floorManager';
 import {
   FLOOR_PLAN_TYPES,
   GEOMETRY,
@@ -11,8 +10,8 @@ import {
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
-import { RootState, store } from '../../store';
-import { addObjects, addPoint, setFloor, setWalls } from '../../store/dataSlice';
+import { RootState } from '../../store';
+import { addObjects, addPoint, setWalls } from '../../store/dataSlice';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -184,13 +183,6 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     // Only create floor if there are rooms (connected walls forming closed shapes)
     if (rooms.length > 0) {
-      // Create floor polygons for backward compatibility
-      const floorPolygons = rooms.map((room) => ({
-        id: crypto.randomUUID(),
-        points: getFloorPolygon(room),
-        walls: room.map((wall) => wall.id),
-      }));
-
       // Convert floor to MeshObjectData format and store in data.objects array
       const floorObjects: MeshObjectData[] = rooms.map((room) => {
         const points = getFloorPolygon(room);
@@ -259,15 +251,6 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       // (Don't use SyncManager - it adds unwanted data and tries to use MeshBuilder)
       if (floorObjects.length > 0) {
         dispatch(addObjects(floorObjects));
-      }
-
-      // Also keep in data.floor for backward compatibility
-      dispatch(setFloor(floorPolygons));
-
-      const scene = store.getState().scene?.scene;
-      if (scene) {
-        const floorManager = new FloorManager(scene, floorPolygons);
-        floorManager.syncData();
       }
     }
 

@@ -97,6 +97,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
   const dimToolRef = useRef<DistanceTool | null>(null);
+  const prevFloorDataRef = useRef<string>('');
   const [showSavePopup, setShowSavePopup] = React.useState(false);
   const [catalogName, setCatalogName] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -377,7 +378,14 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     // Filter floor objects from data.objects array
     const floorObjects = objects.filter((obj) => obj.type === 'floor');
 
-    if (floorObjects.length === 0) return;
+    if (floorObjects.length === 0) {
+      if (prevFloorDataRef.current !== '') {
+        const floorManager = new FloorManager(design3D.scene, []);
+        floorManager.syncData();
+        prevFloorDataRef.current = '';
+      }
+      return;
+    }
 
     // Convert MeshObjectData back to Floor format for FloorManager
     const floorData = floorObjects.map((obj) => {
@@ -405,6 +413,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         textureUrl: textureUrl,
       };
     });
+
+    const currentFloorDataStr = JSON.stringify(floorData);
+    if (prevFloorDataRef.current === currentFloorDataStr) {
+      return;
+    }
+    prevFloorDataRef.current = currentFloorDataStr;
 
     const floorManager = new FloorManager(design3D.scene, floorData);
     floorManager.syncData();

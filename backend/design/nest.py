@@ -1145,6 +1145,7 @@ def nest(
                 "labels_file": labels_pdf_path,
                 "xml_files": xml_paths,  # Return list of generated XMLs
                 "json_file": json_path,  # Return JSON layout path
+                "data": packed_items,    # Return nested items data
                 "message": "Nesting completed successfully.",
                 "total_parts": len(packed_items),
             },

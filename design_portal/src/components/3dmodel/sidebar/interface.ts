@@ -1,5 +1,3 @@
-import { CatalogRule } from '../handler/interface';
-
 export interface MaterialResponse {
   id: string;
   name: string;
@@ -22,8 +20,8 @@ export interface RulePartMaterial {
 
 export interface MaterialChangePopupProps {
   onClose: () => void;
-  onSave: (selectedMaterials: string[]) => void;
-  rules?: CatalogRule[];
+  onSave: (selectedMaterial: any) => void;
+  selectedObject: any;
 }
 
 export type Field = 'width' | 'height' | 'depth';
