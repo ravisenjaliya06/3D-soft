@@ -3,11 +3,14 @@ import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Design } from './interface';
 
 const ProjectDashboard = () => {
+  const router = useRouter();
   const [designsCount, setDesignsCount] = useState(0);
 
   useEffect(() => {
@@ -39,10 +42,10 @@ const ProjectDashboard = () => {
 
   // Features Data
   const featuresData = [
-    { label: 'MES', icon: assets.Mes, route: '/mes' },
-    { label: 'Material', icon: assets.Material, route: '/material' },
-    { label: 'Catalog Manager', icon: assets.Catalogmanager, route: '/catalog' },
-    { label: 'Design', icon: assets.Designs, route: '/design' },
+    { label: 'Design', icon: assets.Designs, route: REDIRECT.DESIGNS },
+    { label: 'Material', icon: assets.Material, route: REDIRECT.MATERIAL },
+    { label: 'Catalog Manager', icon: assets.Catalogmanager, route: REDIRECT.CATALOG_MANAGER },
+    { label: 'MES', icon: assets.Mes, route: REDIRECT.MES },
   ];
 
   return (
@@ -72,7 +75,12 @@ const ProjectDashboard = () => {
             <h3 className={styles.sectionTitle}>Quick Access</h3>
             <div className={styles.featuresGrid}>
               {featuresData.map((feature, index) => (
-                <div key={index} className={styles.featureCard}>
+                <div
+                  key={index}
+                  className={styles.featureCard}
+                  onClick={() => router.push(feature.route)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={styles.featureIconWrapper}>
                     <img src={feature.icon} alt={feature.label} />
                   </div>
