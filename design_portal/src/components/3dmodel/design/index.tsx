@@ -430,7 +430,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             design3D={design3D}
             isActive={isMeasurementActive}
             unitType={currentUnitType}
-            onComplete={() => {}}
+            onComplete={() => { }}
           />
           <HelperTool
             design3D={design3D}

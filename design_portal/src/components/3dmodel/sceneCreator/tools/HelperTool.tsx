@@ -162,12 +162,12 @@ const HelperTool: React.FC<HelperToolProps> = ({
         title: 'Delete',
         onClick: handleDelete,
       },
-      {
-        id: 'panel-design',
-        icon: assets.panel_design,
-        title: 'Panel Design',
-        onClick: handlePanelDesign,
-      },
+      // {
+      //   id: 'panel-design',
+      //   icon: assets.panel_design,
+      //   title: 'Panel Design',
+      //   onClick: handlePanelDesign,
+      // },
       {
         id: 'copy',
         icon: assets.copy_helper,
@@ -239,8 +239,19 @@ const HelperTool: React.FC<HelperToolProps> = ({
   useEffect(() => {
     if (!rendererRef.current) return;
 
-    if (selectedObject) createTool(selectedObject);
-    else removeTool();
+    if (selectedObject) {
+      const isModel =
+        selectedObject.userData?.type === 'model' ||
+        selectedObject.userData?.type === OBJECT_TYPES.MODEL ||
+        selectedObject.userData?.isGLB;
+      if (isModel) {
+        removeTool();
+      } else {
+        createTool(selectedObject);
+      }
+    } else {
+      removeTool();
+    }
   }, [selectedObject, createTool, removeTool]);
 
   useEffect(() => {
