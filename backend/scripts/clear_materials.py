@@ -16,7 +16,9 @@ django.setup()
 # App imports
 from design.models import DesignCatalog
 from material.models import (
-    FinishesLibrary,
+    MaterialFinish,
+    MaterialFinishType,
+    MaterialTexture,
     Material,
 )
 from umaboy.models import Organization
@@ -47,6 +49,9 @@ def clear_materials():
         for catalog in catalogs:
             for material in catalog.materials.all():
                 Material.objects.filter(id=material.id).delete()
+                MaterialTexture.objects.filter(material=material).delete()
+                MaterialFinish.objects.filter(material=material).delete()
+                MaterialFinishType.objects.filter(material=material).delete()
 
         catalog.materials.clear()
 
