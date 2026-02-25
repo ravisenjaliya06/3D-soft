@@ -1,17 +1,24 @@
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import styles from './MaterialChangePopup.module.css';
-import { MaterialChangePopupProps, MaterialResponse } from './interface';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  INVISIBLE_BOXES,
+  OBJECT_TYPES,
+  PART_TYPES,
+  MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
+} from '../sceneCreator/interface';
 import { formatEnumLabel } from '../sceneCreator/utils';
-import { MATERIAL_TYPES as SCENE_MATERIAL_TYPES, PART_TYPES, OBJECT_TYPES, INVISIBLE_BOXES } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { updateObject } from '../store/dataSlice';
+import styles from './MaterialChangePopup.module.css';
+import { MaterialChangePopupProps, MaterialResponse } from './interface';
 
-export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyMaterial?: (part: any, material: any) => void }> = ({
+export const MaterialChangePopup: React.FC<
+  MaterialChangePopupProps & { onApplyMaterial?: (part: any, material: any) => void }
+> = ({
   onClose,
   onSave, // this is typically not used directly here anymore due to part-specific saving, but kept for interface compliance
   selectedObject,
@@ -74,14 +81,14 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
 
     // Add default types if none exist to ensure categories like Panel Stock appear
     const types = Array.from(new Set(allMaterials.map((m) => m?.type).filter(Boolean))) as string[];
-    if (!types.includes(SCENE_MATERIAL_TYPES.PANEL_STOCK)) types.unshift(SCENE_MATERIAL_TYPES.PANEL_STOCK);
+    if (!types.includes(SCENE_MATERIAL_TYPES.PANEL_STOCK))
+      types.unshift(SCENE_MATERIAL_TYPES.PANEL_STOCK);
     if (!types.includes('Banding')) types.push('Banding');
 
     setRuleMaterialTypes(types);
     if (types.length > 0 && !activeRuleType) {
       setActiveRuleType(types[0]);
     }
-
   }, [selectedObject, objects]);
 
   // Update rule parts when active type or parts list changes
@@ -89,7 +96,11 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
     if (!activeRuleType || partsList.length === 0) return;
 
     const matchingChildren = partsList.filter((child) => {
-      const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+      const mats = Array.isArray(child.material)
+        ? child.material
+        : child.material
+          ? [child.material]
+          : [];
       // If no material is assigned at all, still show the part so we can assign to it
       if (activeRuleType === SCENE_MATERIAL_TYPES.PANEL_STOCK) return true; // always show for main type
       return mats.some((m: any) => m?.type === activeRuleType) || true; // show all parts to allow assigning new types
@@ -97,7 +108,11 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
 
     setRuleParts(
       matchingChildren.map((child) => {
-        const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+        const mats = Array.isArray(child.material)
+          ? child.material
+          : child.material
+            ? [child.material]
+            : [];
         return {
           ...child,
           currentMaterial: mats.find((m: any) => m?.type === activeRuleType) || null,
@@ -125,15 +140,30 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-        (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+          (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
         : true
     );
 
   const defaultMaterialTypes = [
-    'Banding', 'Board Stock', 'Caster', 'Connector', 'Drawer Guide',
-    'Hinge', 'Hinge Plate', 'Laminate', 'Leg', 'Leg Leveler',
-    'Miscellaneous', 'Molding', 'Panel Stock', 'Pull', 'Rod',
-    'Sliding Door Rail', 'Sliding Door Roller', 'Wire Basket', 'Connection'
+    'Banding',
+    'Board Stock',
+    'Caster',
+    'Connector',
+    'Drawer Guide',
+    'Hinge',
+    'Hinge Plate',
+    'Laminate',
+    'Leg',
+    'Leg Leveler',
+    'Miscellaneous',
+    'Molding',
+    'Panel Stock',
+    'Pull',
+    'Rod',
+    'Sliding Door Rail',
+    'Sliding Door Roller',
+    'Wire Basket',
+    'Connection',
   ];
 
   const discoveredTypes = Array.from(
@@ -154,7 +184,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
     if (targetPart) {
       const materialArray = Array.isArray(targetPart.material)
         ? [...targetPart.material]
-        : targetPart.material ? [targetPart.material] : [];
+        : targetPart.material
+          ? [targetPart.material]
+          : [];
 
       // Update or add the material for the currently active tab type
       const targetType = activeRuleType || materialConfig.type || SCENE_MATERIAL_TYPES.PANEL_STOCK;
@@ -211,11 +243,23 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
         <div className={styles.mainContent}>
           {/* Left Table (Parts) */}
           <div className={styles.leftPanel} style={{ flex: '0.45' }}>
-            <div className={styles.lefttopbar} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div
+              className={styles.lefttopbar}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
               <span>Target Object: {formatEnumLabel(selectedObject?.name || '')}</span>
             </div>
 
-            <div className={styles.tabs} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+            <div
+              className={styles.tabs}
+              style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginBottom: '0.5rem',
+                overflowX: 'auto',
+                paddingBottom: '0.5rem',
+              }}
+            >
               {ruleMaterialTypes.map((type) => (
                 <button
                   key={type}
@@ -229,10 +273,11 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                     borderRadius: '0.3rem',
                     border: '1px solid var(--border-color)',
                     background: activeRuleType === type ? 'var(--primary-color)' : 'transparent',
-                    color: activeRuleType === type ? 'var(--primary-white)' : 'var(--primary-color)',
+                    color:
+                      activeRuleType === type ? 'var(--primary-white)' : 'var(--primary-color)',
                     cursor: 'pointer',
                     fontSize: '0.75rem',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {type}
@@ -240,7 +285,10 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
               ))}
             </div>
 
-            <div className={styles.tableScrollArea} style={{ minHeight: '10rem', maxHeight: '25rem' }}>
+            <div
+              className={styles.tableScrollArea}
+              style={{ minHeight: '10rem', maxHeight: '25rem' }}
+            >
               <table className={styles.materialTable}>
                 <thead>
                   <tr>
@@ -266,15 +314,30 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                             setSelectedMaterialId(materialId);
                           }
                         }}
-                        className={selectedPartId === part.id ? styles.selectedRow : styles.tableRow}
+                        className={
+                          selectedPartId === part.id ? styles.selectedRow : styles.tableRow
+                        }
                       >
-                        <td className={styles.cellName}>{formatEnumLabel(part.name || 'Unknown')}</td>
+                        <td className={styles.cellName}>
+                          {formatEnumLabel(part.name || 'Unknown')}
+                        </td>
                         <td className={styles.cellDesc}>{currentMaterialName}</td>
                       </tr>
                     );
                   })}
                   {ruleParts.length === 0 && (
-                    <tr><td colSpan={2} style={{ textAlign: 'center', padding: '1rem', color: 'var(--subtext-color)' }}>No parts available</td></tr>
+                    <tr>
+                      <td
+                        colSpan={2}
+                        style={{
+                          textAlign: 'center',
+                          padding: '1rem',
+                          color: 'var(--subtext-color)',
+                        }}
+                      >
+                        No parts available
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -295,17 +358,28 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                   className={styles.typeDropdown}
                 >
                   {materialTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
                 <div className={styles.dropdownIconWrapper}>
-                  <img src={openDropdown ? assets.menuup : assets.menudown} className={styles.dropdownIcon} />
+                  <img
+                    src={openDropdown ? assets.menuup : assets.menudown}
+                    className={styles.dropdownIcon}
+                  />
                 </div>
               </div>
 
               {/* SEARCH */}
               <div className={styles.searchWrapper}>
-                <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  className={styles.searchIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <circle cx="11" cy="11" r="5" />
                   <path d="m20 20-4.35-4.35" />
                 </svg>
@@ -342,7 +416,9 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                         setSelectedMaterialId(item.id);
                       }}
                       onClick={() => setSelectedMaterialId(item.id)}
-                      className={selectedMaterialId === item.id ? styles.selectedRow : styles.tableRow}
+                      className={
+                        selectedMaterialId === item.id ? styles.selectedRow : styles.tableRow
+                      }
                     >
                       {/* RADIO */}
                       <td className={styles.checkboxTd}>
@@ -362,14 +438,33 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                     </tr>
                   ))}
                   {filteredMaterials.length === 0 && (
-                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '1rem', color: 'var(--subtext-color)' }}>No materials found</td></tr>
+                    <tr>
+                      <td
+                        colSpan={3}
+                        style={{
+                          textAlign: 'center',
+                          padding: '1rem',
+                          color: 'var(--subtext-color)',
+                        }}
+                      >
+                        No materials found
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
             </div>
 
             {/* ACTION FOOTER */}
-            <div style={{ padding: '0.75rem', borderTop: '1px solid var(--table-title-border-color)', backgroundColor: 'var(--primary-white)', display: 'flex', justifyContent: 'flex-end' }}>
+            <div
+              style={{
+                padding: '0.75rem',
+                borderTop: '1px solid var(--table-title-border-color)',
+                backgroundColor: 'var(--primary-white)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
               <button
                 onClick={() => {
                   if (selectedPartId && selectedMaterialId) {
@@ -379,9 +474,18 @@ export const MaterialChangePopup: React.FC<MaterialChangePopupProps & { onApplyM
                   }
                 }}
                 className={styles.saveButton}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                }}
               >
-                <img src={assets.addMaterialIcon || assets.addd} alt="Add" style={{ width: '0.9rem', height: '0.9rem', filter: 'brightness(0) invert(1)' }} />
+                <img
+                  src={assets.addMaterialIcon || assets.addd}
+                  alt="Add"
+                  style={{ width: '0.9rem', height: '0.9rem', filter: 'brightness(0) invert(1)' }}
+                />
                 Apply to Selected Part
               </button>
             </div>

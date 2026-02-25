@@ -69,7 +69,7 @@ echo === Check Summary ===
 echo Date: %YYYY%-%MM%-%DD%
 echo Time: %HH%:%Min%:%Sec%
 echo.
-echo ESLint: %lint_status% - Found !error_count! errors (allowed up to 38)
+echo ESLint: %lint_status% - Found !error_count! errors (allowed up to 0)
 echo Format: %format_status%
 echo Build: %build_status%
 

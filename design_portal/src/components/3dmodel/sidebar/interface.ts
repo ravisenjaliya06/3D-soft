@@ -1,5 +1,3 @@
-import { CatalogRule } from '../handler/interface';
-
 export interface MaterialResponse {
   id: string;
   name: string;
