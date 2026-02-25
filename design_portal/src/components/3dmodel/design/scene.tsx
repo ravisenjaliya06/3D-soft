@@ -344,7 +344,8 @@ export const addDoorOnInvisibleBox = async (
   // Overlay: On top of the frame. Center = max.z + depth/2
   // Offset by door depth to prevent overlapping with the back of the invisible box/cupboard frame
   const zPosOffset =
-    (doorType === DOOR_TYPES.INSET ? -doorDimensions.depth / 2 : doorDimensions.depth / 2) + doorDimensions.depth;
+    (doorType === DOOR_TYPES.INSET ? -doorDimensions.depth / 2 : doorDimensions.depth / 2) +
+    doorDimensions.depth;
 
   const localDoorPos = new THREE.Vector3(
     boxCenterLocal.x,
@@ -2141,8 +2142,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [
