@@ -263,9 +263,39 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
     setIsLoading(true);
     try {
+      await commonService.put(API_ENDPOINT.UPDATE_DESIGN_DETAILS(designId), {
+        rendering_project_id: null,
+      });
       await commonService.post(API_ENDPOINT.CLEAR_RENDER_IMAGES(designId), {});
 
-      const box = new THREE.Box3().setFromObject(design3D.scene);
+      // Ensure world matrices are updated before computing bounds
+      design3D.scene.updateMatrixWorld(true);
+
+      const box = new THREE.Box3();
+      design3D.scene.traverseVisible((child: any) => {
+        if (child.isMesh && child.geometry) {
+          // Ignore known helper/background names
+          const name = (child.name || '').toLowerCase();
+          if (name.includes('grid') || name.includes('helper')) {
+            return;
+          }
+
+          if (!child.geometry.boundingBox) {
+            child.geometry.computeBoundingBox();
+          }
+          if (child.geometry.boundingBox) {
+            const childBox = new THREE.Box3().copy(child.geometry.boundingBox);
+            childBox.applyMatrix4(child.matrixWorld);
+
+            const childSize = new THREE.Vector3();
+            childBox.getSize(childSize);
+            if (childSize.x < 100000 && childSize.y < 100000 && childSize.z < 100000) {
+              box.union(childBox);
+            }
+          }
+        }
+      });
+
       if (box.isEmpty()) {
         alert('Scene is empty');
         setIsLoading(false);
@@ -283,9 +313,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         ? (design3D.camera as THREE.PerspectiveCamera).fov * (Math.PI / 180)
         : Math.PI / 4;
 
-      // Changed to bring camera closer
+      // Calculate appropriate distance to fit maxDim with a slight margin
       let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-      cameraZ *= 1.2;
+      cameraZ *= 0.95;
 
       const originalPosition = design3D.camera.position.clone();
       const originalTarget = design3D.controls.target.clone();
