@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Floor, Wall, WallPoint } from '../2dmodel/interface';
+import { removeWallsPoints } from '../2dmodel/utils';
 import { MeshObjectData } from '../sceneCreator/interface';
 import { DataState, Position } from './interface';
 
@@ -142,6 +143,11 @@ const dataSlice = createSlice({
       const idsToRemove = collectIdsToRemove(idToRemove);
 
       state.objects = state.objects.filter((obj) => !idsToRemove.includes(obj.id));
+
+      // Also keep 2D state in sync when walls or floors are deleted from 3D
+      state.walls = state.walls.filter((wall) => !idsToRemove.includes(wall.id));
+      state.floor = state.floor.filter((floor) => !idsToRemove.includes(floor.id));
+      state.points = removeWallsPoints(state.points, state.walls);
     },
     toggleQuickHide: (state, action: PayloadAction<boolean>) => {
       state.isQuickHideActive = action.payload;
