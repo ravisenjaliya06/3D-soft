@@ -1,47 +1,70 @@
+/* MaterialChangePopup.module.css */
+
 .popupOverlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--popup-shadow);
+  background: var(--popup-background-color);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .popup {
   background: var(--primary-white);
-  width: 60rem;
-  border-radius: 0.9rem;
-  position: relative;
-  box-shadow: 0 2px 15px var(--dropdown-shadow);
-  height: 43rem;
-  align-items: start;
-  padding: 1.5rem;
+  width: 50rem;
+  max-width: 90vw;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px var(--box-shadow-color);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.2rem;
-}
-
-.divider {
-  border: none;
-  border-top: 0.063rem solid var(--border-color);
-  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  position: relative;
 }
 
 .header h2 {
-  font-family: var(--font-family);
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--primary-color);
   margin: 0;
-  margin-left: 40%;
+  flex: 1;
+  text-align: center;
 }
 
 .closeButton {
@@ -49,480 +72,335 @@
   height: 1.5rem;
   cursor: pointer;
   position: absolute;
-  top: 2rem;
-  right: 1rem;
+  right: 0;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
 }
 
-.content {
+.closeButton:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--table-title-border-color), transparent);
+  margin: 1rem 0;
+}
+
+/* MAIN CONTENT */
+.mainContent {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 25rem;
+  margin-bottom: 1rem;
+}
+
+/* LEFT PANEL - Part Info */
+.leftPanel {
+  flex: 0.35;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.topSection {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.leftTabs {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.doorLabel {
-  font-family: var(--font-family);
+.lefttopbar {
+  font-family: var(--font-family, 'Inter', sans-serif);
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--primary-color);
-  margin-right: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--table-title-border-color);
 }
 
-.tabs {
+.partCard {
+  background: var(--processed-background-color);
+  border: 1px solid var(--table-title-border-color);
+  border-radius: 8px;
+  padding: 1rem;
   display: flex;
-  gap: 0.2rem;
-  background-color: var(--background-color);
-  border-radius: 0.5rem;
-  padding: 0.2rem;
+  align-items: center;
+  gap: 1rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.tab {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: transparent;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-family: var(--font-family);
-  font-size: 0.8rem;
-  color: var(--primary-color);
-  transition: all 0.2s ease;
+.partCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--box-shadow-color);
 }
 
-.activeTab {
-  background-color: var(--primary-color);
-  color: var(--primary-white);
-}
-
-.tab:hover:not(.activeTab) {
-  background-color: var(--selectedrow-color);
-}
-
-.rightDropdown {
+.partImgWrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--primary-color);
+  border-radius: 50%;
   display: flex;
+  justify-content: center;
   align-items: center;
 }
 
-.dropdown {
-  padding: 0.2rem 0.4rem 0.2rem 0.2rem;
-  border: 0.063rem solid var(--dropdown-border-color);
-  border-radius: 0.375rem;
-  background: var(--dropdown-background-color);
-  font-size: 0.69rem;
-  color: var(--primary-black);
-  cursor: pointer;
-  min-width: 10rem;
-  outline: none;
-  font-family: var(--font-family);
+.partIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+  filter: brightness(0) invert(1);
 }
 
-.mainContent {
+.partContext {
   display: flex;
+  flex-direction: column;
+}
+
+.partLabel {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.7rem;
+  color: var(--subtext-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.partName,
+.partMaterialName {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.partMaterialName {
+  color: var(--primary-green);
+}
+
+/* RIGHT PANEL - Material Selection */
+.rightPanel {
+  flex: 0.65;
+  display: flex;
+  flex-direction: column;
+  background: var(--primary-white);
+  border: 1px solid var(--table-title-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px var(--box-shadow-color);
+}
+
+.righttopbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--processed-background-color);
+  border-bottom: 1px solid var(--table-title-border-color);
   gap: 1rem;
+}
+
+.dropdownWrapper {
+  position: relative;
+}
+
+.typeDropdown {
+  appearance: none;
+  background: var(--primary-white);
+  border: 1px solid var(--table-title-border-color);
+  border-radius: 6px;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  outline: none;
+  min-width: 140px;
+  transition: border-color 0.2s;
+}
+
+.typeDropdown:focus {
+  border-color: var(--primary-color);
+}
+
+.dropdownIconWrapper {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.dropdownIcon {
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.5;
+}
+
+.searchWrapper {
+  position: relative;
   flex: 1;
 }
 
-.tableWrapper {
-  margin-top: 0.5rem;
-  border: 0.06rem solid var(--border-color);
-  border-radius: 0.2rem;
-  max-height: 30rem;
-  width: 29rem;
-  max-width: 29rem;
-  height: 30rem;
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-gray);
 }
 
-.partsTable {
+.searchInput {
   width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-family);
-  table-layout: fixed;
-}
-
-.partsTable thead th {
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: var(--primary-white);
+  border: 1px solid var(--table-title-border-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.75rem;
   color: var(--primary-color);
-  border-bottom: 0.1rem solid var(--sidebarhadding-background-color-20);
-  height: 2rem;
-  position: sticky;
-  top: 3rem;
-  z-index: 2;
-  padding: 0.3rem 0.8rem;
-  text-align: left;
-  border-right: 0.1rem none var(--border-color);
-  padding: 0 2.75rem;
+  outline: none;
+  transition: all 0.2s;
 }
 
-.partsTable th {
-  background-color: var(--thbackground-color);
-  height: 2rem;
+.searchInput:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--table-title-border-color);
 }
 
-.partsTable tbody tr td {
-  padding: 0 2.75rem;
-  border-bottom: 0.0625rem solid var(--border-color);
-}
-
-.partsTable th:last-child {
-  border-right: none;
-}
-
-.partsTable tr {
-  height: 2.5rem;
-}
-
-.partsTable td {
-  padding: 0.3rem 0rem;
-  font-size: 0.6rem;
-  color: var(--primary-black);
-  border-top: 0.1rem solid var(--border-color);
-  border-right: 0.1rem solid var(--border-color);
-  height: 1.5rem;
-  word-wrap: break-word;
-}
-
-.partsTable td:last-child {
-  border-right: none;
-}
-
-.partsTable tr:hover {
-  background-color: var(--primary-table-hover);
-}
-
-.selectedRow {
-  background-color: var(--primary-table-hover);
-}
-
-.tableWrapper::-webkit-scrollbar {
-  width: 0.4rem;
-}
-
-.tableWrapper::-webkit-scrollbar-track {
-  background: var(--primary-white);
-  border-radius: 0.7rem;
-}
-
-.tableWrapper::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 0.7rem;
-}
-
-.tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color);
-}
-
-.tableWrapper::-webkit-scrollbar-button {
-  display: none;
-}
-
-.rightTable::-webkit-scrollbar {
-  width: 0.4rem;
-}
-
-.rightTable::-webkit-scrollbar-track {
-  background: var(--primary-white);
-  border-radius: 0.7rem;
-}
-
-.rightTable::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 0.7rem;
-}
-
-.rightTable::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color);
-}
-
-.rightTable::-webkit-scrollbar-button {
-  display: none;
-}
-
-.rightTable {
-  margin-top: 0.5rem;
-  border: 0.06rem solid var(--border-color);
-  border-radius: 0.2rem;
-  width: 38rem;
-  height: 30rem;
-  display: flex;
-  flex-direction: column;
+/* Material Table */
+.tableScrollArea {
+  flex: 1;
   overflow-y: auto;
+  min-height: 20rem;
+  max-height: 25rem;
+}
+
+.tableScrollArea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tableScrollArea::-webkit-scrollbar-track {
+  background: var(--primary-dark-white);
+}
+
+.tableScrollArea::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color-2);
+  border-radius: 3px;
+}
+
+.tableScrollArea::-webkit-scrollbar-thumb:hover {
+  background: var(--button-soft-grey);
 }
 
 .materialTable {
   width: 100%;
-  height: 30rem;
-  max-height: 30rem;
   border-collapse: collapse;
-  font-family: var(--font-family);
-  table-layout: fixed;
 }
 
 .materialTable th {
-  background-color: var(--primary-white);
-  font-size: 0.8rem;
+  position: sticky;
+  top: 0;
+  background: var(--processed-background-color);
+  color: var(--subtext-color);
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--primary-color);
-  height: 2rem;
-  z-index: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 1rem;
   text-align: left;
-  border-right: 1px solid var(--border-color);
-  padding: 0 2.75rem;
-  border-bottom: 0.1rem;
-  border-color: var(--sidebarhadding-background-color-20);
-  align-items: left;
+  border-bottom: 1px solid var(--table-title-border-color);
+  z-index: 10;
 }
 
-.materialTable th:last-child {
-  border-right: none;
-  height: 2rem;
+.checkboxTh {
+  width: 3rem;
 }
 
 .materialTable td {
-  padding: 0.3rem 0.8rem;
-  font-size: 0.6rem;
-  color: var(--primary-black);
-  border-top: 0.1rem solid var(--border-color);
-  border-right: 0.1rem solid var(--border-color);
-  height: 2rem;
-  word-wrap: break-word;
-  padding: 0 2.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--table-buttom-border-color);
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.8rem;
+  color: var(--project-item-text);
 }
 
-.materialTable td:last-child {
-  border-right: none;
+.tableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.partlItem {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.tableRow:hover {
+  background-color: var(--hover-background-color-2);
 }
 
-.partlItem img {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-
-.materialTable tr:hover {
+.selectedRow {
   background-color: var(--primary-table-hover);
+  cursor: pointer;
 }
 
-.materialItem {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.checkboxTd {
+  width: 3rem;
+  text-align: center;
 }
 
-.materialTable img {
-  width: 0.75rem;
-  height: 0.75rem;
+.radioInput {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  accent-color: var(--primary-color);
 }
 
-.materialIcon {
-  display: inline-block;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background-color: var(--primary-white);
+.cellName {
+  font-weight: 500;
+  color: var(--primary-color);
 }
 
+.cellDesc {
+  color: var(--subtext-color);
+}
+
+/* FOOTER BUTTONS */
 .buttonGroup {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 0rem;
+  margin-top: 1rem;
 }
 
-.addMaterialButton {
-  width: 10rem;
-  height: 2.5rem;
-  font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.5rem;
+.cancelButton,
+.saveButton {
+  padding: 0.6rem 2rem;
+  border-radius: 6px;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  background: transparent;
-}
-
-.addMaterialButton:hover {
-  background-color: var(--primary-hover);
+  transition: all 0.2s ease;
 }
 
 .cancelButton {
-  width: 10rem;
-  height: 2.5rem;
-  font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.5rem;
-  cursor: pointer;
   background: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
 }
 
 .cancelButton:hover {
-  background-color: var(--primary-hover);
+  background: var(--primary-table-hover);
 }
 
 .saveButton {
-  width: 10rem;
-  height: 2.5rem;
-  font-family: var(--font-family);
-  font-size: 1rem;
-  font-weight: 500;
-  background-color: var(--primary-color);
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
   color: var(--primary-white);
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  box-shadow: 0 4px 6px var(--box-shadow-color);
 }
 
 .saveButton:hover {
-  background-color: var(--primary-hover);
-  border: 0.063rem solid var(--primary-color);
-  color: var(--primary-color);
+  background: var(--hover-button);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px var(--box-shadow-color-2);
 }
 
-/* ================= TOP BAR ================= */
-.lefttopbar {
-  display: flex;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  gap: 0.6rem;
-  font-family: var(--font-family);
-  padding: 0.7rem;
-  height: 1.5rem;
-  color: var(--common-text-color);
-  border-bottom: 0.0625rem solid var(--bottom-border-color);
-  background-color: var(--thbackground-color);
-}
-
-/* ================= TABLE ================= */
-.materialTable,
-.partsTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-  font-size: 0.75rem;
-  background-color: var(--primary-white);
-  /* 12px */
-}
-
-/* ================= HEADER ================= */
-.materialTable thead,
-.partsTable thead {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-  background: var(--primary-white);
-  position: sticky;
-  top: 3.1rem;
-  z-index: 2;
-  height: 2.5rem;
-}
-
-.partsTable th {
-  padding: 0 2.75rem;
-  font-weight: 600;
-  color: rgba(57, 37, 121, 1);
-  border-bottom: 0.1rem;
-  border-color: var(--sidebarhadding-background-color-20);
-  align-items: center;
-  background-color: var(--primary-white);
-}
-
-/* ================= BODY ================= */
-.materialTable tbody,
-.partsTable tbody {
-  display: block;
-  flex: 1;
-}
-
-.materialTable tbody tr,
-.partsTable tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-  height: 2rem;
-}
-
-/* ================= MATERIAL CELL ================= */
-.materialItem {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  /* 6px */
-  gap: 0.375rem;
-  /* 6px */
-}
-
-/* ================= HOVER ================= */
-.materialTable tbody tr:hover,
-.partsTable tbody tr:hover {
-  background: var(--primary-table-hover);
-  cursor: pointer;
-}
-
-/* ================= SELECTED ROW ================= */
-.selectedRow {
-  background: var(--selectedrow-color) !important;
-}
-
-/* REMOVE VERTICAL COLUMN LINES */
-.materialTable th,
-.materialTable td,
-.partsTable th,
-.partsTable td {
-  border-left: none !important;
-  border-right: none !important;
-}
-
-/* KEEP ONLY HORIZONTAL LINES */
-.materialTable th,
-.partsTable th {
-  border-bottom: 0.1rem;
-  border-color: var(--sidebarhadding-background-color-20);
-}
-
-.materialTable td,
-.partsTable td {
-  border-bottom: 0.1rem;
-  border-color: var(--sidebarhadding-background-color-20);
-}
-
-.materialItem {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.radio {
-  width: 0.9rem;
-  height: 0.9rem;
-  margin-left: 0rem;
-  cursor: pointer;
-  accent-color: var(--radio-color);
-  /* match your purple theme */
-}
-
-.selectedRow {
-  background-color: var(--selectedrow-color);
+.saveButton:active {
+  transform: translateY(0);
 }

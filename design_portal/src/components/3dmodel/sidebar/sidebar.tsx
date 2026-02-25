@@ -3168,9 +3168,50 @@ const Sidebar: React.FC = () => {
       )}
       {showMaterialPopup && (
         <MaterialChangePopup
+          selectedObject={selectedObject}
           onClose={() => setShowMaterialPopup(false)}
-          onSave={() => {
+          onSave={(selectedMaterial) => {
             if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+              console.log('Saved material:', selectedMaterial);
+            }
+            if (selectedObject) {
+              const materialArray = Array.isArray(selectedObject.material)
+                ? selectedObject.material
+                : [selectedObject.material];
+
+              const updatedMaterials = materialArray.map((mat: any) => {
+                if (
+                  mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK ||
+                  mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS
+                ) {
+                  return { ...mat, ...selectedMaterial };
+                }
+                return mat;
+              });
+
+              applyObjectUpdate(selectedObject, {
+                material: Array.isArray(selectedObject.material)
+                  ? updatedMaterials
+                  : updatedMaterials[0],
+              });
+
+              if (isFullCupboard) {
+                const childPlanks = objects.filter(
+                  (obj) =>
+                    obj.parent === selectedObject.id &&
+                    (obj.type === PART_TYPES.PLANK ||
+                      obj.type === PART_TYPES.VERTICAL_PLANK ||
+                      obj.type === PART_TYPES.HORIZONTAL_PLANK ||
+                      obj.type === PART_TYPES.BACK_PLANK)
+                );
+                childPlanks.forEach((child) => {
+                  applyObjectUpdate(child, {
+                    material: Array.isArray(child.material)
+                      ? updatedMaterials
+                      : updatedMaterials[0],
+                  });
+                });
+              }
             }
             setShowMaterialPopup(false);
           }}
