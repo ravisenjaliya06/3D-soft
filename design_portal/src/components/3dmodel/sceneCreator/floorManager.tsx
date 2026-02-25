@@ -89,6 +89,7 @@ export class FloorManager {
   }
 
   private removeExistingFloors() {
+    console.log('FloorManager removeExistingFloors');
     // Check if there are existing floor meshes to remove
     const floorsToRemove: THREE.Object3D[] = [];
     this.scene.traverse((obj) => {
@@ -115,9 +116,9 @@ export class FloorManager {
 
   public async syncData() {
     if (!this.scene) return;
-
-    this.removeExistingFloors();
-
+    console.log('FloorManager syncData');
+    // Create the new meshes (async operation)
+    const newMeshes: THREE.Mesh[] = [];
     for (const floor of this.floorData) {
       // Get texture URL from floor data if available
       const textureUrl = (floor as any).textureUrl || '/textures/wood_7.jpg';
@@ -128,9 +129,15 @@ export class FloorManager {
       if (mesh) {
         // Set objectId to link mesh to Redux object
         mesh.userData.objectId = floor.id;
-        this.scene.add(mesh);
-        this.floorMeshes.push(mesh);
+        newMeshes.push(mesh);
       }
+    }
+    //if there is any floor in the scene remove it just for helper function
+    this.removeExistingFloors();
+
+    for (const mesh of newMeshes) {
+      this.scene.add(mesh);
+      this.floorMeshes.push(mesh);
     }
   }
 }
