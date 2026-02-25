@@ -175,8 +175,8 @@ const AddMaterialPopup: React.FC<Props> = ({
         type: 'number',
         placeholder: 'Enter waste',
       },
-      { key: 'salesTax', label: 'Sales Tax', type: 'toggle' },
-      { key: 'estimate', label: 'Estimate', type: 'toggle' },
+      // { key: 'salesTax', label: 'Sales Tax', type: 'toggle' },
+      // { key: 'estimate', label: 'Estimate', type: 'toggle' },
     ],
   };
 
@@ -242,7 +242,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter length trim',
               img: assets.length_trim,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -329,17 +329,17 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter rough thickness (mm)',
               img: assets.rough_thickness,
             },
-            {
-              key: 'cncOptimize',
-              label: 'CNC Optimize',
-              type: 'toggle',
-            },
-            {
-              key: 'cncGrainDependent',
-              label: 'CNC Grain Dependent',
-              type: 'toggle',
-            },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // {
+            //   key: 'cncOptimize',
+            //   label: 'CNC Optimize',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncGrainDependent',
+            //   label: 'CNC Grain Dependent',
+            //   type: 'toggle',
+            // },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -373,21 +373,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter spindle speed percent',
               img: assets.spindle_speed,
             },
-            {
-              key: 'cncMinimizeFaceChip',
-              label: 'CNC Minimize Face Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncMinimizeBackChip',
-              label: 'CNC Minimize Back Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncClimbCut',
-              label: 'CNC Climb Cut',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'cncMinimizeFaceChip',
+            //   label: 'CNC Minimize Face Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncMinimizeBackChip',
+            //   label: 'CNC Minimize Back Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncClimbCut',
+            //   label: 'CNC Climb Cut',
+            //   type: 'toggle',
+            // },
             {
               key: 'cncMaximumDepthPerPass',
               label: 'CNC Maximum Depth Per Pass',
@@ -487,7 +487,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Upload GLB',
               accept: '.glb',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -635,7 +635,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Upload GLB',
               accept: '.glb',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -784,7 +784,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter screw center to bottom reference (mm)',
               img: assets.screw_center_ref_bot,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -1156,7 +1156,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'select',
               options: ['Concealed', 'Double Door', 'Overlay', 'Inset'],
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -1294,7 +1294,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'select',
               options: ['Frame', 'Inline', 'Panel'],
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -1434,22 +1434,22 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter oversize',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
           title: 'CNC Settings',
           fields: [
-            {
-              key: 'cncOptimize',
-              label: 'CNC Optimize',
-              type: 'toggle',
-            },
-            {
-              key: 'cncGrainDependent',
-              label: 'CNC Grain Dependent',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'cncOptimize',
+            //   label: 'CNC Optimize',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncGrainDependent',
+            //   label: 'CNC Grain Dependent',
+            //   type: 'toggle',
+            // },
             {
               key: 'cncDropWidth',
               label: 'CNC Drop Width',
@@ -1478,21 +1478,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter spindle speed percent',
               img: assets.spindle_speed,
             },
-            {
-              key: 'cncMinimizeFaceChip',
-              label: 'CNC Minimize Face Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncMinimizeBackChip',
-              label: 'CNC Minimize Back Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncClimbCut',
-              label: 'CNC Climb Cut',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'cncMinimizeFaceChip',
+            //   label: 'CNC Minimize Face Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncMinimizeBackChip',
+            //   label: 'CNC Minimize Back Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncClimbCut',
+            //   label: 'CNC Climb Cut',
+            //   type: 'toggle',
+            // },
             {
               key: 'cncMaximumDepthPerPass',
               label: 'CNC Maximum Depth Per Pass',
@@ -1599,7 +1599,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Upload GLB',
               accept: '.glb',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -1686,7 +1686,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Upload GLB',
               accept: '.glb',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -1824,7 +1824,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Upload GLB',
               accept: '.glb',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         pricingStep,
@@ -1918,22 +1918,22 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter width (mm)',
               img: assets.size_width,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
           title: 'CNC Settings',
           fields: [
-            {
-              key: 'cncOptimize',
-              label: 'CNC Optimize',
-              type: 'toggle',
-            },
-            {
-              key: 'cncGrainDependent',
-              label: 'CNC Grain Dependent',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'cncOptimize',
+            //   label: 'CNC Optimize',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncGrainDependent',
+            //   label: 'CNC Grain Dependent',
+            //   type: 'toggle',
+            // },
             {
               key: 'cncDropWidth',
               label: 'CNC Drop Width',
@@ -1962,21 +1962,21 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter spindle speed percent',
               img: assets.spindle_speed,
             },
-            {
-              key: 'cncMinimizeFaceChip',
-              label: 'CNC Minimize Face Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncMinimizeBackChip',
-              label: 'CNC Minimize Back Chip',
-              type: 'toggle',
-            },
-            {
-              key: 'cncClimbCut',
-              label: 'CNC Climb Cut',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'cncMinimizeFaceChip',
+            //   label: 'CNC Minimize Face Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncMinimizeBackChip',
+            //   label: 'CNC Minimize Back Chip',
+            //   type: 'toggle',
+            // },
+            // {
+            //   key: 'cncClimbCut',
+            //   label: 'CNC Climb Cut',
+            //   type: 'toggle',
+            // },
             {
               key: 'cncMaximumDepthPerPass',
               label: 'CNC Maximum Depth Per Pass',
@@ -2096,7 +2096,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter vertical inset (mm)',
               img: assets.pull_vertical_inset,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -2214,7 +2214,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter width (mm)',
               img: assets.rod_width,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -2352,7 +2352,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter length (mm)',
               img: assets.size_length,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -2471,11 +2471,11 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'select',
               options: ['Roller', 'Slot'],
             },
-            {
-              key: 'mountOnBack',
-              label: 'Mount On Back',
-              type: 'toggle',
-            },
+            // {
+            //   key: 'mountOnBack',
+            //   label: 'Mount On Back',
+            //   type: 'toggle',
+            // },
             {
               key: 'doorEdgeInset',
               label: 'Door Edge Inset',
@@ -2518,7 +2518,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               placeholder: 'Enter vertical inset (mm)',
               img: assets.sliding_door_mount_from_door_top,
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
@@ -2786,7 +2786,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               type: 'number',
               placeholder: 'Enter basket diameter (mm)',
             },
-            { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
+            // { key: 'unitToggle', label: 'Unit Toggle', type: 'toggle' },
           ],
         },
         {
