@@ -115,6 +115,7 @@ export class SceneBuilder {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       logarithmicDepthBuffer: true,
+      preserveDrawingBuffer: true,
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
