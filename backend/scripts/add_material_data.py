@@ -4576,16 +4576,17 @@ def create_finish() -> None:
             },
         )
 
-        if created:
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.create(
-                    type=finish_data["type"],
-                    name=finish_data["name"],
-                    description=finish_data["description"],
-                    color=finish_data["color"],
-                    organization=org,
-                )
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=finish_data["type"],
+                name=finish_data["name"],
+                organization=org,
+                defaults={
+                    "description": finish_data["description"],
+                    "color": finish_data["color"],
+                }
+            )
         finish_objects[finish_data["name"]] = finish
     return finish_objects
 
@@ -4610,15 +4611,14 @@ def create_finish_type() -> None:
             defaults=defaults,
         )
 
-        if created:
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.create(
-                    type=finish_type_data["type"],
-                    name=finish_type_data["name"],
-                    organization=org,
-                    **defaults,
-                )
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=finish_type_data["type"],
+                name=finish_type_data["name"],
+                organization=org,
+                defaults=defaults,
+            )
         finish_type_objects[finish_type_data["name"]] = finish_type
 
     return finish_type_objects
@@ -4645,16 +4645,17 @@ def create_textures() -> None:
         )
         if created:
             print(f"Texture created {texture}")
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.update_or_create(
-                    type=texture_data["type"],
-                    name=texture_data["name"],
-                    organization=org,
-                    **defaults,
-                )
         else:
             print(f"Texture already exists {texture}")
+
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=texture_data["type"],
+                name=texture_data["name"],
+                organization=org,
+                defaults=defaults,
+            )
         texture_objects[texture_data["name"]] = texture
     return texture_objects
 
@@ -4729,11 +4730,13 @@ def create_materials(
 
         material, created = Material.objects.update_or_create(
             name=material_data["name"],
-            type=material_type,
-            company=company,
             organization=None,
             is_catalog=False,
-            defaults={"description": material_data.get("description", "")},
+            defaults={
+                "type": material_type,
+                "company": company,
+                "description": material_data.get("description", ""),
+            },
         )
 
         Properties.objects.update_or_create(
@@ -4812,10 +4815,12 @@ def create_materials(
             org_material, created = Material.objects.update_or_create(
                 name=material_data["name"],
                 type=material_type,
-                company=org_company,
                 organization=org,
                 is_catalog=False,
-                defaults={"description": material_data.get("description", "")},
+                defaults={
+                    "company": org_company,
+                    "description": material_data.get("description", ""),
+                },
             )
 
             Properties.objects.update_or_create(
@@ -4995,6 +5000,8 @@ def _attach_material_by_name(
     else:
         return
 
+    catalog.materials.clear()
+
     for material_name in material_data:
         if not material_name:
             continue
@@ -5009,8 +5016,8 @@ def _attach_material_by_name(
 
 
 if __name__ == "__main__":
-    create_finish()
-    create_finish_type()
+    # create_finish()
+    # create_finish_type()
     create_textures()
     company_objects = create_company()
     create_materials(company_objects)
