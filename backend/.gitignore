@@ -17,6 +17,7 @@ celerybeat**
 **/media/profile_pictures/
 **/media/project/catalogs/
 **/media/output/
+**/media/catalog_images/
 **/media/project/
 **/umaboy/media/output/*
 **/umaboy/media/model_files/

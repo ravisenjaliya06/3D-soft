@@ -114,6 +114,7 @@ export class SceneBuilder {
   private createRenderer(): THREE.WebGLRenderer {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
+      alpha: true,
       logarithmicDepthBuffer: true,
       preserveDrawingBuffer: true,
     });
@@ -208,7 +209,7 @@ export class SceneBuilder {
     animate();
   }
 
-  public toggleSky(): void {}
+  public toggleSky(): void { }
 
   private initSelector() {
     this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);
