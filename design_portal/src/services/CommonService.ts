@@ -2,11 +2,6 @@ import { REDIRECT, STATUS_CODES } from '@/services/CommonStatus';
 import http from '@/services/http-common';
 import Cookies from 'js-cookie';
 
-type Error = {
-  message: string;
-  status: number;
-};
-
 class CommonService {
   // ALL METHODS
   get(url: string) {

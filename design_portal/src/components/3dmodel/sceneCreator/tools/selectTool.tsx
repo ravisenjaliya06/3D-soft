@@ -479,7 +479,7 @@ export class SelectObjectController {
       mesh.position.copy(center);
     }
 
-    mesh.raycast = () => { };
+    mesh.raycast = () => {};
 
     return mesh;
   }
