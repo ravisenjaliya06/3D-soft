@@ -1,157 +1,157 @@
-name: Deploy to Server
+# name: Deploy to Server
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
-jobs:
-  deploy-production:
-    name: Production Deployment
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    defaults:
-      run:
-        shell: bash
+# jobs:
+#   deploy-production:
+#     name: Production Deployment
+#     runs-on: ubuntu-latest
+#     if: github.event_name == 'push'
+#     defaults:
+#       run:
+#         shell: bash
     
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Install & Configure WireGuard
-        run: |
-          sudo apt-get update && sudo apt-get install -y wireguard
-          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
-          sudo chmod 600 wg0.conf
-          sudo wg-quick up ./wg0.conf
+#       - name: Install & Configure WireGuard
+#         run: |
+#           sudo apt-get update && sudo apt-get install -y wireguard
+#           echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+#           sudo chmod 600 wg0.conf
+#           sudo wg-quick up ./wg0.conf
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+#       - name: Add server to known_hosts
+#         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Check which folders changed
-        id: changes
-        run: |
-          # Use a safer fallback for the "before" commit to handle new branches/force pushes
-          BEFORE=${{ github.event.before }}
-          if [ "$BEFORE" == "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD^"; fi
+#       - name: Check which folders changed
+#         id: changes
+#         run: |
+#           # Use a safer fallback for the "before" commit to handle new branches/force pushes
+#           BEFORE=${{ github.event.before }}
+#           if [ "$BEFORE" == "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD^"; fi
 
-          # Check Backend
-          if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^backend/'; then
-            echo "BACKEND_CHANGED=true" >> $GITHUB_ENV
-            echo "Backend changes detected."
-          else
-            echo "BACKEND_CHANGED=false" >> $GITHUB_ENV
-          fi
+#           # Check Backend
+#           if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^backend/'; then
+#             echo "BACKEND_CHANGED=true" >> $GITHUB_ENV
+#             echo "Backend changes detected."
+#           else
+#             echo "BACKEND_CHANGED=false" >> $GITHUB_ENV
+#           fi
 
-          # Check Frontend
-          if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^design_portal/'; then
-            echo "FRONTEND_CHANGED=true" >> $GITHUB_ENV
-            echo "Frontend changes detected."
-          else
-            echo "FRONTEND_CHANGED=false" >> $GITHUB_ENV
-          fi
+#           # Check Frontend
+#           if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^design_portal/'; then
+#             echo "FRONTEND_CHANGED=true" >> $GITHUB_ENV
+#             echo "Frontend changes detected."
+#           else
+#             echo "FRONTEND_CHANGED=false" >> $GITHUB_ENV
+#           fi
 
-      - name: Execute Deployment on Server
-        run: |
-          ssh -A -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -euo pipefail
+#       - name: Execute Deployment on Server
+#         run: |
+#           ssh -A -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             set -euo pipefail
 
-            # This runs every time so the folder is always fresh
-            echo "⬇️ Syncing latest code..."
-            cd /root/bravento
-            git fetch origin main
-            git reset --hard origin/main
+#             # This runs every time so the folder is always fresh
+#             echo "⬇️ Syncing latest code..."
+#             cd /root/bravento
+#             git fetch origin main
+#             git reset --hard origin/main
 
-            if [ "${{ env.BACKEND_CHANGED }}" == "true" ]; then
-              echo "🚀 Deploying Backend..."
-              cd backend/
-              pipenv install --deploy --ignore-pipfile --python 3.11
-              pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
-              pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
+#             if [ "${{ env.BACKEND_CHANGED }}" == "true" ]; then
+#               echo "🚀 Deploying Backend..."
+#               cd backend/
+#               pipenv install --deploy --ignore-pipfile --python 3.11
+#               pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
+#               pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
               
-              # Optional: Run scripts if needed
-              pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
+#               # Optional: Run scripts if needed
+#               pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
 
-              # Use reload instead of restart for zero-downtime
-              systemctl restart gunicorn
-              echo "✅ Backend deployed."
-              cd .. 
-            else
-              echo "⏭️ Skipping Backend Deploy (No changes)"
-            fi
+#               # Use reload instead of restart for zero-downtime
+#               systemctl restart gunicorn
+#               echo "✅ Backend deployed."
+#               cd .. 
+#             else
+#               echo "⏭️ Skipping Backend Deploy (No changes)"
+#             fi
 
-            if [ "${{ env.FRONTEND_CHANGED }}" == "true" ]; then
-              echo "🎨 Deploying Frontend..."
-              cd design_portal/
-              npm install --legacy-peer-deps
+#             if [ "${{ env.FRONTEND_CHANGED }}" == "true" ]; then
+#               echo "🎨 Deploying Frontend..."
+#               cd design_portal/
+#               npm install --legacy-peer-deps
               
-              # Ensure env file exists
-              cp .env.production .env
+#               # Ensure env file exists
+#               cp .env.production .env
               
-              npm run build
+#               npm run build
               
-              # Restart PM2
-              cd ..
-              pm2 restart ecosystem.config.js --update-env || pm2 restart design-portal
-              pm2 save
-              echo "✅ Frontend deployed."
-            else
-               echo "⏭️ Skipping Frontend Deploy (No changes)"
-            fi
+#               # Restart PM2
+#               cd ..
+#               pm2 restart ecosystem.config.js --update-env || pm2 restart design-portal
+#               pm2 save
+#               echo "✅ Frontend deployed."
+#             else
+#                echo "⏭️ Skipping Frontend Deploy (No changes)"
+#             fi
 
-          EOF
+#           EOF
 
-      - name: Verify Services
-        if: always()
-        run: |
-           ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-             echo "--- STATUS CHECK ---"
-             systemctl is-active gunicorn && echo "Gunicorn: OK" || echo "Gunicorn: FAILED"
-             pm2 status | grep design || true
-           EOF
+#       - name: Verify Services
+#         if: always()
+#         run: |
+#            ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#              echo "--- STATUS CHECK ---"
+#              systemctl is-active gunicorn && echo "Gunicorn: OK" || echo "Gunicorn: FAILED"
+#              pm2 status | grep design || true
+#            EOF
 
-      - name: Notify Google Chat
-        if: always()
-        run: |
-          # 1. Determine Status Emoji
-          if [ "${{ job.status }}" == "success" ]; then
-            STATUS_ICON="✅"
-            STATUS_TEXT="Deployment Successful"
-          else
-            STATUS_ICON="❌"
-            STATUS_TEXT="Deployment Failed"
-          fi
+#       - name: Notify Google Chat
+#         if: always()
+#         run: |
+#           # 1. Determine Status Emoji
+#           if [ "${{ job.status }}" == "success" ]; then
+#             STATUS_ICON="✅"
+#             STATUS_TEXT="Deployment Successful"
+#           else
+#             STATUS_ICON="❌"
+#             STATUS_TEXT="Deployment Failed"
+#           fi
 
-          # 2. Get Git Details
-          # Using git log to get the last commit message
-          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
-          AUTHOR=$(git log -1 --pretty=format:"%an")
-          REPO="${{ github.repository }}"
-          BRANCH="${{ github.ref_name }}"
+#           # 2. Get Git Details
+#           # Using git log to get the last commit message
+#           COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+#           AUTHOR=$(git log -1 --pretty=format:"%an")
+#           REPO="${{ github.repository }}"
+#           BRANCH="${{ github.ref_name }}"
 
-          # 3. Create Status Tags for Backend/Frontend
-          # We use emojis to show what was updated vs skipped
-          BE_STATUS=$([[ "${{ env.BACKEND_CHANGED }}" == "true" ]] && echo "🚀 Updated" || echo "⏭️ Skipped")
-          FE_STATUS=$([[ "${{ env.FRONTEND_CHANGED }}" == "true" ]] && echo "🎨 Updated" || echo "⏭️ Skipped")
+#           # 3. Create Status Tags for Backend/Frontend
+#           # We use emojis to show what was updated vs skipped
+#           BE_STATUS=$([[ "${{ env.BACKEND_CHANGED }}" == "true" ]] && echo "🚀 Updated" || echo "⏭️ Skipped")
+#           FE_STATUS=$([[ "${{ env.FRONTEND_CHANGED }}" == "true" ]] && echo "🎨 Updated" || echo "⏭️ Skipped")
 
-          # 4. Construct the Payload
-          # We use \n for newlines
-          TEXT="*$STATUS_ICON $STATUS_TEXT*\n\n"
-          TEXT+="📦 *Repo:* $REPO ($BRANCH)\n"
-          TEXT+="👤 *Author:* $AUTHOR\n"
-          TEXT+="📝 *Commit:* $COMMIT_MSG\n\n"
-          TEXT+="--- *Changes* ---\n"
-          TEXT+="🔹 *Backend:* $BE_STATUS\n"
-          TEXT+="🔸 *Frontend:* $FE_STATUS\n\n"
-          TEXT+="🔗 <https://github.com/$REPO/commit/${{ github.sha }}|View Commit Details>"
+#           # 4. Construct the Payload
+#           # We use \n for newlines
+#           TEXT="*$STATUS_ICON $STATUS_TEXT*\n\n"
+#           TEXT+="📦 *Repo:* $REPO ($BRANCH)\n"
+#           TEXT+="👤 *Author:* $AUTHOR\n"
+#           TEXT+="📝 *Commit:* $COMMIT_MSG\n\n"
+#           TEXT+="--- *Changes* ---\n"
+#           TEXT+="🔹 *Backend:* $BE_STATUS\n"
+#           TEXT+="🔸 *Frontend:* $FE_STATUS\n\n"
+#           TEXT+="🔗 <https://github.com/$REPO/commit/${{ github.sha }}|View Commit Details>"
 
-          # 5. Send Notification
-          curl -X POST -H "Content-Type: application/json" \
-               -d "{\"text\":\"$TEXT\"}" \
-               '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'
+#           # 5. Send Notification
+#           curl -X POST -H "Content-Type: application/json" \
+#                -d "{\"text\":\"$TEXT\"}" \
+#                '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'
