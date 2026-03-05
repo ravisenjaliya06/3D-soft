@@ -105,7 +105,7 @@ class Design(models.Model):
 
         year = timezone.now().year
 
-        for _ in range(3):  # 3 retries is enough
+        while True:
             # Get highest project_code for this year
             last_code = (
                 Design.objects.filter(created_at__year=year)
@@ -124,8 +124,6 @@ class Design(models.Model):
             except IntegrityError:
                 # retry if collision happens
                 continue
-
-        raise IntegrityError("Failed to generate unique project_code after retries")
 
     def __str__(self: "Design") -> str:
         return self.design_name
