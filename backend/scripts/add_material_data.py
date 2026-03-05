@@ -4585,7 +4585,7 @@ def create_finish() -> None:
                 defaults={
                     "description": finish_data["description"],
                     "color": finish_data["color"],
-                }
+                },
             )
         finish_objects[finish_data["name"]] = finish
     return finish_objects
