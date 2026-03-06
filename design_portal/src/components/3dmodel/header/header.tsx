@@ -324,6 +324,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
       const angles = [
         { name: 'front', pos: new THREE.Vector3(center.x, center.y, center.z + cameraZ) },
+
+        // NOTE: Currently, comment this. because render API allow only three image.
         // { name: 'back', pos: new THREE.Vector3(center.x, center.y, center.z - cameraZ) },
         // { name: 'left', pos: new THREE.Vector3(center.x - cameraZ, center.y, center.z) },
         // { name: 'right', pos: new THREE.Vector3(center.x + cameraZ, center.y, center.z) },
