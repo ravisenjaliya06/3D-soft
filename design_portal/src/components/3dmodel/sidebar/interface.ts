@@ -20,7 +20,6 @@ export interface RulePartMaterial {
 
 export interface MaterialChangePopupProps {
   onClose: () => void;
-  onSave: (selectedMaterial: any) => void;
   selectedObject: any;
 }
 

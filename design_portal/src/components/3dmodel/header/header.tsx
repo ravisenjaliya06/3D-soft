@@ -324,9 +324,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
       const angles = [
         { name: 'front', pos: new THREE.Vector3(center.x, center.y, center.z + cameraZ) },
-        { name: 'back', pos: new THREE.Vector3(center.x, center.y, center.z - cameraZ) },
-        { name: 'left', pos: new THREE.Vector3(center.x - cameraZ, center.y, center.z) },
-        { name: 'right', pos: new THREE.Vector3(center.x + cameraZ, center.y, center.z) },
+        // { name: 'back', pos: new THREE.Vector3(center.x, center.y, center.z - cameraZ) },
+        // { name: 'left', pos: new THREE.Vector3(center.x - cameraZ, center.y, center.z) },
+        // { name: 'right', pos: new THREE.Vector3(center.x + cameraZ, center.y, center.z) },
         { name: 'top', pos: new THREE.Vector3(center.x, center.y + cameraZ, center.z) },
         {
           name: 'isometric',
