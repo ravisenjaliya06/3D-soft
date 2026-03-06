@@ -20,7 +20,7 @@ export const MaterialChangePopup: React.FC<
   MaterialChangePopupProps & { onApplyMaterial?: (part: any, material: any) => void }
 > = ({
   onClose,
-  onSave, // this is typically not used directly here anymore due to part-specific saving, but kept for interface compliance
+  // this is typically not used directly here anymore due to part-specific saving, but kept for interface compliance
   selectedObject,
   onApplyMaterial,
 }) => {

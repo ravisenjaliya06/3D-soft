@@ -553,6 +553,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       icon: assets.quickhide,
       onClick: () => {
         dispatch(toggleQuickHide(!isQuickHideActive));
+        if (onViewModeChange && !isQuickHideActive) {
+          onViewModeChange('3d');
+        }
         setcatalogMenu(false);
       },
       isActive: isQuickHideActive,
@@ -563,6 +566,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       icon: assets.mesurment,
       onClick: () => {
         dispatch(toggleMeasurement(!isMeasurementActive));
+        if (onViewModeChange && !isMeasurementActive) {
+          onViewModeChange('3d');
+        }
         setcatalogMenu(false);
       },
       isActive: isMeasurementActive,

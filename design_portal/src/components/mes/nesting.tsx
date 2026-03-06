@@ -1612,11 +1612,19 @@ const Nesting = () => {
                     ) : (
                       displayData.slice(0, visibleDesigns).map((item: any, index: number) => (
                         <tr key={item.id || index}>
-                          <td>{item['Unique ID'] || item.unique_id || item.ID || item.id || index + 1}</td>
+                          <td>
+                            {item['Unique ID'] || item.unique_id || item.ID || item.id || index + 1}
+                          </td>
                           <td>{item.name || item.Name || 'Unknown'}</td>
-                          <td>{formatDimension(item?.dimensions?.width ?? item?.width, item?.type)}</td>
-                          <td>{formatDimension(item?.dimensions?.height ?? item?.height, item?.type)}</td>
-                          <td>{formatDimension(item?.dimensions?.depth ?? item?.depth, item?.type)}</td>
+                          <td>
+                            {formatDimension(item?.dimensions?.width ?? item?.width, item?.type)}
+                          </td>
+                          <td>
+                            {formatDimension(item?.dimensions?.height ?? item?.height, item?.type)}
+                          </td>
+                          <td>
+                            {formatDimension(item?.dimensions?.depth ?? item?.depth, item?.type)}
+                          </td>
                         </tr>
                       ))
                     )}
