@@ -234,7 +234,7 @@ export class MeshBuilder {
     return new THREE.ExtrudeGeometry(shape, extrudeSettings);
   }
 
-  private _getGeometry() {
+  private async _getGeometry(): Promise<THREE.BufferGeometry> {
     let geometry: THREE.BufferGeometry;
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
@@ -254,7 +254,7 @@ export class MeshBuilder {
       this.meshData.holes.length > 0
     ) {
       try {
-        const csgGeometry = applyCSGHoles(geometry, this.meshData.holes);
+        const csgGeometry = await applyCSGHoles(geometry, this.meshData.holes);
         return csgGeometry;
       } catch (error) {
         console.error('Failed to apply CSG holes:', error);
@@ -676,7 +676,9 @@ export class MeshBuilder {
     this.mesh = mesh;
 
     // Now compute the real geometry (possibly with CSG)
-    mesh.geometry = this._getGeometry();
+    this._getGeometry().then((geometry) => {
+      mesh.geometry = geometry;
+    });
 
     this._setName(mesh);
     this._setPosition(mesh);
@@ -973,7 +975,9 @@ export class MeshBuilder {
     }
     if (changes.dimensions || changes.holes) {
       mesh.geometry.dispose();
-      mesh.geometry = this._getGeometry();
+      this._getGeometry().then((geometry) => {
+        mesh.geometry = geometry;
+      });
     }
   }
 

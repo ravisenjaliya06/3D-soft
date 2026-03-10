@@ -1,14 +1,16 @@
 import * as THREE from 'three';
-import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { HoleData } from '../sceneCreator/interface';
 
-export const applyCSGHoles = (
+export const applyCSGHoles = async (
   baseGeometry: THREE.BufferGeometry,
   holes: HoleData[]
-): THREE.BufferGeometry => {
+): Promise<THREE.BufferGeometry> => {
   if (!holes || holes.length === 0) {
     return baseGeometry.clone();
   }
+
+  // Dynamically import three-bvh-csg to avoid SSR issues
+  const { Brush, Evaluator, SUBTRACTION } = await import('three-bvh-csg');
 
   const evaluator = new Evaluator();
 
@@ -30,7 +32,7 @@ export const applyCSGHoles = (
 
     // Perform subtraction
     const tempBrush = evaluator.evaluate(resultBrush, holeBrush, SUBTRACTION);
-    resultBrush = tempBrush as Brush;
+    resultBrush = tempBrush as any; // Cast as any if typing is tricky with dynamic import
   });
 
   return resultBrush.geometry;
