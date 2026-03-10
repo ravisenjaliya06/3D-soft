@@ -29,6 +29,7 @@ export const getDesignCatalogs = async () => {
 
   if (!catalogs || catalogs.length === 0) {
     console.timeEnd('Total_Catalog_Loading_Time');
+
     return;
   }
 

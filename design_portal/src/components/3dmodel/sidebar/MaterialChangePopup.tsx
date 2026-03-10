@@ -18,11 +18,7 @@ import { MaterialChangePopupProps, MaterialResponse } from './interface';
 
 export const MaterialChangePopup: React.FC<
   MaterialChangePopupProps & { onApplyMaterial?: (part: any, material: any) => void }
-> = ({
-  onClose,
-  selectedObject,
-  onApplyMaterial,
-}) => {
+> = ({ onClose, selectedObject, onApplyMaterial }) => {
   const objects = useSelector((state: RootState) => state.data.objects);
   const dispatch = useDispatch();
 

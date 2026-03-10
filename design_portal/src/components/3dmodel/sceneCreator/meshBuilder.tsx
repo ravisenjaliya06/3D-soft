@@ -290,6 +290,11 @@ export class MeshBuilder {
     mesh.userData.openDirection = this.meshData.openDirection;
     mesh.userData.drawerType = this.meshData.drawerType;
     mesh.userData.direction = this.meshData.direction;
+
+    // this "if" for glb model on refresh transform contol active
+    if (this.meshData.type === OBJECT_TYPES.MODEL) {
+      mesh.userData.isGLB = true;
+    }
   }
 
   private _setName(mesh: THREE.Mesh) {
@@ -453,6 +458,12 @@ export class MeshBuilder {
           child.name = `Model_Child_${child.id}`;
         }
       });
+
+      // GLBLoader shifts the model via model.position.sub(center) to center it in its
+      // own local space. When the model is placed directly in the scene (initial toolbar
+      // placement),
+      // coincides with the parent's center — which gives perfect floor alignment on reload.
+      model.position.set(0, 0, 0);
 
       mesh.add(model);
     } catch (error) {
