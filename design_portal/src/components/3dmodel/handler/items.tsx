@@ -110,7 +110,22 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     if (child.userData.type !== PART_TYPES.PLANK) return;
 
     const geom = child.geometry as THREE.BoxGeometry;
-    const { width: pWidth, height: pHeight, depth: pDepth } = geom.parameters;
+    let pWidth = 0,
+      pHeight = 0,
+      pDepth = 0;
+
+    if (geom.parameters) {
+      pWidth = geom.parameters.width;
+      pHeight = geom.parameters.height;
+      pDepth = geom.parameters.depth;
+    } else {
+      if (!geom.boundingBox) geom.computeBoundingBox();
+      const bSize = new THREE.Vector3();
+      geom.boundingBox?.getSize(bSize);
+      pWidth = bSize.x;
+      pHeight = bSize.y;
+      pDepth = bSize.z;
+    }
 
     const dims = [
       { axis: 'x', value: pWidth },
@@ -309,13 +324,22 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
       }
 
       const geom = child.geometry as THREE.BoxGeometry;
-      const { width, height, depth } = geom.parameters
-        ? geom.parameters
-        : {
-            width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
-            height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
-            depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
-          };
+      let width = 0,
+        height = 0,
+        depth = 0;
+
+      if (geom.parameters) {
+        width = geom.parameters.width;
+        height = geom.parameters.height;
+        depth = geom.parameters.depth;
+      } else {
+        if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+        const bSize = new THREE.Vector3();
+        child.geometry.boundingBox?.getSize(bSize);
+        width = bSize.x;
+        height = bSize.y;
+        depth = bSize.z;
+      }
 
       planks.push({
         id: child.userData.objectId || child.uuid,

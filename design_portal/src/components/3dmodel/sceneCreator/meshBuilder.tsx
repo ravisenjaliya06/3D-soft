@@ -291,7 +291,7 @@ export class MeshBuilder {
     mesh.userData.drawerType = this.meshData.drawerType;
     mesh.userData.direction = this.meshData.direction;
 
-    // this "if" for glb model on refresh transform contol active
+    // this "if" for glb model on refresh transform control active
     if (this.meshData.type === OBJECT_TYPES.MODEL) {
       mesh.userData.isGLB = true;
     }
