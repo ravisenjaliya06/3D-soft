@@ -1,11 +1,11 @@
 import { store } from '@/components/3dmodel/store';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import * as THREE from 'three';
-import { MeshObjectData } from '../interface';
-import { getOrCreateThreeDView, getThreeDViewOnly } from '../../design/sceneSingleton';
-import { convertKeysToSnake, CustomToast } from '../utils';
 import CommonService from '@/services/CommonService';
 import { toast } from 'react-toastify';
+import * as THREE from 'three';
+import { getThreeDViewOnly } from '../../design/sceneSingleton';
+import { MeshObjectData } from '../interface';
+import { convertKeysToSnake, CustomToast } from '../utils';
 
 /**
  * Saves objects from scene to catalog
@@ -125,11 +125,7 @@ export class ObjectsSaver {
         selectedMesh = child;
       }
 
-      if (
-        !(child instanceof THREE.Light) &&
-        !(child instanceof THREE.Camera) &&
-        child !== scene
-      ) {
+      if (!(child instanceof THREE.Light) && !(child instanceof THREE.Camera) && child !== scene) {
         child.visible = false;
       }
     });
@@ -194,7 +190,11 @@ export class ObjectsSaver {
     const dataUrl = renderer.domElement.toDataURL('image/png');
 
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log('Distortion-free screenshot captured for:', this.selectedObjectId, dataUrl?.substring(0, 50) + '...');
+      console.log(
+        'Distortion-free screenshot captured for:',
+        this.selectedObjectId,
+        dataUrl?.substring(0, 50) + '...'
+      );
     }
 
     // 4. Restore original state
