@@ -700,7 +700,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       const otherItems = cabinetItems
         .map((item: any) => item[0])
         .filter((item: any) => allowedTypes.includes(item.type));
-
       return [...baseItems, ...otherItems];
     }
     return cabinetItems
@@ -999,13 +998,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 >
                   <img
                     src={
-                      item.image ||
-                      (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
-                        ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
-                        : iconMap[
-                            item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
-                          ]) ||
-                      assets.cabinet
+                      item.image
+                        ? item.image.startsWith('data:image') || item.image.startsWith('/assets/')
+                          ? item.image
+                          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${item.image}`
+                        : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
+                            ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
+                            : iconMap[
+                                item.type === PART_TYPES.PLANK
+                                  ? formatEnumLabel(item.name)
+                                  : item.type
+                              ]) || assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =

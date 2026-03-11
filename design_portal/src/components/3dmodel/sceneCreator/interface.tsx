@@ -212,6 +212,7 @@ export interface MeshObjectData {
   };
   direction?: string;
   holes?: HoleData[];
+  image?: string;
 }
 
 export interface HoleData {

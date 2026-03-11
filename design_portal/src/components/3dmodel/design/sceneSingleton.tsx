@@ -25,3 +25,8 @@ export function getOrCreateThreeDView(mount: HTMLDivElement, designId: string): 
 export function releaseDesignScene(designId: string): void {
   sceneCache.delete(designId);
 }
+
+/** Get cached design view without re-mounting or appending to DOM. */
+export function getThreeDViewOnly(designId: string): ThreeDView | undefined {
+  return sceneCache.get(designId);
+}

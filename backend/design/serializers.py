@@ -1,10 +1,12 @@
 # Python imports
+import base64
 from typing import Any, Dict
 from urllib.request import Request
 from uuid import uuid4
 
 # Django imports
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import transaction
 
 # External imports
@@ -238,6 +240,9 @@ class SceneGetSerializer(serializers.Serializer):
             "id": str(catalog.id),
             "name": catalog.name,
             "type": catalog.type,
+            "image": (
+                f"{settings.MEDIA_URL}{catalog.image.name}" if catalog.image else None
+            ),
             "parent": str(catalog.parent_id) if catalog.parent_id else None,
             "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
@@ -312,6 +317,20 @@ class ScenePayloadSerializer(serializers.Serializer):
             for index, item in enumerate(items):
                 temp_key = f"{index}_{uuid4()}"
 
+                image_data = item.get("image")
+                image_file = None
+                if (
+                    image_data
+                    and isinstance(image_data, str)
+                    and "base64," in image_data
+                ):
+                    format_str, imgstr = image_data.split(";base64,")
+                    ext = format_str.split("/")[-1]
+                    image_file = ContentFile(
+                        base64.b64decode(imgstr), name=f"{uuid4()}.{ext}"
+                    )
+                    item.pop("image", None)
+
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
                     version=version,
@@ -319,6 +338,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                     name=item.get("name"),
                     parent=None,
                     is_library=is_library,
+                    image=image_file,
                     data=item.copy(),
                 )
 
