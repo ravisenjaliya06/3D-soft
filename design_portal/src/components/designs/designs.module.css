@@ -262,6 +262,7 @@
 
 .activeDesignRow {
   z-index: 200 !important;
+  isolation: isolate;
 }
 
 .designview:hover {
@@ -355,6 +356,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  overflow: visible;
 }
 
 .gridItemContainer:hover {
@@ -490,9 +492,9 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  top: 1.5rem;
+  top: 1.25rem;
   right: 1.25rem;
-  z-index: 10;
+  z-index: 20;
 }
 
 .three_dots {
@@ -535,7 +537,7 @@
     0 10px 30px rgba(23, 15, 73, 0.15),
     0 0 0 1px rgba(57, 37, 121, 0.05);
   padding: 0.5rem;
-  min-width: 10rem;
+  min-width: 11rem;
   margin-top: 0.4rem;
   z-index: 300;
   animation: slideInUp 0.2s ease-out;

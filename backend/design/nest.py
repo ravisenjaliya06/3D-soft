@@ -289,8 +289,8 @@ class NestingService:
                     # Ensure numeric types to avoid formatting errors
                     safe_x = self._safe_float(x)
                     safe_y = self._safe_float(y)
-                    safe_w = self._safe_float(w)
-                    safe_h = self._safe_float(h)
+                    safe_w = self._safe_float(w) - self.spacing
+                    safe_h = self._safe_float(h) - self.spacing
 
                     item_details = files.get(rid, {})
                     unique_id = f"SHEET{global_sheet_count:02d}{item_counter:02d}"
@@ -1145,7 +1145,7 @@ def nest(
                 "labels_file": labels_pdf_path,
                 "xml_files": xml_paths,  # Return list of generated XMLs
                 "json_file": json_path,  # Return JSON layout path
-                "data": packed_items,    # Return nested items data
+                "data": packed_items,  # Return nested items data
                 "message": "Nesting completed successfully.",
                 "total_parts": len(packed_items),
             },

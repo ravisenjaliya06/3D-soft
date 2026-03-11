@@ -6,9 +6,6 @@ from os.path import abspath, dirname
 import django
 from django.db.models import QuerySet
 
-# External imports
-from textures import TEXTURE
-
 DJANGO_ROOT = dirname(dirname(abspath(__file__)))
 sys.path.append(DJANGO_ROOT)
 django.setup()
@@ -16,10 +13,10 @@ django.setup()
 # App imports
 from design.models import DesignCatalog
 from material.models import (
+    Material,
     MaterialFinish,
     MaterialFinishType,
     MaterialTexture,
-    Material,
 )
 from umaboy.models import Organization
 
@@ -28,9 +25,9 @@ def get_registered_organization() -> QuerySet[Organization]:
     return Organization.objects.all()
 
 
-def clear_materials():
+def clear_materials() -> None:
     organizations = get_registered_organization()
-    
+
     default_catalogs = DesignCatalog.objects.filter(
         organization__isnull=True, is_library=True, is_script=True
     )
@@ -55,6 +52,7 @@ def clear_materials():
                 MaterialFinishType.objects.filter(material=material).delete()
 
         catalog.materials.clear()
+
 
 if __name__ == "__main__":
     clear_materials()

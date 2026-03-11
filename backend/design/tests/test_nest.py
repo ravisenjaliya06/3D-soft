@@ -238,3 +238,29 @@ class NestModuleTestCase(APIBaseTestCase):
         mock_svg.assert_called()
         mock_layout.assert_called()
         mock_labels.assert_called()
+
+    def test_dimensions_match_input_with_spacing(self: "NestModuleTestCase") -> None:
+        """Test that reported dimensions match input dimensions even with spacing."""
+        original_w = 564
+        original_h = 200
+        files = {
+            "1": {
+                "width": original_w,
+                "height": original_h,
+                "depth": 18,
+                "name": "P1",
+                "type": "rectangle",
+            },
+        }
+
+        # Spacing of 5mm (typical default)
+        service = NestingService(width=2000, height=2000, spacing=5.0)
+        items = service.optimize(files)
+
+        self.assertEqual(len(items), 1)
+        item = items[0]
+
+        # The reported dimensions should match the original input, not the padded 569x205
+        self.assertEqual(item[KEY_WIDTH], original_w)
+        self.assertEqual(item[KEY_HEIGHT], original_h)
+        self.assertEqual(item[KEY_DIMENSIONS], f"{original_w:.2f} x {original_h:.2f}")

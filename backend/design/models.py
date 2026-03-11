@@ -105,27 +105,26 @@ class Design(models.Model):
 
         year = timezone.now().year
 
-        for _ in range(3):  # 3 retries is enough
-            # Get highest project_code for this year
+        for _ in range(10):
+
             last_code = (
-                Design.objects.filter(created_at__year=year)
+                Design.objects.filter(project_code__startswith=f"BRV-{year}-")
                 .aggregate(max_code=Max("project_code"))
                 .get("max_code")
             )
 
             next_number = 1
             if last_code:
-                next_number = int(last_code.rsplit("-", 1)[-1]) + 1
+                next_number = int(last_code.split("-")[-1]) + 1
 
             self.project_code = f"BRV-{year}-{next_number:04d}"
 
             try:
                 return super().save(*args, **kwargs)
             except IntegrityError:
-                # retry if collision happens
                 continue
 
-        raise IntegrityError("Failed to generate unique project_code after retries")
+        raise IntegrityError("Could not generate unique project code")
 
     def __str__(self: "Design") -> str:
         return self.design_name

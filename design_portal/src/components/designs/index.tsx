@@ -619,7 +619,8 @@ const Designs = () => {
                                 className={styles.delete}
                                 onClick={(e) => handleDeleteClickPopUp(e, design.id)}
                               >
-                                <img src={assets.deleteicon} alt="" className="w-4" /> Move to Trash
+                                <img src={assets.deleteicon} alt="" className={styles.actionIcon} />{' '}
+                                Move to Trash
                               </li>
                             </ul>
                           </div>
@@ -652,13 +653,19 @@ const Designs = () => {
                             <div className={styles.gridthree_dots} ref={actionDropdownRef}>
                               <ul className={styles.three_dots_dropdown}>
                                 <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                  <img src={assets.editicon} alt="" className="w-4" /> Edit
+                                  <img src={assets.editicon} alt="" className={styles.actionIcon} />{' '}
+                                  Edit Details
                                 </li>
                                 <li
                                   className={styles.delete}
                                   onClick={(e) => handleDeleteClickPopUp(e, design.id)}
                                 >
-                                  <img src={assets.deleteicon} alt="" className="w-4" /> Trash
+                                  <img
+                                    src={assets.deleteicon}
+                                    alt=""
+                                    className={styles.actionIcon}
+                                  />{' '}
+                                  Move to Trash
                                 </li>
                               </ul>
                             </div>
