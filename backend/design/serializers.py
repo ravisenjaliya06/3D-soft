@@ -1,4 +1,5 @@
 # Python imports
+import base64
 from typing import Any, Dict
 from urllib.request import Request
 from uuid import uuid4
@@ -9,7 +10,6 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 
 # External imports
-import base64
 from rest_framework import serializers
 
 # App imports
@@ -319,10 +319,16 @@ class ScenePayloadSerializer(serializers.Serializer):
 
                 image_data = item.get("image")
                 image_file = None
-                if image_data and isinstance(image_data, str) and "base64," in image_data:
-                    format_str, imgstr = image_data.split(';base64,')
-                    ext = format_str.split('/')[-1]
-                    image_file = ContentFile(base64.b64decode(imgstr), name=f"{uuid4()}.{ext}")
+                if (
+                    image_data
+                    and isinstance(image_data, str)
+                    and "base64," in image_data
+                ):
+                    format_str, imgstr = image_data.split(";base64,")
+                    ext = format_str.split("/")[-1]
+                    image_file = ContentFile(
+                        base64.b64decode(imgstr), name=f"{uuid4()}.{ext}"
+                    )
                     item.pop("image", None)
 
                 catalog = DesignCatalog.objects.create(
