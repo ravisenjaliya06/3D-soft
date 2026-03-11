@@ -59,6 +59,30 @@ export function hideFullScreenLoader() {
   if (loader) loader.remove();
 }
 
+/**
+ * Robustly get dimensions of a mesh's geometry
+ */
+export function getMeshDimensions(mesh: THREE.Mesh) {
+  const geom = mesh.geometry as THREE.BoxGeometry;
+  if (geom.parameters) {
+    return {
+      width: geom.parameters.width,
+      height: geom.parameters.height,
+      depth: geom.parameters.depth,
+    };
+  }
+
+  // Fallback for BufferGeometry/ExtrudeGeometry
+  if (!geom.boundingBox) geom.computeBoundingBox();
+  const bSize = new THREE.Vector3();
+  geom.boundingBox?.getSize(bSize);
+  return {
+    width: bSize.x,
+    height: bSize.y,
+    depth: bSize.z,
+  };
+}
+
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
   if (!boxMesh) return [];
   if (boxMesh.name.toLowerCase().includes('drawer')) return [];
@@ -109,23 +133,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     if (!(child instanceof THREE.Mesh)) return;
     if (child.userData.type !== PART_TYPES.PLANK) return;
 
-    const geom = child.geometry as THREE.BoxGeometry;
-    let pWidth = 0,
-      pHeight = 0,
-      pDepth = 0;
-
-    if (geom.parameters) {
-      pWidth = geom.parameters.width;
-      pHeight = geom.parameters.height;
-      pDepth = geom.parameters.depth;
-    } else {
-      if (!geom.boundingBox) geom.computeBoundingBox();
-      const bSize = new THREE.Vector3();
-      geom.boundingBox?.getSize(bSize);
-      pWidth = bSize.x;
-      pHeight = bSize.y;
-      pDepth = bSize.z;
-    }
+    const { width: pWidth, height: pHeight, depth: pDepth } = getMeshDimensions(child);
 
     const dims = [
       { axis: 'x', value: pWidth },
@@ -323,23 +331,7 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
         return;
       }
 
-      const geom = child.geometry as THREE.BoxGeometry;
-      let width = 0,
-        height = 0,
-        depth = 0;
-
-      if (geom.parameters) {
-        width = geom.parameters.width;
-        height = geom.parameters.height;
-        depth = geom.parameters.depth;
-      } else {
-        if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
-        const bSize = new THREE.Vector3();
-        child.geometry.boundingBox?.getSize(bSize);
-        width = bSize.x;
-        height = bSize.y;
-        depth = bSize.z;
-      }
+      const { width, height, depth } = getMeshDimensions(child);
 
       planks.push({
         id: child.userData.objectId || child.uuid,
