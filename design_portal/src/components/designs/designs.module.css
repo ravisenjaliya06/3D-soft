@@ -21,25 +21,14 @@
   flex-direction: column;
   align-items: center;
   padding: 2.5rem;
-  overflow-y: auto;
+  overflow: hidden;
   gap: 2.5rem;
   background:
     radial-gradient(circle at top right, rgba(75, 42, 173, 0.05) 0%, transparent 40%),
     radial-gradient(circle at bottom left, rgba(57, 37, 121, 0.03) 0%, transparent 30%);
 }
 
-.maincontent::-webkit-scrollbar {
-  width: 6px;
-}
-
-.maincontent::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.maincontent::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 10px;
-}
+/* .maincontent::-webkit-scrollbar moved to .designs */
 
 /* ─── Welcome / Get Started Card ─── */
 .createdesigns {
@@ -155,7 +144,28 @@
   max-width: 65rem;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   gap: 1.5rem;
+  padding-right: 0.5rem;
+}
+
+.designs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.designs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.designs::-webkit-scrollbar-thumb {
+  background: rgba(57, 37, 121, 0.1);
+  border-radius: 10px;
+}
+
+.designs::-webkit-scrollbar-thumb:hover {
+  background: rgba(57, 37, 121, 0.2);
 }
 
 .designfirstpart {
