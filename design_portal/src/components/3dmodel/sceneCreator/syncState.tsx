@@ -537,13 +537,22 @@ export class SyncManager {
 
       const childParams = child.geometry.parameters;
 
+      let baseWidth = childParams.width;
+      let baseHeight = childParams.height;
+      let baseDepth = childParams.depth;
+
+      if (child.userData.originalDimensions) {
+        baseWidth = child.userData.originalDimensions.width;
+        baseHeight = child.userData.originalDimensions.height;
+      }
+
       /**
        * New child dimensions after scaling.
        * If the parent grows or shrinks, each child grows/shrinks proportionally.
        */
-      const nextWidth = Math.max(childParams.width * scaleX, MIN_DIM);
-      const nextHeight = Math.max(childParams.height * scaleY, MIN_DIM);
-      const nextDepth = Math.max(childParams.depth * scaleZ, MIN_DIM);
+      const nextWidth = Math.max(baseWidth * scaleX, MIN_DIM);
+      const nextHeight = Math.max(baseHeight * scaleY, MIN_DIM);
+      const nextDepth = Math.max(baseDepth * scaleZ, MIN_DIM);
 
       /**
        * Update child position as well.
@@ -556,6 +565,9 @@ export class SyncManager {
 
       child.geometry.dispose();
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
+      if (child.userData.originalDimensions) {
+        delete child.userData.originalDimensions;
+      }
 
       child.position.set(nextX, nextY, nextZ);
 

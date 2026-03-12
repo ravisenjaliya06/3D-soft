@@ -66,7 +66,7 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     solid.geometry.dispose();
     (solid.material as THREE.Material).dispose();
 
-    const tempSolid = createLineObjects(mesh, 0xffff00);
+    const tempSolid = createLineObjects(mesh, 0x1a7af8);
 
     solid.geometry = tempSolid.geometry;
     solid.material = tempSolid.material;

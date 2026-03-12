@@ -299,10 +299,6 @@ export class GroovingTool {
           }
 
           sibling.userData.grooves = currentGrooves;
-          console.log(
-            `[GroovingTool] Dispatching Geometric Update for ${sibling.userData.objectId}:`,
-            grooveData
-          );
 
           store.dispatch(
             updateObject({
