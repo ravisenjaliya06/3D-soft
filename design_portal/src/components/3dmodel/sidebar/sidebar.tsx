@@ -179,7 +179,7 @@ const Sidebar: React.FC = () => {
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
-  }, [selectedObjectId, selectedChildObjectId, selectedObject]);
+  }, [selectedObjectId, selectedChildObjectId]);
 
   useEffect(() => {
     if (isQuickHideActive) {
