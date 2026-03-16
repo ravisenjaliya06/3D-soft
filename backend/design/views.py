@@ -494,7 +494,7 @@ class DesignCatalogViewSet(ModelViewSet):
         if not version:
             return Response(
                 {"detail": "Design not found"},
-                status=404,
+                status=200,
             )
 
         catalogs = (
