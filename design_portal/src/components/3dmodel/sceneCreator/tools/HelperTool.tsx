@@ -162,12 +162,12 @@ const HelperTool: React.FC<HelperToolProps> = ({
         title: 'Delete',
         onClick: handleDelete,
       },
-      // {
-      //   id: 'panel-design',
-      //   icon: assets.panel_design,
-      //   title: 'Panel Design',
-      //   onClick: handlePanelDesign,
-      // },
+      {
+        id: 'panel-design',
+        icon: assets.panel_design,
+        title: 'Panel Design',
+        onClick: handlePanelDesign,
+      },
       {
         id: 'copy',
         icon: assets.copy_helper,
