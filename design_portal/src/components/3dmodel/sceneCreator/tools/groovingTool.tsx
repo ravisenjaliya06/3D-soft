@@ -125,14 +125,10 @@ export class GroovingTool {
       y = 0,
       endX = 0,
       endY = 0;
-    let faceW = 0,
-      faceH = 0;
 
     if (thicknessKey === 'depth') {
       // Face is X/Y. Z is Thickness.
       // XML X = Local X, XML Y = Local Y.
-      faceW = geo.parameters.width;
-      faceH = geo.parameters.height;
 
       x = lx;
       y = ly;
@@ -141,8 +137,6 @@ export class GroovingTool {
     } else if (thicknessKey === 'width') {
       // Face is Y/Z. X is Thickness.
       // nest.py: w = raw_h (Y), h = raw_d (Z)
-      faceW = geo.parameters.height;
-      faceH = geo.parameters.depth;
 
       x = ly;
       y = lz;
@@ -152,8 +146,6 @@ export class GroovingTool {
       // height is thickness
       // Face is X/Z. Y is Thickness.
       // nest.py: w = raw_w (X), h = raw_d (Z)
-      faceW = geo.parameters.width;
-      faceH = geo.parameters.depth;
 
       x = lx;
       y = lz;
@@ -209,10 +201,6 @@ export class GroovingTool {
     finalData.endX = Number(finalData.endX.toFixed(6));
     finalData.endY = Number(finalData.endY.toFixed(6));
 
-    console.log(
-      `[GroovingTool] Intersection: LocalBoxMin(${lx},${ly},${lz}) Max(${lex},${ley},${lez}). Face(${thicknessKey}): ${faceW}x${faceH}. Groove: (${finalData.x},${finalData.y}) -> (${finalData.endX},${finalData.endY})`
-    );
-
     return finalData;
   }
 
@@ -223,9 +211,6 @@ export class GroovingTool {
     if (!this.validateMeshForGrooving(mesh)) {
       return;
     }
-
-    console.log('[GroovingTool] Processing Back Plank:', mesh.name, mesh.userData.id);
-
     // 1. Resize Back Plank (if not already)
     const geometry = mesh.geometry as THREE.BoxGeometry;
     let oldW = geometry.parameters.width;
@@ -235,7 +220,6 @@ export class GroovingTool {
       mesh.userData.originalDimensions = { width: oldW, height: oldH };
       const newW = oldW + GROOVE_DEPTH * 2;
       const newH = oldH + GROOVE_DEPTH * 2;
-      console.log(`[GroovingTool] Resizing back plank from ${oldW}x${oldH} to ${newW}x${newH}`);
       mesh.geometry.dispose();
       mesh.geometry = new THREE.BoxGeometry(newW, newH, geometry.parameters.depth);
       oldW = newW; // Update local ref
@@ -253,7 +237,6 @@ export class GroovingTool {
     // Intersection volume is what we want.
 
     const siblings = mesh.parent?.children || [];
-    console.log(`[GroovingTool] Found ${siblings.length} siblings.`);
 
     siblings.forEach((sibling) => {
       if (sibling === mesh) return;

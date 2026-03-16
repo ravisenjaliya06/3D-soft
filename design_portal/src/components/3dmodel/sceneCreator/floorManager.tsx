@@ -89,7 +89,6 @@ export class FloorManager {
   }
 
   private removeExistingFloors() {
-    console.log('FloorManager removeExistingFloors');
     // Check if there are existing floor meshes to remove
     const floorsToRemove: THREE.Object3D[] = [];
     this.scene.traverse((obj) => {

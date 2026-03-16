@@ -150,8 +150,6 @@ const Nesting = () => {
         };
       });
 
-      console.log('Final partsList structure:', partsList);
-
       const wb = XLSX.utils.book_new();
 
       // Common Styles
@@ -203,7 +201,6 @@ const Nesting = () => {
         const area = ((h * w) / 1000000).toFixed(3);
 
         // Use parent_name from nesting JSON (set by backend parent lookup)
-        console.log('part', part);
         const cabinetName = part.parent_name || part.material_name || '-';
 
         let edgeL1 = 'None',
