@@ -75,10 +75,12 @@ export function calculateMinifixPositions(
 ): MinifixConnection[] {
   const minifixConnections: MinifixConnection[] = [];
 
-  // Resolve standards
-  let activeStandards = MINIFIX_STANDARDS;
+  // Resolve standards — always start from MINIFIX_STANDARDS so every field
+  // (including new ones like camBoltProtrusion / boltTailDepth) has a default,
+  // then overlay any custom values the caller provided.
+  let activeStandards: typeof MINIFIX_STANDARDS = MINIFIX_STANDARDS;
   if (typeof spacing === 'object') {
-    activeStandards = spacing;
+    activeStandards = { ...MINIFIX_STANDARDS, ...spacing };
   }
   const effectiveSpacing =
     (typeof spacing === 'number' ? spacing : activeStandards.minifixDistance) ||
@@ -202,6 +204,9 @@ function calculateSingleConnectionData(
   const housingFaceNormal = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
   const housingFaceId = getFaceId(housingFaceNormal, housingPlank.name);
 
+  // Todo :-smit/harsh create for camBoltProtrusion
+  const camBoltProtrusion: number = standards.camBoltProtrusion ?? 34;
+
   const screwHousingHole: MinifixHole = {
     type: 'SCREW',
     connectorId: id,
@@ -210,13 +215,16 @@ function calculateSingleConnectionData(
     drillType: '1',
     face: housingFaceId,
     diameter: standards.screwDiameter,
-    length: standards.screwLength - 10,
+    length: camBoltProtrusion, // must reach exactly the cam center
     localPosition2D: calculateLocal2D(jointPos, housingPlank, housingFaceId),
   };
 
   const intoBoltDir = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
   const boltFaceNormal = { x: -intoBoltDir.x, y: -intoBoltDir.y, z: -intoBoltDir.z };
   const boltFaceId = getFaceId(boltFaceNormal, boltPlank.name);
+
+  // Todo :-smit/harsh create for bolt tail depth
+  const boltTailDepth: number = standards.boltTailDepth ?? 13;
 
   const screwMatingHole: MinifixHole = {
     type: 'SCREW',
@@ -226,15 +234,14 @@ function calculateSingleConnectionData(
     drillType: '2',
     face: boltFaceId,
     diameter: standards.screwDiameter,
-    length: standards.screwLength - 30,
+    length: boltTailDepth,
     localPosition2D: calculateLocal2D(jointPos, boltPlank, boltFaceId),
   };
 
-  const camDist = 34;
   const camPos3D = {
-    x: jointPos.x + intoHousingDir.x * camDist,
-    y: jointPos.y + intoHousingDir.y * camDist,
-    z: jointPos.z + intoHousingDir.z * camDist,
+    x: jointPos.x + intoHousingDir.x * camBoltProtrusion,
+    y: jointPos.y + intoHousingDir.y * camBoltProtrusion,
+    z: jointPos.z + intoHousingDir.z * camBoltProtrusion,
   };
 
   let camDir = { x: 0, y: -1, z: 0 };
