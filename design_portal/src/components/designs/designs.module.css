@@ -302,6 +302,10 @@
   font-size: 1rem;
   font-weight: 700;
   color: #170f49;
+  max-width: 15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .designsdetailsontime {
