@@ -64,14 +64,18 @@ jobs:
 
             # Maintenance Mode: Enable and ensure it's disabled on exit (success or failure)
             echo "🚧 Enabling maintenance mode..."
-            touch /root/bravento/maintenance.enable
-            trap 'echo "🏁 Disabling maintenance mode..."; rm -f /root/bravento/maintenance.enable' EXIT
+            touch /tmp/maintenance.enable
+            trap 'echo "🏁 Disabling maintenance mode..."; rm -f /tmp/maintenance.enable' EXIT
 
             # This runs every time so the folder is always fresh
             echo "⬇️ Syncing latest code..."
             cd /root/bravento
             git fetch origin main
             git reset --hard origin/main
+
+            # Ensure maintenance page is in web root
+            cp /root/bravento/maintenance.html /var/www/html/maintenance.html
+            chmod 644 /var/www/html/maintenance.html
 
             if [ "${{ env.BACKEND_CHANGED }}" == "true" ]; then
               echo "🚀 Deploying Backend..."
