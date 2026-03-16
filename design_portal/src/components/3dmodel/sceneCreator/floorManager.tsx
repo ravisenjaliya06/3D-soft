@@ -116,7 +116,6 @@ export class FloorManager {
 
   public async syncData() {
     if (!this.scene) return;
-    console.log('FloorManager syncData');
     // Create the new meshes (async operation)
     const newMeshes: THREE.Mesh[] = [];
     for (const floor of this.floorData) {
