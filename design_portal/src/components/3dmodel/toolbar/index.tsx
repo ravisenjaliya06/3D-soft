@@ -175,7 +175,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData | any) => {
-    console.log('handleCabinetItemSelect', item);
     // Check if it's a GLB model (has path property)
     if (item.path) {
       if (!threeDView || !threeDView.scene) return;
@@ -310,7 +309,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       }
     } else {
       if (['door', 'Sliding Door', PART_TYPES.DOUBLE_DOOR].includes(item.type)) {
-        console.log('item', item);
         setSelectedCabinetItem(item);
         onAddItems(item, 1);
       } else {

@@ -115,7 +115,6 @@ export const prefetchAll = (urls: string[]): void => {
         console.error('Error during batch prefetch', e);
       }
     }
-    console.log(`Finished prefetching ${urls.length} models`);
   }, 2000); // 3-second initial delay so first page load is prioritized
 };
 
