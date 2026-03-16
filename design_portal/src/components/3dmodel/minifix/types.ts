@@ -13,6 +13,8 @@ export interface MinifixStandards {
   dowelLength: number;
   dowelDistance: number;
   SPACING?: number; // Keep for backward compatibility or remove if unused
+  camBoltProtrusion?: number; //How far the bolt tip protrudes into the HOUSING plank (mm).
+  boltTailDepth?: number; //Drill depth of the bolt-tail hole inside the BOLT plank (mm).
 }
 
 export interface PlankData {

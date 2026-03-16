@@ -5,29 +5,19 @@ import styles from '@/components/template/template.module.css';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { resetStoreForNewDesign } from '../3dmodel/store';
 
 const Template = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
+
   const [searchQuery, setSearchQuery] = useState('');
   const { designid } = router.query || {};
 
   // Focusing on high-fidelity, professional starting points
   const TemplateDesigns = [
-    {
-      name: 'Modern Minimalist Studio',
-      description:
-        'Clean architectural lines with natural green accents, curated for contemporary interior visualization.',
-      icon: assets.blank,
-      tag: 'Featured',
-    },
-    {
-      name: 'Industrial Lofts Workspace',
-      description:
-        'Raw textures and open-plan layouts designed for high-end workspace and studio modeling.',
-      icon: assets.blank,
-      tag: 'Studio',
-    },
     {
       name: 'Blank Artist Canvas',
       description:
@@ -43,6 +33,10 @@ const Template = () => {
 
   const handleCreateDesign = async () => {
     setLoading(true);
+
+    // Reset store BEFORE rendering loading screen and pushing route
+    dispatch(resetStoreForNewDesign() as any);
+
     // Simulate a premium transition feel
     setTimeout(() => {
       router.push({

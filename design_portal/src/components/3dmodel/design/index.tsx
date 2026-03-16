@@ -105,10 +105,6 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   useEffect(() => {
     if (!mountRef.current || !designId) return;
 
-    // Clear full store so new design starts fresh (scene, data, catalog, history, etc.)
-    // i commented this line because i want to use the same store for multiple designs
-    // dispatch(resetStoreForNewDesign());
-
     // Get or create scene for this design (each design has its own scene)
     const threeDView = getOrCreateThreeDView(mountRef.current, designId);
 

@@ -6,18 +6,21 @@ import { ThreeDView } from './interface';
 const sceneCache = new Map<string, ThreeDView>();
 
 export function getOrCreateThreeDView(mount: HTMLDivElement, designId: string): ThreeDView {
-  const cached = sceneCache.get(designId);
-  if (cached) {
-    if (cached.renderer?.domElement && cached.renderer.domElement.parentNode !== mount) {
-      mount.appendChild(cached.renderer.domElement);
+  let threeDView = sceneCache.get(designId);
+
+  if (threeDView) {
+    if (threeDView.renderer?.domElement && threeDView.renderer.domElement.parentNode !== mount) {
+      mount.appendChild(threeDView.renderer.domElement);
     }
-    return cached;
+    return threeDView;
   }
 
+  // Create new scene and fetch initial state
   const builder = new SceneBuilder({ mount });
-  const threeDView = builder.build();
+  threeDView = builder.build();
   sceneCache.set(designId, threeDView);
   getDesignCatalogs();
+
   return threeDView;
 }
 
