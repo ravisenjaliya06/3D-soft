@@ -1,14 +1,58 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
-import { Point, Hole, CurveControls, CornerType } from '../types';
+import { Point, Hole, CurveControls, CornerType, PreviewSidebarProps, PropertiesSidebarProps, BaseSidebarProps } from '../types';
 
-interface PreviewSidebarProps {
-  previewPos: { x: number; y: number };
-  setIsDraggingPreview: (val: boolean) => void;
-  containerRef: React.RefObject<HTMLDivElement | null>;
-  threeCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-}
+/**
+ * A reusable container for sidebar panels.
+ * Includes a draggable header with a title and action icon.
+ */
+const SidebarContainer: React.FC<BaseSidebarProps> = ({ title, pos, height, onDragStart, children }) => (
+  <div className={styles.sidebar} style={{ left: pos.x, top: pos.y, height }}>
+    <div className={styles.panelHeader} onMouseDown={onDragStart}>
+      <div className={styles.panelTitle}><span>⠿</span> {title}</div>
+      <div className={styles.panelHeaderActions}><span>✥</span></div>
+    </div>
+    <div className={styles.propertiesContainer}>
+      <div className={styles.sidebarContent}>{children}</div>
+    </div>
+  </div>
+);
 
+/**
+ * A labeled section within the sidebar.
+ */
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className={styles.sidebarSection}>
+    <div className={styles.sidebarTitle}>{title}</div>
+    {children}
+  </div>
+);
+
+/**
+ * A standard row with a label and its associated control/content.
+ */
+const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className={styles.sidebarRow}>
+    <span>{label}:</span>
+    {children}
+  </div>
+);
+
+/**
+ * A standardized numeric input for consistent stepping and change handling.
+ */
+const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => (
+  <input
+    type="number"
+    step="0.1"
+    value={value}
+    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+  />
+);
+
+/**
+ * Sidebar component that hosts the 3D local preview of the panel.
+ */
 export const PreviewSidebar: React.FC<PreviewSidebarProps> = ({
   previewPos,
   setIsDraggingPreview,
@@ -16,45 +60,24 @@ export const PreviewSidebar: React.FC<PreviewSidebarProps> = ({
   threeCanvasRef,
 }) => {
   return (
-    <div
-      className={styles.sidebar}
-      style={{ left: previewPos.x, top: previewPos.y, height: '260px' }}
+    <SidebarContainer
+      title="Panel Design"
+      pos={previewPos}
+      height="260px"
+      onDragStart={() => setIsDraggingPreview(true)}
     >
-      <div className={styles.panelHeader} onMouseDown={() => setIsDraggingPreview(true)}>
-        <div className={styles.panelTitle}>
-          <span>⠿</span> Panel Design
-        </div>
-        <div className={styles.panelHeaderActions}>
-          <span>✥</span>
-        </div>
-      </div>
       <div className={styles.sidebarPreview} ref={containerRef}>
         <div className={styles.previewTitle}>3D Preview</div>
         <canvas ref={threeCanvasRef} />
       </div>
-    </div>
+    </SidebarContainer>
   );
 };
 
-interface PropertiesSidebarProps {
-  drawingPos: { x: number; y: number };
-  setIsDraggingDrawing: (val: boolean) => void;
-  selectedHoleIndex: number | null;
-  selectedLineIndex: number | null;
-  selectedPointIndex: number | null;
-  selectedCornerIndex: number | null;
-  holes: Hole[];
-  setHoles: any;
-  curveControls: CurveControls;
-  setCurveControls: any;
-  shapePoints: Point[];
-  defaultPanelPoints: Point[];
-  setShapePoints: any;
-  panelWidth: number;
-  isRotated2D: boolean;
-  setSelectedHoleIndex: (val: number | null) => void;
-}
-
+/**
+ * Sidebar component for editing panel properties, vertex coordinates, and hole details.
+ * Features conditional rendering based on what is currently selected (Point, Line, Hole, or Panel).
+ */
 export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   drawingPos,
   setIsDraggingDrawing,
@@ -73,196 +96,149 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   isRotated2D,
   setSelectedHoleIndex,
 }) => {
+
+  /**
+   * Updates the coordinates of a specific vertex within a polygonal hole.
+   */
+  const updateHolePoint = (dim: 'x' | 'y', val: number) => {
+    if (selectedHoleIndex === null || selectedPointIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const nextPoints = [...(next[selectedHoleIndex].points as any)];
+      nextPoints[selectedPointIndex] = { ...nextPoints[selectedPointIndex], [dim]: val };
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
+      return next;
+    });
+  };
+
+  /**
+   * Updates the top-left position (origin) of a hole.
+   */
+  const updateHolePos = (dim: 'x' | 'y', val: number) => {
+    if (selectedHoleIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], [dim]: val };
+      return next;
+    });
+  };
+
+  /**
+   * Updates a vertex coordinate of the main panel outline.
+   */
+  const updatePanelPoint = (dim: 'x' | 'y', val: number) => {
+    if (selectedCornerIndex === null) return;
+    setShapePoints((prev: any) => {
+      const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+      pts[selectedCornerIndex] = { ...pts[selectedCornerIndex], [dim]: val };
+      return pts;
+    });
+  };
+
   return (
-    <div className={styles.sidebar} style={{ left: drawingPos.x, top: drawingPos.y }}>
-      <div className={styles.panelHeader} onMouseDown={() => setIsDraggingDrawing(true)}>
-        <div className={styles.panelTitle}>
-          <span>⠿</span> Drawing
-        </div>
-        <div className={styles.panelHeaderActions}>
-          <span>✥</span>
-        </div>
-      </div>
+    <SidebarContainer
+      title="Drawing"
+      pos={drawingPos}
+      onDragStart={() => setIsDraggingDrawing(true)}
+    >
+      {/* Line Editing (Arcs/Curves) */}
+      {selectedHoleIndex !== null && selectedLineIndex !== null && (
+        <Section title={`Line Editing (Hole #${selectedHoleIndex + 1})`}>
+          <Row label="Type">
+            <select
+              className={styles.sidebarSelect}
+              value={curveControls[`hole_${selectedHoleIndex}_${selectedLineIndex}`] ? 'arc' : 'linear'}
+              onChange={(e) => {
+                const val = e.target.value;
+                const curveKey = `hole_${selectedHoleIndex}_${selectedLineIndex}`;
+                if (val === 'linear') {
+                  const next = { ...curveControls };
+                  delete next[curveKey];
+                  setCurveControls(next);
+                } else {
+                  const hole = holes[selectedHoleIndex];
+                  if (hole.points) {
+                    const p1 = hole.points[selectedLineIndex];
+                    const p2 = hole.points[(selectedLineIndex + 1) % hole.points.length];
+                    setCurveControls((prev: any) => ({
+                      ...prev,
+                      [curveKey]: { x: (p1.x + p2.x) / 2 + 10, y: (p1.y + p2.y) / 2 + 10 },
+                    }));
+                  }
+                }
+              }}
+            >
+              <option value="linear">Linear</option>
+              <option value="arc">Arc</option>
+            </select>
+          </Row>
+        </Section>
+      )}
 
-      <div className={styles.propertiesContainer}>
-        <div className={styles.sidebarContent}>
-          {selectedHoleIndex !== null && selectedLineIndex !== null && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle}>Line Editing (Hole #{selectedHoleIndex + 1})</div>
-              <div className={styles.sidebarRow}>
-                <span>Type:</span>
-                <select
-                  className={styles.sidebarSelect}
-                  value={curveControls[`hole_${selectedHoleIndex}_${selectedLineIndex}`] ? 'arc' : 'linear'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const curveKey = `hole_${selectedHoleIndex}_${selectedLineIndex}`;
-                    if (val === 'linear') {
-                      const next = { ...curveControls };
-                      delete next[curveKey];
-                      setCurveControls(next);
-                    } else {
-                      const hole = holes[selectedHoleIndex];
-                      if (hole.points) {
-                        const p1 = hole.points[selectedLineIndex];
-                        const p2 = hole.points[(selectedLineIndex + 1) % hole.points.length];
-                        setCurveControls((prev: any) => ({
-                          ...prev,
-                          [curveKey]: { x: (p1.x + p2.x) / 2 + 10, y: (p1.y + p2.y) / 2 + 10 },
-                        }));
-                      }
-                    }
-                  }}
-                >
-                  <option value="linear">Linear</option>
-                  <option value="arc">Arc</option>
-                </select>
-              </div>
-            </div>
-          )}
+      {/* Point Editing */}
+      {selectedHoleIndex !== null && selectedPointIndex !== null && (
+        <Section title={`Point Editing (Hole #${selectedHoleIndex + 1})`}>
+          <Row label="Point X">
+            <NumberInput
+              value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x || 0}
+              onChange={(v) => updateHolePoint('x', v)}
+            />
+          </Row>
+          <Row label="Point Y">
+            <NumberInput
+              value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y || 0}
+              onChange={(v) => updateHolePoint('y', v)}
+            />
+          </Row>
+        </Section>
+      )}
 
-          {selectedHoleIndex !== null && selectedPointIndex !== null && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle}>Point Editing (Hole #{selectedHoleIndex + 1})</div>
-              <div className={styles.sidebarRow}>
-                <span>Point X:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x || 0}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setHoles((prev: any) => {
-                      const next = [...prev];
-                      const nextPoints = [...(next[selectedHoleIndex].points as any)];
-                      nextPoints[selectedPointIndex] = { ...nextPoints[selectedPointIndex], x: val };
-                      next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-              <div className={styles.sidebarRow}>
-                <span>Point Y:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y || 0}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setHoles((prev: any) => {
-                      const next = [...prev];
-                      const nextPoints = [...(next[selectedHoleIndex].points as any)];
-                      nextPoints[selectedPointIndex] = { ...nextPoints[selectedPointIndex], y: val };
-                      next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-            </div>
-          )}
+      {/* Hole Position (Face) Editing */}
+      {selectedHoleIndex !== null && selectedPointIndex === null && selectedLineIndex === null && (
+        <Section title={`Face Editing (Hole #${selectedHoleIndex + 1})`}>
+          <Row label="X">
+            <NumberInput value={holes[selectedHoleIndex].x} onChange={(v) => updateHolePos('x', v)} />
+          </Row>
+          <Row label="Y">
+            <NumberInput value={holes[selectedHoleIndex].y} onChange={(v) => updateHolePos('y', v)} />
+          </Row>
+          <button
+            className={styles.sidebarDeleteButton}
+            onClick={() => {
+              setHoles((prev: any) => prev.filter((_: any, i: number) => i !== selectedHoleIndex));
+              setSelectedHoleIndex(null);
+            }}
+          >
+            Delete Hole
+          </button>
+        </Section>
+      )}
 
-          {selectedHoleIndex !== null && selectedPointIndex === null && selectedLineIndex === null && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle}>Face Editing (Hole #{selectedHoleIndex + 1})</div>
-              <div className={styles.sidebarRow}>
-                <span>X:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={holes[selectedHoleIndex].x}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setHoles((prev: any) => {
-                      const next = [...prev];
-                      next[selectedHoleIndex] = { ...next[selectedHoleIndex], x: val };
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-              <div className={styles.sidebarRow}>
-                <span>Y:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={holes[selectedHoleIndex].y}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setHoles((prev: any) => {
-                      const next = [...prev];
-                      next[selectedHoleIndex] = { ...next[selectedHoleIndex], y: val };
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-              <button
-                className={styles.sidebarDeleteButton}
-                onClick={() => {
-                  setHoles((prev: any) => prev.filter((_: any, i: number) => i !== selectedHoleIndex));
-                  setSelectedHoleIndex(null);
-                }}
-              >
-                Delete Hole
-              </button>
-            </div>
-          )}
+      {/* Panel Vertex Editing */}
+      {selectedCornerIndex !== null && (
+        <Section title={`Vertex Editing (#${selectedCornerIndex + 1})`}>
+          <Row label="Point X">
+            <NumberInput
+              value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].x}
+              onChange={(v) => updatePanelPoint('x', v)}
+            />
+          </Row>
+          <Row label="Point Y">
+            <NumberInput
+              value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].y}
+              onChange={(v) => updatePanelPoint('y', v)}
+            />
+          </Row>
+        </Section>
+      )}
 
-          {selectedCornerIndex !== null && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle}>Vertex Editing (#{selectedCornerIndex + 1})</div>
-              <div className={styles.sidebarRow}>
-                <span>Point X:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].x}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setShapePoints((prev: any) => {
-                      const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
-                      pts[selectedCornerIndex] = { ...pts[selectedCornerIndex], x: val };
-                      return pts;
-                    });
-                  }}
-                />
-              </div>
-              <div className={styles.sidebarRow}>
-                <span>Point Y:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].y}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setShapePoints((prev: any) => {
-                      const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
-                      pts[selectedCornerIndex] = { ...pts[selectedCornerIndex], y: val };
-                      return pts;
-                    });
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {selectedHoleIndex === null && selectedCornerIndex === null && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle}>Panel Properties</div>
-              <div className={styles.sidebarRow}>
-                <span>Width:</span>
-                <span>{panelWidth.toFixed(1)} mm</span>
-              </div>
-              <div className={styles.sidebarRow}>
-                <span>Rotated:</span>
-                <span>{isRotated2D ? 'Yes' : 'No'}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+      {/* Default Panel Properties */}
+      {selectedHoleIndex === null && selectedCornerIndex === null && (
+        <Section title="Panel Properties">
+          <Row label="Width">{panelWidth.toFixed(1)} mm</Row>
+          <Row label="Rotated">{isRotated2D ? 'Yes' : 'No'}</Row>
+        </Section>
+      )}
+    </SidebarContainer>
   );
 };

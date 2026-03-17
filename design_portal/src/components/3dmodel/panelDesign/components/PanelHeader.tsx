@@ -1,15 +1,7 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
+import { PanelHeaderProps } from '../types';
 
-interface PanelHeaderProps {
-  tools: { name: string; icon: string; subTools?: string[] }[];
-  activeTool: string | null;
-  setActiveTool: (name: string | null) => void;
-  holeShape: string;
-  setHoleShape: (shape: any) => void;
-  handleCancel: () => void;
-  handleComplete: () => void;
-}
 
 export const PanelHeader: React.FC<PanelHeaderProps> = ({
   tools,

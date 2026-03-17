@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Point, Hole, CurveControls, CornerType } from '../types';
-import { buildThreeShape } from '../utils/geometryUtils';
+import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
 export function useThreeScene(
   shapePoints: Point[],
@@ -18,144 +18,160 @@ export function useThreeScene(
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Persistent Three.js objects
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const meshRef = useRef<THREE.Mesh | null>(null);
+  const frameIdRef = useRef<number | null>(null);
+
+  // Memoized mapping function
+  const getMappedPoint = useMemo(() => 
+    (p: Point) => isRotated2D ? { x: -p.y, y: p.x } : p
+  , [isRotated2D]);
+
+  // Initialization Effect
   useEffect(() => {
-    const selectedObject = state?.data?.selectedObject;
-    const selectedChildObject = state?.data?.selectedChildObject;
-    const globalScene = state?.scene?.scene;
+    if (!threeCanvasRef.current || !containerRef.current) return;
 
-    if (!threeCanvasRef.current || !globalScene) return;
+    // 1. Scene & Lighting Setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(5, 10, 7.5);
+    scene.add(dirLight);
+    sceneRef.current = scene;
 
-    const localScene = new THREE.Scene();
-    localScene.background = new THREE.Color(0xffffff);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    localScene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(5, 10, 7.5);
-    localScene.add(directionalLight);
-
-    const currentPoints = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
-    const mainShape = buildThreeShape(
-      currentPoints,
-      cornerRadius,
-      cornerTypes,
-      {}, // curveControls - can be passed if needed
-      'shape'
-    );
-
-    holes.forEach((hole, hIdx) => {
-      if (hole.type === 'rect') {
-        const holePath = new THREE.Path();
-        holePath.moveTo(hole.x, hole.y);
-        holePath.lineTo(hole.x + hole.width, hole.y);
-        holePath.lineTo(hole.x + hole.width, hole.y + hole.height);
-        holePath.lineTo(hole.x, hole.y + hole.height);
-        holePath.closePath();
-        mainShape.holes.push(holePath);
-      } else if (hole.type === 'circle') {
-        const radius = Math.min(hole.width, hole.height) / 2;
-        const holePath = new THREE.Path();
-        holePath.absarc(hole.x + hole.width / 2, hole.y + hole.height / 2, radius, 0, Math.PI * 2, true);
-        mainShape.holes.push(holePath);
-      } else if (hole.type === 'polygon' && hole.points) {
-        const holeShapeObj = buildThreeShape(
-          hole.points,
-          hole.cornerRadius || new Array(hole.points.length).fill(0),
-          hole.cornerTypes,
-          {},
-          `hole_${hIdx}`
-        );
-        const holePath = new THREE.Path(holeShapeObj.getPoints());
-        mainShape.holes.push(holePath);
-      } else if (hole.type === 'slotting') {
-        const r = Math.min(hole.width, hole.height) / 2;
-        const holePath = new THREE.Path();
-        holePath.moveTo(hole.x + r, hole.y);
-        holePath.lineTo(hole.x + hole.width - r, hole.y);
-        holePath.absarc(hole.x + hole.width - r, hole.y + r, r, -Math.PI / 2, 0, false);
-        holePath.lineTo(hole.x + hole.width, hole.y + hole.height - r);
-        holePath.absarc(hole.x + hole.width - r, hole.y + hole.height - r, r, 0, Math.PI / 2, false);
-        holePath.lineTo(hole.x + r, hole.y + hole.height);
-        holePath.absarc(hole.x + r, hole.y + hole.height - r, r, Math.PI / 2, Math.PI, false);
-        holePath.lineTo(hole.x, hole.y + r);
-        holePath.absarc(hole.x + r, hole.y + r, r, Math.PI, Math.PI * 1.5, false);
-        mainShape.holes.push(holePath);
-      }
-    });
-
-    const extrudeSettings = {
-      depth: plankThickness,
-      bevelEnabled: false,
-    };
-
-    const geometry = new THREE.ExtrudeGeometry(mainShape, extrudeSettings);
-
-    const selectedMesh = globalScene.children.find((obj: any) => obj.userData?.objectId === selectedObject);
-    const selectedChildMesh = selectedMesh?.children.find(
-      (obj: any) => obj.userData?.objectId === selectedChildObject
-    );
-
-    const material = (selectedChildMesh instanceof THREE.Mesh)
-      ? selectedChildMesh.material
-      : new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
-
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.x = Math.PI / 2;
-    if (isRotated2D) mesh.rotation.z = Math.PI / 2;
-
-    const box = new THREE.Box3().setFromObject(mesh);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    mesh.position.sub(center);
-
-    localScene.add(mesh);
-
-    const width = containerRef.current?.clientWidth || 300;
-    const height = containerRef.current?.clientHeight || 200;
-
+    // 2. Renderer Setup
     const renderer = new THREE.WebGLRenderer({
       canvas: threeCanvasRef.current,
       antialias: true,
       alpha: true,
     });
-    renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    rendererRef.current = renderer;
 
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
-    camera.position.set(0, maxDim * 0.5, maxDim * 1.5);
-    camera.lookAt(0, 0, 0);
+    // 3. Camera & Controls Setup
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+    cameraRef.current = camera;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controlsRef.current = controls;
 
+    // 4. Animation Loop
     const animate = () => {
-      const frame = requestAnimationFrame(animate);
+      frameIdRef.current = requestAnimationFrame(animate);
       controls.update();
-      renderer.render(localScene, camera);
-      return frame;
+      renderer.render(scene, camera);
     };
-    const frameId = animate();
+    animate();
 
+    // 5. Cleanup
     return () => {
-      cancelAnimationFrame(frameId);
+      if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
       renderer.dispose();
       controls.dispose();
-      geometry.dispose();
     };
+  }, []);
+
+  // Sync / Update Effect
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    // 1. Build Geometry
+    const currentPoints = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
+    const mappedPoints = currentPoints.map(getMappedPoint);
+    const mainShape = buildThreeShape(mappedPoints, cornerRadius, cornerTypes, {}, 'shape');
+
+    // Add holes using the utility
+    holes.forEach((hole) => {
+      const holePath = createHolePath(hole, getMappedPoint, isRotated2D);
+      mainShape.holes.push(holePath);
+    });
+
+    const geometry = new THREE.ExtrudeGeometry(mainShape, {
+      depth: plankThickness,
+      bevelEnabled: false,
+    });
+
+    // 2. Center and Coordinate Geometry
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    geometry.translate(-center.x, -center.y, -center.z);
+
+    // 3. Material Handling
+    const selectedObject = state?.data?.selectedObject;
+    const selectedChildObject = state?.data?.selectedChildObject;
+    const globalScene = state?.scene?.scene;
+    let material = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
+
+    if (globalScene && selectedObject && selectedChildObject) {
+      const selectedMesh = globalScene.children.find((obj: any) => obj.userData?.objectId === selectedObject);
+      const selectedChildMesh = selectedMesh?.children.find((obj: any) => obj.userData?.objectId === selectedChildObject);
+      if (selectedChildMesh instanceof THREE.Mesh) {
+        material = selectedChildMesh.material.clone();
+      }
+    }
+
+    // 4. Update or Create Mesh
+    if (meshRef.current) {
+      meshRef.current.geometry.dispose();
+      meshRef.current.geometry = geometry;
+      meshRef.current.material = material;
+    } else {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = Math.PI / 2;
+      scene.add(mesh);
+      meshRef.current = mesh;
+    }
+
+    // 5. Auto-target Camera
+    if (cameraRef.current && controlsRef.current) {
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      cameraRef.current.position.set(0, maxDim * 1.5, maxDim * 2);
+      cameraRef.current.lookAt(0, 0, 0);
+      controlsRef.current.target.set(0, 0, 0);
+    }
   }, [
+    shapePoints,
+    defaultPanelPoints,
+    cornerRadius,
+    cornerTypes,
+    holes,
+    plankThickness,
+    isRotated2D,
     state?.scene?.scene,
     state?.data?.selectedObject,
     state?.data?.selectedChildObject,
-    activeTab,
-    holes,
-    shapePoints,
-    cornerRadius,
-    cornerTypes,
-    plankThickness,
-    isRotated2D
+    getMappedPoint
   ]);
+
+  // Resize Handling Effect
+  useEffect(() => {
+    if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        rendererRef.current?.setSize(width, height);
+        if (cameraRef.current) {
+          cameraRef.current.aspect = width / height;
+          cameraRef.current.updateProjectionMatrix();
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   return { threeCanvasRef, containerRef };
 }

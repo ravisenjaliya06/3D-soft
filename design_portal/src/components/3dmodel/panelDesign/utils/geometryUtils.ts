@@ -1,6 +1,17 @@
 import * as THREE from 'three';
 import { Point, CornerType, CurveControls } from '../types';
 
+/**
+ * Calculates tangent points and arc parameters for a rounded corner.
+ * Used to smoothly connect two line segments with a circular arc.
+ * 
+ * @param points Array of shape vertices
+ * @param index Index of the corner to calculate
+ * @param cornerRadius Array of radii for each corner
+ * @param cornerTypes Array of types for each corner (e.g., 'round', 'chamfer')
+ * @param isMapped Whether the points are already mapped to 3D orientation
+ * @returns Object containing tangent points (tp_in, tp_out) and optional arc center/angles
+ */
 export const getTangents = (
   points: Point[],
   index: number,
@@ -68,11 +79,11 @@ export const getTangents = (
   const tp_out_y = p1.y + u_out_y * l;
 
   if (!isMapped) {
-      return {
-          tp_in: { x: tp_in_x, y: tp_in_y },
-          tp_out: { x: tp_out_x, y: tp_out_y },
-          det,
-      };
+    return {
+      tp_in: { x: tp_in_x, y: tp_in_y },
+      tp_out: { x: tp_out_x, y: tp_out_y },
+      det,
+    };
   }
 
   const n_in_x = -u_in_y;
@@ -111,6 +122,17 @@ export const getTangents = (
   };
 };
 
+/**
+ * Builds an SVG-like path string for a 2D shape with rounded corners.
+ * This is primarily used for Konva rendering in the 2D stage.
+ * 
+ * @param points Array of shape vertices
+ * @param cornerRadius Array of radii for each corner
+ * @param cornerTypesArr Array of types for each corner
+ * @param curveControls Mapping of quadratic curve control points
+ * @param prefix Prefix for path identifiers
+ * @returns An SVG path data string (e.g., "M x y L x y Z")
+ */
 export const buildPathData = (
   points: Point[],
   cornerRadius: number[],
@@ -153,6 +175,17 @@ export const buildPathData = (
   return path;
 };
 
+/**
+ * Creates a THREE.Shape for a 2D geometry, handling rounded corners and curves.
+ * This shape can later be extruded into a 3D Mesh.
+ * 
+ * @param points Array of shape vertices
+ * @param cornerRadius Array of radii for each corner
+ * @param cornerTypesArr Array of types for each corner
+ * @param curveControls Mapping of quadratic curve control points
+ * @param prefix Prefix for shape identifiers
+ * @returns A THREE.Shape object
+ */
 export const buildThreeShape = (
   points: Point[],
   cornerRadius: number[],
@@ -192,9 +225,107 @@ export const buildThreeShape = (
   return shape;
 };
 
+/**
+ * Computes the center point of a THREE.BufferGeometry based on its bounding box.
+ * 
+ * @param geometry The Three.js geometry to analyze
+ * @returns A THREE.Vector3 representing the geometric center
+ */
 export const getGeometryCenter = (geometry: THREE.BufferGeometry) => {
   geometry.computeBoundingBox();
   const center = new THREE.Vector3();
   geometry.boundingBox?.getCenter(center);
   return center;
+};
+
+/**
+ * Creates a THREE.Path representing a hole for a 3D Shape.
+ * Handles circular, rectangular, polygonal, and rounded slot holes.
+ * 
+ * @param hole The hole data object
+ * @param getMappedPoint Function to map 2D coordinates to 3D orientation
+ * @param isRotated2D Whether the panel is rotated in 2D view
+ */
+export const createHolePath = (
+  hole: any,
+  getMappedPoint: (p: Point) => Point,
+  isRotated2D: boolean
+): THREE.Path => {
+  const holePath = new THREE.Path();
+
+  if (hole.type === 'circle') {
+    // For circles/ovals, calculate radius and center
+    const radiusX = hole.width / 2;
+    const radiusY = hole.height / 2;
+    const c3d = getMappedPoint({ x: hole.x + radiusX, y: hole.y + radiusY });
+
+    // Use absellipse to draw the hole. 
+    // If the view is rotated, we swap the radii to maintain correctly oriented oval holes.
+    if (isRotated2D) {
+      holePath.absellipse(c3d.x, c3d.y, radiusY, radiusX, 0, Math.PI * 2, false);
+    } else {
+      holePath.absellipse(c3d.x, c3d.y, radiusX, radiusY, 0, Math.PI * 2, false);
+    }
+  } else if (hole.type === 'rect') {
+    // For rectangles, map the corners and draw a closed loop
+    const hp1 = getMappedPoint({ x: hole.x, y: hole.y });
+    const hp2 = getMappedPoint({ x: hole.x + hole.width, y: hole.y + hole.height });
+    const hminX = Math.min(hp1.x, hp2.x), hmaxX = Math.max(hp1.x, hp2.x);
+    const hminY = Math.min(hp1.y, hp2.y), hmaxY = Math.max(hp1.y, hp2.y);
+
+    holePath.moveTo(hminX, hminY);
+    holePath.lineTo(hmaxX, hminY);
+    holePath.lineTo(hmaxX, hmaxY);
+    holePath.lineTo(hminX, hmaxY);
+    holePath.lineTo(hminX, hminY); // Close the path
+  } else if (hole.type === 'polygon' && hole.points) {
+    // For polygons, map each point and connect them
+    const hp = hole.points.map(getMappedPoint);
+    if (hp.length > 0) {
+      holePath.moveTo(hp[0].x, hp[0].y);
+      hp.slice(1).forEach((p: Point) => holePath.lineTo(p.x, p.y));
+      holePath.closePath();
+    }
+  }
+
+  return holePath;
+};
+
+/**
+ * Aligns an extruded geometry to match a specific thickness axis and 
+ * optionally centers it relative to an original geometry.
+ * 
+ * @param geometry The new ExtrudeGeometry to align
+ * @param thickness The depth/thickness of the extrusion
+ * @param axis The axis ('x', 'y', or 'z') representing the thickness
+ * @param originalOptional Optional original geometry to match the center position
+ */
+export const alignExtrudedGeometry = (
+  geometry: THREE.BufferGeometry,
+  thickness: number,
+  axis: 'x' | 'y' | 'z',
+  originalOptional?: THREE.BufferGeometry
+) => {
+  // 1. Center the depth so Z=0 is in the middle of thickness (standard forfurniture panels)
+  geometry.translate(0, 0, -thickness / 2);
+
+  // 2. Rotate geometry to match the detected thickness axis of the original plank
+  if (axis === 'x') {
+    geometry.rotateY(Math.PI / 2);
+  } else if (axis === 'y') {
+    geometry.rotateX(Math.PI / 2);
+  }
+  // No rotation needed for 'z' as it's the default extrusion axis
+
+  // 3. Match the 3D position with the original geometry's center
+  if (originalOptional) {
+    const oldCenter = getGeometryCenter(originalOptional);
+    const newCenter = getGeometryCenter(geometry);
+
+    geometry.translate(
+      oldCenter.x - newCenter.x,
+      oldCenter.y - newCenter.y,
+      oldCenter.z - newCenter.z
+    );
+  }
 };
