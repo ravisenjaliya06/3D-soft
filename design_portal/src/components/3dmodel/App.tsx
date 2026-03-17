@@ -28,9 +28,9 @@ const App: React.FC<AppProps> = ({ router }) => {
     // clear the scene cache for this design to prevent stale state on reload
     // but without destroying it during regular 2D/3D toggles (where App stays mounted).
     return () => {
-      if (designId) {
-        releaseDesignScene(designId);
-      }
+      // if (designId) {
+      //   releaseDesignScene(designId);
+      // }
     };
   }, [router.query.id]);
 
