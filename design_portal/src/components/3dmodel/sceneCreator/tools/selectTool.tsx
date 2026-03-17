@@ -171,6 +171,18 @@ export class SelectObjectController {
 
     this._applyPartSelectOutline(object);
 
+    // Trigger HelperTool display for parts
+    if (this.onShowHelperTool) {
+      if (
+        Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type) ||
+        [PART_TYPES.L_SHAPE_OBJECT, PART_TYPES.U_SHAPE_OBJECT].includes(object.userData.type)
+      ) {
+        this.onShowHelperTool(null);
+      } else {
+        this.onShowHelperTool(object);
+      }
+    }
+
     // If the part is also a 'Main' object (like a Drawer group),
     // we might want the big dotted outline on it.
     this._applyObjectBigOutline();
