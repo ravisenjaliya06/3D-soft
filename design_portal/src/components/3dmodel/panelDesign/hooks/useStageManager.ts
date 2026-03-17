@@ -29,7 +29,7 @@ export function useStageManager(panelWidth: number, panelHeight: number) {
 
   useEffect(() => {
     if (panelWidth > 0 && panelHeight > 0 && stageSize.width > 0 && stageSize.height > 0) {
-      const padding = 50;
+      const padding = 150;
       const availableWidth = stageSize.width - padding * 2;
       const availableHeight = stageSize.height - padding * 2;
 
@@ -72,6 +72,20 @@ export function useStageManager(panelWidth: number, panelHeight: number) {
     setStagePosition(newPos);
   };
 
+  /**
+   * Updates the React state for stage position when the user drags the stage.
+   * This is critical for keeping coordinate transforms in sync.
+   */
+  const handleStageDrag = (e: KonvaEventObject<DragEvent>) => {
+    // Only update if the target is the stage itself
+    if (e.target === stageRef.current) {
+      setStagePosition({
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    }
+  };
+
   return {
     stageRef,
     stageSize,
@@ -79,5 +93,6 @@ export function useStageManager(panelWidth: number, panelHeight: number) {
     setStageScale,
     stagePosition,
     handleWheel,
+    handleStageDrag,
   };
 }

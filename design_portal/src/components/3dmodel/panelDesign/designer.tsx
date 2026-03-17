@@ -29,9 +29,10 @@ import {
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 
+import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
+import { DimensionHighlighter } from './components/DimensionHighlighter';
 import { PanelHeader } from './components/PanelHeader';
 import { HorizontalRuler, VerticalRuler } from './components/Rulers';
-import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
 
 interface PanelDesignerProps {
   state: RootState;
@@ -68,6 +69,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [selectedLineIndex, setSelectedLineIndex] = useState<number | null>(null);
   const [hoveredHoleIndex, setHoveredHoleIndex] = useState<number | null>(null);
+  const [hoveredPanel, setHoveredPanel] = useState(false);
+  const [hoveredCornerIndex, setHoveredCornerIndex] = useState<number | null>(null);
+  const [hoveredHolePointIndex, setHoveredHolePointIndex] = useState<number | null>(null);
+  const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
   const [showConfirmExit, setShowConfirmExit] = useState(false);
   const [isRotated2D, setIsRotated2D] = useState(false);
   const [thicknessAxis, setThicknessAxis] = useState<'x' | 'y' | 'z'>('y');
@@ -102,7 +107,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   ];
 
   // Hooks
-  const { stageRef, stageSize, stageScale, stagePosition, handleWheel } =
+  const { stageRef, stageSize, stageScale, stagePosition, handleWheel, handleStageDrag } =
     useStageManager(panelWidth, panelHeight);
 
   const { threeCanvasRef, containerRef } = useThreeScene(
@@ -116,7 +121,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     state
   );
 
-  // Logic extracted from original useEffects
+  /**
+   * Effect hook to ensure corner radius and types arrays match the number of shape points.
+   */
   useEffect(() => {
     const numPoints = shapePoints.length || 4;
     if (cornerRadius.length !== numPoints) setcornerRadius(Array(numPoints).fill(0));
@@ -238,11 +245,18 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     mesh.geometry = newGeometry;
   };
 
+  /**
+   * Effect hook to trigger geometry update when shape definition (points, holes, curves) changes.
+   */
   useEffect(() => {
     updateMeshGeometry();
   }, [shapePoints, holes, cornerRadius, curveControls, isRotated2D]);
 
   // Event Handlers
+
+  /**
+   * Effect hook for handling preview and drawing window dragging.
+   */
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDraggingPreview)
@@ -309,10 +323,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    */
   const onStageMouseDown = (e: any) => {
     const stage = e.target.getStage();
-    const pointer = stage?.getPointerPosition();
-    if (!pointer) return;
-    const rawX = (pointer.x - stagePosition.x) / stageScale;
-    const rawY = (pointer.y - stagePosition.y) / stageScale;
+    const relativePos = stage?.getRelativePointerPosition();
+    if (!relativePos) return;
+    const { x: rawX, y: rawY } = relativePos;
 
     if (activeTool === 'Draw the outline of the board') {
       const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
@@ -386,10 +399,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    */
   const onStageMouseMove = (e: any) => {
     const stage = e.target.getStage();
-    const pointer = stage?.getPointerPosition();
-    if (!pointer) return;
-    const rawX = (pointer.x - stagePosition.x) / stageScale;
-    const rawY = (pointer.y - stagePosition.y) / stageScale;
+    const relativePos = stage?.getRelativePointerPosition();
+    if (!relativePos) return;
+    const { x: rawX, y: rawY } = relativePos;
 
     if (isDrawingShape && currentDrawingPoints.length > 0) {
       const { snappedX, snappedY, guides } = getSnappedPosition(
@@ -425,50 +437,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }
   };
 
-  /**
-   * Renders the temporary dimension labels (width/height) when hovering over or selecting a hole.
-   * Useful for precise positioning and sizing of cutouts.
-   */
-  const renderHoverDimensions = () => {
-    const currentHoveredIdx = hoveredHoleIndex !== null ? hoveredHoleIndex : selectedHoleIndex;
-    if (currentHoveredIdx === null || !holes[currentHoveredIdx]) return null;
-    const hole = holes[currentHoveredIdx];
-    const pts =
-      hole.type === 'polygon' && hole.points
-        ? hole.points
-        : [
-            { x: hole.x, y: hole.y },
-            { x: hole.x + hole.width, y: hole.y + hole.height },
-          ];
-    const xs = pts.map((p) => p.x),
-      ys = pts.map((p) => p.y);
-    const minX = Math.min(...xs),
-      maxX = Math.max(...xs),
-      minY = Math.min(...ys),
-      maxY = Math.max(...ys);
-    const w = maxX - minX,
-      h = maxY - minY;
-    return (
-      <>
-        <Line points={[minX, minY - 15, maxX, minY - 15]} stroke="#9e9e9e" strokeWidth={0.5} />
-        <Line points={[minX - 15, minY, minX - 15, maxY]} stroke="#9e9e9e" strokeWidth={0.5} />
-        <KonvaText
-          x={minX + w / 2 - 28}
-          y={minY - 26}
-          text={`${w.toFixed(1)} mm`}
-          fontSize={10}
-          fill="#424242"
-        />
-        <KonvaText
-          x={minX - 58}
-          y={minY + h / 2 - 4}
-          text={`${h.toFixed(1)} mm`}
-          fontSize={10}
-          fill="#424242"
-        />
-      </>
-    );
-  };
+  // Removed old renderHoverDimensions and DimensionLineComp logic
 
   const toolsList = [
     { name: 'Undo', icon: assets.undo },
@@ -518,6 +487,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             y={stagePosition.y}
             onWheel={handleWheel}
             draggable={!isDrawingHole && !isDrawingShape}
+            onDragEnd={handleStageDrag}
             onMouseDown={onStageMouseDown}
             onMouseMove={onStageMouseMove}
             onMouseUp={() => {
@@ -531,6 +501,23 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             style={{ backgroundColor: '#fff', display: 'block' }}
           >
             <Layer>
+              {/* Background reset: clears hovers when mouse is not over any object */}
+              <Rect
+                width={stageSize.width * 5}
+                height={stageSize.height * 5}
+                x={-stageSize.width * 2}
+                y={-stageSize.height * 2}
+                fill="transparent"
+                onMouseEnter={(e) => {
+                  setHoveredHoleIndex(null);
+                  setHoveredPanel(false);
+                  setHoveredLineIndex(null);
+                  setHoveredCornerIndex(null);
+                  setHoveredHolePointIndex(null);
+                  const container = e.target.getStage()?.container();
+                  if (container) container.style.cursor = 'default';
+                }}
+              />
               <Path
                 data={buildPathData(
                   shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
@@ -541,8 +528,54 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                 fill="rgba(57, 37, 121, 0.15)"
                 stroke="#392579"
                 strokeWidth={1}
+                hitStrokeWidth={20}
                 fillRule="evenodd"
+                onMouseEnter={(e) => {
+                  setHoveredPanel(true);
+                  const container = e.target.getStage()?.container();
+                  if (container) container.style.cursor = 'pointer';
+                }}
+                onMouseLeave={() => {
+                  setHoveredLineIndex(null);
+                }}
               />
+              {/* Panel Edges Highlighting - listening={false} to avoid event theft */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
+                const nextP = arr[(i + 1) % arr.length];
+                const isHovered = hoveredLineIndex === i && hoveredPanel;
+                return (
+                  <Line
+                    key={`panel-edge-${i}`}
+                    points={[p.x, p.y, nextP.x, nextP.y]}
+                    stroke={isHovered ? '#12086f' : 'transparent'}
+                    strokeWidth={3}
+                    hitStrokeWidth={20}
+                    listening={false}
+                  />
+                );
+              })}
+              {/* Invisible trigger lines for panel edges that handle events */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
+                const nextP = arr[(i + 1) % arr.length];
+                return (
+                  <Line
+                    key={`panel-edge-trigger-${i}`}
+                    points={[p.x, p.y, nextP.x, nextP.y]}
+                    stroke="transparent"
+                    strokeWidth={20 / stageScale}
+                    hitStrokeWidth={20 / stageScale}
+                    onMouseEnter={(e) => {
+                      if (hoveredCornerIndex === null) {
+                        setHoveredLineIndex(i);
+                        setHoveredPanel(true);
+                        const container = e.target.getStage()?.container();
+                        if (container) container.style.cursor = 'pointer';
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredLineIndex(null)}
+                  />
+                );
+              })}
               {tempHole &&
                 (tempHole.type === 'circle' ? (
                   <Circle
@@ -566,25 +599,109 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                 const commonProps = {
                   key: index,
                   fill: 'rgba(0,0,0,0.2)',
-                  stroke: selectedHoleIndex === index ? '#1e88e5' : 'black',
+                  stroke:
+                    selectedHoleIndex === index || hoveredHoleIndex === index ? '#12086f' : 'black',
                   opacity: 0.7,
-                  strokeWidth: 0.5,
+                  strokeWidth: hoveredHoleIndex === index ? 1.5 : 0.5,
                   onClick: () => {
                     setSelectedHoleIndex(index);
                     setSelectedPointIndex(null);
                     setSelectedLineIndex(null);
                   },
-                  onMouseEnter: () => setHoveredHoleIndex(index),
-                  onMouseLeave: () => setHoveredHoleIndex(null),
+                  onMouseEnter: (e: any) => {
+                    setHoveredHoleIndex(index);
+                    const container = e.target.getStage()?.container();
+                    if (container) container.style.cursor = 'pointer';
+                  },
+                  onMouseLeave: () => {
+                    // Do not set null here if we might be entering a trigger
+                    // Instead, we let the stage or other objects handle the clear
+                  },
                 };
                 if (hole.type === 'circle') {
+                  const cx = hole.x + hole.width / 2;
+                  const cy = hole.y + hole.height / 2;
+                  const r = Math.min(hole.width, hole.height) / 2;
+                  const corners = [
+                    { x: hole.x, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y + hole.height },
+                    { x: hole.x, y: hole.y + hole.height },
+                  ];
                   return (
-                    <Circle
-                      {...commonProps}
-                      x={hole.x + hole.width / 2}
-                      y={hole.y + hole.height / 2}
-                      radius={Math.min(hole.width, hole.height) / 2}
-                    />
+                    <React.Fragment key={`hole-circle-container-${index}`}>
+                      <Circle {...commonProps} x={cx} y={cy} radius={r} />
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx) => (
+                          <Rect
+                            key={`h-${index}-p-${pIdx}`}
+                            x={p.x - 5}
+                            y={p.y - 5}
+                            width={10}
+                            height={10}
+                            fill={hoveredHolePointIndex === pIdx ? '#12086f' : 'white'}
+                            stroke="#12086f"
+                            strokeWidth={1}
+                            opacity={0.8}
+                            listening={false}
+                          />
+                        ))}
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx) => (
+                          <Rect
+                            key={`h-${index}-p-trigger-${pIdx}`}
+                            x={p.x - 5 / stageScale}
+                            y={p.y - 5 / stageScale}
+                            width={10 / stageScale}
+                            height={10 / stageScale}
+                            fill="transparent"
+                            onMouseEnter={(e) => {
+                              setHoveredHolePointIndex(pIdx);
+                              setHoveredLineIndex(null); 
+                              const container = e.target.getStage()?.container();
+                              if (container) container.style.cursor = 'pointer';
+                            }}
+                            onMouseLeave={() => setHoveredHolePointIndex(null)}
+                          />
+                        ))}
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx, arr) => {
+                          const nextP = arr[(pIdx + 1) % arr.length];
+                          const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                          return (
+                            <Line
+                              key={`h-${index}-edge-${pIdx}`}
+                              points={[p.x, p.y, nextP.x, nextP.y]}
+                              stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                              strokeWidth={3}
+                              hitStrokeWidth={20 / stageScale}
+                              listening={false}
+                            />
+                          );
+                        })}
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx, arr) => {
+                          const nextP = arr[(pIdx + 1) % arr.length];
+                          return (
+                            <Line
+                              key={`h-${index}-edge-trigger-${pIdx}`}
+                              points={[p.x, p.y, nextP.x, nextP.y]}
+                              stroke="transparent"
+                              strokeWidth={20 / stageScale}
+                              hitStrokeWidth={20 / stageScale}
+                              onMouseEnter={(e) => {
+                                if (hoveredHolePointIndex === null) {
+                                  setHoveredLineIndex(pIdx);
+                                  setHoveredHoleIndex(index);
+                                  const container = e.target.getStage()?.container();
+                                  if (container) container.style.cursor = 'pointer';
+                                }
+                              }}
+                              onMouseLeave={() => setHoveredLineIndex(null)}
+                            />
+                          );
+                        })}
+                    </React.Fragment>
                   );
                 } else if (hole.type === 'polygon' && hole.points) {
                   return (
@@ -599,30 +716,56 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                           curveControls,
                           `hole_${index}`
                         )}
+                        hitStrokeWidth={20}
                       />
-                      {selectedHoleIndex === index && (
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) && (
                         <>
                           {hole.points.map((p, pIdx) => (
                             <Rect
                               key={`h-${index}-p-${pIdx}`}
-                              x={p.x - 3}
-                              y={p.y - 3}
-                              width={6}
-                              height={6}
-                              onClick={() => {
-                                setSelectedPointIndex(pIdx);
+                              x={p.x - 5}
+                              y={p.y - 5}
+                              width={10}
+                              height={10}
+                              fill={
+                                selectedPointIndex === pIdx 
+                                  ? '#12086f' 
+                                  : hoveredHolePointIndex === pIdx 
+                                    ? '#12086f' 
+                                    : 'white'
+                              }
+                              stroke="#12086f"
+                              strokeWidth={1}
+                              listening={false}
+                            />
+                          ))}
+                          {hole.points.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-trigger-${pIdx}`}
+                              x={p.x - 5 / stageScale}
+                              y={p.y - 5 / stageScale}
+                              width={10 / stageScale}
+                              height={10 / stageScale}
+                              fill="transparent"
+                              onMouseEnter={(e) => {
+                                setHoveredHolePointIndex(pIdx);
+                                setHoveredLineIndex(null); 
+                                const container = e.target.getStage()?.container();
+                                if (container) container.style.cursor = 'pointer';
                               }}
+                              onMouseLeave={() => setHoveredHolePointIndex(null)}
+                              onClick={() => setSelectedPointIndex(pIdx)}
                               draggable
                               onDragMove={(e) => {
                                 const { snappedX, snappedY } = getSnappedPosition(
-                                  e.target.x() + 3,
-                                  e.target.y() + 3,
+                                  e.target.x() + (5 / stageScale),
+                                  e.target.y() + (5 / stageScale),
                                   getAllPoints(),
                                   stageScale,
                                   p
                                 );
-                                e.target.x(snappedX - 3);
-                                e.target.y(snappedY - 3);
+                                e.target.x(snappedX - (5 / stageScale));
+                                e.target.y(snappedY - (5 / stageScale));
                                 setHoles((prev) => {
                                   const next = [...prev];
                                   const nextPoints = [...(next[index].points as any)];
@@ -633,54 +776,184 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                               }}
                             />
                           ))}
+                          {hole.points.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            return (
+                              <Line
+                                key={`h-${index}-edge-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                strokeWidth={3}
+                                hitStrokeWidth={0}
+                                listening={false}
+                              />
+                            );
+                          })}
+                          {hole.points.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            return (
+                              <Line
+                                key={`h-${index}-edge-trigger-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke="transparent"
+                                strokeWidth={20 / stageScale}
+                                hitStrokeWidth={20 / stageScale}
+                                onMouseEnter={(e) => {
+                                  if (hoveredHolePointIndex === null) {
+                                    setHoveredLineIndex(pIdx);
+                                    setHoveredHoleIndex(index);
+                                    const container = e.target.getStage()?.container();
+                                    if (container) container.style.cursor = 'pointer';
+                                  }
+                                }}
+                                onMouseLeave={() => setHoveredLineIndex(null)}
+                              />
+                            );
+                          })}
                         </>
                       )}
                     </React.Fragment>
                   );
-                } else if (hole.type === 'slotting') {
-                  const r = Math.min(hole.width, hole.height) / 2;
+                } else if (hole.type === 'slotting' || hole.type === 'rect' || !hole.type) {
+                  const r = hole.type === 'slotting' ? Math.min(hole.width, hole.height) / 2 : 0;
+                  const corners = [
+                    { x: hole.x, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y + hole.height },
+                    { x: hole.x, y: hole.y + hole.height },
+                  ];
                   return (
-                    <Rect
-                      {...commonProps}
-                      x={hole.x}
-                      y={hole.y}
-                      width={hole.width}
-                      height={hole.height}
-                      cornerRadius={r}
-                    />
-                  );
-                } else {
-                  return (
-                    <Rect
-                      {...commonProps}
-                      x={hole.x}
-                      y={hole.y}
-                      width={hole.width}
-                      height={hole.height}
-                    />
+                    <React.Fragment key={`hole-rect-container-${index}`}>
+                      <Rect
+                        {...commonProps}
+                        x={hole.x}
+                        y={hole.y}
+                        width={hole.width}
+                        height={hole.height}
+                        cornerRadius={r}
+                        hitStrokeWidth={20}
+                      />
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) && (
+                        <>
+                          {corners.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-${pIdx}`}
+                              x={p.x - 5}
+                              y={p.y - 5}
+                              width={10}
+                              height={10}
+                              fill={hoveredHolePointIndex === pIdx ? '#12086f' : 'white'}
+                              stroke="#12086f"
+                              strokeWidth={1}
+                              opacity={0.8}
+                              listening={false}
+                            />
+                          ))}
+                          {corners.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-trigger-${pIdx}`}
+                              x={p.x - 5 / stageScale}
+                              y={p.y - 5 / stageScale}
+                              width={10 / stageScale}
+                              height={10 / stageScale}
+                              fill="transparent"
+                              onMouseEnter={(e) => {
+                                setHoveredHolePointIndex(pIdx);
+                                setHoveredLineIndex(null); 
+                                const container = e.target.getStage()?.container();
+                                if (container) container.style.cursor = 'pointer';
+                              }}
+                              onMouseLeave={() => setHoveredHolePointIndex(null)}
+                            />
+                          ))}
+                          {corners.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            return (
+                              <Line
+                                key={`h-${index}-edge-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                strokeWidth={3}
+                                hitStrokeWidth={0}
+                                listening={false}
+                              />
+                            );
+                          })}
+                          {corners.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            return (
+                              <Line
+                                key={`h-${index}-edge-trigger-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke="transparent"
+                                strokeWidth={20 / stageScale}
+                                hitStrokeWidth={20 / stageScale}
+                                onMouseEnter={(e) => {
+                                  if (hoveredHolePointIndex === null) {
+                                    setHoveredLineIndex(pIdx);
+                                    setHoveredHoleIndex(index);
+                                    const container = e.target.getStage()?.container();
+                                    if (container) container.style.cursor = 'pointer';
+                                  }
+                                }}
+                                onMouseLeave={() => setHoveredLineIndex(null)}
+                              />
+                            );
+                          })}
+                        </>
+                      )}
+                    </React.Fragment>
                   );
                 }
               })}
               {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i) => (
                 <Rect
                   key={i}
-                  x={p.x - 3}
-                  y={p.y - 3}
-                  width={6}
-                  height={6}
-                  fill="grey"
-                  opacity={0.7}
+                  x={p.x - 5}
+                  y={p.y - 5}
+                  width={10}
+                  height={10}
+                  fill={
+                    selectedCornerIndex === i 
+                      ? '#12086f' 
+                      : hoveredCornerIndex === i 
+                        ? '#12086f' 
+                        : 'white'
+                  }
+                  stroke="#12086f"
+                  strokeWidth={1}
+                  opacity={hoveredPanel || selectedCornerIndex === i || hoveredCornerIndex === i ? 0.8 : 0}
+                  listening={false}
+                />
+              ))}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i) => (
+                <Rect
+                  key={`panel-corner-trigger-${i}`}
+                  x={p.x - 5 / stageScale}
+                  y={p.y - 5 / stageScale}
+                  width={10 / stageScale}
+                  height={10 / stageScale}
+                  fill="transparent"
+                  onMouseEnter={(e) => {
+                    setHoveredCornerIndex(i);
+                    setHoveredLineIndex(null); 
+                    const container = e.target.getStage()?.container();
+                    if (container) container.style.cursor = 'pointer';
+                  }}
+                  onMouseLeave={() => setHoveredCornerIndex(null)}
                   draggable
                   onDragMove={(e) => {
                     const { snappedX, snappedY, guides } = getSnappedPosition(
-                      e.target.x() + 3,
-                      e.target.y() + 3,
+                      e.target.x() + (5 / stageScale),
+                      e.target.y() + (5 / stageScale),
                       getAllPoints(),
                       stageScale,
                       p
                     );
-                    e.target.x(snappedX - 3);
-                    e.target.y(snappedY - 3);
+                    e.target.x(snappedX - (5 / stageScale));
+                    e.target.y(snappedY - (5 / stageScale));
                     setSnappingGuides(guides);
                     setShapePoints((prev) => {
                       const next = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
@@ -722,7 +995,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   ))}
                 </>
               )}
-              {renderHoverDimensions()}
+               <DimensionHighlighter
+                hoveredHoleIndex={hoveredHoleIndex}
+                selectedHoleIndex={selectedHoleIndex}
+                hoveredPanel={hoveredPanel}
+                holes={holes}
+                shapePoints={shapePoints}
+                defaultPanelPoints={defaultPanelPoints}
+              />
               <Transformer
                 ref={transformerRef}
                 boundBoxFunc={(newBox) => newBox}
@@ -730,6 +1010,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                 anchorStroke="#000"
                 anchorFill="#fff"
                 anchorCornerRadius={2}
+                listening={false}
               />
             </Layer>
           </Stage>
