@@ -335,7 +335,7 @@ export const alignExtrudedGeometry = (
  * In a Y-down coordinate system (like browser/Konva):
  * - Positive area: Clockwise (CW) winding
  * - Negative area: Counter-clockwise (CCW) winding
- * 
+ *
  * @param points Array of polygon vertices
  * @returns The signed area of the polygon
  */

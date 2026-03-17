@@ -3,16 +3,7 @@ import Konva from 'konva';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
-import {
-  Circle,
-  Text as KonvaText,
-  Layer,
-  Line,
-  Path,
-  Rect,
-  Stage,
-  Transformer,
-} from 'react-konva';
+import { Circle, Layer, Line, Path, Rect, Stage, Transformer } from 'react-konva';
 import * as THREE from 'three';
 import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { RootState } from '../store';
@@ -29,10 +20,10 @@ import {
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 
-import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
 import { PanelHeader } from './components/PanelHeader';
 import { HorizontalRuler, VerticalRuler } from './components/Rulers';
+import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
 
 interface PanelDesignerProps {
   state: RootState;
@@ -657,7 +648,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                             fill="transparent"
                             onMouseEnter={(e) => {
                               setHoveredHolePointIndex(pIdx);
-                              setHoveredLineIndex(null); 
+                              setHoveredLineIndex(null);
                               const container = e.target.getStage()?.container();
                               if (container) container.style.cursor = 'pointer';
                             }}
@@ -667,7 +658,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                       {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
                         corners.map((p, pIdx, arr) => {
                           const nextP = arr[(pIdx + 1) % arr.length];
-                          const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                          const isEdgeHovered =
+                            hoveredLineIndex === pIdx && hoveredHoleIndex === index;
                           return (
                             <Line
                               key={`h-${index}-edge-${pIdx}`}
@@ -728,10 +720,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                               width={10}
                               height={10}
                               fill={
-                                selectedPointIndex === pIdx 
-                                  ? '#12086f' 
-                                  : hoveredHolePointIndex === pIdx 
-                                    ? '#12086f' 
+                                selectedPointIndex === pIdx
+                                  ? '#12086f'
+                                  : hoveredHolePointIndex === pIdx
+                                    ? '#12086f'
                                     : 'white'
                               }
                               stroke="#12086f"
@@ -749,7 +741,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                               fill="transparent"
                               onMouseEnter={(e) => {
                                 setHoveredHolePointIndex(pIdx);
-                                setHoveredLineIndex(null); 
+                                setHoveredLineIndex(null);
                                 const container = e.target.getStage()?.container();
                                 if (container) container.style.cursor = 'pointer';
                               }}
@@ -758,14 +750,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                               draggable
                               onDragMove={(e) => {
                                 const { snappedX, snappedY } = getSnappedPosition(
-                                  e.target.x() + (5 / stageScale),
-                                  e.target.y() + (5 / stageScale),
+                                  e.target.x() + 5 / stageScale,
+                                  e.target.y() + 5 / stageScale,
                                   getAllPoints(),
                                   stageScale,
                                   p
                                 );
-                                e.target.x(snappedX - (5 / stageScale));
-                                e.target.y(snappedY - (5 / stageScale));
+                                e.target.x(snappedX - 5 / stageScale);
+                                e.target.y(snappedY - 5 / stageScale);
                                 setHoles((prev) => {
                                   const next = [...prev];
                                   const nextPoints = [...(next[index].points as any)];
@@ -778,7 +770,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                           ))}
                           {hole.points.map((p, pIdx, arr) => {
                             const nextP = arr[(pIdx + 1) % arr.length];
-                            const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeHovered =
+                              hoveredLineIndex === pIdx && hoveredHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
@@ -860,7 +853,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                               fill="transparent"
                               onMouseEnter={(e) => {
                                 setHoveredHolePointIndex(pIdx);
-                                setHoveredLineIndex(null); 
+                                setHoveredLineIndex(null);
                                 const container = e.target.getStage()?.container();
                                 if (container) container.style.cursor = 'pointer';
                               }}
@@ -869,7 +862,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                           ))}
                           {corners.map((p, pIdx, arr) => {
                             const nextP = arr[(pIdx + 1) % arr.length];
-                            const isEdgeHovered = hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeHovered =
+                              hoveredLineIndex === pIdx && hoveredHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
@@ -916,15 +910,17 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   width={10}
                   height={10}
                   fill={
-                    selectedCornerIndex === i 
-                      ? '#12086f' 
-                      : hoveredCornerIndex === i 
-                        ? '#12086f' 
+                    selectedCornerIndex === i
+                      ? '#12086f'
+                      : hoveredCornerIndex === i
+                        ? '#12086f'
                         : 'white'
                   }
                   stroke="#12086f"
                   strokeWidth={1}
-                  opacity={hoveredPanel || selectedCornerIndex === i || hoveredCornerIndex === i ? 0.8 : 0}
+                  opacity={
+                    hoveredPanel || selectedCornerIndex === i || hoveredCornerIndex === i ? 0.8 : 0
+                  }
                   listening={false}
                 />
               ))}
@@ -938,7 +934,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   fill="transparent"
                   onMouseEnter={(e) => {
                     setHoveredCornerIndex(i);
-                    setHoveredLineIndex(null); 
+                    setHoveredLineIndex(null);
                     const container = e.target.getStage()?.container();
                     if (container) container.style.cursor = 'pointer';
                   }}
@@ -946,14 +942,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   draggable
                   onDragMove={(e) => {
                     const { snappedX, snappedY, guides } = getSnappedPosition(
-                      e.target.x() + (5 / stageScale),
-                      e.target.y() + (5 / stageScale),
+                      e.target.x() + 5 / stageScale,
+                      e.target.y() + 5 / stageScale,
                       getAllPoints(),
                       stageScale,
                       p
                     );
-                    e.target.x(snappedX - (5 / stageScale));
-                    e.target.y(snappedY - (5 / stageScale));
+                    e.target.x(snappedX - 5 / stageScale);
+                    e.target.y(snappedY - 5 / stageScale);
                     setSnappingGuides(guides);
                     setShapePoints((prev) => {
                       const next = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
@@ -995,7 +991,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   ))}
                 </>
               )}
-               <DimensionHighlighter
+              <DimensionHighlighter
                 hoveredHoleIndex={hoveredHoleIndex}
                 selectedHoleIndex={selectedHoleIndex}
                 hoveredPanel={hoveredPanel}

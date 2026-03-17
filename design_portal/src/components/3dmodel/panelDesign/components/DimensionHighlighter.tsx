@@ -1,12 +1,23 @@
 import React from 'react';
-import { Line, Text as KonvaText } from 'react-konva';
+import { Text as KonvaText, Line } from 'react-konva';
+import {
+  CIRCLE_FONT_SIZE,
+  DEFAULT_OFFSET,
+  DIM_COLOR,
+  DIM_STROKE_WIDTH,
+  RADIAL_OFFSET,
+  TEXT_FONT_SIZE,
+  TEXT_OFFSET_X,
+  TEXT_OFFSET_Y_BASE,
+  TEXT_WIDTH,
+  TICK_LENGTH,
+} from '../constants';
 import { DimensionHighlighterProps, DimensionLineProps, Hole, Point } from '../types';
 import { calculatePolygonWinding } from '../utils/geometryUtils';
-import { DIM_COLOR, DIM_STROKE_WIDTH, TICK_LENGTH, TEXT_FONT_SIZE, TEXT_WIDTH, TEXT_OFFSET_X, DEFAULT_OFFSET, TEXT_OFFSET_Y_BASE, CIRCLE_FONT_SIZE, RADIAL_OFFSET } from '../constants';
 
 /**
  * A reusable component that renders a standard dimension line with tick marks and a rotated label.
- * 
+ *
  * @param props {@link DimensionLineProps}
  */
 const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DEFAULT_OFFSET }) => {
@@ -31,7 +42,7 @@ const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DE
   ];
 
   let normalizedAngle = (angle * 180) / Math.PI;
-  // Position text "outside" the dimension line. 
+  // Position text "outside" the dimension line.
   // If offset is positive (line moved in perpAngle), textOffsetY should be negative to move further out.
   let textOffsetY = offset >= 0 ? -TEXT_OFFSET_Y_BASE : TEXT_OFFSET_Y_BASE;
 
@@ -51,8 +62,18 @@ const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DE
         listening={false}
       />
       {/* End tick marks */}
-      <Line points={getTickLinePoints(lp1)} stroke={DIM_COLOR} strokeWidth={DIM_STROKE_WIDTH} listening={false} />
-      <Line points={getTickLinePoints(lp2)} stroke={DIM_COLOR} strokeWidth={DIM_STROKE_WIDTH} listening={false} />
+      <Line
+        points={getTickLinePoints(lp1)}
+        stroke={DIM_COLOR}
+        strokeWidth={DIM_STROKE_WIDTH}
+        listening={false}
+      />
+      <Line
+        points={getTickLinePoints(lp2)}
+        stroke={DIM_COLOR}
+        strokeWidth={DIM_STROKE_WIDTH}
+        listening={false}
+      />
       {/* Dimension text */}
       <KonvaText
         x={(lp1.x + lp2.x) / 2}
@@ -74,7 +95,7 @@ const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DE
 
 /**
  * Component responsible for rendering dimension lines for panels and holes based on interaction state.
- * 
+ *
  * @param props {@link DimensionHighlighterProps}
  */
 export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
