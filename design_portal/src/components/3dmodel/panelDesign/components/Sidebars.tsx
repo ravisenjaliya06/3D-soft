@@ -1,16 +1,26 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
-import { Point, Hole, CurveControls, CornerType, PreviewSidebarProps, PropertiesSidebarProps, BaseSidebarProps } from '../types';
+import { BaseSidebarProps, PreviewSidebarProps, PropertiesSidebarProps } from '../types';
 
 /**
  * A reusable container for sidebar panels.
  * Includes a draggable header with a title and action icon.
  */
-const SidebarContainer: React.FC<BaseSidebarProps> = ({ title, pos, height, onDragStart, children }) => (
+const SidebarContainer: React.FC<BaseSidebarProps> = ({
+  title,
+  pos,
+  height,
+  onDragStart,
+  children,
+}) => (
   <div className={styles.sidebar} style={{ left: pos.x, top: pos.y, height }}>
     <div className={styles.panelHeader} onMouseDown={onDragStart}>
-      <div className={styles.panelTitle}><span>⠿</span> {title}</div>
-      <div className={styles.panelHeaderActions}><span>✥</span></div>
+      <div className={styles.panelTitle}>
+        <span>⠿</span> {title}
+      </div>
+      <div className={styles.panelHeaderActions}>
+        <span>✥</span>
+      </div>
     </div>
     <div className={styles.propertiesContainer}>
       <div className={styles.sidebarContent}>{children}</div>
@@ -41,7 +51,10 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
 /**
  * A standardized numeric input for consistent stepping and change handling.
  */
-const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => (
+const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> = ({
+  value,
+  onChange,
+}) => (
   <input
     type="number"
     step="0.1"
@@ -96,7 +109,6 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   isRotated2D,
   setSelectedHoleIndex,
 }) => {
-
   /**
    * Updates the coordinates of a specific vertex within a polygonal hole.
    */
@@ -147,7 +159,9 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
           <Row label="Type">
             <select
               className={styles.sidebarSelect}
-              value={curveControls[`hole_${selectedHoleIndex}_${selectedLineIndex}`] ? 'arc' : 'linear'}
+              value={
+                curveControls[`hole_${selectedHoleIndex}_${selectedLineIndex}`] ? 'arc' : 'linear'
+              }
               onChange={(e) => {
                 const val = e.target.value;
                 const curveKey = `hole_${selectedHoleIndex}_${selectedLineIndex}`;
@@ -197,10 +211,16 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       {selectedHoleIndex !== null && selectedPointIndex === null && selectedLineIndex === null && (
         <Section title={`Face Editing (Hole #${selectedHoleIndex + 1})`}>
           <Row label="X">
-            <NumberInput value={holes[selectedHoleIndex].x} onChange={(v) => updateHolePos('x', v)} />
+            <NumberInput
+              value={holes[selectedHoleIndex].x}
+              onChange={(v) => updateHolePos('x', v)}
+            />
           </Row>
           <Row label="Y">
-            <NumberInput value={holes[selectedHoleIndex].y} onChange={(v) => updateHolePos('y', v)} />
+            <NumberInput
+              value={holes[selectedHoleIndex].y}
+              onChange={(v) => updateHolePos('y', v)}
+            />
           </Row>
           <button
             className={styles.sidebarDeleteButton}
@@ -219,13 +239,17 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
         <Section title={`Vertex Editing (#${selectedCornerIndex + 1})`}>
           <Row label="Point X">
             <NumberInput
-              value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].x}
+              value={
+                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].x
+              }
               onChange={(v) => updatePanelPoint('x', v)}
             />
           </Row>
           <Row label="Point Y">
             <NumberInput
-              value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].y}
+              value={
+                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].y
+              }
               onChange={(v) => updatePanelPoint('y', v)}
             />
           </Row>

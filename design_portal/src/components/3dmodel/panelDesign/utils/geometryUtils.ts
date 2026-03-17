@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { Point, CornerType, CurveControls } from '../types';
+import { CornerType, CurveControls, Point } from '../types';
 
 /**
  * Calculates tangent points and arc parameters for a rounded corner.
  * Used to smoothly connect two line segments with a circular arc.
- * 
+ *
  * @param points Array of shape vertices
  * @param index Index of the corner to calculate
  * @param cornerRadius Array of radii for each corner
@@ -125,7 +125,7 @@ export const getTangents = (
 /**
  * Builds an SVG-like path string for a 2D shape with rounded corners.
  * This is primarily used for Konva rendering in the 2D stage.
- * 
+ *
  * @param points Array of shape vertices
  * @param cornerRadius Array of radii for each corner
  * @param cornerTypesArr Array of types for each corner
@@ -178,7 +178,7 @@ export const buildPathData = (
 /**
  * Creates a THREE.Shape for a 2D geometry, handling rounded corners and curves.
  * This shape can later be extruded into a 3D Mesh.
- * 
+ *
  * @param points Array of shape vertices
  * @param cornerRadius Array of radii for each corner
  * @param cornerTypesArr Array of types for each corner
@@ -189,7 +189,6 @@ export const buildPathData = (
 export const buildThreeShape = (
   points: Point[],
   cornerRadius: number[],
-  cornerTypesArr: CornerType[] = [],
   curveControls: CurveControls = {},
   prefix: string = 'shape'
 ) => {
@@ -214,7 +213,6 @@ export const buildThreeShape = (
     }
 
     const r = cornerRadius[j] || 0;
-    const type = cornerTypesArr[j] || 'default';
     if (r > 0) {
       // For Three.js, simple lineTo for now as in the original code
       // To improve sync, we could implement arc logic here as well
@@ -227,7 +225,7 @@ export const buildThreeShape = (
 
 /**
  * Computes the center point of a THREE.BufferGeometry based on its bounding box.
- * 
+ *
  * @param geometry The Three.js geometry to analyze
  * @returns A THREE.Vector3 representing the geometric center
  */
@@ -241,7 +239,7 @@ export const getGeometryCenter = (geometry: THREE.BufferGeometry) => {
 /**
  * Creates a THREE.Path representing a hole for a 3D Shape.
  * Handles circular, rectangular, polygonal, and rounded slot holes.
- * 
+ *
  * @param hole The hole data object
  * @param getMappedPoint Function to map 2D coordinates to 3D orientation
  * @param isRotated2D Whether the panel is rotated in 2D view
@@ -259,7 +257,7 @@ export const createHolePath = (
     const radiusY = hole.height / 2;
     const c3d = getMappedPoint({ x: hole.x + radiusX, y: hole.y + radiusY });
 
-    // Use absellipse to draw the hole. 
+    // Use absellipse to draw the hole.
     // If the view is rotated, we swap the radii to maintain correctly oriented oval holes.
     if (isRotated2D) {
       holePath.absellipse(c3d.x, c3d.y, radiusY, radiusX, 0, Math.PI * 2, false);
@@ -270,8 +268,10 @@ export const createHolePath = (
     // For rectangles, map the corners and draw a closed loop
     const hp1 = getMappedPoint({ x: hole.x, y: hole.y });
     const hp2 = getMappedPoint({ x: hole.x + hole.width, y: hole.y + hole.height });
-    const hminX = Math.min(hp1.x, hp2.x), hmaxX = Math.max(hp1.x, hp2.x);
-    const hminY = Math.min(hp1.y, hp2.y), hmaxY = Math.max(hp1.y, hp2.y);
+    const hminX = Math.min(hp1.x, hp2.x),
+      hmaxX = Math.max(hp1.x, hp2.x);
+    const hminY = Math.min(hp1.y, hp2.y),
+      hmaxY = Math.max(hp1.y, hp2.y);
 
     holePath.moveTo(hminX, hminY);
     holePath.lineTo(hmaxX, hminY);
@@ -292,9 +292,9 @@ export const createHolePath = (
 };
 
 /**
- * Aligns an extruded geometry to match a specific thickness axis and 
+ * Aligns an extruded geometry to match a specific thickness axis and
  * optionally centers it relative to an original geometry.
- * 
+ *
  * @param geometry The new ExtrudeGeometry to align
  * @param thickness The depth/thickness of the extrusion
  * @param axis The axis ('x', 'y', or 'z') representing the thickness

@@ -170,7 +170,7 @@ export class SelectObjectController {
     store.dispatch(setSelectedChildObject(object.userData.objectId));
 
     this._applyPartSelectOutline(object);
-    
+
     // Trigger HelperTool display for parts
     if (this.onShowHelperTool) {
       if (

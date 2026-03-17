@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { KonvaEventObject } from 'konva/lib/Node';
+import { useEffect, useRef, useState } from 'react';
 
 export function useStageManager(panelWidth: number, panelHeight: number) {
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -33,7 +33,7 @@ export function useStageManager(panelWidth: number, panelHeight: number) {
       setStageScale(newScale);
       setStagePosition({
         x: stageSize.width / 2,
-        y: stageSize.height / 2
+        y: stageSize.height / 2,
       });
     }
   }, [panelWidth, panelHeight, stageSize.width, stageSize.height]);
@@ -71,7 +71,6 @@ export function useStageManager(panelWidth: number, panelHeight: number) {
     stageScale,
     setStageScale,
     stagePosition,
-    setStagePosition,
     handleWheel,
   };
 }

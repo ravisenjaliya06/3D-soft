@@ -1,7 +1,7 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Point, Hole, CurveControls, CornerType } from '../types';
+import { CornerType, Hole, Point } from '../types';
 import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
 export function useThreeScene(
@@ -13,7 +13,6 @@ export function useThreeScene(
   plankThickness: number,
   isRotated2D: boolean,
   state: any,
-  activeTab: string
 ) {
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -27,9 +26,10 @@ export function useThreeScene(
   const frameIdRef = useRef<number | null>(null);
 
   // Memoized mapping function
-  const getMappedPoint = useMemo(() => 
-    (p: Point) => isRotated2D ? { x: -p.y, y: p.x } : p
-  , [isRotated2D]);
+  const getMappedPoint = useMemo(
+    () => (p: Point) => (isRotated2D ? { x: -p.y, y: p.x } : p),
+    [isRotated2D]
+  );
 
   // Initialization Effect
   useEffect(() => {
@@ -85,7 +85,7 @@ export function useThreeScene(
     // 1. Build Geometry
     const currentPoints = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
     const mappedPoints = currentPoints.map(getMappedPoint);
-    const mainShape = buildThreeShape(mappedPoints, cornerRadius, cornerTypes, {}, 'shape');
+    const mainShape = buildThreeShape(mappedPoints, cornerRadius, {}, 'shape');
 
     // Add holes using the utility
     holes.forEach((hole) => {
@@ -112,8 +112,12 @@ export function useThreeScene(
     let material = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
 
     if (globalScene && selectedObject && selectedChildObject) {
-      const selectedMesh = globalScene.children.find((obj: any) => obj.userData?.objectId === selectedObject);
-      const selectedChildMesh = selectedMesh?.children.find((obj: any) => obj.userData?.objectId === selectedChildObject);
+      const selectedMesh = globalScene.children.find(
+        (obj: any) => obj.userData?.objectId === selectedObject
+      );
+      const selectedChildMesh = selectedMesh?.children.find(
+        (obj: any) => obj.userData?.objectId === selectedChildObject
+      );
       if (selectedChildMesh instanceof THREE.Mesh) {
         material = selectedChildMesh.material.clone();
       }
@@ -151,7 +155,7 @@ export function useThreeScene(
     state?.scene?.scene,
     state?.data?.selectedObject,
     state?.data?.selectedChildObject,
-    getMappedPoint
+    getMappedPoint,
   ]);
 
   // Resize Handling Effect

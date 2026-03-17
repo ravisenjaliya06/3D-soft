@@ -2,7 +2,6 @@ import React from 'react';
 import styles from '../panelDesign.module.css';
 import { PanelHeaderProps } from '../types';
 
-
 export const PanelHeader: React.FC<PanelHeaderProps> = ({
   tools,
   activeTool,

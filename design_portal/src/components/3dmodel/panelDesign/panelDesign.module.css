@@ -218,7 +218,8 @@
   font-size: 0.75rem;
 }
 
-.sidebarRow input, .sidebarSelect {
+.sidebarRow input,
+.sidebarSelect {
   background: var(--primary-white);
   border: 1px solid var(--border-color);
   color: var(--common-text-color);
@@ -280,9 +281,24 @@
   gap: 15px;
 }
 
-.headerLeft { flex: 1; font-weight: 700; font-size: 1.1rem; color: var(--primary-color); }
-.headerCenter { flex: 2; display: flex; justify-content: center; gap: 30px; }
-.headerRight { flex: 1; display: flex; justify-content: flex-end; gap: 15px; }
+.headerLeft {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+.headerCenter {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+.headerRight {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
 
 .toolButton {
   display: flex;
@@ -295,14 +311,20 @@
   min-width: 60px;
 }
 
-.toolButton:hover { background: var(--primary-selected-color); }
-.toolButton img { 
-  width: 20px; 
-  height: 20px; 
-  margin-bottom: 4px; 
+.toolButton:hover {
+  background: var(--primary-selected-color);
+}
+.toolButton img {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 4px;
   filter: invert(18%) sepia(87%) saturate(1913%) hue-rotate(241deg) brightness(87%) contrast(98%);
 }
-.toolButton div { font-size: 0.7rem; color: var(--primary-color); font-weight: 600; }
+.toolButton div {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
 
 .footer {
   position: fixed;
@@ -327,9 +349,17 @@
   border: none;
 }
 
-.cancelButton { background: var(--button-soft-grey); color: var(--primary-white); }
-.completeButton { background: var(--primary-color); color: var(--primary-white); }
-.completeButton:hover { background: var(--hover-button); }
+.cancelButton {
+  background: var(--button-soft-grey);
+  color: var(--primary-white);
+}
+.completeButton {
+  background: var(--primary-color);
+  color: var(--primary-white);
+}
+.completeButton:hover {
+  background: var(--hover-button);
+}
 
 .sidebarDeleteButton {
   width: 100%;
@@ -363,8 +393,11 @@
 /* Modals */
 .modalOverlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -380,10 +413,28 @@
   box-shadow: var(--box-shadow);
 }
 
-.popupTitle { color: var(--primary-color); font-size: 1rem; margin: 0; }
-.buttonContainer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-.popupHeader { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-.warningIcon { color: var(--primary-red); font-size: 1.5rem; flex-shrink: 0; }
+.popupTitle {
+  color: var(--primary-color);
+  font-size: 1rem;
+  margin: 0;
+}
+.buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.warningIcon {
+  color: var(--primary-red);
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
 
 .subToolbar {
   position: absolute;
