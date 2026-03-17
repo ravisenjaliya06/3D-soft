@@ -240,15 +240,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
     if (!rendererRef.current) return;
 
     if (selectedObject) {
-      const isModel =
-        selectedObject.userData?.type === 'model' ||
-        selectedObject.userData?.type === OBJECT_TYPES.MODEL ||
-        selectedObject.userData?.isGLB;
-      if (isModel) {
-        removeTool();
-      } else {
-        createTool(selectedObject);
-      }
+      createTool(selectedObject);
     } else {
       removeTool();
     }
