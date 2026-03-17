@@ -10,7 +10,7 @@ import { RootState } from '../store';
 import styles from './panelDesign.module.css';
 
 import { Hole, Point, CurveControls, CornerType } from './types';
-import { buildPathData, buildThreeShape } from './utils/geometryUtils';
+import { buildPathData, buildThreeShape, getGeometryCenter } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
@@ -45,6 +45,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const [hoveredHoleIndex, setHoveredHoleIndex] = useState<number | null>(null);
   const [showConfirmExit, setShowConfirmExit] = useState(false);
   const [isRotated2D, setIsRotated2D] = useState(false);
+  const [thicknessAxis, setThicknessAxis] = useState<'x' | 'y' | 'z'>('y');
   
   const [activeTab] = useState<'3D' | 'Drawing'>('Drawing');
   const [previewPos, setPreviewPos] = useState({ x: window.innerWidth - 350, y: 110 });
@@ -118,14 +119,21 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     if (!(selectedChildMesh instanceof THREE.Mesh)) return;
 
     if (selectedChildMesh.geometry) {
-      setOriginalGeometry(selectedChildMesh.geometry);
+      // Only set original if not already set or selection changed
+      if (!originalGeometry || originalGeometry.uuid !== selectedChildMesh.geometry.uuid) {
+        if (!selectedChildMesh.geometry.userData.isModified) {
+          setOriginalGeometry(selectedChildMesh.geometry.clone());
+        }
+      }
+
       const plankInfo = detectPlankByBoundingBox(selectedChildMesh);
-      const { size, thicknessAxis } = plankInfo;
-      const currentThickness = size[thicknessAxis];
+      const { size, thicknessAxis: detectedAxis } = plankInfo;
+      setThicknessAxis(detectedAxis);
+      const currentThickness = size[detectedAxis];
 
       let w = 0, h = 0;
-      if (thicknessAxis === 'y') { w = size.x; h = size.z; }
-      else if (thicknessAxis === 'x') { w = size.z; h = size.y; }
+      if (detectedAxis === 'y') { w = size.x; h = size.z; }
+      else if (detectedAxis === 'x') { w = size.z; h = size.y; }
       else { w = size.x; h = size.y; }
 
       if (h > w) { setpanelWidth(h); setpanelHeight(w); setIsRotated2D(true); }
@@ -215,7 +223,28 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     const extrudeSettings = { depth: plankThickness, bevelEnabled: false };
     const newGeometry = new THREE.ExtrudeGeometry(mainShape, extrudeSettings);
+    
+    // Preservation of Center and Orientation Logic
+    // 1. Center the depth so Z=0 is in middle of thickness
+    newGeometry.translate(0, 0, -plankThickness / 2);
+
+    // 2. Rotate geometry to match thickness axis of original plank
+    if (thicknessAxis === 'x') {
+      newGeometry.rotateY(Math.PI / 2);
+    } else if (thicknessAxis === 'y') {
+      newGeometry.rotateX(Math.PI / 2);
+    }
+
+    // 3. Match position with original geometry center
+    if (originalGeometry) {
+      const oldCenter = getGeometryCenter(originalGeometry);
+      const newCenter = getGeometryCenter(newGeometry);
+      
+      newGeometry.translate(oldCenter.x - newCenter.x, oldCenter.y - newCenter.y, oldCenter.z - newCenter.z);
+    }
+
     newGeometry.userData.oldGeometry = originalGeometry;
+    newGeometry.userData.isModified = true;
 
     selectedChildMesh.geometry.dispose();
     selectedChildMesh.geometry = newGeometry;

@@ -191,3 +191,10 @@ export const buildThreeShape = (
 
   return shape;
 };
+
+export const getGeometryCenter = (geometry: THREE.BufferGeometry) => {
+  geometry.computeBoundingBox();
+  const center = new THREE.Vector3();
+  geometry.boundingBox?.getCenter(center);
+  return center;
+};
