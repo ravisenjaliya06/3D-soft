@@ -264,7 +264,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     };
   }, [isDraggingPreview, isDraggingDrawing]);
 
+  /**
+   * Triggers the confirmation modal before exiting the designer.
+   */
   const handleCancel = () => setShowConfirmExit(true);
+
+  /**
+   * Reverts changes by restoring the original geometry and navigates back to the design view.
+   */
   const confirmExit = () => {
     const scene = state?.scene?.scene;
     const selectedChildMesh = scene?.children
@@ -373,6 +380,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }
   };
 
+  /**
+   * Handles mouse move events for previewing shapes, updating snapping guides,
+   * or adjusting curve control points during the drawing process.
+   */
   const onStageMouseMove = (e: any) => {
     const stage = e.target.getStage();
     const pointer = stage?.getPointerPosition();
@@ -414,6 +425,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }
   };
 
+  /**
+   * Renders the temporary dimension labels (width/height) when hovering over or selecting a hole.
+   * Useful for precise positioning and sizing of cutouts.
+   */
   const renderHoverDimensions = () => {
     const currentHoveredIdx = hoveredHoleIndex !== null ? hoveredHoleIndex : selectedHoleIndex;
     if (currentHoveredIdx === null || !holes[currentHoveredIdx]) return null;

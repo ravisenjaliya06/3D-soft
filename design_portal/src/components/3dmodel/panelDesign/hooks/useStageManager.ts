@@ -2,6 +2,13 @@ import Konva from 'konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useRef, useState } from 'react';
 
+/**
+ * Manages the Konva stage state, including size, scale (zoom), and position (pan).
+ * Automatically calculates initial zoom-to-fit and handles window resize events.
+ * 
+ * @param panelWidth Width of the panel in millimeters
+ * @param panelHeight Height of the panel in millimeters
+ */
 export function useStageManager(panelWidth: number, panelHeight: number) {
   const stageRef = useRef<Konva.Stage | null>(null);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });

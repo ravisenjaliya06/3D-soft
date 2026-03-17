@@ -8,6 +8,10 @@ interface RulersProps {
   activeTool: string | null;
 }
 
+/**
+ * A horizontal ruler that displays metric markings aligned with the 2D stage.
+ * Adjusts its vertical position based on active toolbars.
+ */
 export const HorizontalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,
@@ -48,6 +52,10 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
   );
 };
 
+/**
+ * A vertical ruler that displays metric markings along the left side of the stage.
+ * Adjusts its top padding to avoid overlap with headers.
+ */
 export const VerticalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,

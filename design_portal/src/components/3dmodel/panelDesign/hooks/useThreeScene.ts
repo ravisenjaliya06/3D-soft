@@ -4,6 +4,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CornerType, Hole, Point } from '../types';
 import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
+/**
+ * Manages a side-by-side Three.js 3D preview of the panel being designed.
+ * Handles scene initialization, real-time geometry updates, material syncing,
+ * and responsive canvas resizing.
+ * 
+ * @returns refs for the canvas and its container to be used in the UI.
+ */
 export function useThreeScene(
   shapePoints: Point[],
   defaultPanelPoints: Point[],

@@ -2,6 +2,16 @@ import { Point } from '../types';
 
 export const SNAP_TOLERANCE = 15;
 
+/**
+ * Calculates a snapped position for a given point against a set of target points.
+ * Provides alignment "guides" for X and Y axes if snapping occurs.
+ * 
+ * @param x Raw X coordinate
+ * @param y Raw Y coordinate
+ * @param allPoints Array of target points to snap to
+ * @param stageScale Current zoom scale of the stage
+ * @param ignoreSelf Optional point to exclude from snapping comparison
+ */
 export const getSnappedPosition = (
   x: number,
   y: number,

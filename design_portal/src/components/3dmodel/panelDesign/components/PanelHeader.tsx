@@ -2,6 +2,11 @@ import React from 'react';
 import styles from '../panelDesign.module.css';
 import { PanelHeaderProps } from '../types';
 
+/**
+ * The main header component for the Panel Designer.
+ * Contains tool selection buttons, action buttons (Complete/Cancel),
+ * and conditional sub-toolbars for specific tools like "Dig".
+ */
 export const PanelHeader: React.FC<PanelHeaderProps> = ({
   tools,
   activeTool,

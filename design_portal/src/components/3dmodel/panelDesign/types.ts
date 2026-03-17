@@ -1,10 +1,20 @@
+/**
+ * Represents a basic 2D point in millimeter coordinates.
+ */
 export interface Point {
   x: number;
   y: number;
 }
 
+/**
+ * Supported corner treatments for panel vertices and polygonal holes.
+ */
 export type CornerType = 'default' | 'round' | 'chamfer' | 'cut-round';
 
+/**
+ * Data structure representing a cutout (hole) in a panel.
+ * Supports various shapes and treatments like rounding and curves.
+ */
 export interface Hole {
   x: number;
   y: number;
@@ -19,6 +29,9 @@ export interface Hole {
   id?: string;
 }
 
+/**
+ * A map of control points used for quadratic Bezier curves on panel edges.
+ */
 export interface CurveControls {
   [key: string]: Point;
 }
