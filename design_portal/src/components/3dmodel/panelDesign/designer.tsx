@@ -52,6 +52,7 @@ interface PanelDesignerProps {
 export default function PanelDesigner({ state }: PanelDesignerProps) {
   const router = useRouter();
   const designId = window.location.pathname.split('/')[2];
+  const versionId = window.location.pathname.split('/')[3];
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
   // States
@@ -281,7 +282,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       selectedChildMesh.geometry.dispose();
       selectedChildMesh.geometry = originalGeometry;
     }
-    router.push(`/design/${designId}`);
+    router.push(`/design/${designId}/${versionId}`);
   };
 
   /**
@@ -290,7 +291,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    */
   const handleComplete = () => {
     updateMeshGeometry();
-    router.push(`/design/${designId}`);
+    router.push(`/design/${designId}/${versionId}`);
   };
 
   /**

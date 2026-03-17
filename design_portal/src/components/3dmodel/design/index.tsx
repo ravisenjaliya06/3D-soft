@@ -26,6 +26,12 @@ export const gettingDesignID = () => {
   return designID;
 };
 
+export const gettingVersionID = () => {
+  /** Retrieves the current version ID from the URL path if it exists. */
+  const parts = window.location.pathname.split('/');
+  return parts.length > 3 ? parts[3] : undefined;
+};
+
 export function removeExistingLines() {
   /** Removes all existing outline line objects from the 3D scene. */
 
@@ -105,8 +111,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   useEffect(() => {
     if (!mountRef.current || !designId) return;
 
+    const versionId = (router.query.versionid as string) ?? gettingVersionID();
+
     // Get or create scene for this design (each design has its own scene)
-    const threeDView = getOrCreateThreeDView(mountRef.current, designId);
+    const threeDView = getOrCreateThreeDView(mountRef.current, designId, versionId);
 
     setLocalDesign3D(threeDView);
     setDesign3D(threeDView);
@@ -164,7 +172,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       setSelectedObject(null);
       setHelperToolObject(null);
     };
-  }, [designId]);
+  }, [designId, router.query.versionid]);
 
   useEffect(() => {
     if (!design3D) return;

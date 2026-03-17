@@ -29,7 +29,14 @@ from umaboy.models import Organization
 from user.constant import PUT
 
 
+class DesignVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DesignVersion
+        fields = ["id", "design", "name"]
+
+
 class DesignSerializer(serializers.ModelSerializer):
+    versions = serializers.SerializerMethodField()
 
     class Meta:
         model = Design
@@ -52,8 +59,13 @@ class DesignSerializer(serializers.ModelSerializer):
             "updated_at",
             "organization",
             "created_by",
+            "versions",
         ]
-        read_only_fields = ["id", "organization", "created_by", "project_code"]
+        read_only_fields = ["id", "organization", "created_by", "project_code", "versions"]
+
+    def get_versions(self, obj):
+        versions = obj.designversion_set.all().order_by("-created_at")
+        return DesignVersionSerializer(versions, many=True).data
 
     def __init__(self: "DesignSerializer", *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -95,10 +107,6 @@ class NestingItemSerializer(serializers.Serializer):
     parent = serializers.CharField(required=False)
 
 
-class DesignVersionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DesignVersion
-        fields = ["id", "design", "name"]
 
 
 class SceneGetSerializer(serializers.Serializer):

@@ -10,7 +10,8 @@ export const API_ENDPOINT = {
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
   GET_MATERIAL_COMPANIES: 'material/company/',
   GET_TEXTURES: 'material/finishes/?type=Texture',
-  GET_DESIGN_CATALOG_ITEMS: (design_id: string) => 'design/catalogs/?design_id=' + design_id,
+  GET_DESIGN_CATALOG_ITEMS: (design_id: string, version_id?: string) =>
+    `design/catalogs/?design_id=${design_id}${version_id ? `&version_id=${version_id}` : ''}`,
   GET_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   GET_DESIGN_NESTING_SHEET: (designID: string, sheetID: string) =>
     `design/${designID}/catalog/item/${sheetID}/`,

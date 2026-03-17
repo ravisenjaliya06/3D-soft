@@ -15,7 +15,7 @@ import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { RootState } from '../store';
+import { resetStoreForNewDesign, RootState } from '../store';
 import {
   setActiveDesignCamDepth,
   setActiveDesignCamDiameter,
@@ -47,9 +47,118 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+  const versionDropdownRef = useRef<HTMLDivElement | null>(null);
+  const versionButtonRef = useRef<HTMLDivElement | null>(null);
+
+  const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+  const designId = pathName.length > 2 ? pathName[2] : '';
+  const versionIdFromUrl = pathName.length > 3 ? pathName[3] : '';
+
+  const [designDetail, setDesignDetail] = useState<Design | null>(null);
+
+  const fetchDesigns = async () => {
+    /** Fetches all designs from the backend. */
+
+    try {
+      const response: { status: number; data: Design[] } = await commonService.get(
+        API_ENDPOINT.GET_DESIGNS
+      );
+      if (response.status === 200) {
+        const designs = response.data;
+        const selectedDesign = designs.find((design) => design.id === designId);
+        if (selectedDesign) {
+          setDesignDetail(selectedDesign);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching designs:', e);
+    }
+  };
+
+  const getVersionName = (vId: string) => {
+    if (!designDetail?.versions) return 'Version';
+    const totalVersions = designDetail.versions.length;
+    // Versions are newest first
+    const index = designDetail.versions.findIndex((v) => v.id === vId);
+    if (index === -1) return 'Version';
+    return `v${totalVersions - index}`;
+  };
+
+  const handleVersionSelect = (vId: string) => {
+    setIsVersionDropdownOpen(false);
+    setIsLoading(true);
+    window.location.href = `/design/${designId}/${vId}`;
+  };
+
+  const handleMakeLatest = async (vId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsVersionDropdownOpen(false);
+    setIsLoading(true);
+
+    try {
+      // 1. Fetch catalogs for the specific version
+      const response: { status: number; data: { catalogs: any } } = await commonService.get(
+        API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(designId, vId)
+      );
+
+      if (response.status === 200) {
+        // 2. Extract and flatten catalogs
+        const catalogsObj = response.data.catalogs;
+        const flattenedCatalogs: any[] = [];
+        Object.values(catalogsObj).forEach((catList: any) => {
+          if (Array.isArray(catList)) {
+            flattenedCatalogs.push(...catList);
+          }
+        });
+
+        if (flattenedCatalogs.length === 0) {
+          toast(({ closeToast }) => (
+            <CustomToast appearance="error" message="No catalogs found to duplicate." closeToast={closeToast} />
+          ));
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Save as new version
+        const payload = {
+          design_id: designId,
+          items: flattenedCatalogs,
+        };
+
+        const createResponse = await commonService.post(
+          API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true),
+          payload
+        );
+
+        if (createResponse.status === 201) {
+          const newVersionId = createResponse.data?.version_id;
+          toast(({ closeToast }) => (
+            <CustomToast appearance="success" message="New version created successfully!" closeToast={closeToast} />
+          ));
+          if (newVersionId) {
+            window.location.href = `/design/${designId}/${newVersionId}`;
+          } else {
+            router.reload();
+          }
+        } else {
+          toast(({ closeToast }) => (
+            <CustomToast appearance="error" message="Failed to create new version." closeToast={closeToast} />
+          ));
+        }
+      }
+    } catch (err) {
+      console.error('Error in handleMakeLatest:', err);
+      toast(({ closeToast }) => (
+        <CustomToast appearance="error" message="An error occurred while duplicating version." closeToast={closeToast} />
+      ));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isRenderDropdownOpen, setIsRenderDropdownOpen] = useState(false);
-  const [designName, setDesignName] = useState<Design[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -122,31 +231,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }
   };
 
-  const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-  const designId = pathName.length > 2 ? pathName[2] : '';
-
   useEffect(() => {
     fetchDesigns();
   }, []);
-
-  const fetchDesigns = async () => {
-    /** Fetches all designs from the backend. */
-
-    try {
-      const response: { status: number; data: Design[] } = await commonService.get(
-        API_ENDPOINT.GET_DESIGNS
-      );
-      if (response.status === 200) {
-        const designs = response.data;
-        const selectedDesign = designs.find((design) => design.id === designId);
-        if (selectedDesign) {
-          setDesignName([selectedDesign]);
-        }
-      }
-    } catch (e) {
-      console.error('Error fetching designs:', e);
-    }
-  };
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -166,6 +253,15 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         !renderDropdownButtonRef.current.contains(event.target as Node)
       ) {
         setIsRenderDropdownOpen(false);
+      }
+
+      if (
+        versionDropdownRef.current &&
+        !versionDropdownRef.current.contains(event.target as Node) &&
+        versionButtonRef.current &&
+        !versionButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsVersionDropdownOpen(false);
       }
     };
 
@@ -234,7 +330,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         {}
       );
       if (response.status === 200) {
-        router.push(`/design/${designId}/nesting`);
+        router.push(`/design/${designId}/${versionIdFromUrl}/nesting`);
       } else {
         toast(({ closeToast }) => (
           <CustomToast
@@ -453,9 +549,14 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     }, 2000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsLoading(true);
     const objectSaver = new ObjectsSaver();
-    objectSaver.saveAllObjects();
+    const newVersionId = await objectSaver.saveAllObjects();
+    if (newVersionId) {
+      window.location.href = `/design/${designId}/${newVersionId}`;
+    }
+    setIsLoading(false);
   };
 
   const headerTools = [
@@ -527,7 +628,51 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       )}
       <div className={styles.header}>
         <div className={styles.headerTitle}>
-          <p>{designName.length > 0 ? designName[0].design_name : 'Furniture Design'}</p>
+          <p>{designDetail ? designDetail.design_name : 'Furniture Design'}</p>
+
+          {designDetail && designDetail.versions && designDetail.versions.length > 0 && (
+            <div className={styles.versionWrapper}>
+              <div
+                className={styles.versionSelector}
+                onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                ref={versionButtonRef}
+              >
+                <p>
+                  Version:{' '}
+                  {versionIdFromUrl ? getVersionName(versionIdFromUrl) : 'v' + (designDetail?.versions?.length || '')}
+                </p>
+                <span style={{ fontSize: '10px', color: 'var(--primary-color)' }}>▼</span>
+              </div>
+
+              {isVersionDropdownOpen && (
+                <div className={styles.versionDropdown} ref={versionDropdownRef}>
+                  {designDetail.versions.map((v, index) => (
+                    <div
+                      key={v.id}
+                      className={`${styles.versionItem} ${
+                        v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
+                          ? styles.active
+                          : ''
+                      }`}
+                      onClick={() => handleVersionSelect(v.id)}
+                    >
+                      <div className={styles.versionInfo}>
+                        <span>{getVersionName(v.id)}</span>
+                        <span className={styles.versionId}>{v.id}</span>
+                      </div>
+                      <button
+                        className={styles.makeLatestButton}
+                        onClick={(e) => handleMakeLatest(v.id, e)}
+                        title="Make this version the latest"
+                      >
+                        Make Latest
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className={styles.headerTools}>
@@ -547,7 +692,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
 
         <div className={styles.header_rightmenu}>
-          {designName.length > 0 && (designName[0] as any).rendering_project_id ? (
+          {designDetail && (designDetail as any).rendering_project_id ? (
             <div
               className={styles.nestingbutton}
               style={{ display: 'flex', alignItems: 'center', padding: '0px' }}

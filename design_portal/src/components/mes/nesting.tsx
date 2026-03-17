@@ -12,6 +12,7 @@ import styles from '../mes/nesting.module.css';
 const Nesting = () => {
   const router = useRouter();
   const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
+  const version_id = (router.query.versionid as string) || window.location.pathname.split('/')[3];
 
   const [visibleDesigns, setVisibleDesigns] = useState(50);
   const [localData, setLocalData] = useState<any[]>([]);
@@ -47,7 +48,7 @@ const Nesting = () => {
       setIsLoadingTable(true);
       try {
         const response: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
           { format: 'json' }
         );
         if (response?.data && !response.data.error) {
@@ -91,7 +92,7 @@ const Nesting = () => {
       let layoutData: any[] = [];
       try {
         const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
           { format: 'json' }
         );
         if (layoutResponse?.data && !layoutResponse.data.error) {
@@ -632,7 +633,7 @@ const Nesting = () => {
       let layoutData: any[] = [];
       try {
         const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
           { format: 'json' }
         );
         if (layoutResponse?.data && !layoutResponse.data.error) {
@@ -1543,7 +1544,7 @@ const Nesting = () => {
                       setIsDownloadingXML(true);
                       try {
                         const response: any = await CommonService.put(
-                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id),
+                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
                           { format: 'xml_zip' }
                         );
                         if (response?.data?.file) {

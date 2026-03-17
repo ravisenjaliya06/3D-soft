@@ -349,9 +349,12 @@ const Designs = () => {
     }
   };
 
-  const handleRedirectDesign = (id: string) => {
-    store.dispatch(resetStoreForNewDesign());
-    router.push(`/design/${id}`);
+  const handleRedirectDesign = (design: Design) => {
+    if (design.versions && design.versions.length > 0) {
+      window.location.href = `/design/${design.id}/${design.versions[0].id}`;
+    } else {
+      window.location.href = `/design/${design.id}`;
+    }
   };
 
   useEffect(() => {
@@ -576,7 +579,7 @@ const Designs = () => {
                     <div
                       key={design.id}
                       className={`${styles.designview} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
-                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
+                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design)}
                     >
                       <img
                         src={assets.design_list_icon}
@@ -635,7 +638,7 @@ const Designs = () => {
                     <div
                       key={design.id}
                       className={`${styles.gridItemContainer} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
-                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
+                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design)}
                     >
                       <div className={styles.gridItem}>
                         <div className={styles.gridTitle}>
