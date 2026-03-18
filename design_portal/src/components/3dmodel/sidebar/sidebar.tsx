@@ -48,12 +48,12 @@ import {
 } from '../store/activeItemSlice';
 import { updateObject } from '../store/dataSlice';
 import {
+  selectIsLatestVersion,
   selectResolvedCamDepth,
   selectResolvedCamDiameter,
   selectResolvedCamHeight,
   selectResolvedMinifixDiameterHole,
   selectResolvedMinifixDistance,
-  selectIsLatestVersion,
 } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
 
@@ -641,7 +641,13 @@ const Sidebar: React.FC = () => {
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
-    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current || !isLatestVersion)
+    if (
+      !selectedObject ||
+      !scene ||
+      isUpdatingPositionRef.current ||
+      !distanceToolRef.current ||
+      !isLatestVersion
+    )
       return;
 
     isUpdatingPositionRef.current = true;
@@ -1461,7 +1467,8 @@ const Sidebar: React.FC = () => {
   };
 
   const handleNailerToggle = async () => {
-    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene || !isLatestVersion) return;
+    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene || !isLatestVersion)
+      return;
 
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {

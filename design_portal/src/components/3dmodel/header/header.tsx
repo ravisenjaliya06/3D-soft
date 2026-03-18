@@ -75,7 +75,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           // Calculate if this is the latest version
           const versions = selectedDesign.versions || [];
           const latestVersion = versions.length > 0 ? versions[0] : null;
-          const isLatest = !!(!versionIdFromUrl || (latestVersion && latestVersion.id === versionIdFromUrl));
+          const isLatest = !!(
+            !versionIdFromUrl ||
+            (latestVersion && latestVersion.id === versionIdFromUrl)
+          );
           dispatch(setIsLatestVersion(isLatest));
         }
       }
@@ -719,7 +722,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         {!isLatestVersion && (
           <div className={styles.viewOnlyMessage}>
-            This is in view mode only. If you want to make changes, switch to the latest version or update this version to latest first, then make your changes.
+            This is in view mode only. If you want to make changes, switch to the latest version or
+            update this version to latest first, then make your changes.
           </div>
         )}
 
@@ -742,7 +746,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
               </p>
               <div
                 ref={renderDropdownButtonRef}
-                onClick={isLatestVersion ? () => setIsRenderDropdownOpen((prev) => !prev) : undefined}
+                onClick={
+                  isLatestVersion ? () => setIsRenderDropdownOpen((prev) => !prev) : undefined
+                }
                 style={{
                   padding: '8px 12px',
                   margin: 0,
