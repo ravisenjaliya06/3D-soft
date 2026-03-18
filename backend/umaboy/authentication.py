@@ -30,8 +30,10 @@ class OrganizationAwareJWTAuthentication(JWTAuthentication):
         if not getattr(user, "is_ghost", False):
             return (user, token)
 
-        org_id = request.headers.get("X-Organization-Id") or request.headers.get(
-            "x-organization-id"
+        org_id = (
+            request.headers.get("X-Organization-Id")
+            or request.headers.get("x-organization-id")
+            or request.META.get("HTTP_X_ORGANIZATION_ID")
         )
         if not org_id or org_id in {"null", "undefined"}:
             return (user, token)
