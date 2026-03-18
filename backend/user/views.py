@@ -40,10 +40,7 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
 )
 from rest_framework.viewsets import ModelViewSet
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-
-# Local imports
-from .tokens import CustomAccessToken, CustomRefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 
 # App imports
 from umaboy.constant import GET, POST, PUT
@@ -76,6 +73,7 @@ from user.utils import send_email, send_google_chat_notification
 
 # Local imports
 from .permissions import AccountManager
+from .tokens import CustomAccessToken, CustomRefreshToken
 
 load_dotenv()
 
@@ -244,8 +242,8 @@ class UserAuthViewset(ModelViewSet):
         )
 
         # Ensure username is in the access token before encoding
-        access_token.payload['username'] = str(user.username)
-        for cache_attr in ['_encoded', '_token', '_cached_token', '_str']:
+        access_token.payload["username"] = str(user.username)
+        for cache_attr in ["_encoded", "_token", "_cached_token", "_str"]:
             if hasattr(access_token, cache_attr):
                 delattr(access_token, cache_attr)
 

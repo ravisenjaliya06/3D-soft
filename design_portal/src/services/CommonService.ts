@@ -56,7 +56,10 @@ class CommonService {
     });
   }
 
-  private decodeJWTToken(token: string | undefined): { userId: string | null; username: string | null } {
+  private decodeJWTToken(token: string | undefined): {
+    userId: string | null;
+    username: string | null;
+  } {
     if (!token) {
       return { userId: null, username: null };
     }
@@ -76,7 +79,8 @@ class CommonService {
 
       return {
         userId: decodedPayload.user_id || decodedPayload.userId || decodedPayload.sub || null,
-        username: decodedPayload.username || decodedPayload.user_name || decodedPayload.name || null,
+        username:
+          decodedPayload.username || decodedPayload.user_name || decodedPayload.name || null,
       };
     } catch (error) {
       console.error('Failed to decode JWT token:', error);

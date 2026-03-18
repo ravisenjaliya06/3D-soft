@@ -1,4 +1,12 @@
+# Python imports
+from typing import TYPE_CHECKING
+
+# External imports
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
+if TYPE_CHECKING:
+    # App imports
+    from umaboy.models import User
 
 
 class CustomAccessToken(AccessToken):
@@ -7,13 +15,13 @@ class CustomAccessToken(AccessToken):
     """
 
     @classmethod
-    def for_user(cls, user):
+    def for_user(cls: type["CustomAccessToken"], user: "User") -> "CustomAccessToken":
         token = super().for_user(user)
-        token.payload['username'] = str(user.username)
+        token.payload["username"] = str(user.username)
 
-        if hasattr(token, '_encoded'):
-            delattr(token, '_encoded')
-        for attr_name in ['_token', '_cached_token', '_str']:
+        if hasattr(token, "_encoded"):
+            delattr(token, "_encoded")
+        for attr_name in ["_token", "_cached_token", "_str"]:
             if hasattr(token, attr_name):
                 delattr(token, attr_name)
 
@@ -28,6 +36,5 @@ class CustomRefreshToken(RefreshToken):
     access_token_class = CustomAccessToken
 
     @classmethod
-    def for_user(cls, user):
-        token = super().for_user(user)
-        return token
+    def for_user(cls: type["CustomRefreshToken"], user: "User") -> "CustomRefreshToken":
+        return super().for_user(user)
