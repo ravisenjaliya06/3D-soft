@@ -41,8 +41,10 @@ class GhostUserMiddleware:
 
         # Handle ghost users
         if getattr(user, "is_ghost", False):
-            org_id = request.headers.get("X-Organization-Id") or request.GET.get(
-                "organization_id"
+            org_id = (
+                request.headers.get("X-Organization-Id")
+                or request.META.get("HTTP_X_ORGANIZATION_ID")
+                or request.GET.get("organization_id")
             )
 
             is_impersonating = False

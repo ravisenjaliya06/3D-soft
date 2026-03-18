@@ -35,7 +35,7 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error?.response?.data?.error;
-    if (typeof window !== 'undefined' && message === 'You have read-only access as a ghost user.') {
+    if (typeof window !== 'undefined' && (message === 'You have read-only access as a ghost user.' || message === "You do not have permission to perform this action.")) {
       toast(React.createElement(CustomToast, { appearance: 'error', message }), {
         position: 'top-right',
         toastId: 'ghost-readonly-access',
