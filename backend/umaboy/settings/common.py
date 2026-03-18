@@ -58,6 +58,7 @@ LOCAL_APP = ["umaboy", "user", "design", "mes_portal", "material"]
 INSTALLED_APPS = INSTALLED_APPS + THIRD_PARTY_APP + LOCAL_APP
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -65,7 +66,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "umaboy.middleware.GhostUserMiddleware",
 ]
 
 ROOT_URLCONF = "umaboy.urls"
@@ -124,7 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "umaboy.authentication.OrganizationAwareJWTAuthentication",
     ),
 }
 
@@ -231,9 +232,9 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
     "ngrok-skip-browser-warning",
+    "X-Organization-Id",
+    "x-organization-id",
 ]
 
 

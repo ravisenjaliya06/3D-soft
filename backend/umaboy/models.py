@@ -40,6 +40,12 @@ class User(AbstractUser):
     profile_picture = models.ImageField(upload_to="profile_pictures", null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
+    is_ghost = models.BooleanField(default=False)
+    ghost_access_type = models.CharField(
+        max_length=10,
+        choices=[("view", "View Only"), ("full", "Full Access")],
+        default="view",
+    )
 
     REQUIRED_FIELDS = ["email"]
 

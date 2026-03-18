@@ -64,6 +64,16 @@ urlpatterns = [
         name="get_organization_details",
     ),
     path(
+        "organization/all/",
+        AddUserInOrganizationViewset.as_view({"get": "all_organizations"}),
+        name="all_organizations",
+    ),
+    path(
+        "ghost-permission/",
+        UserAuthViewset.as_view({"put": "edit_ghost_permission"}),
+        name="ghost_permission",
+    ),
+    path(
         "",
         UserAuthViewset.as_view({"get": "profile", "put": "edit_profile"}),
         name="profile",

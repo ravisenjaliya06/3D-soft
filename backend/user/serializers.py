@@ -301,6 +301,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         source="selected_organization.display_name", read_only=True
     )
     user_groups = serializers.ListField(child=serializers.CharField(), required=False)
+    organizations = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -313,6 +314,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "organization_display_name",
             "user_groups",
             "profile_picture",
+            "is_ghost",
+            "ghost_access_type",
+            "selected_organization",
+            "organizations",
+        ]
+
+    def get_organizations(self: "UserProfileSerializer", user: User) -> list[dict]:
+        orgs = user.organizations.all().order_by("name")
+        return [
+            {
+                "id": str(org.id),
+                "name": org.name,
+                "display_name": org.display_name,
+                "logo": org.logo.url if getattr(org, "logo", None) else None,
+            }
+            for org in orgs
         ]
 
 
@@ -323,6 +340,7 @@ class UserProfileEditSerializer(serializers.ModelSerializer):
             "name",
             "phone",
             "profile_picture",
+            "selected_organization",
         ]
 
     def validate_phone(self: "UserProfileEditSerializer", value: str) -> str:
@@ -485,6 +503,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         model = Organization
         fields = [
             "id",
+            "name",
             "display_name",
             "logo",
             "company_name",

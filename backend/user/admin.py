@@ -32,6 +32,9 @@ class CustomUserAdmin(UserAdmin):
                     "phone",
                     "profile_picture",
                     "is_verified",
+                    "is_ghost",
+                    "ghost_access_type",
+                    "selected_organization",
                 )
             },
         ),

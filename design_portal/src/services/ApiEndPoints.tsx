@@ -5,6 +5,7 @@ export const API_ENDPOINT = {
   GET_USER_DETAILS: 'user/',
   GET_ORGANIZATION_USERS: 'user/organization/users/',
   GET_ORGANIZATION_DETAILS: 'user/organization/details/',
+  ALL_ORGANIZATIONS: 'user/organization/all/',
   GET_DESIGN_SETTING: 'design/setting/',
   GET_CATALOG_ITEMS: 'design/catalogs/',
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
@@ -61,6 +62,7 @@ export const API_ENDPOINT = {
   //PUT
   UPDATE_USER_DETAILS: 'user/',
   UPDATE_ORGANIZATION_DETAILS: 'user/organization/update/',
+  UPDATE_GHOST_PERMISSION: 'user/ghost-permission/',
   UPDATE_DESIGN_SETTING: 'design/setting/',
   EDIT_ORGANIZATION_USER: (userID: string) => `user/organization/edit_user/${userID}/`,
   GET_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,

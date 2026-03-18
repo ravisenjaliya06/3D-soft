@@ -59,6 +59,12 @@ const Settings = () => {
   const [profileUrl, setprofileUrl] = useState('');
   const [organizationUrl, setorganizationUrl] = useState('');
   const [organizationNameError, setOrganizationNameError] = useState<string | null>(null);
+  const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
+  const [selectedGhostOrgId, setSelectedGhostOrgId] = useState<string>(
+    (typeof window !== 'undefined' && localStorage.getItem('ghost_org_id')) || ''
+  );
+  const [ghostAccessType, setGhostAccessType] = useState<string>('view');
+  const [selectedMyOrgId, setSelectedMyOrgId] = useState<string>('');
 
   const [dropdownPosition, setDropdownPosition] = useState<{
     x: number;
@@ -258,6 +264,8 @@ const Settings = () => {
       if (response.status === 200) {
         const UserDetails = response.data;
         setUserDetails(UserDetails);
+        setGhostAccessType(UserDetails.ghost_access_type || 'view');
+        setSelectedMyOrgId(UserDetails.selected_organization || '');
         if (UserDetails.profile_picture && typeof UserDetails.profile_picture === 'string') {
           const serverImageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${UserDetails.profile_picture}`;
           setprofileUrl(serverImageUrl);
@@ -274,6 +282,75 @@ const Settings = () => {
   useEffect(() => {
     fetchUserDetails();
   }, []);
+
+  const fetchAllOrganizations = async () => {
+    try {
+      const response = await CommonService.get(API_ENDPOINT.ALL_ORGANIZATIONS);
+      if (response.status === 200) {
+        setAllOrganizations(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching all organizations:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (UserDetails?.is_ghost) {
+      fetchAllOrganizations();
+    }
+  }, [UserDetails]);
+
+  const toPublicUrl = (path?: string | File | null) => {
+    if (!path || typeof path !== 'string') return '';
+    const normalized = path.replace(/^\/+/, '');
+    return `${process.env.NEXT_PUBLIC_PUBLIC_API}/${normalized}`;
+  };
+
+  const myOrganizations = UserDetails?.organizations || [];
+  const myOrganizationIdSet = new Set(myOrganizations.map((o) => o.id).filter(Boolean) as string[]);
+  const ghostOrganizations = allOrganizations.filter((org) => !myOrganizationIdSet.has(org.id || ''));
+
+  const handleMyOrgChange = async (orgId: string) => {
+    setSelectedMyOrgId(orgId);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ghost_org_id');
+    }
+    setSelectedGhostOrgId('');
+
+    try {
+      await CommonService.put(API_ENDPOINT.UPDATE_USER_DETAILS, {
+        selected_organization: orgId || null,
+      });
+    } catch (error) {
+      console.error('Failed to update selected organization on backend:', error);
+    }
+
+    window.location.reload();
+  };
+
+  const handleGhostOrgChange = (orgId: string) => {
+    setSelectedGhostOrgId(orgId);
+    if (typeof window !== 'undefined') {
+      if (!orgId) localStorage.removeItem('ghost_org_id');
+      else localStorage.setItem('ghost_org_id', orgId);
+    }
+    window.location.reload();
+  };
+
+  const handleGhostPermissionChange = async (type: string) => {
+    try {
+      const response = await CommonService.put(API_ENDPOINT.UPDATE_GHOST_PERMISSION, {
+        ghost_access_type: type,
+      });
+      if (response.status === 200) {
+        setGhostAccessType(type);
+        setSuccessMessage('Ghost permission updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating ghost permission:', error);
+      setErrorMessage('Failed to update ghost permission');
+    }
+  };
 
   const handleAddMemberClick = async () => {
     const newMember: addmember = {
@@ -850,11 +927,9 @@ const Settings = () => {
       if (response.status === 200) {
         const organizationdata = response.data;
         setorganization(organizationdata);
-        if (organizationdata.logo && typeof organizationdata.logo === 'string') {
-          const serverImageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organizationdata.logo}`;
-          setorganizationUrl(serverImageUrl);
-        }
-        setOrganizationName(organizationdata.display_name);
+        const logoUrl = toPublicUrl(organizationdata.logo);
+        setorganizationUrl(logoUrl);
+        setOrganizationName(organizationdata.display_name || '');
       } else {
         console.error('Failed to fetch details:', response.status);
       }
@@ -910,7 +985,7 @@ const Settings = () => {
 
       if (response.status === 200) {
         setorganization(data);
-        setOrganizationName(data.display_name);
+        setOrganizationName(data.display_name ? data.display_name : '');
         if (data.logo && typeof data.logo === 'string') {
           const serverImageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}/${data.logo}`;
           setorganizationUrl(serverImageUrl);
@@ -1214,7 +1289,109 @@ const Settings = () => {
                     {organizationNameError}
                   </p>
                 )}
-                <p className={styles.commingsoon}>More organization settings coming soon...</p>
+
+                {UserDetails?.is_ghost && (
+                  <div className={styles.ghostAccessContainer}>
+                    <div>
+                      <div className={styles.ghostHeaderRow}>
+                        <label className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}>
+                          My Organizations
+                        </label>
+                      </div>
+                      
+                      <div className={styles.ghostGrid}>
+                        {myOrganizations.map(org => {
+                          const logoUrl = toPublicUrl(org.logo) || null;
+                          return (
+                            <button
+                              key={org.id}
+                              onClick={() => handleMyOrgChange(org.id || '')}
+                              className={`${styles.ghostCard} ${selectedMyOrgId === org.id ? styles.ghostCardActive : ''}`}
+                            >
+                              <div className={styles.ghostLogoWrapper}>
+                                {logoUrl ? (
+                                  <img src={logoUrl} alt={org.name} className={styles.ghostLogo} />
+                                ) : (
+                                  <div className={styles.ghostLogoPlaceholder}>
+                                    {org.name?.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className={styles.ghostCardText}>
+                                <div className={styles.ghostOrgName}>
+                                  {org.name}
+                                </div>
+                                <div className={styles.ghostOrgDisplayName}>
+                                  {org.display_name}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className={styles.ghostSubHeaderRow}>
+                        <label className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}>
+                          Ghost Access Organizations
+                        </label>
+                        <div className={styles.ghostAccessTypeRow}>
+                          <span className={styles.ghostAccessTypeLabel}>
+                            Ghost Access Type:
+                          </span>
+                          <div className={styles.ghostAccessTypeToggle}>
+                            <button
+                              onClick={() => handleGhostPermissionChange('view')}
+                              className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'view' ? styles.ghostAccessTypeButtonActive : ''}`}
+                            >
+                              View Only
+                            </button>
+                            <button
+                              onClick={() => handleGhostPermissionChange('full')}
+                              className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'full' ? styles.ghostAccessTypeButtonActive : ''}`}
+                            >
+                              Full Access
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.ghostGrid}>
+                        {ghostOrganizations.map((org) => {
+                          const logoUrl = toPublicUrl(org.logo) || null;
+                          return (
+                            <button
+                              key={org.id}
+                              onClick={() => handleGhostOrgChange(org.id || '')}
+                              className={`${styles.ghostCard} ${selectedGhostOrgId === org.id ? styles.ghostCardActive : ''}`}
+                            >
+                              <div className={styles.ghostLogoWrapper}>
+                                {logoUrl ? (
+                                  <img src={logoUrl} alt={org.name} className={styles.ghostLogo} />
+                                ) : (
+                                  <div className={styles.ghostLogoPlaceholder}>
+                                    {org.name?.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className={styles.ghostCardText}>
+                                <div className={styles.ghostOrgName}>{org.name}</div>
+                                <div className={styles.ghostOrgDisplayName}>{org.display_name}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!UserDetails?.is_ghost && (
+                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>Current Organization</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{organization?.name || 'Loading...'}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>{organization?.display_name}</div>
+                  </div>
+                )}
 
                 {successMessage && (
                   <div className={styles.successPopup}>

@@ -26,6 +26,7 @@ import jwt
 from dotenv import load_dotenv
 from jwt import decode as jwt_decode
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
@@ -377,7 +378,7 @@ class UserAuthViewset(ModelViewSet):
         """
         Get user profile.
         """
-        user_details = User.objects.filter(id=request.user.id).first()
+        user_details = request.user
         serializer = UserProfileSerializer(user_details)
         Logger.info(
             {
@@ -400,6 +401,24 @@ class UserAuthViewset(ModelViewSet):
         serializer.save()
         return Response(
             {"message": "profile updated successfully."}, status=HTTP_200_OK
+        )
+
+    @action(detail=False, methods=[PUT], url_path="ghost-permission")
+    def edit_ghost_permission(self: "UserAuthViewset", request: Request) -> Response:
+        """
+        Edit ghost access type for a ghost user.
+        """
+        if not (hasattr(request.user, "is_ghost") and request.user.is_ghost):
+            return Response({"error": "Unauthorized"}, status=HTTP_403_FORBIDDEN)
+
+        access_type = request.data.get("ghost_access_type")
+        if access_type not in ["view", "full"]:
+            return Response({"error": "Invalid access type"}, status=HTTP_400_BAD_REQUEST)
+
+        request.user.ghost_access_type = access_type
+        request.user.save()
+        return Response(
+            {"message": "Ghost permission updated successfully."}, status=HTTP_200_OK
         )
 
     def _generate_otp(self: "UserAuthViewset") -> Tuple[str, timezone]:
@@ -677,13 +696,33 @@ class AddUserInOrganizationViewset(ModelViewSet):
             status=HTTP_200_OK,
         )
 
+    @action(detail=False, methods=[GET])
+    def all_organizations(self: "AddUserInOrganizationViewset", request: Request) -> Response:
+        """
+        List all organizations. Accessible only by Ghost Users or Admins.
+        """
+        if not (request.user.is_superuser or (hasattr(request.user, 'is_ghost') and request.user.is_ghost)):
+            return Response({"error": "Unauthorized"}, status=HTTP_403_FORBIDDEN)
+        
+        organizations = Organization.objects.all().order_by('name')
+        data = [
+            {
+                "id": str(org.id),
+                "name": org.name,
+                "display_name": org.display_name,
+                "logo": org.logo.url if getattr(org, "logo", None) else None,
+            }
+            for org in organizations
+        ]
+        return Response(data, status=HTTP_200_OK)
+
     def update_organization_details(
         self: "AddUserInOrganizationViewset", request: Request
     ) -> Response:
         """
         Update organization details.
         """
-        organization = Organization.objects.filter(user=request.user).first()
+        organization = request.user.selected_organization
 
         serializer = OrganizationSerializer(
             instance=organization, data=request.data, partial=True
@@ -702,7 +741,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         self: "AddUserInOrganizationViewset", request: Request
     ) -> Response:
         """Fetch a single organization for the logged-in user."""
-        organization = Organization.objects.filter(user=request.user).first()
+        organization = request.user.selected_organization
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data, status=HTTP_200_OK)
 
@@ -834,6 +873,37 @@ class AdminView(viewsets.ViewSet):
         return render(
             request, "custom_admin/users.html", {"approved_users": approved_users}
         )
+
+    def ghost_users(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
+        ghost_users = User.objects.filter(is_ghost=True).order_by("-date_joined")
+        return render(
+            request, "custom_admin/ghost_users.html", {"ghost_users": ghost_users}
+        )
+
+    @method_decorator(csrf_exempt)
+    def toggle_ghost_status(self: "AdminView", request: Request) -> JsonResponse:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return JsonResponse({"error": "Admin access only"}, status=403)
+
+        email = request.POST.get("email")
+        is_ghost = request.POST.get("is_ghost") == "true"
+        access_type = request.POST.get("access_type", "view")
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return JsonResponse({"error": "User not found"}, status=404)
+
+        user.is_ghost = is_ghost
+        user.ghost_access_type = access_type
+        # Ghost users must be verified to log in
+        if is_ghost:
+            user.is_verified = True
+        user.save()
+
+        return JsonResponse({"message": "Ghost status updated successfully"})
 
 
 @method_decorator(csrf_exempt, name="dispatch")

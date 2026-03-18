@@ -144,8 +144,7 @@ class OrganizationDesignSettingViewSet(ModelViewSet):
         return Response(serializer.data, status=HTTP_200_OK)
 
     def create(self: "OrganizationDesignSettingViewSet", request: Request) -> Response:
-        organization_user = request.user
-        organization = Organization.objects.filter(user=organization_user).first()
+        organization = request.user.selected_organization
 
         if not organization:
             return Response(
@@ -169,8 +168,7 @@ class OrganizationDesignSettingViewSet(ModelViewSet):
         self: "OrganizationDesignSettingViewSet", request: Request, *args, **kwargs
     ) -> Response:
 
-        organization_user = request.user
-        organization = Organization.objects.filter(user=organization_user).first()
+        organization = request.user.selected_organization
 
         if not organization:
             return Response(
