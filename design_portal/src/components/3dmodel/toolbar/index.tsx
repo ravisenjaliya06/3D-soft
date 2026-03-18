@@ -165,6 +165,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   };
 
+  //create own event for fetch cabinet items from API and update setCabinetItems state on catalog update event
+  useEffect(() => {
+    const handleCatalogUpdate = () => {
+      fetchCabinetItem();
+    };
+
+    window.addEventListener('catalog-updated', handleCatalogUpdate);
+    return () => {
+      window.removeEventListener('catalog-updated', handleCatalogUpdate);
+    };
+  }, []);
+
   const regenerateGroupIds = (group: MeshObjectData[]): MeshObjectData[] => {
     const idMap = new Map<string, string>();
 

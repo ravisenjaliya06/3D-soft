@@ -246,6 +246,8 @@ export class ObjectsSaver {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
       this._showSuccess('Catalogs created successfully');
+      //create own event for fetch cabinet items from API and update setCabinetItems state on catalog update event
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
     }
   }
 
@@ -264,6 +266,7 @@ export class ObjectsSaver {
       return null;
     } else {
       this._showSuccess('Catalogs created successfully');
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
       return response.data?.version_id;
     }
   }
