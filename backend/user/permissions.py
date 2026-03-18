@@ -5,6 +5,7 @@ from typing import cast
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.exceptions import PermissionDenied
 
 # App imports
 from umaboy.models import Organization, User, UserOrganizationPermission
@@ -82,7 +83,11 @@ def is_ghost_authorized(request: Request) -> bool | None:
     if request.method in [GET, "HEAD", "OPTIONS"]:
         return True
 
-    return getattr(user, "ghost_access_type", "view") == "full"
+    if getattr(user, "ghost_access_type", "view") == "full":
+        return True
+
+    # View-only ghost attempting a write while impersonating.
+    raise PermissionDenied("You have read-only access as a ghost user.")
 
 
 class AccountManager(IsAuthenticated):

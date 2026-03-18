@@ -1,18 +1,11 @@
-# Python imports
-from urllib.request import Request
-
 # Django imports
-from django.http import JsonResponse
-
-# External imports
-from requests import Response
+from django.http import HttpRequest, HttpResponse, JsonResponse
 
 # App imports
 from umaboy.authentication import OrganizationAwareJWTAuthentication
 from umaboy.models import Organization
 
 READ_ONLY_METHODS = {"GET", "HEAD", "OPTIONS"}
-RESTRICTED_PATHS = ("/v1/design/", "/v1/material/", "/v1/mes_portal/")
 
 
 class GhostUserMiddleware:
@@ -20,7 +13,7 @@ class GhostUserMiddleware:
         self.get_response = get_response
         self.auth = OrganizationAwareJWTAuthentication()
 
-    def __call__(self: "GhostUserMiddleware", request: Request) -> Response:
+    def __call__(self: "GhostUserMiddleware", request: HttpRequest) -> HttpResponse:
         user = getattr(request, "user", None)
 
         # Try JWT authentication if not authenticated
@@ -68,7 +61,6 @@ class GhostUserMiddleware:
                 is_impersonating
                 and getattr(user, "ghost_access_type", None) == "view"
                 and request.method not in READ_ONLY_METHODS
-                and any(path in request.path for path in RESTRICTED_PATHS)
             ):
                 return JsonResponse(
                     {"error": "You have read-only access as a ghost user."},
