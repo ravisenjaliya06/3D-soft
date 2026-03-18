@@ -26,6 +26,11 @@ urlpatterns = [
         name="approve_user",
     ),
     path(
+        "ghost-users/",
+        AdminView.as_view({"get": "ghost_users", "post": "toggle_ghost_status"}),
+        name="admin_ghost_users",
+    ),
+    path(
         "",
         AdminView.as_view({"get": "dashboard"}),
         name="admin_dashboard",

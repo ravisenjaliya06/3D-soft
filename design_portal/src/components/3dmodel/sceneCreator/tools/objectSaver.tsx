@@ -246,6 +246,8 @@ export class ObjectsSaver {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
       this._showSuccess('Catalogs created successfully');
+      //create own event for fetch cabinet items from API and update setCabinetItems state on catalog update event
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
     }
   }
 
@@ -261,19 +263,23 @@ export class ObjectsSaver {
     );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
+      return null;
     } else {
       this._showSuccess('Catalogs created successfully');
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
+      return response.data?.version_id;
     }
   }
 
   /**
    * Saves all objects in the scene
    */
-  public saveAllObjects() {
+  public async saveAllObjects() {
     this._clearPayloadData();
     if (this._getAllObjectsData()) {
-      this._createAPICallForDesign();
+      return await this._createAPICallForDesign();
     }
+    return null;
   }
 
   /**

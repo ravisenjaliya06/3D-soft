@@ -5,6 +5,10 @@ export interface User {
   email: string;
   username: string;
   profile_picture: string | File | null;
+  is_ghost?: boolean;
+  ghost_access_type?: string;
+  selected_organization?: string | null;
+  organizations?: Organization[];
 }
 
 export interface addmember {
@@ -22,7 +26,9 @@ export interface Member {
 }
 
 export interface Organization {
-  display_name: string;
+  id?: string;
+  name?: string;
+  display_name?: string | null;
   logo: string | File | null;
 
   // Company Details

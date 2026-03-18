@@ -4,6 +4,7 @@ import commonService from '@/services/CommonService';
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { gettingDesignID } from '../design';
+import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { prefetchGLB } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
@@ -14,10 +15,15 @@ import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
 
-export const getDesignCatalogs = async () => {
+export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDView) => {
   console.time('Total_Catalog_Loading_Time');
+  // Prevent calls with non-UUID versionIds (like 'paneldesign' from old URLs)
+  if (versionId && versionId.length < 10) {
+    return;
+  }
+
   const response: { status: number; data: { catalogs: MeshObjectData[] } } =
-    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID(), versionId));
 
   if (response.status !== 200) {
     console.error('Error fetching catalogs');
@@ -65,7 +71,7 @@ export const getDesignCatalogs = async () => {
   const processBatch = async () => {
     const batch = catalogs.slice(currentIndex, currentIndex + BATCH_SIZE);
 
-    const builder = new SyncManager(batch);
+    const builder = new SyncManager(batch, threeDView, true);
     await builder.syncGroupedBatch(batch);
 
     currentIndex += BATCH_SIZE;

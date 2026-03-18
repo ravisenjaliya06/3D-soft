@@ -100,31 +100,38 @@ class Design(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self: "Design", *args, **kwargs) -> None:
-        if self.project_code:
-            return super().save(*args, **kwargs)
+        is_new = self._state.adding
 
-        year = timezone.now().year
+        if not self.project_code:
+            year = timezone.now().year
 
-        for _ in range(10):
+            for _ in range(10):
+                last_code = (
+                    Design.objects.filter(project_code__startswith=f"BRV-{year}-")
+                    .aggregate(max_code=Max("project_code"))
+                    .get("max_code")
+                )
 
-            last_code = (
-                Design.objects.filter(project_code__startswith=f"BRV-{year}-")
-                .aggregate(max_code=Max("project_code"))
-                .get("max_code")
+                next_number = 1
+                if last_code:
+                    next_number = int(last_code.split("-")[-1]) + 1
+
+                self.project_code = f"BRV-{year}-{next_number:04d}"
+
+                try:
+                    super().save(*args, **kwargs)
+                    break
+                except IntegrityError:
+                    continue
+            else:
+                raise IntegrityError("Could not generate unique project code")
+        else:
+            super().save(*args, **kwargs)
+
+        if is_new:
+            DesignVersion.objects.create(
+                design=self, name=self.design_name or "Untitled Version"
             )
-
-            next_number = 1
-            if last_code:
-                next_number = int(last_code.split("-")[-1]) + 1
-
-            self.project_code = f"BRV-{year}-{next_number:04d}"
-
-            try:
-                return super().save(*args, **kwargs)
-            except IntegrityError:
-                continue
-
-        raise IntegrityError("Could not generate unique project code")
 
     def __str__(self: "Design") -> str:
         return self.design_name

@@ -1,4 +1,5 @@
 # Django imports
+from django.db.models import QuerySet
 
 # External imports
 from rest_framework import filters, viewsets
@@ -12,7 +13,11 @@ from user.permissions import MesEditor
 
 
 class WorkOrderViewSet(viewsets.ModelViewSet):
-    queryset = WorkOrder.objects.all()
+    def get_queryset(self: "WorkOrderViewSet") -> QuerySet[WorkOrder]:
+        return WorkOrder.objects.filter(
+            design__organization=self.request.user.selected_organization
+        ).distinct()
+
     permission_classes = [MesEditor]
     serializer_class = WorkOrderSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
