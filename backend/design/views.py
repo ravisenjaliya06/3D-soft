@@ -441,11 +441,15 @@ class DesignVersionViewSet(ModelViewSet):
 
 
 class DesignCatalogViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    # Use Designer permission so ghost impersonation rules apply consistently
+    # (view-only ghosts cannot write; full ghosts can write while impersonating).
+    permission_classes = [Designer]
     http_method_names = [GET, POST]
 
     def get_queryset(self: "DesignCatalogViewSet") -> QuerySet[Design]:
-        return DesignCatalog.objects.all()
+        return DesignCatalog.objects.filter(
+            organization=self.request.user.selected_organization
+        )
 
     def get_latest_version(
         self: "DesignCatalogViewSet", design: Design
