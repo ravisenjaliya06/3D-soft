@@ -329,3 +329,21 @@ export const alignExtrudedGeometry = (
     );
   }
 };
+
+/**
+ * Calculates the signed area of a polygon to determine its winding order.
+ * In a Y-down coordinate system (like browser/Konva):
+ * - Positive area: Clockwise (CW) winding
+ * - Negative area: Counter-clockwise (CCW) winding
+ *
+ * @param points Array of polygon vertices
+ * @returns The signed area of the polygon
+ */
+export const calculatePolygonWinding = (points: Point[]): number => {
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y - points[j].x * points[i].y;
+  }
+  return area / 2;
+};

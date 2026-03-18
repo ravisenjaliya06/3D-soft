@@ -79,3 +79,25 @@ export interface BaseSidebarProps {
   onDragStart: () => void;
   children: React.ReactNode;
 }
+
+/**
+ * Props for the DimensionHighlighter component.
+ */
+export interface DimensionHighlighterProps {
+  hoveredHoleIndex: number | null;
+  selectedHoleIndex: number | null;
+  hoveredPanel: boolean;
+  holes: Hole[];
+  shapePoints: Point[];
+  defaultPanelPoints: Point[];
+}
+
+/**
+ * Props for the DimensionLine component.
+ */
+export interface DimensionLineProps {
+  p1: Point;
+  p2: Point;
+  text: string;
+  offset?: number;
+}
