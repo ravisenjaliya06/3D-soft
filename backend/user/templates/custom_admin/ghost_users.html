@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Users - Bravento Admin</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    {% load static %}
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'custom_admin/style.css' %}">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="brand-logo">
+                <img src="{% static 'custom_admin/assets/logo-dashboard.svg' %}" alt="Bravento"
+                    style="height: 2.5rem; width: auto;">
+            </a>
+            <button class="btn btn-sm d-lg-none ms-auto" id="closeSidebar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <nav class="mt-3">
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a href="{% url 'admin_users' %}" class="nav-link">
+                <i class="bi bi-people"></i> Users
+            </a>
+            <a href="{% url 'admin_ghost_users' %}" class="nav-link active">
+                <i class="bi bi-ghost"></i> Ghost Users
+            </a>
+            <a href="#" class="nav-link disabled" aria-disabled="true">
+                <i class="bi bi-gear"></i> Settings
+            </a>
+            <div class="mt-auto pt-5 border-top mx-3">
+                <a href="{% url 'admin_logout' %}" class="nav-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="top-header shadow-premium">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-dark p-0 me-3 d-lg-none" id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <h5 class="mb-0 fw-bold">Ghost User Management</h5>
+            </div>
+        </header>
+
+        <!-- Search/Add Section -->
+        <div class="card border-0 shadow-premium mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Add / Manage Ghost User</h6>
+                <form id="ghostForm" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="email" class="form-label small fw-medium">User Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="user@example.com" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="access_type" class="form-label small fw-medium">Access Type</label>
+                        <select class="form-select" id="access_type">
+                            <option value="view">View Only</option>
+                            <option value="full">Full Access (POST, PUT, DELETE)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="is_ghost" checked>
+                            <label class="form-check-label small fw-medium" for="is_ghost">Is Ghost</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="card border-0 shadow-premium">
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <h6 class="mb-0 fw-bold">Active Ghost Users</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="custom-table-container p-0">
+                    <table class="table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Access Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ghostTableBody">
+                            {% for user in ghost_users %}
+                            <tr>
+                                <td>{{ user.name|default:user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge {% if user.ghost_access_type == 'full' %}bg-danger{% else %}bg-info{% endif %} bg-opacity-10 {% if user.ghost_access_type == 'full' %}text-danger{% else %}text-info{% endif %} rounded-pill px-3">
+                                        {{ user.get_ghost_access_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger remove-ghost" data-email="{{ user.email }}">
+                                        Remove Ghost
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center p-3">No ghost users found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        document.getElementById('ghostForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const access_type = document.getElementById('access_type').value;
+            const is_ghost = document.getElementById('is_ghost').checked;
+
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('access_type', access_type);
+            formData.append('is_ghost', is_ghost);
+
+            fetch("{% url 'admin_ghost_users' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if(data.message) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Something went wrong');
+                }
+            });
+        });
+
+        document.querySelectorAll('.remove-ghost').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const email = this.getAttribute('data-email');
+                if(confirm('Remove ghost status for ' + email + '?')) {
+                    const formData = new FormData();
+                    formData.append('email', email);
+                    formData.append('is_ghost', 'false');
+
+                    fetch("{% url 'admin_ghost_users' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: formData
+                    }).then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
