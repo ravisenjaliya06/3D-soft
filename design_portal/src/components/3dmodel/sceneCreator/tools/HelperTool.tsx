@@ -135,10 +135,16 @@ const HelperTool: React.FC<HelperToolProps> = ({
   }, []);
 
   const handlePanelDesign = useCallback(() => {
-    const designId = window.location.pathname.split('/')[2];
+    const parts = window.location.pathname.split('/');
+    const designId = parts[2];
+    const versionId = parts[3];
 
-    router.push(`/design/${designId}/paneldesign`);
-  }, [router, design3D]);
+    if (designId && versionId) {
+      router.push(`/design/${designId}/${versionId}/paneldesign`);
+    } else {
+      router.push(`/design/${designId}/paneldesign`);
+    }
+  }, [router]);
 
   const handleSave = useCallback(() => {
     setCatalogName('');

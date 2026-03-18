@@ -1,3 +1,8 @@
+export interface DesignVersion {
+  id: string;
+  name: string;
+}
+
 export interface Design {
   id: string;
   design_name: string;
@@ -12,6 +17,7 @@ export interface Design {
   customer_contact?: string;
   customer_email?: string;
   project_type?: string;
+  versions: DesignVersion[];
 }
 
 export interface DesignResponse {

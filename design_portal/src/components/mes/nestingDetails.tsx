@@ -7,9 +7,10 @@ import styles from './nestingDetails.module.css';
 
 interface NestingDetailsProps {
   designId: string;
+  versionId: string;
 }
 
-const NestingDetails: React.FC<NestingDetailsProps> = ({ designId }) => {
+const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) => {
   const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +21,12 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId }) => {
     const fetchData = async () => {
       try {
         // 1. Get the JSON file path from backend using CommonService
-        const response: any = await CommonService.put(API_ENDPOINT.DOWNLOAD_NESTING_PDF(designId), {
-          format: 'json',
-        });
+        const response: any = await CommonService.put(
+          API_ENDPOINT.DOWNLOAD_NESTING_PDF(designId) + `?version_id=${versionId}`,
+          {
+            format: 'json',
+          }
+        );
 
         if (response?.status !== 200 || !response?.data) {
           throw new Error(

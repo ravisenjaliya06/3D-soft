@@ -51,6 +51,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
@@ -61,6 +62,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   const isQuickHideActive = state.isQuickHideActive;
   const isMeasurementActive = state.isMeasurementActive;
   const isWallDrawingActive = state.isWallDrawingActive;
+  const isLatestVersion = useSelector(selectIsLatestVersion);
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
@@ -113,6 +115,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
+    if (!isLatestVersion && option !== 'View') {
+      // The system is likely controlling what tools/features are visible or enabled based on user permissions or mode.
+      // It suggests that:
+      // - If all tools are not explicitly enabled, they will remain disabled by default.
+      // - In "view mode", the user should only be able to see the design, not edit it.
+      // - Some basic access like Home/View navigation can still be allowed.
+      // - However, interactive tools or editing options inside the design should be disabled.
+    }
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
@@ -534,7 +544,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         }
       },
       isActive: catalogMenu,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
     {
       option: 'Quick Hide',
@@ -573,7 +583,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         setcatalogMenu(false);
       },
       isActive: isWallDrawingActive,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
   ];
 

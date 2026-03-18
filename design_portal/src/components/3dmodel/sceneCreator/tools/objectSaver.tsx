@@ -261,19 +261,22 @@ export class ObjectsSaver {
     );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
+      return null;
     } else {
       this._showSuccess('Catalogs created successfully');
+      return response.data?.version_id;
     }
   }
 
   /**
    * Saves all objects in the scene
    */
-  public saveAllObjects() {
+  public async saveAllObjects() {
     this._clearPayloadData();
     if (this._getAllObjectsData()) {
-      this._createAPICallForDesign();
+      return await this._createAPICallForDesign();
     }
+    return null;
   }
 
   /**

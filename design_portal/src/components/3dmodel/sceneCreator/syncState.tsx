@@ -27,10 +27,16 @@ export class SyncManager {
   private moveHandlerRef: MoveHandler | null = null;
   private sceneObjectMap: Map<string, THREE.Mesh> = new Map();
   private storeObjectMap: Map<string, MeshObjectData> = new Map();
+  private isAutoSync: boolean = false;
 
-  constructor(data: MeshObjectData | MeshObjectData[], threeDView?: ThreeDView) {
-    const scene = store.getState().scene?.scene;
+  constructor(
+    data: MeshObjectData | MeshObjectData[],
+    threeDView?: ThreeDView,
+    isAutoSync: boolean = false
+  ) {
+    const scene = threeDView?.scene || store.getState().scene?.scene;
     this.scene = scene;
+    this.isAutoSync = isAutoSync;
     // Convert snake_case keys from database to camelCase
     this.data = convertKeysToCamel<MeshObjectData | MeshObjectData[]>(data);
     this.isArray = Array.isArray(this.data);
@@ -39,9 +45,9 @@ export class SyncManager {
       this.meshBuilder = new MeshBuilder(this.data as MeshObjectData);
     }
 
-    if (threeDView?.camera && threeDView?.renderer && scene) {
+    if (threeDView?.camera && threeDView?.renderer && this.scene) {
       this.moveHandlerRef = new MoveHandler({
-        scene: scene,
+        scene: this.scene,
         camera: threeDView.camera as THREE.PerspectiveCamera,
         renderer: threeDView.renderer,
         movableObjects: [],
@@ -233,7 +239,8 @@ export class SyncManager {
 
     if (toAdd.length) {
       store.dispatch(addObjects(toAdd));
-    } else if (toUpdate.length) {
+    }
+    if (toUpdate.length) {
       // Use batch update instead of loop
       store.dispatch(updateObjects(toUpdate as (Partial<MeshObjectData> & { id: string })[]));
     }
@@ -682,7 +689,7 @@ export class SyncManager {
 
     if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
       this.scene.add(root);
-      await this._applyDrag(root);
+      if (!this.isAutoSync) await this._applyDrag(root);
     } else {
       this._attachToParentOrScene(root, rootItem?.parent);
     }
@@ -805,7 +812,7 @@ export class SyncManager {
       if (item.type === OBJECT_TYPES.SINK) {
         updatePlatformHolesForSink(this.scene, mesh);
       }
-      await this._applyDrag(mesh);
+      if (!this.isAutoSync) await this._applyDrag(mesh);
       if (mesh.userData.isMain) generateCompartmentsFromMesh(mesh);
     } else {
       this._attachToParentOrScene(mesh, item.parent);

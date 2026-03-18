@@ -6,15 +6,17 @@ import { useEffect, useState } from 'react';
 const NestingDetailsPage = () => {
   const router = useRouter();
   const [designId, setDesignId] = useState<string | null>(null);
+  const [versionId, setVersionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (router.isReady) {
-      const { designid } = router.query;
+      const { designid, versionid } = router.query;
       setDesignId(designid as string);
+      setVersionId(versionid as string);
     }
   }, [router.isReady, router.query]);
 
-  if (!designId) {
+  if (!designId || !versionId) {
     return <div>Loading...</div>;
   }
 
@@ -23,7 +25,7 @@ const NestingDetailsPage = () => {
       <Head>
         <title>Nesting Details | Bravento</title>
       </Head>
-      <NestingDetails designId={designId} />
+      <NestingDetails designId={designId} versionId={versionId} />
     </>
   );
 };

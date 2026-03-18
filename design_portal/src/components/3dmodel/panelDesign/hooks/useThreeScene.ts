@@ -8,7 +8,7 @@ import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
  * Manages a side-by-side Three.js 3D preview of the panel being designed.
  * Handles scene initialization, real-time geometry updates, material syncing,
  * and responsive canvas resizing.
- * 
+ *
  * @returns refs for the canvas and its container to be used in the UI.
  */
 export function useThreeScene(
@@ -19,7 +19,7 @@ export function useThreeScene(
   holes: Hole[],
   plankThickness: number,
   isRotated2D: boolean,
-  state: any,
+  state: any
 ) {
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);

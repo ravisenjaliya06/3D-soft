@@ -48,12 +48,19 @@ export interface cupBoardData {
   data: cupBoardObjectData[];
   childs: string[];
 }
+export interface DesignVersion {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Design {
   id: string;
   design_name: string;
   created_at: string;
   updated_at: string;
   status: string;
+  versions: DesignVersion[];
 }
 
 export interface HeaderProps {

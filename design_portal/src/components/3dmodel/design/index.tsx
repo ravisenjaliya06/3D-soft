@@ -13,6 +13,7 @@ import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
 import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
@@ -24,6 +25,12 @@ export const gettingDesignID = () => {
 
   const designID = window.location.pathname.split('/')[2];
   return designID;
+};
+
+export const gettingVersionID = () => {
+  /** Retrieves the current version ID from the URL path if it exists. */
+  const parts = window.location.pathname.split('/');
+  return parts.length > 3 ? parts[3] : undefined;
 };
 
 export function removeExistingLines() {
@@ -86,6 +93,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
+  const isLatestVersion = useAppSelector(selectIsLatestVersion);
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
@@ -105,8 +113,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   useEffect(() => {
     if (!mountRef.current || !designId) return;
 
+    const versionId = (router.query.versionid as string) ?? gettingVersionID();
+
     // Get or create scene for this design (each design has its own scene)
-    const threeDView = getOrCreateThreeDView(mountRef.current, designId);
+    const threeDView = getOrCreateThreeDView(mountRef.current, designId, versionId);
 
     setLocalDesign3D(threeDView);
     setDesign3D(threeDView);
@@ -164,7 +174,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       setSelectedObject(null);
       setHelperToolObject(null);
     };
-  }, [designId]);
+  }, [designId, router.query.versionid]);
 
   useEffect(() => {
     if (!design3D) return;
@@ -442,14 +452,16 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             unitType={currentUnitType}
             onComplete={() => {}}
           />
-          <HelperTool
-            design3D={design3D}
-            selectedObject={helperToolObject}
-            moveHandler={moveHandler}
-            setShowSavePopup={setShowSavePopup}
-            setCatalogName={setCatalogName}
-            setError={setError}
-          />
+          {isLatestVersion && (
+            <HelperTool
+              design3D={design3D}
+              selectedObject={helperToolObject}
+              moveHandler={moveHandler}
+              setShowSavePopup={setShowSavePopup}
+              setCatalogName={setCatalogName}
+              setError={setError}
+            />
+          )}
         </>
       )}
       {showSavePopup && (
