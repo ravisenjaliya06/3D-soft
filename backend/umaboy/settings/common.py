@@ -17,6 +17,7 @@ from pathlib import Path
 
 # External imports
 from celery.schedules import crontab
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -229,11 +230,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://13.238.162.99",
 ]
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "authorization",
+# django-cors-headers compares header names case-insensitively, but preflight requests
+# typically send lowercase header names. Keep a single canonical entry here.
+CORS_ALLOW_HEADERS = list(default_headers) + [
     "ngrok-skip-browser-warning",
-    "X-Organization-Id",
     "x-organization-id",
 ]
 
