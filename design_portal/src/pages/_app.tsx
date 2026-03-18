@@ -61,7 +61,6 @@ export default function MyApp({ Component, pageProps }: AppProps) {
             theme="dark"
             className="bravento-toast-container"
             toastClassName="bravento-toast"
-            bodyClassName="bravento-toast-body"
             progressClassName="bravento-toast-progress"
             style={{ zIndex: 2147483647 }}
           />
