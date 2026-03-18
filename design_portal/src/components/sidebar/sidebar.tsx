@@ -31,7 +31,7 @@ const Sidebar = () => {
 
   const handleClick = (item: string, route: string) => {
     if (route === REDIRECT.UNAUTHORIZED) {
-      Cookies.remove('token', { path: '' });
+      Cookies.remove('token', { path: '/' });
       localStorage.clear();
     }
     setActiveItem(item);

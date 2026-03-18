@@ -42,6 +42,9 @@ from rest_framework.status import (
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
+# Local imports
+from .tokens import CustomAccessToken, CustomRefreshToken
+
 # App imports
 from umaboy.constant import GET, POST, PUT
 from umaboy.models import Organization, User, UserOrganizationPermission
@@ -100,7 +103,7 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user: User = serializer.save()
 
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomRefreshToken.for_user(user)
         user.is_verified = False
         user.save()
 
@@ -205,7 +208,8 @@ class UserAuthViewset(ModelViewSet):
                 status=HTTP_403_FORBIDDEN,
             )
 
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomRefreshToken.for_user(user)
+        access_token = CustomAccessToken.for_user(user)
 
         Logger.info(
             {
@@ -239,6 +243,12 @@ class UserAuthViewset(ModelViewSet):
             else None
         )
 
+        # Ensure username is in the access token before encoding
+        access_token.payload['username'] = str(user.username)
+        for cache_attr in ['_encoded', '_token', '_cached_token', '_str']:
+            if hasattr(access_token, cache_attr):
+                delattr(access_token, cache_attr)
+
         return Response(
             {
                 "message": "Logged in",
@@ -246,7 +256,7 @@ class UserAuthViewset(ModelViewSet):
                     "id": user.id,
                     "username": user.username,
                     "refresh": str(refresh),
-                    "access": str(refresh.access_token),  # type: ignore[attr-defined]
+                    "access": str(access_token),
                     "email": user.email,
                     "organization": connected_organizations,
                     "selected_organization": selected_organization,
@@ -292,7 +302,7 @@ class UserAuthViewset(ModelViewSet):
         serializer = RequestEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data
-        token = AccessToken.for_user(user)
+        token = CustomAccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
         threading.Thread(
             target=self._send_forgot_password_email, args=(user, user.email, token)
@@ -543,7 +553,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
             }
             | common_info_logger
         )
-        token = AccessToken.for_user(user)
+        token = CustomAccessToken.for_user(user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
         threading.Thread(
             target=self._send_welcome_email,
@@ -815,7 +825,7 @@ class AdminView(viewsets.ViewSet):
 
         login(request._request, user)
 
-        access_token = AccessToken.for_user(user)
+        access_token = CustomAccessToken.for_user(user)
 
         response = JsonResponse(
             {
