@@ -116,9 +116,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
     if (!isLatestVersion && option !== 'View') {
-      // Allow View, but maybe not others? Actually, user said "show all tool other wise its all disable"
-      // "only show the design" - usually means view mode.
-      // Let's allow Home/View but disable items inside.
+      // The system is likely controlling what tools/features are visible or enabled based on user permissions or mode.
+      // It suggests that:
+      // - If all tools are not explicitly enabled, they will remain disabled by default.
+      // - In "view mode", the user should only be able to see the design, not edit it.
+      // - Some basic access like Home/View navigation can still be allowed.
+      // - However, interactive tools or editing options inside the design should be disabled.
     }
     setIsToolOpen(true);
     setActiveOptionName(name);
