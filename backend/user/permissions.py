@@ -35,6 +35,7 @@ def _get_requested_org_id(request: Request) -> str | None:
         request.headers.get("X-Organization-Id")
         or request.headers.get("x-organization-id")
         or request.query_params.get("organization_id")
+        or request.META.get("HTTP_X_ORGANIZATION_ID")
     )
     if not org_id or org_id in {"null", "undefined"}:
         return None
