@@ -53,6 +53,7 @@ import {
   selectResolvedCamHeight,
   selectResolvedMinifixDiameterHole,
   selectResolvedMinifixDistance,
+  selectIsLatestVersion,
 } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
 
@@ -119,8 +120,8 @@ const Sidebar: React.FC = () => {
   const resolvedCamDepth = useSelector(selectResolvedCamDepth);
   const resolvedCamDiameter = useSelector(selectResolvedCamDiameter);
   const resolvedCamHeight = useSelector(selectResolvedCamHeight);
-
-  const isDisabled = isQuickHideActive;
+  const isLatestVersion = useSelector(selectIsLatestVersion);
+  const isDisabled = isQuickHideActive || !isLatestVersion;
 
   let selectedObject: MeshObjectData | null | undefined;
   const targetId = selectedChildObjectId || selectedObjectId;
@@ -179,7 +180,7 @@ const Sidebar: React.FC = () => {
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
-  }, [selectedObjectId, selectedChildObjectId]);
+  }, [selectedObjectId, selectedChildObjectId, isLatestVersion]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -419,7 +420,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleOpenCloseChange = () => {
-    if (!scene) return;
+    if (!scene || !isLatestVersion) return;
 
     const targetId = selectedChildObjectId ?? selectedObjectId;
     if (!targetId) return;
@@ -444,7 +445,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleHandleModeChange = async (mode: 'handle' | 'handleless') => {
-    if (!scene || !selectedObject) return;
+    if (!scene || !selectedObject || !isLatestVersion) return;
 
     setHandleMode(mode);
 
@@ -550,7 +551,7 @@ const Sidebar: React.FC = () => {
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    if (selectedObject) {
+    if (selectedObject && isLatestVersion) {
       const newPos = position.toLowerCase();
       const materialArray = Array.isArray(selectedObject.material)
         ? [...selectedObject.material]
@@ -640,7 +641,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
-    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current)
+    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current || !isLatestVersion)
       return;
 
     isUpdatingPositionRef.current = true;
@@ -767,7 +768,7 @@ const Sidebar: React.FC = () => {
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
-
+    if (!isLatestVersion) return;
     setShowMaterialPopup(true);
   };
 
@@ -1071,7 +1072,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.topIcon,
       value: handlePos.y,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandlePosState('y', Number(e.target.value)),
     },
@@ -1082,7 +1083,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.leftIcon,
       value: handlePos.x,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandlePosState('x', Number(e.target.value)),
     },
@@ -1093,7 +1094,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.rotateIcon,
       value: handleRot.y,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandleRotState('y', Number(e.target.value)),
     },
@@ -1159,7 +1160,7 @@ const Sidebar: React.FC = () => {
 
   // Disable texture change for invisible boxes (unless it's a plank which is handled separately)
   // We allow Full Cupboards to change texture now.
-  const isTextureChangeDisabled = (isInvisibleBoxSelected && !isPlankSelected) || isQuickHideActive;
+  const isTextureChangeDisabled = (isInvisibleBoxSelected && !isPlankSelected) || isDisabled;
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
@@ -1260,7 +1261,7 @@ const Sidebar: React.FC = () => {
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleMinifixToggle = () => {
-    if (minifixDisabled) return;
+    if (minifixDisabled || !isLatestVersion) return;
     setMinifixEnabled((prev) => !prev);
   };
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
@@ -1399,7 +1400,7 @@ const Sidebar: React.FC = () => {
   }, [selectedObject, objects, isFullCupboard, isQuickHideActive]);
 
   const handleTopPlankToggle = () => {
-    if (topPlankDisabled) return;
+    if (topPlankDisabled || !isLatestVersion) return;
 
     const topPlank = getTopPlank();
     if (!topPlank) return;
@@ -1435,7 +1436,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleFrontpanelToggle = () => {
-    if (frontpanelDisabled) return;
+    if (frontpanelDisabled || !isLatestVersion) return;
 
     const isEnabled = !frontpanelEnabled;
     setFrontpanelEnabled(isEnabled);
@@ -1460,7 +1461,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleNailerToggle = async () => {
-    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene) return;
+    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene || !isLatestVersion) return;
 
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
@@ -1512,7 +1513,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleNoBaseToggle = async () => {
-    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene) return;
+    if (!isFullCupboard || isDisabled || !selectedObject || !scene) return;
 
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
@@ -1556,7 +1557,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleNailerModelChange = async (model: string) => {
-    if (!scene || !selectedObject || !isFullCupboard) return;
+    if (!scene || !selectedObject || !isFullCupboard || !isLatestVersion) return;
 
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
@@ -1768,7 +1769,7 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[-90deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.left,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1777,7 +1778,7 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[-90deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.right,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1786,7 +1787,7 @@ const Sidebar: React.FC = () => {
       rotate: '',
       width: 'w-[5.1rem]',
       value: positionDistances.top,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1795,7 +1796,7 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[180deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.bottom,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
   ];
@@ -1948,7 +1949,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              disabled={!minifixEnabled}
+                              disabled={isDisabled}
                               value={minifixDistanceInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -2006,7 +2007,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              disabled={!minifixEnabled}
+                              disabled={!minifixEnabled || isDisabled}
                               value={minifixDiameterHoleInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -2108,7 +2109,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
-                              disabled={!minifixEnabled}
+                              disabled={!minifixEnabled || isDisabled}
                               value={camDiameterInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -2134,7 +2135,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
-                              disabled={!minifixEnabled}
+                              disabled={!minifixEnabled || isDisabled}
                               value={camDepthInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -2160,7 +2161,7 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
-                              disabled={!minifixEnabled}
+                              disabled={!minifixEnabled || isDisabled}
                               value={camHeightInput}
                               onChange={(e) => {
                                 const value = Number(e.target.value);
@@ -2591,7 +2592,7 @@ const Sidebar: React.FC = () => {
                           const value = e.target.value as 'handle' | 'handleless';
                           handleHandleModeChange(value);
                         }}
-                        disabled={isQuickHideActive}
+                        disabled={isDisabled}
                       >
                         <option value="handle">Handle</option>
                         <option value="handleless">Handleless</option>
@@ -2626,7 +2627,7 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleTopPlankToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
@@ -2646,6 +2647,7 @@ const Sidebar: React.FC = () => {
                               type="number"
                               value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
                               onChange={handleTopPlankDepthChange}
+                              disabled={isDisabled || topPlankDisabled}
                               className="ml-[1.3rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
@@ -2679,7 +2681,7 @@ const Sidebar: React.FC = () => {
                         <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
                           <div
                             onClick={handleNoBaseToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
@@ -2697,7 +2699,7 @@ const Sidebar: React.FC = () => {
                         <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
                           <div
                             onClick={handleNailerToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
@@ -2716,6 +2718,7 @@ const Sidebar: React.FC = () => {
                               <select
                                 value={selectedObject?.nailerModel || 'stand_1'}
                                 onChange={(e) => handleNailerModelChange(e.target.value)}
+                                disabled={isDisabled}
                                 className="mt-[0.5rem] ml-[0.65rem] flex h-[1.3rem] w-[4.25rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                               >
                                 <option value="stand_1">Stand 1</option>
@@ -2727,7 +2730,7 @@ const Sidebar: React.FC = () => {
                         <div className="flex items-center gap-[0rem]">
                           <div
                             onClick={handleFrontpanelToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
@@ -2749,7 +2752,7 @@ const Sidebar: React.FC = () => {
                           >
                             <input
                               type="number"
-                              disabled={frontpanelDisabled}
+                              disabled={frontpanelDisabled || isDisabled}
                               className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
@@ -2766,7 +2769,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              disabled={frontpanelDisabled}
+                              disabled={frontpanelDisabled || isDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
@@ -2778,7 +2781,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <input
                               type="number"
-                              disabled={frontpanelDisabled}
+                              disabled={frontpanelDisabled || isDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
@@ -2823,7 +2826,7 @@ const Sidebar: React.FC = () => {
                               setDoorPosition(value);
                               handleDoorPositionChange(value);
                             }}
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                           >
                             <option value="None">None</option>
                             <option value="Left">Left</option>
@@ -2839,7 +2842,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <button
                             className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                             onClick={handleOpenCloseChange}
                           >
                             Open/Close
@@ -2878,7 +2881,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <select
                             className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                             value={
                               selectedObject?.doorType === DOOR_TYPES.INSET
                                 ? DOOR_TYPES.INSET
@@ -2902,7 +2905,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <button
                             className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                             onClick={handleOpenCloseChange}
                           >
                             Open/Close
@@ -2941,7 +2944,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <select
                             className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                             value={
                               selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
                                 ? DRAWER_TYPES.OVERLAY
@@ -2965,7 +2968,7 @@ const Sidebar: React.FC = () => {
                           </p>
                           <button
                             className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
+                            disabled={isDisabled}
                             onClick={handleOpenCloseChange}
                           >
                             Open/Close
@@ -3045,7 +3048,7 @@ const Sidebar: React.FC = () => {
                       </p>
                       <button
                         className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        disabled={isQuickHideActive}
+                        disabled={isDisabled}
                       >
                         <p className="items-center text-center text-[0.55rem] font-[700]">
                           Press to Change

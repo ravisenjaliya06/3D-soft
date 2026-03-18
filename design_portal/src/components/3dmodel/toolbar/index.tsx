@@ -51,6 +51,7 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
@@ -61,6 +62,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   const isQuickHideActive = state.isQuickHideActive;
   const isMeasurementActive = state.isMeasurementActive;
   const isWallDrawingActive = state.isWallDrawingActive;
+  const isLatestVersion = useSelector(selectIsLatestVersion);
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
@@ -113,6 +115,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
+    if (!isLatestVersion && option !== 'View') {
+      // Allow View, but maybe not others? Actually, user said "show all tool other wise its all disable"
+      // "only show the design" - usually means view mode.
+      // Let's allow Home/View but disable items inside.
+    }
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
@@ -534,7 +541,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         }
       },
       isActive: catalogMenu,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
     {
       option: 'Quick Hide',
@@ -573,7 +580,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         setcatalogMenu(false);
       },
       isActive: isWallDrawingActive,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
   ];
 

@@ -46,6 +46,9 @@ export const selectHeaderCamDiameter = (state: RootState): number =>
 export const selectHeaderCamHeight = (state: RootState): number =>
   state.activeDesign.camHeight ?? state.designSettings.camHeight;
 
+export const selectIsLatestVersion = (state: RootState): boolean =>
+  state.activeDesign.isLatestVersion;
+
 export const selectMinifixStandards = (state: RootState): MinifixStandards => ({
   minifixDistance: selectResolvedMinifixDistance(state),
   minifixDiameterHole: selectResolvedMinifixDiameterHole(state),

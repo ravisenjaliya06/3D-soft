@@ -22,6 +22,7 @@ import {
   setActiveDesignCamHeight,
   setActiveDesignMinifixDiameterHole,
   setActiveDesignMinifixDistance,
+  setIsLatestVersion,
 } from '../store/activeDesignSlice';
 import { setGlobalDoorsOpen } from '../store/dataSlice';
 import {
@@ -30,6 +31,7 @@ import {
   selectHeaderCamHeight,
   selectHeaderMinifixDiameterHole,
   selectHeaderMinifixDistance,
+  selectIsLatestVersion,
 } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
 import styles from './header.module.css';
@@ -44,6 +46,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const resolvedCamDepth = useSelector(selectHeaderCamDepth);
   const resolvedCamDiameter = useSelector(selectHeaderCamDiameter);
   const resolvedCamHeight = useSelector(selectHeaderCamHeight);
+  const isLatestVersion = useSelector(selectIsLatestVersion);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -69,6 +72,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         const selectedDesign = designs.find((design) => design.id === designId);
         if (selectedDesign) {
           setDesignDetail(selectedDesign);
+          // Calculate if this is the latest version
+          const versions = selectedDesign.versions || [];
+          const latestVersion = versions.length > 0 ? versions[0] : null;
+          const isLatest = !!(!versionIdFromUrl || (latestVersion && latestVersion.id === versionIdFromUrl));
+          dispatch(setIsLatestVersion(isLatest));
         }
       }
     } catch (e) {
@@ -594,7 +602,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       option: 'clear',
       name: 'Clear',
       icon: assets.newclear,
-      disabled: false,
+      disabled: !isLatestVersion,
       onClick: handleClear,
     },
     {
@@ -608,7 +616,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       option: 'save',
       name: 'Save Design',
       icon: assets.save,
-      disabled: false,
+      disabled: !isLatestVersion,
       onClick: handleSave,
     },
     {
@@ -629,7 +637,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       option: 'settings',
       name: 'Settings',
       icon: assets.setting_svg,
-      disabled: false,
+      disabled: !isLatestVersion,
       onClick: handleSettingsClick,
     },
   ];
@@ -709,43 +717,57 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           ))}
         </div>
 
+        {!isLatestVersion && (
+          <div className={styles.viewOnlyMessage}>
+            This is in view mode only. If you want to make changes, switch to the latest version or update this version to latest first, then make your changes.
+          </div>
+        )}
+
         <div className={styles.header_rightmenu}>
           {designDetail && (designDetail as any).rendering_project_id ? (
             <div
-              className={styles.nestingbutton}
+              className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
               style={{ display: 'flex', alignItems: 'center', padding: '0px' }}
             >
               <p
-                onClick={handleGoToRender}
+                onClick={isLatestVersion ? handleGoToRender : undefined}
                 style={{
                   padding: '8px 12px',
                   margin: 0,
                   borderRight: '1px solid rgba(255,255,255,0.2)',
+                  cursor: isLatestVersion ? 'pointer' : 'not-allowed',
                 }}
               >
                 View Render
               </p>
               <div
                 ref={renderDropdownButtonRef}
-                onClick={() => setIsRenderDropdownOpen((prev) => !prev)}
+                onClick={isLatestVersion ? () => setIsRenderDropdownOpen((prev) => !prev) : undefined}
                 style={{
                   padding: '8px 12px',
                   margin: 0,
                   color: 'white',
                   display: 'flex',
                   alignItems: 'center',
+                  cursor: isLatestVersion ? 'pointer' : 'not-allowed',
                 }}
-                title="Render options"
+                title={isLatestVersion ? 'Render options' : 'View only mode'}
               >
                 <span style={{ fontSize: '12px', color: 'white' }}>▼</span>
               </div>
             </div>
           ) : (
-            <div className={styles.nestingbutton} onClick={handleRender}>
+            <div
+              className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
+              onClick={isLatestVersion ? handleRender : undefined}
+            >
               <p>Render</p>
             </div>
           )}
-          <div className={styles.nestingbutton} onClick={handleNesting}>
+          <div
+            className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
+            onClick={isLatestVersion ? handleNesting : undefined}
+          >
             <p>Nesting</p>
           </div>
           {isLoading && (

@@ -13,6 +13,7 @@ import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
 import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
@@ -92,6 +93,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
+  const isLatestVersion = useAppSelector(selectIsLatestVersion);
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
@@ -450,14 +452,16 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             unitType={currentUnitType}
             onComplete={() => {}}
           />
-          <HelperTool
-            design3D={design3D}
-            selectedObject={helperToolObject}
-            moveHandler={moveHandler}
-            setShowSavePopup={setShowSavePopup}
-            setCatalogName={setCatalogName}
-            setError={setError}
-          />
+          {isLatestVersion && (
+            <HelperTool
+              design3D={design3D}
+              selectedObject={helperToolObject}
+              moveHandler={moveHandler}
+              setShowSavePopup={setShowSavePopup}
+              setCatalogName={setCatalogName}
+              setError={setError}
+            />
+          )}
         </>
       )}
       {showSavePopup && (
