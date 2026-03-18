@@ -308,7 +308,9 @@ const Settings = () => {
 
   const myOrganizations = UserDetails?.organizations || [];
   const myOrganizationIdSet = new Set(myOrganizations.map((o) => o.id).filter(Boolean) as string[]);
-  const ghostOrganizations = allOrganizations.filter((org) => !myOrganizationIdSet.has(org.id || ''));
+  const ghostOrganizations = allOrganizations.filter(
+    (org) => !myOrganizationIdSet.has(org.id || '')
+  );
 
   const handleMyOrgChange = async (orgId: string) => {
     setSelectedMyOrgId(orgId);
@@ -1294,13 +1296,15 @@ const Settings = () => {
                   <div className={styles.ghostAccessContainer}>
                     <div>
                       <div className={styles.ghostHeaderRow}>
-                        <label className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}>
+                        <label
+                          className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}
+                        >
                           My Organizations
                         </label>
                       </div>
-                      
+
                       <div className={styles.ghostGrid}>
-                        {myOrganizations.map(org => {
+                        {myOrganizations.map((org) => {
                           const logoUrl = toPublicUrl(org.logo) || null;
                           return (
                             <button
@@ -1318,12 +1322,8 @@ const Settings = () => {
                                 )}
                               </div>
                               <div className={styles.ghostCardText}>
-                                <div className={styles.ghostOrgName}>
-                                  {org.name}
-                                </div>
-                                <div className={styles.ghostOrgDisplayName}>
-                                  {org.display_name}
-                                </div>
+                                <div className={styles.ghostOrgName}>{org.name}</div>
+                                <div className={styles.ghostOrgDisplayName}>{org.display_name}</div>
                               </div>
                             </button>
                           );
@@ -1331,13 +1331,13 @@ const Settings = () => {
                       </div>
 
                       <div className={styles.ghostSubHeaderRow}>
-                        <label className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}>
+                        <label
+                          className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}
+                        >
                           Ghost Access Organizations
                         </label>
                         <div className={styles.ghostAccessTypeRow}>
-                          <span className={styles.ghostAccessTypeLabel}>
-                            Ghost Access Type:
-                          </span>
+                          <span className={styles.ghostAccessTypeLabel}>Ghost Access Type:</span>
                           <div className={styles.ghostAccessTypeToggle}>
                             <button
                               onClick={() => handleGhostPermissionChange('view')}
@@ -1386,10 +1386,24 @@ const Settings = () => {
                 )}
 
                 {!UserDetails?.is_ghost && (
-                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>Current Organization</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{organization?.name || 'Loading...'}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>{organization?.display_name}</div>
+                  <div
+                    style={{
+                      marginTop: '2rem',
+                      padding: '1.5rem',
+                      background: '#f8fafc',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                      Current Organization
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                      {organization?.name || 'Loading...'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                      {organization?.display_name}
+                    </div>
                   </div>
                 )}
 

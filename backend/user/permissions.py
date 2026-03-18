@@ -7,8 +7,9 @@ from rest_framework.request import Request
 from rest_framework.viewsets import ModelViewSet
 
 # App imports
-from umaboy.models import User, UserOrganizationPermission, Organization
+from umaboy.models import Organization, User, UserOrganizationPermission
 
+# Local imports
 from .constant import (
     ACCOUNT_MANAGER,
     CAN_MANAGE_CATALOG,

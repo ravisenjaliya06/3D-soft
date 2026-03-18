@@ -1,8 +1,8 @@
+import { CustomToast } from '@/components/3dmodel/utils/CustomToast';
 import { getTokenDetail } from '@/components/helper/helper';
 import axios from 'axios';
 import React from 'react';
 import { toast } from 'react-toastify';
-import { CustomToast } from '@/components/3dmodel/utils/CustomToast';
 
 const http = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_PUBLIC_API}/${process.env.NEXT_PUBLIC_APP_VERSION}/`,
@@ -35,10 +35,7 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error?.response?.data?.error;
-    if (
-      typeof window !== 'undefined' &&
-      message === 'You have read-only access as a ghost user.'
-    ) {
+    if (typeof window !== 'undefined' && message === 'You have read-only access as a ghost user.') {
       toast(React.createElement(CustomToast, { appearance: 'error', message }), {
         position: 'top-right',
         toastId: 'ghost-readonly-access',

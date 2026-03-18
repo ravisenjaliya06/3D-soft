@@ -865,7 +865,10 @@
   cursor: pointer;
   background: transparent;
   color: #64748b;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .ghostAccessTypeButtonActive {

@@ -17,6 +17,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         return WorkOrder.objects.filter(
             design__organization=self.request.user.selected_organization
         ).distinct()
+
     permission_classes = [MesEditor]
     serializer_class = WorkOrderSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]

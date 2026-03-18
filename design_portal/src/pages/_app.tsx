@@ -6,8 +6,8 @@ import localFont from 'next/font/local';
 import { useRouter } from 'next/router';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
-import '../styles/globals.css';
 import 'react-toastify/dist/ReactToastify.css';
+import '../styles/globals.css';
 
 const geistSans = localFont({
   src: '../../public/fonts/GeistVF.woff',

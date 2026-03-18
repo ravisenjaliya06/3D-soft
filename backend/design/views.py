@@ -38,7 +38,6 @@ from design.models import (
     DesignVersion,
     NestingFile,
     NestingSheet,
-    Organization,
     RenderImage,
 )
 from design.nest import nest

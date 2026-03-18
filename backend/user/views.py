@@ -26,8 +26,8 @@ import jwt
 from dotenv import load_dotenv
 from jwt import decode as jwt_decode
 from rest_framework import viewsets
-from rest_framework.decorators import action
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.request import Request
@@ -413,7 +413,9 @@ class UserAuthViewset(ModelViewSet):
 
         access_type = request.data.get("ghost_access_type")
         if access_type not in ["view", "full"]:
-            return Response({"error": "Invalid access type"}, status=HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid access type"}, status=HTTP_400_BAD_REQUEST
+            )
 
         request.user.ghost_access_type = access_type
         request.user.save()
@@ -697,14 +699,19 @@ class AddUserInOrganizationViewset(ModelViewSet):
         )
 
     @action(detail=False, methods=[GET])
-    def all_organizations(self: "AddUserInOrganizationViewset", request: Request) -> Response:
+    def all_organizations(
+        self: "AddUserInOrganizationViewset", request: Request
+    ) -> Response:
         """
         List all organizations. Accessible only by Ghost Users or Admins.
         """
-        if not (request.user.is_superuser or (hasattr(request.user, 'is_ghost') and request.user.is_ghost)):
+        if not (
+            request.user.is_superuser
+            or (hasattr(request.user, "is_ghost") and request.user.is_ghost)
+        ):
             return Response({"error": "Unauthorized"}, status=HTTP_403_FORBIDDEN)
-        
-        organizations = Organization.objects.all().order_by('name')
+
+        organizations = Organization.objects.all().order_by("name")
         data = [
             {
                 "id": str(org.id),

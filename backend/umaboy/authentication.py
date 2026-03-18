@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+# Python imports
 from typing import Optional, Tuple
 
+# External imports
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+# App imports
 from umaboy.models import Organization, User
 
 
@@ -16,7 +19,9 @@ class OrganizationAwareJWTAuthentication(JWTAuthentication):
     will see the impersonated organization for the current request.
     """
 
-    def authenticate(self, request: Request) -> Optional[Tuple[User, str]]:
+    def authenticate(
+        self: "OrganizationAwareJWTAuthentication", request: Request
+    ) -> Optional[Tuple[User, str]]:
         auth_res = super().authenticate(request)
         if not auth_res:
             return None
@@ -25,7 +30,9 @@ class OrganizationAwareJWTAuthentication(JWTAuthentication):
         if not getattr(user, "is_ghost", False):
             return (user, token)
 
-        org_id = request.headers.get("X-Organization-Id") or request.headers.get("x-organization-id")
+        org_id = request.headers.get("X-Organization-Id") or request.headers.get(
+            "x-organization-id"
+        )
         if not org_id or org_id in {"null", "undefined"}:
             return (user, token)
 
@@ -38,4 +45,3 @@ class OrganizationAwareJWTAuthentication(JWTAuthentication):
             user.selected_organization = organization
 
         return (user, token)
-
