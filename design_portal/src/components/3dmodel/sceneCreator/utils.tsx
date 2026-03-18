@@ -3,7 +3,7 @@ import commonService from '@/services/CommonService';
 
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
-import { gettingDesignID, gettingVersionID } from '../design';
+import { gettingDesignID } from '../design';
 import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { prefetchGLB } from '../helper/glbLoader';
@@ -22,9 +22,8 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
     return;
   }
 
-  const response: { status: number; data: { catalogs: MeshObjectData[] } } = await commonService.get(
-    API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID(), versionId)
-  );
+  const response: { status: number; data: { catalogs: MeshObjectData[] } } =
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID(), versionId));
 
   if (response.status !== 200) {
     console.error('Error fetching catalogs');

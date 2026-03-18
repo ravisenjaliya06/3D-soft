@@ -2,6 +2,7 @@
 import sys
 from os.path import abspath, dirname
 
+# Django imports
 # Django setup
 import django
 
@@ -11,6 +12,8 @@ django.setup()
 
 # Django imports
 from django.db.models import Count
+
+# App imports
 from design.models import Design, DesignVersion
 
 
@@ -26,10 +29,10 @@ def create_missing_design_versions() -> None:
     total = designs_without_versions.count()
 
     if total == 0:
-        print("✅ All designs already have versions")
+        print("✅ All designs already have versions")  # noqa
         return
 
-    print(f"🔍 Found {total} designs without versions")
+    print(f"🔍 Found {total} designs without versions")  # noqa
 
     versions_to_create = []
 
@@ -44,7 +47,7 @@ def create_missing_design_versions() -> None:
     # Bulk create for performance
     DesignVersion.objects.bulk_create(versions_to_create)
 
-    print(f"✅ Created {len(versions_to_create)} missing versions")
+    print(f"✅ Created {len(versions_to_create)} missing versions")  # noqa
 
 
 if __name__ == "__main__":

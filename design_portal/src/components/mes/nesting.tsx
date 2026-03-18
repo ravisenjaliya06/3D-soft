@@ -1544,7 +1544,8 @@ const Nesting = () => {
                       setIsDownloadingXML(true);
                       try {
                         const response: any = await CommonService.put(
-                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
+                          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) +
+                            `?version_id=${version_id}`,
                           { format: 'xml_zip' }
                         );
                         if (response?.data?.file) {

@@ -15,7 +15,7 @@ import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { deleteObject } from '../sceneCreator/utils';
-import { resetStoreForNewDesign, RootState } from '../store';
+import { RootState } from '../store';
 import {
   setActiveDesignCamDepth,
   setActiveDesignCamDiameter,
@@ -114,7 +114,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
         if (flattenedCatalogs.length === 0) {
           toast(({ closeToast }) => (
-            <CustomToast appearance="error" message="No catalogs found to duplicate." closeToast={closeToast} />
+            <CustomToast
+              appearance="error"
+              message="No catalogs found to duplicate."
+              closeToast={closeToast}
+            />
           ));
           setIsLoading(false);
           return;
@@ -134,7 +138,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         if (createResponse.status === 201) {
           const newVersionId = createResponse.data?.version_id;
           toast(({ closeToast }) => (
-            <CustomToast appearance="success" message="New version created successfully!" closeToast={closeToast} />
+            <CustomToast
+              appearance="success"
+              message="New version created successfully!"
+              closeToast={closeToast}
+            />
           ));
           if (newVersionId) {
             window.location.href = `/design/${designId}/${newVersionId}`;
@@ -143,14 +151,22 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           }
         } else {
           toast(({ closeToast }) => (
-            <CustomToast appearance="error" message="Failed to create new version." closeToast={closeToast} />
+            <CustomToast
+              appearance="error"
+              message="Failed to create new version."
+              closeToast={closeToast}
+            />
           ));
         }
       }
     } catch (err) {
       console.error('Error in handleMakeLatest:', err);
       toast(({ closeToast }) => (
-        <CustomToast appearance="error" message="An error occurred while duplicating version." closeToast={closeToast} />
+        <CustomToast
+          appearance="error"
+          message="An error occurred while duplicating version."
+          closeToast={closeToast}
+        />
       ));
     } finally {
       setIsLoading(false);
@@ -639,7 +655,9 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
               >
                 <p>
                   Version:{' '}
-                  {versionIdFromUrl ? getVersionName(versionIdFromUrl) : 'v' + (designDetail?.versions?.length || '')}
+                  {versionIdFromUrl
+                    ? getVersionName(versionIdFromUrl)
+                    : 'v' + (designDetail?.versions?.length || '')}
                 </p>
                 <span style={{ fontSize: '10px', color: 'var(--primary-color)' }}>▼</span>
               </div>

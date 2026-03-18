@@ -130,8 +130,7 @@ class Design(models.Model):
 
         if is_new:
             DesignVersion.objects.create(
-                design=self,
-                name=self.design_name or "Untitled Version"
+                design=self, name=self.design_name or "Untitled Version"
             )
 
     def __str__(self: "Design") -> str:

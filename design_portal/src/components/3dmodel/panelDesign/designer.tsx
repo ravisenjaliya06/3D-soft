@@ -103,8 +103,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   ];
 
   // Hooks
-  const { stageRef, stageSize, stageScale, stagePosition, handleWheel } =
-    useStageManager(panelWidth, panelHeight);
+  const { stageRef, stageSize, stageScale, stagePosition, handleWheel } = useStageManager(
+    panelWidth,
+    panelHeight
+  );
 
   const { threeCanvasRef, containerRef } = useThreeScene(
     shapePoints,

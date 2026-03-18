@@ -29,7 +29,11 @@ export class SyncManager {
   private storeObjectMap: Map<string, MeshObjectData> = new Map();
   private isAutoSync: boolean = false;
 
-  constructor(data: MeshObjectData | MeshObjectData[], threeDView?: ThreeDView, isAutoSync: boolean = false) {
+  constructor(
+    data: MeshObjectData | MeshObjectData[],
+    threeDView?: ThreeDView,
+    isAutoSync: boolean = false
+  ) {
     const scene = threeDView?.scene || store.getState().scene?.scene;
     this.scene = scene;
     this.isAutoSync = isAutoSync;

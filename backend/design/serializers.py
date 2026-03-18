@@ -61,9 +61,15 @@ class DesignSerializer(serializers.ModelSerializer):
             "created_by",
             "versions",
         ]
-        read_only_fields = ["id", "organization", "created_by", "project_code", "versions"]
+        read_only_fields = [
+            "id",
+            "organization",
+            "created_by",
+            "project_code",
+            "versions",
+        ]
 
-    def get_versions(self, obj):
+    def get_versions(self: "DesignSerializer", obj: Design) -> list:
         versions = obj.designversion_set.all().order_by("-created_at")
         return DesignVersionSerializer(versions, many=True).data
 
@@ -105,8 +111,6 @@ class NestingItemSerializer(serializers.Serializer):
     geometry_type = serializers.CharField()  # noqa: N815
     isMain = serializers.BooleanField(default=False)  # noqa: N815
     parent = serializers.CharField(required=False)
-
-
 
 
 class SceneGetSerializer(serializers.Serializer):

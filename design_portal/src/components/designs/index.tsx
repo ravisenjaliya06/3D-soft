@@ -7,7 +7,6 @@ import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { resetStoreForNewDesign, store } from '../3dmodel/store';
 import { Design, DesignResponse, User } from './interface';
 
 type StatusStylesType = {
