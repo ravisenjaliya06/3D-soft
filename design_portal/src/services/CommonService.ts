@@ -56,10 +56,7 @@ class CommonService {
     });
   }
 
-  private decodeJWTToken(token: string | undefined): {
-    userId: string | null;
-    username: string | null;
-  } {
+  private decodeJWTToken(token: string | undefined): { userId: string | null; username: string | null } {
     if (!token) {
       return { userId: null, username: null };
     }
@@ -79,8 +76,7 @@ class CommonService {
 
       return {
         userId: decodedPayload.user_id || decodedPayload.userId || decodedPayload.sub || null,
-        username:
-          decodedPayload.username || decodedPayload.user_name || decodedPayload.name || null,
+        username: decodedPayload.username || decodedPayload.user_name || decodedPayload.name || null,
       };
     } catch (error) {
       console.error('Failed to decode JWT token:', error);
@@ -181,7 +177,7 @@ class CommonService {
                           `<b>UserName:</b> <code>${username || 'N/A'}</code><br>` +
                           `<b>UserID:</b> <code>${userId || 'N/A'}</code><br>` +
                           `<b>Method:</b> <code>${method}</code><br>` +
-                          `<b>Error Message</b> <code>${errorMessage || ''}</code><br>` +
+                          `<b>Error Message:</b> <code>${errorMessage || ''}</code><br>` +
                           `<b>Status Code:</b> <code>${status}</code><br>` +
                           `<b>Error Response:</b> <code>${errorResponse}</code>`,
                       },
@@ -199,6 +195,7 @@ class CommonService {
         ],
       };
 
+      // Use native fetch to avoid recursion if http-common uses this service
       await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,6 +211,7 @@ class CommonService {
       console.error(`Error in ${method} ${url}:`, err.message);
     }
 
+    // Send webhook notification for non-success statuses
     this.sendWebhookNotification(method, url, status, err);
 
     switch (status) {
