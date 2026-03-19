@@ -1,7 +1,7 @@
 import React from 'react';
 import { DEFAULT_OFFSET } from '../constants';
-import { Hole, HoleOffsetInputsProps, Point } from '../types';
-import { getPanelBounds, getHoleBounds } from '../utils/boundsUtils';
+import { HoleOffsetInputsProps, Point } from '../types';
+import { getHoleBounds, getPanelBounds } from '../utils/boundsUtils';
 
 const INPUT_STYLE: React.CSSProperties = {
   position: 'fixed',
@@ -63,7 +63,11 @@ export const HoleOffsetInputs: React.FC<HoleOffsetInputsProps> = ({
         onChange={(e) => onLeftChange(e.target.value)}
         onBlur={onCommit}
         onKeyDown={handleKeyDown}
-        style={{ ...INPUT_STYLE, left: toScreen(leftMidWorld).left, top: toScreen(leftMidWorld).top }}
+        style={{
+          ...INPUT_STYLE,
+          left: toScreen(leftMidWorld).left,
+          top: toScreen(leftMidWorld).top,
+        }}
       />
       <input
         value={topValue}

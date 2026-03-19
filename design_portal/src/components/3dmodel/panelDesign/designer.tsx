@@ -10,12 +10,13 @@ import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { GEOMETRY } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { updateObject } from '../store/dataSlice';
-import { PANEL_TOOLS } from './constants';
 import { getDesignIdsFromRouter } from '../utils/routeIds';
-import styles from './panelDesign.module.css';
+import { PANEL_TOOLS } from './constants';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
+import styles from './panelDesign.module.css';
 import { CornerType, CurveControls, Hole, Point } from './types';
+import { getHoleBounds, getPanelBounds } from './utils/boundsUtils';
 import {
   alignExtrudedGeometry,
   buildPathData,
@@ -23,7 +24,6 @@ import {
   createHolePath,
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
-import { getPanelBounds, getHoleBounds } from './utils/boundsUtils';
 
 import { normalizeUVs } from '../sceneCreator/utils';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
@@ -479,7 +479,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         if (
           currentDrawingPoints.length > 0 &&
           Math.hypot(currentDrawingPoints[0].x - snappedX, currentDrawingPoints[0].y - snappedY) <
-          15 / stageScale
+            15 / stageScale
         ) {
           const xs = currentDrawingPoints.map((p) => p.x);
           const ys = currentDrawingPoints.map((p) => p.y);
@@ -557,11 +557,11 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           points:
             holeShape === 'rect'
               ? [
-                { x: minX, y: minY },
-                { x: minX + w, y: minY },
-                { x: minX + w, y: minY + h },
-                { x: minX, y: minY + h },
-              ]
+                  { x: minX, y: minY },
+                  { x: minX + w, y: minY },
+                  { x: minX + w, y: minY + h },
+                  { x: minX, y: minY + h },
+                ]
               : undefined,
         });
       }
@@ -602,10 +602,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       />
 
       <div className={styles.canvasAndSidebar}>
-        <div
-          className={styles.canvasWrapper}
-          style={{ marginTop: 0 }}
-        >
+        <div className={styles.canvasWrapper} style={{ marginTop: 0 }}>
           <VerticalRuler
             stageSize={stageSize}
             stagePosition={stagePosition}
@@ -1146,13 +1143,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   tempHole ||
                   (isDrawingShape && currentDrawingPoints.length > 0
                     ? {
-                      x: 0,
-                      y: 0,
-                      width: 0,
-                      height: 0,
-                      type: 'polygon',
-                      points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
-                    }
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        type: 'polygon',
+                        points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
+                      }
                     : undefined)
                 }
                 showSelectedHoleOffsets

@@ -13,8 +13,8 @@ import {
   TICK_LENGTH,
 } from '../constants';
 import { DimensionHighlighterProps, DimensionLineProps, Hole, Point } from '../types';
+import { getHoleBounds, getPanelBounds } from '../utils/boundsUtils';
 import { calculatePolygonWinding } from '../utils/geometryUtils';
-import { getPanelBounds, getHoleBounds } from '../utils/boundsUtils';
 
 /**
  * A reusable component that renders a standard dimension line with tick marks and a rotated label.
@@ -247,7 +247,10 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
         renderHoleDimensions(hoveredHole)}
       {tempHole && renderHoleDimensions(tempHole)}
       {showPanelDims ? renderPanelDimensions() : null}
-      {showSelectedHoleOffsets && selectedHoleIndex !== null && holes[selectedHoleIndex] && renderHoleOffsetDimensions(holes[selectedHoleIndex])}
+      {showSelectedHoleOffsets &&
+        selectedHoleIndex !== null &&
+        holes[selectedHoleIndex] &&
+        renderHoleOffsetDimensions(holes[selectedHoleIndex])}
       {showSelectedHoleOffsets && tempHole && renderHoleOffsetDimensions(tempHole)}
     </>
   );

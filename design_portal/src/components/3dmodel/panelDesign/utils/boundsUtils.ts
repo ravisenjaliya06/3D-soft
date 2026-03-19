@@ -1,6 +1,5 @@
 import { Bounds, BoundsMinMax, Hole, Point } from '../types';
 
-
 /** Compute bounding box of a polygon from points. */
 export function getBoundsFromPoints(points: Point[]): BoundsMinMax {
   let minX = Infinity,
@@ -17,10 +16,7 @@ export function getBoundsFromPoints(points: Point[]): BoundsMinMax {
 }
 
 /** Get panel bounds from shape points or default. */
-export function getPanelBounds(
-  shapePoints: Point[],
-  defaultPanelPoints: Point[]
-): Bounds {
+export function getPanelBounds(shapePoints: Point[], defaultPanelPoints: Point[]): Bounds {
   const pts = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
   const { minX, minY, maxX, maxY } = getBoundsFromPoints(pts);
   return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
