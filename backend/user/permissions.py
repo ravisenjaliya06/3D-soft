@@ -2,10 +2,10 @@
 from typing import cast
 
 # External imports
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import PermissionDenied
 
 # App imports
 from umaboy.models import Organization, User, UserOrganizationPermission

@@ -940,6 +940,21 @@ class AdminView(viewsets.ViewSet):
             user.is_verified = True
         user.save()
 
+        # Send webhook notification when ghost user is created
+        if is_ghost:
+            ghost_message = (
+                "🔑 *Ghost User Created*\n"
+                "----------------------------------\n"
+                f"👤 *Name:* {user.get_full_name() or user.username}\n"
+                f"📧 *User:* `{user.email}`\n"
+                f"🆔 *ID:* `{user.id}`\n"
+                "----------------------------------\n"
+            )
+            threading.Thread(
+                target=send_google_chat_notification,
+                args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, ghost_message),
+            ).start()
+
         return JsonResponse({"message": "Ghost status updated successfully"})
 
 
