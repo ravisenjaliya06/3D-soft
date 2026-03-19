@@ -46,10 +46,7 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div
-      className={styles.rulerHorizontal}
-      style={{ top: activeTool === PANEL_TOOLS.DIG ? '95px' : '60px' }}
-    >
+    <div className={styles.rulerHorizontal} style={{ top: 60 }}>
       {ticks}
     </div>
   );
@@ -97,10 +94,7 @@ export const VerticalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div
-      className={styles.rulerVertical}
-      style={{ top: activeTool === PANEL_TOOLS.DIG ? '120px' : '85px' }}
-    >
+    <div className={styles.rulerVertical} style={{ top: 85 }}>
       {ticks}
     </div>
   );

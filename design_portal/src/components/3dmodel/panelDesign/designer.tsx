@@ -604,7 +604,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       <div className={styles.canvasAndSidebar}>
         <div
           className={styles.canvasWrapper}
-          style={{ marginTop: activeTool === PANEL_TOOLS.DIG ? '35px' : '0' }}
+          style={{ marginTop: 0 }}
         >
           <VerticalRuler
             stageSize={stageSize}

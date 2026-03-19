@@ -122,9 +122,9 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
   const selectedHole = selectedHoleIndex !== null ? holes[selectedHoleIndex] : null;
   const hoveredHole = hoveredHoleIndex !== null ? holes[hoveredHoleIndex] : null;
 
-  const showPanelDims = !selectedHole && !hoveredHole && hoveredPanel;
+  const showPanelDims = !selectedHole && !hoveredHole && !tempHole && hoveredPanel;
 
-  if (!selectedHole && !hoveredHole && !showPanelDims) return null;
+  if (!selectedHole && !hoveredHole && !showPanelDims && !tempHole) return null;
 
   /**
    * Renders dimensions for the main panel outline.
@@ -223,34 +223,18 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
     );
   };
 
-  const renderSelectedHoleOffsetDimensions = () => {
-    if (!showSelectedHoleOffsets || selectedHoleIndex === null || !holes[selectedHoleIndex]) return null;
-
+  /** Renders left/top offset lines from panel to a hole's bounding box. */
+  const renderHoleOffsetDimensions = (hole: Hole) => {
     const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
-    const holeB = getHoleBounds(holes[selectedHoleIndex]);
-
-    // Left distance: along the hole's top edge (horizontal)
+    const holeB = getHoleBounds(hole);
     const leftP1 = { x: panelB.minX, y: holeB.minY };
     const leftP2 = { x: holeB.minX, y: holeB.minY };
-
-    // Top distance: along the hole's left edge (vertical)
     const topP1 = { x: holeB.minX, y: panelB.minY };
     const topP2 = { x: holeB.minX, y: holeB.minY };
-
     return (
       <>
-        <DimensionLine
-          p1={leftP1}
-          p2={leftP2}
-          offset={-DEFAULT_OFFSET}
-          hideText
-        />
-        <DimensionLine
-          p1={topP1}
-          p2={topP2}
-          offset={-DEFAULT_OFFSET}
-          hideText
-        />
+        <DimensionLine p1={leftP1} p2={leftP2} offset={-DEFAULT_OFFSET} hideText />
+        <DimensionLine p1={topP1} p2={topP2} offset={-DEFAULT_OFFSET} hideText />
       </>
     );
   };
@@ -261,8 +245,10 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
       {hoveredHole &&
         (selectedHoleIndex === null || hoveredHoleIndex !== selectedHoleIndex) &&
         renderHoleDimensions(hoveredHole)}
+      {tempHole && renderHoleDimensions(tempHole)}
       {showPanelDims ? renderPanelDimensions() : null}
-      {renderSelectedHoleOffsetDimensions()}
+      {showSelectedHoleOffsets && selectedHoleIndex !== null && holes[selectedHoleIndex] && renderHoleOffsetDimensions(holes[selectedHoleIndex])}
+      {showSelectedHoleOffsets && tempHole && renderHoleOffsetDimensions(tempHole)}
     </>
   );
 };
