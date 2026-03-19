@@ -77,6 +77,27 @@ from .permissions import AccountManager
 load_dotenv()
 
 
+def _add_username_to_token(token: AccessToken | RefreshToken, user: User) -> None:
+    """
+    Add username to token payload and clear cache attributes.
+    Handles both AccessToken and RefreshToken (including refresh.access_token).
+    """
+    token.payload["username"] = str(user.username)
+
+    # For RefreshToken, also add username to its access_token
+    if hasattr(token, "access_token"):
+        token.access_token.payload["username"] = str(user.username)
+
+    # Clear cache attributes to force re-encoding
+    cache_attrs = ["_encoded", "_token", "_cached_token", "_str"]
+    for cache_attr in cache_attrs:
+        if hasattr(token, cache_attr):
+            delattr(token, cache_attr)
+        # Also clear cache for refresh.access_token if it exists
+        if hasattr(token, "access_token") and hasattr(token.access_token, cache_attr):
+            delattr(token.access_token, cache_attr)
+
+
 class UserAuthViewset(ModelViewSet):
     permission_classes = [AllowAny]
     http_method_names = [POST, GET, PUT]
@@ -101,6 +122,7 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.save()
 
         refresh = RefreshToken.for_user(user)
+        _add_username_to_token(refresh, user)
         user.is_verified = False
         user.save()
 
@@ -206,6 +228,11 @@ class UserAuthViewset(ModelViewSet):
             )
 
         refresh = RefreshToken.for_user(user)
+        access_token = AccessToken.for_user(user)
+
+        # Add username to both refresh and access token payloads
+        _add_username_to_token(refresh, user)
+        _add_username_to_token(access_token, user)
 
         Logger.info(
             {
@@ -246,7 +273,7 @@ class UserAuthViewset(ModelViewSet):
                     "id": user.id,
                     "username": user.username,
                     "refresh": str(refresh),
-                    "access": str(refresh.access_token),  # type: ignore[attr-defined]
+                    "access": str(access_token),
                     "email": user.email,
                     "organization": connected_organizations,
                     "selected_organization": selected_organization,
@@ -293,6 +320,7 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data
         token = AccessToken.for_user(user)
+        _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
         threading.Thread(
             target=self._send_forgot_password_email, args=(user, user.email, token)
@@ -544,6 +572,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
             | common_info_logger
         )
         token = AccessToken.for_user(user)
+        _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
         threading.Thread(
             target=self._send_welcome_email,
@@ -816,6 +845,7 @@ class AdminView(viewsets.ViewSet):
         login(request._request, user)
 
         access_token = AccessToken.for_user(user)
+        _add_username_to_token(access_token, user)
 
         response = JsonResponse(
             {
