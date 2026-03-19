@@ -90,6 +90,12 @@ export interface DimensionHighlighterProps {
   holes: Hole[];
   shapePoints: Point[];
   defaultPanelPoints: Point[];
+  /**
+   * When true, renders additional dimensions that locate the selected hole:
+   * - Left: panel left edge -> hole bounding-box left edge
+   * - Top: panel top edge  -> hole bounding-box top edge
+   */
+  showSelectedHoleOffsets?: boolean;
 }
 
 /**
@@ -98,6 +104,38 @@ export interface DimensionHighlighterProps {
 export interface DimensionLineProps {
   p1: Point;
   p2: Point;
-  text: string;
+  text?: string;
   offset?: number;
+  /** When true, only the line and ticks are drawn; no text label. */
+  hideText?: boolean;
+}
+
+export interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  width: number;
+  height: number;
+}
+
+export interface BoundsMinMax {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+export interface HoleOffsetInputsProps {
+  hole: Hole;
+  shapePoints: Point[];
+  defaultPanelPoints: Point[];
+  stageRef: React.RefObject<any>;
+  stagePosition: { x: number; y: number };
+  stageScale: number;
+  leftValue: string;
+  topValue: string;
+  onLeftChange: (v: string) => void;
+  onTopChange: (v: string) => void;
+  onCommit: () => void;
 }

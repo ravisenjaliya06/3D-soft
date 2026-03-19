@@ -314,6 +314,10 @@
 .toolButton:hover {
   background: var(--primary-selected-color);
 }
+
+.toolButtonActive {
+  background: rgba(52, 152, 219, 0.25) !important;
+}
 .toolButton img {
   width: 20px;
   height: 20px;
@@ -449,4 +453,43 @@
   padding: 0 20px;
   z-index: 2004;
   gap: 12px;
+}
+
+/* Floating Dig sub-toolbar - appears below Dig button when Dig is selected */
+.digSubToolbar {
+  position: fixed;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--secondry-background-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  z-index: 2010;
+}
+
+.digSubToolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.digSubToolButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.digSubToolButtonActive {
+  background: rgba(52, 152, 219, 0.4) !important;
+  color: #3498db;
 }

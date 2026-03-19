@@ -14,13 +14,20 @@ import {
 } from '../constants';
 import { DimensionHighlighterProps, DimensionLineProps, Hole, Point } from '../types';
 import { calculatePolygonWinding } from '../utils/geometryUtils';
+import { getPanelBounds, getHoleBounds } from '../utils/boundsUtils';
 
 /**
  * A reusable component that renders a standard dimension line with tick marks and a rotated label.
  *
  * @param props {@link DimensionLineProps}
  */
-const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DEFAULT_OFFSET }) => {
+const DimensionLine: React.FC<DimensionLineProps> = ({
+  p1,
+  p2,
+  text = '',
+  offset = DEFAULT_OFFSET,
+  hideText = false,
+}) => {
   const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
   const perpAngle = angle + Math.PI / 2;
   const offX = Math.cos(perpAngle) * offset;
@@ -74,21 +81,23 @@ const DimensionLine: React.FC<DimensionLineProps> = ({ p1, p2, text, offset = DE
         strokeWidth={DIM_STROKE_WIDTH}
         listening={false}
       />
-      {/* Dimension text */}
-      <KonvaText
-        x={(lp1.x + lp2.x) / 2}
-        y={(lp1.y + lp2.y) / 2}
-        text={text}
-        fontSize={TEXT_FONT_SIZE}
-        fill={DIM_COLOR}
-        align="center"
-        verticalAlign="middle"
-        rotation={normalizedAngle}
-        width={TEXT_WIDTH}
-        offsetX={TEXT_OFFSET_X}
-        offsetY={textOffsetY}
-        listening={false}
-      />
+      {/* Dimension text - omitted when hideText or no text */}
+      {!hideText && text && (
+        <KonvaText
+          x={(lp1.x + lp2.x) / 2}
+          y={(lp1.y + lp2.y) / 2}
+          text={text}
+          fontSize={TEXT_FONT_SIZE}
+          fill={DIM_COLOR}
+          align="center"
+          verticalAlign="middle"
+          rotation={normalizedAngle}
+          width={TEXT_WIDTH}
+          offsetX={TEXT_OFFSET_X}
+          offsetY={textOffsetY}
+          listening={false}
+        />
+      )}
     </>
   );
 };
@@ -105,20 +114,16 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
   holes,
   shapePoints,
   defaultPanelPoints,
+  showSelectedHoleOffsets = false,
 }) => {
-  // Determine what object to show dimensions for
-  let targetHole: Hole | null = null;
-  let isPanel = false;
+  // Determine what object to show dimensions for.
+  // IMPORTANT: selection must take precedence over hover so selected dimensions stay visible.
+  const selectedHole = selectedHoleIndex !== null ? holes[selectedHoleIndex] : null;
+  const hoveredHole = hoveredHoleIndex !== null ? holes[hoveredHoleIndex] : null;
 
-  if (hoveredHoleIndex !== null) {
-    targetHole = holes[hoveredHoleIndex];
-  } else if (hoveredPanel) {
-    isPanel = true;
-  } else if (selectedHoleIndex !== null) {
-    targetHole = holes[selectedHoleIndex];
-  }
+  const showPanelDims = !selectedHole && !hoveredHole && hoveredPanel;
 
-  if (!targetHole && !isPanel) return null;
+  if (!selectedHole && !hoveredHole && !showPanelDims) return null;
 
   /**
    * Renders dimensions for the main panel outline.
@@ -200,36 +205,63 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
       );
     }
 
-    // Default for rectangle or slotting
+    // Rectangle or slotting: 4 edges (top, right, bottom, left)
+    const { x, y, width, height } = hole;
+    const edges: [Point, Point, string][] = [
+      [{ x, y }, { x: x + width, y }, `${width.toFixed(1)} mm`],
+      [{ x: x + width, y }, { x: x + width, y: y + height }, `${height.toFixed(1)} mm`],
+      [{ x: x + width, y: y + height }, { x, y: y + height }, `${width.toFixed(1)} mm`],
+      [{ x, y: y + height }, { x, y }, `${height.toFixed(1)} mm`],
+    ];
+    return (
+      <>
+        {edges.map(([p1, p2, text], i) => (
+          <DimensionLine key={i} p1={p1} p2={p2} text={text} offset={-DEFAULT_OFFSET} />
+        ))}
+      </>
+    );
+  };
+
+  const renderSelectedHoleOffsetDimensions = () => {
+    if (!showSelectedHoleOffsets || selectedHoleIndex === null || !holes[selectedHoleIndex]) return null;
+
+    const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
+    const holeB = getHoleBounds(holes[selectedHoleIndex]);
+
+    // Left distance: along the hole's top edge (horizontal)
+    const leftP1 = { x: panelB.minX, y: holeB.minY };
+    const leftP2 = { x: holeB.minX, y: holeB.minY };
+
+    // Top distance: along the hole's left edge (vertical)
+    const topP1 = { x: holeB.minX, y: panelB.minY };
+    const topP2 = { x: holeB.minX, y: holeB.minY };
+
     return (
       <>
         <DimensionLine
-          p1={{ x: hole.x, y: hole.y }}
-          p2={{ x: hole.x + hole.width, y: hole.y }}
-          text={`${hole.width.toFixed(1)} mm`}
+          p1={leftP1}
+          p2={leftP2}
           offset={-DEFAULT_OFFSET}
+          hideText
         />
         <DimensionLine
-          p1={{ x: hole.x + hole.width, y: hole.y }}
-          p2={{ x: hole.x + hole.width, y: hole.y + hole.height }}
-          text={`${hole.height.toFixed(1)} mm`}
+          p1={topP1}
+          p2={topP2}
           offset={-DEFAULT_OFFSET}
-        />
-        <DimensionLine
-          p1={{ x: hole.x + hole.width, y: hole.y + hole.height }}
-          p2={{ x: hole.x, y: hole.y + hole.height }}
-          text={`${hole.width.toFixed(1)} mm`}
-          offset={-DEFAULT_OFFSET}
-        />
-        <DimensionLine
-          p1={{ x: hole.x, y: hole.y + hole.height }}
-          p2={{ x: hole.x, y: hole.y }}
-          text={`${hole.height.toFixed(1)} mm`}
-          offset={-DEFAULT_OFFSET}
+          hideText
         />
       </>
     );
   };
 
-  return <>{isPanel ? renderPanelDimensions() : targetHole && renderHoleDimensions(targetHole)}</>;
+  return (
+    <>
+      {selectedHole && renderHoleDimensions(selectedHole)}
+      {hoveredHole &&
+        (selectedHoleIndex === null || hoveredHoleIndex !== selectedHoleIndex) &&
+        renderHoleDimensions(hoveredHole)}
+      {showPanelDims ? renderPanelDimensions() : null}
+      {renderSelectedHoleOffsetDimensions()}
+    </>
+  );
 };
