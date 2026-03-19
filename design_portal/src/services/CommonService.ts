@@ -87,16 +87,12 @@ class CommonService {
   }
 
   private _getErrorField(errorData: any): string | null {
-    if (errorData?.message && typeof errorData.message === 'string') {
-      return errorData.message;
-    }
-    if (errorData?.error && typeof errorData.error === 'string') {
-      return errorData.error;
-    }
-    if (errorData?.detail && typeof errorData.detail === 'string') {
-      return errorData.detail;
-    }
-    return null;
+    return (
+      (typeof errorData?.message === 'string' && errorData.message) ||
+      (typeof errorData?.error === 'string' && errorData.error) ||
+      (typeof errorData?.detail === 'string' && errorData.detail) ||
+      null
+    );
   }
 
   private formatErrorResponse(err: any): string {
