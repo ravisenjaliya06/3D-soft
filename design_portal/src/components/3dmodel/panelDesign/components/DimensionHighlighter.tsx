@@ -105,12 +105,15 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
   holes,
   shapePoints,
   defaultPanelPoints,
+  tempHole,
 }) => {
   // Determine what object to show dimensions for
   let targetHole: Hole | null = null;
   let isPanel = false;
 
-  if (hoveredHoleIndex !== null) {
+  if (tempHole) {
+    targetHole = tempHole;
+  } else if (hoveredHoleIndex !== null) {
     targetHole = holes[hoveredHoleIndex];
   } else if (hoveredPanel) {
     isPanel = true;

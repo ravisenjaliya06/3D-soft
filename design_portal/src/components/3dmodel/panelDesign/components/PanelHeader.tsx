@@ -1,4 +1,5 @@
 import React from 'react';
+import { PANEL_TOOLS } from '../constants';
 import styles from '../panelDesign.module.css';
 import { PanelHeaderProps } from '../types';
 
@@ -26,9 +27,9 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
               key={name}
               className={styles.toolButton}
               onClick={() => {
-                if (name === 'Dig') {
-                  setActiveTool(activeTool === 'Dig' ? null : 'Dig');
-                  if (activeTool !== 'Dig' && !holeShape) {
+                if (name === PANEL_TOOLS.DIG) {
+                  setActiveTool(activeTool === PANEL_TOOLS.DIG ? null : PANEL_TOOLS.DIG);
+                  if (activeTool !== PANEL_TOOLS.DIG && !holeShape) {
                     setHoleShape('rect');
                   }
                   return;
@@ -58,7 +59,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
         </div>
       </div>
 
-      {activeTool === 'Dig' && (
+      {activeTool === PANEL_TOOLS.DIG && (
         <div className={styles.subToolbar}>
           <div className={styles.subToolbarLabel}>Dig Options:</div>
           <select

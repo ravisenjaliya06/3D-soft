@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { normalizeUVs } from '../../sceneCreator/utils';
 import { CornerType, Hole, Point } from '../types';
 import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
@@ -111,6 +112,8 @@ export function useThreeScene(
     const center = new THREE.Vector3();
     box.getCenter(center);
     geometry.translate(-center.x, -center.y, -center.z);
+
+    normalizeUVs(geometry);
 
     // 3. Material Handling
     const selectedObject = state?.data?.selectedObject;

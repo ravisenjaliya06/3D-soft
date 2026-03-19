@@ -4,12 +4,15 @@ import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { Circle, Layer, Line, Path, Rect, Stage, Transformer } from 'react-konva';
+import { useDispatch } from 'react-redux';
 import * as THREE from 'three';
 import { detectPlankByBoundingBox } from '../../utils/plankUtils';
+import { GEOMETRY } from '../sceneCreator/interface';
 import { RootState } from '../store';
+import { updateObject } from '../store/dataSlice';
+import { PANEL_TOOLS } from './constants';
 import { getDesignIdsFromRouter } from '../utils/routeIds';
 import styles from './panelDesign.module.css';
-
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
 import { CornerType, CurveControls, Hole, Point } from './types';
@@ -21,6 +24,7 @@ import {
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 
+import { normalizeUVs } from '../sceneCreator/utils';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
 import { PanelHeader } from './components/PanelHeader';
 import { HorizontalRuler, VerticalRuler } from './components/Rulers';
@@ -44,6 +48,7 @@ interface PanelDesignerProps {
  */
 export default function PanelDesigner({ state }: PanelDesignerProps) {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { designId = '', versionId = '' } = getDesignIdsFromRouter(router);
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
@@ -112,6 +117,26 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     isRotated2D,
     state
   );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDrawingShape(false);
+        setCurrentDrawingPoints([]);
+        setSnappingGuides([]);
+        setMousePos(null);
+
+        setIsDrawingHole(false);
+        setTempHole(null);
+        setNewHoleStart(null);
+
+        setActiveCurveDragKey(null);
+        setActiveTool(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   /**
    * Effect hook to ensure corner radius and types arrays match the number of shape points.
@@ -228,6 +253,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       bevelEnabled: false,
     });
     alignExtrudedGeometry(newGeometry, plankThickness, thicknessAxis, originalGeometry);
+    normalizeUVs(newGeometry);
 
     // Update mesh metadata and swap geometry
     newGeometry.userData.oldGeometry = originalGeometry;
@@ -284,8 +310,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       .find((obj: any) => obj.userData?.objectId === state?.data?.selectedObject)
       ?.children.find((obj: any) => obj.userData?.objectId === state?.data?.selectedChildObject);
     if (selectedChildMesh instanceof THREE.Mesh && originalGeometry) {
-      selectedChildMesh.geometry.dispose();
-      selectedChildMesh.geometry = originalGeometry;
+      (selectedChildMesh as THREE.Mesh).geometry.dispose();
+      (selectedChildMesh as THREE.Mesh).geometry = originalGeometry;
     }
     router.push(`/design/${designId}/${versionId}`);
   };
@@ -296,6 +322,24 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    */
   const handleComplete = () => {
     updateMeshGeometry();
+
+    const selectedChildObject = state?.data?.selectedChildObject;
+    if (selectedChildObject) {
+      dispatch(
+        updateObject({
+          id: selectedChildObject,
+          geometryType: GEOMETRY.EXTRUDE_GEOMETRY,
+          panelDesign: {
+            outline: shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
+            cornerRadius,
+            cornerTypes,
+            curveControls,
+            holes,
+          },
+        })
+      );
+    }
+
     router.push(`/design/${designId}/${versionId}`);
   };
 
@@ -319,7 +363,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     if (!relativePos) return;
     const { x: rawX, y: rawY } = relativePos;
 
-    if (activeTool === 'Draw the outline of the board') {
+    if (activeTool === PANEL_TOOLS.PENCIL) {
       const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
       if (currentDrawingPoints.length > 0) {
         const dist = Math.hypot(
@@ -328,19 +372,22 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         );
         if (dist < 15 / stageScale) {
           if (shapePoints.length === 0) setShapePoints(currentDrawingPoints);
-          else
+          else {
+            const xs = currentDrawingPoints.map((p) => p.x);
+            const ys = currentDrawingPoints.map((p) => p.y);
             setHoles((prev) => [
               ...prev,
               {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
+                x: Math.min(...xs),
+                y: Math.min(...ys),
+                width: Math.max(...xs) - Math.min(...xs),
+                height: Math.max(...ys) - Math.min(...ys),
                 type: 'polygon',
                 points: currentDrawingPoints,
-                id: `hole-${Date.now()}`,
+                id: crypto.randomUUID(),
               },
             ]);
+          }
           setCurrentDrawingPoints([]);
           setIsDrawingShape(false);
           setSnappingGuides([]);
@@ -350,24 +397,26 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       }
       setCurrentDrawingPoints((prev) => [...prev, { x: snappedX, y: snappedY }]);
       setIsDrawingShape(true);
-    } else if (activeTool === 'Dig') {
+    } else if (activeTool === PANEL_TOOLS.DIG) {
       if (holeShape === 'polygon') {
         const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
         if (
           currentDrawingPoints.length > 0 &&
           Math.hypot(currentDrawingPoints[0].x - snappedX, currentDrawingPoints[0].y - snappedY) <
-            15 / stageScale
+          15 / stageScale
         ) {
+          const xs = currentDrawingPoints.map((p) => p.x);
+          const ys = currentDrawingPoints.map((p) => p.y);
           setHoles((prev) => [
             ...prev,
             {
-              x: 0,
-              y: 0,
-              width: 0,
-              height: 0,
+              x: Math.min(...xs),
+              y: Math.min(...ys),
+              width: Math.max(...xs) - Math.min(...xs),
+              height: Math.max(...ys) - Math.min(...ys),
               type: 'polygon',
               points: currentDrawingPoints,
-              id: `hole-${Date.now()}`,
+              id: crypto.randomUUID(),
             },
           ]);
           setCurrentDrawingPoints([]);
@@ -408,35 +457,53 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       const dx = rawX - newHoleStart.x,
         dy = rawY - newHoleStart.y;
       if (holeShape === 'circle') {
-        const r = Math.min(Math.abs(dx), Math.abs(dy)) / 2;
+        const circleRadius = Math.min(Math.abs(dx), Math.abs(dy)) / 2;
         setTempHole({
-          x: newHoleStart.x + dx / 2 - r,
-          y: newHoleStart.y + dy / 2 - r,
-          width: r * 2,
-          height: r * 2,
+          x: newHoleStart.x + dx / 2 - circleRadius,
+          y: newHoleStart.y + dy / 2 - circleRadius,
+          width: circleRadius * 2,
+          height: circleRadius * 2,
           type: 'circle',
+          radius: circleRadius,
         });
-      } else
+      } else {
+        const minX = Math.min(newHoleStart.x, rawX);
+        const minY = Math.min(newHoleStart.y, rawY);
+        const w = Math.abs(dx);
+        const h = Math.abs(dy);
+
         setTempHole({
-          x: Math.min(newHoleStart.x, rawX),
-          y: Math.min(newHoleStart.y, rawY),
-          width: Math.abs(dx),
-          height: Math.abs(dy),
+          x: minX,
+          y: minY,
+          width: w,
+          height: h,
           type: holeShape,
+          points:
+            holeShape === 'rect'
+              ? [
+                { x: minX, y: minY },
+                { x: minX + w, y: minY },
+                { x: minX + w, y: minY + h },
+                { x: minX, y: minY + h },
+              ]
+              : undefined,
         });
+      }
     } else if (activeCurveDragKey) {
       setCurveControls((prev) => ({ ...prev, [activeCurveDragKey]: { x: rawX, y: rawY } }));
     }
   };
 
-  // Removed old renderHoverDimensions and DimensionLineComp logic
-
   const toolsList = [
-    { name: 'Undo', icon: assets.undo },
-    { name: 'Redo', icon: assets.redo },
-    { name: 'Draw the outline of the board', icon: assets.pencil },
-    { name: 'Dig', icon: assets.dig, subTools: ['rect', 'polygon', 'circle', 'slotting'] },
-    { name: 'Curve', icon: assets.curve },
+    { name: PANEL_TOOLS.UNDO, icon: assets.undo },
+    { name: PANEL_TOOLS.REDO, icon: assets.redo },
+    { name: PANEL_TOOLS.PENCIL, icon: assets.pencil },
+    {
+      name: PANEL_TOOLS.DIG,
+      icon: assets.dig,
+      subTools: ['rect', 'polygon', 'circle', 'slotting'],
+    },
+    { name: PANEL_TOOLS.CURVE, icon: assets.curve },
   ];
 
   return (
@@ -461,7 +528,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       <div className={styles.canvasAndSidebar}>
         <div
           className={styles.canvasWrapper}
-          style={{ marginTop: activeTool === 'Dig' ? '35px' : '0' }}
+          style={{ marginTop: activeTool === PANEL_TOOLS.DIG ? '35px' : '0' }}
         >
           <VerticalRuler
             stageSize={stageSize}
@@ -484,7 +551,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             onMouseMove={onStageMouseMove}
             onMouseUp={() => {
               if (isDrawingHole && tempHole)
-                setHoles((prev) => [...prev, { ...tempHole, id: `hole-${Date.now()}` }]);
+                setHoles((prev) => [...prev, { ...tempHole, id: crypto.randomUUID() }]);
               setIsDrawingHole(false);
               setTempHole(null);
               setNewHoleStart(null);
@@ -999,6 +1066,19 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                 holes={holes}
                 shapePoints={shapePoints}
                 defaultPanelPoints={defaultPanelPoints}
+                tempHole={
+                  tempHole ||
+                  (isDrawingShape && currentDrawingPoints.length > 0
+                    ? {
+                      x: 0,
+                      y: 0,
+                      width: 0,
+                      height: 0,
+                      type: 'polygon',
+                      points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
+                    }
+                    : undefined)
+                }
               />
               <Transformer
                 ref={transformerRef}

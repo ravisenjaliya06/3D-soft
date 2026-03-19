@@ -27,6 +27,15 @@ export interface Hole {
   lineTypes?: ('linear' | 'arc')[];
   lineRadii?: number[];
   id?: string;
+  radius?: number;
+}
+
+export interface PanelDesignData {
+  outline: Point[];
+  cornerRadius: number[];
+  cornerTypes: CornerType[];
+  curveControls: CurveControls;
+  holes: Hole[];
 }
 
 /**
@@ -90,6 +99,7 @@ export interface DimensionHighlighterProps {
   holes: Hole[];
   shapePoints: Point[];
   defaultPanelPoints: Point[];
+  tempHole?: Hole | null;
 }
 
 /**

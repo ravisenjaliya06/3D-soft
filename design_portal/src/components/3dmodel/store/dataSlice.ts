@@ -68,6 +68,9 @@ const dataSlice = createSlice({
           edgeBanding: updatedObject.edgeBanding
             ? { ...existingObject.edgeBanding, ...updatedObject.edgeBanding }
             : existingObject.edgeBanding,
+          panelDesign: updatedObject.panelDesign
+            ? updatedObject.panelDesign // Replace panel design entirely
+            : existingObject.panelDesign,
           grooves: updatedObject.grooves
             ? updatedObject.grooves // Replace array entirely, do not merge
             : existingObject.grooves,
@@ -100,6 +103,9 @@ const dataSlice = createSlice({
             edgeBanding: updatedObject.edgeBanding
               ? { ...existingObject.edgeBanding, ...updatedObject.edgeBanding }
               : existingObject.edgeBanding,
+            panelDesign: updatedObject.panelDesign
+              ? updatedObject.panelDesign // Replace panel design entirely
+              : existingObject.panelDesign,
             grooves: updatedObject.grooves
               ? updatedObject.grooves // Replace array entirely, do not merge
               : existingObject.grooves,

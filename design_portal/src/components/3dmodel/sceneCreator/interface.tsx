@@ -3,6 +3,7 @@ import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
+import { PanelDesignData } from '../panelDesign/types';
 import { Position, Rotation } from '../store/interface';
 
 // type const
@@ -213,6 +214,7 @@ export interface MeshObjectData {
   direction?: string;
   holes?: HoleData[];
   image?: string;
+  panelDesign?: PanelDesignData;
 }
 
 export interface HoleData {
@@ -291,4 +293,5 @@ export type MeshObjectPatch = Omit<
   rotation?: Partial<Rotation>;
   edgeBanding?: EdgeBandingState;
   material?: Material[];
+  panelDesign?: PanelDesignData;
 };
