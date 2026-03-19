@@ -568,3 +568,52 @@ export const createCopiedStoreObjects = (
 
 // Re-export specific components from other files for backward compatibility
 export { CustomToast } from '../utils/CustomToast';
+
+// normalize UVs for a Extrude geometry because not directly apply texture just like box geometry type
+export const normalizeUVs = (geometry: THREE.BufferGeometry) => {
+  geometry.computeBoundingBox();
+  geometry.computeVertexNormals();
+
+  const boundingBox = geometry.boundingBox;
+  if (!boundingBox) return;
+
+  const uvAttribute = geometry.attributes.uv;
+  const positionAttribute = geometry.attributes.position;
+  const normalAttribute = geometry.attributes.normal;
+
+  const boundingBoxSize = new THREE.Vector3();
+  boundingBox.getSize(boundingBoxSize);
+
+  for (let i = 0; i < uvAttribute.count; i++) {
+    const posX = positionAttribute.getX(i);
+    const posY = positionAttribute.getY(i);
+    const posZ = positionAttribute.getZ(i);
+
+    const normalX = normalAttribute.getX(i);
+    const normalY = normalAttribute.getY(i);
+    const normalZ = normalAttribute.getZ(i);
+
+    const absNormalX = Math.abs(normalX);
+    const absNormalY = Math.abs(normalY);
+    const absNormalZ = Math.abs(normalZ);
+
+    let u = 0;
+    let v = 0;
+
+    // Project UV based on dominant normal axis
+    if (absNormalZ >= absNormalX && absNormalZ >= absNormalY) {
+      u = boundingBoxSize.x > 0 ? (posX - boundingBox.min.x) / boundingBoxSize.x : 0;
+      v = boundingBoxSize.y > 0 ? (posY - boundingBox.min.y) / boundingBoxSize.y : 0;
+    } else if (absNormalY >= absNormalX && absNormalY >= absNormalZ) {
+      u = boundingBoxSize.x > 0 ? (posX - boundingBox.min.x) / boundingBoxSize.x : 0;
+      v = boundingBoxSize.z > 0 ? (posZ - boundingBox.min.z) / boundingBoxSize.z : 0;
+    } else {
+      u = boundingBoxSize.z > 0 ? (posZ - boundingBox.min.z) / boundingBoxSize.z : 0;
+      v = boundingBoxSize.y > 0 ? (posY - boundingBox.min.y) / boundingBoxSize.y : 0;
+    }
+
+    uvAttribute.setXY(i, u, v);
+  }
+
+  uvAttribute.needsUpdate = true;
+};

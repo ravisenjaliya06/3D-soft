@@ -114,6 +114,7 @@ export const DimensionHighlighter: React.FC<DimensionHighlighterProps> = ({
   holes,
   shapePoints,
   defaultPanelPoints,
+  tempHole,
   showSelectedHoleOffsets = false,
 }) => {
   // Determine what object to show dimensions for.

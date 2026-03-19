@@ -1,4 +1,5 @@
 import React from 'react';
+import { PANEL_TOOLS } from '../constants';
 import styles from '../panelDesign.module.css';
 
 interface RulersProps {
@@ -44,7 +45,10 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div className={styles.rulerHorizontal} style={{ top: 60 }}>
+    <div
+      className={styles.rulerHorizontal}
+      style={{ top: activeTool === PANEL_TOOLS.DIG ? '95px' : '60px' }}
+    >
       {ticks}
     </div>
   );
@@ -91,7 +95,10 @@ export const VerticalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div className={styles.rulerVertical} style={{ top: 85 }}>
+    <div
+      className={styles.rulerVertical}
+      style={{ top: activeTool === PANEL_TOOLS.DIG ? '120px' : '85px' }}
+    >
       {ticks}
     </div>
   );

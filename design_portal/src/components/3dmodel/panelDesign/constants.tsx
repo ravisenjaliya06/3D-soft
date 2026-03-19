@@ -8,3 +8,11 @@ export const DEFAULT_OFFSET = 20;
 export const TEXT_OFFSET_Y_BASE = 22;
 export const CIRCLE_FONT_SIZE = 14;
 export const RADIAL_OFFSET = 5;
+
+export const PANEL_TOOLS = {
+  UNDO: 'Undo',
+  REDO: 'Redo',
+  PENCIL: 'Pencil',
+  DIG: 'Dig',
+  CURVE: 'Curve',
+};

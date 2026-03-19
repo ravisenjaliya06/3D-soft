@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { PANEL_TOOLS } from '../constants';
 import { assets } from '@/svgPaths';
 import styles from '../panelDesign.module.css';
 import { PanelHeaderProps } from '../types';
@@ -68,9 +69,17 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
           {tools.map(({ name, icon }) => (
             <div
               key={name}
-              ref={name === 'Dig' ? digButtonRef : undefined}
-              className={`${styles.toolButton} ${activeTool === name ? styles.toolButtonActive : ''}`}
-              onClick={() => handleToolClick(name)}
+              className={styles.toolButton}
+              onClick={() => {
+                if (name === PANEL_TOOLS.DIG) {
+                  setActiveTool(activeTool === PANEL_TOOLS.DIG ? null : PANEL_TOOLS.DIG);
+                  if (activeTool !== PANEL_TOOLS.DIG && !holeShape) {
+                    setHoleShape('rect');
+                  }
+                  return;
+                }
+                setActiveTool(name);
+              }}
               title={name}
             >
               <img src={icon} alt={name} />
@@ -84,7 +93,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
         </div>
       </div>
 
-      {activeTool === 'Dig' && (
+      {activeTool === PANEL_TOOLS.DIG && (
         <div className={styles.digSubToolbar} style={subToolbarStyle}>
           {DIG_SUB_TOOLS.map(({ value, label }) => (
             <button
