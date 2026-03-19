@@ -41,10 +41,8 @@ const Header = ({
   };
 
   const handleLogout = () => {
-    console.log('handleLogout');
     localStorage.removeItem('token');
     Cookies.remove('token', { path: '/' });
-    console.log(Cookies.get('token'));
     router.push({
       pathname: REDIRECT.UNAUTHORIZED,
     });
