@@ -1573,7 +1573,13 @@ const Nesting = () => {
                   </button>
                   {/* ✅ View Details Button */}
                   <button
-                    onClick={() => router.push(`/design/${design_id}/nesting-details`)}
+                    onClick={() => {
+                      if (design_id && version_id) {
+                        router.push(`/design/${design_id}/${version_id}/nesting-details`);
+                      } else {
+                        router.push(`/design/${design_id}`);
+                      }
+                    }}
                     className={styles.viewDetailsButton}
                     disabled={displayData.length === 0}
                   >

@@ -21,9 +21,11 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
   if (versionId && versionId.length < 10) {
     return;
   }
+  const designId = gettingDesignID();
+  if (!designId) return;
 
   const response: { status: number; data: { catalogs: MeshObjectData[] } } =
-    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID(), versionId));
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(designId, versionId));
 
   if (response.status !== 200) {
     console.error('Error fetching catalogs');

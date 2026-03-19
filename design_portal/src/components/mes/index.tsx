@@ -83,7 +83,23 @@ const Mes = () => {
         console.error('Error triggering nesting:', nestingErr);
       }
 
-      router.push(`/design/${design.id}/nesting`);
+      // Redirect to latest version nesting page:
+      // If we go to /design/<designId>/nesting it matches /design/[designid]/[versionid]
+      // with versionid="nesting" and opens the 3D design page instead.
+      let latestVersionId: string | undefined;
+      const response: { status: number; data: any[] } = await commonService.get(
+        API_ENDPOINT.GET_DESIGNS
+      );
+      if (response.status === 200) {
+        const fullDesign = response.data.find((d: any) => d.id === design.id);
+        latestVersionId = fullDesign?.versions?.[0]?.id;
+      }
+
+      if (latestVersionId) {
+        router.push(`/design/${design.id}/${latestVersionId}/nesting`);
+      } else {
+        router.push(`/design/${design.id}`);
+      }
     } catch (err) {
       setError('No any designs for nesting.');
       console.error('Error fetching sheets:', err);

@@ -234,9 +234,13 @@ export const deleteObject =
   async () => {
     const formData = new FormData();
     formData.append('ids', objectId);
+    const designId = gettingDesignID();
+    if (!designId) return;
+
+    formData.append('design', designId);
 
     const response = (await commonService.delete(
-      API_ENDPOINT.DELETE_OBJECT(gettingDesignID()),
+      API_ENDPOINT.DELETE_OBJECT(designId),
       formData
     )) as ResponseStatus;
 

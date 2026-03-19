@@ -7,6 +7,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
+import { parseDesignIdsFromPathname } from '../../utils/routeIds';
 import { HelperToolProps, OBJECT_TYPES } from '../interface';
 import {
   collectSceneObjectIds,
@@ -135,9 +136,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
   }, []);
 
   const handlePanelDesign = useCallback(() => {
-    const parts = window.location.pathname.split('/');
-    const designId = parts[2];
-    const versionId = parts[3];
+    const { designId, versionId } = parseDesignIdsFromPathname(window.location.pathname);
 
     if (designId && versionId) {
       router.push(`/design/${designId}/${versionId}/paneldesign`);
