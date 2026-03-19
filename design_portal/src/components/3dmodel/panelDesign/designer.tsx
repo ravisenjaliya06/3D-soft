@@ -10,12 +10,13 @@ import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { GEOMETRY } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { updateObject } from '../store/dataSlice';
-import { PANEL_TOOLS } from './constants';
 import { getDesignIdsFromRouter } from '../utils/routeIds';
-import styles from './panelDesign.module.css';
+import { PANEL_TOOLS } from './constants';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
+import styles from './panelDesign.module.css';
 import { CornerType, CurveControls, Hole, Point } from './types';
+import { getHoleBounds, getPanelBounds } from './utils/boundsUtils';
 import {
   alignExtrudedGeometry,
   buildPathData,
@@ -26,6 +27,7 @@ import { getSnappedPosition } from './utils/snappingUtils';
 
 import { normalizeUVs } from '../sceneCreator/utils';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
+import { HoleOffsetInputs } from './components/HoleOffsetInputs';
 import { PanelHeader } from './components/PanelHeader';
 import { HorizontalRuler, VerticalRuler } from './components/Rulers';
 import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
@@ -85,6 +87,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const [holeShape, setHoleShape] = useState<'rect' | 'circle' | 'polygon' | 'slotting'>('rect');
   const [selectedCornerIndex, setSelectedCornerIndex] = useState<number | null>(null);
 
+  // Selected-hole offset inputs (relative to panel top-left)
+  const [holeLeftInput, setHoleLeftInput] = useState<string>('');
+  const [holeTopInput, setHoleTopInput] = useState<string>('');
+
   // Refs for persistent Three.js objects
   const selectedChildMeshRef = useRef<THREE.Mesh | null>(null);
 
@@ -102,6 +108,76 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     { x: panelWidth / 2, y: panelHeight / 2 },
     { x: -panelWidth / 2, y: panelHeight / 2 },
   ];
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  const commitSelectedHoleOffsets = (nextLeftMm: number, nextTopMm: number) => {
+    if (selectedHoleIndex === null) return;
+    const hole = holes[selectedHoleIndex];
+    if (!hole) return;
+
+    const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
+    const holeB = getHoleBounds(hole);
+
+    const maxLeft = Math.max(0, panelB.width - holeB.width);
+    const maxTop = Math.max(0, panelB.height - holeB.height);
+
+    const left = clamp(nextLeftMm, 0, maxLeft);
+    const top = clamp(nextTopMm, 0, maxTop);
+
+    const targetMinX = panelB.minX + left;
+    const targetMinY = panelB.minY + top;
+
+    setHoles((prev) => {
+      const next = [...prev];
+      const current = next[selectedHoleIndex];
+      if (!current) return prev;
+
+      if (current.type === 'polygon' && current.points?.length) {
+        const curB = getHoleBounds(current);
+        const dx = targetMinX - curB.minX;
+        const dy = targetMinY - curB.minY;
+        const movedPoints = current.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        next[selectedHoleIndex] = {
+          ...current,
+          points: movedPoints,
+          x: targetMinX,
+          y: targetMinY,
+          width: curB.width,
+          height: curB.height,
+        };
+        return next;
+      }
+
+      next[selectedHoleIndex] = {
+        ...current,
+        x: targetMinX,
+        y: targetMinY,
+      };
+      return next;
+    });
+
+    // Keep inputs in sync with clamped values
+    setHoleLeftInput(left.toFixed(1));
+    setHoleTopInput(top.toFixed(1));
+  };
+
+  const parseMm = (s: string) => {
+    const n = Number(String(s).replace(/[^\d.+-]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  useEffect(() => {
+    if (selectedHoleIndex === null || !holes[selectedHoleIndex]) {
+      setHoleLeftInput('');
+      setHoleTopInput('');
+      return;
+    }
+    const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
+    const holeB = getHoleBounds(holes[selectedHoleIndex]);
+    setHoleLeftInput((holeB.minX - panelB.minX).toFixed(1));
+    setHoleTopInput((holeB.minY - panelB.minY).toFixed(1));
+  }, [selectedHoleIndex, holes, shapePoints, panelWidth, panelHeight]);
 
   // Hooks
   const { stageRef, stageSize, stageScale, stagePosition, handleWheel, handleStageDrag } =
@@ -403,7 +479,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         if (
           currentDrawingPoints.length > 0 &&
           Math.hypot(currentDrawingPoints[0].x - snappedX, currentDrawingPoints[0].y - snappedY) <
-          15 / stageScale
+            15 / stageScale
         ) {
           const xs = currentDrawingPoints.map((p) => p.x);
           const ys = currentDrawingPoints.map((p) => p.y);
@@ -481,11 +557,11 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           points:
             holeShape === 'rect'
               ? [
-                { x: minX, y: minY },
-                { x: minX + w, y: minY },
-                { x: minX + w, y: minY + h },
-                { x: minX, y: minY + h },
-              ]
+                  { x: minX, y: minY },
+                  { x: minX + w, y: minY },
+                  { x: minX + w, y: minY + h },
+                  { x: minX, y: minY + h },
+                ]
               : undefined,
         });
       }
@@ -526,10 +602,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       />
 
       <div className={styles.canvasAndSidebar}>
-        <div
-          className={styles.canvasWrapper}
-          style={{ marginTop: activeTool === PANEL_TOOLS.DIG ? '35px' : '0' }}
-        >
+        <div className={styles.canvasWrapper} style={{ marginTop: 0 }}>
           <VerticalRuler
             stageSize={stageSize}
             stagePosition={stagePosition}
@@ -1070,15 +1143,16 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                   tempHole ||
                   (isDrawingShape && currentDrawingPoints.length > 0
                     ? {
-                      x: 0,
-                      y: 0,
-                      width: 0,
-                      height: 0,
-                      type: 'polygon',
-                      points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
-                    }
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        type: 'polygon',
+                        points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
+                      }
                     : undefined)
                 }
+                showSelectedHoleOffsets
               />
               <Transformer
                 ref={transformerRef}
@@ -1091,6 +1165,26 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               />
             </Layer>
           </Stage>
+
+          {selectedHoleIndex !== null && holes[selectedHoleIndex] && (
+            <HoleOffsetInputs
+              hole={holes[selectedHoleIndex]}
+              shapePoints={shapePoints}
+              defaultPanelPoints={defaultPanelPoints}
+              stageRef={stageRef}
+              stagePosition={stagePosition}
+              stageScale={stageScale}
+              leftValue={holeLeftInput}
+              topValue={holeTopInput}
+              onLeftChange={setHoleLeftInput}
+              onTopChange={setHoleTopInput}
+              onCommit={() => {
+                const l = parseMm(holeLeftInput);
+                const t = parseMm(holeTopInput);
+                if (l !== null && t !== null) commitSelectedHoleOffsets(l, t);
+              }}
+            />
+          )}
         </div>
         <PreviewSidebar
           previewPos={previewPos}

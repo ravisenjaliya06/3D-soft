@@ -1,23 +1,20 @@
 import React from 'react';
-import { PANEL_TOOLS } from '../constants';
 import styles from '../panelDesign.module.css';
 
 interface RulersProps {
   stageSize: { width: number; height: number };
   stagePosition: { x: number; y: number };
   stageScale: number;
-  activeTool: string | null;
+  activeTool?: string | null;
 }
 
 /**
  * A horizontal ruler that displays metric markings aligned with the 2D stage.
- * Adjusts its vertical position based on active toolbars.
  */
 export const HorizontalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,
   stageScale,
-  activeTool,
 }) => {
   const ticks = [];
   const tickSpacing = 100;
@@ -47,10 +44,7 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div
-      className={styles.rulerHorizontal}
-      style={{ top: activeTool === PANEL_TOOLS.DIG ? '95px' : '60px' }}
-    >
+    <div className={styles.rulerHorizontal} style={{ top: 60 }}>
       {ticks}
     </div>
   );
@@ -58,13 +52,11 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
 
 /**
  * A vertical ruler that displays metric markings along the left side of the stage.
- * Adjusts its top padding to avoid overlap with headers.
  */
 export const VerticalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,
   stageScale,
-  activeTool,
 }) => {
   const ticks = [];
   const tickSpacing = 100;
@@ -99,10 +91,7 @@ export const VerticalRuler: React.FC<RulersProps> = ({
   }
 
   return (
-    <div
-      className={styles.rulerVertical}
-      style={{ top: activeTool === PANEL_TOOLS.DIG ? '120px' : '85px' }}
-    >
+    <div className={styles.rulerVertical} style={{ top: 85 }}>
       {ticks}
     </div>
   );
