@@ -56,7 +56,10 @@ class CommonService {
     });
   }
 
-  private decodeJWTToken(token: string | undefined): { userId: string | null; username: string | null } {
+  private decodeJWTToken(token: string | undefined): {
+    userId: string | null;
+    username: string | null;
+  } {
     if (!token) {
       return { userId: null, username: null };
     }
@@ -68,20 +71,32 @@ class CommonService {
       }
 
       let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) {
-        base64 += '=';
-      }
+      const padding = (4 - (base64.length % 4)) % 4;
+      base64 += '='.repeat(padding);
 
-      const decodedPayload = JSON.parse(atob(base64));
+      const payload = JSON.parse(atob(base64));
 
       return {
-        userId: decodedPayload.user_id || decodedPayload.userId || decodedPayload.sub || null,
-        username: decodedPayload.username || decodedPayload.user_name || decodedPayload.name || null,
+        userId: payload.user_id || payload.userId || payload.sub || null,
+        username: payload.username || payload.user_name || payload.name || null,
       };
     } catch (error) {
       console.error('Failed to decode JWT token:', error);
       return { userId: null, username: null };
     }
+  }
+
+  private _getErrorField(errorData: any): string | null {
+    if (errorData?.message && typeof errorData.message === 'string') {
+      return errorData.message;
+    }
+    if (errorData?.error && typeof errorData.error === 'string') {
+      return errorData.error;
+    }
+    if (errorData?.detail && typeof errorData.detail === 'string') {
+      return errorData.detail;
+    }
+    return null;
   }
 
   private formatErrorResponse(err: any): string {
@@ -90,31 +105,29 @@ class CommonService {
     }
 
     const errorData = err.response.data;
-    const errorMessages: string[] = [];
 
-    Object.keys(errorData).forEach((key) => {
-      const value = errorData[key];
-      if (Array.isArray(value) && value.length > 0) {
-        errorMessages.push(`${key}: ${value.join(', ')}`);
-      } else if (typeof value === 'string' && value.trim()) {
-        errorMessages.push(`${key}: ${value}`);
-      }
-    });
+    // Extract field-level errors (arrays and strings)
+    const errorMessages = Object.entries(errorData)
+      .filter(([, value]) => {
+        return (
+          (Array.isArray(value) && value.length > 0) || (typeof value === 'string' && value.trim())
+        );
+      })
+      .map(([key, value]) => {
+        return Array.isArray(value) ? `${key}: ${value.join(', ')}` : `${key}: ${value}`;
+      });
 
     if (errorMessages.length > 0) {
       return errorMessages.join(' | ');
     }
 
-    if (errorData.message) {
-      return errorData.message;
-    }
-    if (errorData.error) {
-      return errorData.error;
-    }
-    if (errorData.detail) {
-      return errorData.detail;
+    // Try common error fields
+    const commonError = this._getErrorField(errorData);
+    if (commonError) {
+      return commonError;
     }
 
+    // Fallback to JSON stringify
     try {
       return JSON.stringify(errorData, null, 2);
     } catch {
@@ -123,21 +136,8 @@ class CommonService {
   }
 
   private getErrorMessage(err: any): string {
-    if (err?.response?.data) {
-      const errorData = err.response.data;
-
-      if (errorData.message && typeof errorData.message === 'string') {
-        return errorData.message;
-      }
-      if (errorData.error && typeof errorData.error === 'string') {
-        return errorData.error;
-      }
-      if (errorData.detail && typeof errorData.detail === 'string') {
-        return errorData.detail;
-      }
-    }
-
-    return '';
+    const errorData = err?.response?.data;
+    return errorData ? this._getErrorField(errorData) || '' : '';
   }
 
   private async sendWebhookNotification(
