@@ -7,6 +7,7 @@ import { Circle, Layer, Line, Path, Rect, Stage, Transformer } from 'react-konva
 import * as THREE from 'three';
 import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { RootState } from '../store';
+import { getDesignIdsFromRouter } from '../utils/routeIds';
 import styles from './panelDesign.module.css';
 
 import { useStageManager } from './hooks/useStageManager';
@@ -43,8 +44,7 @@ interface PanelDesignerProps {
  */
 export default function PanelDesigner({ state }: PanelDesignerProps) {
   const router = useRouter();
-  const designId = window.location.pathname.split('/')[2];
-  const versionId = window.location.pathname.split('/')[3];
+  const { designId = '', versionId = '' } = getDesignIdsFromRouter(router);
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
   // States
@@ -99,10 +99,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   ];
 
   // Hooks
-  const { stageRef, stageSize, stageScale, stagePosition, handleWheel, handleStageDrag } = useStageManager(
-    panelWidth,
-    panelHeight
-  );
+  const { stageRef, stageSize, stageScale, stagePosition, handleWheel, handleStageDrag } =
+    useStageManager(panelWidth, panelHeight);
 
   const { threeCanvasRef, containerRef } = useThreeScene(
     shapePoints,

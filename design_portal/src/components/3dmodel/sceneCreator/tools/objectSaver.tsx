@@ -4,6 +4,7 @@ import CommonService from '@/services/CommonService';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { getThreeDViewOnly } from '../../design/sceneSingleton';
+import { parseDesignIdsFromPathname } from '../../utils/routeIds';
 import { MeshObjectData } from '../interface';
 import { convertKeysToSnake, CustomToast } from '../utils';
 
@@ -96,11 +97,11 @@ export class ObjectsSaver {
   }
 
   private _takeScreenshot(): string | undefined {
-    const designId = window.location.pathname.split('/')[2];
+    const { designId, versionId } = parseDesignIdsFromPathname(window.location.pathname);
     if (!designId) return undefined;
 
     // Use a safe accessor to avoid moving the renderer to a dummy mount
-    const threeDView = getThreeDViewOnly(designId);
+    const threeDView = getThreeDViewOnly(designId, versionId);
 
     if (!threeDView || !threeDView.renderer) {
       console.error('ThreeDView not found for screenshot');
@@ -234,8 +235,9 @@ export class ObjectsSaver {
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log('Sending payload items:', snakedItems);
     }
+    const { designId } = parseDesignIdsFromPathname(window.location.pathname);
     const payload = {
-      design_id: window.location.pathname.split('/')[2],
+      design_id: designId,
       items: snakedItems,
     };
     const response = await CommonService.post(
@@ -253,8 +255,9 @@ export class ObjectsSaver {
 
   private async _createAPICallForDesign() {
     const snakedItems = convertKeysToSnake(this.payloadData);
+    const { designId } = parseDesignIdsFromPathname(window.location.pathname);
     const payload = {
-      design_id: window.location.pathname.split('/')[2],
+      design_id: designId,
       items: snakedItems,
     };
     const response = await CommonService.post(

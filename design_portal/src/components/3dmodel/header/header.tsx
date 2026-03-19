@@ -34,6 +34,7 @@ import {
   selectIsLatestVersion,
 } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
+import { parseDesignIdsFromPathname } from '../utils/routeIds';
 import styles from './header.module.css';
 
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
@@ -54,9 +55,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const versionDropdownRef = useRef<HTMLDivElement | null>(null);
   const versionButtonRef = useRef<HTMLDivElement | null>(null);
 
-  const pathName = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-  const designId = pathName.length > 2 ? pathName[2] : '';
-  const versionIdFromUrl = pathName.length > 3 ? pathName[3] : '';
+  const { designId = '', versionId: versionIdFromUrl = '' } =
+    typeof window !== 'undefined' && window.location?.pathname
+      ? parseDesignIdsFromPathname(window.location.pathname)
+      : {};
 
   const [designDetail, setDesignDetail] = useState<Design | null>(null);
 

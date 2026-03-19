@@ -15,23 +15,12 @@ import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
 import { selectIsLatestVersion } from '../store/selectors';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
+import { gettingDesignID, gettingVersionID } from '../utils/routeIds';
 import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
-
-export const gettingDesignID = () => {
-  /** Retrieves the current design ID from the URL path. */
-
-  const designID = window.location.pathname.split('/')[2];
-  return designID;
-};
-
-export const gettingVersionID = () => {
-  /** Retrieves the current version ID from the URL path if it exists. */
-  const parts = window.location.pathname.split('/');
-  return parts.length > 3 ? parts[3] : undefined;
-};
+export { gettingDesignID, gettingVersionID } from '../utils/routeIds';
 
 export function removeExistingLines() {
   /** Removes all existing outline line objects from the 3D scene. */
