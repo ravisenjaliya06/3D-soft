@@ -16,6 +16,7 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,
   stageScale,
+  activeTool,
 }) => {
   const ticks = [];
   const tickSpacing = 100;
@@ -61,6 +62,7 @@ export const VerticalRuler: React.FC<RulersProps> = ({
   stageSize,
   stagePosition,
   stageScale,
+  activeTool,
 }) => {
   const ticks = [];
   const tickSpacing = 100;
