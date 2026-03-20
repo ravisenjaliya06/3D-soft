@@ -97,9 +97,11 @@
 }
 
 .sidebarContent {
-  padding: 10px 12px;
+  padding: 8px 10px;
   overflow-y: auto;
-  max-height: 500px; /* Ensure properties don't grow infinitely */
+  max-height: 500px;
+  font-size: 0.7rem;
+  color: #4a5568;
 }
 
 /* Dynamic hole properties panel - matches reference layout */
@@ -129,10 +131,10 @@
 }
 
 .propertyGroupTitle {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 8px;
+  color: #2d3748;
+  margin-bottom: 6px;
   text-transform: capitalize;
   display: flex;
   align-items: center;
@@ -196,15 +198,30 @@
 
 .propertyInput {
   width: 100%;
-  max-width: 100px;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  height: 22px;
-  border: 1px solid var(--border-color);
-  border-radius: 2px;
-  background: var(--primary-white);
-  color: var(--common-text-color);
+  max-width: 90px;
+  padding: 2px 5px;
+  font-size: 0.65rem;
+  height: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  background: #fff;
+  color: #2d3748;
   text-align: center;
+}
+
+.propertyInputSmall {
+  width: 100%;
+  min-width: 80px;
+  max-width: 120px;
+  padding: 6px 8px;
+  font-size: 0.7rem;
+  height: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  color: #2d3748;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .propertyInput:read-only {
@@ -316,26 +333,52 @@
 /* Sections and Rows */
 .sidebarSection {
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .sidebarTitle {
-  color: var(--primary-color);
-  font-size: 0.75rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  border-left: 2px solid var(--primary-color);
+  color: #2d3748;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  border-left: 2px solid #5a67d8;
   padding-left: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
 .sidebarRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-  color: var(--primary-light-black);
-  font-size: 0.75rem;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-size: 0.68rem;
+  gap: 12px;
+}
+
+.sidebarRowCentered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #4a5568;
+  font-size: 0.68rem;
+  width: 100%;
+}
+
+.sidebarRowCentered .sidebarRowLabel {
+  font-size: 0.62rem;
+  margin-bottom: 4px;
+  color: #4a5568;
+}
+
+.sidebarRowCentered input {
+  width: 100%;
+  max-width: 140px;
+  padding: 6px 8px;
+  height: 28px;
+  font-size: 0.7rem;
 }
 
 .sidebarRow input,
@@ -485,16 +528,165 @@
   background: var(--hover-button);
 }
 
+/* Corner Point Panel - centered, professional layout with larger inputs/buttons */
+.cornerPointPanel {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.coordinateSection {
+  margin-bottom: 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.coordinateLabel,
+.cornerTypeLabel,
+.radiusLabel,
+.chamferLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 6px;
+  text-transform: capitalize;
+  width: 100%;
+  text-align: left;
+}
+
+.coordinateInputs,
+.chamferInputs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.coordinateField,
+.chamferField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  max-width: 120px;
+}
+
+.coordinateField input,
+.chamferField input {
+  width: 100%;
+  min-width: 0;
+}
+
+.coordinateSubLabel,
+.chamferSubLabel,
+.radiusUnit {
+  font-size: 0.58rem;
+  color: #718096;
+}
+
+.cornerTypeSection {
+  margin-bottom: 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cornerTypeButtons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.cornerTypeBtn {
+  flex: 1;
+  min-width: 70px;
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #f7fafc;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cornerTypeBtn:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.cornerTypeBtnActive {
+  background: #5a67d8;
+  border-color: #5a67d8;
+  color: #fff;
+}
+
+.radiusSection,
+.chamferSection {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.radiusInputRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.radiusUnit {
+  font-size: 0.6rem;
+  color: #718096;
+}
+
+.cornerDiagram {
+  margin-top: 6px;
+  padding: 6px;
+  background: #f7fafc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagramSvg {
+  width: 48px;
+  height: 48px;
+  color: #5a67d8;
+}
+
+.diagramLabel {
+  font-size: 8px;
+  fill: #4a5568;
+  font-weight: 600;
+}
+
 .sidebarDeleteButton {
   width: 100%;
-  padding: 8px;
+  padding: 6px;
   background: #e74c3c;
   color: #fff;
   border: none;
   border-radius: 4px;
-  margin-top: 15px;
+  margin-top: 12px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
 }
 
 .holeTypeDropdown {
