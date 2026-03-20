@@ -1,29 +1,15 @@
-import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
 import { PANEL_TOOLS } from '../constants';
 import styles from '../panelDesign.module.css';
 import { PanelHeaderProps } from '../types';
 
-const DIG_SUB_TOOLS: { value: 'rect' | 'circle' | 'polygon' | 'slotting'; label: string }[] = [
+const DIG_SUB_TOOLS: { value: 'rect' | 'circle' | 'polygon'; label: string }[] = [
   { value: 'rect', label: 'Rectangle' },
-  { value: 'polygon', label: 'Polygon' },
+  { value: 'polygon', label: 'Pen' },
   { value: 'circle', label: 'Circle' },
-  { value: 'slotting', label: 'Slotting' },
 ];
 
-const SLOTTING_FILTER =
-  'invert(18%) sepia(87%) saturate(1913%) hue-rotate(241deg) brightness(87%) contrast(98%)';
-
-const DigSubToolIcon = ({ value, label }: { value: string; label: string }) => {
-  if (value === 'slotting') {
-    return (
-      <img
-        src={assets.slotting}
-        alt={label}
-        style={{ width: 20, height: 16, objectFit: 'contain', filter: SLOTTING_FILTER }}
-      />
-    );
-  }
+const DigSubToolIcon = ({ value }: { value: string; label: string }) => {
   const svgProps = { width: 20, height: 16, viewBox: '0 0 20 16', fill: 'currentColor' };
   const stroke = { stroke: 'currentColor', fill: 'none', strokeWidth: 1.5 };
   if (value === 'rect')
