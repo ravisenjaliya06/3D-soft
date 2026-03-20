@@ -1,5 +1,6 @@
 import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
+import MaintenanceBanner from '@/components/MaintenanceBanner';
 import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
 import localFont from 'next/font/local';
@@ -46,6 +47,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Provider store={store}>
+        <MaintenanceBanner />
         <main
           className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
         >
