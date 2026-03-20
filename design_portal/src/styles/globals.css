@@ -164,6 +164,7 @@ body {
   margin: 0;
   font-family: Comfortaa, sans-serif;
   overflow: hidden;
+  --banner-offset: 0px;
 }
 
 /* Ensure all form controls use Comfortaa for consistent appearance */
@@ -256,5 +257,57 @@ button {
   .bravento-toast.Toastify__toast {
     padding: 0.8rem 0.9rem;
     border-radius: 12px;
+  }
+}
+
+/* Maintenance Banner Spacing */
+body[data-banner-visible='true'] main {
+  padding-top: var(--banner-offset);
+}
+body[data-banner-visible='true'] {
+  --banner-offset: 30px;
+}
+
+.maintenance-banner-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #fffeec;
+  color: #ff0000;
+  height: 30px;
+  z-index: 99999;
+  overflow: hidden;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+.maintenance-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 14px;
+  line-height: 30px;
+  font-family: Comfortaa;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  text-shadow: 0.15px 0 currentColor;
+  will-change: opacity;
+  animation: noticeBlinkCycle 3s linear infinite;
+}
+
+@keyframes noticeBlinkCycle {
+  0%,
+  82%,
+  100% {
+    opacity: 1;
+  }
+  83%,
+  92% {
+    opacity: 0;
   }
 }
