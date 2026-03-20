@@ -875,6 +875,15 @@ const Sidebar: React.FC = () => {
       },
     });
 
+    // Mark the mesh as edited so SnapManager preserves dimensions on re-snap
+    if (selectedObject.type === OBJECT_TYPES.PLATFORM && scene) {
+      scene.traverse((child: THREE.Object3D) => {
+        if (child instanceof THREE.Mesh && child.userData.objectId === selectedObject.id) {
+          child.userData.isEdited = true;
+        }
+      });
+    }
+
     // Regenerate minifixes
     if (scene) {
       requestAnimationFrame(() => {
