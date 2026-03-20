@@ -267,3 +267,41 @@ body[data-banner-visible='true'] main {
 body[data-banner-visible='true'] {
   --banner-offset: 20px;
 }
+
+.maintenance-banner-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #e5ddff;
+  color: #392579;
+  height: 20px;
+  z-index: 99999;
+  overflow: hidden;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+.maintenance-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 20px;
+  font-family: Comfortaa, sans-serif;
+  font-weight: 700 !important;
+  letter-spacing: 0.1px;
+  text-shadow: 0.15px 0 currentColor;
+  will-change: transform;
+}
+
+@keyframes scrollMessage {
+  0% {
+    transform: translateX(100vw);
+  }
+  100% {
+    transform: translateX(calc(-100% - 100vw));
+  }
+}
