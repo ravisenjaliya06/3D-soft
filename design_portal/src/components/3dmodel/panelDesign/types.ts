@@ -60,6 +60,7 @@ export interface PanelHeaderProps {
   setHoleShape: (shape: any) => void;
   handleCancel: () => void;
   handleComplete: () => void;
+  handleRestoreDefault: () => void;
 }
 
 export interface PropertiesSidebarProps {

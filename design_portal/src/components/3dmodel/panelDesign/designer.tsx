@@ -239,6 +239,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     if (!scene || !selectedObject || !selectedChildObject) {
       selectedChildMeshRef.current = null;
+      if (designId && versionId) {
+        router.push(`/design/${designId}/${versionId}`);
+      }
       return;
     }
 
@@ -260,6 +263,22 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       if (!originalGeometry || originalGeometry.uuid !== mesh.geometry.uuid) {
         if (!mesh.geometry.userData.isModified) {
           setOriginalGeometry(mesh.geometry.clone());
+        }
+        
+        const objectData = state?.data?.objects?.find((obj: any) => obj.id === selectedChildObject);
+        if (objectData?.panelDesign) {
+          const pd = objectData.panelDesign;
+          if (pd.outline?.length > 0) setShapePoints(pd.outline);
+          if (pd.cornerRadius?.length > 0) setcornerRadius(pd.cornerRadius);
+          if (pd.cornerTypes?.length > 0) setCornerTypes(pd.cornerTypes);
+          if (pd.curveControls) setCurveControls(pd.curveControls);
+          if (pd.holes?.length > 0) setHoles(pd.holes);
+        } else {
+          setShapePoints([]);
+          setcornerRadius([]);
+          setCornerTypes([]);
+          setCurveControls({});
+          setHoles([]);
         }
       }
 
@@ -405,6 +424,17 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       (selectedChildMesh as THREE.Mesh).geometry = originalGeometry;
     }
     router.push(`/design/${designId}/${versionId}`);
+  };
+
+  /**
+   * Restores the panel to a generic state, removing custom holes and outlines.
+   */
+  const handleRestoreDefault = () => {
+    setShapePoints([]);
+    setcornerRadius([]);
+    setCornerTypes([]);
+    setCurveControls({});
+    setHoles([]);
   };
 
   /**
@@ -588,13 +618,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const toolsList = [
     { name: PANEL_TOOLS.UNDO, icon: assets.undo },
     { name: PANEL_TOOLS.REDO, icon: assets.redo },
+    { name: PANEL_TOOLS.RESTORE, icon: assets.undo },
     { name: PANEL_TOOLS.PENCIL, icon: assets.pencil },
     {
       name: PANEL_TOOLS.DIG,
       icon: assets.dig,
       subTools: ['rect', 'polygon', 'circle'],
     },
-    { name: PANEL_TOOLS.CURVE, icon: assets.curve },
   ];
 
   return (
@@ -607,6 +637,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         setHoleShape={setHoleShape}
         handleCancel={handleCancel}
         handleComplete={handleComplete}
+        handleRestoreDefault={handleRestoreDefault}
       />
 
       <HorizontalRuler
@@ -1081,6 +1112,63 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   }
                                 }}
                                 onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
+                                draggable={selectedHoleIndex === index && selectedLineIndex === pIdx}
+                                dragBoundFunc={() => ({ x: 0, y: 0 })}
+                                onDragStart={(e) => {
+                                  const stage = e.target.getStage();
+                                  if (!stage) return;
+                                  const pos = stage.getPointerPosition();
+                                  if (!pos) return;
+                                  const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+                                  (e.target as any).setAttr('startPos', localPos);
+                                  (e.target as any).setAttr('startPoints', JSON.parse(JSON.stringify(hole.points)));
+                                }}
+                                onDragMove={(e) => {
+                                  const stage = e.target.getStage();
+                                  if (!stage) return;
+                                  const pos = stage.getPointerPosition();
+                                  if (!pos) return;
+                                  const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+                                  
+                                  const startPos = (e.target as any).getAttr('startPos');
+                                  const startPoints = (e.target as any).getAttr('startPoints');
+                                  if (!startPos || !startPoints) return;
+                                  
+                                  const dx = localPos.x - startPos.x;
+                                  const dy = localPos.y - startPos.y;
+                                  
+                                  const p1 = startPoints[pIdx];
+                                  const p2 = startPoints[(pIdx + 1) % startPoints.length];
+                                  const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                                  if (len === 0) return;
+                                  const nx = -(p2.y - p1.y) / len;
+                                  const ny = (p2.x - p1.x) / len;
+                                  const dist = dx * nx + dy * ny;
+                                  const moveX = nx * dist;
+                                  const moveY = ny * dist;
+                                  
+                                  setHoles((prev: any) => {
+                                    const next = [...prev];
+                                    const h = { ...next[index] };
+                                    if (h.points) {
+                                      const pts = [...startPoints];
+                                      pts[pIdx] = { x: pts[pIdx].x + moveX, y: pts[pIdx].y + moveY };
+                                      pts[(pIdx + 1) % pts.length] = {
+                                        x: pts[(pIdx + 1) % pts.length].x + moveX,
+                                        y: pts[(pIdx + 1) % pts.length].y + moveY,
+                                      };
+                                      h.points = pts;
+                                      next[index] = h;
+                                    }
+                                    return next;
+                                  });
+                                }}
                               />
                             );
                           })}

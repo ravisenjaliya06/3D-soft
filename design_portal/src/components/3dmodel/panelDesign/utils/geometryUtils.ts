@@ -343,14 +343,7 @@ export const createHolePath = (
       const prevJ = (i - 1 + pts.length) % pts.length;
       const tangents = getTangents(pts, j, radii);
 
-      const curveKey = `hole_${holeIndex}_${prevJ}`;
-      const ctrl = curveControls[curveKey];
-      if (ctrl) {
-        const mappedCtrl = getMappedPoint(ctrl);
-        holePath.quadraticCurveTo(mappedCtrl.x, mappedCtrl.y, tangents.tp_in.x, tangents.tp_in.y);
-      } else {
-        holePath.lineTo(tangents.tp_in.x, tangents.tp_in.y);
-      }
+      holePath.lineTo(tangents.tp_in.x, tangents.tp_in.y);
 
       const r = radii[j] ?? 0;
       const type = types[j] ?? 'default';

@@ -199,6 +199,47 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     });
   };
 
+  const updateHoleLinePoint = (pIdx: number, dim: 'x' | 'y', val: number) => {
+    if (selectedHoleIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const nextPoints = [...(next[selectedHoleIndex].points as any)];
+      nextPoints[pIdx] = { ...nextPoints[pIdx], [dim]: val };
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
+      return next;
+    });
+  };
+
+  const splitSelectedLine = () => {
+    if (selectedHoleIndex === null || selectedLineIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const hole = next[selectedHoleIndex];
+      if (!hole.points) return prev;
+      
+      const pts = [...hole.points];
+      const radii = [...(hole.cornerRadius ?? Array(pts.length).fill(0))];
+      const types = [...(hole.cornerTypes ?? Array(pts.length).fill('default'))];
+      
+      const p1 = pts[selectedLineIndex];
+      const p2 = pts[(selectedLineIndex + 1) % pts.length];
+      const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      
+      pts.splice(selectedLineIndex + 1, 0, midPoint);
+      radii.splice(selectedLineIndex + 1, 0, 0); 
+      types.splice(selectedLineIndex + 1, 0, 'default');
+      
+      next[selectedHoleIndex] = { 
+        ...hole, 
+        points: pts,
+        cornerRadius: radii,
+        cornerTypes: types
+      };
+      
+      return next;
+    });
+  };
+
   /**
    * Updates corner radius for a hole point.
    */
@@ -519,6 +560,73 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
               <option value="arc">Arc</option>
             </select>
           </Row>
+
+          {holes[selectedHoleIndex]?.points && (
+            <>
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 1 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(holes[selectedHoleIndex].points[selectedLineIndex]?.x ?? 0).toFixed(1)}
+                      onChange={(e) => updateHoleLinePoint(selectedLineIndex, 'x', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(holes[selectedHoleIndex].points[selectedLineIndex]?.y ?? 0).toFixed(1)}
+                      onChange={(e) => updateHoleLinePoint(selectedLineIndex, 'y', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 2 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(holes[selectedHoleIndex].points[(selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length]?.x ?? 0).toFixed(1)}
+                      onChange={(e) => updateHoleLinePoint((selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length, 'x', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(holes[selectedHoleIndex].points[(selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length]?.y ?? 0).toFixed(1)}
+                      onChange={(e) => updateHoleLinePoint((selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length, 'y', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className={styles.sidebarDeleteButton}
+                  style={{ backgroundColor: '#12086f', color: '#fff' }}
+                  onClick={splitSelectedLine}
+                >
+                  Add new point to center
+                </button>
+              </div>
+            </>
+          )}
         </Section>
       )}
 
