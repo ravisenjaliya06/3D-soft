@@ -39,6 +39,8 @@ const poppinsSemiBold = localFont({
 export default function MyApp({ Component, pageProps }: AppProps) {
   useGLBPreloader(); // Start preloading 3D assets in background
   const router = useRouter();
+  const showMaintenanceBanner =
+    router.pathname === '/auth/login' || router.pathname === '/dashboard';
   const isDesignPage = router.pathname.startsWith('/design/');
   const isCatalogPage = router.pathname.startsWith('/catalogmanager');
   const isMaterialPage = router.pathname.startsWith('/material');
@@ -47,7 +49,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Provider store={store}>
-        <MaintenanceBanner />
+        {showMaintenanceBanner && <MaintenanceBanner />}
         <main
           className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
         >
