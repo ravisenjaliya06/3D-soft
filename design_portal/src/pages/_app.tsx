@@ -1,6 +1,7 @@
 import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
 import MaintenanceBanner from '@/components/MaintenanceBanner';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
 import localFont from 'next/font/local';
@@ -39,6 +40,8 @@ const poppinsSemiBold = localFont({
 export default function MyApp({ Component, pageProps }: AppProps) {
   useGLBPreloader(); // Start preloading 3D assets in background
   const router = useRouter();
+  const showMaintenanceBanner =
+    router.pathname === REDIRECT.LOGIN || router.pathname === REDIRECT.DASHBOARD;
   const isDesignPage = router.pathname.startsWith('/design/');
   const isCatalogPage = router.pathname.startsWith('/catalogmanager');
   const isMaterialPage = router.pathname.startsWith('/material');
@@ -47,7 +50,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Provider store={store}>
-        <MaintenanceBanner />
+        {showMaintenanceBanner && <MaintenanceBanner />}
         <main
           className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
         >
