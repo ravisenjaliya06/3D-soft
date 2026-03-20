@@ -265,7 +265,7 @@ body[data-banner-visible='true'] main {
   padding-top: var(--banner-offset);
 }
 body[data-banner-visible='true'] {
-  --banner-offset: 20px;
+  --banner-offset: 30px;
 }
 
 .maintenance-banner-container {
@@ -273,9 +273,9 @@ body[data-banner-visible='true'] {
   top: 0;
   left: 0;
   right: 0;
-  background-color: #e5ddff;
-  color: #392579;
-  height: 20px;
+  background-color: #fffeec;
+  color: #ff0000;
+  height: 30px;
   z-index: 99999;
   overflow: hidden;
   width: 100%;
@@ -287,21 +287,27 @@ body[data-banner-visible='true'] {
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   white-space: nowrap;
-  font-size: 13px;
-  line-height: 20px;
-  font-family: Comfortaa, sans-serif;
-  font-weight: 700 !important;
+  text-align: center;
+  font-size: 14px;
+  line-height: 30px;
+  font-family: Comfortaa;
+  font-weight: 500;
   letter-spacing: 0.1px;
   text-shadow: 0.15px 0 currentColor;
-  will-change: transform;
+  will-change: opacity;
+  animation: noticeBlinkCycle 3s linear infinite;
 }
 
-@keyframes scrollMessage {
-  0% {
-    transform: translateX(100vw);
-  }
+@keyframes noticeBlinkCycle {
+  0%,
+  82%,
   100% {
-    transform: translateX(calc(-100% - 100vw));
+    opacity: 1;
+  }
+  83%,
+  92% {
+    opacity: 0;
   }
 }

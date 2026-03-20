@@ -42,21 +42,11 @@ const MaintenanceBanner = () => {
   }
 
   const message =
-    '🔧 Maintenance Notice: The site will undergo scheduled maintenance today between 7:00 PM - 8:00 PM IST. Thank you for your patience.';
-
-  const animationDuration = 20;
-  const animationDurationStr = `${animationDuration}s`;
+    '🚨 Maintenance Notice: The site will undergo scheduled maintenance today between 7:00 PM - 8:00 PM IST. Thank you for your patience. 🚨';
 
   return (
     <div id="maintenance-banner" className="maintenance-banner-container">
-      <span
-        className="maintenance-message"
-        style={{
-          animation: `scrollMessage ${animationDurationStr} linear infinite`,
-        }}
-      >
-        {message}
-      </span>
+      <span className="maintenance-message">{message}</span>
     </div>
   );
 };
