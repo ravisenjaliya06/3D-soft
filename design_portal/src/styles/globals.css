@@ -164,6 +164,7 @@ body {
   margin: 0;
   font-family: Comfortaa, sans-serif;
   overflow: hidden;
+  --banner-offset: 0px;
 }
 
 /* Ensure all form controls use Comfortaa for consistent appearance */
@@ -257,4 +258,12 @@ button {
     padding: 0.8rem 0.9rem;
     border-radius: 12px;
   }
+}
+
+/* Maintenance Banner Spacing */
+body[data-banner-visible='true'] main {
+  padding-top: var(--banner-offset);
+}
+body[data-banner-visible='true'] {
+  --banner-offset: 20px;
 }

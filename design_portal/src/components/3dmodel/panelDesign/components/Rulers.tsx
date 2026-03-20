@@ -53,11 +53,7 @@ export const HorizontalRuler: React.FC<RulersProps> = ({
 /**
  * A vertical ruler that displays metric markings along the left side of the stage.
  */
-export const VerticalRuler: React.FC<RulersProps> = ({
-  stageSize,
-  stagePosition,
-  stageScale,
-}) => {
+export const VerticalRuler: React.FC<RulersProps> = ({ stageSize, stagePosition, stageScale }) => {
   const ticks = [];
   const tickSpacing = 100;
   const viewHeight = stageSize.height;
