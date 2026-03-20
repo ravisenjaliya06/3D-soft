@@ -1,6 +1,12 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
-import { BaseSidebarProps, Point, PreviewSidebarProps, PropertiesSidebarProps, PropertyGroupConfig } from '../types';
+import {
+  BaseSidebarProps,
+  Point,
+  PreviewSidebarProps,
+  PropertiesSidebarProps,
+  PropertyGroupConfig,
+} from '../types';
 import { getHoleBounds, getPanelBounds } from '../utils/boundsUtils';
 
 /**
@@ -70,11 +76,7 @@ const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> 
  * For 1 field with inlineLayout: title and input on same line.
  */
 const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) => (
-  <div
-    className={
-      group.noBorder ? styles.propertyGroupNoBorder : styles.propertyGroup
-    }
-  >
+  <div className={group.noBorder ? styles.propertyGroupNoBorder : styles.propertyGroup}>
     {group.inlineLayout && group.fields.length === 1 ? (
       <div className={styles.propertyGroupInline}>
         <span className={styles.propertyGroupTitle}>
@@ -96,8 +98,7 @@ const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) =>
             className={styles.propertyInput}
             value={group.fields[0].getValue().toFixed(1)}
             onChange={(e) =>
-              !group.fields[0].readOnly &&
-              group.fields[0].onChange(parseFloat(e.target.value) || 0)
+              !group.fields[0].readOnly && group.fields[0].onChange(parseFloat(e.target.value) || 0)
             }
             readOnly={group.fields[0].readOnly}
           />
@@ -203,18 +204,6 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   };
 
   /**
-   * Updates the top-left position (origin) of a hole.
-   */
-  const updateHolePos = (dim: 'x' | 'y', val: number) => {
-    if (selectedHoleIndex === null) return;
-    setHoles((prev: any) => {
-      const next = [...prev];
-      next[selectedHoleIndex] = { ...next[selectedHoleIndex], [dim]: val };
-      return next;
-    });
-  };
-
-  /**
    * Updates the center position of a hole (translates the whole shape).
    */
   const updateHoleCenter = (dim: 'x' | 'y', newCenterVal: number) => {
@@ -298,10 +287,15 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       if (pointIndex >= pts.length) return prev;
       pts[pointIndex] = { ...pts[pointIndex], [dim]: val };
       const { minX, minY, maxX, maxY } = (() => {
-        let mx = Infinity, my = Infinity, Mx = -Infinity, My = -Infinity;
+        let mx = Infinity,
+          my = Infinity,
+          Mx = -Infinity,
+          My = -Infinity;
         pts.forEach((p: Point) => {
-          mx = Math.min(mx, p.x); my = Math.min(my, p.y);
-          Mx = Math.max(Mx, p.x); My = Math.max(My, p.y);
+          mx = Math.min(mx, p.x);
+          my = Math.min(my, p.y);
+          Mx = Math.max(Mx, p.x);
+          My = Math.max(My, p.y);
         });
         return { minX: mx, minY: my, maxX: Mx, maxY: My };
       })();
@@ -374,9 +368,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     const width = Math.abs(bounds.width);
     const height = Math.abs(bounds.height);
     const points: Point[] =
-      hole.type === 'polygon' && hole.points && hole.points.length > 0
-        ? hole.points
-        : [];
+      hole.type === 'polygon' && hole.points && hole.points.length > 0 ? hole.points : [];
 
     const groups: PropertyGroupConfig[] = [
       {
@@ -386,19 +378,13 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
           {
             subLabel: 'W',
             getValue: () => width,
-            onChange:
-              hole.type === 'rect'
-                ? (v) => updateRectSize('width', v)
-                : () => {},
+            onChange: hole.type === 'rect' ? (v) => updateRectSize('width', v) : () => {},
             readOnly: hole.type !== 'rect',
           },
           {
             subLabel: 'H',
             getValue: () => height,
-            onChange:
-              hole.type === 'rect'
-                ? (v) => updateRectSize('height', v)
-                : () => {},
+            onChange: hole.type === 'rect' ? (v) => updateRectSize('height', v) : () => {},
             readOnly: hole.type !== 'rect',
           },
         ],
@@ -521,28 +507,30 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       {selectedHoleIndex !== null &&
         selectedPointIndex === null &&
         selectedLineIndex === null &&
-        holes[selectedHoleIndex] && (() => {
+        holes[selectedHoleIndex] &&
+        (() => {
           const groups = buildHolePropertyGroups();
           return (
             <div className={styles.holePropertiesPanel}>
               {groups.map((group, idx) => (
                 <React.Fragment key={idx}>
                   <PropertySection group={group} />
-                  {group.noBorder &&
-                    (idx === groups.length - 1 || !groups[idx + 1]?.noBorder) && (
-                      <div className={styles.coordinatesGroupEnd} />
-                    )}
+                  {group.noBorder && (idx === groups.length - 1 || !groups[idx + 1]?.noBorder) && (
+                    <div className={styles.coordinatesGroupEnd} />
+                  )}
                 </React.Fragment>
               ))}
               <button
-              className={styles.sidebarDeleteButton}
-              onClick={() => {
-                setHoles((prev: any) => prev.filter((_: any, i: number) => i !== selectedHoleIndex));
-                setSelectedHoleIndex(null);
-              }}
-            >
-              Delete Hole
-            </button>
+                className={styles.sidebarDeleteButton}
+                onClick={() => {
+                  setHoles((prev: any) =>
+                    prev.filter((_: any, i: number) => i !== selectedHoleIndex)
+                  );
+                  setSelectedHoleIndex(null);
+                }}
+              >
+                Delete Hole
+              </button>
             </div>
           );
         })()}

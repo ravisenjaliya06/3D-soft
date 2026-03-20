@@ -150,7 +150,6 @@ export interface HoleOffsetInputsProps {
   onCommit: () => void;
 }
 
-
 /** Property field for dynamic property panel: subLabel (e.g. "W", "H", "x", "y") and value/onChange */
 export interface PropertyFieldConfig {
   subLabel: string;
