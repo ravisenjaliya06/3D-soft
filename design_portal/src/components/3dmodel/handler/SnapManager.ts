@@ -178,21 +178,44 @@ export class SnapManager {
     let widthCM = m.widthM * 100 - (startHit ? PLATFORM_DEPTH : 0) - (endHit ? PLATFORM_DEPTH : 0);
     const offset = (endHit ? -1 : startHit ? 1 : 0) * (PLATFORM_DEPTH * 0.005);
 
-    if (object.geometry instanceof THREE.BoxGeometry) {
-      const g = object.geometry.parameters;
-      if (Math.abs(g.width - widthCM) > 0.1) {
-        object.geometry.dispose();
-        object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+    if (!object.userData.isEdited) {
+      if (object.geometry instanceof THREE.BoxGeometry) {
+        const g = object.geometry.parameters;
+        if (Math.abs(g.width - widthCM) > 0.1) {
+          object.geometry.dispose();
+          object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+        }
       }
     }
 
     const wallDepthM =
       wall.geometry instanceof THREE.BoxGeometry ? wall.geometry.parameters.depth * 0.01 : 0.1;
 
-    const finalPos = m.position
-      .clone()
-      .addScaledVector(m.direction, offset)
-      .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    let finalPos: THREE.Vector3;
+
+    if (object.userData.isEdited) {
+      // Edited platform: preserve the user's drag position along the wall direction
+      // and only snap the perpendicular (depth) axis and Y
+      const toObject = object.position.clone().sub(m.position);
+      let alongWall = toObject.dot(m.direction);
+
+      // Clamp so the platform stays within wall bounds
+      const platWidthM =
+        object.geometry instanceof THREE.BoxGeometry ? object.geometry.parameters.width * 0.01 : 0;
+      const maxOffset = wallHalf - platWidthM / 2;
+      alongWall = Math.max(-maxOffset, Math.min(maxOffset, alongWall));
+
+      finalPos = m.position
+        .clone()
+        .addScaledVector(m.direction, alongWall)
+        .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    } else {
+      // Non-edited platform: center on wall (existing behaviour)
+      finalPos = m.position
+        .clone()
+        .addScaledVector(m.direction, offset)
+        .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    }
 
     finalPos.y = PLATFORM_HEIGHT;
     object.position.copy(finalPos);
