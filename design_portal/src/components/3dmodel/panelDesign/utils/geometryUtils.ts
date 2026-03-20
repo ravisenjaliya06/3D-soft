@@ -16,8 +16,6 @@ export const getTangents = (
   points: Point[],
   index: number,
   cornerRadius: number[],
-  cornerTypesArr?: CornerType[],
-  isMapped: boolean = false
 ) => {
   const n = points.length;
   const p0 = points[(index - 1 + n) % n];
@@ -85,7 +83,8 @@ export const getTangents = (
 
   const prevHasRound = (cornerRadius[(index - 1 + n) % n] || 0) > 0;
   const nextHasRound = (cornerRadius[(index + 1) % n] || 0) > 0;
-  const maxL = (prevHasRound || nextHasRound) ? Math.min(len1 / 2.01, len2 / 2.01) : Math.min(len1, len2);
+  const maxL =
+    prevHasRound || nextHasRound ? Math.min(len1 / 2.01, len2 / 2.01) : Math.min(len1, len2);
 
   let actual_r = r_requested;
   if (l > maxL) {
@@ -99,11 +98,11 @@ export const getTangents = (
   const bis_x = v1_nx + v2_nx;
   const bis_y = v1_ny + v2_ny;
   const len_bis = Math.hypot(bis_x, bis_y);
-  
+
   if (len_bis < 1e-6) {
     return { tp_in, tp_out, center: tp_in, start_angle: 0, end_angle: 0, det, actual_r };
   }
-  
+
   const bis_nx = bis_x / len_bis;
   const bis_ny = bis_y / len_bis;
 
@@ -142,13 +141,13 @@ export const buildPathData = (
   const n = points.length;
   if (n < 3) return '';
 
-  const tangents0 = getTangents(points, 0, cornerRadius, cornerTypesArr);
+  const tangents0 = getTangents(points, 0, cornerRadius);
   let path = `M ${tangents0.tp_out.x} ${tangents0.tp_out.y}`;
 
   for (let i = 1; i <= n; i++) {
     const j = i % n;
     const prevJ = (i - 1 + n) % n;
-    const tangents = getTangents(points, j, cornerRadius, cornerTypesArr);
+    const tangents = getTangents(points, j, cornerRadius);
 
     const ctrl = curveControls[`${prefix}_${prevJ}`];
     if (ctrl) {
@@ -198,13 +197,13 @@ export const buildThreeShape = (
 
   const shape = new THREE.Shape();
 
-  const tangents0 = getTangents(points, 0, cornerRadius, cornerTypesArr, true);
+  const tangents0 = getTangents(points, 0, cornerRadius);
   shape.moveTo(tangents0.tp_out.x, tangents0.tp_out.y);
 
   for (let i = 1; i <= n; i++) {
     const j = i % n;
     const prevJ = (i - 1 + n) % n;
-    const tangents = getTangents(points, j, cornerRadius, cornerTypesArr, true);
+    const tangents = getTangents(points, j, cornerRadius);
 
     const ctrl = curveControls[`${prefix}_${prevJ}`];
     if (ctrl) {
@@ -291,12 +290,15 @@ export const createHolePath = (
     if (radii.some((r: number) => r > 0)) {
       const pts = corners.map(getMappedPoint);
       const rArr = [...radii, 0, 0, 0, 0].slice(0, 4);
-      const tArr = ([...types, 'default', 'default', 'default', 'default'].slice(0, 4) as CornerType[]);
-      const tangents0 = getTangents(pts, 0, rArr, tArr, true);
+      const tArr = [...types, 'default', 'default', 'default', 'default'].slice(
+        0,
+        4
+      ) as CornerType[];
+      const tangents0 = getTangents(pts, 0, rArr);
       holePath.moveTo(tangents0.tp_out.x, tangents0.tp_out.y);
       for (let i = 1; i <= 4; i++) {
         const j = i % 4;
-        const tangents = getTangents(pts, j, rArr, tArr, true);
+        const tangents = getTangents(pts, j, rArr);
         holePath.lineTo(tangents.tp_in.x, tangents.tp_in.y);
         const r = rArr[j] ?? 0;
         const type = tArr[j] ?? 'default';
@@ -333,14 +335,14 @@ export const createHolePath = (
     const pts = hole.points.map(getMappedPoint);
     const radii = hole.cornerRadius ?? new Array(pts.length).fill(0);
     const types: CornerType[] = hole.cornerTypes ?? new Array(pts.length).fill('default');
-    const tangents0 = getTangents(pts, 0, radii, types, true);
+    const tangents0 = getTangents(pts, 0, radii);
     holePath.moveTo(tangents0.tp_out.x, tangents0.tp_out.y);
-    
+
     for (let i = 1; i <= pts.length; i++) {
       const j = i % pts.length;
       const prevJ = (i - 1 + pts.length) % pts.length;
-      const tangents = getTangents(pts, j, radii, types, true);
-      
+      const tangents = getTangents(pts, j, radii);
+
       const curveKey = `hole_${holeIndex}_${prevJ}`;
       const ctrl = curveControls[curveKey];
       if (ctrl) {

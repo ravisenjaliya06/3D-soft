@@ -57,21 +57,6 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
 );
 
 /**
- * A standardized numeric input for consistent stepping and change handling.
- */
-const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> = ({
-  value,
-  onChange,
-}) => (
-  <input
-    type="number"
-    step="0.1"
-    value={value}
-    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-  />
-);
-
-/**
  * Renders a property section with the reference layout: title, input row(s) with sub-labels underneath.
  * For 2 fields: [input] [input] with sub-labels centered under each.
  * For 1 field with inlineLayout: title and input on same line.
@@ -502,9 +487,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       onDragStart={() => setIsDraggingDrawing(true)}
     >
       {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
-      {selectedCornerIndex === null &&
-        selectedHoleIndex !== null &&
-        selectedLineIndex !== null && (
+      {selectedCornerIndex === null && selectedHoleIndex !== null && selectedLineIndex !== null && (
         <Section title={`Line Editing (Hole #${selectedHoleIndex + 1})`}>
           <Row label="Type">
             <select
@@ -544,125 +527,71 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
         selectedHoleIndex !== null &&
         selectedPointIndex !== null &&
         holes[selectedHoleIndex]?.points && (
-        <div className={styles.cornerPointPanel}>
-          <Section title={`Corner Point (Hole #${selectedHoleIndex + 1})`}>
-            <div className={styles.coordinateSection}>
-              <div className={styles.coordinateLabel}>Coordinate</div>
-              <div className={styles.coordinateInputs}>
-                <div className={styles.coordinateField}>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className={styles.propertyInputSmall}
-                    value={(
-                      holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x ?? 0
-                    ).toFixed(1)}
-                    onChange={(e) =>
-                      updateHolePoint('x', parseFloat(e.target.value) || 0)
-                    }
-                  />
-                  <span className={styles.coordinateSubLabel}>x</span>
-                </div>
-                <div className={styles.coordinateField}>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className={styles.propertyInputSmall}
-                    value={(
-                      holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y ?? 0
-                    ).toFixed(1)}
-                    onChange={(e) =>
-                      updateHolePoint('y', parseFloat(e.target.value) || 0)
-                    }
-                  />
-                  <span className={styles.coordinateSubLabel}>y</span>
-                </div>
-              </div>
-            </div>
-            <div className={styles.cornerTypeSection}>
-              <div className={styles.cornerTypeLabel}>Corner Point Type</div>
-              <div className={styles.cornerTypeButtons}>
-                {CORNER_TYPE_OPTIONS.map((opt) => {
-                  const hole = holes[selectedHoleIndex];
-                  const ptsLen = hole?.points?.length ?? 0;
-                  const types = hole?.cornerTypes ?? Array(ptsLen).fill('default');
-                  const currentType = types[selectedPointIndex] ?? 'default';
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`${styles.cornerTypeBtn} ${
-                        currentType === opt.value ? styles.cornerTypeBtnActive : ''
-                      }`}
-                      onClick={() => updateHoleCornerType(opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {(() => {
-              const hole = holes[selectedHoleIndex];
-              const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
-              const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
-              const currentType = types[selectedPointIndex] ?? 'default';
-              const currentRadius = radii[selectedPointIndex] ?? 0;
-              if (currentType !== 'round') return null;
-              return (
-                <div className={styles.radiusSection}>
-                  <div className={styles.radiusLabel}>Radius</div>
-                  <div className={styles.radiusInputRow}>
+          <div className={styles.cornerPointPanel}>
+            <Section title={`Corner Point (Hole #${selectedHoleIndex + 1})`}>
+              <div className={styles.coordinateSection}>
+                <div className={styles.coordinateLabel}>Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
                     <input
                       type="number"
                       step="0.1"
-                      min={0}
                       className={styles.propertyInputSmall}
-                      value={currentRadius.toFixed(1)}
-                      onChange={(e) =>
-                        updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
-                      }
+                      value={(
+                        holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) => updateHolePoint('x', parseFloat(e.target.value) || 0)}
                     />
-                    <span className={styles.radiusUnit}>mm</span>
+                    <span className={styles.coordinateSubLabel}>x</span>
                   </div>
-                  <div className={styles.cornerDiagram}>
-                    <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
-                      <path
-                        d="M 10 50 L 10 10 L 50 10"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeDasharray="3 2"
-                        opacity={0.6}
-                      />
-                      <path
-                        d="M 10 50 A 40 40 0 0 1 50 10"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <circle cx="10" cy="50" r="2" fill="#00bcd4" />
-                      <circle cx="50" cy="10" r="2" fill="#00bcd4" />
-                      <text x="30" y="38" className={styles.diagramLabel}>
-                        r
-                      </text>
-                    </svg>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(
+                        holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) => updateHolePoint('y', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
                   </div>
                 </div>
-              );
-            })()}
-            {(() => {
-              const hole = holes[selectedHoleIndex];
-              const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
-              const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
-              const currentType = types[selectedPointIndex] ?? 'default';
-              const currentRadius = radii[selectedPointIndex] ?? 0;
-              if (currentType !== 'chamfer') return null;
-              return (
-                <div className={styles.chamferSection}>
-                  <div className={styles.chamferLabel}>Chamfer Distance</div>
-                  <div className={styles.chamferInputs}>
-                    <div className={styles.chamferField}>
+              </div>
+              <div className={styles.cornerTypeSection}>
+                <div className={styles.cornerTypeLabel}>Corner Point Type</div>
+                <div className={styles.cornerTypeButtons}>
+                  {CORNER_TYPE_OPTIONS.map((opt) => {
+                    const hole = holes[selectedHoleIndex];
+                    const ptsLen = hole?.points?.length ?? 0;
+                    const types = hole?.cornerTypes ?? Array(ptsLen).fill('default');
+                    const currentType = types[selectedPointIndex] ?? 'default';
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`${styles.cornerTypeBtn} ${
+                          currentType === opt.value ? styles.cornerTypeBtnActive : ''
+                        }`}
+                        onClick={() => updateHoleCornerType(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {(() => {
+                const hole = holes[selectedHoleIndex];
+                const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
+                const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
+                const currentType = types[selectedPointIndex] ?? 'default';
+                const currentRadius = radii[selectedPointIndex] ?? 0;
+                if (currentType !== 'round') return null;
+                return (
+                  <div className={styles.radiusSection}>
+                    <div className={styles.radiusLabel}>Radius</div>
+                    <div className={styles.radiusInputRow}>
                       <input
                         type="number"
                         step="0.1"
@@ -673,54 +602,104 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                           updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
                         }
                       />
-                      <span className={styles.chamferSubLabel}>d1</span>
+                      <span className={styles.radiusUnit}>mm</span>
                     </div>
-                    <div className={styles.chamferField}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min={0}
-                        className={styles.propertyInputSmall}
-                        value={currentRadius.toFixed(1)}
-                        onChange={(e) =>
-                          updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
-                        }
-                      />
-                      <span className={styles.chamferSubLabel}>d2</span>
+                    <div className={styles.cornerDiagram}>
+                      <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                        <path
+                          d="M 10 50 L 10 10 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeDasharray="3 2"
+                          opacity={0.6}
+                        />
+                        <path
+                          d="M 10 50 A 40 40 0 0 1 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        />
+                        <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                        <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                        <text x="30" y="38" className={styles.diagramLabel}>
+                          r
+                        </text>
+                      </svg>
                     </div>
                   </div>
-                  <div className={styles.cornerDiagram}>
-                    <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
-                      <path
-                        d="M 10 50 L 10 10 L 50 10"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeDasharray="3 2"
-                        opacity={0.6}
-                      />
-                      <path
-                        d="M 10 50 L 50 10"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <circle cx="10" cy="50" r="2" fill="#00bcd4" />
-                      <circle cx="50" cy="10" r="2" fill="#00bcd4" />
-                      <text x="18" y="48" className={styles.diagramLabel}>
-                        d1
-                      </text>
-                      <text x="42" y="14" className={styles.diagramLabel}>
-                        d2
-                      </text>
-                    </svg>
+                );
+              })()}
+              {(() => {
+                const hole = holes[selectedHoleIndex];
+                const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
+                const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
+                const currentType = types[selectedPointIndex] ?? 'default';
+                const currentRadius = radii[selectedPointIndex] ?? 0;
+                if (currentType !== 'chamfer') return null;
+                return (
+                  <div className={styles.chamferSection}>
+                    <div className={styles.chamferLabel}>Chamfer Distance</div>
+                    <div className={styles.chamferInputs}>
+                      <div className={styles.chamferField}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min={0}
+                          className={styles.propertyInputSmall}
+                          value={currentRadius.toFixed(1)}
+                          onChange={(e) =>
+                            updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
+                          }
+                        />
+                        <span className={styles.chamferSubLabel}>d1</span>
+                      </div>
+                      <div className={styles.chamferField}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min={0}
+                          className={styles.propertyInputSmall}
+                          value={currentRadius.toFixed(1)}
+                          onChange={(e) =>
+                            updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
+                          }
+                        />
+                        <span className={styles.chamferSubLabel}>d2</span>
+                      </div>
+                    </div>
+                    <div className={styles.cornerDiagram}>
+                      <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                        <path
+                          d="M 10 50 L 10 10 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeDasharray="3 2"
+                          opacity={0.6}
+                        />
+                        <path
+                          d="M 10 50 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        />
+                        <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                        <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                        <text x="18" y="48" className={styles.diagramLabel}>
+                          d1
+                        </text>
+                        <text x="42" y="14" className={styles.diagramLabel}>
+                          d2
+                        </text>
+                      </svg>
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
-          </Section>
-        </div>
-      )}
+                );
+              })()}
+            </Section>
+          </div>
+        )}
 
       {/* Hole Properties - only when no panel corner selected, no point/line selected */}
       {selectedCornerIndex === null &&
@@ -767,12 +746,10 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                     type="number"
                     step="0.1"
                     className={styles.propertyInputSmall}
-                    value={(
-                      shapePoints.length > 0 ? shapePoints : defaultPanelPoints
-                    )[selectedCornerIndex].x.toFixed(1)}
-                    onChange={(e) =>
-                      updatePanelPoint('x', parseFloat(e.target.value) || 0)
-                    }
+                    value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                      selectedCornerIndex
+                    ].x.toFixed(1)}
+                    onChange={(e) => updatePanelPoint('x', parseFloat(e.target.value) || 0)}
                   />
                   <span className={styles.coordinateSubLabel}>x</span>
                 </div>
@@ -781,12 +758,10 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                     type="number"
                     step="0.1"
                     className={styles.propertyInputSmall}
-                    value={(
-                      shapePoints.length > 0 ? shapePoints : defaultPanelPoints
-                    )[selectedCornerIndex].y.toFixed(1)}
-                    onChange={(e) =>
-                      updatePanelPoint('y', parseFloat(e.target.value) || 0)
-                    }
+                    value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                      selectedCornerIndex
+                    ].y.toFixed(1)}
+                    onChange={(e) => updatePanelPoint('y', parseFloat(e.target.value) || 0)}
                   />
                   <span className={styles.coordinateSubLabel}>y</span>
                 </div>
@@ -812,8 +787,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                           if (opt.value === 'default') {
                             setCornerRadius((r) => {
                               const nr = [...(r.length ? r : Array(4).fill(0))];
-                              if (selectedCornerIndex < nr.length)
-                                nr[selectedCornerIndex] = 0;
+                              if (selectedCornerIndex < nr.length) nr[selectedCornerIndex] = 0;
                               return nr;
                             });
                           } else if (
@@ -822,8 +796,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                           ) {
                             setCornerRadius((r) => {
                               const nr = [...(r.length ? r : Array(4).fill(0))];
-                              if (selectedCornerIndex < nr.length)
-                                nr[selectedCornerIndex] = 50;
+                              if (selectedCornerIndex < nr.length) nr[selectedCornerIndex] = 50;
                               return nr;
                             });
                           }
@@ -851,8 +824,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       const v = Math.max(0, parseFloat(e.target.value) || 0);
                       setCornerRadius((prev) => {
                         const next = [...(prev.length ? prev : Array(4).fill(0))];
-                        if (selectedCornerIndex < next.length)
-                          next[selectedCornerIndex] = v;
+                        if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
                         return next;
                       });
                     }}
@@ -899,8 +871,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                         const v = Math.max(0, parseFloat(e.target.value) || 0);
                         setCornerRadius((prev) => {
                           const next = [...(prev.length ? prev : Array(4).fill(0))];
-                          if (selectedCornerIndex < next.length)
-                            next[selectedCornerIndex] = v;
+                          if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
                           return next;
                         });
                       }}
@@ -918,8 +889,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                         const v = Math.max(0, parseFloat(e.target.value) || 0);
                         setCornerRadius((prev) => {
                           const next = [...(prev.length ? prev : Array(4).fill(0))];
-                          if (selectedCornerIndex < next.length)
-                            next[selectedCornerIndex] = v;
+                          if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
                           return next;
                         });
                       }}
@@ -937,12 +907,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       strokeDasharray="3 2"
                       opacity={0.6}
                     />
-                    <path
-                      d="M 10 50 L 50 10"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
+                    <path d="M 10 50 L 50 10" fill="none" stroke="currentColor" strokeWidth="1.5" />
                     <circle cx="10" cy="50" r="2" fill="#00bcd4" />
                     <circle cx="50" cy="10" r="2" fill="#00bcd4" />
                     <text x="18" y="48" className={styles.diagramLabel}>

@@ -94,13 +94,7 @@ export function useThreeScene(
     // 1. Build Geometry
     const currentPoints = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
     const mappedPoints = currentPoints.map(getMappedPoint);
-    const mainShape = buildThreeShape(
-      mappedPoints,
-      cornerRadius,
-      {},
-      'shape',
-      cornerTypes
-    );
+    const mainShape = buildThreeShape(mappedPoints, cornerRadius, {}, 'shape', cornerTypes);
 
     // Add holes using the utility
     holes.forEach((hole, index) => {
