@@ -79,6 +79,10 @@ export interface PropertiesSidebarProps {
   panelWidth: number;
   isRotated2D: boolean;
   setSelectedHoleIndex: (val: number | null) => void;
+  cornerRadius: number[];
+  setCornerRadius: (val: number[] | ((prev: number[]) => number[])) => void;
+  cornerTypes: CornerType[];
+  setCornerTypes: (val: CornerType[] | ((prev: CornerType[]) => CornerType[])) => void;
 }
 
 export interface BaseSidebarProps {
@@ -148,4 +152,22 @@ export interface HoleOffsetInputsProps {
   onLeftChange: (v: string) => void;
   onTopChange: (v: string) => void;
   onCommit: () => void;
+}
+
+/** Property field for dynamic property panel: subLabel (e.g. "W", "H", "x", "y") and value/onChange */
+export interface PropertyFieldConfig {
+  subLabel: string;
+  getValue: () => number;
+  onChange: (val: number) => void;
+  readOnly?: boolean;
+}
+
+/** Property group: title (e.g. "Size", "Position") and 1 or 2 fields */
+export interface PropertyGroupConfig {
+  title: string;
+  fields: PropertyFieldConfig[];
+  noBorder?: boolean;
+  inlineLayout?: boolean;
+  hideSeparator?: boolean;
+  infoLabel?: string;
 }

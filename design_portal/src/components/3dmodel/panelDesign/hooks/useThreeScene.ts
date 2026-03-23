@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { normalizeUVs } from '../../sceneCreator/utils';
-import { CornerType, Hole, Point } from '../types';
+import { CornerType, CurveControls, Hole, Point } from '../types';
 import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
 /**
@@ -18,6 +18,7 @@ export function useThreeScene(
   cornerRadius: number[],
   cornerTypes: CornerType[],
   holes: Hole[],
+  curveControls: CurveControls,
   plankThickness: number,
   isRotated2D: boolean,
   state: any
@@ -93,17 +94,18 @@ export function useThreeScene(
     // 1. Build Geometry
     const currentPoints = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
     const mappedPoints = currentPoints.map(getMappedPoint);
-    const mainShape = buildThreeShape(mappedPoints, cornerRadius, {}, 'shape');
+    const mainShape = buildThreeShape(mappedPoints, cornerRadius, {}, 'shape', cornerTypes);
 
     // Add holes using the utility
-    holes.forEach((hole) => {
-      const holePath = createHolePath(hole, getMappedPoint, isRotated2D);
+    holes.forEach((hole, index) => {
+      const holePath = createHolePath(hole, index, curveControls, getMappedPoint, isRotated2D);
       mainShape.holes.push(holePath);
     });
 
     const geometry = new THREE.ExtrudeGeometry(mainShape, {
       depth: plankThickness,
       bevelEnabled: false,
+      curveSegments: 32,
     });
 
     // 2. Center and Coordinate Geometry
@@ -160,6 +162,7 @@ export function useThreeScene(
     cornerRadius,
     cornerTypes,
     holes,
+    curveControls,
     plankThickness,
     isRotated2D,
     state?.scene?.scene,

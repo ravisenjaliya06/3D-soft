@@ -56,6 +56,9 @@ export class SceneBuilder {
     this.config = config;
     this.mount = config.mount;
 
+    // Enable global Three.js cache so textures and models are stored in memory and instantly reused
+    THREE.Cache.enabled = true;
+
     // Initialize core components
     this.scene = this.createScene();
     this.perspectiveCamera = this.createPerspectiveCamera();
@@ -185,10 +188,13 @@ export class SceneBuilder {
   }
 
   private setupEventListeners(): void {
-    window.addEventListener('resize', () => this.handleResize());
+    window.addEventListener('resize', this.handleResize);
   }
 
-  private handleResize(): void {
+  private handleResize = (): void => {
+    if (this.camera instanceof THREE.PerspectiveCamera) {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+    }
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -197,7 +203,7 @@ export class SceneBuilder {
       this.overlayCanvas.width = window.innerWidth;
       this.overlayCanvas.height = window.innerHeight;
     }
-  }
+  };
 
   private startAnimation(): void {
     const animate = () => {
@@ -209,7 +215,7 @@ export class SceneBuilder {
     animate();
   }
 
-  public toggleSky(): void {}
+  public toggleSky(): void { }
 
   private initSelector() {
     this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);
@@ -290,11 +296,7 @@ export class SceneBuilder {
     }
 
     // Remove event listeners
-    window.removeEventListener('resize', () => this.handleResize());
-    window.addEventListener('resize', () => {
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    window.removeEventListener('resize', this.handleResize);
 
     // Dispose of geometries and materials
     this.scene.traverse((object) => {
