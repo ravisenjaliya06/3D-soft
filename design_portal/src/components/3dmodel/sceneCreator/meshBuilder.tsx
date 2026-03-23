@@ -15,7 +15,13 @@ import {
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
-import { convertKeysToCamel, globalTextureLoader } from './utils';
+import { convertKeysToCamel, globalTextureLoader, normalizeUVs } from './utils';
+import {
+  alignExtrudedGeometry,
+  buildThreeShape,
+  createHolePath,
+} from '../panelDesign/utils/geometryUtils';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -224,6 +230,61 @@ export class MeshBuilder {
   }
 
   private _createExtrudeGeometry(): THREE.ExtrudeGeometry {
+    const { panelDesign, dimensions } = this.meshData;
+
+    if (panelDesign) {
+      const { outline, cornerRadius, cornerTypes, curveControls, holes } = panelDesign;
+
+      // Detect orientation and thickness axis
+      const tempGeo = new THREE.BoxGeometry(dimensions.width, dimensions.height, dimensions.depth);
+      const tempMesh = new THREE.Mesh(tempGeo);
+      const { thicknessAxis, size } = detectPlankByBoundingBox(tempMesh);
+      tempGeo.dispose();
+
+      let w = 0,
+        h = 0;
+      if (thicknessAxis === 'y') {
+        w = size.x;
+        h = size.z;
+      } else if (thicknessAxis === 'x') {
+        w = size.z;
+        h = size.y;
+      } else {
+        w = size.x;
+        h = size.y;
+      }
+
+      const isRotated2D = h > w;
+      const mappedPoints = isRotated2D ? outline.map((p) => ({ x: -p.y, y: p.x })) : outline;
+      const getMappedPoint = (p: { x: number; y: number }) => (isRotated2D ? { x: -p.y, y: p.x } : p);
+
+      const mainShape = buildThreeShape(
+        mappedPoints,
+        cornerRadius || [],
+        curveControls || {},
+        'shape',
+        cornerTypes || []
+      );
+
+      holes?.forEach((hole, index) => {
+        mainShape.holes.push(
+          createHolePath(hole, index, curveControls || {}, getMappedPoint, isRotated2D)
+        );
+      });
+
+      const thickness = size[thicknessAxis];
+      const geometry = new THREE.ExtrudeGeometry(mainShape, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+
+      alignExtrudedGeometry(geometry, thickness, thicknessAxis);
+      normalizeUVs(geometry);
+
+      return geometry;
+    }
+
     const shape = this._createShape();
 
     // NOTE: Right now, it only has two external properties (depth and bevelEnabled). Later on, we’ll add more properties when we need to support custom shapes.
@@ -231,7 +292,9 @@ export class MeshBuilder {
       depth: this.meshData.dimensions?.depth || 0,
       bevelEnabled: false,
     };
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    normalizeUVs(geometry);
+    return geometry;
   }
 
   private async _getGeometry(): Promise<THREE.BufferGeometry> {
@@ -290,6 +353,7 @@ export class MeshBuilder {
     mesh.userData.openDirection = this.meshData.openDirection;
     mesh.userData.drawerType = this.meshData.drawerType;
     mesh.userData.direction = this.meshData.direction;
+    mesh.userData.dimensions = this.meshData.dimensions;
 
     // this "if" for glb model on refresh transform control active
     if (this.meshData.type === OBJECT_TYPES.MODEL) {
@@ -973,7 +1037,7 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions || changes.holes) {
+    if (changes.dimensions || changes.holes || changes.panelDesign) {
       mesh.geometry.dispose();
       this._getGeometry().then((geometry) => {
         mesh.geometry = geometry;
