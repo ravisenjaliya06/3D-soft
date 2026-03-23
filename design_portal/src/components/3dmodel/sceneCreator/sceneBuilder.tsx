@@ -56,6 +56,9 @@ export class SceneBuilder {
     this.config = config;
     this.mount = config.mount;
 
+    // Enable global Three.js cache so textures and models are stored in memory and instantly reused
+    THREE.Cache.enabled = true;
+
     // Initialize core components
     this.scene = this.createScene();
     this.perspectiveCamera = this.createPerspectiveCamera();
@@ -209,7 +212,7 @@ export class SceneBuilder {
     animate();
   }
 
-  public toggleSky(): void {}
+  public toggleSky(): void { }
 
   private initSelector() {
     this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);

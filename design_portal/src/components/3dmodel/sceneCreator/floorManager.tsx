@@ -33,26 +33,33 @@ class FloorBuilder {
     return shape;
   }
 
-  private async createMaterial(): Promise<THREE.MeshStandardMaterial> {
-    try {
-      const texture = await textureLoader(this.textureUrl, 5, 5); // Repeat texture
-      return new THREE.MeshStandardMaterial({
-        map: texture,
-        side: THREE.DoubleSide,
-        roughness: 0.8,
-      });
-    } catch (e) {
+  private createMaterial(): THREE.MeshStandardMaterial {
+    // Start completely transparent so there is no gray placeholder color
+    const material = new THREE.MeshStandardMaterial({
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0
+    });
+
+    textureLoader(this.textureUrl, 5, 5).then((texture) => {
+      material.map = texture;
+      material.transparent = false; // Disable transparency when texture loads
+      material.opacity = 1;
+      material.roughness = 0.8;
+      material.needsUpdate = true;
+    }).catch((e) => {
       console.error(
         'FloorBuilder: Failed to load floor texture from',
         this.textureUrl,
         'Error:',
         e
       );
-      return new THREE.MeshStandardMaterial({ color: 0xcccccc, side: THREE.DoubleSide });
-    }
+    });
+
+    return material;
   }
 
-  public async createMesh(): Promise<THREE.Mesh | null> {
+  public createMesh(): THREE.Mesh | null {
     if (this.points.length < 3) return null;
 
     const shape = this.createShape();
@@ -62,7 +69,7 @@ class FloorBuilder {
     // Shape is created in XY plane, so we rotate -90 deg around X
     geometry.rotateX(Math.PI / 2);
 
-    const material = await this.createMaterial();
+    const material = this.createMaterial();
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'GeneratedFloor';
@@ -123,7 +130,7 @@ export class FloorManager {
 
       // Use the internal FloorBuilder class
       const builder = new FloorBuilder(floor.points, this.scene, textureUrl);
-      const mesh = await builder.createMesh();
+      const mesh = builder.createMesh();
       if (mesh) {
         // Set objectId to link mesh to Redux object
         mesh.userData.objectId = floor.id;
