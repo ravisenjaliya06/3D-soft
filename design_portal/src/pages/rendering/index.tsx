@@ -115,18 +115,18 @@ export default function RenderingPage() {
 
           if (
             statusData.project_status === 'completed' ||
-            statusData.cloudinary_url_enhanced ||
-            statusData.cloudinary_url_video
+            statusData.url_enhanced ||
+            statusData.url_video
           ) {
-            if (statusData.cloudinary_url_enhanced)
-              setFinalImage(statusData.cloudinary_url_enhanced);
-            if (statusData.cloudinary_url_video) setFinalVideo(statusData.cloudinary_url_video);
+            if (statusData.url_enhanced)
+              setFinalImage(statusData.url_enhanced);
+            if (statusData.url_video) setFinalVideo(statusData.url_video);
 
             // Should we clear interval if both arrived? The API processes image then video.
             // But if status is completed, we definitively stop.
             if (
               statusData.project_status === 'completed' ||
-              (statusData.cloudinary_url_enhanced && statusData.cloudinary_url_video)
+              (statusData.url_enhanced && statusData.url_video)
             ) {
               clearInterval(pollInterval);
               setLoadingText('');
