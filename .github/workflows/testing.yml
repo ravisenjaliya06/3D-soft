@@ -1,0 +1,17 @@
+name: Testing Workflow
+
+on:
+  schedule:
+    - cron: '35 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  test-flow:
+    name: Test Flow Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print workflow test message
+        run: |
+          echo "Testing workflow is running successfully."
+          echo "UTC now: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Note: This is a temporary daily test at 4:05 PM IST (10:35 UTC). Remove after verification."
