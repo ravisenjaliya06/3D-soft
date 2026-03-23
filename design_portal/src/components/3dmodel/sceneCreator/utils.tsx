@@ -110,10 +110,29 @@ export const textureLoader = (
   repeatX: number = 1,
   repeatY: number = 1
 ): Promise<THREE.Texture> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    let objectUrl = url;
+    let isFromCache = false;
+
+    // 1. Try to get Blob from Browser Cache (prefetched by getDesignCatalogs)
+    if ('caches' in window) {
+      try {
+        const cache = await caches.open('bravento-glb-cache-v1');
+        const response = await cache.match(url);
+        if (response) {
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          isFromCache = true;
+        }
+      } catch (e) {
+        console.warn('Cache check failed for texture', e);
+      }
+    }
+
     globalTextureLoader.load(
-      url,
+      objectUrl,
       (texture) => {
+        if (isFromCache) URL.revokeObjectURL(objectUrl);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeatX, repeatY);
@@ -121,6 +140,7 @@ export const textureLoader = (
       },
       undefined,
       (error) => {
+        if (isFromCache) URL.revokeObjectURL(objectUrl);
         console.warn('Failed to load texture:', error);
         reject(error);
       }
