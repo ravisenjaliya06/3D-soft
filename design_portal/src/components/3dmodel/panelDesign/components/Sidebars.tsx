@@ -208,34 +208,56 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     });
   };
 
-  const splitSelectedLine = () => {
-    if (selectedHoleIndex === null || selectedLineIndex === null) return;
-    setHoles((prev: any) => {
-      const next = [...prev];
-      const hole = next[selectedHoleIndex];
-      if (!hole.points) return prev;
-
-      const pts = [...hole.points];
-      const radii = [...(hole.cornerRadius ?? Array(pts.length).fill(0))];
-      const types = [...(hole.cornerTypes ?? Array(pts.length).fill('default'))];
-
-      const p1 = pts[selectedLineIndex];
-      const p2 = pts[(selectedLineIndex + 1) % pts.length];
-      const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-
-      pts.splice(selectedLineIndex + 1, 0, midPoint);
-      radii.splice(selectedLineIndex + 1, 0, 0);
-      types.splice(selectedLineIndex + 1, 0, 'default');
-
-      next[selectedHoleIndex] = {
-        ...hole,
-        points: pts,
-        cornerRadius: radii,
-        cornerTypes: types,
-      };
-
-      return next;
+  const updatePanelLinePoint = (pIdx: number, dim: 'x' | 'y', val: number) => {
+    setShapePoints((prev: any) => {
+      const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+      const nextPts = [...pts];
+      nextPts[pIdx] = { ...nextPts[pIdx], [dim]: val };
+      return nextPts;
     });
+  };
+
+  const splitSelectedLine = () => {
+    if (selectedLineIndex === null) return;
+    if (selectedHoleIndex !== null) {
+      setHoles((prev: any) => {
+        const next = [...prev];
+        const hole = next[selectedHoleIndex];
+        if (!hole.points) return prev;
+
+        const pts = [...hole.points];
+        const radii = [...(hole.cornerRadius ?? Array(pts.length).fill(0))];
+        const types = [...(hole.cornerTypes ?? Array(pts.length).fill('default'))];
+
+        const p1 = pts[selectedLineIndex];
+        const p2 = pts[(selectedLineIndex + 1) % pts.length];
+        const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+
+        pts.splice(selectedLineIndex + 1, 0, midPoint);
+        radii.splice(selectedLineIndex + 1, 0, 0);
+        types.splice(selectedLineIndex + 1, 0, 'default');
+
+        next[selectedHoleIndex] = {
+          ...hole,
+          points: pts,
+          cornerRadius: radii,
+          cornerTypes: types,
+        };
+
+        return next;
+      });
+    } else {
+      setShapePoints((prev: any) => {
+        const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+        const p1 = pts[selectedLineIndex];
+        const p2 = pts[(selectedLineIndex + 1) % pts.length];
+        const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+
+        const nextPts = [...pts];
+        nextPts.splice(selectedLineIndex + 1, 0, midPoint);
+        return nextPts;
+      });
+    }
   };
 
   /**
@@ -524,9 +546,18 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       onDragStart={() => setIsDraggingDrawing(true)}
     >
       {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
-      {selectedCornerIndex === null && selectedHoleIndex !== null && selectedLineIndex !== null && (
-        <Section title={`Line Editing (Hole #${selectedHoleIndex + 1})`}>
-          {holes[selectedHoleIndex]?.points && (
+      {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
+      {selectedCornerIndex === null && selectedLineIndex !== null && (
+        <Section
+          title={
+            selectedHoleIndex !== null
+              ? `Line Editing (Hole #${selectedHoleIndex + 1})`
+              : 'Line Editing (Panel)'
+          }
+        >
+          {((selectedHoleIndex !== null && holes[selectedHoleIndex]?.points) ||
+            (selectedHoleIndex === null &&
+              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints))) && (
             <>
               <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
                 <div className={styles.coordinateLabel}>Point 1 Coordinate</div>
@@ -536,11 +567,24 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       type="number"
                       step="0.1"
                       className={styles.propertyInputSmall}
-                      value={(holes[selectedHoleIndex].points[selectedLineIndex]?.x ?? 0).toFixed(
-                        1
-                      )}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            selectedLineIndex
+                          ]?.x ?? 0
+                      ).toFixed(1)}
                       onChange={(e) =>
-                        updateHoleLinePoint(selectedLineIndex, 'x', parseFloat(e.target.value) || 0)
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              selectedLineIndex,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              selectedLineIndex,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
                       }
                     />
                     <span className={styles.coordinateSubLabel}>x</span>
@@ -550,11 +594,24 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       type="number"
                       step="0.1"
                       className={styles.propertyInputSmall}
-                      value={(holes[selectedHoleIndex].points[selectedLineIndex]?.y ?? 0).toFixed(
-                        1
-                      )}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            selectedLineIndex
+                          ]?.y ?? 0
+                      ).toFixed(1)}
                       onChange={(e) =>
-                        updateHoleLinePoint(selectedLineIndex, 'y', parseFloat(e.target.value) || 0)
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              selectedLineIndex,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              selectedLineIndex,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
                       }
                     />
                     <span className={styles.coordinateSubLabel}>y</span>
@@ -570,17 +627,28 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       type="number"
                       step="0.1"
                       className={styles.propertyInputSmall}
-                      value={(
-                        holes[selectedHoleIndex].points[
-                          (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
-                        ]?.x ?? 0
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![
+                            (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
+                          ]?.x ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            (selectedLineIndex + 1) %
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                          ]?.x ?? 0
                       ).toFixed(1)}
                       onChange={(e) =>
-                        updateHoleLinePoint(
-                          (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
-                          'x',
-                          parseFloat(e.target.value) || 0
-                        )
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              (selectedLineIndex + 1) %
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
                       }
                     />
                     <span className={styles.coordinateSubLabel}>x</span>
@@ -590,17 +658,28 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       type="number"
                       step="0.1"
                       className={styles.propertyInputSmall}
-                      value={(
-                        holes[selectedHoleIndex].points[
-                          (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
-                        ]?.y ?? 0
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![
+                            (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
+                          ]?.y ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            (selectedLineIndex + 1) %
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                          ]?.y ?? 0
                       ).toFixed(1)}
                       onChange={(e) =>
-                        updateHoleLinePoint(
-                          (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
-                          'y',
-                          parseFloat(e.target.value) || 0
-                        )
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              (selectedLineIndex + 1) %
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
                       }
                     />
                     <span className={styles.coordinateSubLabel}>y</span>

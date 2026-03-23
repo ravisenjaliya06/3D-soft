@@ -768,11 +768,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
                 const nextP = arr[(i + 1) % arr.length];
                 const isHovered = hoveredLineIndex === i && hoveredPanel;
+                const isSelected = selectedLineIndex === i && selectedHoleIndex === null;
                 return (
                   <Line
                     key={`panel-edge-${i}`}
                     points={[p.x, p.y, nextP.x, nextP.y]}
-                    stroke={isHovered ? '#12086f' : 'transparent'}
+                    stroke={isHovered || isSelected ? '#12086f' : 'transparent'}
                     strokeWidth={3}
                     hitStrokeWidth={20}
                     listening={false}
@@ -798,6 +799,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                       }
                     }}
                     onMouseLeave={() => setHoveredLineIndex(null)}
+                    onClick={() => {
+                      setSelectedLineIndex(i);
+                      setSelectedHoleIndex(null);
+                      setSelectedCornerIndex(null);
+                      setSelectedPointIndex(null);
+                    }}
                   />
                 );
               })}
@@ -938,11 +945,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                           const nextP = arr[(pIdx + 1) % arr.length];
                           const isEdgeHovered =
                             hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                          const isEdgeSelected =
+                            selectedLineIndex === pIdx && selectedHoleIndex === index;
                           return (
                             <Line
                               key={`h-${index}-edge-${pIdx}`}
                               points={[p.x, p.y, nextP.x, nextP.y]}
-                              stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                              stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                               strokeWidth={3}
                               hitStrokeWidth={20 / stageScale}
                               listening={false}
@@ -973,6 +982,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                 }
                               }}
                               onMouseLeave={() => setHoveredLineIndex(null)}
+                              onClick={() => {
+                                setSelectedHoleIndex(index);
+                                setSelectedLineIndex(pIdx);
+                                setSelectedPointIndex(null);
+                                setSelectedCornerIndex(null);
+                              }}
                             />
                           );
                         })}
@@ -1075,11 +1090,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                             const nextP = arr[(pIdx + 1) % arr.length];
                             const isEdgeHovered =
                               hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1282,11 +1299,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                             const nextP = arr[(pIdx + 1) % arr.length];
                             const isEdgeHovered =
                               hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1315,6 +1334,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   }
                                 }}
                                 onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
                               />
                             );
                           })}
