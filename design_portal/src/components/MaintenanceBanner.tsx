@@ -4,23 +4,29 @@ const MaintenanceBanner = () => {
   const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    const checkDay = () => {
-      const now = new Date();
-      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 3 = Wednesday, 5 = Friday
+    const checkDayAndTime = () => {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        hour: '2-digit',
+        hour12: false,
+      });
 
-      // Show banner on Wednesday (3) or Friday (5)
-      if (dayOfWeek === 3 || dayOfWeek === 5) {
-        setShouldShow(true);
-      } else {
-        setShouldShow(false);
-      }
+      const parts = formatter.formatToParts(new Date());
+      const weekday = parts.find((part) => part.type === 'weekday')?.value;
+      const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+
+      const isTargetDay = weekday === 'Wed' || weekday === 'Fri';
+      const isWithinWindow = hour >= 13 && hour < 19; // 1:00 PM IST to 7:00 PM IST
+
+      setShouldShow(isTargetDay && isWithinWindow);
     };
 
     // Check immediately
-    checkDay();
+    checkDayAndTime();
 
-    // Check every minute to handle day changes
-    const interval = setInterval(checkDay, 60000);
+    // Check every minute to handle day and time changes
+    const interval = setInterval(checkDayAndTime, 60000);
 
     return () => clearInterval(interval);
   }, []);
