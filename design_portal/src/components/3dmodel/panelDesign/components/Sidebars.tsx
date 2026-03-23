@@ -2,6 +2,7 @@ import React from 'react';
 import styles from '../panelDesign.module.css';
 import {
   BaseSidebarProps,
+  CornerType,
   Point,
   PreviewSidebarProps,
   PropertiesSidebarProps,
@@ -53,21 +54,6 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
     <span>{label}:</span>
     {children}
   </div>
-);
-
-/**
- * A standardized numeric input for consistent stepping and change handling.
- */
-const NumberInput: React.FC<{ value: number; onChange: (val: number) => void }> = ({
-  value,
-  onChange,
-}) => (
-  <input
-    type="number"
-    step="0.1"
-    value={value}
-    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-  />
 );
 
 /**
@@ -171,6 +157,12 @@ export const PreviewSidebar: React.FC<PreviewSidebarProps> = ({
  * Sidebar component for editing panel properties, vertex coordinates, and hole details.
  * Features conditional rendering based on what is currently selected (Point, Line, Hole, or Panel).
  */
+const CORNER_TYPE_OPTIONS: { value: CornerType; label: string }[] = [
+  { value: 'default', label: 'Default' },
+  { value: 'round', label: 'Round' },
+  { value: 'chamfer', label: 'Chamfer' },
+];
+
 export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   drawingPos,
   setIsDraggingDrawing,
@@ -188,6 +180,10 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   panelWidth,
   isRotated2D,
   setSelectedHoleIndex,
+  cornerRadius,
+  setCornerRadius,
+  cornerTypes,
+  setCornerTypes,
 }) => {
   /**
    * Updates the coordinates of a specific vertex within a polygonal hole.
@@ -199,6 +195,47 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       const nextPoints = [...(next[selectedHoleIndex].points as any)];
       nextPoints[selectedPointIndex] = { ...nextPoints[selectedPointIndex], [dim]: val };
       next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
+      return next;
+    });
+  };
+
+  /**
+   * Updates corner radius for a hole point.
+   */
+  const updateHoleCornerRadius = (val: number) => {
+    if (selectedHoleIndex === null || selectedPointIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = next[selectedHoleIndex];
+      const ptsLen = h.points?.length ?? 0;
+      const radii = [...(h.cornerRadius ?? Array(ptsLen).fill(0))];
+      if (selectedPointIndex < radii.length) radii[selectedPointIndex] = Math.max(0, val);
+      next[selectedHoleIndex] = { ...h, cornerRadius: radii };
+      return next;
+    });
+  };
+
+  /**
+   * Updates corner type for a hole point.
+   */
+  const updateHoleCornerType = (type: CornerType) => {
+    if (selectedHoleIndex === null || selectedPointIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = next[selectedHoleIndex];
+      const ptsLen = h.points?.length ?? 0;
+      const types = [...(h.cornerTypes ?? Array(ptsLen).fill('default'))];
+      if (selectedPointIndex < types.length) types[selectedPointIndex] = type;
+      next[selectedHoleIndex] = { ...h, cornerTypes: types };
+      if (type === 'default') {
+        const radii = [...(h.cornerRadius ?? Array(ptsLen).fill(0))];
+        if (selectedPointIndex < radii.length) radii[selectedPointIndex] = 0;
+        next[selectedHoleIndex].cornerRadius = radii;
+      } else if ((h.cornerRadius?.[selectedPointIndex] ?? 0) === 0) {
+        const radii = [...(h.cornerRadius ?? Array(ptsLen).fill(0))];
+        if (selectedPointIndex < radii.length) radii[selectedPointIndex] = 50;
+        next[selectedHoleIndex].cornerRadius = radii;
+      }
       return next;
     });
   };
@@ -447,8 +484,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       pos={drawingPos}
       onDragStart={() => setIsDraggingDrawing(true)}
     >
-      {/* Line Editing (Arcs/Curves) */}
-      {selectedHoleIndex !== null && selectedLineIndex !== null && (
+      {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
+      {selectedCornerIndex === null && selectedHoleIndex !== null && selectedLineIndex !== null && (
         <Section title={`Line Editing (Hole #${selectedHoleIndex + 1})`}>
           <Row label="Type">
             <select
@@ -483,26 +520,188 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
         </Section>
       )}
 
-      {/* Point Editing */}
-      {selectedHoleIndex !== null && selectedPointIndex !== null && (
-        <Section title={`Point Editing (Hole #${selectedHoleIndex + 1})`}>
-          <Row label="Point X">
-            <NumberInput
-              value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x || 0}
-              onChange={(v) => updateHolePoint('x', v)}
-            />
-          </Row>
-          <Row label="Point Y">
-            <NumberInput
-              value={holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y || 0}
-              onChange={(v) => updateHolePoint('y', v)}
-            />
-          </Row>
-        </Section>
-      )}
+      {/* Hole Point Editing - same layout as main panel Corner Point */}
+      {selectedCornerIndex === null &&
+        selectedHoleIndex !== null &&
+        selectedPointIndex !== null &&
+        holes[selectedHoleIndex]?.points && (
+          <div className={styles.cornerPointPanel}>
+            <Section title={`Corner Point (Hole #${selectedHoleIndex + 1})`}>
+              <div className={styles.coordinateSection}>
+                <div className={styles.coordinateLabel}>Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(
+                        holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.x ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) => updateHolePoint('x', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(
+                        holes[selectedHoleIndex]?.points?.[selectedPointIndex]?.y ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) => updateHolePoint('y', parseFloat(e.target.value) || 0)}
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.cornerTypeSection}>
+                <div className={styles.cornerTypeLabel}>Corner Point Type</div>
+                <div className={styles.cornerTypeButtons}>
+                  {CORNER_TYPE_OPTIONS.map((opt) => {
+                    const hole = holes[selectedHoleIndex];
+                    const ptsLen = hole?.points?.length ?? 0;
+                    const types = hole?.cornerTypes ?? Array(ptsLen).fill('default');
+                    const currentType = types[selectedPointIndex] ?? 'default';
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`${styles.cornerTypeBtn} ${
+                          currentType === opt.value ? styles.cornerTypeBtnActive : ''
+                        }`}
+                        onClick={() => updateHoleCornerType(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {(() => {
+                const hole = holes[selectedHoleIndex];
+                const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
+                const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
+                const currentType = types[selectedPointIndex] ?? 'default';
+                const currentRadius = radii[selectedPointIndex] ?? 0;
+                if (currentType !== 'round') return null;
+                return (
+                  <div className={styles.radiusSection}>
+                    <div className={styles.radiusLabel}>Radius</div>
+                    <div className={styles.radiusInputRow}>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min={0}
+                        className={styles.propertyInputSmall}
+                        value={currentRadius.toFixed(1)}
+                        onChange={(e) =>
+                          updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
+                        }
+                      />
+                      <span className={styles.radiusUnit}>mm</span>
+                    </div>
+                    <div className={styles.cornerDiagram}>
+                      <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                        <path
+                          d="M 10 50 L 10 10 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeDasharray="3 2"
+                          opacity={0.6}
+                        />
+                        <path
+                          d="M 10 50 A 40 40 0 0 1 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        />
+                        <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                        <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                        <text x="30" y="38" className={styles.diagramLabel}>
+                          r
+                        </text>
+                      </svg>
+                    </div>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const hole = holes[selectedHoleIndex];
+                const radii = hole?.cornerRadius ?? Array(hole?.points?.length ?? 0).fill(0);
+                const types = hole?.cornerTypes ?? Array(hole?.points?.length ?? 0).fill('default');
+                const currentType = types[selectedPointIndex] ?? 'default';
+                const currentRadius = radii[selectedPointIndex] ?? 0;
+                if (currentType !== 'chamfer') return null;
+                return (
+                  <div className={styles.chamferSection}>
+                    <div className={styles.chamferLabel}>Chamfer Distance</div>
+                    <div className={styles.chamferInputs}>
+                      <div className={styles.chamferField}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min={0}
+                          className={styles.propertyInputSmall}
+                          value={currentRadius.toFixed(1)}
+                          onChange={(e) =>
+                            updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
+                          }
+                        />
+                        <span className={styles.chamferSubLabel}>d1</span>
+                      </div>
+                      <div className={styles.chamferField}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min={0}
+                          className={styles.propertyInputSmall}
+                          value={currentRadius.toFixed(1)}
+                          onChange={(e) =>
+                            updateHoleCornerRadius(Math.max(0, parseFloat(e.target.value) || 0))
+                          }
+                        />
+                        <span className={styles.chamferSubLabel}>d2</span>
+                      </div>
+                    </div>
+                    <div className={styles.cornerDiagram}>
+                      <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                        <path
+                          d="M 10 50 L 10 10 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeDasharray="3 2"
+                          opacity={0.6}
+                        />
+                        <path
+                          d="M 10 50 L 50 10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        />
+                        <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                        <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                        <text x="18" y="48" className={styles.diagramLabel}>
+                          d1
+                        </text>
+                        <text x="42" y="14" className={styles.diagramLabel}>
+                          d2
+                        </text>
+                      </svg>
+                    </div>
+                  </div>
+                );
+              })()}
+            </Section>
+          </div>
+        )}
 
-      {/* Hole Properties - Dynamic format based on shape (Circle vs Rect/Polygon) */}
-      {selectedHoleIndex !== null &&
+      {/* Hole Properties - only when no panel corner selected, no point/line selected */}
+      {selectedCornerIndex === null &&
+        selectedHoleIndex !== null &&
         selectedPointIndex === null &&
         selectedLineIndex === null &&
         holes[selectedHoleIndex] &&
@@ -533,26 +732,194 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
           );
         })()}
 
-      {/* Panel Vertex Editing */}
+      {/* Panel Corner Point Editing */}
       {selectedCornerIndex !== null && (
-        <Section title={`Vertex Editing (#${selectedCornerIndex + 1})`}>
-          <Row label="Point X">
-            <NumberInput
-              value={
-                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].x
-              }
-              onChange={(v) => updatePanelPoint('x', v)}
-            />
-          </Row>
-          <Row label="Point Y">
-            <NumberInput
-              value={
-                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[selectedCornerIndex].y
-              }
-              onChange={(v) => updatePanelPoint('y', v)}
-            />
-          </Row>
-        </Section>
+        <div className={styles.cornerPointPanel}>
+          <Section title="Corner Point">
+            <div className={styles.coordinateSection}>
+              <div className={styles.coordinateLabel}>Coordinate</div>
+              <div className={styles.coordinateInputs}>
+                <div className={styles.coordinateField}>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className={styles.propertyInputSmall}
+                    value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                      selectedCornerIndex
+                    ].x.toFixed(1)}
+                    onChange={(e) => updatePanelPoint('x', parseFloat(e.target.value) || 0)}
+                  />
+                  <span className={styles.coordinateSubLabel}>x</span>
+                </div>
+                <div className={styles.coordinateField}>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className={styles.propertyInputSmall}
+                    value={(shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                      selectedCornerIndex
+                    ].y.toFixed(1)}
+                    onChange={(e) => updatePanelPoint('y', parseFloat(e.target.value) || 0)}
+                  />
+                  <span className={styles.coordinateSubLabel}>y</span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.cornerTypeSection}>
+              <div className={styles.cornerTypeLabel}>Corner Point Type</div>
+              <div className={styles.cornerTypeButtons}>
+                {CORNER_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`${styles.cornerTypeBtn} ${
+                      (cornerTypes[selectedCornerIndex] || 'default') === opt.value
+                        ? styles.cornerTypeBtnActive
+                        : ''
+                    }`}
+                    onClick={() => {
+                      setCornerTypes((prev) => {
+                        const next = [...(prev.length ? prev : Array(4).fill('default'))];
+                        if (selectedCornerIndex < next.length) {
+                          next[selectedCornerIndex] = opt.value;
+                          if (opt.value === 'default') {
+                            setCornerRadius((r) => {
+                              const nr = [...(r.length ? r : Array(4).fill(0))];
+                              if (selectedCornerIndex < nr.length) nr[selectedCornerIndex] = 0;
+                              return nr;
+                            });
+                          } else if (
+                            (opt.value === 'round' || opt.value === 'chamfer') &&
+                            (cornerRadius[selectedCornerIndex] || 0) === 0
+                          ) {
+                            setCornerRadius((r) => {
+                              const nr = [...(r.length ? r : Array(4).fill(0))];
+                              if (selectedCornerIndex < nr.length) nr[selectedCornerIndex] = 50;
+                              return nr;
+                            });
+                          }
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(cornerTypes[selectedCornerIndex] || 'default') === 'round' && (
+              <div className={styles.radiusSection}>
+                <div className={styles.radiusLabel}>Radius</div>
+                <div className={styles.radiusInputRow}>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    className={styles.propertyInputSmall}
+                    value={(cornerRadius[selectedCornerIndex] || 0).toFixed(1)}
+                    onChange={(e) => {
+                      const v = Math.max(0, parseFloat(e.target.value) || 0);
+                      setCornerRadius((prev) => {
+                        const next = [...(prev.length ? prev : Array(4).fill(0))];
+                        if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className={styles.radiusUnit}>mm</span>
+                </div>
+                <div className={styles.cornerDiagram}>
+                  <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                    <path
+                      d="M 10 50 L 10 10 L 50 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeDasharray="3 2"
+                      opacity={0.6}
+                    />
+                    <path
+                      d="M 10 50 A 40 40 0 0 1 50 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                    <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                    <text x="30" y="38" className={styles.diagramLabel}>
+                      r
+                    </text>
+                  </svg>
+                </div>
+              </div>
+            )}
+            {(cornerTypes[selectedCornerIndex] || 'default') === 'chamfer' && (
+              <div className={styles.chamferSection}>
+                <div className={styles.chamferLabel}>Chamfer Distance</div>
+                <div className={styles.chamferInputs}>
+                  <div className={styles.chamferField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      className={styles.propertyInputSmall}
+                      value={(cornerRadius[selectedCornerIndex] || 0).toFixed(1)}
+                      onChange={(e) => {
+                        const v = Math.max(0, parseFloat(e.target.value) || 0);
+                        setCornerRadius((prev) => {
+                          const next = [...(prev.length ? prev : Array(4).fill(0))];
+                          if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className={styles.chamferSubLabel}>d1</span>
+                  </div>
+                  <div className={styles.chamferField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      className={styles.propertyInputSmall}
+                      value={(cornerRadius[selectedCornerIndex] || 0).toFixed(1)}
+                      onChange={(e) => {
+                        const v = Math.max(0, parseFloat(e.target.value) || 0);
+                        setCornerRadius((prev) => {
+                          const next = [...(prev.length ? prev : Array(4).fill(0))];
+                          if (selectedCornerIndex < next.length) next[selectedCornerIndex] = v;
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className={styles.chamferSubLabel}>d2</span>
+                  </div>
+                </div>
+                <div className={styles.cornerDiagram}>
+                  <svg viewBox="0 0 60 60" className={styles.diagramSvg}>
+                    <path
+                      d="M 10 50 L 10 10 L 50 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeDasharray="3 2"
+                      opacity={0.6}
+                    />
+                    <path d="M 10 50 L 50 10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <circle cx="10" cy="50" r="2" fill="#00bcd4" />
+                    <circle cx="50" cy="10" r="2" fill="#00bcd4" />
+                    <text x="18" y="48" className={styles.diagramLabel}>
+                      d1
+                    </text>
+                    <text x="42" y="14" className={styles.diagramLabel}>
+                      d2
+                    </text>
+                  </svg>
+                </div>
+              </div>
+            )}
+          </Section>
+        </div>
       )}
 
       {/* Default Panel Properties */}

@@ -79,6 +79,10 @@ export interface PropertiesSidebarProps {
   panelWidth: number;
   isRotated2D: boolean;
   setSelectedHoleIndex: (val: number | null) => void;
+  cornerRadius: number[];
+  setCornerRadius: (val: number[] | ((prev: number[]) => number[])) => void;
+  cornerTypes: CornerType[];
+  setCornerTypes: (val: CornerType[] | ((prev: CornerType[]) => CornerType[])) => void;
 }
 
 export interface BaseSidebarProps {

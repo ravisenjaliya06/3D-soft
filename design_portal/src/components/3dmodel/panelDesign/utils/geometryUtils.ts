@@ -16,16 +16,14 @@ export const getTangents = (
   points: Point[],
   index: number,
   cornerRadius: number[],
-  cornerTypes?: CornerType[],
-  isMapped: boolean = false
 ) => {
   const n = points.length;
   const p0 = points[(index - 1 + n) % n];
   const p1 = points[index];
   const p2 = points[(index + 1) % n];
-  const r = cornerRadius[index] || 0;
+  const r_requested = cornerRadius[index] || 0;
 
-  if (r <= 0) {
+  if (r_requested <= 0) {
     return {
       tp_in: { x: p1.x, y: p1.y },
       tp_out: { x: p1.x, y: p1.y },
@@ -33,105 +31,143 @@ export const getTangents = (
       start_angle: 0,
       end_angle: 0,
       det: 0,
+      actual_r: 0,
     };
   }
 
-  let dx = p1.x - p0.x;
-  let dy = p1.y - p0.y;
-  let len = Math.hypot(dx, dy);
-  const u_in_x = dx / len;
-  const u_in_y = dy / len;
+  const v1x = p0.x - p1.x;
+  const v1y = p0.y - p1.y;
+  const v2x = p2.x - p1.x;
+  const v2y = p2.y - p1.y;
 
-  dx = p2.x - p1.x;
-  dy = p2.y - p1.y;
-  len = Math.hypot(dx, dy);
-  const u_out_x = dx / len;
-  const u_out_y = dy / len;
+  const len1 = Math.hypot(v1x, v1y);
+  const len2 = Math.hypot(v2x, v2y);
 
-  const dot = u_in_x * u_out_x + u_in_y * u_out_y;
-  const alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
-
-  const det = u_in_x * u_out_y - u_in_y * u_out_x;
-  if (det <= 0 || alpha === 0) {
+  if (len1 < 1e-6 || len2 < 1e-6) {
     return {
       tp_in: { x: p1.x, y: p1.y },
       tp_out: { x: p1.x, y: p1.y },
       center: { x: p1.x, y: p1.y },
       start_angle: 0,
       end_angle: 0,
-      det: det,
+      det: 0,
+      actual_r: 0,
     };
   }
 
-  const half_alpha = alpha / 2;
-  const tan_half = Math.tan(half_alpha);
-  let l = r * tan_half;
+  const v1_nx = v1x / len1;
+  const v1_ny = v1y / len1;
+  const v2_nx = v2x / len2;
+  const v2_ny = v2y / len2;
 
-  const len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-  const len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-  if (l > len_prev / 2 || l > len_next / 2) {
-    l = Math.min(len_prev / 2, len_next / 2);
-  }
+  const dot = Math.max(-1, Math.min(1, v1_nx * v2_nx + v1_ny * v2_ny));
+  const theta = Math.acos(dot);
 
-  const tp_in_x = p1.x - u_in_x * l;
-  const tp_in_y = p1.y - u_in_y * l;
-  const tp_out_x = p1.x + u_out_x * l;
-  const tp_out_y = p1.y + u_out_y * l;
+  const cross = v1_nx * v2_ny - v1_ny * v2_nx;
+  const det = -cross; // Compatibility flag for CCW/CW matching
 
-  if (!isMapped) {
+  if (theta < 1e-6 || Math.abs(theta - Math.PI) < 1e-6) {
     return {
-      tp_in: { x: tp_in_x, y: tp_in_y },
-      tp_out: { x: tp_out_x, y: tp_out_y },
+      tp_in: { x: p1.x, y: p1.y },
+      tp_out: { x: p1.x, y: p1.y },
+      center: { x: p1.x, y: p1.y },
+      start_angle: 0,
+      end_angle: 0,
       det,
+      actual_r: 0,
     };
   }
 
-  const n_in_x = -u_in_y;
-  const n_in_y = u_in_x;
-  const n_out_x = -u_out_y;
-  const n_out_y = u_out_x;
+  const half_theta = theta / 2;
+  let l = r_requested / Math.tan(half_theta);
 
-  let bis_x = n_in_x + n_out_x;
-  let bis_y = n_in_y + n_out_y;
-  len = Math.hypot(bis_x, bis_y);
-  bis_x /= len;
-  bis_y /= len;
+  const prevHasRound = (cornerRadius[(index - 1 + n) % n] || 0) > 0;
+  const nextHasRound = (cornerRadius[(index + 1) % n] || 0) > 0;
+  const maxL =
+    prevHasRound || nextHasRound ? Math.min(len1 / 2.01, len2 / 2.01) : Math.min(len1, len2);
 
-  const sin_half = Math.sin(half_alpha);
-  const d = r / sin_half;
+  let actual_r = r_requested;
+  if (l > maxL) {
+    l = maxL;
+    actual_r = l * Math.tan(half_theta);
+  }
 
-  const center_x = p1.x + bis_x * d;
-  const center_y = p1.y + bis_y * d;
+  const tp_in = { x: p1.x + v1_nx * l, y: p1.y + v1_ny * l };
+  const tp_out = { x: p1.x + v2_nx * l, y: p1.y + v2_ny * l };
 
-  let vec_x = tp_in_x - center_x;
-  let vec_y = tp_in_y - center_y;
-  const start_angle = Math.atan2(vec_y, vec_x);
+  const bis_x = v1_nx + v2_nx;
+  const bis_y = v1_ny + v2_ny;
+  const len_bis = Math.hypot(bis_x, bis_y);
 
-  vec_x = tp_out_x - center_x;
-  vec_y = tp_out_y - center_y;
-  let end_angle = Math.atan2(vec_y, vec_x);
-  if (end_angle < start_angle) end_angle += 2 * Math.PI;
+  if (len_bis < 1e-6) {
+    return { tp_in, tp_out, center: tp_in, start_angle: 0, end_angle: 0, det, actual_r };
+  }
 
-  return {
-    tp_in: { x: tp_in_x, y: tp_in_y },
-    tp_out: { x: tp_out_x, y: tp_out_y },
-    center: { x: center_x, y: center_y },
-    start_angle,
-    end_angle,
-    det,
-  };
+  const bis_nx = bis_x / len_bis;
+  const bis_ny = bis_y / len_bis;
+
+  const d_c = actual_r / Math.sin(half_theta);
+  const center = { x: p1.x + bis_nx * d_c, y: p1.y + bis_ny * d_c };
+
+  const vec_in_x = tp_in.x - center.x;
+  const vec_in_y = tp_in.y - center.y;
+  const vec_out_x = tp_out.x - center.x;
+  const vec_out_y = tp_out.y - center.y;
+
+  const start_angle = Math.atan2(vec_in_y, vec_in_x);
+  const end_angle = Math.atan2(vec_out_y, vec_out_x);
+
+  return { tp_in, tp_out, center, start_angle, end_angle, det, actual_r };
+};
+
+/**
+ * Shared geometry traversal logic used by both SVG path and Three.js shape generation.
+ */
+const processGeometry = (
+  points: Point[],
+  cornerRadius: number[],
+  cornerTypesArr: CornerType[],
+  curveControls: CurveControls,
+  prefix: string,
+  callbacks: {
+    moveTo: (x: number, y: number) => void;
+    lineTo: (x: number, y: number) => void;
+    quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) => void;
+    arcTo: (
+      tangents: ReturnType<typeof getTangents>,
+      type: CornerType
+    ) => void;
+  }
+) => {
+  const n = points.length;
+  if (n < 3) return;
+
+  const tangentsArr = points.map((_, i) => getTangents(points, i, cornerRadius));
+  const t0 = tangentsArr[0];
+  callbacks.moveTo(t0.tp_out.x, t0.tp_out.y);
+
+  for (let i = 1; i <= n; i++) {
+    const j = i % n;
+    const prevJ = (i - 1 + n) % n;
+    const tangents = tangentsArr[j];
+
+    const ctrl = curveControls[`${prefix}_${prevJ}`];
+    if (ctrl) {
+      callbacks.quadraticCurveTo(ctrl.x, ctrl.y, tangents.tp_in.x, tangents.tp_in.y);
+    } else {
+      callbacks.lineTo(tangents.tp_in.x, tangents.tp_in.y);
+    }
+
+    const r = cornerRadius[j] || 0;
+    const type = cornerTypesArr[j] || 'default';
+    if (r > 0 && tangents.actual_r > 0) {
+      callbacks.arcTo(tangents, type);
+    }
+  }
 };
 
 /**
  * Builds an SVG-like path string for a 2D shape with rounded corners.
- * This is primarily used for Konva rendering in the 2D stage.
- *
- * @param points Array of shape vertices
- * @param cornerRadius Array of radii for each corner
- * @param cornerTypesArr Array of types for each corner
- * @param curveControls Mapping of quadratic curve control points
- * @param prefix Prefix for path identifiers
- * @returns An SVG path data string (e.g., "M x y L x y Z")
  */
 export const buildPathData = (
   points: Point[],
@@ -140,86 +176,56 @@ export const buildPathData = (
   curveControls: CurveControls = {},
   prefix: string = 'shape'
 ) => {
-  const n = points.length;
-  if (n < 3) return '';
-
-  const tangents0 = getTangents(points, 0, cornerRadius);
-  let path = `M ${tangents0.tp_out.x} ${tangents0.tp_out.y}`;
-
-  for (let i = 1; i <= n; i++) {
-    const j = i % n;
-    const prevJ = (i - 1 + n) % n;
-    const tangents = getTangents(points, j, cornerRadius);
-
-    const ctrl = curveControls[`${prefix}_${prevJ}`];
-    if (ctrl) {
-      path += ` Q ${ctrl.x} ${ctrl.y} ${tangents.tp_in.x} ${tangents.tp_in.y}`;
-    } else {
-      path += ` L ${tangents.tp_in.x} ${tangents.tp_in.y}`;
-    }
-
-    const r = cornerRadius[j] || 0;
-    const type = cornerTypesArr[j] || 'default';
-    if (r > 0) {
+  let path = '';
+  processGeometry(points, cornerRadius, cornerTypesArr, curveControls, prefix, {
+    moveTo: (x, y) => (path += `M ${x} ${y}`),
+    lineTo: (x, y) => (path += ` L ${x} ${y}`),
+    quadraticCurveTo: (cpx, cpy, x, y) => (path += ` Q ${cpx} ${cpy} ${x} ${y}`),
+    arcTo: (tangents, type) => {
+      const sweep = (tangents.det ?? 1) >= 0 ? 1 : 0;
       if (type === 'round') {
-        path += ` A ${r} ${r} 0 0 1 ${tangents.tp_out.x} ${tangents.tp_out.y}`;
+        path += ` A ${tangents.actual_r} ${tangents.actual_r} 0 0 ${sweep} ${tangents.tp_out.x} ${tangents.tp_out.y}`;
       } else if (type === 'chamfer') {
         path += ` L ${tangents.tp_out.x} ${tangents.tp_out.y}`;
       } else if (type === 'cut-round') {
-        path += ` A ${r} ${r} 0 0 0 ${tangents.tp_out.x} ${tangents.tp_out.y}`;
+        path += ` A ${tangents.actual_r} ${tangents.actual_r} 0 0 ${1 - sweep} ${tangents.tp_out.x} ${tangents.tp_out.y}`;
       }
-    }
-  }
-
-  path += ' Z';
-  return path;
+    },
+  });
+  return path ? path + ' Z' : '';
 };
 
 /**
  * Creates a THREE.Shape for a 2D geometry, handling rounded corners and curves.
- * This shape can later be extruded into a 3D Mesh.
- *
- * @param points Array of shape vertices
- * @param cornerRadius Array of radii for each corner
- * @param cornerTypesArr Array of types for each corner
- * @param curveControls Mapping of quadratic curve control points
- * @param prefix Prefix for shape identifiers
- * @returns A THREE.Shape object
  */
 export const buildThreeShape = (
   points: Point[],
   cornerRadius: number[],
   curveControls: CurveControls = {},
-  prefix: string = 'shape'
+  prefix: string = 'shape',
+  cornerTypesArr: CornerType[] = []
 ) => {
-  const n = points.length;
-  if (n < 3) return new THREE.Shape();
-
   const shape = new THREE.Shape();
-
-  const tangents0 = getTangents(points, 0, cornerRadius);
-  shape.moveTo(tangents0.tp_out.x, tangents0.tp_out.y);
-
-  for (let i = 1; i <= n; i++) {
-    const j = i % n;
-    const prevJ = (i - 1 + n) % n;
-    const tangents = getTangents(points, j, cornerRadius);
-
-    const ctrl = curveControls[`${prefix}_${prevJ}`];
-    if (ctrl) {
-      shape.quadraticCurveTo(ctrl.x, ctrl.y, tangents.tp_in.x, tangents.tp_in.y);
-    } else {
-      shape.lineTo(tangents.tp_in.x, tangents.tp_in.y);
-    }
-
-    const r = cornerRadius[j] || 0;
-    if (r > 0) {
-      // For Three.js, simple lineTo for now as in the original code
-      // To improve sync, we could implement arc logic here as well
-      shape.lineTo(tangents.tp_out.x, tangents.tp_out.y);
-    }
-  }
-
+  processGeometry(points, cornerRadius, cornerTypesArr, curveControls, prefix, {
+    moveTo: (x, y) => shape.moveTo(x, y),
+    lineTo: (x, y) => shape.lineTo(x, y),
+    quadraticCurveTo: (cpx, cpy, x, y) => shape.quadraticCurveTo(cpx, cpy, x, y),
+    arcTo: (tangents, type) => {
+      if (type === 'round' && tangents.center && tangents.start_angle !== undefined) {
+        const arcCw = (tangents.det ?? 1) < 0;
+        shape.absarc(
+          tangents.center.x,
+          tangents.center.y,
+          tangents.actual_r,
+          tangents.start_angle,
+          tangents.end_angle!,
+          arcCw
+        );
+      } else {
+        shape.lineTo(tangents.tp_out.x, tangents.tp_out.y);
+      }
+    },
+  });
   return shape;
 };
 
@@ -246,46 +252,83 @@ export const getGeometryCenter = (geometry: THREE.BufferGeometry) => {
  */
 export const createHolePath = (
   hole: any,
+  holeIndex: number,
+  curveControls: CurveControls,
   getMappedPoint: (p: Point) => Point,
   isRotated2D: boolean
 ): THREE.Path => {
   const holePath = new THREE.Path();
 
   if (hole.type === 'circle') {
-    // For circles/ovals, calculate radius and center
     const radiusX = hole.width / 2;
     const radiusY = hole.height / 2;
     const c3d = getMappedPoint({ x: hole.x + radiusX, y: hole.y + radiusY });
-
-    // Use absellipse to draw the hole.
-    // If the view is rotated, we swap the radii to maintain correctly oriented oval holes.
     if (isRotated2D) {
       holePath.absellipse(c3d.x, c3d.y, radiusY, radiusX, 0, Math.PI * 2, false);
     } else {
       holePath.absellipse(c3d.x, c3d.y, radiusX, radiusY, 0, Math.PI * 2, false);
     }
-  } else if (hole.type === 'rect') {
-    // For rectangles, map the corners and draw a closed loop
-    const hp1 = getMappedPoint({ x: hole.x, y: hole.y });
-    const hp2 = getMappedPoint({ x: hole.x + hole.width, y: hole.y + hole.height });
-    const hminX = Math.min(hp1.x, hp2.x),
-      hmaxX = Math.max(hp1.x, hp2.x);
-    const hminY = Math.min(hp1.y, hp2.y),
-      hmaxY = Math.max(hp1.y, hp2.y);
+  } else if (hole.type === 'rect' || hole.type === 'polygon') {
+    let pts: Point[] = [];
+    let radii: number[] = [];
+    let types: CornerType[] = [];
+    let prefix = `hole_${holeIndex}`;
 
-    holePath.moveTo(hminX, hminY);
-    holePath.lineTo(hmaxX, hminY);
-    holePath.lineTo(hmaxX, hmaxY);
-    holePath.lineTo(hminX, hmaxY);
-    holePath.lineTo(hminX, hminY); // Close the path
-  } else if (hole.type === 'polygon' && hole.points) {
-    // For polygons, map each point and connect them
-    const hp = hole.points.map(getMappedPoint);
-    if (hp.length > 0) {
-      holePath.moveTo(hp[0].x, hp[0].y);
-      hp.slice(1).forEach((p: Point) => holePath.lineTo(p.x, p.y));
-      holePath.closePath();
+    if (hole.type === 'rect') {
+      const corners = [
+        { x: hole.x, y: hole.y },
+        { x: hole.x + hole.width, y: hole.y },
+        { x: hole.x + hole.width, y: hole.y + hole.height },
+        { x: hole.x, y: hole.y + hole.height },
+      ];
+      radii = hole.cornerRadius ?? [];
+      types = hole.cornerTypes ?? [];
+
+      if (!radii.some((r: number) => r > 0)) {
+        const hp1 = getMappedPoint({ x: hole.x, y: hole.y });
+        const hp2 = getMappedPoint({ x: hole.x + hole.width, y: hole.y + hole.height });
+        const hminX = Math.min(hp1.x, hp2.x), hmaxX = Math.max(hp1.x, hp2.x);
+        const hminY = Math.min(hp1.y, hp2.y), hmaxY = Math.max(hp1.y, hp2.y);
+        holePath.moveTo(hminX, hminY);
+        holePath.lineTo(hmaxX, hminY);
+        holePath.lineTo(hmaxX, hmaxY);
+        holePath.lineTo(hminX, hmaxY);
+        holePath.lineTo(hminX, hminY);
+        return holePath;
+      }
+      pts = corners.map(getMappedPoint);
+      radii = [...radii, 0, 0, 0, 0].slice(0, 4);
+      types = [...types, 'default', 'default', 'default', 'default'].slice(0, 4) as CornerType[];
+    } else {
+      pts = hole.points.map(getMappedPoint);
+      radii = hole.cornerRadius ?? new Array(pts.length).fill(0);
+      types = hole.cornerTypes ?? new Array(pts.length).fill('default');
+      prefix = `hole_${holeIndex}`;
     }
+
+    processGeometry(pts, radii, types, curveControls, prefix, {
+      moveTo: (x, y) => holePath.moveTo(x, y),
+      lineTo: (x, y) => holePath.lineTo(x, y),
+      quadraticCurveTo: (cpx, cpy, x, y) => {
+        const mappedCtrl = getMappedPoint({ x: cpx, y: cpy });
+        holePath.quadraticCurveTo(mappedCtrl.x, mappedCtrl.y, x, y);
+      },
+      arcTo: (tangents, type) => {
+        if (type === 'round' && tangents.center && tangents.start_angle !== undefined) {
+          const arcCw = (tangents.det ?? 1) < 0;
+          holePath.absarc(
+            tangents.center.x,
+            tangents.center.y,
+            tangents.actual_r,
+            tangents.start_angle,
+            tangents.end_angle!,
+            arcCw
+          );
+        } else {
+          holePath.lineTo(tangents.tp_out.x, tangents.tp_out.y);
+        }
+      },
+    });
   }
 
   return holePath;
