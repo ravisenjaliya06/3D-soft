@@ -102,6 +102,127 @@
   max-height: 500px; /* Ensure properties don't grow infinitely */
 }
 
+/* Dynamic hole properties panel - matches reference layout */
+.holePropertiesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.propertyGroup {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.propertyGroup:last-of-type {
+  border-bottom: none;
+}
+
+.propertyGroupNoBorder {
+  padding: 8px 0;
+  border-bottom: none;
+}
+
+.coordinatesGroupEnd {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0;
+}
+
+.propertyGroupTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.propertyInfoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--common-text-color);
+  background: var(--primary-dark-white);
+  border-radius: 50%;
+  cursor: help;
+}
+
+.propertyGroupInline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.propertyGroupInline .propertyGroupTitle {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.propertyGroupInline .propertyFieldWrapper {
+  flex: 0 1 auto;
+}
+
+.propertyGroupInlineField {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.propertySubLabelInline {
+  font-size: 0.65rem;
+  color: var(--project-item-text);
+}
+
+.propertyInputRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.propertyFieldWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.propertyInput {
+  width: 100%;
+  max-width: 100px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  height: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  background: var(--primary-white);
+  color: var(--common-text-color);
+  text-align: center;
+}
+
+.propertyInput:read-only {
+  background: var(--primary-dark-white);
+  cursor: default;
+}
+
+.propertySubLabel {
+  font-size: 0.65rem;
+  color: var(--project-item-text);
+}
+
+.propertySeparator {
+  font-size: 0.75rem;
+  color: var(--project-item-text);
+  align-self: center;
+}
+
 .propertiesContainer {
   background: var(--primary-white);
   overflow: hidden;
@@ -129,7 +250,6 @@
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--primary-color);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   background: rgba(255, 255, 255, 0.8);
   padding: 2px 6px;
