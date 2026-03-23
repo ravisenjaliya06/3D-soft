@@ -264,7 +264,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         if (!mesh.geometry.userData.isModified) {
           setOriginalGeometry(mesh.geometry.clone());
         }
-        
+
         const objectData = state?.data?.objects?.find((obj: any) => obj.id === selectedChildObject);
         if (objectData?.panelDesign) {
           const pd = objectData.panelDesign;
@@ -1035,11 +1035,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                         const r = radii[pIdx] ?? 0;
                         const type = types[pIdx] ?? 'default';
                         if (r <= 0 || type === 'default') return null;
-                        const tangents = getTangents(
-                          pts,
-                          pIdx,
-                          hole.cornerRadius ?? [],
-                        );
+                        const tangents = getTangents(pts, pIdx, hole.cornerRadius ?? []);
                         const p1 = pts[pIdx];
                         if (
                           tangents.tp_in.x === p1.x &&
@@ -1118,31 +1114,44 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   setSelectedPointIndex(null);
                                   setSelectedCornerIndex(null);
                                 }}
-                                draggable={selectedHoleIndex === index && selectedLineIndex === pIdx}
+                                draggable={
+                                  selectedHoleIndex === index && selectedLineIndex === pIdx
+                                }
                                 dragBoundFunc={() => ({ x: 0, y: 0 })}
                                 onDragStart={(e) => {
                                   const stage = e.target.getStage();
                                   if (!stage) return;
                                   const pos = stage.getPointerPosition();
                                   if (!pos) return;
-                                  const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+                                  const localPos = stage
+                                    .getAbsoluteTransform()
+                                    .copy()
+                                    .invert()
+                                    .point(pos);
                                   (e.target as any).setAttr('startPos', localPos);
-                                  (e.target as any).setAttr('startPoints', JSON.parse(JSON.stringify(hole.points)));
+                                  (e.target as any).setAttr(
+                                    'startPoints',
+                                    JSON.parse(JSON.stringify(hole.points))
+                                  );
                                 }}
                                 onDragMove={(e) => {
                                   const stage = e.target.getStage();
                                   if (!stage) return;
                                   const pos = stage.getPointerPosition();
                                   if (!pos) return;
-                                  const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
-                                  
+                                  const localPos = stage
+                                    .getAbsoluteTransform()
+                                    .copy()
+                                    .invert()
+                                    .point(pos);
+
                                   const startPos = (e.target as any).getAttr('startPos');
                                   const startPoints = (e.target as any).getAttr('startPoints');
                                   if (!startPos || !startPoints) return;
-                                  
+
                                   const dx = localPos.x - startPos.x;
                                   const dy = localPos.y - startPos.y;
-                                  
+
                                   const p1 = startPoints[pIdx];
                                   const p2 = startPoints[(pIdx + 1) % startPoints.length];
                                   const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -1152,13 +1161,16 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   const dist = dx * nx + dy * ny;
                                   const moveX = nx * dist;
                                   const moveY = ny * dist;
-                                  
+
                                   setHoles((prev: any) => {
                                     const next = [...prev];
                                     const h = { ...next[index] };
                                     if (h.points) {
                                       const pts = [...startPoints];
-                                      pts[pIdx] = { x: pts[pIdx].x + moveX, y: pts[pIdx].y + moveY };
+                                      pts[pIdx] = {
+                                        x: pts[pIdx].x + moveX,
+                                        y: pts[pIdx].y + moveY,
+                                      };
                                       pts[(pIdx + 1) % pts.length] = {
                                         x: pts[(pIdx + 1) % pts.length].x + moveX,
                                         y: pts[(pIdx + 1) % pts.length].y + moveY,
@@ -1472,8 +1484,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           selectedCornerIndex={selectedCornerIndex}
           holes={holes}
           setHoles={setHoles}
-          curveControls={curveControls}
-          setCurveControls={setCurveControls}
           shapePoints={shapePoints}
           defaultPanelPoints={defaultPanelPoints}
           setShapePoints={setShapePoints}

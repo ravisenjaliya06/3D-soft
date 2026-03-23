@@ -72,8 +72,6 @@ export interface PropertiesSidebarProps {
   selectedCornerIndex: number | null;
   holes: Hole[];
   setHoles: any;
-  curveControls: CurveControls;
-  setCurveControls: any;
   shapePoints: Point[];
   defaultPanelPoints: Point[];
   setShapePoints: any;
