@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
 import {
+  Axis2D,
   BaseSidebarProps,
   CornerType,
   Point,
@@ -186,7 +187,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates the coordinates of a specific vertex within a polygonal hole.
    */
-  const updateHolePoint = (dim: 'x' | 'y', val: number) => {
+  const updateHolePoint = (dim: Axis2D, val: number) => {
     if (selectedHoleIndex === null || selectedPointIndex === null) return;
     setHoles((prev: any) => {
       const next = [...prev];
@@ -197,7 +198,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     });
   };
 
-  const updateHoleLinePoint = (pIdx: number, dim: 'x' | 'y', val: number) => {
+  const updateHoleLinePoint = (pIdx: number, dim: Axis2D, val: number) => {
     if (selectedHoleIndex === null) return;
     setHoles((prev: any) => {
       const next = [...prev];
@@ -208,7 +209,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     });
   };
 
-  const updatePanelLinePoint = (pIdx: number, dim: 'x' | 'y', val: number) => {
+  const updatePanelLinePoint = (pIdx: number, dim: Axis2D, val: number) => {
     setShapePoints((prev: any) => {
       const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
       const nextPts = [...pts];
@@ -304,7 +305,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates the center position of a hole (translates the whole shape).
    */
-  const updateHoleCenter = (dim: 'x' | 'y', newCenterVal: number) => {
+  const updateHoleCenter = (dim: Axis2D, newCenterVal: number) => {
     if (selectedHoleIndex === null) return;
     const hole = holes[selectedHoleIndex];
     const bounds = getHoleBounds(hole);
@@ -365,7 +366,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates a coordinate point at index i in a polygonal/rect hole.
    */
-  const updateHoleCoordinate = (pointIndex: number, dim: 'x' | 'y', val: number) => {
+  const updateHoleCoordinate = (pointIndex: number, dim: Axis2D, val: number) => {
     if (selectedHoleIndex === null) return;
     setHoles((prev: any) => {
       const next = [...prev];
@@ -417,9 +418,9 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     if (!hole) return [];
 
     const panelBounds = getPanelBounds(shapePoints, defaultPanelPoints);
-    const toDisplay = (val: number, dim: 'x' | 'y') =>
+    const toDisplay = (val: number, dim: Axis2D) =>
       dim === 'x' ? val - panelBounds.minX : val - panelBounds.minY;
-    const fromDisplay = (display: number, dim: 'x' | 'y') =>
+    const fromDisplay = (display: number, dim: Axis2D) =>
       dim === 'x' ? display + panelBounds.minX : display + panelBounds.minY;
 
     if (hole.type === 'circle') {
@@ -530,7 +531,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates a vertex coordinate of the main panel outline.
    */
-  const updatePanelPoint = (dim: 'x' | 'y', val: number) => {
+  const updatePanelPoint = (dim: Axis2D, val: number) => {
     if (selectedCornerIndex === null) return;
     setShapePoints((prev: any) => {
       const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];

@@ -15,7 +15,7 @@ import { PANEL_TOOLS } from './constants';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
 import styles from './panelDesign.module.css';
-import { CornerType, CurveControls, Hole, Point } from './types';
+import { Axis2D, CornerType, CurveControls, Hole, Point } from './types';
 import { getHoleBounds, getPanelBounds } from './utils/boundsUtils';
 import {
   alignExtrudedGeometry,
@@ -107,7 +107,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const [mousePos, setMousePos] = useState<Point | null>(null);
   const [activeCurveDragKey, setActiveCurveDragKey] = useState<string | null>(null);
   const [curveControls, setCurveControls] = useState<CurveControls>({});
-  const [snappingGuides, setSnappingGuides] = useState<{ type: 'x' | 'y'; value: number }[]>([]);
+  const [snappingGuides, setSnappingGuides] = useState<{ type: Axis2D; value: number }[]>([]);
 
   const defaultPanelPoints = [
     { x: -panelWidth / 2, y: -panelHeight / 2 },
@@ -462,6 +462,57 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }
 
     router.push(`/design/${designId}/${versionId}`);
+  };
+
+  /**
+   * Handles the dragging of a hole's edge, updating its vertices accordingly.
+   *
+   * @param e Konva event
+   * @param index Hole index
+   * @param pIdx Point index
+   */
+  const handleHoleEdgeDrag = (e: any, index: number, pIdx: number) => {
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+    const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+
+    const startPos = (e.target as any).getAttr('startPos');
+    const startPoints = (e.target as any).getAttr('startPoints');
+    if (!startPos || !startPoints) return;
+
+    const dx = localPos.x - startPos.x;
+    const dy = localPos.y - startPos.y;
+
+    const p1 = startPoints[pIdx];
+    const p2 = startPoints[(pIdx + 1) % startPoints.length];
+    const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    if (len === 0) return;
+    const nx = -(p2.y - p1.y) / len;
+    const ny = (p2.x - p1.x) / len;
+    const dist = dx * nx + dy * ny;
+    const moveX = nx * dist;
+    const moveY = ny * dist;
+
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = { ...next[index] };
+      if (h.points) {
+        const pts = [...startPoints];
+        pts[pIdx] = {
+          x: pts[pIdx].x + moveX,
+          y: pts[pIdx].y + moveY,
+        };
+        pts[(pIdx + 1) % pts.length] = {
+          x: pts[(pIdx + 1) % pts.length].x + moveX,
+          y: pts[(pIdx + 1) % pts.length].y + moveY,
+        };
+        h.points = pts;
+        next[index] = h;
+      }
+      return next;
+    });
   };
 
   /**
@@ -1151,53 +1202,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                     JSON.parse(JSON.stringify(hole.points))
                                   );
                                 }}
-                                onDragMove={(e) => {
-                                  const stage = e.target.getStage();
-                                  if (!stage) return;
-                                  const pos = stage.getPointerPosition();
-                                  if (!pos) return;
-                                  const localPos = stage
-                                    .getAbsoluteTransform()
-                                    .copy()
-                                    .invert()
-                                    .point(pos);
-
-                                  const startPos = (e.target as any).getAttr('startPos');
-                                  const startPoints = (e.target as any).getAttr('startPoints');
-                                  if (!startPos || !startPoints) return;
-
-                                  const dx = localPos.x - startPos.x;
-                                  const dy = localPos.y - startPos.y;
-
-                                  const p1 = startPoints[pIdx];
-                                  const p2 = startPoints[(pIdx + 1) % startPoints.length];
-                                  const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                                  if (len === 0) return;
-                                  const nx = -(p2.y - p1.y) / len;
-                                  const ny = (p2.x - p1.x) / len;
-                                  const dist = dx * nx + dy * ny;
-                                  const moveX = nx * dist;
-                                  const moveY = ny * dist;
-
-                                  setHoles((prev: any) => {
-                                    const next = [...prev];
-                                    const h = { ...next[index] };
-                                    if (h.points) {
-                                      const pts = [...startPoints];
-                                      pts[pIdx] = {
-                                        x: pts[pIdx].x + moveX,
-                                        y: pts[pIdx].y + moveY,
-                                      };
-                                      pts[(pIdx + 1) % pts.length] = {
-                                        x: pts[(pIdx + 1) % pts.length].x + moveX,
-                                        y: pts[(pIdx + 1) % pts.length].y + moveY,
-                                      };
-                                      h.points = pts;
-                                      next[index] = h;
-                                    }
-                                    return next;
-                                  });
-                                }}
+                                onDragMove={(e) => handleHoleEdgeDrag(e, index, pIdx)}
                               />
                             );
                           })}
