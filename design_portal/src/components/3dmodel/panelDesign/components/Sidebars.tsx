@@ -255,9 +255,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     setHoles((prev: any) => {
       const next = [...prev];
       const h = next[selectedHoleIndex];
-      if (h.type === 'circle') {
-        next[selectedHoleIndex] = { ...h, x: h.x + dx, y: h.y + dy };
-      } else if (h.points?.length) {
+      if (h.points?.length) {
         next[selectedHoleIndex] = {
           ...h,
           x: h.x + dx,
