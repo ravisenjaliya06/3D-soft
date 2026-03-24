@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../panelDesign.module.css';
 import {
+  Axis2D,
   BaseSidebarProps,
   CornerType,
   Point,
@@ -172,8 +173,6 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   selectedCornerIndex,
   holes,
   setHoles,
-  curveControls,
-  setCurveControls,
   shapePoints,
   defaultPanelPoints,
   setShapePoints,
@@ -188,7 +187,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates the coordinates of a specific vertex within a polygonal hole.
    */
-  const updateHolePoint = (dim: 'x' | 'y', val: number) => {
+  const updateHolePoint = (dim: Axis2D, val: number) => {
     if (selectedHoleIndex === null || selectedPointIndex === null) return;
     setHoles((prev: any) => {
       const next = [...prev];
@@ -197,6 +196,69 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
       return next;
     });
+  };
+
+  const updateHoleLinePoint = (pIdx: number, dim: Axis2D, val: number) => {
+    if (selectedHoleIndex === null) return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const nextPoints = [...(next[selectedHoleIndex].points as any)];
+      nextPoints[pIdx] = { ...nextPoints[pIdx], [dim]: val };
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], points: nextPoints };
+      return next;
+    });
+  };
+
+  const updatePanelLinePoint = (pIdx: number, dim: Axis2D, val: number) => {
+    setShapePoints((prev: any) => {
+      const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+      const nextPts = [...pts];
+      nextPts[pIdx] = { ...nextPts[pIdx], [dim]: val };
+      return nextPts;
+    });
+  };
+
+  const splitSelectedLine = () => {
+    if (selectedLineIndex === null) return;
+    if (selectedHoleIndex !== null) {
+      setHoles((prev: any) => {
+        const next = [...prev];
+        const hole = next[selectedHoleIndex];
+        if (!hole.points) return prev;
+
+        const pts = [...hole.points];
+        const radii = [...(hole.cornerRadius ?? Array(pts.length).fill(0))];
+        const types = [...(hole.cornerTypes ?? Array(pts.length).fill('default'))];
+
+        const p1 = pts[selectedLineIndex];
+        const p2 = pts[(selectedLineIndex + 1) % pts.length];
+        const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+
+        pts.splice(selectedLineIndex + 1, 0, midPoint);
+        radii.splice(selectedLineIndex + 1, 0, 0);
+        types.splice(selectedLineIndex + 1, 0, 'default');
+
+        next[selectedHoleIndex] = {
+          ...hole,
+          points: pts,
+          cornerRadius: radii,
+          cornerTypes: types,
+        };
+
+        return next;
+      });
+    } else {
+      setShapePoints((prev: any) => {
+        const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+        const p1 = pts[selectedLineIndex];
+        const p2 = pts[(selectedLineIndex + 1) % pts.length];
+        const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+
+        const nextPts = [...pts];
+        nextPts.splice(selectedLineIndex + 1, 0, midPoint);
+        return nextPts;
+      });
+    }
   };
 
   /**
@@ -243,7 +305,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates the center position of a hole (translates the whole shape).
    */
-  const updateHoleCenter = (dim: 'x' | 'y', newCenterVal: number) => {
+  const updateHoleCenter = (dim: Axis2D, newCenterVal: number) => {
     if (selectedHoleIndex === null) return;
     const hole = holes[selectedHoleIndex];
     const bounds = getHoleBounds(hole);
@@ -304,7 +366,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates a coordinate point at index i in a polygonal/rect hole.
    */
-  const updateHoleCoordinate = (pointIndex: number, dim: 'x' | 'y', val: number) => {
+  const updateHoleCoordinate = (pointIndex: number, dim: Axis2D, val: number) => {
     if (selectedHoleIndex === null) return;
     setHoles((prev: any) => {
       const next = [...prev];
@@ -356,9 +418,9 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     if (!hole) return [];
 
     const panelBounds = getPanelBounds(shapePoints, defaultPanelPoints);
-    const toDisplay = (val: number, dim: 'x' | 'y') =>
+    const toDisplay = (val: number, dim: Axis2D) =>
       dim === 'x' ? val - panelBounds.minX : val - panelBounds.minY;
-    const fromDisplay = (display: number, dim: 'x' | 'y') =>
+    const fromDisplay = (display: number, dim: Axis2D) =>
       dim === 'x' ? display + panelBounds.minX : display + panelBounds.minY;
 
     if (hole.type === 'circle') {
@@ -469,7 +531,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   /**
    * Updates a vertex coordinate of the main panel outline.
    */
-  const updatePanelPoint = (dim: 'x' | 'y', val: number) => {
+  const updatePanelPoint = (dim: Axis2D, val: number) => {
     if (selectedCornerIndex === null) return;
     setShapePoints((prev: any) => {
       const pts = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
@@ -485,38 +547,159 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       onDragStart={() => setIsDraggingDrawing(true)}
     >
       {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
-      {selectedCornerIndex === null && selectedHoleIndex !== null && selectedLineIndex !== null && (
-        <Section title={`Line Editing (Hole #${selectedHoleIndex + 1})`}>
-          <Row label="Type">
-            <select
-              className={styles.sidebarSelect}
-              value={
-                curveControls[`hole_${selectedHoleIndex}_${selectedLineIndex}`] ? 'arc' : 'linear'
-              }
-              onChange={(e) => {
-                const val = e.target.value;
-                const curveKey = `hole_${selectedHoleIndex}_${selectedLineIndex}`;
-                if (val === 'linear') {
-                  const next = { ...curveControls };
-                  delete next[curveKey];
-                  setCurveControls(next);
-                } else {
-                  const hole = holes[selectedHoleIndex];
-                  if (hole.points) {
-                    const p1 = hole.points[selectedLineIndex];
-                    const p2 = hole.points[(selectedLineIndex + 1) % hole.points.length];
-                    setCurveControls((prev: any) => ({
-                      ...prev,
-                      [curveKey]: { x: (p1.x + p2.x) / 2 + 10, y: (p1.y + p2.y) / 2 + 10 },
-                    }));
-                  }
-                }
-              }}
-            >
-              <option value="linear">Linear</option>
-              <option value="arc">Arc</option>
-            </select>
-          </Row>
+      {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
+      {selectedCornerIndex === null && selectedLineIndex !== null && (
+        <Section
+          title={
+            selectedHoleIndex !== null
+              ? `Line Editing (Hole #${selectedHoleIndex + 1})`
+              : 'Line Editing (Panel)'
+          }
+        >
+          {((selectedHoleIndex !== null && holes[selectedHoleIndex]?.points) ||
+            (selectedHoleIndex === null &&
+              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints))) && (
+            <>
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 1 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            selectedLineIndex
+                          ]?.x ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              selectedLineIndex,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              selectedLineIndex,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            selectedLineIndex
+                          ]?.y ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              selectedLineIndex,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              selectedLineIndex,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 2 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![
+                            (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
+                          ]?.x ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            (selectedLineIndex + 1) %
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                          ]?.x ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              (selectedLineIndex + 1) %
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                              'x',
+                              parseFloat(e.target.value) || 0
+                            )
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? holes[selectedHoleIndex].points![
+                            (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
+                          ]?.y ?? 0
+                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                            (selectedLineIndex + 1) %
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                          ]?.y ?? 0
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
+                              (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                          : updatePanelLinePoint(
+                              (selectedLineIndex + 1) %
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                              'y',
+                              parseFloat(e.target.value) || 0
+                            )
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className={styles.sidebarDeleteButton}
+                  style={{ backgroundColor: '#12086f', color: '#fff' }}
+                  onClick={splitSelectedLine}
+                >
+                  Add new point to center
+                </button>
+              </div>
+            </>
+          )}
         </Section>
       )}
 

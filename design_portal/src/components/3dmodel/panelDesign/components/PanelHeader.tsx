@@ -41,6 +41,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
   setHoleShape,
   handleCancel,
   handleComplete,
+  handleRestoreDefault,
 }) => {
   const digButtonRef = useRef<HTMLDivElement | null>(null);
   const [digButtonRect, setDigButtonRect] = useState<DOMRect | null>(null);
@@ -71,6 +72,10 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
               key={name}
               className={styles.toolButton}
               onClick={() => {
+                if (name === PANEL_TOOLS.RESTORE) {
+                  handleRestoreDefault();
+                  return;
+                }
                 if (name === PANEL_TOOLS.DIG) {
                   setActiveTool(activeTool === PANEL_TOOLS.DIG ? null : PANEL_TOOLS.DIG);
                   if (activeTool !== PANEL_TOOLS.DIG && !holeShape) {
