@@ -63,6 +63,14 @@ export function hideFullScreenLoader() {
  * Robustly get dimensions of a mesh's geometry
  */
 export function getMeshDimensions(mesh: THREE.Mesh) {
+  if (mesh.userData.dimensions) {
+    return {
+      width: mesh.userData.dimensions.width,
+      height: mesh.userData.dimensions.height,
+      depth: mesh.userData.dimensions.depth,
+    };
+  }
+
   const geom = mesh.geometry as THREE.BoxGeometry;
   if (geom.parameters) {
     return {
