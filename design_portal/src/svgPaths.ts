@@ -71,7 +71,6 @@ export const BREVENTO_BACKGROUND_LOGO_SVG = {
 
 export const CATALOG = {
   close: '/assets/catalog/close.svg',
-  img2: '/assets/catalog/toolbaricon/img2.svg',
   logo: '/assets/catalog/logo.svg',
   profile: '/assets/catalog/profile.svg',
   img1: '/assets/catalog/toolbaricon/img1.svg',
@@ -366,7 +365,6 @@ export const TOOLBAR = {
   door: '/assets/toolbar/door.svg',
   double_door: '/assets/toolbar/double_door.svg',
   drawer: '/assets/toolbar/drawer.svg',
-  exlight: '/assets/toolbar/exlight.svg',
   grid: '/assets/toolbar/grid.svg',
   hide: '/assets/toolbar/hide.svg',
   images: '/assets/toolbar/images.jpg',

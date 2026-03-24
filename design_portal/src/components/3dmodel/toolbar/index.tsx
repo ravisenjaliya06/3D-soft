@@ -104,7 +104,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     });
   }, []);
   const [catalogMenu, setcatalogMenu] = useState(false);
-  const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
   const [selectedCabinetItem, setSelectedCabinetItem] = useState<MeshObjectData | null>(null);
@@ -115,14 +114,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
-    if (!isLatestVersion && option !== 'View') {
-      // The system is likely controlling what tools/features are visible or enabled based on user permissions or mode.
-      // It suggests that:
-      // - If all tools are not explicitly enabled, they will remain disabled by default.
-      // - In "view mode", the user should only be able to see the design, not edit it.
-      // - Some basic access like Home/View navigation can still be allowed.
-      // - However, interactive tools or editing options inside the design should be disabled.
-    }
     setIsToolOpen(true);
     setActiveOptionName(name);
     setActiveOption(option);
@@ -141,10 +132,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     setQuantityValue(1);
   };
 
-  const options = [
-    { option: 'Home', name: 'Home', icon: assets.img1 },
-    { option: 'View', name: 'View', icon: assets.img2 },
-  ];
+  const options = [{ option: 'Home', name: 'Home', icon: assets.img1 }];
 
   /** Fetch cabinet items from API and update setCabinetItems state */
   const fetchCabinetItem = async () => {
@@ -599,20 +587,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     },
   ];
 
-  const viewTools = [
-    {
-      option: 'Exlight',
-      icon: assets.exlight,
-      onClick: () => {
-        if (threeDView) {
-          threeDView.toggleSky();
-          setIsExlightActive((prev) => !prev);
-        }
-      },
-      disabled: false,
-      isActive: isExlightActive,
-    },
-  ];
   const furnitureTools = [
     { option: 'Kitchen', icon: assets.kitchen },
     { option: 'Cabinet', icon: assets.cabinet_svg },
@@ -864,26 +838,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       <div className={styles.left_toolbarlist_arrow}>
                         <img src={assets.left_arrow} alt="arrow" />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeOption === 'View' && (
-                <div className={styles.activegroup_tools_group}>
-                  {viewTools.map(({ option, icon, onClick, disabled }) => (
-                    <div
-                      key={option}
-                      className={styles.toollistbox}
-                      style={{
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        opacity: disabled ? 0.3 : 1,
-                      }}
-                      onClick={onClick}
-                      title={disabled ? 'Coming Soon' : option}
-                    >
-                      <img src={icon} alt={`${option} Icon`} />
-                      <span>{option}</span>
                     </div>
                   ))}
                 </div>
