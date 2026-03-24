@@ -162,6 +162,7 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 /* Hover State (Expanded) */
@@ -257,7 +258,7 @@
 /* Active padding for expanded (space for indicator) */
 .nav li.active span,
 .nav li.active {
-  padding-left: 2.2rem;
+  padding-left: 2rem;
 }
 
 /* Inactive padding for expanded */
