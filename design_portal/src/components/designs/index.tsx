@@ -579,7 +579,7 @@ const Designs = () => {
             <div className={styles.designviewpart}>
               {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
               {!loading && filteredDesigns.length === 0 && (
-                <div className="rounded-3xl border border-dashed bg-white p-12 text-center font-medium text-slate-400">
+                <div className="rounded-3xl bg-white p-12 text-center font-medium text-slate-400">
                   No projects found matching your criteria.
                 </div>
               )}
