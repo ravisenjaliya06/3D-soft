@@ -7,6 +7,11 @@ export interface Point {
 }
 
 /**
+ * Represents a 2D axis, either horizontal ('x') or vertical ('y').
+ */
+export type Axis2D = 'x' | 'y';
+
+/**
  * Supported corner treatments for panel vertices and polygonal holes.
  */
 export type CornerType = 'default' | 'round' | 'chamfer' | 'cut-round';
@@ -60,6 +65,7 @@ export interface PanelHeaderProps {
   setHoleShape: (shape: any) => void;
   handleCancel: () => void;
   handleComplete: () => void;
+  handleRestoreDefault: () => void;
 }
 
 export interface PropertiesSidebarProps {
@@ -71,8 +77,6 @@ export interface PropertiesSidebarProps {
   selectedCornerIndex: number | null;
   holes: Hole[];
   setHoles: any;
-  curveControls: CurveControls;
-  setCurveControls: any;
   shapePoints: Point[];
   defaultPanelPoints: Point[];
   setShapePoints: any;

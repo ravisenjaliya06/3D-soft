@@ -1,4 +1,4 @@
-import { Point } from '../types';
+import { Axis2D, Point } from '../types';
 
 export const SNAP_TOLERANCE = 15;
 
@@ -21,7 +21,7 @@ export const getSnappedPosition = (
 ) => {
   let snappedX = x;
   let snappedY = y;
-  let guides: { type: 'x' | 'y'; value: number }[] = [];
+  let guides: { type: Axis2D; value: number }[] = [];
 
   let snappedToX = false;
   let snappedToY = false;

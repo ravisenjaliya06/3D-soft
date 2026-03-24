@@ -38,23 +38,25 @@ class FloorBuilder {
     const material = new THREE.MeshStandardMaterial({
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0
+      opacity: 0,
     });
 
-    textureLoader(this.textureUrl, 5, 5).then((texture) => {
-      material.map = texture;
-      material.transparent = false; // Disable transparency when texture loads
-      material.opacity = 1;
-      material.roughness = 0.8;
-      material.needsUpdate = true;
-    }).catch((e) => {
-      console.error(
-        'FloorBuilder: Failed to load floor texture from',
-        this.textureUrl,
-        'Error:',
-        e
-      );
-    });
+    textureLoader(this.textureUrl, 5, 5)
+      .then((texture) => {
+        material.map = texture;
+        material.transparent = false; // Disable transparency when texture loads
+        material.opacity = 1;
+        material.roughness = 0.8;
+        material.needsUpdate = true;
+      })
+      .catch((e) => {
+        console.error(
+          'FloorBuilder: Failed to load floor texture from',
+          this.textureUrl,
+          'Error:',
+          e
+        );
+      });
 
     return material;
   }
