@@ -53,6 +53,7 @@ class DesignSerializer(serializers.ModelSerializer):
             "customer_gstin",
             "customer_contact",
             "customer_email",
+            "order_number",
             "project_type",
             "project_code",
             "created_at",
@@ -246,9 +247,22 @@ class SceneGetSerializer(serializers.Serializer):
         DRF will iterate when many=True.
         """
         catalog.data.pop("minifix_connections", None)
+        data = catalog.data or {}
+
+        # Handle legacy keys and ensure "edge_banding" is provided
+        edge_data = data.get("edge_banding")
+        if edge_data is None:
+            edge_data = data.get("edgeband")
+        if edge_data is None:
+            edge_data = data.get("edgeBanding")
+        if edge_data is None:
+            edge_data = data.get("edgebands")
+            
+        if edge_data is not None:
+            data["edge_banding"] = edge_data
 
         return {
-            **(catalog.data or {}),
+            **data,
             "id": str(catalog.id),
             "name": catalog.name,
             "type": catalog.type,

@@ -166,7 +166,9 @@ class NestingService:
         packer.pack()
         return self._process_packed_results(packer, remaining_files)
 
-    def optimize(self: "NestingService", files: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def optimize(
+        self: "NestingService", files: Dict[str, Any], company_name: str = ""
+    ) -> List[Dict[str, Any]]:
         """
         Main optimization loop. Processes files grouped by thickness (KEY_HEIGHT), creates multiple sheets,
         assigns Unique IDs (e.g. A1.1), and returns a flat list of nested parts.
@@ -246,6 +248,18 @@ class NestingService:
         # Sort thicknesses to assign codes A, B, C... deterministic
         sorted_thicknesses = sorted(files_by_depth.keys(), reverse=True)
 
+        # Determine the company prefix for barcodes
+        company_prefix = "SHEET"
+        if company_name and company_name.strip():
+            words = [w.strip() for w in company_name.split() if w.strip()]
+            if len(words) >= 2:
+                if words[0].isupper() and len(words[0]) >= 2:
+                    company_prefix = words[0][:2]
+                else:
+                    company_prefix = (words[0][0] + words[1][0]).upper()
+            elif len(words) == 1:
+                company_prefix = words[0][:2].upper()
+
         all_packed_items = []
         global_sheet_count = 1
 
@@ -293,7 +307,7 @@ class NestingService:
                     safe_h = self._safe_float(h) - self.spacing
 
                     item_details = files.get(rid, {})
-                    unique_id = f"SHEET{global_sheet_count:02d}{item_counter:02d}"
+                    unique_id = f"{company_prefix}{global_sheet_count:02d}{item_counter:02d}"
 
                     all_packed_items.append(
                         {
@@ -310,7 +324,7 @@ class NestingService:
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
                             "is_rotated": is_rotated,
-                            "sheet_num": f"SHEET{global_sheet_count:02d}",  # Grouping for visualization
+                            "sheet_num": f"{company_prefix}{global_sheet_count:02d}",  # Grouping for visualization
                             "sheet_width": self.bin_width,
                             "sheet_height": self.bin_height,
                             "sheet_thickness": thickness,
@@ -319,7 +333,7 @@ class NestingService:
                             "depth": item_details.get(KEY_DEPTH, 17.0),
                             "minifix_holes": item_details.get("minifix_holes", []),
                             "grooves": item_details.get("grooves", []),
-                            "edgebands": item_details.get("edgebands", []),
+                            "edge_banding": item_details.get("edge_banding", {}),
                             "parent_name": item_details.get("parent_name", ""),
                         }
                     )
@@ -402,6 +416,8 @@ class NestingService:
         packed_items: List[Dict[str, Any]],
         output_path: str,
         design_name: str = "files",
+        order_number: str = "",
+        company_name: str = "",
     ) -> List[str]:
         """
         Generates XML files for each panel containing machining data.
@@ -424,6 +440,15 @@ class NestingService:
             filename = f"{item[KEY_UNIQUE_ID]}.xml"
             filepath = os.path.join(xml_dir, filename)
 
+            # Extract edgeband info for Excel and XML
+            edge_banding_data = item.get("edge_banding")
+            if not isinstance(edge_banding_data, dict):
+                edge_banding_data = {}
+            edge_left = edge_banding_data.get("left", "")
+            edge_right = edge_banding_data.get("right", "")
+            edge_top = edge_banding_data.get("top", "")
+            edge_bottom = edge_banding_data.get("bottom", "")
+
             # Sheet 1: Cutting List Extraction
             width_val = self._safe_float(item.get(KEY_WIDTH))
             length_val = self._safe_float(item.get(KEY_HEIGHT))
@@ -432,20 +457,20 @@ class NestingService:
 
             sheet1_data.append(
                 {
-                    "Part ID": item.get(KEY_UNIQUE_ID, ""),
-                    "Part Name": item.get(KEY_NAME, item.get(KEY_ID, "")),
-                    "Cabinet/Assembly": item.get("parent_name", ""),
-                    "Material": item.get("material_name", ""),
-                    "Thickness": thval,
-                    "Length": length_val,
-                    "Width": width_val,
-                    "Qty": 1,
-                    "Area (sqm)": round(area_sqm, 4),
-                    "Grain Dir": "L",
-                    "Edge L1": "",
-                    "Edge L2": "",
-                    "Edge W1": "",
-                    "Edge W2": "",
+                    "Barcode": item.get(KEY_UNIQUE_ID, ""),
+                    "Order Number": order_number,
+                    "Company Name": company_name,
+                    "Cabinet Name": item.get("parent_name", ""),
+                    "Part Number": item.get(KEY_NAME, item.get(KEY_ID, "")),
+                    "Material": item.get("material_name") or "-",
+                    "length": length_val,
+                    "width": width_val,
+                    "thickness": thval,
+                    "Edge Left": edge_left,
+                    "Edge Right": edge_right,
+                    "Edge Top": edge_top,
+                    "Edge Bottom": edge_bottom,
+                    "grain": "L",
                 }
             )
 
@@ -455,7 +480,6 @@ class NestingService:
             panels = ET.SubElement(project, "Panels")
 
             # Panel Attributes
-
             width = f"{width_val:.6f}"
             length = f"{length_val:.6f}"
             th = f"{thval:.6f}"
@@ -465,7 +489,7 @@ class NestingService:
                 "Name": str(item.get(KEY_INPUT_NAME, item.get(KEY_ID))),
                 "Width": width,
                 "Length": length,
-                "Material": str(item.get("material_name", "")),
+                "Material": str(item.get("material_name") or "-"),
                 "Thickness": th,
                 "IsProduce": "true",
                 "MachiningPoint": "1",
@@ -520,7 +544,6 @@ class NestingService:
                         and hole_type in ["CAM"]
                         and face_id in ["6"]
                     ):
-                        # if xml_type == "2" and hole_type in ["SCREW", "DOWEL"] and face_id not in ["1", "6"]:
                         final_x = self._safe_float(pos.get("y", 0))
                         final_y = self._safe_float(pos.get("x", 0))
                     elif (
@@ -579,7 +602,7 @@ class NestingService:
                     # Add to Sheet 2
                     sheet2_data.append(
                         {
-                            "Part ID": item.get(KEY_UNIQUE_ID, ""),
+                            "Barcode": item.get(KEY_UNIQUE_ID, ""),
                             "Part Name": item.get(KEY_NAME, item.get(KEY_ID, "")),
                             "Hole Type": hole_type,
                             "X Pos": final_x,
@@ -632,12 +655,34 @@ class NestingService:
                     logger.warning(f"Error processing groove: {e}")
                     continue
 
-            # EdgeGroup (Static as per example for now?)
+            # EdgeGroup
             edge_group = ET.SubElement(panel, "EdgeGroup")
 
-            # Create edges with Thickness=0 default
-            for f in ["1", "2", "3", "4"]:
-                ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")
+            # Map our edge names to face IDs for XML
+            # XML expects faces 1, 2, 3, 4 for edges.
+            # Based on Cutting List logic: L1, L2, W1, W2.
+            # Let's map: 1=Bottom, 2=Top, 3=Left, 4=Right (common convention)
+            # Actually, I'll check if there's a convention in the codebase.
+            # In generate_xmls (old code):
+            # for f in ["1", "2", "3", "4"]:
+            #     ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")
+
+            edge_map = {
+                "1": edge_bottom,
+                "2": edge_top,
+                "3": edge_left,
+                "4": edge_right,
+            }
+
+            for f_id, material in edge_map.items():
+                thickness = "1.000000" if material else "0.000000"
+                edge_attrs = {
+                    "Face": f_id,
+                    "Thickness": thickness,
+                }
+                if material:
+                    edge_attrs["Material"] = material
+                ET.SubElement(edge_group, "Edge", **edge_attrs)
 
             # Pretty print
             xml_bytes = ET.tostring(root)
@@ -656,25 +701,25 @@ class NestingService:
         excel_path = os.path.join(xml_dir, "Cutting List.xlsx")
 
         cols1 = [
-            "Part ID",
-            "Part Name",
-            "Cabinet/Assembly",
+            "Barcode",
+            "Order Number",
+            "Company Name",
+            "Cabinet Name",
+            "Part Number",
             "Material",
-            "Thickness",
-            "Length",
-            "Width",
-            "Qty",
-            "Area (sqm)",
-            "Grain Dir",
-            "Edge L1",
-            "Edge L2",
-            "Edge W1",
-            "Edge W2",
+            "length",
+            "width",
+            "thickness",
+            "Edge Left",
+            "Edge Right",
+            "Edge Top",
+            "Edge Bottom",
+            "grain",
         ]
         df1 = pd.DataFrame(sheet1_data, columns=cols1)
 
         cols2 = [
-            "Part ID",
+            "Barcode",
             "Part Name",
             "Hole Type",
             "X Pos",
@@ -1112,6 +1157,8 @@ def nest(
     spacing: float = 5.0,
     design_setting: Optional[object] = None,
     design_name: str = "files",
+    order_number: str = "",
+    company_name: str = "",
 ) -> JsonResponse:
     """
     Wrapper function to use the NestingService.
@@ -1125,14 +1172,16 @@ def nest(
             spacing=spacing,
         )
 
-        packed_items = service.optimize(files)
+        packed_items = service.optimize(files, company_name=company_name)
         excel_path = service.generate_excel(packed_items, output)
         svg_paths = service.generate_svg(packed_items, output)
         layout_pdf_path = service.generate_layout_pdf(svg_paths, output)
         labels_pdf_path = service.generate_labels(packed_items, output)
 
         # New: Generate XMLs
-        xml_paths = service.generate_xmls(packed_items, output, design_name)
+        xml_paths = service.generate_xmls(
+            packed_items, output, design_name, order_number, company_name
+        )
 
         # New: Generate JSON Layout Data
         json_path = service.generate_json(packed_items, output)

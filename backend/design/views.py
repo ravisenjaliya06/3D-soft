@@ -326,7 +326,10 @@ class NestAPIViewset(ModelViewSet):
                 "minifix_holes": item.get("minifix_holes", []),
                 "position": item.get("position", {}),
                 "rotation": item.get("rotation", {}),
+                "edge_banding": item.get("edge_banding", {}),
                 "parent_name": item.get("parent_name", ""),
+                "material_name": item.get("material_name", "-"),
+                "banding_material_name": item.get("banding_material_name", "-"),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
@@ -343,6 +346,8 @@ class NestAPIViewset(ModelViewSet):
             enclosing_rectangle=True,
             design_setting=design_setting,
             design_name=design.design_name if design else "files",
+            order_number=design.order_number if design else "",
+            company_name=design.customer_company if design else "",
         )
 
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")

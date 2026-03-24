@@ -191,6 +191,13 @@ export class DesignBuilder {
       }
     });
 
+    // Wait for all geometry and banding to finish building
+    await Promise.all(
+      Array.from(this.builderMap.values())
+        .map((b) => b.geometryPromise)
+        .filter(Boolean)
+    );
+
     // Apply parent's banding material to child planks (async - waits for color extraction)
     await this._applyParentBandingToPlanks();
 

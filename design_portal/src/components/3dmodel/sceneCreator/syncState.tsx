@@ -849,6 +849,11 @@ export class SyncManager {
       }
     }
 
+    // Wait for the geometry and banding to be built
+    if (this.meshBuilder?.geometryPromise) {
+      await this.meshBuilder.geometryPromise;
+    }
+
     // This is a plank (regular or drawer plank) - apply parent banding if needed
     if (item.parent && this.meshBuilder) {
       await this._applyParentBandingIfNeeded(item);
@@ -862,6 +867,9 @@ export class SyncManager {
     ) {
       this.meshBuilder.updateGrooving(mesh);
     }
+
+    // Sync banding state to Redux for this single plank
+    this._syncBandingFromScene([item]);
   }
 
   /**

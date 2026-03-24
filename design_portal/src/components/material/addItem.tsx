@@ -225,7 +225,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -312,7 +312,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -470,7 +470,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -611,7 +611,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -705,7 +705,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1147,7 +1147,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1285,7 +1285,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1404,7 +1404,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1569,7 +1569,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1669,7 +1669,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1795,7 +1795,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -1894,7 +1894,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -2053,7 +2053,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -2184,7 +2184,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -2336,7 +2336,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -2462,7 +2462,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {
@@ -2750,7 +2750,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                 'Per M',
                 'SQ Ft',
                 'SQ M',
-                'sheet',
+                'Sheet',
               ],
             },
             {

@@ -19,8 +19,9 @@ import { convertKeysToCamel, globalTextureLoader } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
-  private mesh: THREE.Mesh | null = null;
-  private parentMesh: THREE.Mesh | null = null;
+  public mesh: THREE.Mesh | null = null;
+  public parentMesh: THREE.Mesh | null = null;
+  public geometryPromise: Promise<void> | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
   private textureLoader = globalTextureLoader;
@@ -610,7 +611,11 @@ export class MeshBuilder {
     }
 
     // Use provided edgeBandingState or fall back to meshData
-    const bandingState = edgeBandingState || this.meshData.edgeBanding;
+    const bandingState =
+      edgeBandingState ||
+      this.meshData.edgeBanding ||
+      (this.meshData as any).edge_banding ||
+      (this.meshData as any).edgebands;
 
     if (bandingMaterialData && bandingState) {
       await tool.applyBandingFromState(
@@ -623,12 +628,14 @@ export class MeshBuilder {
     }
   }
 
-  private _handleMaterial() {
+  private async _handleMaterial() {
     if (!this.mesh) return;
 
     const materialArray = Array.isArray(this.meshData.material)
       ? this.meshData.material
       : [this.meshData.material];
+
+    const promises: Promise<void>[] = [];
 
     materialArray.forEach((materialData) => {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
@@ -642,17 +649,19 @@ export class MeshBuilder {
         if (this.mesh) {
           const tool = this._getOrCreateBandingTool();
           if (tool) {
-            tool
-              .createBandingOnPlank(
-                this.mesh,
-                materialData,
-                this.meshData.edgeBanding,
-                this.parentMesh,
-                { material: this.meshData.material, id: this.meshData.id }
-              )
-              .catch((error) => {
-                console.warn('Failed to create banding:', error);
-              });
+            promises.push(
+              tool
+                .createBandingOnPlank(
+                  this.mesh,
+                  materialData,
+                  this.meshData.edgeBanding || (this.meshData as any).edge_banding || (this.meshData as any).edgebands,
+                  this.parentMesh,
+                  { material: this.meshData.material, id: this.meshData.id }
+                )
+                .catch((error) => {
+                  console.warn('Failed to create banding:', error);
+                })
+            );
           }
         }
       }
@@ -663,6 +672,20 @@ export class MeshBuilder {
     } else if (this.meshData.type === OBJECT_TYPES.MODEL) {
       this._loadModel(this.mesh!);
     }
+
+    // Also attempt to apply banding using parent material if not found in direct materials
+    const materials: any = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+    const hasDirectBanding = materials.some((m: any) => m?.type === MATERIAL_TYPES.BANDING);
+
+    if (!hasDirectBanding && this.mesh) {
+      promises.push(this.updateBanding(this.mesh));
+    }
+
+    await Promise.all(promises);
   }
 
   public createMesh(): THREE.Mesh {
@@ -676,8 +699,10 @@ export class MeshBuilder {
     this.mesh = mesh;
 
     // Now compute the real geometry (possibly with CSG)
-    this._getGeometry().then((geometry) => {
+    this.geometryPromise = this._getGeometry().then(async (geometry) => {
       mesh.geometry = geometry;
+      await this._handleMaterial();
+      this._createGrooving();
     });
 
     this._setName(mesh);
@@ -685,8 +710,6 @@ export class MeshBuilder {
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-    this._handleMaterial();
-    this._createGrooving();
     this._checkForParentAddons(mesh);
     return mesh;
   }
