@@ -3327,11 +3327,24 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
 
     try {
-      const isEdit = !!initialData?.id;
+      const materialId = initialData?.materialId || initialData?.id;
+      const isEdit = !!initialData;
+      const hasCompanyId = Boolean(companyId);
+
+      if (isEdit && !materialId) {
+        setFinishError('Unable to identify material for update. Please reopen edit and try again.');
+        return;
+      }
+
+      if (!isEdit && !hasCompanyId) {
+        setFinishError('Please select a company before creating a material.');
+        return;
+      }
+
       const endpoint = isEdit
-        ? companyId
-          ? API_ENDPOINT.UPDATE_COMPANY_MATERIAL_DETAIL(companyId, initialData.id)
-          : API_ENDPOINT.UPDATE_MATERIAL(initialData.id)
+        ? hasCompanyId
+          ? API_ENDPOINT.UPDATE_COMPANY_MATERIAL_DETAIL(companyId, materialId)
+          : API_ENDPOINT.UPDATE_MATERIAL(materialId)
         : API_ENDPOINT.CREATE_COMPANY_MATERIAL(companyId);
 
       const response = isEdit
@@ -3340,7 +3353,9 @@ const AddMaterialPopup: React.FC<Props> = ({
 
       if (response.status === 201 || response.status === 200) {
         setCreateWorkOrderPopup(false);
-        handleGetCompanyMaterials(companyId);
+        if (hasCompanyId) {
+          handleGetCompanyMaterials(companyId);
+        }
       } else {
         setFinishError(`Failed to ${isEdit ? 'update' : 'create'} material. Please try again.`);
       }
