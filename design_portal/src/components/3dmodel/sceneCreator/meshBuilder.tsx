@@ -1,5 +1,11 @@
 import * as THREE from 'three';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { GLBLoader } from '../helper/glbLoader';
+import {
+  alignExtrudedGeometry,
+  buildThreeShape,
+  createHolePath,
+} from '../panelDesign/utils/geometryUtils';
 import { store } from '../store';
 import { applyCSGHoles } from '../utils/csgUtils';
 import {
@@ -16,12 +22,6 @@ import {
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
 import { convertKeysToCamel, globalTextureLoader, normalizeUVs } from './utils';
-import {
-  alignExtrudedGeometry,
-  buildThreeShape,
-  createHolePath,
-} from '../panelDesign/utils/geometryUtils';
-import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -257,7 +257,8 @@ export class MeshBuilder {
 
       const isRotated2D = h > w;
       const mappedPoints = isRotated2D ? outline.map((p) => ({ x: -p.y, y: p.x })) : outline;
-      const getMappedPoint = (p: { x: number; y: number }) => (isRotated2D ? { x: -p.y, y: p.x } : p);
+      const getMappedPoint = (p: { x: number; y: number }) =>
+        isRotated2D ? { x: -p.y, y: p.x } : p;
 
       const mainShape = buildThreeShape(
         mappedPoints,

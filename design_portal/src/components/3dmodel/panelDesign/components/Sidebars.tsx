@@ -569,10 +569,10 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       step="0.1"
                       className={styles.propertyInputSmall}
                       value={(selectedHoleIndex !== null
-                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0
-                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                        ? (holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             selectedLineIndex
-                          ]?.x ?? 0
+                          ]?.x ?? 0)
                       ).toFixed(1)}
                       onChange={(e) =>
                         selectedHoleIndex !== null
@@ -596,10 +596,10 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       step="0.1"
                       className={styles.propertyInputSmall}
                       value={(selectedHoleIndex !== null
-                        ? holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0
-                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                        ? (holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             selectedLineIndex
-                          ]?.y ?? 0
+                          ]?.y ?? 0)
                       ).toFixed(1)}
                       onChange={(e) =>
                         selectedHoleIndex !== null
@@ -629,13 +629,13 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       step="0.1"
                       className={styles.propertyInputSmall}
                       value={(selectedHoleIndex !== null
-                        ? holes[selectedHoleIndex].points![
+                        ? (holes[selectedHoleIndex].points![
                             (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
-                          ]?.x ?? 0
-                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                          ]?.x ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             (selectedLineIndex + 1) %
                               (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
-                          ]?.x ?? 0
+                          ]?.x ?? 0)
                       ).toFixed(1)}
                       onChange={(e) =>
                         selectedHoleIndex !== null
@@ -660,13 +660,13 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       step="0.1"
                       className={styles.propertyInputSmall}
                       value={(selectedHoleIndex !== null
-                        ? holes[selectedHoleIndex].points![
+                        ? (holes[selectedHoleIndex].points![
                             (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
-                          ]?.y ?? 0
-                        : (shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                          ]?.y ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             (selectedLineIndex + 1) %
                               (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
-                          ]?.y ?? 0
+                          ]?.y ?? 0)
                       ).toFixed(1)}
                       onChange={(e) =>
                         selectedHoleIndex !== null
