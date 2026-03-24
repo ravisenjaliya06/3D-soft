@@ -118,8 +118,7 @@ export default function RenderingPage() {
             statusData.url_enhanced ||
             statusData.url_video
           ) {
-            if (statusData.url_enhanced)
-              setFinalImage(statusData.url_enhanced);
+            if (statusData.url_enhanced) setFinalImage(statusData.url_enhanced);
             if (statusData.url_video) setFinalVideo(statusData.url_video);
 
             // Should we clear interval if both arrived? The API processes image then video.

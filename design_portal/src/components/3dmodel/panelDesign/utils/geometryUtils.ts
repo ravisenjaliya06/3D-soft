@@ -12,11 +12,7 @@ import { CornerType, CurveControls, Point } from '../types';
  * @param isMapped Whether the points are already mapped to 3D orientation
  * @returns Object containing tangent points (tp_in, tp_out) and optional arc center/angles
  */
-export const getTangents = (
-  points: Point[],
-  index: number,
-  cornerRadius: number[],
-) => {
+export const getTangents = (points: Point[], index: number, cornerRadius: number[]) => {
   const n = points.length;
   const p0 = points[(index - 1 + n) % n];
   const p1 = points[index];
@@ -133,10 +129,7 @@ const processGeometry = (
     moveTo: (x: number, y: number) => void;
     lineTo: (x: number, y: number) => void;
     quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) => void;
-    arcTo: (
-      tangents: ReturnType<typeof getTangents>,
-      type: CornerType
-    ) => void;
+    arcTo: (tangents: ReturnType<typeof getTangents>, type: CornerType) => void;
   }
 ) => {
   const n = points.length;
@@ -287,8 +280,10 @@ export const createHolePath = (
       if (!radii.some((r: number) => r > 0)) {
         const hp1 = getMappedPoint({ x: hole.x, y: hole.y });
         const hp2 = getMappedPoint({ x: hole.x + hole.width, y: hole.y + hole.height });
-        const hminX = Math.min(hp1.x, hp2.x), hmaxX = Math.max(hp1.x, hp2.x);
-        const hminY = Math.min(hp1.y, hp2.y), hmaxY = Math.max(hp1.y, hp2.y);
+        const hminX = Math.min(hp1.x, hp2.x),
+          hmaxX = Math.max(hp1.x, hp2.x);
+        const hminY = Math.min(hp1.y, hp2.y),
+          hmaxY = Math.max(hp1.y, hp2.y);
         holePath.moveTo(hminX, hminY);
         holePath.lineTo(hmaxX, hminY);
         holePath.lineTo(hmaxX, hmaxY);
