@@ -173,7 +173,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         # Extract materials
         material_name = "-"
         banding_material_name = "-"
-        
+
         # 1. Try DB first
         for material in catalog.materials.all():
             m_type = material.type
@@ -181,16 +181,19 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                 material_name = material.name
             elif m_type == "Banding":
                 banding_material_name = material.name
-                
+
         # 2. Try raw catalog data if missing
         raw_materials = catalog_data.get("material", [])
         if not isinstance(raw_materials, list):
             raw_materials = [raw_materials] if raw_materials else []
-            
+
         for material_dict in raw_materials:
             m_type = material_dict.get("type", "")
             m_name = material_dict.get("name", "")
-            if m_type in ["Panel Stock", "Board Stock", "Laminate"] and material_name == "-":
+            if (
+                m_type in ["Panel Stock", "Board Stock", "Laminate"]
+                and material_name == "-"
+            ):
                 material_name = m_name
             elif m_type == "Banding" and banding_material_name == "-":
                 banding_material_name = m_name
@@ -201,7 +204,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                 if material.type != "Banding":
                     material_name = material.name
                     break
-            
+
             if material_name == "-":
                 for material_dict in raw_materials:
                     if material_dict.get("type", "") != "Banding":
@@ -275,7 +278,7 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
             edgebands_raw = catalog_data.get("edgeBanding")
         if edgebands_raw is None:
             edgebands_raw = []
-        
+
         # Handle both object format {left: true, top: false, ...} and array format ["LEFT", ...]
         if isinstance(edgebands_raw, dict):
             edge_key_map = {
@@ -291,25 +294,34 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                 for k, v in edgebands_raw.items()
                 if k in edge_key_map and v
             }
-            
+
             # Re-map front->right and back->left as requested by user
             if "front" in edgebands_dict and edgebands_dict["front"]:
                 if "right" not in edgebands_dict or not edgebands_dict["right"]:
                     edgebands_dict["right"] = edgebands_dict["front"]
                 del edgebands_dict["front"]
-                
+
             if "back" in edgebands_dict and edgebands_dict["back"]:
                 if "left" not in edgebands_dict or not edgebands_dict["left"]:
                     edgebands_dict["left"] = edgebands_dict["back"]
                 del edgebands_dict["back"]
-                
+
             edgebands = edgebands_dict
         else:
             # If it's a list like ["LEFT", "RIGHT"], we don't know the material from the list itself,
             # so we use banding_material_name for all.
-            edge_map_inv = {"LEFT": "left", "RIGHT": "right", "TOP": "top", "BOTTOM": "bottom", "FRONT": "front", "BACK": "back"}
-            edgebands_list = [edge_map_inv.get(e.upper(), e.lower()) for e in edgebands_raw]
-            
+            edge_map_inv = {
+                "LEFT": "left",
+                "RIGHT": "right",
+                "TOP": "top",
+                "BOTTOM": "bottom",
+                "FRONT": "front",
+                "BACK": "back",
+            }
+            edgebands_list = [
+                edge_map_inv.get(e.upper(), e.lower()) for e in edgebands_raw
+            ]
+
             edgebands = {}
             for e in edgebands_list:
                 if e == "front" and "right" not in edgebands_list:

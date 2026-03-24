@@ -307,7 +307,9 @@ class NestingService:
                     safe_h = self._safe_float(h) - self.spacing
 
                     item_details = files.get(rid, {})
-                    unique_id = f"{company_prefix}{global_sheet_count:02d}{item_counter:02d}"
+                    unique_id = (
+                        f"{company_prefix}{global_sheet_count:02d}{item_counter:02d}"
+                    )
 
                     all_packed_items.append(
                         {
@@ -453,7 +455,6 @@ class NestingService:
             width_val = self._safe_float(item.get(KEY_WIDTH))
             length_val = self._safe_float(item.get(KEY_HEIGHT))
             thval = self._safe_float(item.get("depth", 17.0))
-            area_sqm = (width_val * length_val) / 1000000.0
 
             sheet1_data.append(
                 {

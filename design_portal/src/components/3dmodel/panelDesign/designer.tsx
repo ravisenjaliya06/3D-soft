@@ -1004,11 +1004,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                         const r = radii[pIdx] ?? 0;
                         const type = types[pIdx] ?? 'default';
                         if (r <= 0 || type === 'default') return null;
-                        const tangents = getTangents(
-                          pts,
-                          pIdx,
-                          hole.cornerRadius ?? [],
-                        );
+                        const tangents = getTangents(pts, pIdx, hole.cornerRadius ?? []);
                         const p1 = pts[pIdx];
                         if (
                           tangents.tp_in.x === p1.x &&

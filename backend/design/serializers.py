@@ -257,7 +257,7 @@ class SceneGetSerializer(serializers.Serializer):
             edge_data = data.get("edgeBanding")
         if edge_data is None:
             edge_data = data.get("edgebands")
-            
+
         if edge_data is not None:
             data["edge_banding"] = edge_data
 

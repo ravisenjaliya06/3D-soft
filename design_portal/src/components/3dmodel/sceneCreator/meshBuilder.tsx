@@ -654,7 +654,9 @@ export class MeshBuilder {
                 .createBandingOnPlank(
                   this.mesh,
                   materialData,
-                  this.meshData.edgeBanding || (this.meshData as any).edge_banding || (this.meshData as any).edgebands,
+                  this.meshData.edgeBanding ||
+                    (this.meshData as any).edge_banding ||
+                    (this.meshData as any).edgebands,
                   this.parentMesh,
                   { material: this.meshData.material, id: this.meshData.id }
                 )
