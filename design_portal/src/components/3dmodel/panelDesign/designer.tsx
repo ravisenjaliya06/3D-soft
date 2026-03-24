@@ -15,7 +15,7 @@ import { PANEL_TOOLS } from './constants';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
 import styles from './panelDesign.module.css';
-import { CornerType, CurveControls, Hole, Point } from './types';
+import { Axis2D, CornerType, CurveControls, Hole, Point } from './types';
 import { getHoleBounds, getPanelBounds } from './utils/boundsUtils';
 import {
   alignExtrudedGeometry,
@@ -107,7 +107,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const [mousePos, setMousePos] = useState<Point | null>(null);
   const [activeCurveDragKey, setActiveCurveDragKey] = useState<string | null>(null);
   const [curveControls, setCurveControls] = useState<CurveControls>({});
-  const [snappingGuides, setSnappingGuides] = useState<{ type: 'x' | 'y'; value: number }[]>([]);
+  const [snappingGuides, setSnappingGuides] = useState<{ type: Axis2D; value: number }[]>([]);
 
   const defaultPanelPoints = [
     { x: -panelWidth / 2, y: -panelHeight / 2 },
@@ -239,6 +239,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     if (!scene || !selectedObject || !selectedChildObject) {
       selectedChildMeshRef.current = null;
+      if (designId && versionId) {
+        router.push(`/design/${designId}/${versionId}`);
+      }
       return;
     }
 
@@ -260,6 +263,22 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       if (!originalGeometry || originalGeometry.uuid !== mesh.geometry.uuid) {
         if (!mesh.geometry.userData.isModified) {
           setOriginalGeometry(mesh.geometry.clone());
+        }
+
+        const objectData = state?.data?.objects?.find((obj: any) => obj.id === selectedChildObject);
+        if (objectData?.panelDesign) {
+          const pd = objectData.panelDesign;
+          if (pd.outline?.length > 0) setShapePoints(pd.outline);
+          if (pd.cornerRadius?.length > 0) setcornerRadius(pd.cornerRadius);
+          if (pd.cornerTypes?.length > 0) setCornerTypes(pd.cornerTypes);
+          if (pd.curveControls) setCurveControls(pd.curveControls);
+          if (pd.holes?.length > 0) setHoles(pd.holes);
+        } else {
+          setShapePoints([]);
+          setcornerRadius([]);
+          setCornerTypes([]);
+          setCurveControls({});
+          setHoles([]);
         }
       }
 
@@ -408,6 +427,17 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   };
 
   /**
+   * Restores the panel to a generic state, removing custom holes and outlines.
+   */
+  const handleRestoreDefault = () => {
+    setShapePoints([]);
+    setcornerRadius([]);
+    setCornerTypes([]);
+    setCurveControls({});
+    setHoles([]);
+  };
+
+  /**
    * Finalizes the editing process by applying the geometry changes to the
    * main design scene and navigating back.
    */
@@ -432,6 +462,57 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     }
 
     router.push(`/design/${designId}/${versionId}`);
+  };
+
+  /**
+   * Handles the dragging of a hole's edge, updating its vertices accordingly.
+   *
+   * @param e Konva event
+   * @param index Hole index
+   * @param pIdx Point index
+   */
+  const handleHoleEdgeDrag = (e: any, index: number, pIdx: number) => {
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+    const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+
+    const startPos = (e.target as any).getAttr('startPos');
+    const startPoints = (e.target as any).getAttr('startPoints');
+    if (!startPos || !startPoints) return;
+
+    const dx = localPos.x - startPos.x;
+    const dy = localPos.y - startPos.y;
+
+    const p1 = startPoints[pIdx];
+    const p2 = startPoints[(pIdx + 1) % startPoints.length];
+    const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    if (len === 0) return;
+    const nx = -(p2.y - p1.y) / len;
+    const ny = (p2.x - p1.x) / len;
+    const dist = dx * nx + dy * ny;
+    const moveX = nx * dist;
+    const moveY = ny * dist;
+
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = { ...next[index] };
+      if (h.points) {
+        const pts = [...startPoints];
+        pts[pIdx] = {
+          x: pts[pIdx].x + moveX,
+          y: pts[pIdx].y + moveY,
+        };
+        pts[(pIdx + 1) % pts.length] = {
+          x: pts[(pIdx + 1) % pts.length].x + moveX,
+          y: pts[(pIdx + 1) % pts.length].y + moveY,
+        };
+        h.points = pts;
+        next[index] = h;
+      }
+      return next;
+    });
   };
 
   /**
@@ -588,13 +669,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const toolsList = [
     { name: PANEL_TOOLS.UNDO, icon: assets.undo },
     { name: PANEL_TOOLS.REDO, icon: assets.redo },
+    { name: PANEL_TOOLS.RESTORE, icon: assets.undo },
     { name: PANEL_TOOLS.PENCIL, icon: assets.pencil },
     {
       name: PANEL_TOOLS.DIG,
       icon: assets.dig,
       subTools: ['rect', 'polygon', 'circle'],
     },
-    { name: PANEL_TOOLS.CURVE, icon: assets.curve },
   ];
 
   return (
@@ -607,6 +688,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         setHoleShape={setHoleShape}
         handleCancel={handleCancel}
         handleComplete={handleComplete}
+        handleRestoreDefault={handleRestoreDefault}
       />
 
       <HorizontalRuler
@@ -737,11 +819,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
                 const nextP = arr[(i + 1) % arr.length];
                 const isHovered = hoveredLineIndex === i && hoveredPanel;
+                const isSelected = selectedLineIndex === i && selectedHoleIndex === null;
                 return (
                   <Line
                     key={`panel-edge-${i}`}
                     points={[p.x, p.y, nextP.x, nextP.y]}
-                    stroke={isHovered ? '#12086f' : 'transparent'}
+                    stroke={isHovered || isSelected ? '#12086f' : 'transparent'}
                     strokeWidth={3}
                     hitStrokeWidth={20}
                     listening={false}
@@ -767,6 +850,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                       }
                     }}
                     onMouseLeave={() => setHoveredLineIndex(null)}
+                    onClick={() => {
+                      setSelectedLineIndex(i);
+                      setSelectedHoleIndex(null);
+                      setSelectedCornerIndex(null);
+                      setSelectedPointIndex(null);
+                    }}
                   />
                 );
               })}
@@ -907,11 +996,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                           const nextP = arr[(pIdx + 1) % arr.length];
                           const isEdgeHovered =
                             hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                          const isEdgeSelected =
+                            selectedLineIndex === pIdx && selectedHoleIndex === index;
                           return (
                             <Line
                               key={`h-${index}-edge-${pIdx}`}
                               points={[p.x, p.y, nextP.x, nextP.y]}
-                              stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                              stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                               strokeWidth={3}
                               hitStrokeWidth={20 / stageScale}
                               listening={false}
@@ -942,6 +1033,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                 }
                               }}
                               onMouseLeave={() => setHoveredLineIndex(null)}
+                              onClick={() => {
+                                setSelectedHoleIndex(index);
+                                setSelectedLineIndex(pIdx);
+                                setSelectedPointIndex(null);
+                                setSelectedCornerIndex(null);
+                              }}
                             />
                           );
                         })}
@@ -1044,11 +1141,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                             const nextP = arr[(pIdx + 1) % arr.length];
                             const isEdgeHovered =
                               hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1077,6 +1176,33 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   }
                                 }}
                                 onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
+                                draggable={
+                                  selectedHoleIndex === index && selectedLineIndex === pIdx
+                                }
+                                dragBoundFunc={() => ({ x: 0, y: 0 })}
+                                onDragStart={(e) => {
+                                  const stage = e.target.getStage();
+                                  if (!stage) return;
+                                  const pos = stage.getPointerPosition();
+                                  if (!pos) return;
+                                  const localPos = stage
+                                    .getAbsoluteTransform()
+                                    .copy()
+                                    .invert()
+                                    .point(pos);
+                                  (e.target as any).setAttr('startPos', localPos);
+                                  (e.target as any).setAttr(
+                                    'startPoints',
+                                    JSON.parse(JSON.stringify(hole.points))
+                                  );
+                                }}
+                                onDragMove={(e) => handleHoleEdgeDrag(e, index, pIdx)}
                               />
                             );
                           })}
@@ -1178,11 +1304,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                             const nextP = arr[(pIdx + 1) % arr.length];
                             const isEdgeHovered =
                               hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
                             return (
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1211,6 +1339,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                                   }
                                 }}
                                 onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
                               />
                             );
                           })}
@@ -1380,8 +1514,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           selectedCornerIndex={selectedCornerIndex}
           holes={holes}
           setHoles={setHoles}
-          curveControls={curveControls}
-          setCurveControls={setCurveControls}
           shapePoints={shapePoints}
           defaultPanelPoints={defaultPanelPoints}
           setShapePoints={setShapePoints}

@@ -15,12 +15,19 @@ import {
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
-import { convertKeysToCamel, globalTextureLoader } from './utils';
+import { convertKeysToCamel, globalTextureLoader, normalizeUVs } from './utils';
+import {
+  alignExtrudedGeometry,
+  buildThreeShape,
+  createHolePath,
+} from '../panelDesign/utils/geometryUtils';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
-  private mesh: THREE.Mesh | null = null;
-  private parentMesh: THREE.Mesh | null = null;
+  public mesh: THREE.Mesh | null = null;
+  public parentMesh: THREE.Mesh | null = null;
+  public geometryPromise: Promise<void> | null = null;
   private bandingTool: BandingTool | null = null;
   private groovingTool: GroovingTool | null = null;
   private textureLoader = globalTextureLoader;
@@ -224,6 +231,61 @@ export class MeshBuilder {
   }
 
   private _createExtrudeGeometry(): THREE.ExtrudeGeometry {
+    const { panelDesign, dimensions } = this.meshData;
+
+    if (panelDesign) {
+      const { outline, cornerRadius, cornerTypes, curveControls, holes } = panelDesign;
+
+      // Detect orientation and thickness axis
+      const tempGeo = new THREE.BoxGeometry(dimensions.width, dimensions.height, dimensions.depth);
+      const tempMesh = new THREE.Mesh(tempGeo);
+      const { thicknessAxis, size } = detectPlankByBoundingBox(tempMesh);
+      tempGeo.dispose();
+
+      let w = 0,
+        h = 0;
+      if (thicknessAxis === 'y') {
+        w = size.x;
+        h = size.z;
+      } else if (thicknessAxis === 'x') {
+        w = size.z;
+        h = size.y;
+      } else {
+        w = size.x;
+        h = size.y;
+      }
+
+      const isRotated2D = h > w;
+      const mappedPoints = isRotated2D ? outline.map((p) => ({ x: -p.y, y: p.x })) : outline;
+      const getMappedPoint = (p: { x: number; y: number }) => (isRotated2D ? { x: -p.y, y: p.x } : p);
+
+      const mainShape = buildThreeShape(
+        mappedPoints,
+        cornerRadius || [],
+        curveControls || {},
+        'shape',
+        cornerTypes || []
+      );
+
+      holes?.forEach((hole, index) => {
+        mainShape.holes.push(
+          createHolePath(hole, index, curveControls || {}, getMappedPoint, isRotated2D)
+        );
+      });
+
+      const thickness = size[thicknessAxis];
+      const geometry = new THREE.ExtrudeGeometry(mainShape, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+
+      alignExtrudedGeometry(geometry, thickness, thicknessAxis);
+      normalizeUVs(geometry);
+
+      return geometry;
+    }
+
     const shape = this._createShape();
 
     // NOTE: Right now, it only has two external properties (depth and bevelEnabled). Later on, we’ll add more properties when we need to support custom shapes.
@@ -231,7 +293,9 @@ export class MeshBuilder {
       depth: this.meshData.dimensions?.depth || 0,
       bevelEnabled: false,
     };
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    normalizeUVs(geometry);
+    return geometry;
   }
 
   private async _getGeometry(): Promise<THREE.BufferGeometry> {
@@ -290,6 +354,7 @@ export class MeshBuilder {
     mesh.userData.openDirection = this.meshData.openDirection;
     mesh.userData.drawerType = this.meshData.drawerType;
     mesh.userData.direction = this.meshData.direction;
+    mesh.userData.dimensions = this.meshData.dimensions;
 
     // this "if" for glb model on refresh transform control active
     if (this.meshData.type === OBJECT_TYPES.MODEL) {
@@ -610,7 +675,11 @@ export class MeshBuilder {
     }
 
     // Use provided edgeBandingState or fall back to meshData
-    const bandingState = edgeBandingState || this.meshData.edgeBanding;
+    const bandingState =
+      edgeBandingState ||
+      this.meshData.edgeBanding ||
+      (this.meshData as any).edge_banding ||
+      (this.meshData as any).edgebands;
 
     if (bandingMaterialData && bandingState) {
       await tool.applyBandingFromState(
@@ -623,12 +692,14 @@ export class MeshBuilder {
     }
   }
 
-  private _handleMaterial() {
+  private async _handleMaterial() {
     if (!this.mesh) return;
 
     const materialArray = Array.isArray(this.meshData.material)
       ? this.meshData.material
       : [this.meshData.material];
+
+    const promises: Promise<void>[] = [];
 
     materialArray.forEach((materialData) => {
       if (materialData?.type === MATERIAL_TYPES.PULL) {
@@ -642,17 +713,21 @@ export class MeshBuilder {
         if (this.mesh) {
           const tool = this._getOrCreateBandingTool();
           if (tool) {
-            tool
-              .createBandingOnPlank(
-                this.mesh,
-                materialData,
-                this.meshData.edgeBanding,
-                this.parentMesh,
-                { material: this.meshData.material, id: this.meshData.id }
-              )
-              .catch((error) => {
-                console.warn('Failed to create banding:', error);
-              });
+            promises.push(
+              tool
+                .createBandingOnPlank(
+                  this.mesh,
+                  materialData,
+                  this.meshData.edgeBanding ||
+                    (this.meshData as any).edge_banding ||
+                    (this.meshData as any).edgebands,
+                  this.parentMesh,
+                  { material: this.meshData.material, id: this.meshData.id }
+                )
+                .catch((error) => {
+                  console.warn('Failed to create banding:', error);
+                })
+            );
           }
         }
       }
@@ -663,6 +738,20 @@ export class MeshBuilder {
     } else if (this.meshData.type === OBJECT_TYPES.MODEL) {
       this._loadModel(this.mesh!);
     }
+
+    // Also attempt to apply banding using parent material if not found in direct materials
+    const materials: any = Array.isArray(this.meshData.material)
+      ? this.meshData.material
+      : this.meshData.material
+        ? [this.meshData.material]
+        : [];
+    const hasDirectBanding = materials.some((m: any) => m?.type === MATERIAL_TYPES.BANDING);
+
+    if (!hasDirectBanding && this.mesh) {
+      promises.push(this.updateBanding(this.mesh));
+    }
+
+    await Promise.all(promises);
   }
 
   public createMesh(): THREE.Mesh {
@@ -676,8 +765,10 @@ export class MeshBuilder {
     this.mesh = mesh;
 
     // Now compute the real geometry (possibly with CSG)
-    this._getGeometry().then((geometry) => {
+    this.geometryPromise = this._getGeometry().then(async (geometry) => {
       mesh.geometry = geometry;
+      await this._handleMaterial();
+      this._createGrooving();
     });
 
     this._setName(mesh);
@@ -685,8 +776,6 @@ export class MeshBuilder {
     this._setRotation(mesh);
     this._setScale(mesh);
     this._setUserData(mesh);
-    this._handleMaterial();
-    this._createGrooving();
     this._checkForParentAddons(mesh);
     return mesh;
   }
@@ -973,7 +1062,7 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions || changes.holes) {
+    if (changes.dimensions || changes.holes || changes.panelDesign) {
       mesh.geometry.dispose();
       this._getGeometry().then((geometry) => {
         mesh.geometry = geometry;

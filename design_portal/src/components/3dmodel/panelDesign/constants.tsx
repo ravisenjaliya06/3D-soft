@@ -15,4 +15,5 @@ export const PANEL_TOOLS = {
   PENCIL: 'Pencil',
   DIG: 'Dig',
   CURVE: 'Curve',
+  RESTORE: 'Restore Default',
 };

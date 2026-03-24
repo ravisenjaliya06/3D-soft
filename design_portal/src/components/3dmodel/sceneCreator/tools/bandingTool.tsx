@@ -31,22 +31,20 @@ export class BandingTool {
   public isPlank(mesh: THREE.Mesh): boolean {
     const type = mesh.userData.type;
 
-    // Explicitly exclude drawers, doors, and handles
-    if (
-      type === PART_TYPES.DRAWER ||
-      type === PART_TYPES.DOOR ||
-      type === PART_TYPES.HANDLE ||
-      type === PART_TYPES.L_SHAPE_OBJECT
-    ) {
+    // Explicitly exclude non-plank-like objects
+    if (type === PART_TYPES.HANDLE || type === PART_TYPES.L_SHAPE_OBJECT) {
       return false;
     }
 
-    // Include all plank types (including any future plank types)
+    // Include all plank types, doors, and drawers which should have banding
     return (
       type === PART_TYPES.PLANK ||
       type === PART_TYPES.VERTICAL_PLANK ||
       type === PART_TYPES.HORIZONTAL_PLANK ||
       type === PART_TYPES.BACK_PLANK ||
+      type === PART_TYPES.DOOR ||
+      type === PART_TYPES.DOUBLE_DOOR ||
+      type === PART_TYPES.DRAWER ||
       Object.values(PART_TYPES).includes(type) ||
       Object.values(DRAWER_PLANK_TYPES).includes(type)
     );
@@ -551,8 +549,6 @@ export class BandingTool {
   ): Promise<void> {
     if (!this.isPlank(mesh)) return;
 
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-
     const bandingThickness = bandingMaterialData.properties?.thickness || this.defaultThickness;
 
     // Store original dimensions before adjustments
@@ -563,6 +559,13 @@ export class BandingTool {
     const originalWidth = original.width;
     const originalHeight = original.height;
     const originalDepth = original.depth;
+
+    if (originalWidth <= 0 || originalHeight <= 0 || originalDepth <= 0) {
+      if (!(mesh.geometry instanceof THREE.BoxGeometry)) {
+        console.warn('Cannot create banding: Invalid mesh dimensions', original);
+        return;
+      }
+    }
 
     const orientation = this.getPlankOrientation(mesh);
 
@@ -785,11 +788,13 @@ export class BandingTool {
       }
     }
 
-    // STEP 2: Reduce plank dimensions based on banding state
-    this.updatePlankDimensions(mesh, effectiveBandingState, bandingThickness, objectData?.id);
+    // STEP 2: Reduce plank dimensions based on banding state (only for BoxGeometry)
+    if (mesh.geometry instanceof THREE.BoxGeometry) {
+      this.updatePlankDimensions(mesh, effectiveBandingState, bandingThickness, objectData?.id);
+    }
 
     // STEP 3: Get reduced dimensions and adjust banding positions
-    const { width, height, depth } = mesh.geometry.parameters;
+    const { width, height, depth } = this.getCurrentDimensions(mesh);
 
     // Adjust banding mesh positions and sizes to match reduced plank
     for (const { mesh: bandingMesh, edge } of bandingMeshes) {
@@ -956,8 +961,6 @@ export class BandingTool {
     objectData?: { material?: Material | Material[]; id?: string },
     options?: { isDimensionUpdate?: boolean }
   ): Promise<void> {
-    if (!(mesh.geometry instanceof THREE.BoxGeometry)) return;
-
     const isDimensionUpdate = options?.isDimensionUpdate === true;
 
     // If dimensions are being updated externally, update original dimensions
@@ -1206,6 +1209,19 @@ export class BandingTool {
       return { width, height, depth };
     }
 
+    // Fallback: use bounding box for other geometries (e.g. ExtrudeGeometry)
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    if (box) {
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      return {
+        width: size.x,
+        height: size.y,
+        depth: size.z,
+      };
+    }
+
     return { width: 0, height: 0, depth: 0 };
   }
 
@@ -1311,5 +1327,31 @@ export class BandingTool {
         console.warn('Failed to update Redux state for plank dimensions:', error);
       }
     }
+  }
+
+  /**
+   * Get current dimensions of a mesh using BoxGeometry parameters or bounding box
+   */
+  private getCurrentDimensions(mesh: THREE.Mesh): {
+    width: number;
+    height: number;
+    depth: number;
+  } {
+    if (mesh.geometry instanceof THREE.BoxGeometry) {
+      const { width, height, depth } = mesh.geometry.parameters;
+      return { width, height, depth };
+    }
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    if (box) {
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      return {
+        width: size.x,
+        height: size.y,
+        depth: size.z,
+      };
+    }
+    return { width: 0, height: 0, depth: 0 };
   }
 }

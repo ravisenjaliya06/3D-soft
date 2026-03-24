@@ -88,6 +88,7 @@ class Design(models.Model):
     customer_gstin = models.CharField(max_length=50, null=True, blank=True)
     customer_contact = models.CharField(max_length=50, null=True, blank=True)
     customer_email = models.EmailField(max_length=255, null=True, blank=True)
+    order_number = models.CharField(max_length=100, null=True, blank=True)
     project_type = models.CharField(max_length=255, null=True, blank=True)
     project_code = models.CharField(
         max_length=20,
