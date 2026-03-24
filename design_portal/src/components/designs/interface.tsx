@@ -10,6 +10,7 @@ export interface Design {
   updated_at: string;
   status: string;
   detail: string;
+  order_number?: string;
   customer_name?: string;
   customer_company?: string;
   customer_address?: string;

@@ -23,6 +23,7 @@ const Designs = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerCompany, setCustomerCompany] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -99,6 +100,14 @@ const Designs = () => {
   ];
 
   const customerFields = [
+    {
+      label: 'Order Number (Optional)',
+      id: 'order_number',
+      type: 'text',
+      placeholder: 'Enter order number...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setOrderNumber(e.target.value),
+      value: orderNumber,
+    },
     {
       label: 'Customer Name (Optional)',
       id: 'customer',
@@ -229,6 +238,7 @@ const Designs = () => {
     }
 
     const fields: Record<string, string> = {
+      order_number: orderNumber,
       customer_name: customerName,
       customer_company: customerCompany,
       customer_address: customerAddress,
@@ -324,6 +334,7 @@ const Designs = () => {
       setSelectedDesign(design);
       setDesingName(design.design_name || '');
       setDesingStatus(design.status || '');
+      setOrderNumber(design.order_number || '');
       setCustomerName(design.customer_name || '');
       setCustomerCompany(design.customer_company || '');
       setCustomerAddress(design.customer_address || '');
@@ -410,6 +421,7 @@ const Designs = () => {
               onClick={() => {
                 setDesingName('');
                 setDesingStatus('');
+                setOrderNumber('');
                 setCustomerName('');
                 setCustomerCompany('');
                 setCustomerAddress('');
