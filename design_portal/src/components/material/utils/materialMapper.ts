@@ -379,12 +379,18 @@ export const mapMaterial = (m: MaterialMap, type?: string): TableRow => {
 };
 
 export const flattenMaterial = (m: MaterialMap): any => {
+  const rawPropertiesId = (m.properties as Record<string, unknown>)?.id;
+  const propertiesId = typeof rawPropertiesId === 'string' ? rawPropertiesId : undefined;
+
   return {
-    id: m.id,
     name: m.name,
     description: m.description,
     type: m.properties.material_type || m.type,
     ...m.properties,
+    // Keep both ids explicit; endpoint updates must always use material id.
+    propertiesId,
+    materialId: m.id,
+    id: m.id,
     // Map snake_case to camelCase for the form if necessary
     thickness: m.properties.thickness,
     lengthTrim: m.properties.length_trim,

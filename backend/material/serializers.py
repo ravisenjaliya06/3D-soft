@@ -586,9 +586,13 @@ class MaterialSerializer(serializers.ModelSerializer):
     def _validate_properties(self: "MaterialSerializer", attrs: Dict[str, str]) -> None:
         """Validate the dynamic 'properties' field based on material type."""
         properties_data = attrs.get("properties")
-        properties_id = properties_data.get("id", None)
-        if properties_id:
-            properties_data.pop("model_file", None)
+        properties_id = None
+        if properties_data:
+            properties_id = properties_data.get("id", None)
+            # When updating an existing properties object, we must not accept a new file
+            # through the same payload; remove it only when an id is present.
+            if properties_id:
+                properties_data.pop("model_file", None)
 
         material_type = attrs.get("type")
         if not properties_data:
@@ -599,7 +603,9 @@ class MaterialSerializer(serializers.ModelSerializer):
         )
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data["id"] = properties_id
+        # Only include id when it is a real value; avoid injecting None
+        if properties_id:
+            serializer.validated_data["id"] = properties_id
         attrs["properties"] = serializer.validated_data
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
@@ -715,6 +721,8 @@ class MaterialSerializer(serializers.ModelSerializer):
         # Update properties if properties exist
         if properties_data and hasattr(instance, "properties"):
             material_id = instance.id
+            # Never try to update primary key via .update(); remove id if present
+            properties_data.pop("id", None)
             Properties.objects.filter(material=material_id).update(**properties_data)
 
         # Update finishes
