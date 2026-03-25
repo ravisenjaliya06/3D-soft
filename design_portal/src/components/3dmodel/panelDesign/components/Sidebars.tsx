@@ -332,17 +332,44 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   };
 
   /**
-   * Updates the width or height of a rect hole.
+   * Updates the width or height of a rect or slotting hole.
    */
   const updateRectSize = (dim: 'width' | 'height', val: number) => {
     if (selectedHoleIndex === null) return;
     const hole = holes[selectedHoleIndex];
-    if (hole.type !== 'rect') return;
+    if (hole.type !== 'rect' && hole.type !== 'slotting') return;
     const size = Math.max(0.1, val);
     setHoles((prev: any) => {
       const next = [...prev];
       const h = next[selectedHoleIndex];
-      next[selectedHoleIndex] = { ...h, [dim]: size };
+      let newPoints = h.points;
+      if (h.points && h.points.length === 4) {
+        newPoints = [
+          { x: h.x, y: h.y },
+          { x: h.x + (dim === 'width' ? size : h.width), y: h.y },
+          {
+            x: h.x + (dim === 'width' ? size : h.width),
+            y: h.y + (dim === 'height' ? size : h.height),
+          },
+          { x: h.x, y: h.y + (dim === 'height' ? size : h.height) },
+        ];
+      }
+      next[selectedHoleIndex] = { ...h, [dim]: size, points: newPoints };
+      return next;
+    });
+  };
+
+  /**
+   * Updates the pocket depth of a slotting hole.
+   */
+  const updateSlottingDepth = (val: number) => {
+    if (selectedHoleIndex === null) return;
+    const hole = holes[selectedHoleIndex];
+    if (hole.type !== 'slotting') return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = next[selectedHoleIndex];
+      next[selectedHoleIndex] = { ...h, depth: Math.max(0.1, val) };
       return next;
     });
   };
@@ -465,7 +492,9 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     const width = Math.abs(bounds.width);
     const height = Math.abs(bounds.height);
     const points: Point[] =
-      hole.type === 'polygon' && hole.points && hole.points.length > 0 ? hole.points : [];
+      (hole.type === 'polygon' || hole.type === 'slotting') && hole.points && hole.points.length > 0
+        ? hole.points
+        : [];
 
     const groups: PropertyGroupConfig[] = [
       {
@@ -475,14 +504,20 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
           {
             subLabel: 'W',
             getValue: () => width,
-            onChange: hole.type === 'rect' ? (v) => updateRectSize('width', v) : () => {},
-            readOnly: hole.type !== 'rect',
+            onChange:
+              hole.type === 'rect' || hole.type === 'slotting'
+                ? (v) => updateRectSize('width', v)
+                : () => {},
+            readOnly: hole.type !== 'rect' && hole.type !== 'slotting',
           },
           {
             subLabel: 'H',
             getValue: () => height,
-            onChange: hole.type === 'rect' ? (v) => updateRectSize('height', v) : () => {},
-            readOnly: hole.type !== 'rect',
+            onChange:
+              hole.type === 'rect' || hole.type === 'slotting'
+                ? (v) => updateRectSize('height', v)
+                : () => {},
+            readOnly: hole.type !== 'rect' && hole.type !== 'slotting',
           },
         ],
       },
@@ -546,8 +581,26 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
       pos={drawingPos}
       onDragStart={() => setIsDraggingDrawing(true)}
     >
-      {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
-      {/* Line Editing (Arcs/Curves) - only when no panel corner selected */}
+      {/* Slotting Depth Properties - always visible when a slotting hole is selected */}
+      {selectedHoleIndex !== null && holes[selectedHoleIndex]?.type === 'slotting' && (
+        <Section title="Slotting Properties">
+          <div className={styles.radiusSection}>
+            <div className={styles.radiusLabel}>Depth</div>
+            <div className={styles.radiusInputRow}>
+              <input
+                type="number"
+                step="0.1"
+                min={0.1}
+                className={styles.propertyInputSmall}
+                value={(holes[selectedHoleIndex].depth ?? 5).toFixed(1)}
+                onChange={(e) => updateSlottingDepth(parseFloat(e.target.value) || 0.1)}
+              />
+              <span className={styles.radiusUnit}>mm</span>
+            </div>
+          </div>
+        </Section>
+      )}
+
       {selectedCornerIndex === null && selectedLineIndex !== null && (
         <Section
           title={

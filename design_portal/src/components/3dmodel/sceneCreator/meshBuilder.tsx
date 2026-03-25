@@ -230,7 +230,7 @@ export class MeshBuilder {
     return shape;
   }
 
-  private _createExtrudeGeometry(): THREE.ExtrudeGeometry {
+  private async _createExtrudeGeometry(): Promise<THREE.ExtrudeGeometry> {
     const { panelDesign, dimensions } = this.meshData;
 
     if (panelDesign) {
@@ -269,9 +269,11 @@ export class MeshBuilder {
       );
 
       holes?.forEach((hole, index) => {
-        mainShape.holes.push(
-          createHolePath(hole, index, curveControls || {}, getMappedPoint, isRotated2D)
-        );
+        if (hole.type !== 'slotting') {
+          mainShape.holes.push(
+            createHolePath(hole, index, curveControls || {}, getMappedPoint, isRotated2D)
+          );
+        }
       });
 
       const thickness = size[thicknessAxis];
@@ -282,9 +284,59 @@ export class MeshBuilder {
       });
 
       alignExtrudedGeometry(geometry, thickness, thicknessAxis);
-      normalizeUVs(geometry);
 
-      return geometry;
+      let finalGeometry = geometry as THREE.BufferGeometry;
+
+      const slottingHoles = holes?.filter((h) => h.type === 'slotting') || [];
+      if (slottingHoles.length > 0) {
+        const { Evaluator, Brush, SUBTRACTION } = await import('three-bvh-csg');
+        const evaluator = new Evaluator();
+        let resultBrush = new Brush(finalGeometry);
+        resultBrush.updateMatrixWorld();
+
+        for (const hole of slottingHoles) {
+          const pocketDepth = hole.depth ?? 10;
+          const originalIndex = holes!.indexOf(hole);
+          const holePath = createHolePath(
+            hole,
+            originalIndex,
+            curveControls || {},
+            getMappedPoint,
+            isRotated2D
+          );
+          const plugShape = new THREE.Shape(holePath.getPoints());
+
+          const plugGeom = new THREE.ExtrudeGeometry(plugShape, {
+            depth: pocketDepth,
+            bevelEnabled: false,
+            curveSegments: 32,
+          });
+
+          // 1. Position identically to the front face
+          plugGeom.translate(0, 0, thickness / 2 - pocketDepth);
+
+          // 2. Rotate exactly identically to the main extrusion
+          if (thicknessAxis === 'x') {
+            plugGeom.rotateY(Math.PI / 2);
+          } else if (thicknessAxis === 'y') {
+            plugGeom.rotateX(Math.PI / 2);
+          }
+
+          const holeBrush = new Brush(plugGeom);
+          holeBrush.updateMatrixWorld();
+
+          resultBrush = evaluator.evaluate(resultBrush, holeBrush, SUBTRACTION);
+        }
+
+        finalGeometry = resultBrush.geometry;
+        Object.setPrototypeOf(finalGeometry, THREE.ExtrudeGeometry.prototype);
+        Object.defineProperty(finalGeometry, 'type', { value: 'ExtrudeGeometry' });
+        (finalGeometry as any).parameters = geometry.parameters;
+      }
+
+      normalizeUVs(finalGeometry);
+
+      return finalGeometry as THREE.ExtrudeGeometry;
     }
 
     const shape = this._createShape();
@@ -306,7 +358,7 @@ export class MeshBuilder {
         geometry = this._createBoxGeometry();
         break;
       case GEOMETRY.EXTRUDE_GEOMETRY:
-        geometry = this._createExtrudeGeometry();
+        geometry = await this._createExtrudeGeometry();
         break;
       default:
         geometry = this._createBoxGeometry();

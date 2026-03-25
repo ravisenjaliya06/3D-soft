@@ -11,7 +11,7 @@ import { GEOMETRY } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { getDesignIdsFromRouter } from '../utils/routeIds';
-import { PANEL_TOOLS } from './constants';
+import { PANEL_TOOLS, SLOTTING_DEPTH } from './constants';
 import { useStageManager } from './hooks/useStageManager';
 import { useThreeScene } from './hooks/useThreeScene';
 import styles from './panelDesign.module.css';
@@ -335,7 +335,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    * 3. Extrudes the shape into THREE.ExtrudeGeometry.
    * 4. Aligns the new geometry using the alignExtrudedGeometry utility.
    */
-  const updateMeshGeometry = () => {
+  const updateMeshGeometry = async () => {
     const mesh = selectedChildMeshRef.current;
     if (!mesh) return;
 
@@ -353,24 +353,96 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       cornerTypes
     );
     holes.forEach((hole, index) => {
-      mainShape.holes.push(createHolePath(hole, index, curveControls, getMappedPoint, isRotated2D));
+      if (hole.type !== 'slotting') {
+        mainShape.holes.push(
+          createHolePath(hole, index, curveControls, getMappedPoint, isRotated2D)
+        );
+      }
     });
 
-    // Create 3D geometry and align it
+    // Create 3D geometry
     const newGeometry = new THREE.ExtrudeGeometry(mainShape, {
       depth: plankThickness,
       bevelEnabled: false,
       curveSegments: 32,
     });
-    alignExtrudedGeometry(newGeometry, plankThickness, thicknessAxis, originalGeometry);
-    normalizeUVs(newGeometry);
+
+    const mainTrans = alignExtrudedGeometry(
+      newGeometry,
+      plankThickness,
+      thicknessAxis,
+      originalGeometry
+    );
+
+    let finalGeometry = newGeometry as THREE.BufferGeometry;
+
+    const slottingHoles = holes.filter((h) => h.type === 'slotting');
+    if (slottingHoles.length > 0) {
+      const { Evaluator, Brush, SUBTRACTION } = await import('three-bvh-csg');
+      const evaluator = new Evaluator();
+      let resultBrush = new Brush(finalGeometry);
+      resultBrush.updateMatrixWorld();
+
+      for (const hole of slottingHoles) {
+        const pocketDepth = hole.depth ?? 10;
+        const originalIndex = holes.indexOf(hole);
+        const holePath = createHolePath(
+          hole,
+          originalIndex,
+          curveControls,
+          getMappedPoint,
+          isRotated2D
+        );
+        const plugShape = new THREE.Shape(holePath.getPoints());
+
+        const plugGeom = new THREE.ExtrudeGeometry(plugShape, {
+          depth: pocketDepth,
+          bevelEnabled: false,
+          curveSegments: 32,
+        });
+
+        // 1. Center depth targeting the front face
+        plugGeom.translate(0, 0, plankThickness / 2 - pocketDepth);
+
+        // 2. Apply same rotation logic as alignExtrudedGeometry
+        if (thicknessAxis === 'x') {
+          plugGeom.rotateY(Math.PI / 2);
+        } else if (thicknessAxis === 'y') {
+          plugGeom.rotateX(Math.PI / 2);
+        }
+
+        // 3. Apply the exact same translation that was applied to the main geometry
+        if (mainTrans) {
+          plugGeom.translate(mainTrans.x, mainTrans.y, mainTrans.z);
+        }
+
+        const holeBrush = new Brush(plugGeom);
+        holeBrush.updateMatrixWorld();
+
+        resultBrush = evaluator.evaluate(resultBrush, holeBrush, SUBTRACTION);
+      }
+
+      finalGeometry = resultBrush.geometry;
+      Object.setPrototypeOf(finalGeometry, THREE.ExtrudeGeometry.prototype);
+      Object.defineProperty(finalGeometry, 'type', { value: 'ExtrudeGeometry' });
+      (finalGeometry as any).parameters = newGeometry.parameters;
+    }
+
+    normalizeUVs(finalGeometry);
 
     // Update mesh metadata and swap geometry
-    newGeometry.userData.oldGeometry = originalGeometry;
-    newGeometry.userData.isModified = true;
+    finalGeometry.userData.oldGeometry = originalGeometry;
+    finalGeometry.userData.isModified = true;
 
     mesh.geometry.dispose();
-    mesh.geometry = newGeometry;
+    mesh.geometry = finalGeometry;
+
+    // --- Cleanup Old Slotting Plugs (if any) ---
+    const oldPlugs = mesh.children.filter((c) => c.name === 'slottingPlug');
+    oldPlugs.forEach((p) => {
+      mesh.remove(p);
+      if (p instanceof THREE.Mesh) p.geometry.dispose();
+    });
   };
 
   /**
@@ -569,8 +641,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       }
       setCurrentDrawingPoints((prev) => [...prev, { x: snappedX, y: snappedY }]);
       setIsDrawingShape(true);
-    } else if (activeTool === PANEL_TOOLS.DIG) {
-      if (holeShape === 'polygon') {
+    } else if (activeTool === PANEL_TOOLS.DIG || activeTool === PANEL_TOOLS.SLOTTING) {
+      if (holeShape === 'polygon' && activeTool !== PANEL_TOOLS.SLOTTING) {
         const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
         if (
           currentDrawingPoints.length > 0 &&
@@ -628,7 +700,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     } else if (isDrawingHole && newHoleStart) {
       const dx = rawX - newHoleStart.x,
         dy = rawY - newHoleStart.y;
-      if (holeShape === 'circle') {
+      if (holeShape === 'circle' && activeTool !== PANEL_TOOLS.SLOTTING) {
         const circleRadius = Math.min(Math.abs(dx), Math.abs(dy)) / 2;
         setTempHole({
           x: newHoleStart.x + dx / 2 - circleRadius,
@@ -649,9 +721,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           y: minY,
           width: w,
           height: h,
-          type: holeShape,
+          type: activeTool === PANEL_TOOLS.SLOTTING ? 'slotting' : holeShape,
           points:
-            holeShape === 'rect'
+            holeShape === 'rect' && activeTool !== PANEL_TOOLS.SLOTTING
               ? [
                   { x: minX, y: minY },
                   { x: minX + w, y: minY },
@@ -676,6 +748,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       icon: assets.dig,
       subTools: ['rect', 'polygon', 'circle'],
     },
+    { name: PANEL_TOOLS.CURVE, icon: assets.curve },
+    { name: PANEL_TOOLS.SLOTTING, icon: assets.slotting },
   ];
 
   return (
@@ -724,6 +798,14 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                 const holeToAdd = { ...tempHole, id: crypto.randomUUID() };
                 if (holeToAdd.type === 'rect') {
                   holeToAdd.type = 'polygon';
+                  holeToAdd.points = [
+                    { x: holeToAdd.x, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y + holeToAdd.height },
+                    { x: holeToAdd.x, y: holeToAdd.y + holeToAdd.height },
+                  ];
+                } else if (holeToAdd.type === 'slotting') {
+                  holeToAdd.depth = SLOTTING_DEPTH; // Default depth, editable in sidebar
                   holeToAdd.points = [
                     { x: holeToAdd.x, y: holeToAdd.y },
                     { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y },
@@ -1079,7 +1161,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                         ))}
                     </React.Fragment>
                   );
-                } else if (hole.type === 'polygon' && hole.points) {
+                } else if ((hole.type === 'polygon' || hole.type === 'slotting') && hole.points) {
                   return (
                     <React.Fragment key={`hole-poly-container-${index}`}>
                       <Path
@@ -1275,8 +1357,8 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                       )}
                     </React.Fragment>
                   );
-                } else if (hole.type === 'slotting' || hole.type === 'rect' || !hole.type) {
-                  const r = hole.type === 'slotting' ? Math.min(hole.width, hole.height) / 2 : 0;
+                } else if (hole.type === 'rect' || !hole.type) {
+                  const r = 0;
                   const corners = [
                     { x: hole.x, y: hole.y },
                     { x: hole.x + hole.width, y: hole.y },

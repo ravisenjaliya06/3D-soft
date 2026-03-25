@@ -33,6 +33,8 @@ export interface Hole {
   lineRadii?: number[];
   id?: string;
   radius?: number;
+  depth?: number;
+  isSlotting?: boolean;
 }
 
 export interface PanelDesignData {
