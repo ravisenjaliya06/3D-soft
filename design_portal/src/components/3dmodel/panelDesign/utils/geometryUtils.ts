@@ -261,13 +261,13 @@ export const createHolePath = (
     } else {
       holePath.absellipse(c3d.x, c3d.y, radiusX, radiusY, 0, Math.PI * 2, false);
     }
-  } else if (hole.type === 'rect' || hole.type === 'polygon') {
+  } else if (hole.type === 'rect' || hole.type === 'polygon' || hole.type === 'slotting') {
     let pts: Point[] = [];
     let radii: number[] = [];
     let types: CornerType[] = [];
     let prefix = `hole_${holeIndex}`;
 
-    if (hole.type === 'rect') {
+    if (hole.type === 'rect' || hole.type === 'slotting') {
       const corners = [
         { x: hole.x, y: hole.y },
         { x: hole.x + hole.width, y: hole.y },
@@ -360,12 +360,14 @@ export const alignExtrudedGeometry = (
     const oldCenter = getGeometryCenter(originalOptional);
     const newCenter = getGeometryCenter(geometry);
 
-    geometry.translate(
-      oldCenter.x - newCenter.x,
-      oldCenter.y - newCenter.y,
-      oldCenter.z - newCenter.z
-    );
+    const transX = oldCenter.x - newCenter.x;
+    const transY = oldCenter.y - newCenter.y;
+    const transZ = oldCenter.z - newCenter.z;
+
+    geometry.translate(transX, transY, transZ);
+    return new THREE.Vector3(transX, transY, transZ);
   }
+  return new THREE.Vector3(0, 0, 0);
 };
 
 /**

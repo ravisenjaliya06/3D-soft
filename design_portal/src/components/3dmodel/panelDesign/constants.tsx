@@ -8,6 +8,7 @@ export const DEFAULT_OFFSET = 20;
 export const TEXT_OFFSET_Y_BASE = 22;
 export const CIRCLE_FONT_SIZE = 14;
 export const RADIAL_OFFSET = 5;
+export const SLOTTING_DEPTH = 5;
 
 export const PANEL_TOOLS = {
   UNDO: 'Undo',
@@ -15,5 +16,6 @@ export const PANEL_TOOLS = {
   PENCIL: 'Pencil',
   DIG: 'Dig',
   CURVE: 'Curve',
+  SLOTTING: 'Slotting',
   RESTORE: 'Restore Default',
 };
