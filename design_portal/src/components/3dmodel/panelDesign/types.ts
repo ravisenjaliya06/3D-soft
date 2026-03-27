@@ -35,6 +35,7 @@ export interface Hole {
   radius?: number;
   depth?: number;
   isSlotting?: boolean;
+  face?: 'front' | 'back';
 }
 
 export interface PanelDesignData {

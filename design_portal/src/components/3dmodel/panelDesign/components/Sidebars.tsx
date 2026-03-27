@@ -375,6 +375,20 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   };
 
   /**
+   * Updates the face (front or back) of a slotting hole.
+   */
+  const updateSlottingFace = (face: 'front' | 'back') => {
+    if (selectedHoleIndex === null) return;
+    const hole = holes[selectedHoleIndex];
+    if (hole.type !== 'slotting') return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], face };
+      return next;
+    });
+  };
+
+  /**
    * Updates the radius of a circle hole.
    */
   const updateCircleRadius = (val: number) => {
@@ -596,6 +610,26 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                 onChange={(e) => updateSlottingDepth(parseFloat(e.target.value) || 0.1)}
               />
               <span className={styles.radiusUnit}>mm</span>
+            </div>
+          </div>
+
+          <div className={styles.cornerTypeSection} style={{ marginTop: 12 }}>
+            <div className={styles.cornerTypeLabel}>Face</div>
+            <div className={styles.cornerTypeButtons}>
+              {['front', 'back'].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={`${styles.cornerTypeBtn} ${
+                    (holes[selectedHoleIndex].face ?? 'front') === f
+                      ? styles.cornerTypeBtnActive
+                      : ''
+                  }`}
+                  onClick={() => updateSlottingFace(f as 'front' | 'back')}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
         </Section>

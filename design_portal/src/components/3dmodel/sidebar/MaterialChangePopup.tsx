@@ -135,7 +135,7 @@ export const MaterialChangePopup: React.FC<
     .filter((m) =>
       materialSearch
         ? (m.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-        (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+          (m.description || '').toLowerCase().includes(materialSearch.toLowerCase())
         : true
     );
 

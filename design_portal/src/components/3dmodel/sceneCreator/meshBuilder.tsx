@@ -312,8 +312,13 @@ export class MeshBuilder {
             curveSegments: 32,
           });
 
-          // 1. Position identically to the front face
-          plugGeom.translate(0, 0, thickness / 2 - pocketDepth);
+          // 1. Position identically to the selected face
+          const face = hole.face ?? 'front';
+          if (face === 'back') {
+            plugGeom.translate(0, 0, -thickness / 2);
+          } else {
+            plugGeom.translate(0, 0, thickness / 2 - pocketDepth);
+          }
 
           // 2. Rotate exactly identically to the main extrusion
           if (thicknessAxis === 'x') {
