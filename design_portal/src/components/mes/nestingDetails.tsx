@@ -31,7 +31,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
         if (response?.status !== 200 || !response?.data) {
           throw new Error(
             response?.data?.error ||
-              'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
+            'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
           );
         }
 
@@ -61,13 +61,13 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
 
   const sheetsObj = data
     ? data.reduce(
-        (acc, curr) => {
-          if (!acc[curr.sheet_num]) acc[curr.sheet_num] = [];
-          acc[curr.sheet_num].push(curr);
-          return acc;
-        },
-        {} as Record<string, any[]>
-      )
+      (acc, curr) => {
+        if (!acc[curr.sheet_num]) acc[curr.sheet_num] = [];
+        acc[curr.sheet_num].push(curr);
+        return acc;
+      },
+      {} as Record<string, any[]>
+    )
     : {};
 
   const sheetNames = Object.keys(sheetsObj).sort();
@@ -385,13 +385,93 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                     }
 
                                     if (drillType === '1') {
+                                      const nameUpper = (
+                                        part.name ||
+                                        part.Name ||
+                                        part.material_name ||
+                                        ''
+                                      ).toUpperCase();
+                                      const isVertical =
+                                        nameUpper.includes('VERTICAL') ||
+                                        nameUpper.includes('SIDE');
+                                      const isBack =
+                                        nameUpper.includes('BACK') ||
+                                        nameUpper.includes('FRONT') ||
+                                        nameUpper.includes('DOOR') ||
+                                        nameUpper.includes('SKIRTING');
+                                      const plankType = isVertical
+                                        ? 'VERTICAL'
+                                        : isBack
+                                          ? 'BACK'
+                                          : 'HORIZONTAL';
+
+                                      const unrotW = isRotated ? h : w;
+                                      const unrotH = isRotated ? w : h;
+                                      const px = parseFloat(pos.x || 0);
+                                      const py = parseFloat(pos.y || 0);
+
+                                      const faceConfigs: Record<
+                                        string,
+                                        Record<string, [number, number, string]>
+                                      > = {
+                                        VERTICAL: {
+                                          '5': [px, 0, 'top'],
+                                          '3': [px, unrotH, 'bottom'],
+                                          '2': [unrotW, py, 'right'],
+                                          '4': [0, py, 'left'],
+                                        },
+                                        BACK: {
+                                          '1': [px, 0, 'top'],
+                                          '6': [px, unrotH, 'bottom'],
+                                          '3': [unrotW, py, 'right'],
+                                          '5': [0, py, 'left'],
+                                        },
+                                        HORIZONTAL: {
+                                          '4': [px, 0, 'top'],
+                                          '2': [px, unrotH, 'bottom'],
+                                          '3': [unrotW, px, 'right'],
+                                          '5': [0, px, 'left'],
+                                        },
+                                      };
+
+                                      const [unrotX, unrotY, edge] = faceConfigs[plankType][
+                                        face
+                                      ] || [px, 0, 'top'];
+
+                                      const rotatedEdges: Record<string, string> = {
+                                        top: 'left',
+                                        bottom: 'right',
+                                        left: 'top',
+                                        right: 'bottom',
+                                      };
+                                      const finalX = isRotated ? unrotY : unrotX;
+                                      const finalY = isRotated ? unrotX : unrotY;
+                                      const finalEdge = isRotated ? rotatedEdges[edge] : edge;
+
+                                      let rectX = finalX;
+                                      let rectY = finalY;
+                                      let rectW =
+                                        finalEdge === 'top' || finalEdge === 'bottom' ? dia : len;
+                                      let rectH =
+                                        finalEdge === 'top' || finalEdge === 'bottom' ? len : dia;
+
+                                      if (finalEdge === 'top') rectX -= dia / 2;
+                                      else if (finalEdge === 'bottom') {
+                                        rectX -= dia / 2;
+                                        rectY -= len;
+                                      } else if (finalEdge === 'left') rectY -= dia / 2;
+                                      else if (finalEdge === 'right') {
+                                        rectX -= len;
+                                        rectY -= dia / 2;
+                                      }
+
                                       return (
                                         <rect
                                           key={`h-${hIdx}`}
-                                          x={x + hx}
-                                          y={y + hy}
-                                          width={len}
-                                          height={dia}
+                                          x={x + rectX}
+                                          y={y + rectY}
+                                          width={rectW}
+                                          height={rectH}
                                           fill="none"
                                           stroke="green"
                                           strokeWidth="1"
