@@ -521,7 +521,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
             onChange:
               hole.type === 'rect' || hole.type === 'slotting'
                 ? (v) => updateRectSize('width', v)
-                : () => { },
+                : () => {},
             readOnly: hole.type !== 'rect' && hole.type !== 'slotting',
           },
           {
@@ -530,7 +530,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
             onChange:
               hole.type === 'rect' || hole.type === 'slotting'
                 ? (v) => updateRectSize('height', v)
-                : () => { },
+                : () => {},
             readOnly: hole.type !== 'rect' && hole.type !== 'slotting',
           },
         ],
@@ -620,10 +620,11 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                 <button
                   key={face}
                   type="button"
-                  className={`${styles.cornerTypeBtn} ${(holes[selectedHoleIndex].face ?? 'front') === face
-                    ? styles.cornerTypeBtnActive
-                    : ''
-                    }`}
+                  className={`${styles.cornerTypeBtn} ${
+                    (holes[selectedHoleIndex].face ?? 'front') === face
+                      ? styles.cornerTypeBtnActive
+                      : ''
+                  }`}
                   onClick={() => updateSlottingFace(face as 'front' | 'back')}
                 >
                   {face.charAt(0).toUpperCase() + face.slice(1)}
@@ -645,147 +646,147 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
           {((selectedHoleIndex !== null && holes[selectedHoleIndex]?.points) ||
             (selectedHoleIndex === null &&
               (shapePoints.length > 0 ? shapePoints : defaultPanelPoints))) && (
-              <>
-                <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
-                  <div className={styles.coordinateLabel}>Point 1 Coordinate</div>
-                  <div className={styles.coordinateInputs}>
-                    <div className={styles.coordinateField}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className={styles.propertyInputSmall}
-                        value={(selectedHoleIndex !== null
-                          ? (holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0)
-                          : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+            <>
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 1 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? (holes[selectedHoleIndex].points![selectedLineIndex]?.x ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             selectedLineIndex
                           ]?.x ?? 0)
-                        ).toFixed(1)}
-                        onChange={(e) =>
-                          selectedHoleIndex !== null
-                            ? updateHoleLinePoint(
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
                               selectedLineIndex,
                               'x',
                               parseFloat(e.target.value) || 0
                             )
-                            : updatePanelLinePoint(
+                          : updatePanelLinePoint(
                               selectedLineIndex,
                               'x',
                               parseFloat(e.target.value) || 0
                             )
-                        }
-                      />
-                      <span className={styles.coordinateSubLabel}>x</span>
-                    </div>
-                    <div className={styles.coordinateField}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className={styles.propertyInputSmall}
-                        value={(selectedHoleIndex !== null
-                          ? (holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0)
-                          : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? (holes[selectedHoleIndex].points![selectedLineIndex]?.y ?? 0)
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             selectedLineIndex
                           ]?.y ?? 0)
-                        ).toFixed(1)}
-                        onChange={(e) =>
-                          selectedHoleIndex !== null
-                            ? updateHoleLinePoint(
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
                               selectedLineIndex,
                               'y',
                               parseFloat(e.target.value) || 0
                             )
-                            : updatePanelLinePoint(
+                          : updatePanelLinePoint(
                               selectedLineIndex,
                               'y',
                               parseFloat(e.target.value) || 0
                             )
-                        }
-                      />
-                      <span className={styles.coordinateSubLabel}>y</span>
-                    </div>
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
                   </div>
                 </div>
+              </div>
 
-                <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
-                  <div className={styles.coordinateLabel}>Point 2 Coordinate</div>
-                  <div className={styles.coordinateInputs}>
-                    <div className={styles.coordinateField}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className={styles.propertyInputSmall}
-                        value={(selectedHoleIndex !== null
-                          ? (holes[selectedHoleIndex].points![
+              <div className={styles.coordinateSection} style={{ marginTop: 12 }}>
+                <div className={styles.coordinateLabel}>Point 2 Coordinate</div>
+                <div className={styles.coordinateInputs}>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? (holes[selectedHoleIndex].points![
                             (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
                           ]?.x ?? 0)
-                          : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             (selectedLineIndex + 1) %
-                            (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
                           ]?.x ?? 0)
-                        ).toFixed(1)}
-                        onChange={(e) =>
-                          selectedHoleIndex !== null
-                            ? updateHoleLinePoint(
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
                               (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
                               'x',
                               parseFloat(e.target.value) || 0
                             )
-                            : updatePanelLinePoint(
+                          : updatePanelLinePoint(
                               (selectedLineIndex + 1) %
-                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
                               'x',
                               parseFloat(e.target.value) || 0
                             )
-                        }
-                      />
-                      <span className={styles.coordinateSubLabel}>x</span>
-                    </div>
-                    <div className={styles.coordinateField}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className={styles.propertyInputSmall}
-                        value={(selectedHoleIndex !== null
-                          ? (holes[selectedHoleIndex].points![
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>x</span>
+                  </div>
+                  <div className={styles.coordinateField}>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.propertyInputSmall}
+                      value={(selectedHoleIndex !== null
+                        ? (holes[selectedHoleIndex].points![
                             (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length
                           ]?.y ?? 0)
-                          : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
+                        : ((shapePoints.length > 0 ? shapePoints : defaultPanelPoints)[
                             (selectedLineIndex + 1) %
-                            (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
+                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length
                           ]?.y ?? 0)
-                        ).toFixed(1)}
-                        onChange={(e) =>
-                          selectedHoleIndex !== null
-                            ? updateHoleLinePoint(
+                      ).toFixed(1)}
+                      onChange={(e) =>
+                        selectedHoleIndex !== null
+                          ? updateHoleLinePoint(
                               (selectedLineIndex + 1) % holes[selectedHoleIndex].points!.length,
                               'y',
                               parseFloat(e.target.value) || 0
                             )
-                            : updatePanelLinePoint(
+                          : updatePanelLinePoint(
                               (selectedLineIndex + 1) %
-                              (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
+                                (shapePoints.length > 0 ? shapePoints : defaultPanelPoints).length,
                               'y',
                               parseFloat(e.target.value) || 0
                             )
-                        }
-                      />
-                      <span className={styles.coordinateSubLabel}>y</span>
-                    </div>
+                      }
+                    />
+                    <span className={styles.coordinateSubLabel}>y</span>
                   </div>
                 </div>
+              </div>
 
-                <div style={{ marginTop: 16 }}>
-                  <button
-                    type="button"
-                    className={styles.sidebarDeleteButton}
-                    style={{ backgroundColor: '#12086f', color: '#fff' }}
-                    onClick={splitSelectedLine}
-                  >
-                    Add new point to center
-                  </button>
-                </div>
-              </>
-            )}
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className={styles.sidebarDeleteButton}
+                  style={{ backgroundColor: '#12086f', color: '#fff' }}
+                  onClick={splitSelectedLine}
+                >
+                  Add new point to center
+                </button>
+              </div>
+            </>
+          )}
         </Section>
       )}
 
@@ -837,8 +838,9 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       <button
                         key={opt.value}
                         type="button"
-                        className={`${styles.cornerTypeBtn} ${currentType === opt.value ? styles.cornerTypeBtnActive : ''
-                          }`}
+                        className={`${styles.cornerTypeBtn} ${
+                          currentType === opt.value ? styles.cornerTypeBtnActive : ''
+                        }`}
                         onClick={() => updateHoleCornerType(opt.value)}
                       >
                         {opt.label}
@@ -1040,10 +1042,11 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                   <button
                     key={opt.value}
                     type="button"
-                    className={`${styles.cornerTypeBtn} ${(cornerTypes[selectedCornerIndex] || 'default') === opt.value
-                      ? styles.cornerTypeBtnActive
-                      : ''
-                      }`}
+                    className={`${styles.cornerTypeBtn} ${
+                      (cornerTypes[selectedCornerIndex] || 'default') === opt.value
+                        ? styles.cornerTypeBtnActive
+                        : ''
+                    }`}
                     onClick={() => {
                       setCornerTypes((prev) => {
                         const next = [...(prev.length ? prev : Array(4).fill('default'))];
