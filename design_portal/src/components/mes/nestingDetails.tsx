@@ -31,7 +31,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
         if (response?.status !== 200 || !response?.data) {
           throw new Error(
             response?.data?.error ||
-              'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
+            'Failed to get layout data path. It might not be generated yet. Try to download nesting files from the previous page first.'
           );
         }
 
@@ -61,13 +61,13 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
 
   const sheetsObj = data
     ? data.reduce(
-        (acc, curr) => {
-          if (!acc[curr.sheet_num]) acc[curr.sheet_num] = [];
-          acc[curr.sheet_num].push(curr);
-          return acc;
-        },
-        {} as Record<string, any[]>
-      )
+      (acc, curr) => {
+        if (!acc[curr.sheet_num]) acc[curr.sheet_num] = [];
+        acc[curr.sheet_num].push(curr);
+        return acc;
+      },
+      {} as Record<string, any[]>
+    )
     : {};
 
   const sheetNames = Object.keys(sheetsObj).sort();
