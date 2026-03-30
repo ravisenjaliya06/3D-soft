@@ -289,13 +289,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
-      console.log('fullGroup', fullGroup);
 
       if (fullGroup) {
         const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
-        console.log('clonedGroupWithNewIds', clonedGroupWithNewIds);
         const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
-        console.log('syncManager', syncManager);
         await syncManager.syncData();
       } else if (item.type === OBJECT_TYPES.PLATFORM) {
         const newId = crypto.randomUUID();
@@ -806,9 +803,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${
-                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                  }`}
+                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                    }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -851,9 +847,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {furnitureTools.map(({ option, icon, isExpandable }) => (
                     <React.Fragment key={option}>
                       <div
-                        className={`${styles.furnitureItemslist} ${
-                          selectedFurnitureCategory === option ? styles.activeItem : ''
-                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''
+                          } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
                         onClick={() => handleFurnitureCategoryClick(option)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -885,9 +880,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           {modelSubmenuItems.map((subItem) => (
                             <div
                               key={subItem.option}
-                              className={`${styles.dropdownItem} ${
-                                selectedFurnitureCategory === subItem.option ? styles.active : ''
-                              }`}
+                              className={`${styles.dropdownItem} ${selectedFurnitureCategory === subItem.option ? styles.active : ''
+                                }`}
                               onClick={() => handleFurnitureCategoryClick(subItem.option)}
                             >
                               <div className={styles.activegroup_tools}>
@@ -980,17 +974,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           ? item.image
                           : `${process.env.NEXT_PUBLIC_PUBLIC_API}${item.image}`
                         : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
-                            ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
-                            : iconMap[
-                                item.type === PART_TYPES.PLANK
-                                  ? formatEnumLabel(item.name)
-                                  : item.type
-                              ]) || assets.cabinet
+                          ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
+                          : iconMap[
+                          item.type === PART_TYPES.PLANK
+                            ? formatEnumLabel(item.name)
+                            : item.type
+                          ]) || assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =
                         iconMap[
-                          item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                         ] || assets.cabinet;
                       e.currentTarget.src = fallback;
                       e.currentTarget.onerror = null;
@@ -1030,7 +1024,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           <div
             className={
               selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
+                selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
                 ? styles.createpopupLShape
                 : styles.createpopup
             }
@@ -1048,7 +1042,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               onClick={closePopup}
             />
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-            selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
+              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
               <div className={styles.arrowContainer}>
                 <div className={styles.arrowButtonsContainer}>
                   <button
