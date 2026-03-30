@@ -437,6 +437,108 @@ class NestingService:
         sheet1_data = []  # Cutting List
         sheet2_data = []  # Drilling Data
 
+        # --- Build banding material cache (name -> max thickness in mm) ---
+        material_thickness_cache: Dict[str, float] = {}
+        try:
+            try:
+                from material.models import Material  # type: ignore
+            except Exception:  # noqa: BLE001
+                from backend.material.models import Material  # type: ignore
+
+            qs = Material.objects.filter(type="Banding").prefetch_related("properties")
+            if company_name:
+                qs = qs.filter(company__name__iexact=company_name)
+
+            for m in qs:
+                try:
+                    name_key = str(getattr(m, "name", "")).strip()
+                    if not name_key:
+                        continue
+                    name_key_lower = name_key.lower()
+                    max_thickness = 0.0
+                    props_iter = getattr(m, "properties", None)
+                    if props_iter is not None:
+                        props_iter = props_iter.all()
+                    else:
+                        props_iter = []
+                    for prop in props_iter:
+                        t_val = self._safe_float(getattr(prop, "thickness", 0.0), 0.0)
+                        if t_val > max_thickness:
+                            max_thickness = t_val
+                    if max_thickness > 0:
+                        prev = material_thickness_cache.get(name_key_lower, 0.0)
+                        material_thickness_cache[name_key_lower] = max(prev, max_thickness)
+                except Exception:  # noqa: BLE001
+                    continue
+        except Exception:  # noqa: BLE001
+            # ORM not available; leave cache empty
+            material_thickness_cache = {}
+
+        # Resolver for edge banding thickness (mm)
+        def resolve_edge_thickness_mm(val: Any) -> Optional[float]:  # noqa: ANN401
+            """
+            Resolution order:
+            1) dict with 'thickness'
+            2) parse '<num> mm' (prefer), else pick plausible number (0.2–5.0)
+            3) lookup by name in material_thickness_cache (exact → contains)
+            """
+            # 1) dict with thickness
+            if isinstance(val, dict):
+                raw_t = val.get("thickness", None)
+                if raw_t is not None:
+                    t = self._safe_float(raw_t, 0.0)
+                    return t if t > 0 else None
+
+            # Normalize string
+            name_str = ""
+            if isinstance(val, (str, bytes)):
+                try:
+                    name_str = str(val).strip()
+                except Exception:
+                    name_str = ""
+
+            # 2) parse numeric with preference for 'mm'
+            if name_str:
+                try:
+                    mm_match = re.search(r"(\\d+(?:\\.\\d+)?)\\s*mm", name_str, flags=re.IGNORECASE)
+                    if mm_match:
+                        t = float(mm_match.group(1))
+                        return t if t > 0 else None
+                    # find all numeric tokens and choose a plausible banding thickness
+                    all_nums = re.findall(r"\\d+(?:\\.\\d+)?", name_str)
+                    for num_str in all_nums:
+                        try:
+                            t = float(num_str)
+                            if 0.2 <= t <= 5.0:
+                                return t
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
+                # 3) cache lookup by name
+                key = name_str.lower()
+                # exact
+                if key in material_thickness_cache:
+                    t = material_thickness_cache[key]
+                    return t if t > 0 else None
+                # contains: try keys contained in value first
+                for k, t in material_thickness_cache.items():
+                    try:
+                        if k and k in key and t > 0:
+                            return t
+                    except Exception:
+                        continue
+                # reverse-contains: value contained in keys
+                for k, t in material_thickness_cache.items():
+                    try:
+                        if key and key in k and t > 0:
+                            return t
+                    except Exception:
+                        continue
+
+            return None
+
         for item in packed_items:
             # We use the unique ID for the filename
             filename = f"{item[KEY_UNIQUE_ID]}.xml"
@@ -446,10 +548,37 @@ class NestingService:
             edge_banding_data = item.get("edge_banding")
             if not isinstance(edge_banding_data, dict):
                 edge_banding_data = {}
-            edge_left = edge_banding_data.get("left", "")
-            edge_right = edge_banding_data.get("right", "")
-            edge_top = edge_banding_data.get("top", "")
-            edge_bottom = edge_banding_data.get("bottom", "")
+            edge_left_raw = edge_banding_data.get("left", "")
+            edge_right_raw = edge_banding_data.get("right", "")
+            edge_top_raw = edge_banding_data.get("top", "")
+            edge_bottom_raw = edge_banding_data.get("bottom", "")
+
+            # Resolve thickness for Cutting List (plain number or blank)
+            edge_left_th = resolve_edge_thickness_mm(edge_left_raw)
+            edge_right_th = resolve_edge_thickness_mm(edge_right_raw)
+            edge_top_th = resolve_edge_thickness_mm(edge_top_raw)
+            edge_bottom_th = resolve_edge_thickness_mm(edge_bottom_raw)
+
+            # Normalize material name for XML (keep original banding name/string)
+            def to_material_name(val: Any) -> str:  # noqa: ANN401
+                if isinstance(val, dict):
+                    for key in ("name", "material", "title", "label"):
+                        v = val.get(key)
+                        if isinstance(v, (str, bytes)) and str(v).strip():
+                            return str(v).strip()
+                    # fallback to string form of dict value if present
+                    raw = val.get("value")
+                    if isinstance(raw, (str, bytes)) and str(raw).strip():
+                        return str(raw).strip()
+                    return ""
+                if isinstance(val, (str, bytes)):
+                    return str(val).strip()
+                return ""
+
+            edge_left = to_material_name(edge_left_raw)
+            edge_right = to_material_name(edge_right_raw)
+            edge_top = to_material_name(edge_top_raw)
+            edge_bottom = to_material_name(edge_bottom_raw)
 
             # Sheet 1: Cutting List Extraction
             width_val = self._safe_float(item.get(KEY_WIDTH))
@@ -458,22 +587,22 @@ class NestingService:
 
             sheet1_data.append(
                 {
-                    "Barcode": item.get(KEY_UNIQUE_ID, ""),
-                    "Order Number": order_number,
-                    "Company Name": company_name,
-                    "Cabinet Name": item.get("parent_name", ""),
-                    "Part Number": item.get(KEY_NAME, item.get(KEY_ID, "")),
                     "Material": item.get("material_name") or "-",
                     "length": length_val,
                     "width": width_val,
                     "thickness": thval,
-                    "Edge Left": edge_left,
-                    "Edge Right": edge_right,
-                    "Edge Top": edge_top,
-                    "Edge Bottom": edge_bottom,
+                    "quantity": item.get("quantity", ""),
+                    "colour": item.get("colour", ""),
+                    "texture": item.get("texture", ""),
+                    "Barcode": item.get(KEY_UNIQUE_ID, ""),
+                    "Edge Left": f"{edge_left_th:.1f}" if edge_left_th is not None else "",
+                    "Edge Right": f"{edge_right_th:.1f}" if edge_right_th is not None else "",
+                    "Edge Top": f"{edge_top_th:.1f}" if edge_top_th is not None else "",
+                    "Edge Bottom": f"{edge_bottom_th:.1f}" if edge_bottom_th is not None else "",
                     "grain": "L",
                 }
             )
+
 
             # Root Element
             root = ET.Element("Root")
@@ -702,15 +831,14 @@ class NestingService:
         excel_path = os.path.join(xml_dir, "Cutting List.xlsx")
 
         cols1 = [
-            "Barcode",
-            "Order Number",
-            "Company Name",
-            "Cabinet Name",
-            "Part Number",
             "Material",
             "length",
             "width",
             "thickness",
+            "quantity",
+            "colour",
+            "texture",
+            "Barcode",
             "Edge Left",
             "Edge Right",
             "Edge Top",
