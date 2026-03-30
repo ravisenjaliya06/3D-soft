@@ -488,10 +488,10 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  function applyObjectUpdate(
+  async function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
-  ): void {
+  ): Promise<void> {
     if (!selectedObject) return;
     const updatedObject: MeshObjectData = {
       ...selectedObject,
@@ -519,7 +519,7 @@ const Sidebar: React.FC = () => {
     // Use SyncManager for all objects including floor
     // MeshBuilder now supports floor material updates
     const syncManager = new SyncManager(updatedObject);
-    syncManager.syncData();
+    await syncManager.syncData();
   }
 
   const handleSetting = () => {
@@ -814,7 +814,7 @@ const Sidebar: React.FC = () => {
       return !prev;
     });
   };
-  const handleDimensionChange = (field: Field, value: number) => {
+  const handleDimensionChange = async (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
 
     // Round the value to ensure it's a whole number
@@ -866,7 +866,7 @@ const Sidebar: React.FC = () => {
     const euler = new THREE.Euler(currentRot.x, currentRot.y, currentRot.z);
     shiftVector.applyEuler(euler);
 
-    applyObjectUpdate(selectedObject, {
+    await applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
         x: currentPos.x + shiftVector.x,
@@ -897,6 +897,7 @@ const Sidebar: React.FC = () => {
 
         if (cupboardMesh && cupboardMesh.userData.isMain) {
           updateMinifixesForCupboard(cupboardMesh);
+          generateCompartmentsFromMesh(cupboardMesh);
         }
       });
     }

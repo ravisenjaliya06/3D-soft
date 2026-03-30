@@ -64,7 +64,6 @@ export class SyncManager {
 
     // Initialize Maps for O(1) access
     this._initializeMaps();
-
     const list = this._normalizeData(this.data);
 
     this._syncState(list);
@@ -392,7 +391,7 @@ export class SyncManager {
 
     const data = this.data as MeshObjectData;
     const changes = this._getMeshObjectPatch(this.oldData, data);
-    this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
+    await this.meshBuilder.updateMesh(mesh, changes, this.oldData.material);
 
     if (changes.dimensions && mesh.userData.isMain) {
       this._updateChildrenDimensions(mesh, changes.dimensions);
@@ -577,6 +576,13 @@ export class SyncManager {
       }
 
       child.position.set(nextX, nextY, nextZ);
+
+      // update userData dimensions so logic like getMeshDimensions sees the new values
+      child.userData.dimensions = {
+        width: nextWidth,
+        height: nextHeight,
+        depth: nextDepth,
+      };
 
       // Update banding for this child plank if it has any
       if (

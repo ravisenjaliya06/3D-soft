@@ -289,10 +289,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
     if (Object.values(OBJECT_TYPES).includes(item.type)) {
       const fullGroup = cabinetItems.find((group) => group.some((g) => g.id === item.id));
+      console.log('fullGroup', fullGroup);
 
       if (fullGroup) {
         const clonedGroupWithNewIds = regenerateGroupIds(fullGroup);
+        console.log('clonedGroupWithNewIds', clonedGroupWithNewIds);
         const syncManager = new SyncManager(clonedGroupWithNewIds, threeDView);
+        console.log('syncManager', syncManager);
         await syncManager.syncData();
       } else if (item.type === OBJECT_TYPES.PLATFORM) {
         const newId = crypto.randomUUID();

@@ -102,9 +102,15 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       toRemove.push(child);
     }
   });
-  toRemove.forEach((c) => boxMesh.remove(c));
+
+  toRemove.forEach((boxMeshChild) => {
+    if (boxMeshChild.parent) {
+      boxMeshChild.parent.remove(boxMeshChild);
+    }
+  });
 
   // --- Compute local bounding box ---
+  boxMesh.updateMatrixWorld(true);
   const containerGeom = boxMesh.geometry as THREE.BufferGeometry;
   containerGeom.computeBoundingBox();
   const bb = containerGeom.boundingBox;
