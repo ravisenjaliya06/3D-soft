@@ -439,40 +439,45 @@ class NestingService:
 
         # --- Build banding material cache (name -> max thickness in mm) ---
         material_thickness_cache: Dict[str, float] = {}
+        material_model = None
         try:
-            try:
-                from material.models import Material  # type: ignore
-            except Exception:  # noqa: BLE001
-                from backend.material.models import Material  # type: ignore
+            # App imports
+            from material.models import Material as _Material  # type: ignore
 
-            qs = Material.objects.filter(type="Banding").prefetch_related("properties")
+            material_model = _Material
+        except ImportError:
+            try:
+                # App imports
+                from backend.material.models import Material as _Material  # type: ignore
+
+                material_model = _Material
+            except ImportError:
+                material_model = None
+
+        if material_model is not None:
+            qs = material_model.objects.filter(type="Banding").prefetch_related(
+                "properties"
+            )
             if company_name:
                 qs = qs.filter(company__name__iexact=company_name)
 
             for m in qs:
-                try:
-                    name_key = str(getattr(m, "name", "")).strip()
-                    if not name_key:
-                        continue
-                    name_key_lower = name_key.lower()
-                    max_thickness = 0.0
-                    props_iter = getattr(m, "properties", None)
-                    if props_iter is not None:
-                        props_iter = props_iter.all()
-                    else:
-                        props_iter = []
-                    for prop in props_iter:
-                        t_val = self._safe_float(getattr(prop, "thickness", 0.0), 0.0)
-                        if t_val > max_thickness:
-                            max_thickness = t_val
-                    if max_thickness > 0:
-                        prev = material_thickness_cache.get(name_key_lower, 0.0)
-                        material_thickness_cache[name_key_lower] = max(prev, max_thickness)
-                except Exception:  # noqa: BLE001
+                name_attr = getattr(m, "name", "")
+                name_key = str(name_attr).strip() if name_attr is not None else ""
+                if not name_key:
                     continue
-        except Exception:  # noqa: BLE001
-            # ORM not available; leave cache empty
-            material_thickness_cache = {}
+                name_key_lower = name_key.lower()
+                max_thickness = 0.0
+                props_iter = getattr(m, "properties", None)
+                prop_list = list(props_iter.all()) if props_iter is not None else []
+                for prop in prop_list:
+                    raw_t = getattr(prop, "thickness", 0.0)
+                    t_val = self._safe_float(raw_t, 0.0)
+                    if t_val > max_thickness:
+                        max_thickness = t_val
+                if max_thickness > 0:
+                    prev = material_thickness_cache.get(name_key_lower, 0.0)
+                    material_thickness_cache[name_key_lower] = max(prev, max_thickness)
 
         # Resolver for edge banding thickness (mm)
         def resolve_edge_thickness_mm(val: Any) -> Optional[float]:  # noqa: ANN401
@@ -492,29 +497,31 @@ class NestingService:
             # Normalize string
             name_str = ""
             if isinstance(val, (str, bytes)):
-                try:
-                    name_str = str(val).strip()
-                except Exception:
-                    name_str = ""
+                name_str = str(val).strip()
 
             # 2) parse numeric with preference for 'mm'
             if name_str:
-                try:
-                    mm_match = re.search(r"(\\d+(?:\\.\\d+)?)\\s*mm", name_str, flags=re.IGNORECASE)
-                    if mm_match:
+                mm_match = re.search(
+                    r"(\d+(?:\.\d+)?)\s*mm", name_str, flags=re.IGNORECASE
+                )
+                if mm_match:
+                    try:
                         t = float(mm_match.group(1))
-                        return t if t > 0 else None
-                    # find all numeric tokens and choose a plausible banding thickness
-                    all_nums = re.findall(r"\\d+(?:\\.\\d+)?", name_str)
-                    for num_str in all_nums:
-                        try:
-                            t = float(num_str)
-                            if 0.2 <= t <= 5.0:
-                                return t
-                        except Exception:
-                            continue
-                except Exception:
-                    pass
+                        if t > 0:
+                            return t
+                    except ValueError:
+                        logger.debug("Failed to parse mm thickness from '%s'", name_str)
+                # find all numeric tokens and choose a plausible banding thickness
+                all_nums = re.findall(r"\d+(?:\.\d+)?", name_str)
+                for num_str in all_nums:
+                    try:
+                        t = float(num_str)
+                        if 0.2 <= t <= 5.0:
+                            return t
+                    except ValueError:
+                        logger.debug(
+                            "Non-numeric token while parsing thickness: '%s'", num_str
+                        )
 
                 # 3) cache lookup by name
                 key = name_str.lower()
@@ -524,18 +531,12 @@ class NestingService:
                     return t if t > 0 else None
                 # contains: try keys contained in value first
                 for k, t in material_thickness_cache.items():
-                    try:
-                        if k and k in key and t > 0:
-                            return t
-                    except Exception:
-                        continue
+                    if k and k in key and t > 0:
+                        return t
                 # reverse-contains: value contained in keys
                 for k, t in material_thickness_cache.items():
-                    try:
-                        if key and key in k and t > 0:
-                            return t
-                    except Exception:
-                        continue
+                    if key and key in k and t > 0:
+                        return t
 
             return None
 
@@ -595,14 +596,19 @@ class NestingService:
                     "colour": item.get("colour", ""),
                     "texture": item.get("texture", ""),
                     "Barcode": item.get(KEY_UNIQUE_ID, ""),
-                    "Edge Left": f"{edge_left_th:.1f}" if edge_left_th is not None else "",
-                    "Edge Right": f"{edge_right_th:.1f}" if edge_right_th is not None else "",
+                    "Edge Left": (
+                        f"{edge_left_th:.1f}" if edge_left_th is not None else ""
+                    ),
+                    "Edge Right": (
+                        f"{edge_right_th:.1f}" if edge_right_th is not None else ""
+                    ),
                     "Edge Top": f"{edge_top_th:.1f}" if edge_top_th is not None else "",
-                    "Edge Bottom": f"{edge_bottom_th:.1f}" if edge_bottom_th is not None else "",
+                    "Edge Bottom": (
+                        f"{edge_bottom_th:.1f}" if edge_bottom_th is not None else ""
+                    ),
                     "grain": "L",
                 }
             )
-
 
             # Root Element
             root = ET.Element("Root")
