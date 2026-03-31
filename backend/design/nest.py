@@ -622,7 +622,7 @@ class NestingService:
                     "length": length_val,
                     "width": width_val,
                     "thickness": thval,
-                    "quantity": item.get("quantity", ""),
+                    "quantity": item.get("quantity", 1),
                     "colour": item.get("colour", ""),
                     "texture": item.get("texture", ""),
                     "Barcode": item.get(KEY_UNIQUE_ID, ""),
