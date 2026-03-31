@@ -478,11 +478,13 @@ class NestingService:
     def get_banding_display_name(self: "NestingService", value: object) -> str:
         """Extract a readable banding name from dict-like input or fallback to plain text."""
         getter = getattr(value, "get", None)
-        if callable(getter):
-            for field in ("name", "material", "title", "label", "value"):
-                candidate = self.to_str_or_empty(getter(field, ""))
-                if candidate:
-                    return candidate
+        if not callable(getter):
+            return self.to_str_or_empty(value)
+
+        for field in ("name", "material", "title", "label", "value"):
+            candidate = self.to_str_or_empty(getter(field, ""))
+            if candidate:
+                return candidate
         return self.to_str_or_empty(value)
 
     def resolve_edge_thickness(
