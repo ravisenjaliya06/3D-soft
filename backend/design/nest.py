@@ -588,6 +588,10 @@ class NestingService:
 
             sheet1_data.append(
                 {
+                    "Order Number": order_number,
+                    "Company Name": company_name,
+                    "Cabinet Name": item.get("parent_name", ""),
+                    "Part Number": item.get(KEY_NAME, item.get(KEY_ID, "")),
                     "Material": item.get("material_name") or "-",
                     "length": length_val,
                     "width": width_val,
@@ -837,6 +841,10 @@ class NestingService:
         excel_path = os.path.join(xml_dir, "Cutting List.xlsx")
 
         cols1 = [
+            "Order Number",
+            "Company Name",
+            "Cabinet Name",
+            "Part Number",
             "Material",
             "length",
             "width",
