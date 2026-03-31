@@ -26,6 +26,9 @@ from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK
 from svglib.svglib import svg2rlg
 
+# App imports
+from material.models import Material
+
 # Local imports
 from .constant import (
     KEY_DEPTH,
@@ -413,6 +416,104 @@ class NestingService:
             adjusted_width = max_length + 2  # Extra padding
             worksheet.column_dimensions[column_letter].width = adjusted_width
 
+    @staticmethod
+    def to_str_or_empty(value: object) -> str:
+        """Return a stripped string representation or an empty string."""
+        if value is None:
+            return ""
+        return str(value).strip()
+
+    @staticmethod
+    def parse_mm_thickness(text: str) -> Optional[float]:
+        """Extract thickness when the source explicitly includes `mm`."""
+        match = re.search(r"(\d+(?:\.\d+)?)\s*mm", text, flags=re.IGNORECASE)
+        if not match:
+            return None
+        try:
+            value = float(match.group(1))
+        except ValueError:
+            return None
+        if value > 0:
+            return value
+        return None
+
+    @staticmethod
+    def extract_plausible_thickness(
+        text: str, min_mm: float = 0.2, max_mm: float = 5.0
+    ) -> Optional[float]:
+        """Pick the first numeric token that falls in a plausible banding range."""
+        numeric_tokens = re.findall(r"\d+(?:\.\d+)?", text)
+        for token in numeric_tokens:
+            try:
+                value = float(token)
+            except ValueError:
+                continue
+            if min_mm <= value <= max_mm:
+                return value
+        return None
+
+    @staticmethod
+    def lookup_banding_thickness_by_name(
+        name: str, cache: Dict[str, float]
+    ) -> Optional[float]:
+        """Resolve thickness from cache by exact key, contains, then reverse-contains."""
+        normalized = name.lower().strip()
+        if not normalized:
+            return None
+
+        exact_value = cache.get(normalized)
+        if exact_value and exact_value > 0:
+            return exact_value
+
+        for cached_name, cached_value in cache.items():
+            if cached_name and cached_name in normalized and cached_value > 0:
+                return cached_value
+
+        for cached_name, cached_value in cache.items():
+            if normalized in cached_name and cached_value > 0:
+                return cached_value
+
+        return None
+
+    def get_banding_display_name(self: "NestingService", value: object) -> str:
+        """Extract a readable banding name from dict-like input or fallback to plain text."""
+        getter = getattr(value, "get", None)
+        if callable(getter):
+            for field in ("name", "material", "title", "label", "value"):
+                candidate = self.to_str_or_empty(getter(field, ""))
+                if candidate:
+                    return candidate
+        return self.to_str_or_empty(value)
+
+    def resolve_edge_thickness(
+        self: "NestingService", value: object, cache: Dict[str, float]
+    ) -> Optional[float]:
+        """
+        Resolve edge thickness in mm from dict-like values, text parsing, or cache lookup.
+        Priority: explicit thickness -> '<num> mm' -> plausible numeric token -> cache name lookup.
+        """
+        getter = getattr(value, "get", None)
+        if callable(getter):
+            explicit_thickness = getter("thickness", None)
+            if explicit_thickness is not None:
+                numeric = self._safe_float(explicit_thickness, 0.0)
+                if numeric > 0:
+                    return numeric
+
+        name_text = self.get_banding_display_name(value)
+        if not name_text:
+            return None
+
+        mm_value = self.parse_mm_thickness(name_text)
+        if mm_value is not None:
+            return mm_value
+
+        plausible_value = self.extract_plausible_thickness(name_text)
+        if plausible_value is not None:
+            return plausible_value
+
+        return self.lookup_banding_thickness_by_name(name_text, cache)
+
     def generate_xmls(
         self: "NestingService",
         packed_items: List[Dict[str, Any]],
@@ -437,108 +538,39 @@ class NestingService:
         sheet1_data = []  # Cutting List
         sheet2_data = []  # Drilling Data
 
-        # --- Build banding material cache (name -> max thickness in mm) ---
+        # Cache format: {lowercase_banding_name: max_thickness_mm}
         material_thickness_cache: Dict[str, float] = {}
-        material_model = None
-        try:
-            # App imports
-            from material.models import Material as _Material  # type: ignore
-
-            material_model = _Material
-        except ImportError:
-            try:
-                # App imports
-                from backend.material.models import Material as _Material  # type: ignore
-
-                material_model = _Material
-            except ImportError:
-                material_model = None
-
-        if material_model is not None:
-            qs = material_model.objects.filter(type="Banding").prefetch_related(
-                "properties"
+        banding_queryset = Material.objects.filter(type="Banding").prefetch_related(
+            "properties"
+        )
+        if company_name:
+            banding_queryset = banding_queryset.filter(
+                company__name__iexact=company_name
             )
-            if company_name:
-                qs = qs.filter(company__name__iexact=company_name)
 
-            for m in qs:
-                name_attr = getattr(m, "name", "")
-                name_key = str(name_attr).strip() if name_attr is not None else ""
-                if not name_key:
-                    continue
-                name_key_lower = name_key.lower()
-                max_thickness = 0.0
-                props_iter = getattr(m, "properties", None)
-                prop_list = list(props_iter.all()) if props_iter is not None else []
-                for prop in prop_list:
-                    raw_t = getattr(prop, "thickness", 0.0)
-                    t_val = self._safe_float(raw_t, 0.0)
-                    if t_val > max_thickness:
-                        max_thickness = t_val
-                if max_thickness > 0:
-                    prev = material_thickness_cache.get(name_key_lower, 0.0)
-                    material_thickness_cache[name_key_lower] = max(prev, max_thickness)
+        for banding_material in banding_queryset:
+            material_name = self.to_str_or_empty(getattr(banding_material, "name", ""))
+            if not material_name:
+                continue
+            normalized_material_name = material_name.lower()
 
-        # Resolver for edge banding thickness (mm)
-        def resolve_edge_thickness_mm(val: Any) -> Optional[float]:  # noqa: ANN401
-            """
-            Resolution order:
-            1) dict with 'thickness'
-            2) parse '<num> mm' (prefer), else pick plausible number (0.2–5.0)
-            3) lookup by name in material_thickness_cache (exact → contains)
-            """
-            # 1) dict with thickness
-            if isinstance(val, dict):
-                raw_t = val.get("thickness", None)
-                if raw_t is not None:
-                    t = self._safe_float(raw_t, 0.0)
-                    return t if t > 0 else None
-
-            # Normalize string
-            name_str = ""
-            if isinstance(val, (str, bytes)):
-                name_str = str(val).strip()
-
-            # 2) parse numeric with preference for 'mm'
-            if name_str:
-                mm_match = re.search(
-                    r"(\d+(?:\.\d+)?)\s*mm", name_str, flags=re.IGNORECASE
+            max_thickness_mm = 0.0
+            properties_manager = getattr(banding_material, "properties", None)
+            properties = list(properties_manager.all()) if properties_manager else []
+            for property_item in properties:
+                thickness_value = self._safe_float(
+                    getattr(property_item, "thickness", 0.0), 0.0
                 )
-                if mm_match:
-                    try:
-                        t = float(mm_match.group(1))
-                        if t > 0:
-                            return t
-                    except ValueError:
-                        logger.debug("Failed to parse mm thickness from '%s'", name_str)
-                # find all numeric tokens and choose a plausible banding thickness
-                all_nums = re.findall(r"\d+(?:\.\d+)?", name_str)
-                for num_str in all_nums:
-                    try:
-                        t = float(num_str)
-                        if 0.2 <= t <= 5.0:
-                            return t
-                    except ValueError:
-                        logger.debug(
-                            "Non-numeric token while parsing thickness: '%s'", num_str
-                        )
+                if thickness_value > max_thickness_mm:
+                    max_thickness_mm = thickness_value
 
-                # 3) cache lookup by name
-                key = name_str.lower()
-                # exact
-                if key in material_thickness_cache:
-                    t = material_thickness_cache[key]
-                    return t if t > 0 else None
-                # contains: try keys contained in value first
-                for k, t in material_thickness_cache.items():
-                    if k and k in key and t > 0:
-                        return t
-                # reverse-contains: value contained in keys
-                for k, t in material_thickness_cache.items():
-                    if key and key in k and t > 0:
-                        return t
-
-            return None
+            if max_thickness_mm > 0:
+                cached_value = material_thickness_cache.get(
+                    normalized_material_name, 0.0
+                )
+                material_thickness_cache[normalized_material_name] = max(
+                    cached_value, max_thickness_mm
+                )
 
         for item in packed_items:
             # We use the unique ID for the filename
@@ -555,31 +587,23 @@ class NestingService:
             edge_bottom_raw = edge_banding_data.get("bottom", "")
 
             # Resolve thickness for Cutting List (plain number or blank)
-            edge_left_th = resolve_edge_thickness_mm(edge_left_raw)
-            edge_right_th = resolve_edge_thickness_mm(edge_right_raw)
-            edge_top_th = resolve_edge_thickness_mm(edge_top_raw)
-            edge_bottom_th = resolve_edge_thickness_mm(edge_bottom_raw)
+            edge_left_th = self.resolve_edge_thickness(
+                edge_left_raw, material_thickness_cache
+            )
+            edge_right_th = self.resolve_edge_thickness(
+                edge_right_raw, material_thickness_cache
+            )
+            edge_top_th = self.resolve_edge_thickness(
+                edge_top_raw, material_thickness_cache
+            )
+            edge_bottom_th = self.resolve_edge_thickness(
+                edge_bottom_raw, material_thickness_cache
+            )
 
-            # Normalize material name for XML (keep original banding name/string)
-            def to_material_name(val: Any) -> str:  # noqa: ANN401
-                if isinstance(val, dict):
-                    for key in ("name", "material", "title", "label"):
-                        v = val.get(key)
-                        if isinstance(v, (str, bytes)) and str(v).strip():
-                            return str(v).strip()
-                    # fallback to string form of dict value if present
-                    raw = val.get("value")
-                    if isinstance(raw, (str, bytes)) and str(raw).strip():
-                        return str(raw).strip()
-                    return ""
-                if isinstance(val, (str, bytes)):
-                    return str(val).strip()
-                return ""
-
-            edge_left = to_material_name(edge_left_raw)
-            edge_right = to_material_name(edge_right_raw)
-            edge_top = to_material_name(edge_top_raw)
-            edge_bottom = to_material_name(edge_bottom_raw)
+            edge_left = self.get_banding_display_name(edge_left_raw)
+            edge_right = self.get_banding_display_name(edge_right_raw)
+            edge_top = self.get_banding_display_name(edge_top_raw)
+            edge_bottom = self.get_banding_display_name(edge_bottom_raw)
 
             # Sheet 1: Cutting List Extraction
             width_val = self._safe_float(item.get(KEY_WIDTH))
