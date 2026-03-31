@@ -26,6 +26,9 @@ from reportlab.pdfgen import canvas
 from rest_framework.status import HTTP_200_OK
 from svglib.svglib import svg2rlg
 
+# App imports
+from material.models import Material
+
 # Local imports
 from .constant import (
     KEY_DEPTH,
@@ -413,6 +416,106 @@ class NestingService:
             adjusted_width = max_length + 2  # Extra padding
             worksheet.column_dimensions[column_letter].width = adjusted_width
 
+    @staticmethod
+    def to_str_or_empty(value: object) -> str:
+        """Return a stripped string representation or an empty string."""
+        if value is None:
+            return ""
+        return str(value).strip()
+
+    @staticmethod
+    def parse_mm_thickness(text: str) -> Optional[float]:
+        """Extract thickness when the source explicitly includes `mm`."""
+        match = re.search(r"(\d+(?:\.\d+)?)\s*mm", text, flags=re.IGNORECASE)
+        if not match:
+            return None
+        try:
+            value = float(match.group(1))
+        except ValueError:
+            return None
+        if value > 0:
+            return value
+        return None
+
+    @staticmethod
+    def extract_plausible_thickness(
+        text: str, min_mm: float = 0.2, max_mm: float = 5.0
+    ) -> Optional[float]:
+        """Pick the first numeric token that falls in a plausible banding range."""
+        numeric_tokens = re.findall(r"\d+(?:\.\d+)?", text)
+        for token in numeric_tokens:
+            try:
+                value = float(token)
+            except ValueError:
+                continue
+            if min_mm <= value <= max_mm:
+                return value
+        return None
+
+    @staticmethod
+    def lookup_banding_thickness_by_name(
+        name: str, cache: Dict[str, float]
+    ) -> Optional[float]:
+        """Resolve thickness from cache by exact key, contains, then reverse-contains."""
+        normalized = name.lower().strip()
+        if not normalized:
+            return None
+
+        exact_value = cache.get(normalized)
+        if exact_value and exact_value > 0:
+            return exact_value
+
+        for cached_name, cached_value in cache.items():
+            if cached_name and cached_name in normalized and cached_value > 0:
+                return cached_value
+
+        for cached_name, cached_value in cache.items():
+            if normalized in cached_name and cached_value > 0:
+                return cached_value
+
+        return None
+
+    def get_banding_display_name(self: "NestingService", value: object) -> str:
+        """Extract a readable banding name from dict-like input or fallback to plain text."""
+        getter = getattr(value, "get", None)
+        if not callable(getter):
+            return self.to_str_or_empty(value)
+
+        for field in ("name", "material", "title", "label", "value"):
+            candidate = self.to_str_or_empty(getter(field, ""))
+            if candidate:
+                return candidate
+        return self.to_str_or_empty(value)
+
+    def resolve_edge_thickness(
+        self: "NestingService", value: object, cache: Dict[str, float]
+    ) -> Optional[float]:
+        """
+        Resolve edge thickness in mm from dict-like values, text parsing, or cache lookup.
+        Priority: explicit thickness -> '<num> mm' -> plausible numeric token -> cache name lookup.
+        """
+        getter = getattr(value, "get", None)
+        if callable(getter):
+            explicit_thickness = getter("thickness", None)
+            if explicit_thickness is not None:
+                numeric = self._safe_float(explicit_thickness, 0.0)
+                if numeric > 0:
+                    return numeric
+
+        name_text = self.get_banding_display_name(value)
+        if not name_text:
+            return None
+
+        mm_value = self.parse_mm_thickness(name_text)
+        if mm_value is not None:
+            return mm_value
+
+        plausible_value = self.extract_plausible_thickness(name_text)
+        if plausible_value is not None:
+            return plausible_value
+
+        return self.lookup_banding_thickness_by_name(name_text, cache)
+
     def generate_xmls(
         self: "NestingService",
         packed_items: List[Dict[str, Any]],
@@ -437,6 +540,40 @@ class NestingService:
         sheet1_data = []  # Cutting List
         sheet2_data = []  # Drilling Data
 
+        # Cache format: {lowercase_banding_name: max_thickness_mm}
+        material_thickness_cache: Dict[str, float] = {}
+        banding_queryset = Material.objects.filter(type="Banding").prefetch_related(
+            "properties"
+        )
+        if company_name:
+            banding_queryset = banding_queryset.filter(
+                company__name__iexact=company_name
+            )
+
+        for banding_material in banding_queryset:
+            material_name = self.to_str_or_empty(getattr(banding_material, "name", ""))
+            if not material_name:
+                continue
+            normalized_material_name = material_name.lower()
+
+            max_thickness_mm = 0.0
+            properties_manager = getattr(banding_material, "properties", None)
+            properties = list(properties_manager.all()) if properties_manager else []
+            for property_item in properties:
+                thickness_value = self._safe_float(
+                    getattr(property_item, "thickness", 0.0), 0.0
+                )
+                if thickness_value > max_thickness_mm:
+                    max_thickness_mm = thickness_value
+
+            if max_thickness_mm > 0:
+                cached_value = material_thickness_cache.get(
+                    normalized_material_name, 0.0
+                )
+                material_thickness_cache[normalized_material_name] = max(
+                    cached_value, max_thickness_mm
+                )
+
         for item in packed_items:
             # We use the unique ID for the filename
             filename = f"{item[KEY_UNIQUE_ID]}.xml"
@@ -446,10 +583,29 @@ class NestingService:
             edge_banding_data = item.get("edge_banding")
             if not isinstance(edge_banding_data, dict):
                 edge_banding_data = {}
-            edge_left = edge_banding_data.get("left", "")
-            edge_right = edge_banding_data.get("right", "")
-            edge_top = edge_banding_data.get("top", "")
-            edge_bottom = edge_banding_data.get("bottom", "")
+            edge_left_raw = edge_banding_data.get("left", "")
+            edge_right_raw = edge_banding_data.get("right", "")
+            edge_top_raw = edge_banding_data.get("top", "")
+            edge_bottom_raw = edge_banding_data.get("bottom", "")
+
+            # Resolve thickness for Cutting List (plain number or blank)
+            edge_left_th = self.resolve_edge_thickness(
+                edge_left_raw, material_thickness_cache
+            )
+            edge_right_th = self.resolve_edge_thickness(
+                edge_right_raw, material_thickness_cache
+            )
+            edge_top_th = self.resolve_edge_thickness(
+                edge_top_raw, material_thickness_cache
+            )
+            edge_bottom_th = self.resolve_edge_thickness(
+                edge_bottom_raw, material_thickness_cache
+            )
+
+            edge_left = self.get_banding_display_name(edge_left_raw)
+            edge_right = self.get_banding_display_name(edge_right_raw)
+            edge_top = self.get_banding_display_name(edge_top_raw)
+            edge_bottom = self.get_banding_display_name(edge_bottom_raw)
 
             # Sheet 1: Cutting List Extraction
             width_val = self._safe_float(item.get(KEY_WIDTH))
@@ -458,7 +614,6 @@ class NestingService:
 
             sheet1_data.append(
                 {
-                    "Barcode": item.get(KEY_UNIQUE_ID, ""),
                     "Order Number": order_number,
                     "Company Name": company_name,
                     "Cabinet Name": item.get("parent_name", ""),
@@ -467,10 +622,20 @@ class NestingService:
                     "length": length_val,
                     "width": width_val,
                     "thickness": thval,
-                    "Edge Left": edge_left,
-                    "Edge Right": edge_right,
-                    "Edge Top": edge_top,
-                    "Edge Bottom": edge_bottom,
+                    "quantity": item.get("quantity", ""),
+                    "colour": item.get("colour", ""),
+                    "texture": item.get("texture", ""),
+                    "Barcode": item.get(KEY_UNIQUE_ID, ""),
+                    "Edge Left": (
+                        f"{edge_left_th:.1f}" if edge_left_th is not None else ""
+                    ),
+                    "Edge Right": (
+                        f"{edge_right_th:.1f}" if edge_right_th is not None else ""
+                    ),
+                    "Edge Top": f"{edge_top_th:.1f}" if edge_top_th is not None else "",
+                    "Edge Bottom": (
+                        f"{edge_bottom_th:.1f}" if edge_bottom_th is not None else ""
+                    ),
                     "grain": "L",
                 }
             )
@@ -702,7 +867,6 @@ class NestingService:
         excel_path = os.path.join(xml_dir, "Cutting List.xlsx")
 
         cols1 = [
-            "Barcode",
             "Order Number",
             "Company Name",
             "Cabinet Name",
@@ -711,6 +875,10 @@ class NestingService:
             "length",
             "width",
             "thickness",
+            "quantity",
+            "colour",
+            "texture",
+            "Barcode",
             "Edge Left",
             "Edge Right",
             "Edge Top",
