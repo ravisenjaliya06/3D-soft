@@ -10,7 +10,7 @@ import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
-import { updateMinifixesForCupboard } from './items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from './items';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -174,6 +174,13 @@ export class UpdateObjectInScene {
       updateParams.newDepth
     );
 
+    // update userData dimensions
+    mesh.userData.dimensions = {
+      width: updateParams.newWidth,
+      height: updateParams.newHeight,
+      depth: updateParams.newDepth,
+    };
+
     if (mesh.userData.isMain === true) {
       this.updateChildrenDynamic(mesh, updateParams);
     }
@@ -191,6 +198,7 @@ export class UpdateObjectInScene {
     if (mesh.userData.isMain) {
       this.updateChildrenDynamic(mesh, updateParams);
       updateMinifixesForCupboard(mesh);
+      generateCompartmentsFromMesh(mesh);
     }
 
     updateOrRefreshOutline(this.scene, mesh);
@@ -261,6 +269,13 @@ export class UpdateObjectInScene {
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
 
       child.position.set(nextX, nextY, nextZ);
+
+      // update userData dimensions
+      child.userData.dimensions = {
+        width: nextWidth,
+        height: nextHeight,
+        depth: nextDepth,
+      };
 
       if (
         child.userData.type &&

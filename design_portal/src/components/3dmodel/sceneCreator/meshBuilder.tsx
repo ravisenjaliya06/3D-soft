@@ -1063,11 +1063,11 @@ export class MeshBuilder {
     this._getMaterial();
   }
 
-  public updateMesh(
+  public async updateMesh(
     mesh: THREE.Mesh,
     changes: Partial<MeshObjectData>,
     oldMaterial?: MeshObjectData['material']
-  ) {
+  ): Promise<void> {
     this._setUserData(mesh);
     if (changes.position) {
       this._setPosition(mesh);
@@ -1117,9 +1117,8 @@ export class MeshBuilder {
     }
     if (changes.dimensions || changes.holes || changes.panelDesign) {
       mesh.geometry.dispose();
-      this._getGeometry().then((geometry) => {
-        mesh.geometry = geometry;
-      });
+      const geometry = await this._getGeometry();
+      mesh.geometry = geometry;
     }
   }
 
