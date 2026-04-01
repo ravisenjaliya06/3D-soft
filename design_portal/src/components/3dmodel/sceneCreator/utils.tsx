@@ -637,3 +637,59 @@ export const normalizeUVs = (geometry: THREE.BufferGeometry) => {
 
   uvAttribute.needsUpdate = true;
 };
+
+// map axis for sync state (this is actually IMP function for child objects)
+// Generic mapping function for robust 1D scaling
+// Preserves distance to edges if <= 150mm ("pinned"), otherwise scales proportionally.
+export function mapAxis(
+  baseCenter: number,
+  baseSize: number,
+  oldContainerSize: number,
+  newContainerSize: number,
+  isFixedSize: boolean
+) {
+  const MIN_DIM = 0.01;
+
+  const oldHalf = oldContainerSize / 2;
+  const newHalf = newContainerSize / 2;
+
+  const minEdge = baseCenter - baseSize / 2;
+  const maxEdge = baseCenter + baseSize / 2;
+
+  const dLeft = minEdge - -oldHalf;
+  const dRight = oldHalf - maxEdge;
+
+  let nextSize = baseSize;
+  let nextCenter = baseCenter;
+
+  if (isFixedSize) {
+    if (dLeft <= 150 && dLeft <= dRight) {
+      nextCenter = -newHalf + dLeft + baseSize / 2;
+    } else if (dRight <= 150) {
+      nextCenter = newHalf - dRight - baseSize / 2;
+    } else if (Math.abs(dLeft - dRight) < 1) {
+      nextCenter = 0;
+    } else {
+      nextCenter = baseCenter * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+  } else {
+    let newMin, newMax;
+
+    if (dLeft <= 150) {
+      newMin = -newHalf + dLeft;
+    } else {
+      newMin = minEdge * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+
+    if (dRight <= 150) {
+      newMax = newHalf - dRight;
+    } else {
+      newMax = maxEdge * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+
+    nextSize = Math.max(newMax - newMin, MIN_DIM);
+    nextCenter = (newMin + newMax) / 2;
+  }
+
+  return { nextSize, nextCenter };
+}

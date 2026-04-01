@@ -3226,7 +3226,7 @@ CATALOG = [
     },
     {
         "id": "c0a1b2c3-d4e5-4f67-8a9b-1c2d3e4f5001",
-        "name": "BACK_PANEL_1",
+        "name": "BACK_PLANK_1",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3239,7 +3239,7 @@ CATALOG = [
     },
     {
         "id": "d1b2c3d4-e5f6-4a78-9b0c-2d3e4f5a6002",
-        "name": "BACK_PANEL_2",
+        "name": "BACK_PLANK_2",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3252,7 +3252,7 @@ CATALOG = [
     },
     {
         "id": "e2c3d4e5-f6a7-4b89-8c1d-3e4f5a6b7003",
-        "name": "BACK_PANEL_3",
+        "name": "BACK_PLANK_3",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3265,7 +3265,7 @@ CATALOG = [
     },
     {
         "id": "f3d4e5f6-a7b8-4c90-9d2e-4f5a6b7c8004",
-        "name": "BACK_PANEL_4",
+        "name": "BACK_PLANK_4",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3278,7 +3278,7 @@ CATALOG = [
     },
     {
         "id": "a4e5f6a7-b8c9-4d01-8e3f-5a6b7c8d9005",
-        "name": "BACK_PANEL_5",
+        "name": "BACK_PLANK_5",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3291,7 +3291,7 @@ CATALOG = [
     },
     {
         "id": "b5f6a7b8-c9d0-4e12-9f4a-6b7c8d9e0006",
-        "name": "BACK_PANEL_6",
+        "name": "BACK_PLANK_6",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3304,7 +3304,7 @@ CATALOG = [
     },
     {
         "id": "c6a7b8c9-d0e1-4f23-8a5b-7c8d9e0f1007",
-        "name": "BACK_PANEL_7",
+        "name": "BACK_PLANK_7",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3317,7 +3317,7 @@ CATALOG = [
     },
     {
         "id": "d7b8c9d0-e1f2-4a34-9b6c-8d9e0f1a2008",
-        "name": "BACK_PANEL_8",
+        "name": "BACK_PLANK_8",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",

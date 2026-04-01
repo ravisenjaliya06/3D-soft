@@ -16,7 +16,7 @@ import {
   PART_TYPES,
 } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { convertKeysToCamel, create2DWallFromMeshData } from './utils';
+import { convertKeysToCamel, create2DWallFromMeshData, mapAxis } from './utils';
 
 export class SyncManager {
   private scene: THREE.Scene;
@@ -454,7 +454,6 @@ export class SyncManager {
     }
   }
 
-  // Updates children dimensions when parent dimensions change
   private _updateChildrenDimensions(
     mesh: THREE.Mesh,
     newDimensions: Partial<{ width: number; height: number; depth: number }>
@@ -464,23 +463,18 @@ export class SyncManager {
     const data = this.data as MeshObjectData;
     if (!data.dimensions) return;
 
-    // Use oldData dimensions (before update) and new data dimensions (after update)
     const oldWidth = this.oldData.dimensions?.width ?? 0;
     const oldHeight = this.oldData.dimensions?.height ?? 0;
     const oldDepth = this.oldData.dimensions?.depth ?? 0;
+
     const newWidth = newDimensions.width ?? data.dimensions.width ?? oldWidth;
     const newHeight = newDimensions.height ?? data.dimensions.height ?? oldHeight;
     const newDepth = newDimensions.depth ?? data.dimensions.depth ?? oldDepth;
 
-    // Temporary fix for zero dimension
     const MIN_DIM = 0.01;
 
-    /**
-     * Calculate how much the parent mesh has scaled.
-     * Example:
-     *  oldWidth = 100, newWidth = 200 → scaleX = 2
-     *  That means children should also double in width.
-     */
+    // Use MIN_DIM guard only when the old value is actually zero to prevent division by zero.
+    // When old == new (axis unchanged), scale must be exactly 1.0 to avoid cumulative drift.
     const scaleX = newWidth / (oldWidth + MIN_DIM);
     const scaleY = newHeight / (oldHeight + MIN_DIM);
     const scaleZ = newDepth / (oldDepth + MIN_DIM);
@@ -490,9 +484,11 @@ export class SyncManager {
     mesh.children.forEach((child) => {
       if (!(child instanceof THREE.Mesh) || !(child.geometry instanceof THREE.BoxGeometry)) return;
 
-      // Skip banding meshes - they will be updated separately
-      if (child.userData.type === 'banding') {
-        // Update banding mesh dimensions and position
+      const userDataStr = child.userData.type || '';
+      const nameStr = (child.name || child.userData.name || '').toUpperCase();
+
+      // 🔹 Handle Banding (unchanged)
+      if (userDataStr === 'banding') {
         const edge = child.userData.edge;
         const bandingParams = child.geometry.parameters;
         const bandingThickness = Math.min(
@@ -501,12 +497,12 @@ export class SyncManager {
           bandingParams.depth
         );
 
-        let newBandingGeometry: THREE.BoxGeometry;
-        let newBandingPosition: THREE.Vector3;
+        let geo: THREE.BoxGeometry;
+        let pos: THREE.Vector3;
 
         if (edge === 'top' || edge === 'bottom') {
-          newBandingGeometry = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
-          newBandingPosition = new THREE.Vector3(
+          geo = new THREE.BoxGeometry(newWidth, bandingThickness, newDepth);
+          pos = new THREE.Vector3(
             0,
             edge === 'top'
               ? newHeight / 2 - bandingThickness / 2
@@ -514,144 +510,165 @@ export class SyncManager {
             0
           );
         } else if (edge === 'left' || edge === 'right') {
-          newBandingGeometry = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
-          newBandingPosition = new THREE.Vector3(
+          geo = new THREE.BoxGeometry(bandingThickness, newHeight, newDepth);
+          pos = new THREE.Vector3(
             edge === 'left'
               ? -newWidth / 2 + bandingThickness / 2
               : newWidth / 2 - bandingThickness / 2,
             0,
             0
           );
-        } else if (edge === 'front' || edge === 'back') {
-          newBandingGeometry = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
-          newBandingPosition = new THREE.Vector3(
+        } else {
+          geo = new THREE.BoxGeometry(newWidth, newHeight, bandingThickness);
+          pos = new THREE.Vector3(
             0,
             0,
             edge === 'front'
               ? newDepth / 2 - bandingThickness / 2
               : -newDepth / 2 + bandingThickness / 2
           );
-        } else {
-          return; // Unknown edge
         }
 
         child.geometry.dispose();
-        child.geometry = newBandingGeometry;
-        child.position.copy(newBandingPosition);
+        child.geometry = geo;
+        child.position.copy(pos);
         return;
       }
 
-      const childParams = child.geometry.parameters;
+      const params = child.geometry.parameters;
 
-      let baseWidth = childParams.width;
-      let baseHeight = childParams.height;
-      let baseDepth = childParams.depth;
+      // Always use current geometry parameters as the base.
+      // child.userData.originalDimensions is set by banding tool to track pre-banding sizes
+      // and represents a REDUCED size (after banding subtraction), NOT the real current geometry.
+      // Using it here would cause stale values on axes that were already scaled in a previous
+      // dimension change, leading to incorrect mapAxis results and "exploded" cupboard layouts.
+      let baseWidth = params.width;
+      let baseHeight = params.height;
+      let baseDepth = params.depth;
 
-      if (child.userData.originalDimensions) {
-        baseWidth = child.userData.originalDimensions.width;
-        baseHeight = child.userData.originalDimensions.height;
+      const isPlank =
+        userDataStr === PART_TYPES.PLANK || userDataStr.toLowerCase().includes(PART_TYPES.PLANK);
+
+      // Identify Plank Role for scaling locking
+      const isVertical =
+        isPlank &&
+        (userDataStr === PART_TYPES.VERTICAL_PLANK ||
+          nameStr.includes('LEFT') ||
+          nameStr.includes('RIGHT') ||
+          nameStr.includes('VERTICAL'));
+      const isHorizontal =
+        isPlank &&
+        (userDataStr === PART_TYPES.HORIZONTAL_PLANK ||
+          nameStr.includes('TOP') ||
+          nameStr.includes('BOTTOM') ||
+          nameStr.includes('HORIZONTAL'));
+      const isBack = isPlank && (userDataStr === PART_TYPES.BACK_PLANK || nameStr.includes('BACK'));
+
+      const isGeneric = !isVertical && !isHorizontal && !isBack;
+
+      let nextWidth, nextHeight, nextDepth;
+      let nextX, nextY, nextZ;
+
+      if (isGeneric) {
+        // fallback proportional scaling for undefined structures
+        nextWidth = Math.max(baseWidth * scaleX, MIN_DIM);
+        nextHeight = Math.max(baseHeight * scaleY, MIN_DIM);
+        nextDepth = Math.max(baseDepth * scaleZ, MIN_DIM);
+        nextX = child.position.x * scaleX;
+        nextY = child.position.y * scaleY;
+        nextZ = child.position.z * scaleZ;
+      } else {
+        // X-Axis mapping (Width)
+        const resX = mapAxis(child.position.x, baseWidth, oldWidth, newWidth, isVertical);
+        nextWidth = resX.nextSize;
+        nextX = resX.nextCenter;
+
+        // Y-Axis mapping (Height)
+        const resY = mapAxis(child.position.y, baseHeight, oldHeight, newHeight, isHorizontal);
+        nextHeight = resY.nextSize;
+        nextY = resY.nextCenter;
+
+        // Z-Axis mapping (Depth)
+        const resZ = mapAxis(child.position.z, baseDepth, oldDepth, newDepth, isBack);
+        nextDepth = resZ.nextSize;
+        nextZ = resZ.nextCenter;
       }
 
-      /**
-       * New child dimensions after scaling.
-       * If the parent grows or shrinks, each child grows/shrinks proportionally.
-       */
-      const nextWidth = Math.max(baseWidth * scaleX, MIN_DIM);
-      const nextHeight = Math.max(baseHeight * scaleY, MIN_DIM);
-      const nextDepth = Math.max(baseDepth * scaleZ, MIN_DIM);
-
-      /**
-       * Update child position as well.
-       * If the parent gets bigger, children move farther away proportionally.
-       * If the parent gets smaller, children move closer proportionally.
-       */
-      const nextX = child.position.x * scaleX;
-      const nextY = child.position.y * scaleY;
-      const nextZ = child.position.z * scaleZ;
-
+      // Apply geometry
       child.geometry.dispose();
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
-      if (child.userData.originalDimensions) {
-        delete child.userData.originalDimensions;
-      }
 
       child.position.set(nextX, nextY, nextZ);
 
-      // update userData dimensions so logic like getMeshDimensions sees the new values
       child.userData.dimensions = {
         width: nextWidth,
         height: nextHeight,
         depth: nextDepth,
       };
 
-      // Update banding for this child plank if it has any
-      if (
-        child.userData.type &&
-        ['plank', 'verticalPlank', 'horizontalPlank', 'backPlank'].includes(child.userData.type)
-      ) {
-        // Update banding meshes for this child plank
-        child.children.forEach((bandingChild) => {
-          if (!(bandingChild instanceof THREE.Mesh) || bandingChild.userData.type !== 'banding')
-            return;
-          if (!(bandingChild.geometry instanceof THREE.BoxGeometry)) return;
+      // Keep originalDimensions in sync so banding tool uses correct base sizes
+      if (child.userData.originalDimensions) {
+        child.userData.originalDimensions = {
+          width: nextWidth,
+          height: nextHeight,
+          depth: nextDepth,
+        };
+      }
 
-          const bandingEdge = bandingChild.userData.edge;
-          const bandingParams = bandingChild.geometry.parameters;
+      // 🔹 Update Banding Children on the Plank
+      child.children.forEach((subChild) => {
+        if (!(subChild instanceof THREE.Mesh) || !(subChild.geometry instanceof THREE.BoxGeometry)) return;
+
+        if (subChild.userData.type === 'banding') {
+          const edge = subChild.userData.edge;
+          const bandingParams = subChild.geometry.parameters;
           const bandingThickness = Math.min(
             bandingParams.width,
             bandingParams.height,
             bandingParams.depth
           );
 
-          let newBandingGeometry: THREE.BoxGeometry;
-          let newBandingPosition: THREE.Vector3;
+          let geo: THREE.BoxGeometry;
+          let pos: THREE.Vector3;
 
-          if (bandingEdge === 'top' || bandingEdge === 'bottom') {
-            newBandingGeometry = new THREE.BoxGeometry(nextWidth, bandingThickness, nextDepth);
-            newBandingPosition = new THREE.Vector3(
+          if (edge === 'top' || edge === 'bottom') {
+            geo = new THREE.BoxGeometry(nextWidth, bandingThickness, nextDepth);
+            pos = new THREE.Vector3(
               0,
-              bandingEdge === 'top'
+              edge === 'top'
                 ? nextHeight / 2 - bandingThickness / 2
                 : -nextHeight / 2 + bandingThickness / 2,
               0
             );
-          } else if (bandingEdge === 'left' || bandingEdge === 'right') {
-            newBandingGeometry = new THREE.BoxGeometry(bandingThickness, nextHeight, nextDepth);
-            newBandingPosition = new THREE.Vector3(
-              bandingEdge === 'left'
+          } else if (edge === 'left' || edge === 'right') {
+            geo = new THREE.BoxGeometry(bandingThickness, nextHeight, nextDepth);
+            pos = new THREE.Vector3(
+              edge === 'left'
                 ? -nextWidth / 2 + bandingThickness / 2
                 : nextWidth / 2 - bandingThickness / 2,
               0,
               0
             );
-          } else if (bandingEdge === 'front' || bandingEdge === 'back') {
-            newBandingGeometry = new THREE.BoxGeometry(nextWidth, nextHeight, bandingThickness);
-            newBandingPosition = new THREE.Vector3(
+          } else {
+            geo = new THREE.BoxGeometry(nextWidth, nextHeight, bandingThickness);
+            pos = new THREE.Vector3(
               0,
               0,
-              bandingEdge === 'front'
+              edge === 'front'
                 ? nextDepth / 2 - bandingThickness / 2
                 : -nextDepth / 2 + bandingThickness / 2
             );
-          } else {
-            return;
           }
 
-          bandingChild.geometry.dispose();
-          bandingChild.geometry = newBandingGeometry;
-          bandingChild.position.copy(newBandingPosition);
-        });
-      }
+          subChild.geometry.dispose();
+          subChild.geometry = geo;
+          subChild.position.copy(pos);
+        }
+      });
 
-      // Note: We don't update outline for children - only the selected parent should have an outline
-
-      /**
-       * If this child also exists in your Redux store,
-       * update its dimensions + position there as well.
-       */
+      // Update Redux
       if (child.userData.objectId) {
         const childData = this.storeObjectMap.get(child.userData.objectId);
-
         if (childData) {
           updates.push({
             id: child.userData.objectId,

@@ -67,6 +67,7 @@ import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import SidebarInput from './SidebarInput';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -1992,12 +1993,6 @@ const Sidebar: React.FC = () => {
                                       style: { padding: 0, minHeight: 'auto' },
                                     }
                                   );
-                                  // We allow setting the state so user can type, but maybe we shouldn't dispatch update?
-                                  // User Request: "if minifix distance is 32 so i can only add miniifx ditance 64 other wise 128"
-                                  // "i cnat add" implies blocking or reverting.
-                                  // But user needs to type "6" then "4". If I block "6", they can't type "64".
-                                  // So I should probably allow typing but warn.
-                                  // AND NOT dispatch updateObject?
                                   return;
                                 }
 
@@ -2407,14 +2402,11 @@ const Sidebar: React.FC = () => {
                                         ))}
                                       </select>
                                     ) : (
-                                      <input
-                                        type="number"
+                                      <SidebarInput
                                         min={field.min}
                                         step={1}
                                         value={field.value ?? ''}
-                                        onChange={(e) =>
-                                          field.onValueChange(Number(e.target.value))
-                                        }
+                                        onUpdate={field.onValueChange}
                                         disabled={field.disabled}
                                         className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                       />
@@ -2432,16 +2424,12 @@ const Sidebar: React.FC = () => {
                                   <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                     Width
                                   </p>
-                                  <input
-                                    type="number"
+                                  <SidebarInput
                                     min={1}
                                     step="1"
                                     value={dimensionsUI.width ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'width',
-                                        Math.max(1, Number(e.target.value))
-                                      )
+                                    onUpdate={(val) =>
+                                      handleDimensionChange('width', Math.max(1, val))
                                     }
                                     disabled={isHorizontalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -2453,16 +2441,12 @@ const Sidebar: React.FC = () => {
                                   <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                     Height
                                   </p>
-                                  <input
-                                    type="number"
+                                  <SidebarInput
                                     min={1}
                                     step="1"
                                     value={dimensionsUI.height ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'height',
-                                        Math.max(1, Number(e.target.value))
-                                      )
+                                    onUpdate={(val) =>
+                                      handleDimensionChange('height', Math.max(1, val))
                                     }
                                     disabled={isVerticalPlank || isDisabled}
                                     className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -2474,16 +2458,12 @@ const Sidebar: React.FC = () => {
                                   <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                     Depth
                                   </p>
-                                  <input
-                                    type="number"
+                                  <SidebarInput
                                     min={1}
                                     step="1"
                                     value={dimensionsUI.depth ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'depth',
-                                        Math.max(1, Number(e.target.value))
-                                      )
+                                    onUpdate={(val) =>
+                                      handleDimensionChange('depth', Math.max(1, val))
                                     }
                                     disabled={isQuickHideActive}
                                     className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
