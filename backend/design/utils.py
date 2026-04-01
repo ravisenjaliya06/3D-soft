@@ -291,9 +291,9 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         if banding_material_thickness is not None:
             edge_val = {
                 "name": banding_material_name,
-                "thickness": banding_material_thickness
+                "thickness": banding_material_thickness,
             }
-            
+
         if isinstance(edgebands_raw, dict):
             edge_key_map = {
                 "left": "LEFT",
