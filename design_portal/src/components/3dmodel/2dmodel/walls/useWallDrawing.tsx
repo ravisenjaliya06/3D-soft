@@ -21,7 +21,8 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
   const storeSelector = useSelector((state: RootState) => state.data);
   const points = storeSelector.points;
-  const walls = storeSelector.walls;
+  const objects = storeSelector.objects;
+  const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
   const isWallDrawingActive = storeSelector.isWallDrawingActive;
 
   const [startPointId, setStartPointId] = useState<string | null>(null);
@@ -108,7 +109,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     if (isSamePoint) return;
 
     // Prevent duplicate wall in either direction
-    const isDuplicateWall = walls.some((existingWall) => {
+    const isDuplicateWall = walls.some((existingWall: MeshObjectData) => {
       const wallCoords = getWall2DPoints(existingWall);
       const start = wallCoords.startPoint;
       const end = wallCoords.endPoint;

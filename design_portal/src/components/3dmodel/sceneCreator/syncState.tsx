@@ -617,7 +617,8 @@ export class SyncManager {
 
       // 🔹 Update Banding Children on the Plank
       child.children.forEach((subChild) => {
-        if (!(subChild instanceof THREE.Mesh) || !(subChild.geometry instanceof THREE.BoxGeometry)) return;
+        if (!(subChild instanceof THREE.Mesh) || !(subChild.geometry instanceof THREE.BoxGeometry))
+          return;
 
         if (subChild.userData.type === 'banding') {
           const edge = subChild.userData.edge;

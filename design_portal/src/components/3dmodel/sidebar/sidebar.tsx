@@ -26,6 +26,7 @@ import {
   DOUBLE_DOOR_PLANK_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  FLOOR_PLAN_TYPES,
   INVISIBLE_BOXES,
   Material,
   MeshObjectData,
@@ -494,6 +495,7 @@ const Sidebar: React.FC = () => {
     patch: MeshObjectPatch
   ): Promise<void> {
     if (!selectedObject) return;
+
     const updatedObject: MeshObjectData = {
       ...selectedObject,
       ...patch,
@@ -517,8 +519,7 @@ const Sidebar: React.FC = () => {
         : selectedObject.edgeBanding,
     };
 
-    // Use SyncManager for all objects including floor
-    // MeshBuilder now supports floor material updates
+    // 2. Use SyncManager for 3D scene synchronization
     const syncManager = new SyncManager(updatedObject);
     await syncManager.syncData();
   }
@@ -852,9 +853,16 @@ const Sidebar: React.FC = () => {
 
     if (config) {
       const scaleValue = selectedObject.scale?.[config.axis] ?? 1;
-      if (config.side === config.negative) {
+      let side = config.side;
+
+      // Force walls to only grow "upward" (maintaining the bottom at floor level)
+      if (selectedObject.type === FLOOR_PLAN_TYPES.WALL && field === 'height') {
+        side = config.positive; // 'top'
+      }
+
+      if (side === config.negative) {
         positionShift[config.axis] = -(delta / 2) * scaleValue;
-      } else if (config.side === config.positive) {
+      } else if (side === config.positive) {
         positionShift[config.axis] = (delta / 2) * scaleValue;
       }
     }
@@ -913,10 +921,11 @@ const Sidebar: React.FC = () => {
 
       //@ts-ignore
       const updatedMaterials: Material[] = materialArray.map((mat) => {
-        // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
+        // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects) and Wall
         if (
           mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK ||
-          mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS
+          mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS ||
+          mat?.type === SCENE_MATERIAL_TYPES.WALL
         ) {
           return {
             ...mat,
@@ -1159,7 +1168,9 @@ const Sidebar: React.FC = () => {
       PART_TYPES.VERTICAL_PLANK,
       PART_TYPES.HORIZONTAL_PLANK,
       ...Object.values(DRAWER_PLANK_TYPES),
-      'floor', // Exclude floor objects - they should have texture change enabled
+      'floor',
+      FLOOR_PLAN_TYPES.WALL,
+      FLOOR_PLAN_TYPES.CWALL,
     ].includes(selectedObject.type);
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
@@ -1174,6 +1185,9 @@ const Sidebar: React.FC = () => {
     selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
     selectedObject?.name?.toLowerCase().includes('invisible_box') ||
     selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
+
+  // Wall selected flag
+  const isWallSelected = selectedObject?.type === FLOOR_PLAN_TYPES.WALL;
 
   // Disable texture change for invisible boxes (unless it's a plank which is handled separately)
   // We allow Full Cupboards to change texture now.
@@ -1920,284 +1934,361 @@ const Sidebar: React.FC = () => {
             <>
               {/* your existing code – NO CHANGES inside */}
               <div className="w-[15rem] bg-white p-3 shadow-sm">
-                {/* ================= Minifix & Grooving ================= */}
-                <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                  {/* Header */}
-                  <div className="mb-[0rem] flex items-center justify-between">
-                    <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
-                      Minifix & Grooving
-                    </p>
-                    <button
-                      onClick={() => toggleSection('minifix')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.minifix ? '+' : '−'}
-                    </button>
-                  </div>
-                  {!collapsed.minifix && (
-                    <>
-                      {/* ================= Split Inputs ================= */}
-                      <div className="flex gap-[0.75rem]">
-                        {/* -------- LEFT PART -------- */}
-                        <div className="flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="ml-[0rem] flex items-center gap-[1rem]">
-                            <div
-                              onClick={handleMinifixToggle}
-                              className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {/* Knob */}
-                              <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  minifixEnabled
-                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                }`}
-                              />
-                            </div>
-                            <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Minifix
-                            </p>
-                          </div>
+                {/* ================= WALL PROPERTIES ================= */}
+                {isWallSelected && (
+                  <>
+                    {/* Wall – Layout (Dimensions) */}
+                    <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                      <div className="mb-[0rem] flex items-center justify-between">
+                        <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                          Wall Layout
+                        </p>
+                        <button
+                          onClick={() => toggleSection('layout')}
+                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        >
+                          <img
+                            src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                            alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                            className="h-[0.8rem] w-[0.8rem]"
+                          />
+                        </button>
+                      </div>
 
-                          {/* Distance */}
-                          <div className="mt-[0rem]">
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Distance
+                      {!collapsed.layout && (
+                        <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0.4rem]">
+                          {/* Height only for wall */}
+                          <div className="flex flex-col gap-[0.2rem]">
+                            <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Height
                             </p>
-                            <input
-                              type="number"
+                            <SidebarInput
+                              min={1}
+                              step="1"
+                              value={dimensionsUI.height ?? ''}
+                              onUpdate={(val) => handleDimensionChange('height', Math.max(1, val))}
                               disabled={isDisabled}
-                              value={minifixDistanceInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setMinifixDistanceInput(value);
-
-                                if (value % 32 !== 0) {
-                                  toast(
-                                    ({ closeToast }) => (
-                                      <CustomToast
-                                        appearance="error"
-                                        message="Distance must be in multiple of 32"
-                                        closeToast={closeToast}
-                                      />
-                                    ),
-                                    {
-                                      position: 'top-center',
-                                      autoClose: 3000,
-                                      hideProgressBar: true, // as per user pref or default
-                                      closeButton: false,
-                                      icon: false,
-                                      className:
-                                        '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
-                                      style: { padding: 0, minHeight: 'auto' },
-                                    }
-                                  );
-                                  return;
-                                }
-
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, minifixDistance: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemMinifixDistance(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                            <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
-                              in multiple of 32
-                            </p>
-                          </div>
-
-                          {/* Diameter Hole */}
-                          <div className="">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Diameter Hole
-                            </p>
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled || isDisabled}
-                              value={minifixDiameterHoleInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setMinifixDiameterHoleInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({
-                                      id: selectedObject.id,
-                                      minifixDiameterHole: value,
-                                    })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemMinifixDiameterHole(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
+                      )}
+                    </div>
 
-                        {/* -------- VERTICAL DIVIDER -------- */}
-                        <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+                    <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                        {/* -------- RIGHT PART -------- */}
-                        <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="flex items-center gap-[0.5rem]">
-                            <div
-                              className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
-                            >
-                              {/* Knob */}
-                              <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
+                    {/* Wall – Texture */}
+                    <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
+                      <div className="mt-[0rem] flex gap-[0rem]">
+                        <div className="flex-1">
+                          <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                            Wall Texture
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-[0rem] flex gap-[1rem]">
+                        {/* Select Texture Button */}
+                        <button
+                          onClick={toggleTextureList}
+                          disabled={isDisabled}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
+                        >
+                          Select Texture
+                          <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                  </>
+                )}
+                {/* ================= Minifix & Grooving ================= */}
+                {!isWallSelected && (
+                  <>
+                    <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                      {/* Header */}
+                      <div className="mb-[0rem] flex items-center justify-between">
+                        <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                          Minifix & Grooving
+                        </p>
+                        <button
+                          onClick={() => toggleSection('minifix')}
+                          className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                        >
+                          {collapsed.minifix ? '+' : '−'}
+                        </button>
+                      </div>
+                      {!collapsed.minifix && (
+                        <>
+                          {/* ================= Split Inputs ================= */}
+                          <div className="flex gap-[0.75rem]">
+                            {/* -------- LEFT PART -------- */}
+                            <div className="flex w-[6rem] flex-col">
+                              {/* Toggle */}
+                              <div className="ml-[0rem] flex items-center gap-[1rem]">
+                                <div
+                                  onClick={handleMinifixToggle}
+                                  className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                                >
+                                  {/* Knob */}
+                                  <div
+                                    className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                      minifixEnabled
+                                        ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                        : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                    }`}
+                                  />
+                                </div>
+                                <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Minifix
+                                </p>
+                              </div>
+
+                              {/* Distance */}
+                              <div className="mt-[0rem]">
+                                <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Distance
+                                </p>
+                                <input
+                                  type="number"
+                                  disabled={isDisabled}
+                                  value={minifixDistanceInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setMinifixDistanceInput(value);
+
+                                    if (value % 32 !== 0) {
+                                      toast(
+                                        ({ closeToast }) => (
+                                          <CustomToast
+                                            appearance="error"
+                                            message="Distance must be in multiple of 32"
+                                            closeToast={closeToast}
+                                          />
+                                        ),
+                                        {
+                                          position: 'top-center',
+                                          autoClose: 3000,
+                                          hideProgressBar: true, // as per user pref or default
+                                          closeButton: false,
+                                          icon: false,
+                                          className:
+                                            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                          style: { padding: 0, minHeight: 'auto' },
+                                        }
+                                      );
+                                      return;
+                                    }
+
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({
+                                          id: selectedObject.id,
+                                          minifixDistance: value,
+                                        })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemMinifixDistance(value));
+                                    }
+                                  }}
+                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                                <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
+                                  in multiple of 32
+                                </p>
+                              </div>
+
+                              {/* Diameter Hole */}
+                              <div className="">
+                                <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Diameter Hole
+                                </p>
+                                <input
+                                  type="number"
+                                  disabled={!minifixEnabled || isDisabled}
+                                  value={minifixDiameterHoleInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setMinifixDiameterHoleInput(value);
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({
+                                          id: selectedObject.id,
+                                          minifixDiameterHole: value,
+                                        })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemMinifixDiameterHole(value));
+                                    }
+                                  }}
+                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
                             </div>
 
-                            <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
-                              Grooving
-                            </p>
-                          </div>
+                            {/* -------- VERTICAL DIVIDER -------- */}
+                            <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
 
-                          {/* Inside */}
-                          <div>
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Inside
-                            </p>
-                            <input
-                              type="number"
-                              disabled={true}
-                              // value={inside}
-                              // onChange={(e) => setInside(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
+                            {/* -------- RIGHT PART -------- */}
+                            <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
+                              {/* Toggle */}
+                              <div className="flex items-center gap-[0.5rem]">
+                                <div
+                                  className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
+                                >
+                                  {/* Knob */}
+                                  <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
+                                </div>
 
-                          {/* Edge to End */}
-                          <div>
-                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Edge to End
-                            </p>
-                            <input
-                              type="number"
-                              disabled={true}
-                              // value={edgeToEnd}
-                              // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
+                                <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
+                                  Grooving
+                                </p>
+                              </div>
+
+                              {/* Inside */}
+                              <div>
+                                <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Inside
+                                </p>
+                                <input
+                                  type="number"
+                                  disabled={true}
+                                  // value={inside}
+                                  // onChange={(e) => setInside(Number(e.target.value))}
+                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+
+                              {/* Edge to End */}
+                              <div>
+                                <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                  Edge to End
+                                </p>
+                                <input
+                                  type="number"
+                                  disabled={true}
+                                  // value={edgeToEnd}
+                                  // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        </>
+                      )}
+                    </div>
+                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                    {/* ================= Camlock Screw Hole ================= */}
+                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                      <div className="flex items-center justify-between gap-[0.5rem]">
+                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                          Camlock Screw Hole
+                        </p>
+                        <button
+                          onClick={() => toggleSection('camlock')}
+                          className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        >
+                          <img
+                            src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
+                            alt={collapsed.camlock ? 'Expand' : 'Collapse'}
+                            className="h-[0.8rem] w-[0.8rem]"
+                          />
+                        </button>
                       </div>
-                    </>
-                  )}
-                </div>
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                      {!collapsed.camlock && (
+                        <>
+                          <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
+                            <div>
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                                Diameter
+                              </p>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  disabled={!minifixEnabled || isDisabled}
+                                  value={camDiameterInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setCamDiameterInput(value);
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({ id: selectedObject.id, camDiameter: value })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemCamDiameter(value));
+                                    }
+                                  }}
+                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
 
-                {/* ================= Camlock Screw Hole ================= */}
-                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                  <div className="flex items-center justify-between gap-[0.5rem]">
-                    <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                      Camlock Screw Hole
-                    </p>
-                    <button
-                      onClick={() => toggleSection('camlock')}
-                      className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                    >
-                      <img
-                        src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
-                        alt={collapsed.camlock ? 'Expand' : 'Collapse'}
-                        className="h-[0.8rem] w-[0.8rem]"
-                      />
-                    </button>
-                  </div>
-                  {!collapsed.camlock && (
-                    <>
-                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Diameter
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled || isDisabled}
-                              value={camDiameterInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamDiameterInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camDiameter: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamDiameter(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
+                            <div>
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                                Depth
+                              </p>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  disabled={!minifixEnabled || isDisabled}
+                                  value={camDepthInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setCamDepthInput(value);
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({ id: selectedObject.id, camDepth: value })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemCamDepth(value));
+                                    }
+                                  }}
+                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
 
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Depth
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled || isDisabled}
-                              value={camDepthInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamDepthInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camDepth: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamDepth(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
+                            <div>
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                                Height
+                              </p>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  disabled={!minifixEnabled || isDisabled}
+                                  value={camHeightInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setCamHeightInput(value);
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({ id: selectedObject.id, camHeight: value })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemCamHeight(value));
+                                    }
+                                  }}
+                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Height
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled || isDisabled}
-                              value={camHeightInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamHeightInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camHeight: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamHeight(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-              <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between gap-[0.5rem]">
@@ -2243,7 +2334,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Edge Banding Controls for Planks */}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between gap-[0.5rem]">
@@ -2306,181 +2397,186 @@ const Sidebar: React.FC = () => {
                 </>
               )}
 
-              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && (
-                <>
-                  {sideBarMenuConfig.map((menu) => (
-                    <div key={menu.subMenu}>
-                      {/* HEADER */}
-                      <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                        <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
-                          <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                            {menu.title}
-                          </p>
-                          <button
-                            onClick={() => toggleSection('layout')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                          >
-                            <img
-                              src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
-                              alt={collapsed.layout ? 'Expand' : 'Collapse'}
-                              className="h-[0.8rem] w-[0.8rem]"
-                            />
-                          </button>
-                        </div>
-                        {!collapsed.layout && (
-                          <>
-                            {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
-                            {(isPlankSelected || isPlatformSelected) && (
-                              <div className="flex flex-col gap-[0.6rem]">
-                                {menu.fields.map((field) => (
-                                  <div
-                                    key={field.name}
-                                    className="flex flex-row items-start justify-between gap-[0rem]"
-                                  >
-                                    {/* LEFT SIDE */}
-                                    <div className="flex items-center justify-between gap-[0rem]">
-                                      {/* LEFT: LABEL */}
-                                      <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                        {field.label}
-                                      </p>
+              {!isQuickHideActive &&
+                isSettingOpen &&
+                isFullCupboardorPlankSelected &&
+                !isWallSelected && (
+                  <>
+                    {sideBarMenuConfig.map((menu) => (
+                      <div key={menu.subMenu}>
+                        {/* HEADER */}
+                        <div className="mb-[0rem] ml-[1rem] flex flex-col">
+                          <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                            <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              {menu.title}
+                            </p>
+                            <button
+                              onClick={() => toggleSection('layout')}
+                              className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+                          {!collapsed.layout && (
+                            <>
+                              {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
+                              {(isPlankSelected || isPlatformSelected) && (
+                                <div className="flex flex-col gap-[0.6rem]">
+                                  {menu.fields.map((field) => (
+                                    <div
+                                      key={field.name}
+                                      className="flex flex-row items-start justify-between gap-[0rem]"
+                                    >
+                                      {/* LEFT SIDE */}
+                                      <div className="flex items-center justify-between gap-[0rem]">
+                                        {/* LEFT: LABEL */}
+                                        <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          {field.label}
+                                        </p>
 
-                                      {field.controls && (
-                                        <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                          {controlIconMap[field.name]?.map((icon, idx) => {
-                                            let isActive = false;
-                                            if (field.name === 'width') {
-                                              isActive =
-                                                (idx === 0 && widthSide === 'left') ||
-                                                (idx === 1 && widthSide === 'right');
-                                            } else if (field.name === 'height') {
-                                              isActive =
-                                                (idx === 0 && heightSide === 'top') ||
-                                                (idx === 1 && heightSide === 'bottom');
-                                            } else if (field.name === 'depth') {
-                                              isActive =
-                                                (idx === 0 && depthSide === 'front') ||
-                                                (idx === 1 && depthSide === 'back');
-                                            }
+                                        {field.controls && (
+                                          <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                            {controlIconMap[field.name]?.map((icon, idx) => {
+                                              let isActive = false;
+                                              if (field.name === 'width') {
+                                                isActive =
+                                                  (idx === 0 && widthSide === 'left') ||
+                                                  (idx === 1 && widthSide === 'right');
+                                              } else if (field.name === 'height') {
+                                                isActive =
+                                                  (idx === 0 && heightSide === 'top') ||
+                                                  (idx === 1 && heightSide === 'bottom');
+                                              } else if (field.name === 'depth') {
+                                                isActive =
+                                                  (idx === 0 && depthSide === 'front') ||
+                                                  (idx === 1 && depthSide === 'back');
+                                              }
 
-                                            return (
-                                              <button
-                                                key={idx}
-                                                type="button"
-                                                onClick={() => handleControlClick(field.name, idx)}
-                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                                  isActive
-                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                } `}
-                                              >
-                                                <img
-                                                  src={icon}
-                                                  alt="control"
-                                                  className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                                />
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
+                                              return (
+                                                <button
+                                                  key={idx}
+                                                  type="button"
+                                                  onClick={() =>
+                                                    handleControlClick(field.name, idx)
+                                                  }
+                                                  className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                    isActive
+                                                      ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                      : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  } `}
+                                                >
+                                                  <img
+                                                    src={icon}
+                                                    alt="control"
+                                                    className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                                  />
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* RIGHT SIDE INPUT */}
+                                      {field.type === 'select' ? (
+                                        <select
+                                          value={field.value ?? ''}
+                                          onChange={(e) =>
+                                            field.onValueChange(Number(e.target.value))
+                                          }
+                                          disabled={field.disabled}
+                                          className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
+                                        >
+                                          {field.options?.map((opt) => (
+                                            <option key={opt} value={opt}>
+                                              {opt}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <SidebarInput
+                                          min={field.min}
+                                          step={1}
+                                          value={field.value ?? ''}
+                                          onUpdate={field.onValueChange}
+                                          disabled={field.disabled}
+                                          className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        />
                                       )}
                                     </div>
+                                  ))}
+                                </div>
+                              )}
 
-                                    {/* RIGHT SIDE INPUT */}
-                                    {field.type === 'select' ? (
-                                      <select
-                                        value={field.value ?? ''}
-                                        onChange={(e) =>
-                                          field.onValueChange(Number(e.target.value))
-                                        }
-                                        disabled={field.disabled}
-                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
-                                      >
-                                        {field.options?.map((opt) => (
-                                          <option key={opt} value={opt}>
-                                            {opt}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <SidebarInput
-                                        min={field.min}
-                                        step={1}
-                                        value={field.value ?? ''}
-                                        onUpdate={field.onValueChange}
-                                        disabled={field.disabled}
-                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                      />
-                                    )}
+                              {/* CUPBOARD LAYOUT - 2x2 GRID */}
+                              {!isPlankSelected && !isPlatformSelected && (
+                                <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
+                                  {/* Width */}
+                                  <div className="flex flex-col gap-[0.2rem]">
+                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Width
+                                    </p>
+                                    <SidebarInput
+                                      min={1}
+                                      step="1"
+                                      value={dimensionsUI.width ?? ''}
+                                      onUpdate={(val) =>
+                                        handleDimensionChange('width', Math.max(1, val))
+                                      }
+                                      disabled={isHorizontalPlank || isDisabled}
+                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
                                   </div>
-                                ))}
-                              </div>
-                            )}
 
-                            {/* CUPBOARD LAYOUT - 2x2 GRID */}
-                            {!isPlankSelected && !isPlatformSelected && (
-                              <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
-                                {/* Width */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Width
-                                  </p>
-                                  <SidebarInput
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.width ?? ''}
-                                    onUpdate={(val) =>
-                                      handleDimensionChange('width', Math.max(1, val))
-                                    }
-                                    disabled={isHorizontalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
+                                  {/* Height */}
+                                  <div className="flex flex-col gap-[0.2rem]">
+                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Height
+                                    </p>
+                                    <SidebarInput
+                                      min={1}
+                                      step="1"
+                                      value={dimensionsUI.height ?? ''}
+                                      onUpdate={(val) =>
+                                        handleDimensionChange('height', Math.max(1, val))
+                                      }
+                                      disabled={isVerticalPlank || isDisabled}
+                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </div>
 
-                                {/* Height */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Height
-                                  </p>
-                                  <SidebarInput
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.height ?? ''}
-                                    onUpdate={(val) =>
-                                      handleDimensionChange('height', Math.max(1, val))
-                                    }
-                                    disabled={isVerticalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
+                                  {/* Depth */}
+                                  <div className="flex flex-col gap-[0.2rem]">
+                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Depth
+                                    </p>
+                                    <SidebarInput
+                                      min={1}
+                                      step="1"
+                                      value={dimensionsUI.depth ?? ''}
+                                      onUpdate={(val) =>
+                                        handleDimensionChange('depth', Math.max(1, val))
+                                      }
+                                      disabled={isQuickHideActive}
+                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </div>
                                 </div>
+                              )}
+                            </>
+                          )}
+                        </div>
 
-                                {/* Depth */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Depth
-                                  </p>
-                                  <SidebarInput
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.depth ?? ''}
-                                    onUpdate={(val) =>
-                                      handleDimensionChange('depth', Math.max(1, val))
-                                    }
-                                    disabled={isQuickHideActive}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
+                        <hr className="my-[0.4rem] opacity-20" />
                       </div>
-
-                      <hr className="my-[0.4rem] opacity-20" />
-                    </div>
-                  ))}
-                </>
-              )}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
+                    ))}
+                  </>
+                )}
+              {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                     <div className="flex items-center justify-between gap-[0.5rem]">
