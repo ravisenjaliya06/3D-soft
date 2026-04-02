@@ -561,8 +561,13 @@ export class SyncManager {
         (userDataStr === PART_TYPES.HORIZONTAL_PLANK ||
           nameStr.includes('TOP') ||
           nameStr.includes('BOTTOM') ||
-          nameStr.includes('HORIZONTAL'));
-      const isBack = isPlank && (userDataStr === PART_TYPES.BACK_PLANK || nameStr.includes('BACK'));
+          nameStr.includes('HORIZONTAL') ||
+          nameStr.includes('SKIRTING'));
+      const isBack =
+        isPlank &&
+        (userDataStr === PART_TYPES.BACK_PLANK ||
+          nameStr.includes('BACK') ||
+          nameStr.includes('FRONT'));
 
       const isGeneric = !isVertical && !isHorizontal && !isBack;
 

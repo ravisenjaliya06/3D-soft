@@ -1466,28 +1466,50 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handleFrontpanelToggle = () => {
-    if (frontpanelDisabled || !isLatestVersion) return;
+  const handleSkirtingToggle = async () => {
+    if (!selectedObject || !scene || isDisabled || !isLatestVersion) return;
 
-    const isEnabled = !frontpanelEnabled;
-    setFrontpanelEnabled(isEnabled);
-
-    if (!scene || !selectedObject) return;
-
-    // Find the actual mesh in the scene
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
         targetMesh = obj;
       }
     });
 
-    if (targetMesh) {
+    if (!targetMesh) return;
+
+    try {
+      const isEnabled = !selectedObject.skirtingEnabled;
+      const updatePatch: any = { skirtingEnabled: isEnabled };
+
       if (isEnabled) {
+        // Turning skirting ON
+        // Automatically turn off Nailer if it was on
+        if (selectedObject.nailerEnabled) {
+          updatePatch.nailerEnabled = false;
+          await removeNailers(scene, targetMesh);
+        }
+
+        // We use 'No Base' (flush sides) as the foundation for skirting
+        if (!selectedObject.noBaseEnabled) {
+          await applyNoBase(scene, targetMesh, true);
+        }
+
+        await applyObjectUpdate(selectedObject, updatePatch);
         addSkirtingPlanks(targetMesh);
       } else {
+        // Turning skirting OFF
         removeSkirtingPlanks(targetMesh);
+
+        // If we want the normal extended base back
+        if (!selectedObject.noBaseEnabled) {
+          await applyNoBase(scene, targetMesh, false);
+        }
+
+        await applyObjectUpdate(selectedObject, updatePatch);
       }
+    } catch (error) {
+      console.error('Error toggling skirting:', error);
     }
   };
 
@@ -1511,7 +1533,7 @@ const Sidebar: React.FC = () => {
       if (isEnabled) {
         // Turning nailer ON -> automatically remove skirting planks.
         removeSkirtingPlanks(targetMesh);
-        setFrontpanelEnabled(false);
+        updatePatch.skirtingEnabled = false;
       }
 
       if (isEnabled && selectedObject.noBaseEnabled) {
@@ -1565,7 +1587,7 @@ const Sidebar: React.FC = () => {
       if (isEnabled) {
         // Remove skirting planks immediately
         removeSkirtingPlanks(targetMesh);
-        setFrontpanelEnabled(false);
+        updatePatch.skirtingEnabled = false;
 
         // Turn off Nailer if it was on
         if (selectedObject.nailerEnabled) {
@@ -2822,13 +2844,13 @@ const Sidebar: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-[0rem]">
                           <div
-                            onClick={handleFrontpanelToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            onClick={handleSkirtingToggle}
+                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.skirtingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                frontpanelEnabled
+                                selectedObject?.skirtingEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                               }`}
@@ -2836,9 +2858,9 @@ const Sidebar: React.FC = () => {
                           </div>
 
                           <p
-                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]`}
                           >
-                            Front & Back Panel
+                            Skirting
                           </p>
                           <div
                             className={`flex items-center gap-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}

@@ -1349,6 +1349,7 @@ export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, ne
 export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   if (!boxMesh) return;
   if (boxMesh.userData?.noBaseEnabled) return;
+
   const boxObject = store
     .getState()
     .data.objects.find(
@@ -1357,6 +1358,42 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   if (!boxObject) {
     console.error('object not found');
     return;
+  }
+
+  const { bottomPlank, verticalPlanks } = getCupboardPlanks(boxMesh);
+  if (!bottomPlank) return;
+
+  const bp = bottomPlank as THREE.Mesh;
+  const bpGeo = bp.geometry as THREE.BoxGeometry;
+  const actualBottomY = bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
+
+  const scene = boxMesh.parent as THREE.Scene;
+
+  // 1. Make vertical planks flush
+  verticalPlanks.forEach((vp) => {
+    const { height } = (vp.geometry as THREE.BoxGeometry).parameters;
+    const vpMinY = vp.position.y - height / 2;
+
+    if (vpMinY < actualBottomY - 1) {
+      const newHeight = vp.position.y + height / 2 - actualBottomY;
+      if (newHeight > 0) {
+        if (vp.userData.originalHeight === undefined) {
+          vp.userData.originalHeight = height;
+          vp.userData.originalY = vp.position.y;
+        }
+        updatePlankDimension(vp, newHeight, actualBottomY + newHeight / 2, boxMesh, scene);
+      }
+    }
+  });
+
+  // 2. Handle Shifting (to 75mm)
+  const worldBottomPos = boxMesh.localToWorld(new THREE.Vector3(0, actualBottomY, 0));
+  const currentWorldBottomY = worldBottomPos.y;
+  const desiredWorldBottomY = 75;
+  const shiftAmount = desiredWorldBottomY - currentWorldBottomY;
+
+  if (Math.abs(shiftAmount) > 0.1) {
+    updateCupboardPosition(boxMesh, shiftAmount, (boxMesh.userData.noBaseShift || 0) + shiftAmount);
   }
 
   const geometry = boxMesh.geometry;
@@ -1368,48 +1405,66 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   const { x: width, y: height, z: depth } = size;
 
   const thickness = 18;
-  const skirtingHeight = 82;
+  const skirtingHeight = 75;
+  const inset = 10;
 
   removeSkirtingPlanks(boxMesh);
 
-  const backSkirtingData: MeshObjectData = {
-    id: crypto.randomUUID(),
-    name: 'BACK_SKIRTING_PLANK',
-    type: PART_TYPES.PLANK,
-    geometryType: GEOMETRY.BOX_GEOMETRY,
-    parent: boxMesh.userData.objectId,
-    dimensions: { width, height: skirtingHeight, depth: thickness },
-    // Back is Z negative. Cupboard is centered at 0 in its local space.
-    position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: -depth / 2 + thickness / 2 },
-    rotation: { x: 0, y: 0, z: 0 },
-    material: boxObject.material ?? [],
-    isMain: false,
-  };
+  // Position skirting such that it is from world Y=0 to Y=75
+  // Local Y for world Y=0 is actualBottomY - 75
+  const skirtingCenterY = actualBottomY - skirtingHeight / 2;
 
-  const backSkirting = new MeshBuilder(backSkirtingData);
-  const back = backSkirting.createMesh();
-  back.userData.isSkirting = true;
-  boxMesh.add(back);
-  store.dispatch(updateObject(backSkirtingData));
+  const skirtingConfigs = [
+    {
+      name: 'FRONT_SKIRTING_PLANK',
+      dimensions: { width: width - 2 * inset, height: skirtingHeight, depth: thickness },
+      position: { x: 0, y: skirtingCenterY, z: depth / 2 - thickness / 2 - inset },
+    },
+    {
+      name: 'BACK_SKIRTING_PLANK',
+      dimensions: { width: width - 2 * inset, height: skirtingHeight, depth: thickness },
+      position: { x: 0, y: skirtingCenterY, z: -depth / 2 + thickness / 2 + inset },
+    },
+    {
+      name: 'LEFT_SKIRTING_PLANK',
+      dimensions: {
+        width: thickness,
+        height: skirtingHeight,
+        depth: depth - 2 * inset - 2 * thickness,
+      },
+      position: { x: -width / 2 + thickness / 2 + inset, y: skirtingCenterY, z: 0 },
+    },
+    {
+      name: 'RIGHT_SKIRTING_PLANK',
+      dimensions: {
+        width: thickness,
+        height: skirtingHeight,
+        depth: depth - 2 * inset - 2 * thickness,
+      },
+      position: { x: width / 2 - thickness / 2 - inset, y: skirtingCenterY, z: 0 },
+    },
+  ];
 
-  const frontSkirtingData: MeshObjectData = {
-    id: crypto.randomUUID(),
-    name: 'FRONT_SKIRTING_PLANK',
-    type: PART_TYPES.PLANK,
-    geometryType: GEOMETRY.BOX_GEOMETRY,
-    parent: boxMesh.userData.objectId,
-    dimensions: { width, height: skirtingHeight, depth: thickness },
-    position: { x: 0, y: -height / 2 + skirtingHeight / 2, z: depth / 2 - thickness / 2 },
-    rotation: { x: 0, y: 0, z: 0 },
-    material: boxObject.material ?? [],
-    isMain: false,
-  };
+  skirtingConfigs.forEach((config) => {
+    const data: MeshObjectData = {
+      id: crypto.randomUUID(),
+      name: config.name,
+      type: PART_TYPES.PLANK,
+      geometryType: GEOMETRY.BOX_GEOMETRY,
+      parent: boxMesh.userData.objectId,
+      dimensions: config.dimensions,
+      position: config.position,
+      rotation: { x: 0, y: 0, z: 0 },
+      material: boxObject.material ?? [],
+      isMain: false,
+    };
 
-  const frontSkirting = new MeshBuilder(frontSkirtingData);
-  const front = frontSkirting.createMesh();
-  front.userData.isSkirting = true;
-  boxMesh.add(front);
-  store.dispatch(updateObject(frontSkirtingData));
+    const builder = new MeshBuilder(data);
+    const mesh = builder.createMesh();
+    mesh.userData.isSkirting = true;
+    boxMesh.add(mesh);
+    store.dispatch(updateObject(data));
+  });
 };
 
 export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
@@ -1427,6 +1482,49 @@ export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
       store.dispatch(removeObject(objectId));
     }
     boxMesh.remove(child);
+  });
+
+  // Revert Shifting logic if needed
+  // If we remove skirting, we should probably return to the "No Base" position (Y=0) 
+  // or "Normal Base" position (Y=100).
+  // For now, let's just shift back by whatever shift we applied.
+  const shiftAmount = boxMesh.userData.noBaseShift;
+  if (shiftAmount) {
+    updateCupboardPosition(boxMesh, -shiftAmount, 0);
+  }
+
+  // Also revert vertical planks
+  const { verticalPlanks } = getCupboardPlanks(boxMesh);
+  verticalPlanks.forEach((vp) => {
+    const { originalHeight, originalY } = vp.userData;
+    if (originalHeight !== undefined) {
+      updatePlankDimension(vp, originalHeight, originalY, boxMesh);
+      delete vp.userData.originalHeight;
+      delete vp.userData.originalY;
+    }
+  });
+};
+
+export const hydrateSkirting = (cupboardMesh: THREE.Mesh) => {
+  if (!cupboardMesh) return;
+
+  const cupboardId = cupboardMesh.userData.objectId;
+  const allObjects = store.getState().data.objects;
+
+  // Find skirting planks belonging to this cupboard
+  const skirtingPlanks = allObjects.filter(
+    (obj) => obj.parent === cupboardId && obj.name && obj.name.includes('SKIRTING_PLANK')
+  );
+
+  skirtingPlanks.forEach((data) => {
+    // Check if it already exists in the scene
+    const exists = cupboardMesh.children.some((child) => child.userData.objectId === data.id);
+    if (!exists) {
+      const builder = new MeshBuilder(data);
+      const mesh = builder.createMesh();
+      mesh.userData.isSkirting = true;
+      cupboardMesh.add(mesh);
+    }
   });
 };
 
@@ -2142,8 +2240,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [
@@ -2250,15 +2348,7 @@ export const hasExtendedSidePlanks = (cupboardMesh: THREE.Mesh): boolean => {
   return false; // No planks extend below the bottom
 };
 
-export const applyNoBase = async (
-  scene: THREE.Scene,
-  cupboardMesh: THREE.Mesh,
-  isNoBase: boolean
-) => {
-  const cupboardId = cupboardMesh?.userData.objectId;
-  if (!cupboardId) return;
-
-  const currentObjects = store.getState().data.objects;
+const getCupboardPlanks = (cupboardMesh: THREE.Mesh) => {
   let bottomPlank: THREE.Mesh | null = null;
   const verticalPlanks: THREE.Mesh[] = [];
 
@@ -2277,56 +2367,81 @@ export const applyNoBase = async (
     }
   });
 
+  return { bottomPlank, verticalPlanks };
+};
+
+const updatePlankDimension = (
+  vp: THREE.Mesh,
+  height: number,
+  y: number,
+  cupboardMesh: THREE.Mesh,
+  scene?: THREE.Scene
+) => {
+  const currentObjects = store.getState().data.objects;
+  const vpGeo = vp.geometry as THREE.BoxGeometry;
+  vp.geometry.dispose();
+  vp.geometry = new THREE.BoxGeometry(vpGeo.parameters.width, height, vpGeo.parameters.depth);
+  vp.position.y = y;
+
+  const vpData = currentObjects.find((obj) => obj.id === vp.userData.objectId);
+  if (!vpData) return;
+
+  store.dispatch(
+    updateObject({
+      ...vpData,
+      dimensions: { ...vpData.dimensions, height },
+      position: { ...vpData.position, y },
+    })
+  );
+
+  const builder = new MeshBuilder(vpData, scene);
+  builder.setParentMesh(cupboardMesh);
+  builder.updateBanding(vp, { isDimensionUpdate: true });
+};
+
+const updateCupboardPosition = (
+  cupboardMesh: THREE.Mesh,
+  shiftY: number,
+  newShiftData: number
+) => {
+  const currentObjects = store.getState().data.objects;
+  const cupboardId = cupboardMesh.userData.objectId;
+  const localShift = new THREE.Vector3(0, shiftY, 0);
+  const worldPos = cupboardMesh.localToWorld(localShift);
+
+  cupboardMesh.parent?.worldToLocal(worldPos);
+  cupboardMesh.position.copy(worldPos);
+  cupboardMesh.userData.noBaseShift = newShiftData;
+
+  const cbData = currentObjects.find((obj) => obj.id === cupboardId);
+  if (cbData) {
+    store.dispatch(
+      updateObject({
+        ...cbData,
+        position: {
+          x: cupboardMesh.position.x,
+          y: cupboardMesh.position.y,
+          z: cupboardMesh.position.z,
+        },
+      })
+    );
+  }
+};
+
+export const applyNoBase = async (
+  scene: THREE.Scene,
+  cupboardMesh: THREE.Mesh,
+  isNoBase: boolean
+) => {
+  const cupboardId = cupboardMesh?.userData.objectId;
+  if (!cupboardId) return;
+
+  const { bottomPlank, verticalPlanks } = getCupboardPlanks(cupboardMesh);
   const bp = bottomPlank as THREE.Mesh | null;
   if (!bp) return;
 
   const bpGeo = bp.geometry as THREE.BoxGeometry;
   const actualBottomY = bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
-
-  const updatePlankDimension = (vp: THREE.Mesh, height: number, y: number) => {
-    const vpGeo = vp.geometry as THREE.BoxGeometry;
-    vp.geometry.dispose();
-    vp.geometry = new THREE.BoxGeometry(vpGeo.parameters.width, height, vpGeo.parameters.depth);
-    vp.position.y = y;
-
-    const vpData = currentObjects.find((obj) => obj.id === vp.userData.objectId);
-    if (!vpData) return;
-
-    store.dispatch(
-      updateObject({
-        ...vpData,
-        dimensions: { ...vpData.dimensions, height },
-        position: { ...vpData.position, y },
-      })
-    );
-
-    const builder = new MeshBuilder(vpData, scene);
-    builder.setParentMesh(cupboardMesh);
-    builder.updateBanding(vp, { isDimensionUpdate: true });
-  };
-
-  const updateCupboardPosition = (shiftY: number, newShiftData: number) => {
-    const localShift = new THREE.Vector3(0, shiftY, 0);
-    const worldPos = cupboardMesh.localToWorld(localShift);
-
-    cupboardMesh.parent?.worldToLocal(worldPos);
-    cupboardMesh.position.copy(worldPos);
-    cupboardMesh.userData.noBaseShift = newShiftData;
-
-    const cbData = currentObjects.find((obj) => obj.id === cupboardId);
-    if (cbData) {
-      store.dispatch(
-        updateObject({
-          ...cbData,
-          position: {
-            x: cupboardMesh.position.x,
-            y: cupboardMesh.position.y,
-            z: cupboardMesh.position.z,
-          },
-        })
-      );
-    }
-  };
 
   if (isNoBase) {
     let lowestVpMinY: number | null = null;
@@ -2344,20 +2459,20 @@ export const applyNoBase = async (
             vp.userData.originalHeight = height;
             vp.userData.originalY = vp.position.y;
           }
-          updatePlankDimension(vp, newHeight, actualBottomY + newHeight / 2);
+          updatePlankDimension(vp, newHeight, actualBottomY + newHeight / 2, cupboardMesh, scene);
         }
       }
     });
 
     if (lowestVpMinY !== null) {
       const shiftAmount = actualBottomY - lowestVpMinY;
-      updateCupboardPosition(-shiftAmount, shiftAmount);
+      updateCupboardPosition(cupboardMesh, -shiftAmount, shiftAmount);
     }
   } else {
     verticalPlanks.forEach((vp) => {
       const { originalHeight, originalY } = vp.userData;
       if (originalHeight !== undefined) {
-        updatePlankDimension(vp, originalHeight, originalY);
+        updatePlankDimension(vp, originalHeight, originalY, cupboardMesh, scene);
         delete vp.userData.originalHeight;
         delete vp.userData.originalY;
       }
@@ -2365,7 +2480,7 @@ export const applyNoBase = async (
 
     const shiftAmount = cupboardMesh.userData.noBaseShift;
     if (shiftAmount) {
-      updateCupboardPosition(shiftAmount, 0);
+      updateCupboardPosition(cupboardMesh, shiftAmount, 0);
     }
   }
 };
