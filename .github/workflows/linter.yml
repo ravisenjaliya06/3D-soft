@@ -74,9 +74,9 @@ jobs:
           
           echo "Current Coverage: $coverage_percentage%"
           
-          # Logic: Fail if coverage is below 70%
-          if (( $(echo "$coverage_percentage < 70" | bc -l) )); then
-            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 70%)"
+          # Logic: Fail if coverage is below 90%
+          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 90%)"
             echo "Please add more tests."
             exit 1
           else
