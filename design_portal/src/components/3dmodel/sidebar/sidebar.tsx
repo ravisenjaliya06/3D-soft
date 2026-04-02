@@ -35,6 +35,7 @@ import {
   MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
   TextureDetails,
 } from '../sceneCreator/interface';
+
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
@@ -65,7 +66,7 @@ import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
-import { Axis, Field } from './interface';
+import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import SidebarInput from './SidebarInput';
 
@@ -76,7 +77,7 @@ const Sidebar: React.FC = () => {
   const [doorPosition, setDoorPosition] = useState('None');
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
-  const [textureRotation, setTextureRotation] = useState(0);
+  const [textureGrain, setTextureGrain] = useState<TextureGrain>('None');
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
@@ -101,7 +102,6 @@ const Sidebar: React.FC = () => {
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
   const distanceToolRef = useRef<DistanceTool | null>(null);
-  const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
   const isUpdatingPositionRef = useRef(false);
@@ -173,9 +173,11 @@ const Sidebar: React.FC = () => {
 
     if (selectedObject) {
       // @ts-ignore
-      setTextureRotation(selectedObject.textureRotation ?? 0);
+      setTextureGrain(
+        (selectedObject.textureGrain as 'None' | 'Horizontal' | 'Vertical') || 'None'
+      );
     } else {
-      setTextureRotation(0);
+      setTextureGrain('None');
     }
 
     setWidthSide(null);
@@ -779,22 +781,6 @@ const Sidebar: React.FC = () => {
     setShowMaterialPopup(true);
   };
 
-  // Helper function to get texture from Material array
-  const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
-    if (!materialArray || !Array.isArray(materialArray)) return null;
-    // Support both Panel Stock and Floor material types
-    const material = materialArray.find(
-      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
-    );
-    if (material?.textures && material.textures.length > 0) {
-      const texture = material.textures[0];
-      if (texture?.textureDetail?.image) {
-        return texture.textureDetail.image;
-      }
-    }
-    return null;
-  };
-
   // Helper function to check if material has texture
   const hasTextureMaterial = (materialArray?: Material[]): boolean => {
     if (!materialArray || !Array.isArray(materialArray)) return false;
@@ -978,28 +964,20 @@ const Sidebar: React.FC = () => {
     setIsTextureListOpen(false);
   };
 
-  const handleTextureRotationChange = (value: number) => {
+  const handleTextureGrainChange = (value: TextureGrain) => {
     if (!selectedObject || isDisabled) return;
-    const clampedValue = Math.max(0, Math.min(180, value));
-    if (isUpdatingTextureRotationRef.current) return;
-    if (Math.abs(clampedValue - textureRotation) < 0.01) return;
-    isUpdatingTextureRotationRef.current = true;
-    setTextureRotation(clampedValue);
+    const typedValue = value;
+    if (textureGrain === typedValue) return;
+    setTextureGrain(typedValue);
 
-    // Check if material has texture
-    if (hasTextureMaterial(selectedObject.material)) {
-      // Update texture rotation via UpdateHandler
-      const texturePath = getTextureFromMaterial(selectedObject.material);
-      if (texturePath && updateObjectRef.current) {
-        updateObjectRef.current.update(selectedObject.id, {
-          textureRotation: clampedValue,
-        });
-      }
+    if (updateObjectRef.current) {
+      // Pass selectedObject as currentObject so updateRedux is triggered and Redux is updated
+      updateObjectRef.current.update(
+        selectedObject.id,
+        { textureGrain: typedValue },
+        selectedObject
+      );
     }
-
-    setTimeout(() => {
-      isUpdatingTextureRotationRef.current = false;
-    }, 100);
   };
 
   const handleShelvesInnerDistanceChange = (value: number) => {
@@ -3086,29 +3064,18 @@ const Sidebar: React.FC = () => {
 
                         {/* Texture Grain Input */}
                         <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] bg-[white] p-[0rem]">
-                          {/* Rotate Icon */}
-                          <div className="pl-[0.5rem]">
-                            <img
-                              src={assets.rotateIcon}
-                              alt="rotate"
-                              className="pointer-events-none h-[0.8rem] w-[0.8rem] opacity-70"
-                            />
-                          </div>
-                          <div className="flex h-[1.2rem] flex-1 items-center justify-center pl-[0.3rem]">
-                            {/* Input */}
-                            <input
-                              type="number"
-                              min={0}
-                              max={180}
-                              value={textureRotation}
-                              onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                              disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                              className="h-[1rem] w-[2.8rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <div className="pr-[0.2rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
-                            °
-                          </div>
+                          <select
+                            value={textureGrain}
+                            onChange={(e) =>
+                              handleTextureGrainChange(e.target.value as TextureGrain)
+                            }
+                            disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
+                            className="h-[1rem] w-full border-[0rem] pl-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50"
+                          >
+                            <option value="None">None</option>
+                            <option value="Horizontal">Horizontal</option>
+                            <option value="Vertical">Vertical</option>
+                          </select>
                         </div>
                       </div>
                     </div>

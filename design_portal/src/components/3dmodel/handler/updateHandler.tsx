@@ -1,7 +1,7 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
-import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
+import { MeshObjectData, PART_TYPES, TEXTURE_GRAIN } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
@@ -47,6 +47,11 @@ export class UpdateObjectInScene {
     this.updateMeshMaterial(mesh, updates);
     if (updates.textureRotation !== undefined) {
       this.updateTextureRotation(mesh, updates.textureRotation);
+    }
+    if (updates.textureGrain !== undefined) {
+      mesh.userData.textureGrain = updates.textureGrain;
+      const rotationDeg = updates.textureGrain === TEXTURE_GRAIN.VERTICAL ? 90 : 0;
+      this.updateTextureRotation(mesh, rotationDeg);
     }
     if (updates.openDirection) {
       mesh.userData.openDirection = updates.openDirection;
@@ -458,6 +463,9 @@ export class UpdateObjectInScene {
         openDirection: updates.openDirection
           ? (updates.openDirection as any)
           : currentObject.openDirection,
+
+        textureGrain:
+          updates.textureGrain !== undefined ? updates.textureGrain : currentObject.textureGrain,
       })
     );
   }
