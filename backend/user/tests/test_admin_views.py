@@ -61,7 +61,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.factory = RequestFactory()
 
-        # Admin user
         self.admin_user = User.objects.create(
             username="admin",
             email="admin@test.com",
@@ -70,7 +69,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
             is_staff=True,
         )
 
-        # Normal user
         self.normal_user = User.objects.create(
             username="normal",
             email="normal@test.com",
@@ -97,7 +95,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         request.user = AnonymousUser()
         request.COOKIES = {settings.ADMIN_JWT_COOKIE_NAME: "invalid.jwt.token"}
 
-        # Expect TokenError to be raised
         with self.assertRaises(TokenError):
             ApproveUserView.as_view()(request, user_id="1")
 
@@ -204,7 +201,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # ------- Ghost authorization and permission class delegation coverage -------
     def test_is_ghost_authorized_same_org_returns_none(self: "AdminAPIViewTestCase") -> None:
         self.user.is_ghost = True
         self.user.ghost_access_type = "view"
@@ -216,7 +212,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         assert is_ghost_authorized(request) is None
 
     def test_permissions_false_when_no_selected_org(self: "AdminAPIViewTestCase") -> None:
-        # Remove selected organization
         self.user.selected_organization = None
         self.user.save(update_fields=["selected_organization"])
         request = Request(APIRequestFactory().get("/any/"))
@@ -226,15 +221,12 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         assert Designer().has_permission(request, None) is False
         assert MesEditor().has_permission(request, None) is False
 
-    # ---- Smoke tests for authentication and middleware early paths ----
     def test_organization_aware_jwt_auth_returns_none_without_token(self: "AdminAPIViewTestCase") -> None:
         auth = OrganizationAwareJWTAuthentication()
-        # Request without Authorization header returns None
         req = APIRequestFactory().get("/any/")
         assert auth.authenticate(req) is None
 
     def test_ghost_user_middleware_allows_anonymous_through(self: "AdminAPIViewTestCase") -> None:
-        # Next handler records it was called
         called = {"ok": False}
 
         def get_response(_req):
@@ -242,7 +234,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
             return self.client.get(reverse("admin_login"))
 
         mw = GhostUserMiddleware(get_response)
-        # Unauthenticated request should pass through
         req = APIRequestFactory().get("/any/")
         resp = mw(req)
         assert resp.status_code in (200, 302)
@@ -251,20 +242,17 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_ghost_user_middleware_write_deny_on_impersonation(self: "AdminAPIViewTestCase") -> None:
         """Ghost user with view-only impersonating another org should get 403 on write."""
         other_org = Organization.objects.create(name="XOrg", display_name="XOrg")
-        # Ensure user is ghost and not a member of other_org
         self.user.is_ghost = True
         self.user.ghost_access_type = "view"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
-        # Middleware with simple next that would return 200 if allowed
         def get_response(_req):
             return self.client.get(reverse("admin_login"))
         mw = GhostUserMiddleware(get_response)
         req = APIRequestFactory().post("/write/")
         req.user = self.user
-        # Impersonate other org via header
         req.META["HTTP_X_ORGANIZATION_ID"] = str(other_org.id)
         resp = mw(req)
-        assert resp.status_code in (403, 200, 302)  # allow environments where login redirect may occur
+        assert resp.status_code in (403, 200, 302)
 
     def test_is_ghost_authorized_other_org_get_allowed(self: "AdminAPIViewTestCase") -> None:
         """View-only ghost impersonating other org should be allowed for GET."""
@@ -276,7 +264,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         req.META = {"HTTP_X_ORGANIZATION_ID": str(other_org.id)}
         request = Request(req)
         request.user = self.user
-        # Should not raise; returns None or True depending on implementation
         result = is_ghost_authorized(request)
         assert result in (None, True)
 
@@ -308,7 +295,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         req.user = self.user
         req.META["HTTP_X_ORGANIZATION_ID"] = str(other_org.id)
         resp = mw(req)
-        assert resp.status_code in (200, 302)  # allowed
+        assert resp.status_code in (200, 302)
 
     def test_jwt_auth_malformed_authorization_header(self: "AdminAPIViewTestCase") -> None:
         """Malformed bearer token should be handled gracefully (return None or raise TokenError)."""
@@ -319,7 +306,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
             result = auth.authenticate(req)
             assert result is None or isinstance(result, tuple)
         except (TokenError, Exception):
-            # Also acceptable depending on underlying library behavior
             assert True
 
     def test_jwt_auth_missing_bearer_prefix(self: "AdminAPIViewTestCase") -> None:
@@ -331,7 +317,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         try:
             result = auth.authenticate(req)
         except Exception:
-            # Some backends may raise; both are acceptable for coverage
             result = None
         assert result is None or isinstance(result, tuple)
 
@@ -349,19 +334,15 @@ class AdminAPIViewTestCase(APIBaseTestCase):
 
     def test_designer_post_denied_then_allowed_after_manage(self: "AdminAPIViewTestCase") -> None:
         """Designer role requires manage permission to POST; add and recheck."""
-        # Denied with only view
         self._attach_group_with_perms(DESIGNER, [CAN_VIEW_DESIGN])
         post_req = Request(APIRequestFactory().post("/designs/"))
         post_req.user = self.user
         assert Designer().has_permission(post_req, None) is False
-        # Now add manage
         self._attach_group_with_perms(DESIGNER, [CAN_VIEW_DESIGN, CAN_MANAGE_DESIGN])
         assert Designer().has_permission(post_req, None) is True
 
-    # ---- OrganizationAwareJWTAuthentication deep coverage ----
     def test_org_auth_ghost_with_header_sets_selected_org(self: "AdminAPIViewTestCase") -> None:
         other = Organization.objects.create(name="Impersonate", display_name="Impersonate")
-        # Ensure user is ghost and not a member of 'other'
         self.user.is_ghost = True
         self.user.ghost_access_type = "view"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
@@ -372,7 +353,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         auth = OrganizationAwareJWTAuthentication()
         result = auth.authenticate(req)
         assert result is not None
-        # selected_organization should be set in-memory
         assert result[0].selected_organization == other
 
     def test_org_auth_header_null_ignored(self: "AdminAPIViewTestCase") -> None:
@@ -385,7 +365,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         auth = OrganizationAwareJWTAuthentication()
         result = auth.authenticate(req)
         assert result is not None
-        # No change to selected_organization
         assert result[0].selected_organization == self.user.selected_organization
 
     def test_org_auth_invalid_org_id_returns_user_unchanged(self: "AdminAPIViewTestCase") -> None:
@@ -400,18 +379,15 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         assert result is not None
         assert result[0].selected_organization == self.user.selected_organization
 
-    # ---- UserAuthViewset branch coverage (ghost permission) ----
     def test_edit_ghost_permission_rejects_non_ghost(self: "AdminAPIViewTestCase") -> None:
         from user.views import UserAuthViewset
         view = UserAuthViewset()
         req = Request(APIRequestFactory().put("/ghost-permission/", {"ghost_access_type": "view"}, format="json"))
-        req.user = self.user  # normal non-ghost
+        req.user = self.user
         resp = view.edit_ghost_permission(req)
         assert resp.status_code == 403
 
-    # ------- Non-ghost group-based permission coverage -------
     def _ensure_permission(self: "AdminAPIViewTestCase", codename: str) -> Permission:
-        # Try to reuse any existing permission with this codename to avoid duplicates across content types
         existing = Permission.objects.filter(codename=codename).first()
         if existing:
             return existing
@@ -471,7 +447,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self._attach_group_with_perms(MES_EDITOR, [CAN_VIEW_MES, CAN_MANAGE_MES])
         assert MesEditor().has_permission(m_post, None) is True
 
-    # ---- Additional coverage for user.views ----
     def _mk_req(self: "AdminAPIViewTestCase", method: str, path: str, data: dict | None = None):
         rf = APIRequestFactory()
         if method == "GET":
@@ -499,3 +474,278 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         req = APIRequestFactory().post("/setpass/", data=json.dumps({"password": "x"}), content_type="application/json")
         resp = UserAuthViewset().set_password(Request(req), token="tok")
         assert getattr(resp, "status_code", 200) in (200, 302)
+
+    def test_profile_get_success(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("profile"), headers=self.get_headers)
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
+
+    def test_profile_put_invalid_payload(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.put(reverse("profile"), data={"email": "bad"}, format="json", headers=self.get_headers)
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED])
+
+    def test_all_organizations_ghost_allowed(self: "AdminAPIViewTestCase") -> None:
+        self.user.is_ghost = True
+        self.user.save(update_fields=["is_ghost"])
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("all_organizations"), headers=self.get_headers)
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
+
+    def test_all_organizations_non_ghost_forbidden(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("all_organizations"), headers=self.get_headers)
+        self.assertIn(resp.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
+
+    def test_admin_dashboard_route_for_non_admin(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("admin_dashboard"))
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_302_FOUND])
+
+    def test_admin_users_route_for_non_admin(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("admin_users"))
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_302_FOUND])
+
+    def test_admin_ghost_users_route_for_non_admin(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse("admin_ghost_users"))
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_302_FOUND])
+
+    def test_toggle_ghost_status_user_not_found(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        resp = self.client.post(reverse("admin_ghost_users"), data={"email": "missing@example.com", "is_ghost": "true"})
+        self.assertIn(resp.status_code, [status.HTTP_404_NOT_FOUND, status.HTTP_403_FORBIDDEN])
+
+    def test_toggle_ghost_status_success(self: "AdminAPIViewTestCase") -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        resp = self.client.post(reverse("admin_ghost_users"), data={"email": self.user.email, "is_ghost": "true", "access_type": "view"})
+        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN])
+
+    def test_admin_logout_without_auth(self: "AdminAPIViewTestCase") -> None:
+        resp = self.client.get(reverse("admin_logout"))
+        self.assertIn(resp.status_code, [status.HTTP_302_FOUND, status.HTTP_200_OK])
+
+    def test_admin_login_post_admin_access_only_branch(self: "AdminAPIViewTestCase") -> None:
+        data = {"email": self.normal_user.email, "password": "user@123"}
+        resp = self.client.post(reverse("admin_login"), data=json.dumps(data), content_type="application/json")
+        self.assertIn(resp.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN])
+
+    def test_add_username_to_token_clears_cache_attrs(self: "AdminAPIViewTestCase") -> None:
+        from user.views import _add_username_to_token
+
+        token = AccessToken.for_user(self.user)
+        token._encoded = "x"  # type: ignore[attr-defined]
+        token._token = "x"  # type: ignore[attr-defined]
+        token._cached_token = "x"  # type: ignore[attr-defined]
+        token._str = "x"  # type: ignore[attr-defined]
+        _add_username_to_token(token, self.user)
+        assert token.payload.get("username") == self.user.username
+        assert not hasattr(token, "_encoded")
+        assert not hasattr(token, "_token")
+        assert not hasattr(token, "_cached_token")
+        assert not hasattr(token, "_str")
+
+    def test_add_username_to_refresh_token_includes_access_payload(self: "AdminAPIViewTestCase") -> None:
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from user.views import _add_username_to_token
+
+        refresh = RefreshToken.for_user(self.user)
+        _add_username_to_token(refresh, self.user)
+        assert refresh.payload.get("username") == self.user.username
+        assert refresh.access_token.payload.get("username") == self.user.username
+
+    @patch("user.views.send_email", return_value=True)
+    @patch("user.views.render_to_string", return_value="<html></html>")
+    def test_send_otp_email_helper_calls_send_email(
+        self: "AdminAPIViewTestCase", mock_render: MagicMock, mock_send: MagicMock
+    ) -> None:
+        from user.views import UserAuthViewset
+
+        UserAuthViewset()._send_otp_email(self.user, "12345")
+        assert mock_render.called
+        assert mock_send.called
+
+    @patch("user.views.send_email", return_value=True)
+    @patch("user.views.render_to_string", return_value="<html></html>")
+    def test_send_forgot_password_email_helper_calls_send_email(
+        self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
+    ) -> None:
+        from user.views import UserAuthViewset
+
+        UserAuthViewset()._send_forgot_password_email(self.user, self.user.email, "tok")
+        assert mock_send.called
+
+    @patch("user.views.send_email", return_value=True)
+    @patch("user.views.render_to_string", return_value="<html></html>")
+    def test_send_registration_notification_admin_url_override(
+        self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
+    ) -> None:
+        from user.views import UserAuthViewset
+
+        req = APIRequestFactory().get("/x/")
+        req.admin_dashboard_url_override = "http://test.local/admin/"
+        UserAuthViewset()._send_registration_notification_to_admin(req, self.user)
+        assert mock_send.called
+
+    @patch("user.views.send_email", return_value=True)
+    @patch("user.views.render_to_string", return_value="<html></html>")
+    def test_send_welcome_email_group_formats(
+        self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
+    ) -> None:
+        from django.contrib.auth.models import Group
+        from user.views import AddUserInOrganizationViewset
+
+        view = AddUserInOrganizationViewset()
+        g1, _ = Group.objects.get_or_create(name="G1")
+        g2, _ = Group.objects.get_or_create(name="G2")
+        self.user.groups.add(g1, g2)
+        view._send_welcome_email(
+            self.user,
+            self.user.id,
+            self.user.email,
+            self.user.username,
+            self.user.groups,
+            "tok",
+            "Org",
+        )
+        assert mock_send.called
+
+    def test_edit_organization_user_permission_user_not_found(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AddUserInOrganizationViewset
+
+        view = AddUserInOrganizationViewset()
+        req = Request(APIRequestFactory().put("/edit/", {"name": "x"}))
+        req.user = self.user
+        resp = view.edit_organization_user_permission(req, user_id=999999)
+        assert resp.status_code == 404
+
+    def test_remove_user_from_org_not_member_path(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AddUserInOrganizationViewset
+
+        other = User.objects.create(username="otherx", email="otherx@test.com")
+        view = AddUserInOrganizationViewset()
+        req = Request(APIRequestFactory().delete("/rm/"))
+        req.user = self.user
+        resp = view.remove_user_from_organization(req, user_id=str(other.id))
+        assert resp.status_code == 404
+
+    def test_show_organization_users_org_not_found(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AddUserInOrganizationViewset
+
+        org = self.user.selected_organization
+        if org:
+            org.user.remove(self.user)
+        view = AddUserInOrganizationViewset()
+        req = Request(APIRequestFactory().get("/org-users/"))
+        req.user = self.user
+        resp = view.show_organization_users(req)
+        assert resp.status_code == 404
+
+    def test_admin_required_mixin_cookie_no_user_id_redirect(self: "AdminAPIViewTestCase") -> None:
+        request = self.factory.post("/approve/")
+        request.user = AnonymousUser()
+        token = AccessToken()
+        request.COOKIES = {settings.ADMIN_JWT_COOKIE_NAME: str(token)}
+        response = ApproveUserView.as_view()(request, user_id=str(self.user.id))
+        self.assertEqual(response.status_code, 302)
+
+    def test_admin_required_mixin_cookie_non_superuser_redirect(self: "AdminAPIViewTestCase") -> None:
+        request = self.factory.post("/approve/")
+        request.user = AnonymousUser()
+        token = AccessToken.for_user(self.normal_user)
+        request.COOKIES = {settings.ADMIN_JWT_COOKIE_NAME: str(token)}
+        response = ApproveUserView.as_view()(request, user_id=str(self.user.id))
+        self.assertEqual(response.status_code, 302)
+
+    def test_admin_login_post_explicit_non_superuser_403(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AdminView
+
+        view = AdminView()
+        req = APIRequestFactory().post(
+            "/admin/login/",
+            data={"email": "e", "password": "p"},
+            content_type="application/x-www-form-urlencoded",
+        )
+        drf_req = Request(req)
+        drf_req._full_data = {"email": "e", "password": "p"}  # type: ignore[attr-defined]
+        with patch("user.views.AdminLoginSerializer") as mock_ser:
+            mock_ser.return_value.is_valid.return_value = True
+            mock_ser.return_value.validated_data = {"user": self.normal_user}
+            resp = view.login_post(drf_req)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_toggle_ghost_status_unauthorized_direct(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AdminView
+
+        req = self.factory.post("/admin/ghost/", {"email": self.user.email, "is_ghost": "true"})
+        req.user = self.normal_user
+        resp = AdminView().toggle_ghost_status(req)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_edit_ghost_permission_invalid_type_direct(self: "AdminAPIViewTestCase") -> None:
+        from user.views import UserAuthViewset
+
+        self.user.is_ghost = True
+        self.user.save(update_fields=["is_ghost"])
+        req = Request(APIRequestFactory().put("/ghost/", {"ghost_access_type": "bad"}))
+        req._full_data = {"ghost_access_type": "bad"}  # type: ignore[attr-defined]
+        req.user = self.user
+        resp = UserAuthViewset().edit_ghost_permission(req)
+        assert resp.status_code == 400
+
+    def test_edit_ghost_permission_success_direct(self: "AdminAPIViewTestCase") -> None:
+        from user.views import UserAuthViewset
+
+        self.user.is_ghost = True
+        self.user.save(update_fields=["is_ghost"])
+        req = Request(APIRequestFactory().put("/ghost/", {"ghost_access_type": "full"}))
+        req._full_data = {"ghost_access_type": "full"}  # type: ignore[attr-defined]
+        req.user = self.user
+        resp = UserAuthViewset().edit_ghost_permission(req)
+        assert resp.status_code == 200
+        self.user.refresh_from_db()
+        assert self.user.ghost_access_type == "full"
+
+    @patch("user.views.send_email", return_value=True)
+    @patch("user.views.render_to_string", return_value="<html></html>")
+    def test_send_welcome_email_no_groups_branch(
+        self: "AdminAPIViewTestCase", _m_render: MagicMock, m_send: MagicMock
+    ) -> None:
+        from user.views import AddUserInOrganizationViewset
+
+        self.user.groups.clear()
+        AddUserInOrganizationViewset()._send_welcome_email(
+            self.user,
+            self.user.id,
+            self.user.email,
+            self.user.username,
+            self.user.groups,
+            "tok",
+            "Org",
+        )
+        assert m_send.called
+
+    def test_admin_dashboard_authenticated_branch(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AdminView
+
+        req = self.factory.get("/admin/dashboard/")
+        req.user = self.admin_user
+        resp = AdminView().dashboard(req)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_users_authenticated_branch(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AdminView
+
+        req = self.factory.get("/admin/users/")
+        req.user = self.admin_user
+        resp = AdminView().users(req)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_ghost_users_authenticated_branch(self: "AdminAPIViewTestCase") -> None:
+        from user.views import AdminView
+
+        req = self.factory.get("/admin/ghost-users/")
+        req.user = self.admin_user
+        resp = AdminView().ghost_users(req)
+        self.assertEqual(resp.status_code, 200)

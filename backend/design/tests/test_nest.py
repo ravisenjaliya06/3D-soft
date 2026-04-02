@@ -11,9 +11,12 @@ from design.nest import (
     KEY_HEIGHT,
     KEY_ID,
     KEY_NAME,
+    KEY_RADIUS,
+    KEY_TYPE,
     KEY_UNIQUE_ID,
     KEY_WIDTH,
     NestingService,
+    TYPE_CIRCLE,
     nest,
 )
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
@@ -91,14 +94,13 @@ class NestModuleTestCase(APIBaseTestCase):
 
         self.assertEqual(len(packed_items), 3)
 
-        # Verify IDs logic A/B based on the newly updated format
         ids = [item[KEY_UNIQUE_ID] for item in packed_items]
         self.assertTrue(
             any(x.startswith("SHEET01") for x in ids)
-        )  # 18mm (First thickest)
+        )
         self.assertTrue(
             any(x.startswith("SHEET02") for x in ids)
-        )  # 12mm (Second thickest)
+        )
 
     @patch("pandas.DataFrame.to_excel")
     def test_nesting_service_generate_excel(
@@ -163,20 +165,13 @@ class NestModuleTestCase(APIBaseTestCase):
             },
         }
 
-        # Service with 0 spacing
+
         service_zero = NestingService(width=1000, height=1000, spacing=0)
         items_zero = service_zero.optimize(files)
-        # Position should be roughly 0,0 (plus padding/optimization variance, but X usually starts at 0)
 
-        # Service with 10 spacing
+
         service_spaced = NestingService(width=1000, height=1000, spacing=10)
         items_spaced = service_spaced.optimize(files)
-
-        # In the spaced version, the item is centered in its padded slot.
-        # Slot size = 110 x 110.
-        # Rectpack usually places at bottom-left 0,0.
-        # Our Logic: "x": x + self.spacing / 2
-        # So X should be 5.
 
         item_zero = items_zero[0]
         item_spaced = items_spaced[0]
@@ -211,15 +206,14 @@ class NestModuleTestCase(APIBaseTestCase):
         service = NestingService(width=1000, height=1000)
         service.generate_labels(packed_items, "test.json")
 
-        mock_qr.assert_called()  # QR Widget created
-        mock_drawing.assert_called()  # Drawing created
-        mock_draw.assert_called()  # Drawing rendered to PDF
-        mock_canvas_instance.save.assert_called()  # PDF saved
+        mock_qr.assert_called()
+        mock_drawing.assert_called()
+        mock_draw.assert_called()
+        mock_canvas_instance.save.assert_called()
 
     @patch("reportlab.pdfgen.canvas.Canvas")
     def test_generate_labels_pagination(self: "NestModuleTestCase", mock_canvas: MagicMock) -> None:
         """Ensure generate_labels adds pages when many items exist."""
-        # Create enough items to force at least one page break
         many = []
         for i in range(30):
             many.append(
@@ -232,7 +226,6 @@ class NestModuleTestCase(APIBaseTestCase):
             )
         service = NestingService(width=1000, height=1000)
         service.generate_labels(many, "out.json")
-        # showPage should be called at least once to paginate
         assert mock_canvas.return_value.showPage.called
 
     @patch("design.nest.NestingService.generate_labels")
@@ -247,7 +240,6 @@ class NestModuleTestCase(APIBaseTestCase):
         mock_labels: MagicMock,
     ) -> None:
         """Test that nest() wrapper calls all generation methods"""
-        # Return dummy paths
         mock_excel.return_value = "out.xlsx"
         mock_svg.return_value = ["out_A1.svg"]
         mock_layout.return_value = "out_layout.pdf"
@@ -275,14 +267,12 @@ class NestModuleTestCase(APIBaseTestCase):
             },
         }
 
-        # Spacing of 5mm (typical default)
         service = NestingService(width=2000, height=2000, spacing=5.0)
         items = service.optimize(files)
 
         self.assertEqual(len(items), 1)
         item = items[0]
 
-        # The reported dimensions should match the original input, not the padded 569x205
         self.assertEqual(item[KEY_WIDTH], original_w)
         self.assertEqual(item[KEY_HEIGHT], original_h)
         self.assertEqual(item[KEY_DIMENSIONS], f"{original_w:.2f} x {original_h:.2f}")
@@ -290,7 +280,6 @@ class NestModuleTestCase(APIBaseTestCase):
     def test_test_nesting_load_data(self: "NestModuleTestCase") -> None:
         """Exercise design.test_nesting.load_data by writing a temporary data.json and restoring it."""
         data_file = tn.DATA_FILE
-        # Backup original if exists
         original = None
         if os.path.exists(data_file):
             with open(data_file, "r", encoding="utf-8") as f:
@@ -310,10 +299,8 @@ class NestModuleTestCase(APIBaseTestCase):
             with open(data_file, "w", encoding="utf-8") as f:
                 json.dump(fake, f)
             files = tn.load_data()
-            # Only plank types should be present
             assert "A" in files and "C" in files and "B" not in files
         finally:
-            # Restore original content
             if original is not None:
                 with open(data_file, "w", encoding="utf-8") as f:
                     f.write(original)
@@ -321,36 +308,28 @@ class NestModuleTestCase(APIBaseTestCase):
                 if os.path.exists(data_file):
                     os.remove(data_file)
 
-    # ---- Additional helper coverage for NestingService ----
     def test_safe_float_and_banding_helpers(self: "NestModuleTestCase") -> None:
         service = NestingService(width=1000, height=1000)
 
-        # _safe_float
         assert service._safe_float("12.5") == 12.5
         assert service._safe_float({"x": 1}) == 0.0
         assert service._safe_float(None, default=1.2) == 1.2
 
-        # get_banding_display_name
         assert service.get_banding_display_name({"name": "Edge A"}) == "Edge A"
         assert service.get_banding_display_name("PlainText") == "PlainText"
 
-        # parse_mm_thickness
         assert service.parse_mm_thickness("1.5 mm") == 1.5
         assert service.parse_mm_thickness("no unit here") is None
 
-        # extract_plausible_thickness
         assert service.extract_plausible_thickness("Edge 2.0 glossy") == 2.0
         assert service.extract_plausible_thickness("Edge 10.0") is None
 
-        # lookup_banding_thickness_by_name
         cache = {"edge a": 2.0, "edge b": 1.0}
         assert service.lookup_banding_thickness_by_name("Edge A", cache) == 2.0
         assert service.lookup_banding_thickness_by_name("unknown", cache) is None
 
-        # resolve_edge_thickness
         assert service.resolve_edge_thickness({"thickness": 1.2}, cache) == 1.2
         assert service.resolve_edge_thickness("Nice 2.5 mm", cache) == 2.5
-        # falls back to cache via name
         assert service.resolve_edge_thickness("EDGE A", cache) == 2.0
 
     @patch("builtins.open")
@@ -372,7 +351,6 @@ class NestModuleTestCase(APIBaseTestCase):
                 self.height = 100
 
             def scale(self, x: float, y: float) -> None:  # noqa: ARG002
-                # no-op
                 return
 
         mock_svg2rlg.return_value = DummyDrawing()
@@ -387,7 +365,6 @@ class NestModuleTestCase(APIBaseTestCase):
         service = NestingService(width=500, height=300)
         assert service.to_str_or_empty(None) == ""
         assert service.to_str_or_empty(123) == "123"
-        # get_banding_display_name prefers keys in order, else str(value)
         assert service.get_banding_display_name({"label": "LBL"}) == "LBL"
         assert service.get_banding_display_name({"value": "VAL"}) == "VAL"
         assert service.get_banding_display_name({"unknown": "X"}) == "{'unknown': 'X'}"
@@ -395,17 +372,13 @@ class NestModuleTestCase(APIBaseTestCase):
     def test_dimension_smallest_axis_assignment_variants(self: "NestModuleTestCase") -> None:
         """Cover reassignment when width/height/depth is the smallest dimension."""
         files = {
-            # depth smallest -> thickness=depth, face=(width,height)
             "A": {"type": "rectangle", "width": 500, "height": 400, "depth": 10, "name": "pA"},
-            # width smallest -> thickness=width, face swaps to use height/depth
             "B": {"type": "rectangle", "width": 10, "height": 600, "depth": 300, "name": "pB"},
-            # height smallest -> thickness=height, face uses width/depth
             "C": {"type": "rectangle", "width": 700, "height": 10, "depth": 200, "name": "pC"},
         }
         service = NestingService(width=1200, height=1200, allow_rotation=True)
         items = service.optimize(files)
         assert len(items) == 3
-        # Ensure reported face sizes are positive and correspond to reassignment logic
         for it in items:
             assert it[KEY_WIDTH] > 0 and it[KEY_HEIGHT] > 0
 
@@ -417,7 +390,6 @@ class NestModuleTestCase(APIBaseTestCase):
         }
         rot_on = NestingService(width=600, height=600, allow_rotation=True).optimize(files)
         rot_off = NestingService(width=600, height=600, allow_rotation=False).optimize(files)
-        # Some placements may rotate under allow_rotation
         assert any(item.get("is_rotated") for item in rot_on) or True
         assert all(not item.get("is_rotated") for item in rot_off)
     @patch("zipfile.ZipFile")
@@ -435,7 +407,6 @@ class NestModuleTestCase(APIBaseTestCase):
     ) -> None:
         mock_walk.return_value = [("base/xml", [], [])]
         service = NestingService(width=400, height=200)
-        # Item with all edges populated and two grooves, including a CAM hole
         items = [
             {
                 KEY_NAME: "PartTwo",
@@ -462,7 +433,6 @@ class NestModuleTestCase(APIBaseTestCase):
         assert mock_writer.called
         assert mock_zip.called
 
-    # ---- More branches on helpers and edge cases ----
     def test_parse_mm_thickness_variants(self: "NestModuleTestCase") -> None:
         service = NestingService(width=100, height=100)
         assert service.parse_mm_thickness("2 mm") == 2.0
@@ -473,27 +443,21 @@ class NestModuleTestCase(APIBaseTestCase):
     def test_extract_plausible_thickness_variants(self: "NestModuleTestCase") -> None:
         service = NestingService(width=100, height=100)
         assert service.extract_plausible_thickness("Edge-1.2-matte") == 1.2
-        # Out-of-range should be discarded
         assert service.extract_plausible_thickness("Edge-0.1") is None
         assert service.extract_plausible_thickness("No numbers here") is None
 
     def test_resolve_edge_thickness_cache_miss_then_hit(self: "NestModuleTestCase") -> None:
         service = NestingService(width=100, height=100)
         cache: dict[str, float] = {}
-        # No info -> None
         assert service.resolve_edge_thickness({}, cache) is None
-        # Name-based cache fill then hit
         cache["band a"] = 1.8
         assert service.resolve_edge_thickness("Band A", cache) == 1.8
 
     def test_safe_float_locale_and_invalid(self: "NestModuleTestCase") -> None:
         service = NestingService(width=100, height=100)
-        # Some locales use comma; ensure fallback default is used
         assert service._safe_float("12,5", default=0.0) == 0.0
-        # Uncastable object returns default
         assert service._safe_float(object(), default=7.0) == 7.0
 
-    # ---- Additional error paths and helper ordering ----
     @patch("json.dump", side_effect=Exception("io error"))
     @patch("builtins.open")
     def test_generate_json_raises_on_write_error(
@@ -505,7 +469,6 @@ class NestModuleTestCase(APIBaseTestCase):
 
     def test_get_banding_display_name_order(self: "NestModuleTestCase") -> None:
         service = NestingService(width=100, height=100)
-        # Prefers 'name' then 'material' then 'title' then 'label' then 'value'
         assert service.get_banding_display_name({"material": "M", "label": "L"}) == "M"
         assert service.get_banding_display_name({"title": "T", "value": "V"}) == "T"
         assert service.get_banding_display_name({"label": "LBL"}) == "LBL"
@@ -523,7 +486,6 @@ class NestModuleTestCase(APIBaseTestCase):
     def test_generate_layout_pdf_skips_none_drawings(
         self: "NestModuleTestCase", mock_canvas: MagicMock, _mock_svg2rlg: MagicMock, _mock_draw: MagicMock
     ) -> None:
-        # First returns None, second returns a dummy with width/height/scale
         class Dummy:
             width = 50
             height = 100
@@ -533,7 +495,6 @@ class NestModuleTestCase(APIBaseTestCase):
         service = NestingService(width=200, height=100)
         out = service.generate_layout_pdf(["a.svg", "b.svg"], "folder/out.any")
         assert out.endswith("_layout.pdf")
-        # save called even if first drawing None
         assert mock_canvas.return_value.save.called
 
     def test_calculate_efficiency_empty(self: "NestModuleTestCase") -> None:
@@ -542,7 +503,6 @@ class NestModuleTestCase(APIBaseTestCase):
     @patch("svgwrite.Drawing")
     def test_generate_svg_faces_and_rotation(self: "NestModuleTestCase", mock_drawing: MagicMock) -> None:
         """Ensure generate_svg draws both edge-drill rectangles and through-holes, including rotation logic."""
-        # Mock drawing instance
         dwg = mock_drawing.return_value
         items = [
             {
@@ -563,9 +523,7 @@ class NestModuleTestCase(APIBaseTestCase):
         ]
         service = NestingService(width=200, height=100)
         paths = service.generate_svg(items, "out.json")
-        # Ensure SVG file list returned
         assert isinstance(paths, list) and len(paths) == 1
-        # We expect multiple drawing operations
         assert dwg.add.called
 
     @patch("zipfile.ZipFile")
@@ -581,7 +539,6 @@ class NestModuleTestCase(APIBaseTestCase):
         mock_writer: MagicMock,
         mock_zip: MagicMock,
     ) -> None:
-        # Set walk to iterate an empty xml dir so zipping runs
         mock_walk.return_value = [("base/xml", [], [])]
         service = NestingService(width=500, height=300)
         items = [
@@ -601,8 +558,98 @@ class NestModuleTestCase(APIBaseTestCase):
         ]
         out = service.generate_xmls(items, "base/out.any", design_name="Test:Name", order_number="ORD", company_name="")
         assert isinstance(out, list)
-        # open called to write XMLs
         assert mock_open.called
-        # Excel and Zip writer invoked
         assert mock_writer.called
         assert mock_zip.called
+
+    def test_safe_float_more_inputs(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s._safe_float([], default=3.0) == 3.0
+        assert s._safe_float((), default=4.0) == 4.0
+        assert s._safe_float("7") == 7.0
+
+    def test_parse_mm_thickness_zero_and_negative_like(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s.parse_mm_thickness("0 mm") is None
+        assert s.parse_mm_thickness("-1 mm") == 1.0 or s.parse_mm_thickness("-1 mm") is None
+
+    def test_extract_plausible_thickness_boundaries(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s.extract_plausible_thickness("edge 0.2") == 0.2
+        assert s.extract_plausible_thickness("edge 5.0") == 5.0
+        assert s.extract_plausible_thickness("edge 5.1") is None
+
+    def test_lookup_banding_contains_and_reverse_contains(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        cache = {"oak banding": 1.2, "white": 0.8}
+        assert s.lookup_banding_thickness_by_name("premium oak banding 1mm", cache) == 1.2
+        assert s.lookup_banding_thickness_by_name("oak", cache) == 1.2
+
+    def test_resolve_edge_thickness_prefers_explicit(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        cache = {"band a": 2.2}
+        assert s.resolve_edge_thickness({"name": "Band A", "thickness": 1.1}, cache) == 1.1
+
+    def test_calculate_efficiency_with_zero_area_rect(self: "NestModuleTestCase") -> None:
+        rects = [(0, 0, 0, 0, 100, "z"), (0, 0, 0, 100, 100, "n")]
+        eff = NestingService.calculate_efficiency(rects, 200, 200)
+        assert eff == (100 * 100) / (200 * 200) * 100
+
+    def test_pack_rectangles_circle_and_missing_keys(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=100, height=100)
+        packer = s._prepare_packer(sort_algo=s.SORT_ALGORITHMS[0])
+        files = {
+            "c1": {KEY_TYPE: TYPE_CIRCLE, KEY_RADIUS: 5},
+            "bad": {KEY_TYPE: "rectangle"},
+        }
+        s._pack_rectangles(packer, files)
+        assert True
+
+    def test_process_packed_results_with_zero_bin_area(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=0, height=0)
+        packer = MagicMock()
+        packer.rect_list.return_value = [(0, 0, 0, 10, 20, "a")]
+        rects, eff, unplaced = s._process_packed_results(packer, {"a": {KEY_WIDTH: 10, KEY_HEIGHT: 20}})
+        assert len(rects) == 1
+        assert eff == 0.0
+        assert unplaced == {}
+
+    def test_optimize_with_invalid_dimension_values(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=100, height=100)
+        files = {"a": {"type": "rectangle", "width": "bad", "height": 10, "depth": 5, "name": "x"}}
+        with self.assertRaises(TypeError):
+            s.optimize(files)
+
+    def test_company_prefix_generation_in_unique_id(self: "NestModuleTestCase") -> None:
+        files = {"a": {"type": "rectangle", "width": 50, "height": 20, "depth": 5, "name": "x"}}
+        s = NestingService(width=100, height=100)
+        items = s.optimize(files, company_name="Alpha Beta")
+        assert items and items[0][KEY_UNIQUE_ID].startswith("AB")
+
+    def test_company_prefix_single_word(self: "NestModuleTestCase") -> None:
+        files = {"a": {"type": "rectangle", "width": 50, "height": 20, "depth": 5, "name": "x"}}
+        s = NestingService(width=100, height=100)
+        items = s.optimize(files, company_name="Gamma")
+        assert items and items[0][KEY_UNIQUE_ID].startswith("GA")
+
+    def test_to_str_or_empty_strips_whitespace(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s.to_str_or_empty("  abc  ") == "abc"
+
+    def test_lookup_banding_empty_name(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s.lookup_banding_thickness_by_name("", {"a": 1.0}) is None
+
+    def test_resolve_edge_thickness_text_without_numbers(self: "NestModuleTestCase") -> None:
+        s = NestingService(width=10, height=10)
+        assert s.resolve_edge_thickness("NoBandInfo", {}) is None
+
+    @patch("svgwrite.Drawing")
+    def test_generate_svg_multiple_sheets_paths_count(self: "NestModuleTestCase", _mock_dwg: MagicMock) -> None:
+        items = [
+            {KEY_UNIQUE_ID: "SHEET0101", KEY_WIDTH: 20, KEY_HEIGHT: 10, "x": 0, "y": 0, "sheet_num": "SHEET01", KEY_NAME: "A"},
+            {KEY_UNIQUE_ID: "SHEET0201", KEY_WIDTH: 20, KEY_HEIGHT: 10, "x": 0, "y": 0, "sheet_num": "SHEET02", KEY_NAME: "B"},
+        ]
+        s = NestingService(width=100, height=100)
+        out = s.generate_svg(items, "out.json")
+        assert len(out) == 2

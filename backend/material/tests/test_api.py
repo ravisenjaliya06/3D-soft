@@ -1,5 +1,6 @@
 # Python imports
 import uuid
+from unittest.mock import MagicMock
 
 # Django imports
 from django.urls import reverse
@@ -101,7 +102,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-        # Either DRF unique validation or custom error; ensure not success
         self.assertIn(response.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT])
 
     def test_validate_material(self: "MaterialAPIViewTestCase") -> None:
@@ -132,7 +132,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-        # Accept either 400 or 200 depending on how type choices are enforced; not 5xx
         self.assertIn(response.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_201_CREATED, status.HTTP_200_OK])
 
     def test_get_material(self: "MaterialAPIViewTestCase") -> None:
@@ -175,14 +174,12 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.data, [])
 
     def test_material_filter_by_type_after_setup(self: "MaterialAPIViewTestCase") -> None:
-        # Just ensure filter endpoint works with auth
         response = self.client.get(
             reverse("material-list", kwargs={"company_id": self.company.id}) + "?type=Laminate",
             headers=self.get_headers,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # -------- Additional material serializer/view validations --------
     def test_create_material_missing_type(self: "MaterialAPIViewTestCase") -> None:
         data = {"name": "MatX", "company": self.company.id}
         response = self.client.post(
@@ -209,7 +206,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-        # Disallow duplicates (serializer or DB constraint)
         self.assertIn(r2.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT, status.HTTP_401_UNAUTHORIZED])
 
     def test_create_company_missing_name(self: "MaterialAPIViewTestCase") -> None:
@@ -233,7 +229,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         url = reverse("material-list", kwargs={"company_id": self.company.id}) + "?search=NoMatch"
         resp = self.client.get(url, headers=self.get_headers)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        # Current view may ignore 'search' and return all; just ensure it is a list response
         self.assertIsInstance(resp.data, list)
 
     def test_material_post_missing_company_field(self: "MaterialAPIViewTestCase") -> None:
@@ -244,7 +239,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-        # Serializer may infer company from path and allow create; accept 201/200 as valid too
         self.assertIn(resp.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED])
 
     def test_material_get_with_pagination_params(self: "MaterialAPIViewTestCase") -> None:
@@ -252,7 +246,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         resp = self.client.get(url, headers=self.get_headers)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Phase 3 additions
     def test_company_list_with_pagination_params(self: "MaterialAPIViewTestCase") -> None:
         url = reverse("company-list") + "?page=1&page_size=1"
         resp = self.client.get(url, headers=self.get_headers)
@@ -278,7 +271,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         )
         self.assertIn(resp.status_code, [status.HTTP_404_NOT_FOUND, status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED])
 
-    # ---- Serializer/Views deep branches ----
     def test_finishes_list_filter_by_type(self: "MaterialAPIViewTestCase") -> None:
         url = reverse("finishes-list") + "?type=Finish"
         resp = self.client.get(url, headers=self.get_headers)
@@ -291,7 +283,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, list)
 
-    # ---- material.serializers branches via direct calls where feasible ----
     def test_material_factory_unsupported_type_raises(self: "MaterialAPIViewTestCase") -> None:
         from material.serializers import MaterialFactorySerializer
         with self.assertRaises(Exception):
@@ -299,17 +290,14 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
 
     def test_company_serializer_unique_validation_and_create_org(self: "MaterialAPIViewTestCase") -> None:
         from material.serializers import CompanySerializer
-        # First create should pass (or be unauthorized in strict envs)
         data = {"name": "UniqueCo", "material_type": "Banding"}
         req = self.client.post(reverse("company-list"), data=data, format="json", headers=self.get_headers)
         self.assertIn(req.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
-        # Second with same name/type should 400
         resp = self.client.post(reverse("company-list"), data=data, format="json", headers=self.get_headers)
         self.assertIn(resp.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT, status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
 
     def test_material_serializer_validate_properties_id_drops_model_file(self: "MaterialAPIViewTestCase") -> None:
         from material.serializers import MaterialSerializer
-        # Banding requires minimal fields: thickness and length_trim; include id to trigger drop
         payload = {
             "name": "WithProps",
             "type": "Banding",
@@ -323,13 +311,36 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
             format="json",
             headers=self.get_headers,
         )
-        # Accept 201/200/400 depending on deeper validations present; just ensure no 5xx
         self.assertIn(resp.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
 
     def test_material_create_without_company_id_assigns_org(self: "MaterialAPIViewTestCase") -> None:
         """Hit perform_create else branch: no company_id in URL; organization inferred from user."""
-        url = reverse("company-list")  # Root mapped to MaterialViewSet in urls
+        url = reverse("company-list")
         payload = {"name": "RootMat", "type": "Laminate", "description": ""}
         resp = self.client.post(url, data=payload, format="json", headers=self.get_headers)
-        # Depending on conflicting route semantics, accept 200/201/400
         self.assertIn(resp.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+
+    def test_material_viewset_perform_create_with_company_id(self: "MaterialAPIViewTestCase") -> None:
+        from material.views import MaterialViewSet
+
+        view = MaterialViewSet()
+        view.kwargs = {"company_id": str(self.company.id)}
+        view.request = type("R", (), {"user": self.user})()
+        serializer = type("S", (), {"save": MagicMock()})()
+        view.perform_create(serializer)  # type: ignore[arg-type]
+        serializer.save.assert_called_once()
+        kwargs = serializer.save.call_args.kwargs
+        self.assertEqual(kwargs.get("company_id"), str(self.company.id))
+        self.assertEqual(kwargs.get("organization"), self.organization)
+
+    def test_material_viewset_perform_create_without_company_id(self: "MaterialAPIViewTestCase") -> None:
+        from material.views import MaterialViewSet
+
+        view = MaterialViewSet()
+        view.kwargs = {}
+        view.request = type("R", (), {"user": self.user})()
+        serializer = type("S", (), {"save": MagicMock()})()
+        view.perform_create(serializer)  # type: ignore[arg-type]
+        kwargs = serializer.save.call_args.kwargs
+        self.assertEqual(kwargs.get("organization"), self.organization)
+        self.assertNotIn("company_id", kwargs)
