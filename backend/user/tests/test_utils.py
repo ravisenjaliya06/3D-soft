@@ -183,7 +183,9 @@ class UtilsTestCase(APIBaseTestCase):
         self.assertEqual(permission_instance.groups.count(), len(groups))
 
     @patch("user.utils.requests.post")
-    def test_send_google_chat_notification_success(self: "UtilsTestCase", mock_post: MagicMock) -> None:
+    def test_send_google_chat_notification_success(
+        self: "UtilsTestCase", mock_post: MagicMock
+    ) -> None:
         mock_resp = MagicMock()
         mock_resp.raise_for_status.return_value = None
         mock_post.return_value = mock_resp
@@ -191,7 +193,9 @@ class UtilsTestCase(APIBaseTestCase):
         mock_post.assert_called_once()
 
     @patch("user.utils.requests.post")
-    def test_send_google_chat_notification_failure(self: "UtilsTestCase", mock_post: MagicMock) -> None:
+    def test_send_google_chat_notification_failure(
+        self: "UtilsTestCase", mock_post: MagicMock
+    ) -> None:
         mock_post.side_effect = Exception("boom")
         send_google_chat_notification("http://webhook.example", "hello")
         mock_post.assert_called_once()
@@ -199,17 +203,17 @@ class UtilsTestCase(APIBaseTestCase):
     def test_get_client_ip_variants(self: "UtilsTestCase") -> None:
         req = MagicMock()
         req.META = {"HTTP_X_FORWARDED_FOR": "1.2.3.4, 5.6.7.8"}
-        assert get_client_ip(req) == "1.2.3.4"
+        self.assertEqual(get_client_ip(req), "1.2.3.4")
         req2 = MagicMock()
         req2.META = {"REMOTE_ADDR": "9.8.7.6"}
-        assert get_client_ip(req2) == "9.8.7.6"
+        self.assertEqual(get_client_ip(req2), "9.8.7.6")
 
     @patch("user.utils.requests.get")
     def test_get_ip_location_private_loopback_returns_none(
         self: "UtilsTestCase", mock_get: MagicMock
     ) -> None:
-        assert get_ip_location("192.168.1.10") is None
-        assert get_ip_location("127.0.0.1") is None
+        self.assertIsNone(get_ip_location("192.168.1.10"))
+        self.assertIsNone(get_ip_location("127.0.0.1"))
         mock_get.assert_not_called()
 
     @patch("user.utils.requests.get")
@@ -222,36 +226,44 @@ class UtilsTestCase(APIBaseTestCase):
             "regionName": "Region",
             "country": "Country",
         }
-        assert get_ip_location("8.8.8.8") == "City, Region, Country"
+        self.assertEqual(get_ip_location("8.8.8.8"), "City, Region, Country")
 
         mock_get.side_effect = requests.RequestException("network")
-        assert get_ip_location("8.8.4.4") is None
+        self.assertIsNone(get_ip_location("8.8.4.4"))
 
     @patch("user.utils.requests.get")
-    def test_get_ip_location_non_success_status(self: "UtilsTestCase", mock_get: MagicMock) -> None:
+    def test_get_ip_location_non_success_status(
+        self: "UtilsTestCase", mock_get: MagicMock
+    ) -> None:
         mock_get.return_value.json.return_value = {"status": "fail"}
-        assert get_ip_location("1.1.1.1") is None
+        self.assertIsNone(get_ip_location("1.1.1.1"))
 
     @patch("user.utils.requests.post")
-    def test_send_google_chat_notification_timeout(self: "UtilsTestCase", mock_post: MagicMock) -> None:
+    def test_send_google_chat_notification_timeout(
+        self: "UtilsTestCase", mock_post: MagicMock
+    ) -> None:
         mock_post.side_effect = requests.Timeout("t")
         send_google_chat_notification("http://webhook.example", "hello")
         mock_post.assert_called_once()
 
     def test_add_user_to_organization_no_groups_is_noop(self: "UtilsTestCase") -> None:
-        organization = (
-            Organization.objects.using(DEFAULT_DATABASE).filter(user=self.user).first()
-            or self.seed_organization(DEFAULT_DATABASE)
-        )
+        organization = Organization.objects.using(DEFAULT_DATABASE).filter(
+            user=self.user
+        ).first() or self.seed_organization(DEFAULT_DATABASE)
         add_user_to_organization(self.user, organization, [])
 
-    def test_get_ip_location_invalid_schema_missing_status(self: "UtilsTestCase") -> None:
+    def test_get_ip_location_invalid_schema_missing_status(
+        self: "UtilsTestCase",
+    ) -> None:
         with patch("user.utils.requests.get") as mock_get:
             mock_get.return_value.json.return_value = {"city": "X"}
-            assert get_ip_location("8.8.8.8") is None
+            self.assertIsNone(get_ip_location("8.8.8.8"))
         with patch("user.utils.requests.get") as mock_get2:
-            mock_get2.return_value.json.return_value = {"status": "success", "country": "C"}
-            assert get_ip_location("8.8.8.8") == "C"
+            mock_get2.return_value.json.return_value = {
+                "status": "success",
+                "country": "C",
+            }
+            self.assertEqual(get_ip_location("8.8.8.8"), "C")
 
     @patch("smtplib.SMTP")
     def test_send_email_generic_exception_and_tls_login_order(
@@ -260,37 +272,35 @@ class UtilsTestCase(APIBaseTestCase):
         server = MagicMock()
         mock_smtp.return_value.__enter__.return_value = server
         server.sendmail.side_effect = Exception("boom")
-        try:
-            result = send_email(self.email_data)
-            self.assertFalse(result)
-        except Exception:
-            pass
+        with self.assertRaises(Exception):
+            _ = send_email(self.email_data)
         self.assertTrue(mock_smtp.called)
 
     @patch("user.utils.requests.get")
-    def test_get_ip_location_missing_fields_schema(self: "UtilsTestCase", mock_get: MagicMock) -> None:
+    def test_get_ip_location_missing_fields_schema(
+        self: "UtilsTestCase", mock_get: MagicMock
+    ) -> None:
         mock_get.return_value.json.return_value = {
             "status": "success",
             "country": "OnlyCountry",
         }
-        assert get_ip_location("8.8.8.8") == "OnlyCountry"
+        self.assertEqual(get_ip_location("8.8.8.8"), "OnlyCountry")
 
     def test_get_client_ip_without_headers(self: "UtilsTestCase") -> None:
         req = MagicMock()
         req.META = {}
-        assert get_client_ip(req) is None
+        self.assertIsNone(get_client_ip(req))
 
     def test_add_user_to_organization_idempotent(self: "UtilsTestCase") -> None:
-        organization = (
-            Organization.objects.using(DEFAULT_DATABASE).filter(user=self.user).first()
-            or self.seed_organization(DEFAULT_DATABASE)
-        )
+        organization = Organization.objects.using(DEFAULT_DATABASE).filter(
+            user=self.user
+        ).first() or self.seed_organization(DEFAULT_DATABASE)
         groups = [ACCOUNT_MANAGER, MES_EDITOR]
         add_user_to_organization(self.user, organization, groups)
         add_user_to_organization(self.user, organization, groups)
-        permission_instance = UserOrganizationPermission.objects.using(DEFAULT_DATABASE).get(
-            user=self.user, organization=organization
-        )
+        permission_instance = UserOrganizationPermission.objects.using(
+            DEFAULT_DATABASE
+        ).get(user=self.user, organization=organization)
         names = set(permission_instance.groups.values_list("name", flat=True))
         for g in set(groups):
             self.assertIn(g, names)
@@ -307,7 +317,7 @@ class UtilsTestCase(APIBaseTestCase):
         mock_company.objects.filter.return_value = []
         mock_material.objects.filter.return_value = []
         out = default_material_data(self.organization)
-        assert out is True
+        self.assertTrue(out is True)
         mock_properties.objects.filter.assert_not_called()
 
     @patch("user.utils.Properties")
@@ -319,8 +329,11 @@ class UtilsTestCase(APIBaseTestCase):
         mock_material: MagicMock,
         mock_properties: MagicMock,
     ) -> None:
+        # Python imports
+        from typing import Self
+
         class F:
-            def __init__(self, name: str) -> None:
+            def __init__(self: Self, name: str) -> None:
                 self.name = name
 
         src_company = MagicMock()
@@ -332,7 +345,12 @@ class UtilsTestCase(APIBaseTestCase):
         src_material = MagicMock()
         src_material.id = 22
         src_material.company_id = 11
-        src_material._meta.fields = [F("id"), F("organization"), F("company"), F("name")]
+        src_material._meta.fields = [
+            F("id"),
+            F("organization"),
+            F("company"),
+            F("name"),
+        ]
         src_material.name = "M1"
         new_material = MagicMock()
 
@@ -347,14 +365,16 @@ class UtilsTestCase(APIBaseTestCase):
         mock_properties.objects.filter.return_value = [src_prop]
 
         out = default_material_data(self.organization)
-        assert out is True
-        assert mock_company.objects.create.called
-        assert mock_material.objects.create.called
-        assert mock_properties.objects.create.called
+        self.assertTrue(out is True)
+        self.assertTrue(mock_company.objects.create.called)
+        self.assertTrue(mock_material.objects.create.called)
+        self.assertTrue(mock_properties.objects.create.called)
 
     @patch("user.utils.FinishesLibrary")
     @patch("user.utils.model_to_dict")
-    def test_duplicate_default_textures_empty(self: "UtilsTestCase", mock_to_dict: MagicMock, mock_fin: MagicMock) -> None:
+    def test_duplicate_default_textures_empty(
+        self: "UtilsTestCase", mock_to_dict: MagicMock, mock_fin: MagicMock
+    ) -> None:
         mock_fin.objects.filter.return_value = []
         duplicate_default_textures(self.organization)
         mock_to_dict.assert_not_called()
@@ -367,10 +387,12 @@ class UtilsTestCase(APIBaseTestCase):
         mock_fin.objects.filter.return_value = [MagicMock(), MagicMock()]
         mock_to_dict.return_value = {"name": "T1", "type": "x"}
         duplicate_default_textures(self.organization)
-        assert mock_fin.objects.create.call_count == 2
+        self.assertEqual(mock_fin.objects.create.call_count, 2)
 
     @patch("user.utils.DesignCatalog")
-    def test_duplicate_default_catalogs_success(self: "UtilsTestCase", mock_dc: MagicMock) -> None:
+    def test_duplicate_default_catalogs_success(
+        self: "UtilsTestCase", mock_dc: MagicMock
+    ) -> None:
         c1 = MagicMock()
         c1.id = "old-parent"
         c1.parent_id = None
@@ -397,11 +419,13 @@ class UtilsTestCase(APIBaseTestCase):
         mock_dc.objects.create.side_effect = [clone1, clone2]
 
         duplicate_default_catalogs_for_organization(self.organization)
-        assert mock_dc.objects.create.call_count == 2
-        assert clone2.save.called
+        self.assertEqual(mock_dc.objects.create.call_count, 2)
+        self.assertTrue(clone2.save.called)
 
     @patch("user.utils.DesignCatalog")
-    def test_duplicate_default_catalogs_missing_parent_raises(self: "UtilsTestCase", mock_dc: MagicMock) -> None:
+    def test_duplicate_default_catalogs_missing_parent_raises(
+        self: "UtilsTestCase", mock_dc: MagicMock
+    ) -> None:
         orphan = MagicMock()
         orphan.id = "old-child"
         orphan.parent_id = "missing-parent"
@@ -420,16 +444,27 @@ class UtilsTestCase(APIBaseTestCase):
             duplicate_default_catalogs_for_organization(self.organization)
 
     @patch("user.utils.requests.get")
-    def test_get_ip_location_invalid_ip_valueerror(self: "UtilsTestCase", mock_get: MagicMock) -> None:
-        assert get_ip_location("not-an-ip") is None
+    def test_get_ip_location_invalid_ip_valueerror(
+        self: "UtilsTestCase", mock_get: MagicMock
+    ) -> None:
+        self.assertIsNone(get_ip_location("not-an-ip"))
         mock_get.assert_not_called()
 
     @patch("smtplib.SMTP")
-    def test_send_email_sender_refused_bytes_error_format(self: "UtilsTestCase", mock_smtp: MagicMock) -> None:
-        mock_smtp.side_effect = smtplib.SMTPSenderRefused(550, b"bad sender", "x@test.com")
-        assert send_email(self.email_data) is False
+    def test_send_email_sender_refused_bytes_error_format(
+        self: "UtilsTestCase", mock_smtp: MagicMock
+    ) -> None:
+        mock_smtp.side_effect = smtplib.SMTPSenderRefused(
+            550, b"bad sender", "x@test.com"
+        )
+        self.assertFalse(send_email(self.email_data))
 
     @patch("user.utils.requests.get")
-    def test_get_ip_location_success_partial_fields_trim(self: "UtilsTestCase", mock_get: MagicMock) -> None:
-        mock_get.return_value.json.return_value = {"status": "success", "city": "OnlyCity"}
-        assert get_ip_location("8.8.8.8") == "OnlyCity"
+    def test_get_ip_location_success_partial_fields_trim(
+        self: "UtilsTestCase", mock_get: MagicMock
+    ) -> None:
+        mock_get.return_value.json.return_value = {
+            "status": "success",
+            "city": "OnlyCity",
+        }
+        self.assertEqual(get_ip_location("8.8.8.8"), "OnlyCity")

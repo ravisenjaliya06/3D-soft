@@ -3,6 +3,7 @@ import os
 import tempfile
 import uuid
 from datetime import date
+from unittest.mock import patch
 
 # Django imports
 from django.urls import reverse
@@ -10,24 +11,29 @@ from django.urls import reverse
 # External imports
 import pytest
 from rest_framework import status
-from unittest.mock import patch
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
 
 # App imports
-from design.models import CatalogTypeChoices, Design, DesignCatalog, DesignSetting, DesignVersion
-from design.views import create_excel_for_nesting
-from mes_portal.models import WorkOrder
-from mes_portal.views import WorkOrderViewSet
-from umaboy.models import Organization
+from design.models import (
+    CatalogTypeChoices,
+    Design,
+    DesignCatalog,
+    DesignSetting,
+    DesignVersion,
+)
 from design.utils import (
     group_catalogs_as_lists,
     parse_catalog_data,
     parse_design_data,
     split_parents_and_children,
 )
+from design.views import create_excel_for_nesting
+from mes_portal.models import WorkOrder
+from mes_portal.views import WorkOrderViewSet
 from tests.model_factory import new_design_version
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-from rest_framework.request import Request
-from rest_framework.test import APIRequestFactory
+from umaboy.models import Organization
 
 
 @pytest.mark.django_db
@@ -793,7 +799,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         names = {c.name for c in catalogs}
         self.assertEqual(names, {"Item 1", "Item 2", "Item 3"})
 
-    def test_create_design_catalog_missing_design_id_returns_400(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_missing_design_id_returns_400(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Serializer validation error path for missing design_id."""
         payload = {"items": [{"id": "x", "name": "Cab", "type": "Cabinet"}]}
         response = self.client.post(
@@ -804,7 +812,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_design_catalog_invalid_items_type(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_invalid_items_type(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Serializer validation error path when items is not a list."""
         payload = {"design_id": str(self.design.id), "items": {"id": "x"}}
         response = self.client.post(
@@ -815,12 +825,19 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_design_catalog_child_with_unknown_parent(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_child_with_unknown_parent(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Child references a parent not in payload: create() raises ValueError (not DRF 400)."""
         payload = {
             "design_id": str(self.design.id),
             "items": [
-                {"id": "childX", "name": "Door X", "type": "Door", "parent": "nope-parent"}
+                {
+                    "id": "childX",
+                    "name": "Door X",
+                    "type": "Door",
+                    "parent": "nope-parent",
+                }
             ],
         }
         with self.assertRaises(ValueError) as ctx:
@@ -832,7 +849,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             )
         self.assertIn("Parent not found", str(ctx.exception))
 
-    def test_put_design_settings_with_negative_dimensions(self: "DesignAPIViewTestCase") -> None:
+    def test_put_design_settings_with_negative_dimensions(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """DesignSettingSerializer has no min validators; negatives are accepted (200)."""
         data = {"unit": "mm", "sheet_width": -1, "sheet_height": -5}
         response = self.client.put(
@@ -1204,13 +1223,19 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
         )
 
-    def test_catalog_list_library_true_returns_items(self: "DesignAPIViewTestCase") -> None:
+    def test_catalog_list_library_true_returns_items(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """GET /catalogs/ without design/version should return library=True items (possibly empty)."""
-        resp = self.client.get(reverse("design_catalogs"), format="json", headers=self.get_headers)
+        resp = self.client.get(
+            reverse("design_catalogs"), format="json", headers=self.get_headers
+        )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn(type(resp.data).__name__, ["list", "dict"])
 
-    def test_catalog_list_with_version_but_no_catalogs_returns_detail(self: "DesignAPIViewTestCase") -> None:
+    def test_catalog_list_with_version_but_no_catalogs_returns_detail(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """GET /catalogs/ with version filter but none exist should return {'detail': 'Design not found'} (200)."""
         resp = self.client.get(
             reverse("design_catalogs"),
@@ -1221,7 +1246,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn("detail", resp.data)
 
-    def test_nesting_files_list_with_design_id_but_empty(self: "DesignAPIViewTestCase") -> None:
+    def test_nesting_files_list_with_design_id_but_empty(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """GET /files/ with valid design_id returns 200 with possibly empty list."""
         resp = self.client.get(
             reverse("nesting_files") + f"?design_id={self.design.id}",
@@ -1231,7 +1258,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, list)
 
-    def test_nesting_files_list_ignores_unknown_file_type(self: "DesignAPIViewTestCase") -> None:
+    def test_nesting_files_list_ignores_unknown_file_type(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Unknown file_type query should not 5xx and still return 200 with list response."""
         resp = self.client.get(
             reverse("nesting_files") + f"?design_id={self.design.id}&file_type=unknown",
@@ -1241,7 +1270,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, list)
 
-    def test_download_nesting_file_xml_zip_when_design_not_found(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_xml_zip_when_design_not_found(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """xml_zip should still return a zip path when design is not found (fallback branch)."""
         data = {"format": "xml_zip"}
         resp = self.client.put(
@@ -1252,43 +1283,87 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
 
-    def test_create_design_catalog_with_is_library_true_and_base64_image(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_with_is_library_true_and_base64_image(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Posting with ?is_library=true and base64 image should succeed and not create a version."""
         img = "data:image/png;base64,"
         payload = {
             "design_id": str(self.design.id),
             "items": [
-                {"id": "A", "name": "Plank A", "type": "plank", "image": img, "dimensions": {"width": 10, "height": 20, "depth": 3}}
+                {
+                    "id": "A",
+                    "name": "Plank A",
+                    "type": "plank",
+                    "image": img,
+                    "dimensions": {"width": 10, "height": 20, "depth": 3},
+                }
             ],
         }
         url = reverse("design_catalogs") + "?is_library=true"
-        resp = self.client.post(url, data=payload, format="json", headers=self.get_headers)
+        resp = self.client.post(
+            url, data=payload, format="json", headers=self.get_headers
+        )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(resp.data.get("version_id"))
         self.assertTrue(len(resp.data.get("catalog_ids", [])) >= 1)
 
-    def test_create_design_catalog_creates_version_when_not_library(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_creates_version_when_not_library(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Default (not library) should create a new version and return its id."""
         payload = {
             "design_id": str(self.design.id),
-            "items": [{"id": "B", "name": "Plank B", "type": "plank", "dimensions": {"width": 11, "height": 22, "depth": 4}}],
+            "items": [
+                {
+                    "id": "B",
+                    "name": "Plank B",
+                    "type": "plank",
+                    "dimensions": {"width": 11, "height": 22, "depth": 4},
+                }
+            ],
         }
-        resp = self.client.post(reverse("design_catalogs"), data=payload, format="json", headers=self.get_headers)
+        resp = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertIsNotNone(resp.data.get("version_id"))
 
-    def test_create_design_catalog_parent_child_happy_path(self: "DesignAPIViewTestCase") -> None:
+    def test_create_design_catalog_parent_child_happy_path(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Child links to existing parent by frontend id within the same payload."""
         items = [
-            {"id": "PARENT", "name": "Parent Cabinet", "type": "plank", "dimensions": {"width": 50, "height": 60, "depth": 18}},
-            {"id": "CHILD", "name": "Child Door", "type": "door", "parent": "PARENT", "dimensions": {"width": 30, "height": 40, "depth": 18}},
+            {
+                "id": "PARENT",
+                "name": "Parent Cabinet",
+                "type": "plank",
+                "dimensions": {"width": 50, "height": 60, "depth": 18},
+            },
+            {
+                "id": "CHILD",
+                "name": "Child Door",
+                "type": "door",
+                "parent": "PARENT",
+                "dimensions": {"width": 30, "height": 40, "depth": 18},
+            },
         ]
         payload = {"design_id": str(self.design.id), "items": items}
-        resp = self.client.post(reverse("design_catalogs"), data=payload, format="json", headers=self.get_headers)
+        resp = self.client.post(
+            reverse("design_catalogs"),
+            data=payload,
+            format="json",
+            headers=self.get_headers,
+        )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(resp.data.get("catalog_ids", [])), 2)
 
-    def test_put_design_settings_partial_width_update(self: "DesignAPIViewTestCase") -> None:
+    def test_put_design_settings_partial_width_update(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """PUT with only some fields should still update settings (view uses serializer model)."""
         data = {"unit": "mm", "sheet_width": 777}
         self.client.force_authenticate(user=self.user)
@@ -1307,7 +1382,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(get_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(get_resp.data.get("sheet_width"), 777)
 
-    def test_parse_design_data_orientation_and_bands(self: "DesignAPIViewTestCase") -> None:
+    def test_parse_design_data_orientation_and_bands(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Orientation fix for left/right/top planks; edgeband dict to list mapping; parent name mapping."""
         items = [
             {
@@ -1333,7 +1410,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertTrue(set(out["1"]["edgebands"]).issuperset({"LEFT", "TOP"}))
         self.assertEqual(out["2"]["parent_name"], "LEFT_PLANK")
 
-    def test_parse_catalog_data_position_rotation_passthrough(self: "DesignAPIViewTestCase") -> None:
+    def test_parse_catalog_data_position_rotation_passthrough(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Ensure position and rotation fields are passthrough from catalog.data."""
         cat = DesignCatalog.objects.create(
             organization=self.organization,
@@ -1350,7 +1429,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(row["position"], {"x": 1, "y": 2, "z": 3})
         self.assertEqual(row["rotation"], {"x": 0, "y": 90, "z": 0})
 
-    def test_download_nesting_file_svg_with_sheet_number(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_svg_with_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """SVG download should include the requested sheet number in filename path."""
         data = {"format": "svg", "sheet_number": 3}
         resp = self.client.put(
@@ -1362,8 +1443,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn("nesting_sheet_3.svg", resp.data.get("file", ""))
 
-    def test_nesting_sheet_list_missing_design_id(self: "DesignAPIViewTestCase") -> None:
-        resp = self.client.get(reverse("nesting_sheets"), format="json", headers=self.get_headers)
+    def test_nesting_sheet_list_missing_design_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        resp = self.client.get(
+            reverse("nesting_sheets"), format="json", headers=self.get_headers
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("design_id", resp.data.get("error", ""))
 
@@ -1377,7 +1462,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertIn("Design not found", resp.data.get("error", ""))
 
     def test_nesting_file_list_missing_design_id(self: "DesignAPIViewTestCase") -> None:
-        resp = self.client.get(reverse("nesting_files"), format="json", headers=self.get_headers)
+        resp = self.client.get(
+            reverse("nesting_files"), format="json", headers=self.get_headers
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("design_id", resp.data.get("error", ""))
 
@@ -1390,7 +1477,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("Design not found", resp.data.get("error", ""))
 
-    def test_download_nesting_file_invalid_format(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_invalid_format_again(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         data = {"format": "invalid-format"}
         resp = self.client.put(
             reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
@@ -1401,7 +1490,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Enter Valid Format", resp.data.get("Error", ""))
 
-    def test_download_nesting_file_dwg_sheet_number(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_dwg_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         data = {"format": "dwg", "sheet_number": 2}
         resp = self.client.put(
             reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
@@ -1412,7 +1503,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn("nesting_sheet_2.dwg", resp.data.get("file", ""))
 
-    def test_download_nesting_file_xml_sheet_number(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_xml_sheet_number(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         data = {"format": "xml", "sheet_number": 4}
         resp = self.client.put(
             reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
@@ -1423,18 +1516,24 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn("nesting_sheet_4.xml", resp.data.get("file", ""))
 
-    def test_download_nesting_file_json_success_after_nesting(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_json_success_after_nesting(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Mock nesting to succeed and json file to exist, then GET json content."""
+        # External imports
         from rest_framework.response import Response as DRFResponse
+
         DesignCatalog.objects.create(
             organization=self.organization,
             type=CatalogTypeChoices.PLANK,
             name="P",
             data={"dimensions": {"width": 10, "height": 20, "depth": 5}},
         )
-        with patch("design.views.NestAPIViewset.nesting", return_value=DRFResponse(status=200)), \
-             patch("design.views.os.path.exists", return_value=True), \
-             patch("design.views.open", create=True) as mock_open:
+        with patch(
+            "design.views.NestAPIViewset.nesting", return_value=DRFResponse(status=200)
+        ), patch("design.views.os.path.exists", return_value=True), patch(
+            "design.views.open", create=True
+        ) as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = "{}"
             data = {"format": "json"}
             resp = self.client.put(
@@ -1446,20 +1545,28 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
             self.assertIsInstance(resp.data, dict)
 
-    def test_render_image_create_and_clear_invalid_design(self: "DesignAPIViewTestCase") -> None:
+    def test_render_image_create_and_clear_invalid_design(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         response = self.client.post(
             reverse("render_images", kwargs={"design_id": str(uuid.uuid4())}),
             data={"image_url": "http://example.com/img.png"},
             format="json",
             headers=self.get_headers,
         )
-        self.assertIn(response.status_code, [status.HTTP_404_NOT_FOUND, status.HTTP_401_UNAUTHORIZED])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_404_NOT_FOUND, status.HTTP_401_UNAUTHORIZED],
+        )
         response = self.client.post(
             reverse("render_images_clear", kwargs={"design_id": str(uuid.uuid4())}),
             format="json",
             headers=self.get_headers,
         )
-        self.assertIn(response.status_code, [status.HTTP_404_NOT_FOUND, status.HTTP_401_UNAUTHORIZED])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_404_NOT_FOUND, status.HTTP_401_UNAUTHORIZED],
+        )
 
     def test_parse_design_data_and_group_helpers(self: "DesignAPIViewTestCase") -> None:
         """Covers parse_design_data → orientation/minifix/grooves/edgeband + group helpers."""
@@ -1478,9 +1585,20 @@ class DesignAPIViewTestCase(APIBaseTestCase):
                 "dimensions": {"width": 0.6, "height": 2.0, "depth": 0.018},
                 "grooves": [{"x": 1, "y": 2, "end_x": 10, "end_y": 2, "width": 3}],
                 "minifixHoles": [
-                    {"type": "DOWEL", "diameter": 8, "length": 30, "face": "5", "localPosition2D": {"x": 5, "y": 6}}
+                    {
+                        "type": "DOWEL",
+                        "diameter": 8,
+                        "length": 30,
+                        "face": "5",
+                        "localPosition2D": {"x": 5, "y": 6},
+                    }
                 ],
-                "edgeband": {"left": True, "right": False, "top": True, "bottom": False},
+                "edgeband": {
+                    "left": True,
+                    "right": False,
+                    "top": True,
+                    "bottom": False,
+                },
             },
             {
                 "id": "p2",
@@ -1492,30 +1610,42 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             },
         ]
         parsed = parse_design_data(items)
-        assert "p1" in parsed and "p2" in parsed
-        assert parsed["p1"]["width"] == pytest.approx(18.0)
-        assert parsed["p1"]["height"] == pytest.approx(2000.0)
-        assert isinstance(parsed["p1"]["grooves"], list) and parsed["p1"]["grooves"]
-        assert isinstance(parsed["p1"]["minifix_holes"], list) and parsed["p1"]["minifix_holes"]
-        assert "edgebands" in parsed["p1"] or "edge_banding" in parsed["p1"]
+        self.assertIn("p1", parsed)
+        self.assertIn("p2", parsed)
+        self.assertAlmostEqual(parsed["p1"]["width"], 18.0, places=6)
+        self.assertAlmostEqual(parsed["p1"]["height"], 2000.0, places=6)
+        self.assertIsInstance(parsed["p1"]["grooves"], list)
+        self.assertTrue(parsed["p1"]["grooves"])
+        self.assertIsInstance(parsed["p1"]["minifix_holes"], list)
+        self.assertTrue(parsed["p1"]["minifix_holes"])
+        self.assertTrue("edgebands" in parsed["p1"] or "edge_banding" in parsed["p1"])
 
         parents, children = split_parents_and_children(items)
-        assert "root1" in parents
-        assert "root1" in children and len(children["root1"]) == 2
+        self.assertIn("root1", parents)
+        self.assertIn("root1", children)
+        self.assertEqual(len(children["root1"]), 2)
 
         grouped = group_catalogs_as_lists(items)
-        assert any(len(group) >= 2 and group[0]["id"] == "root1" for group in grouped)
+        self.assertTrue(
+            any(len(group) >= 2 and group[0]["id"] == "root1" for group in grouped)
+        )
 
-    def test_split_parents_and_children_error_paths(self: "DesignAPIViewTestCase") -> None:
+    def test_split_parents_and_children_error_paths(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Covers required error branches in split_parents_and_children."""
         with pytest.raises(Exception):
             split_parents_and_children([{"id": "c1", "parent": "x"}])
         with pytest.raises(Exception):
             split_parents_and_children([{"id": "p", "isMain": True}, {"id": "c1"}])
         with pytest.raises(Exception):
-            split_parents_and_children([{"id": "p", "isMain": True}, {"id": "c1", "parent": "zzz"}])
+            split_parents_and_children(
+                [{"id": "p", "isMain": True}, {"id": "c1", "parent": "zzz"}]
+            )
 
-    def test_parse_catalog_data_material_and_edgeband(self: "DesignAPIViewTestCase") -> None:
+    def test_parse_catalog_data_material_and_edgeband(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """Covers parse_catalog_data: PLANK only, materials fallback and edgeband variants."""
         cat = DesignCatalog.objects.create(
             organization=self.organization,
@@ -1525,19 +1655,27 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             data={
                 "dimensions": {"width": 564, "height": 200, "depth": 18},
                 "material": [{"type": "Laminate", "name": "Oak 123"}],
-                "edgeband": {"front": True, "back": True, "left": False, "right": False},
+                "edgeband": {
+                    "front": True,
+                    "back": True,
+                    "left": False,
+                    "right": False,
+                },
                 "minifix_holes": [{"type": "DOWEL", "diameter": 8}],
             },
         )
         parsed = parse_catalog_data([cat])
-        assert str(cat.id) in parsed
+        self.assertIn(str(cat.id), parsed)
         plank = parsed[str(cat.id)]
-        assert plank["width"] == 564
-        assert plank["height"] == 18
-        assert "edge_banding" in plank and isinstance(plank["edge_banding"], dict)
-        assert plank.get("material_name", "-") in ("Oak 123", "-")
+        self.assertEqual(plank["width"], 564)
+        self.assertEqual(plank["height"], 18)
+        self.assertIn("edge_banding", plank)
+        self.assertIsInstance(plank["edge_banding"], dict)
+        self.assertIn(plank.get("material_name", "-"), ("Oak 123", "-"))
 
-    def test_parse_catalog_data_db_precedence_and_alt_keys(self: "DesignAPIViewTestCase") -> None:
+    def test_parse_catalog_data_db_precedence_and_alt_keys(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         """DB material should override raw; accept edgeBanding/edge_banding keys and map front/back."""
         cat = DesignCatalog.objects.create(
             organization=self.organization,
@@ -1552,10 +1690,10 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         parsed = parse_catalog_data([cat])
         plank = parsed[str(cat.id)]
-        assert plank["width"] == 300
-        assert plank["height"] == 180
-        assert isinstance(plank.get("edge_banding", {}), dict)
-        assert "parent_name" in plank
+        self.assertEqual(plank["width"], 300)
+        self.assertEqual(plank["height"], 180)
+        self.assertIsInstance(plank.get("edge_banding", {}), dict)
+        self.assertIn("parent_name", plank)
 
     def test_download_nesting_file_json_triggers_generation_error(
         self: "DesignAPIViewTestCase",
@@ -1663,10 +1801,15 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST]
         )
 
-    def test_download_nesting_file_json_not_found_after_generation(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_json_not_found_after_generation(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        # External imports
         from rest_framework.response import Response as DRFResponse
-        with patch("design.views.NestAPIViewset.nesting", return_value=DRFResponse(status=200)), \
-             patch("design.views.os.path.exists", return_value=False):
+
+        with patch(
+            "design.views.NestAPIViewset.nesting", return_value=DRFResponse(status=200)
+        ), patch("design.views.os.path.exists", return_value=False):
             resp = self.client.put(
                 reverse("download_nesting_file", kwargs={"design_id": self.design.id}),
                 data={"format": "json"},
@@ -1675,7 +1818,9 @@ class DesignAPIViewTestCase(APIBaseTestCase):
             )
             self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_nesting_files_list_with_file_type_unknown(self: "DesignAPIViewTestCase") -> None:
+    def test_nesting_files_list_with_file_type_unknown(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         resp = self.client.get(
             reverse("nesting_files"),
             {"design_id": str(self.design.id), "file_type": "unknown"},
@@ -1685,16 +1830,27 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, list)
 
-    def test_nesting_sheets_list_with_valid_design_empty_or_generated(self: "DesignAPIViewTestCase") -> None:
+    def test_nesting_sheets_list_with_valid_design_empty_or_generated(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         resp = self.client.get(
             reverse("nesting_sheets"),
             {"design_id": str(self.design.id)},
             format="json",
             headers=self.get_headers,
         )
-        self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            resp.status_code,
+            [
+                status.HTTP_200_OK,
+                status.HTTP_400_BAD_REQUEST,
+                status.HTTP_404_NOT_FOUND,
+            ],
+        )
 
-    def test_download_nesting_file_xml_zip_nonexistent_design_id(self: "DesignAPIViewTestCase") -> None:
+    def test_download_nesting_file_xml_zip_nonexistent_design_id(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         resp = self.client.put(
             reverse("download_nesting_file", kwargs={"design_id": str(uuid.uuid4())}),
             data={"format": "xml_zip"},
@@ -1703,14 +1859,18 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertIn(resp.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
 
-    def test_nesting_files_list_with_sheet_number_non_int(self: "DesignAPIViewTestCase") -> None:
+    def test_nesting_files_list_with_sheet_number_non_int(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
         resp = self.client.get(
             reverse("nesting_files"),
             {"design_id": str(self.design.id), "sheet_number": "abc"},
             format="json",
             headers=self.get_headers,
         )
-        self.assertIn(resp.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_200_OK])
+        self.assertIn(
+            resp.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_200_OK]
+        )
 
     def test_mes_workorder_str_returns_name(self: "DesignAPIViewTestCase") -> None:
         wo = WorkOrder.objects.create(
@@ -1722,8 +1882,12 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         )
         self.assertEqual(str(wo), "WO-1")
 
-    def test_mes_workorder_viewset_get_queryset_filters_by_selected_org(self: "DesignAPIViewTestCase") -> None:
-        other_org = Organization.objects.create(name="OtherOrg", display_name="OtherOrg")
+    def test_mes_workorder_viewset_get_queryset_filters_by_selected_org(
+        self: "DesignAPIViewTestCase",
+    ) -> None:
+        other_org = Organization.objects.create(
+            name="OtherOrg", display_name="OtherOrg"
+        )
         other_design = Design.objects.create(
             organization=other_org,
             created_by=self.user,
