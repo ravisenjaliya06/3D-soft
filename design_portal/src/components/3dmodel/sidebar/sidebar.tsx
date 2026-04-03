@@ -255,17 +255,7 @@ const Sidebar: React.FC = () => {
         // Disable front panel toggle if there are natively no extended side planks
         // OR if "No Base" is enabled
         // OR if "Nailer" is enabled
-        const hasExtended = hasExtendedSidePlanks(targetMesh);
-        setFrontpanelDisabled(
-          !hasExtended ||
-            selectedObject.noBaseEnabled === true ||
-            selectedObject.nailerEnabled === true
-        );
-
-        const hasSkirting = (targetMesh as THREE.Mesh).children.some(
-          (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
-        );
-        setFrontpanelEnabled(hasSkirting);
+        // legacy front panel disable/enabled no longer used in UI
 
         // Calculate distances for position fields
         if (distanceToolRef.current) {
@@ -1255,8 +1245,7 @@ const Sidebar: React.FC = () => {
   const [minifixDisabled, setMinifixDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
-  const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
-  const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
+  // legacy front panel state removed
 
   // Local state for minifix settings inputs
   const [minifixDistanceInput, setMinifixDistanceInput] = useState(resolvedMinifixDistance);
@@ -1285,7 +1274,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setTopPlankDisabled(false);
-    setFrontpanelDisabled(false);
   }, []);
 
   // Load cupboard-specific minifix values when object is selected
@@ -1458,7 +1446,13 @@ const Sidebar: React.FC = () => {
 
     try {
       const isEnabled = !selectedObject.skirtingEnabled;
-      const updatePatch: any = { skirtingEnabled: isEnabled };
+      const defaultOffset = selectedObject.skirtingOffset ?? 10;
+      const defaultHeight = selectedObject.skirtingHeight ?? 75;
+      const updatePatch: any = {
+        skirtingEnabled: isEnabled,
+        skirtingOffset: defaultOffset,
+        skirtingHeight: defaultHeight,
+      };
 
       if (isEnabled) {
         // Turning skirting ON
@@ -1474,7 +1468,7 @@ const Sidebar: React.FC = () => {
         }
 
         await applyObjectUpdate(selectedObject, updatePatch);
-        addSkirtingPlanks(targetMesh);
+        addSkirtingPlanks(targetMesh, { height: defaultHeight, offset: defaultOffset });
       } else {
         // Turning skirting OFF
         removeSkirtingPlanks(targetMesh);
@@ -1489,6 +1483,61 @@ const Sidebar: React.FC = () => {
     } catch (error) {
       console.error('Error toggling skirting:', error);
     }
+  };
+
+  // Skirting dynamic inputs
+  const handleSkirtingOffsetChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedObject || !scene || !selectedObject.skirtingEnabled || isDisabled) return;
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+    if (!targetMesh) return;
+
+    const newOffset = value;
+    const newHeight = selectedObject.skirtingHeight ?? 75;
+
+    // Persist to store first
+    await applyObjectUpdate(selectedObject, {
+      skirtingOffset: newOffset,
+      skirtingHeight: newHeight,
+    });
+
+    // Rebuild skirting
+    removeSkirtingPlanks(targetMesh);
+    addSkirtingPlanks(targetMesh, { height: newHeight, offset: newOffset });
+  };
+
+  const handleSkirtingHeightChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedObject || !scene || !selectedObject.skirtingEnabled || isDisabled) return;
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+    if (!targetMesh) return;
+
+    const newHeight = value;
+    const newOffset = selectedObject.skirtingOffset ?? 10;
+
+    // Persist to store first
+    await applyObjectUpdate(selectedObject, {
+      skirtingOffset: newOffset,
+      skirtingHeight: newHeight,
+    });
+
+    // Rebuild skirting
+    removeSkirtingPlanks(targetMesh);
+    addSkirtingPlanks(targetMesh, { height: newHeight, offset: newOffset });
   };
 
   const handleNailerToggle = async () => {
@@ -2840,41 +2889,34 @@ const Sidebar: React.FC = () => {
                           >
                             Skirting
                           </p>
-                          <div
-                            className={`flex items-center gap-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            <input
-                              type="number"
-                              disabled={frontpanelDisabled || isDisabled}
-                              className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
                         </div>
 
-                        <div
-                          className={`mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem] ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                        >
+                        <div className={`mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]`}>
                           <div className="mr-[1rem] px-3 py-2">
                             <p
-                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${!selectedObject?.skirtingEnabled || isDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
                             >
-                              Back Panel
+                              Offset
                             </p>
                             <input
                               type="number"
-                              disabled={frontpanelDisabled || isDisabled}
+                              value={selectedObject?.skirtingOffset ?? 10}
+                              onChange={handleSkirtingOffsetChange}
+                              disabled={!selectedObject?.skirtingEnabled || isDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                           <div className="mr-[0.5rem] px-[3] py-[2]">
                             <p
-                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${frontpanelDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${!selectedObject?.skirtingEnabled || isDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
                             >
-                              Inward Size
+                              Height
                             </p>
                             <input
                               type="number"
-                              disabled={frontpanelDisabled || isDisabled}
+                              value={selectedObject?.skirtingHeight ?? 75}
+                              onChange={handleSkirtingHeightChange}
+                              disabled={!selectedObject?.skirtingEnabled || isDisabled}
                               className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>

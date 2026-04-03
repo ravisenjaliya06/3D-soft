@@ -28,6 +28,7 @@ import { LShapeObjectManager } from '../sceneCreator/tools/lShapeObjectTool';
 import { findMesh } from '../sceneCreator/utils';
 import { store } from '../store';
 import {
+  addObjects,
   removeObject,
   setobjectSelected,
   setSelectedChildObject,
@@ -1346,9 +1347,11 @@ export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, ne
   }
 };
 
-export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
+export const addSkirtingPlanks = (
+  boxMesh: THREE.Mesh,
+  options?: { height?: number; offset?: number }
+) => {
   if (!boxMesh) return;
-  if (boxMesh.userData?.noBaseEnabled) return;
 
   const boxObject = store
     .getState()
@@ -1359,6 +1362,12 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     console.error('object not found');
     return;
   }
+
+  // Resolve dynamic settings from store or defaults
+  const allObjects = store.getState().data.objects;
+  const cupboardData = allObjects.find((o) => o.id === boxMesh.userData.objectId);
+  const skirtingHeight = options?.height ?? cupboardData?.skirtingHeight ?? 75;
+  const inset = options?.offset ?? cupboardData?.skirtingOffset ?? 10;
 
   const { bottomPlank, verticalPlanks } = getCupboardPlanks(boxMesh);
   if (!bottomPlank) return;
@@ -1386,10 +1395,10 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     }
   });
 
-  // 2. Handle Shifting (to 75mm)
+  // 2. Handle Shifting (to skirting height)
   const worldBottomPos = boxMesh.localToWorld(new THREE.Vector3(0, actualBottomY, 0));
   const currentWorldBottomY = worldBottomPos.y;
-  const desiredWorldBottomY = 75;
+  const desiredWorldBottomY = skirtingHeight;
   const shiftAmount = desiredWorldBottomY - currentWorldBottomY;
 
   if (Math.abs(shiftAmount) > 0.1) {
@@ -1402,11 +1411,9 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
 
   const size = new THREE.Vector3();
   geometry.boundingBox.getSize(size);
-  const { x: width, y: height, z: depth } = size;
+  const { x: width, z: depth } = size;
 
   const thickness = 18;
-  const skirtingHeight = 75;
-  const inset = 10;
 
   removeSkirtingPlanks(boxMesh);
 
@@ -1463,8 +1470,20 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
     const mesh = builder.createMesh();
     mesh.userData.isSkirting = true;
     boxMesh.add(mesh);
-    store.dispatch(updateObject(data));
+    store.dispatch(addObjects([data]));
   });
+
+  // Persist settings on cupboard object
+  if (cupboardData) {
+    store.dispatch(
+      updateObject({
+        ...cupboardData,
+        skirtingEnabled: true,
+        skirtingHeight: skirtingHeight,
+        skirtingOffset: inset,
+      })
+    );
+  }
 };
 
 export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
@@ -1485,7 +1504,7 @@ export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   });
 
   // Revert Shifting logic if needed
-  // If we remove skirting, we should probably return to the "No Base" position (Y=0) 
+  // If we remove skirting, we should probably return to the "No Base" position (Y=0)
   // or "Normal Base" position (Y=100).
   // For now, let's just shift back by whatever shift we applied.
   const shiftAmount = boxMesh.userData.noBaseShift;
@@ -1510,11 +1529,23 @@ export const hydrateSkirting = (cupboardMesh: THREE.Mesh) => {
 
   const cupboardId = cupboardMesh.userData.objectId;
   const allObjects = store.getState().data.objects;
+  const cupboardData = allObjects.find((o) => o.id === cupboardId);
 
   // Find skirting planks belonging to this cupboard
   const skirtingPlanks = allObjects.filter(
     (obj) => obj.parent === cupboardId && obj.name && obj.name.includes('SKIRTING_PLANK')
   );
+
+  // If skirting is enabled but no planks found in store (legacy designs), rebuild dynamically
+  if ((cupboardData?.skirtingEnabled && skirtingPlanks.length === 0) || !skirtingPlanks.length) {
+    if (cupboardData?.skirtingEnabled) {
+      addSkirtingPlanks(cupboardMesh, {
+        height: cupboardData.skirtingHeight ?? 75,
+        offset: cupboardData.skirtingOffset ?? 10,
+      });
+      return;
+    }
+  }
 
   skirtingPlanks.forEach((data) => {
     // Check if it already exists in the scene
@@ -2240,8 +2271,8 @@ const buildNailerMeshes = async (cupboardMesh: THREE.Mesh, modelName: string) =>
   const bp = bottomPlank as THREE.Mesh | null;
   const actualBottomY = bp
     ? bp.position.y +
-    ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
-      -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
+      ((bp.geometry as THREE.BoxGeometry).boundingBox?.min.y ||
+        -(bp.geometry as THREE.BoxGeometry).parameters.height / 2)
     : -h / 2;
 
   const positions = [
@@ -2399,11 +2430,7 @@ const updatePlankDimension = (
   builder.updateBanding(vp, { isDimensionUpdate: true });
 };
 
-const updateCupboardPosition = (
-  cupboardMesh: THREE.Mesh,
-  shiftY: number,
-  newShiftData: number
-) => {
+const updateCupboardPosition = (cupboardMesh: THREE.Mesh, shiftY: number, newShiftData: number) => {
   const currentObjects = store.getState().data.objects;
   const cupboardId = cupboardMesh.userData.objectId;
   const localShift = new THREE.Vector3(0, shiftY, 0);

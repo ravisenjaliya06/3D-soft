@@ -208,6 +208,7 @@ export interface MeshObjectData {
   noBaseEnabled?: boolean;
   skirtingEnabled?: boolean;
   skirtingHeight?: number;
+  skirtingOffset?: number;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {
