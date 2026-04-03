@@ -196,9 +196,10 @@ export class MeshBuilder {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
-        createdMaterial = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-        });
+        const wallTexture = this._createTexture(materialData);
+        createdMaterial = wallTexture
+          ? new THREE.MeshStandardMaterial({ map: wallTexture })
+          : new THREE.MeshStandardMaterial({ color: 0xffffff });
       } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
         // Support floor material type - use same texture loading as Panel Stock
         createdMaterial = this._createTextureMaterial(materialData);
