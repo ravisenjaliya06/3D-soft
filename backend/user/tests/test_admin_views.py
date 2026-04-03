@@ -10,6 +10,7 @@ from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import DEFAULT_DB_ALIAS
+from django.http import HttpRequest, HttpResponse
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -19,8 +20,8 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 # App imports
 from tests.testing import APIBaseTestCase
@@ -47,7 +48,13 @@ from user.permissions import (
     MesEditor,
     is_ghost_authorized,
 )
-from user.views import ApproveUserView
+from user.views import (
+    AddUserInOrganizationViewset,
+    AdminView,
+    ApproveUserView,
+    UserAuthViewset,
+    _add_username_to_token,
+)
 
 
 class AdminAPIViewTestCase(APIBaseTestCase):
@@ -234,9 +241,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     ) -> None:
         called = {"ok": False}
 
-        # Django imports
-        from django.http import HttpRequest, HttpResponse
-
         def get_response(_req: HttpRequest) -> HttpResponse:
             called["ok"] = True
             return self.client.get(reverse("admin_login"))
@@ -255,9 +259,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.user.is_ghost = True
         self.user.ghost_access_type = "view"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
-
-        # Django imports
-        from django.http import HttpRequest, HttpResponse
 
         def get_response(_req: HttpRequest) -> HttpResponse:
             return self.client.get(reverse("admin_login"))
@@ -308,9 +309,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.user.ghost_access_type = "full"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
 
-        # Django imports
-        from django.http import HttpRequest, HttpResponse
-
         def get_response(_req: HttpRequest) -> HttpResponse:
             return self.client.get(reverse("admin_login"))
 
@@ -328,9 +326,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         auth = OrganizationAwareJWTAuthentication()
         req = APIRequestFactory().get("/any/")
         req.META["HTTP_AUTHORIZATION"] = "Bearer not.a.jwt"
-        # External imports
-        from rest_framework_simplejwt.exceptions import InvalidToken
-
         with self.assertRaises((InvalidToken, TokenError)):
             auth.authenticate(req)
 
@@ -423,9 +418,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_edit_ghost_permission_rejects_non_ghost(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         view = UserAuthViewset()
         req = Request(
             APIRequestFactory().put(
@@ -519,13 +511,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         return rf.post(path, data=data or {})
 
     def test_set_password_get_renders(self: "AdminAPIViewTestCase") -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         req = APIRequestFactory().get("/setpass/")
-        # Python imports
-        import uuid
-
         resp = UserAuthViewset().set_password(Request(req), token=str(uuid.uuid4()))
         self.assertIn(getattr(resp, "status_code", 200), (200, 302))
 
@@ -534,17 +520,11 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_set_password_expired_token(
         self: "AdminAPIViewTestCase", _m_dec: MagicMock, _m_msgs: MagicMock
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         req = APIRequestFactory().post(
             "/setpass/",
             data=json.dumps({"password": "x"}),
             content_type="application/json",
         )
-        # Python imports
-        import uuid
-
         resp = UserAuthViewset().set_password(Request(req), token=str(uuid.uuid4()))
         self.assertIn(getattr(resp, "status_code", 200), (200, 302))
 
@@ -556,17 +536,11 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_set_password_user_not_found(
         self: "AdminAPIViewTestCase", _m_dec: MagicMock, _m_msgs: MagicMock
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         req = APIRequestFactory().post(
             "/setpass/",
             data=json.dumps({"password": "x"}),
             content_type="application/json",
         )
-        # Python imports
-        import uuid
-
         resp = UserAuthViewset().set_password(Request(req), token=str(uuid.uuid4()))
         self.assertIn(getattr(resp, "status_code", 200), (200, 302))
 
@@ -667,12 +641,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_add_username_to_token_clears_cache_attrs(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # Python imports
-        import uuid
-
-        # App imports
-        from user.views import _add_username_to_token
-
         token = AccessToken.for_user(self.user)
         placeholder = str(uuid.uuid4())
         token._encoded = placeholder  # type: ignore[attr-defined]
@@ -689,12 +657,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_add_username_to_refresh_token_includes_access_payload(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # External imports
-        from rest_framework_simplejwt.tokens import RefreshToken
-
-        # App imports
-        from user.views import _add_username_to_token
-
         refresh = RefreshToken.for_user(self.user)
         _add_username_to_token(refresh, self.user)
         self.assertEqual(refresh.payload.get("username"), self.user.username)
@@ -707,9 +669,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_send_otp_email_helper_calls_send_email(
         self: "AdminAPIViewTestCase", mock_render: MagicMock, mock_send: MagicMock
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         UserAuthViewset()._send_otp_email(self.user, "12345")
         self.assertTrue(mock_render.called)
         self.assertTrue(mock_send.called)
@@ -719,9 +678,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_send_forgot_password_email_helper_calls_send_email(
         self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         UserAuthViewset()._send_forgot_password_email(self.user, self.user.email, "tok")
         self.assertTrue(mock_send.called)
 
@@ -730,9 +686,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_send_registration_notification_admin_url_override(
         self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         req = APIRequestFactory().get("/x/")
         req.admin_dashboard_url_override = "http://test.local/admin/"
         UserAuthViewset()._send_registration_notification_to_admin(req, self.user)
@@ -743,12 +696,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_send_welcome_email_group_formats(
         self: "AdminAPIViewTestCase", _mock_render: MagicMock, mock_send: MagicMock
     ) -> None:
-        # Django imports
-        from django.contrib.auth.models import Group
-
-        # App imports
-        from user.views import AddUserInOrganizationViewset
-
         view = AddUserInOrganizationViewset()
         g1, _ = Group.objects.get_or_create(name="G1")
         g2, _ = Group.objects.get_or_create(name="G2")
@@ -767,9 +714,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_edit_organization_user_permission_user_not_found(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import AddUserInOrganizationViewset
-
         view = AddUserInOrganizationViewset()
         req = Request(APIRequestFactory().put("/edit/", {"name": "x"}))
         req.user = self.user
@@ -777,9 +721,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, 404)
 
     def test_remove_user_from_org_not_member_path(self: "AdminAPIViewTestCase") -> None:
-        # App imports
-        from user.views import AddUserInOrganizationViewset
-
         other = User.objects.create(username="otherx", email="otherx@test.com")
         view = AddUserInOrganizationViewset()
         req = Request(APIRequestFactory().delete("/rm/"))
@@ -790,9 +731,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_show_organization_users_org_not_found(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import AddUserInOrganizationViewset
-
         org = self.user.selected_organization
         if org:
             org.user.remove(self.user)
@@ -825,9 +763,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_admin_login_post_explicit_non_superuser_403(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import AdminView
-
         view = AdminView()
         req = APIRequestFactory().post(
             "/admin/login/",
@@ -845,9 +780,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_toggle_ghost_status_unauthorized_direct(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import AdminView
-
         req = self.factory.post(
             "/admin/ghost/", {"email": self.user.email, "is_ghost": "true"}
         )
@@ -858,9 +790,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_edit_ghost_permission_invalid_type_direct(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         self.user.is_ghost = True
         self.user.save(update_fields=["is_ghost"])
         req = Request(APIRequestFactory().put("/ghost/", {"ghost_access_type": "bad"}))
@@ -870,9 +799,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_edit_ghost_permission_success_direct(self: "AdminAPIViewTestCase") -> None:
-        # App imports
-        from user.views import UserAuthViewset
-
         self.user.is_ghost = True
         self.user.save(update_fields=["is_ghost"])
         req = Request(APIRequestFactory().put("/ghost/", {"ghost_access_type": "full"}))
@@ -888,9 +814,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_send_welcome_email_no_groups_branch(
         self: "AdminAPIViewTestCase", _m_render: MagicMock, m_send: MagicMock
     ) -> None:
-        # App imports
-        from user.views import AddUserInOrganizationViewset
-
         self.user.groups.clear()
         AddUserInOrganizationViewset()._send_welcome_email(
             self.user,
@@ -904,18 +827,12 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.assertTrue(m_send.called)
 
     def test_admin_dashboard_authenticated_branch(self: "AdminAPIViewTestCase") -> None:
-        # App imports
-        from user.views import AdminView
-
         req = self.factory.get("/admin/dashboard/")
         req.user = self.admin_user
         resp = AdminView().dashboard(req)
         self.assertEqual(resp.status_code, 200)
 
     def test_admin_users_authenticated_branch(self: "AdminAPIViewTestCase") -> None:
-        # App imports
-        from user.views import AdminView
-
         req = self.factory.get("/admin/users/")
         req.user = self.admin_user
         resp = AdminView().users(req)
@@ -924,9 +841,6 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     def test_admin_ghost_users_authenticated_branch(
         self: "AdminAPIViewTestCase",
     ) -> None:
-        # App imports
-        from user.views import AdminView
-
         req = self.factory.get("/admin/ghost-users/")
         req.user = self.admin_user
         resp = AdminView().ghost_users(req)

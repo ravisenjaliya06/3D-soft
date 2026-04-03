@@ -11,6 +11,8 @@ from rest_framework import status
 
 # App imports
 from material.models import Company
+from material.serializers import MaterialFactorySerializer
+from material.views import MaterialViewSet
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -363,9 +365,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_material_factory_unsupported_type_raises(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        # App imports
-        from material.serializers import MaterialFactorySerializer
-
         with self.assertRaises(Exception):
             MaterialFactorySerializer.get_material_serializer("UnsupportedType")
 
@@ -440,9 +439,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_material_viewset_perform_create_with_company_id(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        # App imports
-        from material.views import MaterialViewSet
-
         view = MaterialViewSet()
         view.kwargs = {"company_id": str(self.company.id)}
         view.request = type("R", (), {"user": self.user})()
@@ -456,9 +452,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_material_viewset_perform_create_without_company_id(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        # App imports
-        from material.views import MaterialViewSet
-
         view = MaterialViewSet()
         view.kwargs = {}
         view.request = type("R", (), {"user": self.user})()

@@ -12,6 +12,7 @@ from django.urls import reverse
 import pytest
 from rest_framework import status
 from rest_framework.request import Request
+from rest_framework.response import Response as DRFResponse
 from rest_framework.test import APIRequestFactory
 
 # App imports
@@ -1520,9 +1521,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
         self: "DesignAPIViewTestCase",
     ) -> None:
         """Mock nesting to succeed and json file to exist, then GET json content."""
-        # External imports
-        from rest_framework.response import Response as DRFResponse
-
         DesignCatalog.objects.create(
             organization=self.organization,
             type=CatalogTypeChoices.PLANK,
@@ -1804,9 +1802,6 @@ class DesignAPIViewTestCase(APIBaseTestCase):
     def test_download_nesting_file_json_not_found_after_generation(
         self: "DesignAPIViewTestCase",
     ) -> None:
-        # External imports
-        from rest_framework.response import Response as DRFResponse
-
         with patch(
             "design.views.NestAPIViewset.nesting", return_value=DRFResponse(status=200)
         ), patch("design.views.os.path.exists", return_value=False):
