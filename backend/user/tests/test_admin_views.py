@@ -57,6 +57,10 @@ from user.views import (
 )
 
 
+def get_response_ok(_req: HttpRequest) -> HttpResponse:
+    return HttpResponse("OK", status=200)
+
+
 class AdminAPIViewTestCase(APIBaseTestCase):
     databases = {DEFAULT_DB_ALIAS}
 
@@ -241,11 +245,11 @@ class AdminAPIViewTestCase(APIBaseTestCase):
     ) -> None:
         called = {"ok": False}
 
-        def get_response(_req: HttpRequest) -> HttpResponse:
+        def _wrapper(_req: HttpRequest) -> HttpResponse:
             called["ok"] = True
-            return self.client.get(reverse("admin_login"))
+            return get_response_ok(_req)
 
-        mw = GhostUserMiddleware(get_response)
+        mw = GhostUserMiddleware(_wrapper)
         req = APIRequestFactory().get("/any/")
         resp = mw(req)
         self.assertIn(resp.status_code, (200, 302))
@@ -260,10 +264,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.user.ghost_access_type = "view"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
 
-        def get_response(_req: HttpRequest) -> HttpResponse:
-            return self.client.get(reverse("admin_login"))
-
-        mw = GhostUserMiddleware(get_response)
+        mw = GhostUserMiddleware(get_response_ok)
         req = APIRequestFactory().post("/write/")
         req.user = self.user
         req.META["HTTP_X_ORGANIZATION_ID"] = str(other_org.id)
@@ -309,10 +310,7 @@ class AdminAPIViewTestCase(APIBaseTestCase):
         self.user.ghost_access_type = "full"
         self.user.save(update_fields=["is_ghost", "ghost_access_type"])
 
-        def get_response(_req: HttpRequest) -> HttpResponse:
-            return self.client.get(reverse("admin_login"))
-
-        mw = GhostUserMiddleware(get_response)
+        mw = GhostUserMiddleware(get_response_ok)
         req = APIRequestFactory().post("/write/")
         req.user = self.user
         req.META["HTTP_X_ORGANIZATION_ID"] = str(other_org.id)
