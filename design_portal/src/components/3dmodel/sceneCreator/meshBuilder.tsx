@@ -18,6 +18,7 @@ import {
   MeshObjectData,
   OBJECT_TYPES,
   PART_TYPES,
+  TEXTURE_GRAIN,
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
@@ -161,6 +162,14 @@ export class MeshBuilder {
         texture.wrapT = THREE.RepeatWrapping;
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.repeat.set(1, 1);
+
+        //it is for texture grain when design loaded
+        texture.center.set(0.5, 0.5);
+        if (this.meshData.textureGrain === TEXTURE_GRAIN.VERTICAL) {
+          texture.rotation = Math.PI / 2;
+        } else {
+          texture.rotation = 0;
+        }
       }
     });
     return texture;

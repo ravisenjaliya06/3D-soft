@@ -176,6 +176,7 @@ export interface MeshObjectData {
   rotation: Rotation;
   path?: string;
   unique_id?: string;
+  textureGrain?: TextureGrain;
 
   //optional properties
   description?: string;
@@ -297,3 +298,11 @@ export type MeshObjectPatch = Omit<
   material?: Material[];
   panelDesign?: PanelDesignData;
 };
+
+export const TEXTURE_GRAIN = {
+  NONE: 'None',
+  HORIZONTAL: 'Horizontal',
+  VERTICAL: 'Vertical',
+} as const;
+
+export type TextureGrain = (typeof TEXTURE_GRAIN)[keyof typeof TEXTURE_GRAIN];

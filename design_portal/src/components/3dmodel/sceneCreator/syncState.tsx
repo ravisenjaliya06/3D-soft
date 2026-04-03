@@ -229,10 +229,17 @@ export class SyncManager {
         }
 
         const itemWithBanding = this._detectBandingFromScene(itemToAdd);
-        toAdd.push(itemWithBanding);
+
+        // Default textureGrain to 'None' for all new plank/object entries
+        const itemWithDefaults: MeshObjectData = {
+          ...itemWithBanding,
+          textureGrain: itemWithBanding.textureGrain ?? 'None',
+        };
+
+        toAdd.push(itemWithDefaults);
 
         // Update map so subsequent methods (like _sync2D) see it as existing
-        this.storeObjectMap.set(item.id, itemWithBanding);
+        this.storeObjectMap.set(item.id, itemWithDefaults);
       }
     });
 

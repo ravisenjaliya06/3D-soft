@@ -51,3 +51,5 @@ export interface DistanceInputProps {
   disabled: boolean;
   onChange: (direction: string, value: number) => void;
 }
+
+export type TextureGrain = 'None' | 'Horizontal' | 'Vertical';

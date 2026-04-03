@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
-import { Material } from '../sceneCreator/interface';
+import { Material, TextureGrain } from '../sceneCreator/interface';
 import { Object3D, Position, Rotation } from '../store/interface';
 
 export const ITEM = {
@@ -308,6 +308,7 @@ export interface UpdatePayload {
   rotation?: Partial<Rotation>;
   material?: Material;
   textureRotation?: number;
+  textureGrain?: TextureGrain;
   openDirection?: string;
 }
 
