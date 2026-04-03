@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { hydrateNailers } from '../design/scene';
+import { hydrateNailers, hydrateSkirting } from '../design/scene';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { store } from '../store';
 import {
@@ -206,6 +206,9 @@ export class DesignBuilder {
       const mesh = this.meshMap.get(meshData.id);
       if (mesh && meshData.nailerEnabled) {
         nailerPromises.push(hydrateNailers(mesh, meshData.nailerModel));
+      }
+      if (mesh && meshData.skirtingEnabled) {
+        hydrateSkirting(mesh);
       }
     });
 
