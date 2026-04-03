@@ -273,16 +273,7 @@ export class SyncManager {
       right?: boolean;
       front?: boolean;
       back?: boolean;
-    } = {};
-
-    mesh.children.forEach((child) => {
-      if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
-        const edge = child.userData.edge;
-        if (edge && typeof edge === 'string') {
-          detectedBanding[edge as keyof typeof detectedBanding] = true;
-        }
-      }
-    });
+    } = mesh.userData.edgeBanding || {};
 
     // If we found any banding, add it to the meshData
     if (Object.keys(detectedBanding).length > 0) {
@@ -781,16 +772,7 @@ export class SyncManager {
         right?: boolean;
         front?: boolean;
         back?: boolean;
-      } = {};
-
-      mesh.children.forEach((child) => {
-        if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
-          const edge = child.userData.edge;
-          if (edge && typeof edge === 'string') {
-            detectedBanding[edge as keyof typeof detectedBanding] = true;
-          }
-        }
-      });
+      } = mesh.userData.edgeBanding || {};
 
       // If we found banding and it's not already in Redux, update it
       if (Object.keys(detectedBanding).length > 0) {
