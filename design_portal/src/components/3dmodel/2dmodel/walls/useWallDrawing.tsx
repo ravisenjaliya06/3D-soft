@@ -11,7 +11,7 @@ import {
 import { SyncManager } from '../../sceneCreator/syncState';
 import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
-import { addObjects, addPoint, setWalls } from '../../store/dataSlice';
+import { addObjects, addPoint, removeObject, setWalls, updateObjects } from '../../store/dataSlice';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -182,10 +182,23 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     // Find rooms from walls
     const rooms = findRoomsFromWalls(updatedWalls);
 
-    // Only create floor if there are rooms (connected walls forming closed shapes)
+    // Filter existing floors from the objects array
+    const existingFloors = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.FLOOR);
+
     if (rooms.length > 0) {
-      // Convert floor to MeshObjectData format and store in data.objects array
-      const floorObjects: MeshObjectData[] = rooms.map((room) => {
+      const reconciledFloors: MeshObjectData[] = [];
+      const usedFloorIds = new Set<string>();
+
+      rooms.forEach((room) => {
+        const roomWallIds = room.map((w) => w.id).sort();
+        const roomWallIdsKey = roomWallIds.join(',');
+
+        // Find an existing floor that matches the set of walls in the current room
+        const existingFloor = existingFloors.find((f) => {
+          const floorWallIds = (f.floorData?.walls || []).slice().sort();
+          return floorWallIds.join(',') === roomWallIdsKey;
+        });
+
         const points = getFloorPolygon(room);
 
         // Calculate bounding box for floor dimensions
@@ -200,59 +213,103 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
 
-        return {
-          id: crypto.randomUUID(),
-          name: 'Floor',
-          type: FLOOR_PLAN_TYPES.FLOOR,
-          isMain: true,
-          geometryType: GEOMETRY.NONE,
-          dimensions: {
-            width: width,
-            height: 0.01,
-            depth: depth,
-          },
-          position: {
-            x: centerX / 100,
-            y: 0,
-            z: centerY / 100,
-          },
-          rotation: {
-            x: 0,
-            y: 0,
-            z: 0,
-          },
-          material: [
-            {
-              id: crypto.randomUUID(),
-              name: 'Floor Material',
-              type: MATERIAL_TYPES.MISCELLANEOUS,
-              properties: {
-                model: false,
-                unit_of_issue: 'Each',
-                default_cost: 0,
-                sell_price: 0,
-                default_markup: 0,
-                sales_tax: false,
-                default_tax_rate: 0,
-                waste: 0,
-                estimate: false,
-                model_file: null,
-              },
-              textures: [],
+        if (existingFloor) {
+          // Update existing floor
+          reconciledFloors.push({
+            ...existingFloor,
+            dimensions: { ...existingFloor.dimensions, width, depth },
+            position: { x: centerX / 100, y: 0, z: centerY / 100 },
+            floorData: {
+              ...existingFloor.floorData!,
+              points: points,
+              walls: room.map((wall) => wall.id),
             },
-          ],
-          floorData: {
-            points: points,
-            walls: room.map((wall) => wall.id),
-          },
-        };
+          });
+          usedFloorIds.add(existingFloor.id);
+        } else {
+          // Create new floor object
+          reconciledFloors.push({
+            id: crypto.randomUUID(),
+            name: 'Floor',
+            type: FLOOR_PLAN_TYPES.FLOOR,
+            isMain: true,
+            geometryType: GEOMETRY.NONE,
+            dimensions: {
+              width: width,
+              height: 0.01,
+              depth: depth,
+            },
+            position: {
+              x: centerX / 100,
+              y: 0,
+              z: centerY / 100,
+            },
+            rotation: { x: 0, y: 0, z: 0 },
+            material: [
+              {
+                id: crypto.randomUUID(),
+                name: 'Floor Material',
+                type: MATERIAL_TYPES.MISCELLANEOUS,
+                properties: {
+                  model: false,
+                  unit_of_issue: 'Each',
+                  default_cost: 0,
+                  sell_price: 0,
+                  default_markup: 0,
+                  sales_tax: false,
+                  default_tax_rate: 0,
+                  waste: 0,
+                  estimate: false,
+                  model_file: null,
+                },
+                textures: [],
+              },
+            ],
+            floorData: {
+              points: points,
+              walls: room.map((wall) => wall.id),
+            },
+          });
+        }
       });
 
-      // Store floor objects in data.objects array using direct dispatch
-      // (Don't use SyncManager - it adds unwanted data and tries to use MeshBuilder)
-      if (floorObjects.length > 0) {
-        dispatch(addObjects(floorObjects));
+      // Split into additions, updates and deletions
+      const floorsToAdd = reconciledFloors.filter(
+        (f) => !existingFloors.find((ef) => ef.id === f.id)
+      );
+      const floorsToUpdate = reconciledFloors.filter((f) =>
+        existingFloors.find((ef) => ef.id === f.id)
+      );
+      // const floorsToDelete = existingFloors.filter(ef => !usedFloorIds.has(ef.id)); // Deletion logic if needed
+
+      const floorsToDelete = existingFloors.filter((ef) => !usedFloorIds.has(ef.id));
+
+      if (floorsToAdd.length > 0) {
+        dispatch(addObjects(floorsToAdd));
       }
+
+      if (floorsToUpdate.length > 0) {
+        const updatePayload = floorsToUpdate.map((f) => ({
+          id: f.id,
+          dimensions: f.dimensions,
+          position: f.position,
+          floorData: f.floorData,
+        }));
+        dispatch(updateObjects(updatePayload));
+      }
+
+      if (floorsToDelete.length > 0) {
+        floorsToDelete.forEach((ef) => dispatch(removeObject(ef.id)));
+      }
+
+      // Sync all reconciled floors + any remaining floors to 3D
+      const syncManager = new SyncManager(reconciledFloors);
+      syncManager.syncData();
+    } else if (existingFloors.length > 0) {
+      // No rooms detected, remove all existing floors
+      existingFloors.forEach((ef) => dispatch(removeObject(ef.id)));
+      const syncManager = new SyncManager([]);
+      syncManager.syncData();
     }
 
     // Set next start point for continuous drawing

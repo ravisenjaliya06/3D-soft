@@ -15,7 +15,7 @@ import { getHoleBounds, getPanelBounds } from '../utils/boundsUtils';
  * A reusable container for sidebar panels.
  * Includes a draggable header with a title and action icon.
  */
-const SidebarContainer: React.FC<BaseSidebarProps> = ({
+export const SidebarContainer: React.FC<BaseSidebarProps> = ({
   title,
   pos,
   height,
@@ -62,7 +62,7 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
  * For 2 fields: [input] [input] with sub-labels centered under each.
  * For 1 field with inlineLayout: title and input on same line.
  */
-const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) => (
+export const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) => (
   <div className={group.noBorder ? styles.propertyGroupNoBorder : styles.propertyGroup}>
     {group.inlineLayout && group.fields.length === 1 ? (
       <div className={styles.propertyGroupInline}>

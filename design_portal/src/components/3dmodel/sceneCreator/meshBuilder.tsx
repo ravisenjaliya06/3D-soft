@@ -362,6 +362,20 @@ export class MeshBuilder {
   }
 
   private async _getGeometry(): Promise<THREE.BufferGeometry> {
+    if (this.meshData.type === FLOOR_PLAN_TYPES.FLOOR && this.meshData.floorData) {
+      const shape = new THREE.Shape();
+      const points = this.meshData.floorData.points;
+      if (points.length >= 3) {
+        shape.moveTo(points[0].x / 100, points[0].y / 100);
+        for (let i = 1; i < points.length; i++) {
+          shape.lineTo(points[i].x / 100, points[i].y / 100);
+        }
+        shape.closePath();
+        const geometry = new THREE.ShapeGeometry(shape);
+        geometry.rotateX(Math.PI / 2);
+        return geometry;
+      }
+    }
     let geometry: THREE.BufferGeometry;
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
@@ -1125,7 +1139,7 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions || changes.holes || changes.panelDesign) {
+    if (changes.dimensions || changes.holes || changes.panelDesign || changes.floorData) {
       mesh.geometry.dispose();
       const geometry = await this._getGeometry();
       mesh.geometry = geometry;

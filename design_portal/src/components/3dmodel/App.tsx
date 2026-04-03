@@ -29,7 +29,7 @@ const App: React.FC<AppProps> = ({ router }) => {
         onViewModeChange={handleViewModeChange}
         viewMode={viewMode}
       />
-      <Sidebar />
+      {viewMode === '3d' && <Sidebar />}
       <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />
       <ToastContainer position="top-right" theme="dark" style={{ marginTop: '60px' }} />
     </div>

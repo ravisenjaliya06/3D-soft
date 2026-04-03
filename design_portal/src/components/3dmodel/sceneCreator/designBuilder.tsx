@@ -141,7 +141,7 @@ export class DesignBuilder {
    * Builds all mesh objects, arranges them by parent relationship,
    * and returns one blank mesh containing them.
    */
-  public async createDesign(): Promise<THREE.Mesh> {
+  public async createDesign(): Promise<THREE.Object3D> {
     const meshList: THREE.Mesh[] = [];
 
     this.data.forEach((meshData) => {
@@ -152,7 +152,7 @@ export class DesignBuilder {
       this.builderMap.set(meshData.id, builder);
     });
 
-    let rootMesh: THREE.Mesh | null = null;
+    const rootMeshes: THREE.Object3D[] = [];
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
 
@@ -167,14 +167,7 @@ export class DesignBuilder {
           }
         }
       } else {
-        if (!rootMesh) {
-          rootMesh = mesh;
-        } else if (!meshData.parent) {
-          const currentRootData = this.dataMap.get(rootMesh.userData?.objectId);
-          if (currentRootData && currentRootData.parent) {
-            rootMesh = mesh;
-          }
-        }
+        rootMeshes.push(mesh);
       }
     });
 
@@ -216,13 +209,19 @@ export class DesignBuilder {
       await Promise.all(nailerPromises);
     }
 
-    if (!rootMesh) {
-      console.warn('Root mesh not explicitly found by parent isolation. Defaulting to first item.');
-      rootMesh = meshList[0];
+    let finalRoot: THREE.Object3D;
+    if (rootMeshes.length === 1) {
+      finalRoot = rootMeshes[0];
+    } else {
+      finalRoot = new THREE.Group();
+      finalRoot.name = 'batch_group';
+      rootMeshes.forEach((m) => finalRoot.add(m));
     }
 
-    this._createInitialCompartments(rootMesh);
-    updateMinifixesForCupboard(rootMesh);
-    return rootMesh;
+    if (finalRoot instanceof THREE.Mesh && finalRoot.userData.isMain) {
+      this._createInitialCompartments(finalRoot);
+      updateMinifixesForCupboard(finalRoot);
+    }
+    return finalRoot;
   }
 }

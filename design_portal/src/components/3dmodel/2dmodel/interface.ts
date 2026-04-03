@@ -1,5 +1,6 @@
 import { RecordOf } from 'immutable';
 import { JSX } from 'react';
+import { MeshObjectData } from '../sceneCreator/interface';
 
 export interface Dimansions {
   width: number;
@@ -58,4 +59,10 @@ export interface Floor {
   id: string;
   points: WallPoint[];
   walls: string[];
+}
+
+export interface TwoDSidebarProps {
+  object: MeshObjectData;
+  pos: { x: number; y: number };
+  onDragStart: () => void;
 }

@@ -226,6 +226,17 @@ const dataSlice = createSlice({
     setFloor: (state, action: PayloadAction<Floor[]>) => {
       state.floor = action.payload;
     },
+    setPoints: (state, action: PayloadAction<WallPoint[]>) => {
+      state.points = action.payload;
+    },
+    updatePoints: (state, action: PayloadAction<WallPoint[]>) => {
+      action.payload.forEach((updatedPoint) => {
+        const index = state.points.findIndex((p) => p.id === updatedPoint.id);
+        if (index !== -1) {
+          state.points[index] = { ...state.points[index], ...updatedPoint };
+        }
+      });
+    },
     resetData: () => {
       return { ...initialState };
     },
@@ -259,6 +270,8 @@ export const {
   addWall,
   setWalls,
   setFloor,
+  setPoints,
+  updatePoints,
   updateWall,
   removeWall,
   clearWalls,
