@@ -1,3 +1,4 @@
+import { getMaintenanceMode } from '@/lib/maintenance-schedule';
 import { useEffect, useState } from 'react';
 
 const MaintenanceBanner = () => {
@@ -5,21 +6,7 @@ const MaintenanceBanner = () => {
 
   useEffect(() => {
     const checkDayAndTime = () => {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Kolkata',
-        weekday: 'short',
-        hour: '2-digit',
-        hour12: false,
-      });
-
-      const parts = formatter.formatToParts(new Date());
-      const weekday = parts.find((part) => part.type === 'weekday')?.value;
-      const hour = Number(parts.find((part) => part.type === 'hour')?.value);
-
-      const isTargetDay = weekday === 'Wed' || weekday === 'Fri';
-      const isWithinWindow = hour >= 13 && hour < 19; // 1:00 PM IST to 7:00 PM IST
-
-      setShouldShow(isTargetDay && isWithinWindow);
+      setShouldShow(getMaintenanceMode() === 'banner');
     };
 
     // Check immediately
