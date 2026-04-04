@@ -1,4 +1,4 @@
-import { getMaintenanceMode } from '@/lib/maintenance-schedule';
+import { getMaintenanceMode } from '@/components/maintenance/maintenance-schedule';
 import { useEffect, useState } from 'react';
 
 const MaintenanceBanner = () => {

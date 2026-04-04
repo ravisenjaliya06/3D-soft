@@ -1,6 +1,6 @@
 'use client';
 
-import { getMaintenanceMode, MaintenanceMode } from '@/lib/maintenance-schedule';
+import { getMaintenanceMode, MaintenanceMode } from '@/components/maintenance/maintenance-schedule';
 import { ReactNode, useEffect, useState } from 'react';
 import MaintenanceBanner from './MaintenanceBanner';
 import MaintenanceFullPage from './MaintenanceFullPage';

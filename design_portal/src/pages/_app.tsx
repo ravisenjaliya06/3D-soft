@@ -1,6 +1,6 @@
 import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
-import MaintenanceGate from '@/components/MaintenanceGate';
+import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
