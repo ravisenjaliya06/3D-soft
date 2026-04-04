@@ -64,9 +64,9 @@ interface PopupStep {
   fields: Array<{
     key: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'toggle' | 'file';
+    type: 'text' | 'number' | 'select' | 'toggle' | 'file' | 'texture-grid';
     placeholder?: string;
-    options?: string[];
+    options?: any[];
     disabled?: boolean;
     img?: string;
     accept?: string;
@@ -76,7 +76,7 @@ interface PopupStep {
 interface Field {
   key: keyof MaterialPropertiesInput | string;
   type: string;
-  options?: string[];
+  options?: any[];
   disabled?: boolean;
   placeholder?: string;
   label: string;
@@ -98,6 +98,22 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [formData, setFormData] = useState<MaterialPropertiesInput>({});
   const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
   const [errorMessage, setFinishError] = useState<string | null>(null);
+  const [texturesList, setTexturesList] = useState<any[]>([]);
+  const [visibleTextureCount, setVisibleTextureCount] = useState(40);
+
+  useEffect(() => {
+    const fetchTextures = async () => {
+      try {
+        const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
+        if (response && response.data) {
+          setTexturesList(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching textures:', error);
+      }
+    };
+    fetchTextures();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -180,6 +196,18 @@ const AddMaterialPopup: React.FC<Props> = ({
     ],
   };
 
+  const finishStep: PopupStep = {
+    title: 'Finish Details',
+    fields: [
+      {
+        key: 'selectedTexture',
+        label: 'Select Texture',
+        type: 'texture-grid',
+        options: texturesList,
+      },
+    ],
+  };
+
   // Define popup sequences for each material type
   const getPopupSequence = (materialType: string): PopupStep[] => {
     const sequences: { [key: string]: PopupStep[] } = {
@@ -246,29 +274,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'finish',
-              label: 'Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'finishType',
-              label: 'Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'texture',
-              label: 'Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Board Stock': [
         {
@@ -398,35 +404,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'backFinish',
-              label: 'Back Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'edgeFinish',
-              label: 'Edge Finish',
-              type: 'select',
-              options: ['Banded', 'Raw', 'Sealed'],
-            },
-            {
-              key: 'endFinish',
-              label: 'End Finish',
-              type: 'select',
-              options: ['Banded', 'Raw', 'Sealed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Caster: [
         {
@@ -491,83 +469,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'axleFinish',
-              label: 'Axle Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'axleFinishType',
-              label: 'Axle Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'axleTexture',
-              label: 'Axle Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'pivotFinish',
-              label: 'Pivot Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'pivotFinishType',
-              label: 'Pivot Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'pivotTexture',
-              label: 'Pivot Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'plateFinish',
-              label: 'Plate Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'plateFinishType',
-              label: 'Plate Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'plateTexture',
-              label: 'Plate Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'wheelFinish',
-              label: 'Wheel Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'wheelFinishType',
-              label: 'Wheel Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'wheelTexture',
-              label: 'Wheel Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Connector: [
         {
@@ -639,29 +541,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'connectorFinish',
-              label: 'Connector Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'connectorFinishType',
-              label: 'Connector Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'connectorTexture',
-              label: 'Connector Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Drawer Guide': [
         {
@@ -1063,47 +943,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'drawerMemberFinish',
-              label: 'Drawer Member Finish',
-              type: 'select',
-              options: ['Zinc Plated', 'Black', 'White'],
-            },
-            {
-              key: 'drawerMemberFinishType',
-              label: 'Drawer Member Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'drawerMemberTexture',
-              label: 'Drawer Member Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'assemblyMemberFinish',
-              label: 'Assembly Member Finish',
-              type: 'select',
-              options: ['Zinc Plated', 'Black', 'White'],
-            },
-            {
-              key: 'assemblyMemberFinishType',
-              label: 'Assembly Member Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'assemblyMemberTexture',
-              label: 'Assembly Member Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Hinge: [
         {
@@ -1219,29 +1059,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'hingeFinish',
-              label: 'Hinge Finish',
-              type: 'select',
-              options: ['Nickel Plated', 'Black', 'Brass', 'Stainless Steel'],
-            },
-            {
-              key: 'finishType',
-              label: 'Finish Type',
-              type: 'select',
-              options: ['Matte', 'Polished', 'Brushed'],
-            },
-            {
-              key: 'texture',
-              label: 'Texture',
-              type: 'select',
-              options: ['Smooth', 'Textured'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Hinge Plate': [
         {
@@ -1338,29 +1156,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'hingePlateFinish',
-              label: 'Hinge Plate Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'hingePlateFinishType',
-              label: 'Hinge Plate Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'hingePlateTexture',
-              label: 'Hinge Plate Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Laminate: [
         {
@@ -1503,29 +1299,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'faceFinishType',
-              label: 'Face Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'faceTexture',
-              label: 'Face Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Leg: [
         {
@@ -1603,29 +1377,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'faceFinishType',
-              label: 'Face Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'faceTexture',
-              label: 'Face Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Leg Leveler': [
         {
@@ -1690,29 +1442,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'faceFinishType',
-              label: 'Face Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'faceTexture',
-              label: 'Face Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Miscellaneous: [
         {
@@ -1828,29 +1558,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw'],
-            },
-            {
-              key: 'faceFinishType',
-              label: 'Face Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'faceTexture',
-              label: 'Face Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Panel Stock': [
         {
@@ -1987,29 +1695,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'faceFinish',
-              label: 'Face Finish',
-              type: 'select',
-              options: ['Laminated', 'Veneer', 'Raw', 'Painted'],
-            },
-            {
-              key: 'finishType',
-              label: 'Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'texture',
-              label: 'Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Pull: [
         {
@@ -2118,29 +1804,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'pullFinish',
-              label: 'Pull Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'pullFinishType',
-              label: 'Pull Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'pullTexture',
-              label: 'Pull Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       Rod: [
         {
@@ -2270,29 +1934,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'pullFinish',
-              label: 'Pull Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'pullFinishType',
-              label: 'Pull Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'pullTexture',
-              label: 'Pull Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Sliding Door Rail': [
         {
@@ -2396,29 +2038,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'pullFinish',
-              label: 'Pull Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'pullFinishType',
-              label: 'Pull Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'pullTexture',
-              label: 'Pull Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Sliding Door Roller': [
         {
@@ -2684,29 +2304,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'pullFinish',
-              label: 'Pull Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'pullFinishType',
-              label: 'Pull Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'pullTexture',
-              label: 'Pull Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
       'Wire Basket': [
         {
@@ -2863,65 +2461,7 @@ const AddMaterialPopup: React.FC<Props> = ({
           ],
         },
         pricingStep,
-        {
-          title: 'Finish Details',
-          fields: [
-            {
-              key: 'wireBasketFinish',
-              label: 'Wire Basket Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'wireBasketFinishType',
-              label: 'Wire Basket Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'wireBasketTexture',
-              label: 'Wire Basket Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'basketMemberFinish',
-              label: 'Basket Member Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'basketMemberFinishType',
-              label: 'Basket Member Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'basketMemberTexture',
-              label: 'Basket Member Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-            {
-              key: 'assemblyMemberFinish',
-              label: 'Assembly Member Finish',
-              type: 'select',
-              options: ['Matte', 'Gloss', 'Semi-Gloss'],
-            },
-            {
-              key: 'assemblyMemberFinishType',
-              label: 'Assembly Member Finish Type',
-              type: 'select',
-              options: ['Wood Grain', 'Solid Color', 'Textured'],
-            },
-            {
-              key: 'assemblyMemberTexture',
-              label: 'Assembly Member Texture',
-              type: 'select',
-              options: ['Smooth', 'Embossed', 'Brushed'],
-            },
-          ],
-        },
+        finishStep,
       ],
     };
 
@@ -3299,9 +2839,16 @@ const AddMaterialPopup: React.FC<Props> = ({
 
     // Prepare finish data based on material type
     const prepareFinishes = () => {
-      const finishes: [] = [];
-      const finish_types: [] = [];
-      const textures: [] = [];
+      const finishes: any[] = [];
+      const finish_types: any[] = [];
+      const textures: any[] = [];
+
+      if (formData.selectedTexture) {
+        const selectedTextureObj = texturesList.find((t) => t.id === formData.selectedTexture);
+        if (selectedTextureObj) {
+          textures.push(selectedTextureObj.name);
+        }
+      }
 
       return { finishes, finish_types, textures };
     };
@@ -3370,6 +2917,55 @@ const AddMaterialPopup: React.FC<Props> = ({
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 
     switch (field.type) {
+      case 'texture-grid':
+        return (
+          <div className="flex flex-col gap-4 w-full">
+            <span className="text-sm font-semibold text-slate-700">{field.label}</span>
+            <div
+              className={styles.textureGrid}
+              onScroll={(e: React.UIEvent<HTMLDivElement>) => {
+                const target = e.currentTarget;
+                if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+                  if (visibleTextureCount < texturesList.length) {
+                    setVisibleTextureCount((prev) => prev + 40);
+                  }
+                }
+              }}
+            >
+              {texturesList.slice(0, visibleTextureCount).map((texture) => {
+                const isSelected = value === texture.id;
+                const imageUrl = texture.image
+                  ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image.startsWith('/') ? '' : '/'}${texture.image}`
+                  : null;
+
+                return (
+                  <div
+                    key={texture.id}
+                    className={`${styles.textureItem} ${isSelected ? styles.selected : ''}`}
+                    onClick={() => {
+                      handleInputChange(field.key, texture.id);
+                      if (onActivate) onActivate();
+                    }}
+                  >
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={texture.name}
+                        className={styles.textureThumbnail}
+                      />
+                    ) : (
+                      <div className="w-[80px] h-[80px] bg-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400">
+                        No Image
+                      </div>
+                    )}
+                    <span className={styles.textureLabel}>{texture.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+
       case 'select':
         return (
           <div title={field.label}>
@@ -3384,7 +2980,11 @@ const AddMaterialPopup: React.FC<Props> = ({
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 handleInputChange(field.key, e.target.value)
               }
-              options={field.options?.map((opt) => ({ value: opt, label: opt })) || []}
+              options={
+                field.options?.map((opt: any) =>
+                  typeof opt === 'string' ? { value: opt, label: opt } : opt
+                ) || []
+              }
               disabled={field.key === 'type' && currentStep === 0}
               borderColor={undefined}
               error={undefined}
@@ -3553,7 +3153,7 @@ const AddMaterialPopup: React.FC<Props> = ({
         {/* Form Body Section */}
         <div className={`${styles.formContentScroll} ${styles.custom_scrollbar}`}>
           {(() => {
-            const hasImageFields = currentPopup?.fields.some((field) => field.img);
+            const hasImageFields = currentPopup?.fields.some((field) => field.img || field.type === 'texture-grid');
             const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
 
             return (
@@ -3567,7 +3167,7 @@ const AddMaterialPopup: React.FC<Props> = ({
                     // Allow 2 fields per row in pricing step, but make 'waste' full-width
                     // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
                     const isFullWidth =
-                      field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
+                      field.type !== 'toggle' && (!isPricingStep || field.key === 'waste') || field.type === 'texture-grid';
 
                     return (
                       <div
@@ -3597,6 +3197,26 @@ const AddMaterialPopup: React.FC<Props> = ({
                             <ModelViewer file={(formData.model_file as File) || null} />
                           </div>
                         );
+                      }
+
+                      if (activeFieldKey === 'selectedTexture' || currentPopup?.title === 'Finish Details') {
+                        const selectedTex = texturesList.find((t) => t.id === formData.selectedTexture);
+                        if (selectedTex?.image) {
+                          const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${selectedTex.image.startsWith('/') ? '' : '/'}${selectedTex.image}`;
+                          return (
+                            <img
+                              src={imageUrl}
+                              className={styles.previewImage}
+                              alt="Texture Guide"
+                            />
+                          );
+                        } else {
+                          return (
+                            <div className="text-sm text-slate-400 italic">
+                              Select a texture to see preview
+                            </div>
+                          );
+                        }
                       }
 
                       if (activeField?.img) {
