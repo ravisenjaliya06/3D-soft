@@ -14,6 +14,7 @@ import {
   DOUBLE_DOOR_PLANK_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  FLOOR_PLAN_TYPES,
   GEOMETRY,
   INVISIBLE_BOXES,
   Material,
@@ -38,6 +39,83 @@ import {
 import { CustomToast } from '../utils/CustomToast';
 
 let cachedHandleModel: THREE.Object3D | null = null;
+
+/**
+ * Find the root THREE.Scene for a given object by walking up the parent chain.
+ * Falls back to Redux scene if not found.
+ */
+const getSceneFromObject = (obj: THREE.Object3D): THREE.Scene | null => {
+  let current: THREE.Object3D | null = obj;
+  while (current) {
+    if (current instanceof THREE.Scene) return current;
+    current = current.parent;
+  }
+  try {
+    return store.getState().scene?.scene || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Find the top Y position of the floor in world coordinates, if any.
+ * Returns 0 when no floor objects are present.
+ */
+const getFloorTopY = (scene: THREE.Scene): number => {
+  let topY = 0;
+  scene.traverse((obj) => {
+    if (obj instanceof THREE.Mesh && obj.userData?.type === FLOOR_PLAN_TYPES.FLOOR) {
+      const box = new THREE.Box3().setFromObject(obj);
+      if (box.max.y > topY) topY = box.max.y;
+    }
+  });
+  return topY;
+};
+
+/**
+ * Same vertical shift as addNailers / removeNailers: local Y via localToWorld → parent.worldToLocal.
+ */
+const applyCupboardVerticalShiftLikeNailer = (cupboardMesh: THREE.Mesh, localYDelta: number) => {
+  if (!localYDelta) return;
+  const localShift = new THREE.Vector3(0, localYDelta, 0);
+  const worldPos = cupboardMesh.localToWorld(localShift.clone());
+  if (cupboardMesh.parent) {
+    cupboardMesh.parent.worldToLocal(worldPos);
+  }
+  cupboardMesh.position.copy(worldPos);
+
+  const currentObjects = store.getState().data.objects;
+  const cbData = currentObjects.find((obj) => obj.id === cupboardMesh.userData.objectId);
+  if (cbData) {
+    store.dispatch(
+      updateObject({
+        ...cbData,
+        position: {
+          x: cupboardMesh.position.x,
+          y: cupboardMesh.position.y,
+          z: cupboardMesh.position.z,
+        },
+      })
+    );
+  }
+};
+
+/** Remove skirting plank meshes only — does not revert cupboard position (used while refreshing skirting). */
+const detachSkirtingPlankMeshes = (boxMesh: THREE.Mesh) => {
+  const toRemove: THREE.Object3D[] = [];
+  boxMesh.children.forEach((child) => {
+    if (child.name && child.name.includes('SKIRTING_PLANK')) {
+      toRemove.push(child);
+    }
+  });
+  toRemove.forEach((child) => {
+    const objectId = child.userData.objectId;
+    if (objectId) {
+      store.dispatch(removeObject(objectId));
+    }
+    boxMesh.remove(child);
+  });
+};
 
 export const loadSinkModel = async (scene: THREE.Scene, url: string) => {
   let counterMesh = scene.getObjectByName('Counter_CenterWall') as THREE.Mesh | null;
@@ -1376,7 +1454,10 @@ export const addSkirtingPlanks = (
   const bpGeo = bp.geometry as THREE.BoxGeometry;
   const actualBottomY = bp.position.y + (bpGeo.boundingBox?.min.y || -bpGeo.parameters.height / 2);
 
-  const scene = boxMesh.parent as THREE.Scene;
+  const scene = getSceneFromObject(boxMesh) as THREE.Scene;
+
+  // 0. Remove old skirting meshes first (without reverting position)
+  detachSkirtingPlankMeshes(boxMesh);
 
   // 1. Make vertical planks flush
   verticalPlanks.forEach((vp) => {
@@ -1395,14 +1476,30 @@ export const addSkirtingPlanks = (
     }
   });
 
-  // 2. Handle Shifting (to skirting height)
-  const worldBottomPos = boxMesh.localToWorld(new THREE.Vector3(0, actualBottomY, 0));
-  const currentWorldBottomY = worldBottomPos.y;
-  const desiredWorldBottomY = skirtingHeight;
-  const shiftAmount = desiredWorldBottomY - currentWorldBottomY;
+  // 2. Lift cupboard like nailers: revert previous skirting lift, then apply needed lift from floor/skirting height
+  try {
+    (boxMesh.parent as THREE.Object3D | null)?.updateMatrixWorld?.(true);
+    boxMesh.updateMatrixWorld(true);
+    (scene as THREE.Scene | null)?.updateMatrixWorld?.(true);
+  } catch {}
 
-  if (Math.abs(shiftAmount) > 0.1) {
-    updateCupboardPosition(boxMesh, shiftAmount, (boxMesh.userData.noBaseShift || 0) + shiftAmount);
+  const prevSkirting = boxMesh.userData.skirtingShift || 0;
+  if (prevSkirting) {
+    applyCupboardVerticalShiftLikeNailer(boxMesh, -prevSkirting);
+    boxMesh.userData.skirtingShift = 0;
+  }
+
+  const worldBox = new THREE.Box3().setFromObject(boxMesh);
+  const currentWorldBottomY = worldBox.min.y;
+  const sceneTopY = getFloorTopY(scene);
+  const desiredWorldBottomY = sceneTopY + skirtingHeight;
+  const dw = desiredWorldBottomY - currentWorldBottomY;
+
+  if (Math.abs(dw) > 0.1) {
+    applyCupboardVerticalShiftLikeNailer(boxMesh, dw);
+    boxMesh.userData.skirtingShift = dw;
+  } else {
+    boxMesh.userData.skirtingShift = 0;
   }
 
   const geometry = boxMesh.geometry;
@@ -1414,8 +1511,6 @@ export const addSkirtingPlanks = (
   const { x: width, z: depth } = size;
 
   const thickness = 18;
-
-  removeSkirtingPlanks(boxMesh);
 
   // Position skirting such that it is from world Y=0 to Y=75
   // Local Y for world Y=0 is actualBottomY - 75
@@ -1488,25 +1583,19 @@ export const addSkirtingPlanks = (
 
 export const removeSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   if (!boxMesh) return;
-  const toRemove: THREE.Object3D[] = [];
-  boxMesh.children.forEach((child) => {
-    if (child.name && child.name.includes('SKIRTING_PLANK')) {
-      toRemove.push(child);
-    }
-  });
 
-  toRemove.forEach((child) => {
-    const objectId = child.userData.objectId;
-    if (objectId) {
-      store.dispatch(removeObject(objectId));
-    }
-    boxMesh.remove(child);
-  });
+  // Remove skirting meshes
+  detachSkirtingPlankMeshes(boxMesh);
 
   // Revert Shifting logic if needed
-  // If we remove skirting, we should probably return to the "No Base" position (Y=0)
-  // or "Normal Base" position (Y=100).
-  // For now, let's just shift back by whatever shift we applied.
+  // First, revert only skirting-specific shift (if any)
+  const skirtingShift = boxMesh.userData.skirtingShift || 0;
+  if (skirtingShift) {
+    applyCupboardVerticalShiftLikeNailer(boxMesh, -skirtingShift);
+    boxMesh.userData.skirtingShift = 0;
+  }
+
+  // Then revert any No Base shift if it was applied
   const shiftAmount = boxMesh.userData.noBaseShift;
   if (shiftAmount) {
     updateCupboardPosition(boxMesh, -shiftAmount, 0);
