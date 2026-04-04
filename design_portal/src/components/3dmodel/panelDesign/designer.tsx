@@ -385,6 +385,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
       for (const hole of slottingHoles) {
         const pocketDepth = hole.depth ?? 10;
+        const face = hole.face ?? 'front';
         const originalIndex = holes.indexOf(hole);
         const holePath = createHolePath(
           hole,
@@ -401,8 +402,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           curveSegments: 32,
         });
 
-        // 1. Center depth targeting the front face
-        plugGeom.translate(0, 0, plankThickness / 2 - pocketDepth);
+        // 1. Center depth targeting the selected face
+        if (face === 'back') {
+          plugGeom.translate(0, 0, -plankThickness / 2);
+        } else {
+          plugGeom.translate(0, 0, plankThickness / 2 - pocketDepth);
+        }
 
         // 2. Apply same rotation logic as alignExtrudedGeometry
         if (thicknessAxis === 'x') {
@@ -701,10 +706,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
       const dx = rawX - newHoleStart.x,
         dy = rawY - newHoleStart.y;
       if (holeShape === 'circle' && activeTool !== PANEL_TOOLS.SLOTTING) {
-        const circleRadius = Math.min(Math.abs(dx), Math.abs(dy)) / 2;
+        const circleRadius = Math.sqrt(dx * dx + dy * dy);
         setTempHole({
-          x: newHoleStart.x + dx / 2 - circleRadius,
-          y: newHoleStart.y + dy / 2 - circleRadius,
+          x: newHoleStart.x - circleRadius,
+          y: newHoleStart.y - circleRadius,
           width: circleRadius * 2,
           height: circleRadius * 2,
           type: 'circle',
@@ -956,8 +961,10 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
                     y={tempHole.y}
                     width={tempHole.width}
                     height={tempHole.height}
-                    fill="rgba(0,0,0,0.2)"
-                    stroke="black"
+                    fill={
+                      tempHole.type === 'slotting' ? 'rgba(255, 165, 0, 0.3)' : 'rgba(0,0,0,0.2)'
+                    }
+                    stroke={tempHole.type === 'slotting' ? '#e67e22' : 'black'}
                   />
                 ))}
               {/* Panel corners rendered BEFORE holes so hole points take priority when overlapping */}
@@ -1034,9 +1041,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
               {holes.map((hole, index) => {
                 const commonProps = {
                   key: index,
-                  fill: 'rgba(0,0,0,0.2)',
+                  fill: hole.type === 'slotting' ? 'rgba(255, 165, 0, 0.3)' : 'rgba(0,0,0,0.2)',
                   stroke:
-                    selectedHoleIndex === index || hoveredHoleIndex === index ? '#12086f' : 'black',
+                    selectedHoleIndex === index || hoveredHoleIndex === index
+                      ? '#12086f'
+                      : hole.type === 'slotting'
+                        ? '#e67e22'
+                        : 'black',
                   opacity: 0.7,
                   strokeWidth: hoveredHoleIndex === index ? 1.5 : 0.5,
                   onClick: () => {
