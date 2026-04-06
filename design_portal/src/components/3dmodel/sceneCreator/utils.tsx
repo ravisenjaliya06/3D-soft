@@ -10,7 +10,7 @@ import { prefetchGLB } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
-import { EDGES, MeshObjectData, PART_TYPES } from './interface';
+import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
@@ -208,7 +208,8 @@ export const convertPosition3DTo2D = (
 
 export function create2DWallFromMeshData(data: MeshObjectData) {
   const state = store.getState();
-  const walls = state.data.walls;
+  const objects = state.data.objects;
+  const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
 
   const width = data.dimensions.width;
   const angle = data.rotation?.y ?? 0;

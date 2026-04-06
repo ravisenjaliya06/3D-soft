@@ -322,6 +322,10 @@ class NestingService:
                             KEY_UNIQUE_ID: unique_id,
                             KEY_WIDTH: safe_w,  # Width of Face
                             KEY_HEIGHT: safe_h,  # Height of Face
+                            # Normalized texture grain code for XLSX: 0 None, 1 Vertical, 2 Horizontal
+                            "texture_grain_code": self.map_texture_grain(
+                                self._extract_texture_value(item_details)
+                            ),
                             "x": safe_x
                             + self.spacing
                             / 2,  # Data for SVG (Centered in padded area)
@@ -424,6 +428,30 @@ class NestingService:
         return str(value).strip()
 
     @staticmethod
+    def map_texture_grain(value: object) -> int:
+        """
+        Map texture grain to numeric code for XLSX texture column:
+        0 = None/Unknown, 1 = Vertical, 2 = Horizontal.
+        Accepts numeric 0/1/2 or string labels ('None','Vertical','Horizontal').
+        """
+        # Prefer numeric input
+        if isinstance(value, (int, float)):
+            try:
+                code = int(value)
+            except (ValueError, TypeError):
+                return 0
+            return code if code in (0, 1, 2) else 0
+
+        text = str(value).strip().lower() if value is not None else ""
+        if text in ("none", ""):
+            return 0
+        if text == "vertical":
+            return 1
+        if text == "horizontal":
+            return 2
+        return 0
+
+    @staticmethod
     def parse_mm_thickness(text: str) -> Optional[float]:
         """Extract thickness when the source explicitly includes `mm`."""
         match = re.search(r"(\d+(?:\.\d+)?)\s*mm", text, flags=re.IGNORECASE)
@@ -474,6 +502,37 @@ class NestingService:
                 return cached_value
 
         return None
+
+    @staticmethod
+    def _extract_texture_value(details: Dict[str, object]) -> object:
+        """
+        Attempt to retrieve a texture grain indicator from common locations/keys in a part payload.
+        Search order (first hit wins):
+          - details['textureGrain'] (numeric 0/1/2 preferred)
+          - details['texture_grain']
+          - details['texture'] (string label)
+          - details['attributes'].{textureGrain|texture_grain|texture}
+          - details['options'].{textureGrain|texture_grain|texture}
+        """
+        direct_candidates = (
+            details.get("textureGrain"),
+            details.get("texture_grain"),
+            details.get("texture"),
+        )
+        for candidate in direct_candidates:
+            if candidate is not None and str(candidate) != "":
+                return candidate
+
+        for container_key in ("attributes", "options", "metadata"):
+            container = details.get(container_key)
+            getter = getattr(container, "get", None)
+            if callable(getter):
+                for key in ("textureGrain", "texture_grain", "texture"):
+                    candidate = getter(key, None)
+                    if candidate is not None and str(candidate) != "":
+                        return candidate
+
+        return ""
 
     def get_banding_display_name(self: "NestingService", value: object) -> str:
         """Extract a readable banding name from dict-like input or fallback to plain text."""
@@ -612,6 +671,8 @@ class NestingService:
             length_val = self._safe_float(item.get(KEY_HEIGHT))
             thval = self._safe_float(item.get("depth", 17.0))
 
+            # Texture grain is already normalized in optimize() via texture_grain_code
+
             sheet1_data.append(
                 {
                     "Order Number": order_number,
@@ -624,7 +685,15 @@ class NestingService:
                     "thickness": thval,
                     "quantity": item.get("quantity", 1),
                     "colour": item.get("colour", ""),
-                    "texture": item.get("texture", ""),
+                    "texture": item.get(
+                        "texture_grain_code",
+                        self.map_texture_grain(
+                            item.get(
+                                "textureGrain",
+                                item.get("texture_grain", item.get("texture", "")),
+                            )
+                        ),
+                    ),
                     "Barcode": item.get(KEY_UNIQUE_ID, ""),
                     "Edge Left": (
                         f"{edge_left_th:.1f}" if edge_left_th is not None else ""

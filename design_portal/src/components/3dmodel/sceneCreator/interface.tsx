@@ -206,6 +206,9 @@ export interface MeshObjectData {
   nailerEnabled?: boolean;
   nailerModel?: string;
   noBaseEnabled?: boolean;
+  skirtingEnabled?: boolean;
+  skirtingHeight?: number;
+  skirtingOffset?: number;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {

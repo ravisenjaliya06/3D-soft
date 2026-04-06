@@ -277,6 +277,18 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         plank_data["position"] = catalog_data.get("position", {"x": 0, "y": 0, "z": 0})
         plank_data["rotation"] = catalog_data.get("rotation", {"x": 0, "y": 0, "z": 0})
 
+        # Extract texture grain from possible keys (numeric preferred)
+        texture_val = None
+        for key in ("textureGrain", "texture_grain", "texture"):
+            if key in catalog_data:
+                texture_val = catalog_data.get(key)
+                break
+        if texture_val is not None:
+            # Preserve original field(s) so downstream can normalize
+            plank_data["textureGrain"] = catalog_data.get("textureGrain", None)
+            plank_data["texture_grain"] = catalog_data.get("texture_grain", None)
+            plank_data["texture"] = catalog_data.get("texture", None)
+
         # Extract edgeband data (handle multiple possible keys)
         edgebands_raw = catalog_data.get("edgeband")
         if edgebands_raw is None:

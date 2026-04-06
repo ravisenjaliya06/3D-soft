@@ -330,6 +330,10 @@ class NestAPIViewset(ModelViewSet):
                 "parent_name": item.get("parent_name", ""),
                 "material_name": item.get("material_name", "-"),
                 "banding_material_name": item.get("banding_material_name", "-"),
+                # Pass through texture grain in multiple shapes for downstream normalization
+                "textureGrain": item.get("textureGrain"),
+                "texture_grain": item.get("texture_grain"),
+                "texture": item.get("texture"),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")

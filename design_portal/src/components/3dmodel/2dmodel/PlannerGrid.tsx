@@ -1,14 +1,20 @@
 // PlannerGrid.tsx
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { ReactSVGPanZoom, Tool, TOOL_AUTO, Value } from 'react-svg-pan-zoom';
+import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
+import { RootState } from '../store';
+import { setobjectSelected } from '../store/dataSlice';
 import { GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
+import { TwoDSidebar } from './TwoDSidebar';
 import { useWallDrawing } from './walls/useWallDrawing';
 import { Wall2D } from './walls/wall2D';
 import { findRoomsFromWalls, getFloorPolygon } from './walls/wallFloor';
 
 export default function PlannerGrid() {
   const Viewer = useRef<ReactSVGPanZoom | null>(null);
+  const dispatch = useDispatch();
 
   const [value, setValue] = useState<Value>(REACTSVGPANZOOM_INITIAL_VALUE);
   const [tool, setTool] = useState<Tool>(TOOL_AUTO);
@@ -23,6 +29,46 @@ export default function PlannerGrid() {
     resetDrawing,
   } = useWallDrawing(GRID_SIZE.WIDTH, GRID_SIZE.HEIGHT);
 
+  const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
+  const objects = useSelector((state: RootState) => state.data.objects);
+  const isDrawingActive = useSelector((state: RootState) => state.data.isWallDrawingActive);
+
+  const selectedWall = objects.find(
+    (obj: MeshObjectData) => obj.id === selectedObjectId && obj.type === FLOOR_PLAN_TYPES.WALL
+  );
+
+  const [sidebarPos, setSidebarPos] = useState({
+    x: typeof window !== 'undefined' ? window.innerWidth - 300 : 0,
+    y: 100,
+  });
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingSidebar) {
+        setSidebarPos({
+          x: e.clientX - dragOffset.current.x,
+          y: e.clientY - dragOffset.current.y,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSidebar(false);
+    };
+
+    if (isDraggingSidebar) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingSidebar]);
+
   // Get data for preview wall
   const preview = getPreviewData();
 
@@ -36,13 +82,23 @@ export default function PlannerGrid() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         resetDrawing();
+        dispatch(setobjectSelected(null));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [resetDrawing]);
+  }, [resetDrawing, dispatch]);
+
+  const onViewerClick = (event: any) => {
+    if (isDrawingActive) {
+      handleViewerClick(event);
+    } else {
+      // If clicking background, deselect
+      dispatch(setobjectSelected(null));
+    }
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#fafafa]">
@@ -54,7 +110,7 @@ export default function PlannerGrid() {
         onChangeTool={setTool}
         value={value}
         onChangeValue={setValue}
-        onClick={handleViewerClick}
+        onClick={onViewerClick}
         onMouseMove={handleViewerMouseMove}
         toolbarProps={{
           position: 'none',
@@ -174,6 +230,14 @@ export default function PlannerGrid() {
           </g>
         </svg>
       </ReactSVGPanZoom>
+
+      {selectedWall && (
+        <TwoDSidebar
+          object={selectedWall}
+          pos={sidebarPos}
+          onDragStart={() => setIsDraggingSidebar(true)}
+        />
+      )}
     </div>
   );
 }

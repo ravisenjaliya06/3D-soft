@@ -15,7 +15,7 @@ import { getHoleBounds, getPanelBounds } from '../utils/boundsUtils';
  * A reusable container for sidebar panels.
  * Includes a draggable header with a title and action icon.
  */
-const SidebarContainer: React.FC<BaseSidebarProps> = ({
+export const SidebarContainer: React.FC<BaseSidebarProps> = ({
   title,
   pos,
   height,
@@ -62,7 +62,7 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
  * For 2 fields: [input] [input] with sub-labels centered under each.
  * For 1 field with inlineLayout: title and input on same line.
  */
-const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) => (
+export const PropertySection: React.FC<{ group: PropertyGroupConfig }> = ({ group }) => (
   <div className={group.noBorder ? styles.propertyGroupNoBorder : styles.propertyGroup}>
     {group.inlineLayout && group.fields.length === 1 ? (
       <div className={styles.propertyGroupInline}>
@@ -375,6 +375,20 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   };
 
   /**
+   * Updates the face (front or back) of a slotting hole.
+   */
+  const updateSlottingFace = (face: 'front' | 'back') => {
+    if (selectedHoleIndex === null) return;
+    const hole = holes[selectedHoleIndex];
+    if (hole.type !== 'slotting') return;
+    setHoles((prev: any) => {
+      const next = [...prev];
+      next[selectedHoleIndex] = { ...next[selectedHoleIndex], face };
+      return next;
+    });
+  };
+
+  /**
    * Updates the radius of a circle hole.
    */
   const updateCircleRadius = (val: number) => {
@@ -596,6 +610,26 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                 onChange={(e) => updateSlottingDepth(parseFloat(e.target.value) || 0.1)}
               />
               <span className={styles.radiusUnit}>mm</span>
+            </div>
+          </div>
+
+          <div className={styles.cornerTypeSection} style={{ marginTop: 12 }}>
+            <div className={styles.cornerTypeLabel}>Face</div>
+            <div className={styles.cornerTypeButtons}>
+              {['front', 'back'].map((face) => (
+                <button
+                  key={face}
+                  type="button"
+                  className={`${styles.cornerTypeBtn} ${
+                    (holes[selectedHoleIndex].face ?? 'front') === face
+                      ? styles.cornerTypeBtnActive
+                      : ''
+                  }`}
+                  onClick={() => updateSlottingFace(face as 'front' | 'back')}
+                >
+                  {face.charAt(0).toUpperCase() + face.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
         </Section>

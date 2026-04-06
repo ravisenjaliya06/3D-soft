@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Floor, Wall, WallPoint } from '../2dmodel/interface';
 import { removeWallsPoints } from '../2dmodel/utils';
-import { MeshObjectData } from '../sceneCreator/interface';
+import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { DataState, Position } from './interface';
 
 const initialState: DataState = {
@@ -19,7 +19,6 @@ const initialState: DataState = {
   isWallDrawingActive: false,
   hoverdMesh: null,
   points: [],
-  walls: [],
   floor: [],
   globalDoorsOpen: false,
 };
@@ -151,9 +150,9 @@ const dataSlice = createSlice({
       state.objects = state.objects.filter((obj) => !idsToRemove.includes(obj.id));
 
       // Also keep 2D state in sync when walls or floors are deleted from 3D
-      state.walls = state.walls.filter((wall) => !idsToRemove.includes(wall.id));
       state.floor = state.floor.filter((floor) => !idsToRemove.includes(floor.id));
-      state.points = removeWallsPoints(state.points, state.walls);
+      const remainingWalls = state.objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
+      state.points = removeWallsPoints(state.points, remainingWalls as any);
     },
     toggleQuickHide: (state, action: PayloadAction<boolean>) => {
       state.isQuickHideActive = action.payload;
@@ -204,26 +203,39 @@ const dataSlice = createSlice({
       state.points.push(action.payload);
     },
     addWall: (state, action: PayloadAction<MeshObjectData>) => {
-      state.walls.push(action.payload);
+      state.objects.push(action.payload);
     },
     setWalls: (state, action: PayloadAction<MeshObjectData[]>) => {
-      state.walls = action.payload;
+      // Filter out existing wall objects and replace with new ones
+      const nonWallObjects = state.objects.filter((obj) => obj.type !== FLOOR_PLAN_TYPES.WALL);
+      state.objects = [...nonWallObjects, ...action.payload];
     },
     updateWall: (state, action: PayloadAction<MeshObjectData>) => {
-      const index = state.walls.findIndex((wall) => wall.id === action.payload.id);
+      const index = state.objects.findIndex((obj) => obj.id === action.payload.id);
       if (index !== -1) {
-        state.walls[index] = action.payload;
+        state.objects[index] = action.payload;
       }
     },
     removeWall: (state, action: PayloadAction<Wall>) => {
-      state.walls = state.walls.filter((wall) => wall.id !== action.payload.id);
+      state.objects = state.objects.filter((obj) => obj.id !== action.payload.id);
     },
     clearWalls: (state) => {
-      state.walls = [];
+      state.objects = state.objects.filter((obj) => obj.type !== FLOOR_PLAN_TYPES.WALL);
       state.points = [];
     },
     setFloor: (state, action: PayloadAction<Floor[]>) => {
       state.floor = action.payload;
+    },
+    setPoints: (state, action: PayloadAction<WallPoint[]>) => {
+      state.points = action.payload;
+    },
+    updatePoints: (state, action: PayloadAction<WallPoint[]>) => {
+      action.payload.forEach((updatedPoint) => {
+        const index = state.points.findIndex((p) => p.id === updatedPoint.id);
+        if (index !== -1) {
+          state.points[index] = { ...state.points[index], ...updatedPoint };
+        }
+      });
     },
     resetData: () => {
       return { ...initialState };
@@ -258,6 +270,8 @@ export const {
   addWall,
   setWalls,
   setFloor,
+  setPoints,
+  updatePoints,
   updateWall,
   removeWall,
   clearWalls,
