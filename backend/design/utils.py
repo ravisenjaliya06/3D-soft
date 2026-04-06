@@ -158,7 +158,17 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
     result = {}
 
     for catalog in catalogs:
-        if catalog.type != CatalogTypeChoices.PLANK:
+        if catalog.type not in [
+            CatalogTypeChoices.PLANK,
+            CatalogTypeChoices.DOOR,
+            CatalogTypeChoices.DRAWER,
+            CatalogTypeChoices.DRAWER_FACE,
+            CatalogTypeChoices.FRONT_DRAWER_PLANK,
+            CatalogTypeChoices.BACK_DRAWER_PLANK,
+            CatalogTypeChoices.BOTTOM_DRAWER_PLANK,
+            CatalogTypeChoices.RIGHT_DRAWER_PLANK,
+            CatalogTypeChoices.LEFT_DRAWER_PLANK,
+        ]:
             continue
 
         catalog_id = str(catalog.id)
@@ -218,9 +228,47 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
                         material_name = material_dict.get("name", "-")
                         break
 
+        # 4. For Drawer Planks: inherit edge binding material from parent Drawer if not found
+        drawer_planks = [
+            CatalogTypeChoices.DRAWER_FACE,
+            CatalogTypeChoices.FRONT_DRAWER_PLANK,
+            CatalogTypeChoices.BACK_DRAWER_PLANK,
+            CatalogTypeChoices.BOTTOM_DRAWER_PLANK,
+            CatalogTypeChoices.RIGHT_DRAWER_PLANK,
+            CatalogTypeChoices.LEFT_DRAWER_PLANK,
+        ]
+        if (
+            catalog.type in drawer_planks
+            and banding_material_name == "-"
+            and catalog.parent
+        ):
+            for material in catalog.parent.materials.all():
+                if material.type == "Banding":
+                    banding_material_name = material.name
+                    first_prop = material.properties.first()
+                    if first_prop:
+                        banding_material_thickness = first_prop.thickness
+                    break
+
+            if banding_material_name == "-":
+                parent_data = catalog.parent.data or {}
+                parent_raw_materials = parent_data.get("material", [])
+                if not isinstance(parent_raw_materials, list):
+                    parent_raw_materials = (
+                        [parent_raw_materials] if parent_raw_materials else []
+                    )
+
+                for material_dict in parent_raw_materials:
+                    if material_dict.get("type", "") == "Banding":
+                        banding_material_name = material_dict.get("name", "-")
+                        props = material_dict.get("properties")
+                        if isinstance(props, dict):
+                            banding_material_thickness = props.get("thickness")
+                        break
+
         plank_data = {
             "type": "rectangle",
-            "object": "PLANK",
+            "object": catalog.type.upper(),
             "name": name,
             "unit": "mm",
             "width": width,
