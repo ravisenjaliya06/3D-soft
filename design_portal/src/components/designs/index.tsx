@@ -41,6 +41,7 @@ const Designs = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
   const [userdetails, setUserDetails] = useState<User | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const statusStyles: StatusStylesType = {
     LIST: {
@@ -65,6 +66,62 @@ const Designs = () => {
       Completed: assets.complate_svg,
     },
   };
+
+  const setFieldError = (fieldId: string, message: string) => {
+    setErrors((prev) => ({ ...prev, [fieldId]: message }));
+  };
+
+  const clearFieldError = (fieldId: string) => {
+    setErrors((prev) => {
+      if (!prev[fieldId]) return prev;
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
+  };
+
+  const isEmailValid = (email: string) => {
+    const trimmed = email.trim();
+    if (!trimmed) return false;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(trimmed);
+  };
+
+  const countDigits = (value: string) => {
+    return (value.match(/\d/g) || []).length;
+  };
+
+  const isContactValid = (contact: string) => {
+    const digits = countDigits(contact);
+    return digits >= 10 && digits <= 15;
+  };
+
+  const handleCustomerChange =
+    (fieldId: string, setter: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setter(value);
+      if (fieldId === 'customer_email') {
+        if (isEmailValid(value)) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'Please enter a valid email address.');
+        }
+        return;
+      }
+      if (fieldId === 'customer_contact') {
+        if (isContactValid(value)) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'Contact must contain 10–15 digits (spaces/dashes allowed).');
+        }
+        return;
+      }
+      if (value.trim()) {
+        clearFieldError(fieldId);
+      } else {
+        setFieldError(fieldId, 'This field is required.');
+      }
+    };
 
   const filterStatusOptions = [
     { value: null, label: 'All Projects', icon: assets.design_list_icon, color: '' },
@@ -101,59 +158,66 @@ const Designs = () => {
 
   const customerFields = [
     {
-      label: 'Order Number (Optional)',
+      label: 'Order Number*',
       id: 'order_number',
       type: 'text',
       placeholder: 'Enter order number...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setOrderNumber(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('order_number', setOrderNumber)(e),
       value: orderNumber,
     },
     {
-      label: 'Customer Name (Optional)',
+      label: 'Customer Name*',
       id: 'customer',
       type: 'text',
       placeholder: 'Enter customer name...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer', setCustomerName)(e),
       value: customerName,
     },
     {
-      label: 'Customer Company (Optional)',
+      label: 'Customer Company*',
       id: 'customer_company',
       type: 'text',
       placeholder: 'Enter customer company...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerCompany(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_company', setCustomerCompany)(e),
       value: customerCompany,
     },
     {
-      label: 'Customer Address (Optional)',
+      label: 'Customer Address*',
       id: 'customer_address',
       type: 'text',
       placeholder: 'Enter customer address...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerAddress(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_address', setCustomerAddress)(e),
       value: customerAddress,
     },
     {
-      label: 'Customer GSTIN (Optional)',
+      label: 'Customer GSTIN*',
       id: 'customer_gstin',
       type: 'text',
       placeholder: 'Enter customer GSTIN...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerGstin(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_gstin', setCustomerGstin)(e),
       value: customerGstin,
     },
     {
-      label: 'Customer Contact (Optional)',
+      label: 'Customer Contact*',
       id: 'customer_contact',
       type: 'text',
       placeholder: 'Enter customer contact...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerContact(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_contact', setCustomerContact)(e),
       value: customerContact,
     },
     {
-      label: 'Customer Email (Optional)',
+      label: 'Customer Email*',
       id: 'customer_email',
       type: 'email',
       placeholder: 'Enter customer email...',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_email', setCustomerEmail)(e),
       value: customerEmail,
     },
   ];
@@ -260,6 +324,34 @@ const Designs = () => {
   const handleCreateDesign = async () => {
     if (!designName.trim()) return;
 
+    // Validate required customer fields
+    const validationErrors: Record<string, string> = {};
+    const requiredCustomer: Array<[string, string]> = [
+      ['order_number', orderNumber],
+      ['customer', customerName],
+      ['customer_company', customerCompany],
+      ['customer_address', customerAddress],
+      ['customer_gstin', customerGstin],
+      ['customer_contact', customerContact],
+      ['customer_email', customerEmail],
+    ];
+    requiredCustomer.forEach(([key, val]) => {
+      if (!val || !val.trim()) {
+        validationErrors[key] = 'This field is required.';
+      }
+    });
+    if (customerEmail && !isEmailValid(customerEmail)) {
+      validationErrors['customer_email'] = 'Please enter a valid email address.';
+    }
+    if (!isContactValid(customerContact)) {
+      validationErrors['customer_contact'] =
+        'Contact must contain 10–15 digits (spaces/dashes allowed).';
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -278,6 +370,34 @@ const Designs = () => {
 
   const handleEditClick = async () => {
     if (!selectedDesign) return;
+
+    // Validate required customer fields
+    const validationErrors: Record<string, string> = {};
+    const requiredCustomer: Array<[string, string]> = [
+      ['order_number', orderNumber],
+      ['customer', customerName],
+      ['customer_company', customerCompany],
+      ['customer_address', customerAddress],
+      ['customer_gstin', customerGstin],
+      ['customer_contact', customerContact],
+      ['customer_email', customerEmail],
+    ];
+    requiredCustomer.forEach(([key, val]) => {
+      if (!val || !val.trim()) {
+        validationErrors[key] = 'This field is required.';
+      }
+    });
+    if (customerEmail && !isEmailValid(customerEmail)) {
+      validationErrors['customer_email'] = 'Please enter a valid email address.';
+    }
+    if (!isContactValid(customerContact)) {
+      validationErrors['customer_contact'] =
+        'Contact must contain 10–15 digits (spaces/dashes allowed).';
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     setLoading(true);
 
@@ -461,7 +581,7 @@ const Designs = () => {
                       onClick={() => setShowPopup(false)}
                     />
                     <div>
-                      <h2>New Project</h2>
+                      <h2>New Design</h2>
                       <p>Give your design a name to get started.</p>
                     </div>
                   </div>
@@ -472,7 +592,7 @@ const Designs = () => {
                     }}
                   >
                     <div className={styles.formSection}>
-                      <h3 className={styles.formSectionTitle}>Project Details</h3>
+                      <h3 className={styles.formSectionTitle}>Design Details</h3>
                       <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
                         {projectFields.map((field, i) => (
                           <InputField
@@ -497,7 +617,7 @@ const Designs = () => {
                             mediumField
                             borderColor="rgba(57, 37, 121, 0.1)"
                             {...field}
-                            error=""
+                            error={errors[(field as any).id] ?? ''}
                           />
                         ))}
                       </div>
@@ -738,7 +858,7 @@ const Designs = () => {
                 </div>
                 <form onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.formSection}>
-                    <h3 className={styles.formSectionTitle}>Project Details</h3>
+                    <h3 className={styles.formSectionTitle}>Design Details</h3>
                     <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
                       {editProjectFields.map((field, i) => (
                         <InputField
@@ -763,7 +883,7 @@ const Designs = () => {
                           mediumField
                           borderColor="rgba(57, 37, 121, 0.1)"
                           {...field}
-                          error=""
+                          error={errors[(field as any).id] ?? ''}
                         />
                       ))}
                     </div>
