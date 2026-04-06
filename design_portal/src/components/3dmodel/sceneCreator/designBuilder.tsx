@@ -42,6 +42,7 @@ export class DesignBuilder {
         visit(localDataMap.get(item.parent)!);
       }
 
+      visiting.delete(item.id);
       visited.add(item.id);
       sorted.push(item);
     };
@@ -222,6 +223,9 @@ export class DesignBuilder {
       this._createInitialCompartments(finalRoot);
       updateMinifixesForCupboard(finalRoot);
     }
+    finalRoot.updateMatrixWorld(true);
     return finalRoot;
   }
 }
+
+
