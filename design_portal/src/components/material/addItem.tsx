@@ -239,24 +239,6 @@ const AddMaterialPopup: React.FC<Props> = ({
           title: 'Banding Specifications',
           fields: [
             {
-              key: 'unitOfIssue',
-              label: 'Unit of Issue',
-              type: 'select',
-              options: [
-                'BD Ft',
-                'BD M',
-                'Cubic Ft',
-                'Cubic M',
-                'Each',
-                'pair',
-                'Per Ft',
-                'Per M',
-                'SQ Ft',
-                'SQ M',
-                'Sheet',
-              ],
-            },
-            {
               key: 'thickness',
               label: 'Thickness',
               type: 'number',
@@ -2538,7 +2520,6 @@ const AddMaterialPopup: React.FC<Props> = ({
   const handleFinish = async () => {
     // Base properties that are common to all material types
     const baseProperties = {
-      unit_of_issue: formData.unitOfIssue || '',
       default_cost: formData.defaultCost || 0,
       sell_price: formData.sellPrice || 0,
       default_markup: formData.defaultMarkup || 0,

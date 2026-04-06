@@ -73,7 +73,6 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "model_file",
-            "unit_of_issue",
             "waste",
             "default_cost",
             "sales_tax",
@@ -82,7 +81,7 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
             "default_markup",
             "estimate",
         ]
-        read_only_fields = ["material"]
+        read_only_fields = ["material", "unit_of_issue"]
 
 
 class ValidationMixin:
