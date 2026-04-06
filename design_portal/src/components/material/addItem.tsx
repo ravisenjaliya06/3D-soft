@@ -2846,7 +2846,8 @@ const AddMaterialPopup: React.FC<Props> = ({
       if (formData.selectedTexture) {
         const selectedTextureObj = texturesList.find((t) => t.id === formData.selectedTexture);
         if (selectedTextureObj) {
-          textures.push(selectedTextureObj.name);
+          const updatedTextureObj = { ...selectedTextureObj, texture: selectedTextureObj.id };
+          textures.push(updatedTextureObj);
         }
       }
 

@@ -66,6 +66,25 @@ const meshBuilder = (data: MeshObjectData | MeshObjectData[]) => {
   return builder.syncData();
 };
 
+// Get the thickness of the panel stock material
+const getPanelThickness = (selectedCabinetItem: any): number => {
+  let thickness = 18; // fallback
+
+  if (!selectedCabinetItem) return thickness;
+
+  const materials = Array.isArray(selectedCabinetItem)
+    ? selectedCabinetItem.flatMap((item) => item.material || [])
+    : selectedCabinetItem.material || [];
+
+  materials.forEach((material: Material) => {
+    if (material?.type === MATERIAL_TYPES.PANEL_STOCK) {
+      thickness = material.properties?.thickness || thickness;
+    }
+  });
+
+  return thickness;
+};
+
 export const addVerticalPlanksToBox = async (
   scene: THREE.Scene,
   boxMesh: THREE.Mesh,
@@ -97,7 +116,7 @@ export const addVerticalPlanksToBox = async (
   const height = size.y;
   const depth = size.z;
 
-  const thickness = 18;
+  const thickness = getPanelThickness(selectedCabinetItem);
   const innerDepth = 25;
   const edgeClearance = thickness;
 
@@ -179,7 +198,7 @@ export const addHorizontalPlanksInsideBox = async (
   const height = size.y;
   const depth = size.z;
 
-  const thickness = 18;
+  const thickness = getPanelThickness(selectedCabinetItem);
   const innerDepth = 25;
 
   if (height <= thickness) {
@@ -322,7 +341,12 @@ export const addDoorOnInvisibleBox = async (
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const doorDepth = 18;
+  let doorDepth = getPanelThickness(selectedCabinetItem);
+  // selectedCabinetItem?.material?.forEach((material: Material) => {
+  //     if (material.type === MATERIAL_TYPES.PANEL_STOCK) {
+  //       doorDepth = material.properties.thickness;
+  //     }
+  // });
   const doorType = DOOR_TYPES.INSET; // Default to Inset (In-to-In) as per request
 
   let doorDimensions = {
@@ -456,7 +480,7 @@ export const addDoubleDoorOnInvisibleBox = async (
 
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-  const doorDepth = 18;
+  const doorDepth = getPanelThickness(selectedCabinetItem);
   const doorType = DOOR_TYPES.INSET; // Default to Inset (In-to-In)
 
   let doorDimensions = {
@@ -683,7 +707,7 @@ export const addDrawersOnInvisibleBox = async (
 
     const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
-    const thickness = 18;
+    const thickness = getPanelThickness(selectedCabinetItem);
     const drawerConstructionType = 'fivePlank';
 
     const parent: THREE.Mesh = !boxMesh.parent?.userData.isMain
@@ -964,7 +988,9 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
   geometry.boundingBox.getSize(size);
 
   const d = size.z;
-  const thickness = 18;
+  const currentObjects = store.getState().data.objects;
+  const drawerData = currentObjects.find((obj) => obj.id === drawerGroupId);  
+  const thickness = getPanelThickness(drawerData);
   const faceD = 20;
   const isOverlay = newType === DRAWER_TYPES.OVERLAY;
 
@@ -972,8 +998,8 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
   drawerMesh.userData.drawerType = newType;
 
   // Redux update (drawer group only)
-  const currentObjects = store.getState().data.objects;
-  const drawerData = currentObjects.find((obj) => obj.id === drawerGroupId);
+
+
   if (drawerData) {
     store.dispatch(updateObject({ ...drawerData, drawerType: newType }));
   }
@@ -1227,7 +1253,7 @@ export const updateDoorType = async (scene: THREE.Scene, doorGroupId: string, ne
   const w = size.x;
   const h = size.y;
 
-  const doorDepth = 18; // Standard door thickness
+  const doorDepth = getPanelThickness(doorData); // Standard door thickness
 
   // Try to get base dimensions from stored compartment data
   // Fallback to current dimensions + inference if missing (for legacy)
@@ -1367,7 +1393,7 @@ export const addSkirtingPlanks = (boxMesh: THREE.Mesh) => {
   geometry.boundingBox.getSize(size);
   const { x: width, y: height, z: depth } = size;
 
-  const thickness = 18;
+  const thickness = getPanelThickness(boxObject);
   const skirtingHeight = 82;
 
   removeSkirtingPlanks(boxMesh);
