@@ -421,11 +421,6 @@ export const addDoorOnInvisibleBox = async (
   const boxCenterLocal = geometryBoundingBox.getCenter(new THREE.Vector3());
 
   let doorDepth = getPanelThickness(selectedCabinetItem);
-  // selectedCabinetItem?.material?.forEach((material: Material) => {
-  //     if (material.type === MATERIAL_TYPES.PANEL_STOCK) {
-  //       doorDepth = material.properties.thickness;
-  //     }
-  // });
   const doorType = DOOR_TYPES.INSET; // Default to Inset (In-to-In) as per request
 
   let doorDimensions = {
