@@ -268,7 +268,7 @@ export class ObjectsSaver {
       this._showError(response.data.detail || 'Catalog creation failed');
       return null;
     } else {
-      this._showSuccess('Catalogs created successfully');
+      // Intentionally suppress success toast here for design save to avoid duplicates.
       window.dispatchEvent(new CustomEvent('catalog-updated'));
       return response.data?.version_id;
     }
