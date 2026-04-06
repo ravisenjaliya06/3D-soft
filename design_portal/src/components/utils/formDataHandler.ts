@@ -13,23 +13,36 @@ export const handleFormData = <T extends Record<string, string>>(
         .join(' ');
 
       errors[key] = `${formattedKey} is required.`;
-      setError(errors[key]);
     } else {
       formDataObject.append(key, String(value));
       errors[key] = null;
     }
   }
 
-  if ('password' in formData && 'confirm_password' in formData) {
-    if (formData.password !== formData.confirm_password) {
-      errors['confirm_password'] = "Passwords dosn't match.";
-      setError(errors['confirm_password']);
+  if ('password' in formData && !errors['password']) {
+    const password = String(formData.password);
+    if (password.length < 8) {
+      errors['password'] = 'Password must be at least 8 characters long.';
+    } else if (!/[a-zA-Z]/.test(password)) {
+      errors['password'] = 'Password must contain at least one letter.';
+    } else if (!/\d/.test(password)) {
+      errors['password'] = 'Password must contain at least one numeric character.';
     }
   }
 
-  setError(null);
+  if ('password' in formData && 'confirm_password' in formData) {
+    if (formData.password !== formData.confirm_password) {
+      errors['confirm_password'] = "Passwords don't match.";
+    }
+  }
+
+  const hasErrors = Object.values(errors).some((error) => error !== null);
+  if (!hasErrors) {
+    setError(null);
+  }
+
   return {
-    formData: Object.keys(errors).some((key) => errors[key]) ? false : formDataObject,
+    formData: hasErrors ? false : formDataObject,
     errors,
   };
 };

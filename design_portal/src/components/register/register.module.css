@@ -407,3 +407,9 @@
 .googleButton p {
   font-family: var(--font-family);
 }
+
+.passwordStrengthBar {
+  width: 23rem;
+  margin: 0 auto 0.8rem auto;
+  font-family: var(--font-family);
+}

@@ -6,6 +6,7 @@ import { assets } from '@/svgPaths';
 import { RegisterForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, useState } from 'react';
+import PasswordStrengthBar from 'react-password-strength-bar';
 
 const Register = () => {
   const router = useRouter();
@@ -83,7 +84,7 @@ const Register = () => {
 
   const firstfieldsgroup = [
     {
-      label: 'Name',
+      label: 'Name *',
       type: 'text',
       placeholder: 'Enter name',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value),
@@ -91,7 +92,7 @@ const Register = () => {
       smallField: true,
     },
     {
-      label: 'Email',
+      label: 'Email *',
       type: 'email',
       placeholder: 'Enter email',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
@@ -102,7 +103,7 @@ const Register = () => {
 
   const secondfieldsgroup = [
     {
-      label: 'Username',
+      label: 'Username *',
       type: 'text',
       smallField: true,
       placeholder: 'Enter username',
@@ -110,8 +111,8 @@ const Register = () => {
       error: usernameError,
     },
     {
-      label: 'Phone Number',
-      type: 'tel',
+      label: 'Phone Number *',
+      type: 'number',
       smallField: true,
       placeholder: 'Enter phone number',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setNumber(e.target.value),
@@ -121,7 +122,7 @@ const Register = () => {
 
   const thirdfieldsgroup = [
     {
-      label: 'Organization Name',
+      label: 'Organization Name *',
       type: 'text',
       placeholder: 'Enter organization name',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value),
@@ -129,7 +130,7 @@ const Register = () => {
       error: organizationNameError,
     },
     {
-      label: 'Password',
+      label: 'Password *',
       type: 'password',
       placeholder: 'Enter password',
       showPassword,
@@ -138,7 +139,7 @@ const Register = () => {
       error: passwordError,
     },
     {
-      label: 'Confirm Password',
+      label: 'Confirm Password *',
       type: 'password',
       placeholder: 'Enter confirm password',
       showPassword: showConfirmPassword,
@@ -193,12 +194,23 @@ const Register = () => {
               </div>
               <div className={styles.inputGroup}>
                 {thirdfieldsgroup.map((field, index) => (
-                  <InputField
-                    className={styles.inputField}
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
+                  <div key={index}>
+                    <InputField
+                      className={styles.inputField}
+                      {...field}
+                      borderColor="var(--primary-color-grey-2 )"
+                    />
+                    {field.label.includes('Password *') && !field.label.includes('Confirm') && (
+                      <div className={styles.passwordStrengthBar}>
+                        <PasswordStrengthBar
+                          password={password}
+                          minLength={8}
+                          scoreWords={['Weak', 'Okay', 'Average', 'Good', 'Strong']}
+                          shortScoreWord="Too short"
+                        />
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               {error && <p className={styles.registererrorMessage}>{error}</p>}
