@@ -2920,7 +2920,7 @@ const AddMaterialPopup: React.FC<Props> = ({
     switch (field.type) {
       case 'texture-grid':
         return (
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex w-full flex-col gap-4">
             <span className="text-sm font-semibold text-slate-700">{field.label}</span>
             <div
               className={styles.textureGrid}
@@ -2949,13 +2949,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                     }}
                   >
                     {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={texture.name}
-                        className={styles.textureThumbnail}
-                      />
+                      <img src={imageUrl} alt={texture.name} className={styles.textureThumbnail} />
                     ) : (
-                      <div className="w-[80px] h-[80px] bg-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400">
+                      <div className="flex h-[80px] w-[80px] items-center justify-center rounded-lg bg-slate-200 text-[10px] text-slate-400">
                         No Image
                       </div>
                     )}
@@ -3154,7 +3150,9 @@ const AddMaterialPopup: React.FC<Props> = ({
         {/* Form Body Section */}
         <div className={`${styles.formContentScroll} ${styles.custom_scrollbar}`}>
           {(() => {
-            const hasImageFields = currentPopup?.fields.some((field) => field.img || field.type === 'texture-grid');
+            const hasImageFields = currentPopup?.fields.some(
+              (field) => field.img || field.type === 'texture-grid'
+            );
             const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
 
             return (
@@ -3168,7 +3166,8 @@ const AddMaterialPopup: React.FC<Props> = ({
                     // Allow 2 fields per row in pricing step, but make 'waste' full-width
                     // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
                     const isFullWidth =
-                      field.type !== 'toggle' && (!isPricingStep || field.key === 'waste') || field.type === 'texture-grid';
+                      (field.type !== 'toggle' && (!isPricingStep || field.key === 'waste')) ||
+                      field.type === 'texture-grid';
 
                     return (
                       <div
@@ -3200,8 +3199,13 @@ const AddMaterialPopup: React.FC<Props> = ({
                         );
                       }
 
-                      if (activeFieldKey === 'selectedTexture' || currentPopup?.title === 'Finish Details') {
-                        const selectedTex = texturesList.find((t) => t.id === formData.selectedTexture);
+                      if (
+                        activeFieldKey === 'selectedTexture' ||
+                        currentPopup?.title === 'Finish Details'
+                      ) {
+                        const selectedTex = texturesList.find(
+                          (t) => t.id === formData.selectedTexture
+                        );
                         if (selectedTex?.image) {
                           const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${selectedTex.image.startsWith('/') ? '' : '/'}${selectedTex.image}`;
                           return (

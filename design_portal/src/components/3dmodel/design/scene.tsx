@@ -989,7 +989,7 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
 
   const d = size.z;
   const currentObjects = store.getState().data.objects;
-  const drawerData = currentObjects.find((obj) => obj.id === drawerGroupId);  
+  const drawerData = currentObjects.find((obj) => obj.id === drawerGroupId);
   const thickness = getPanelThickness(drawerData);
   const faceD = 20;
   const isOverlay = newType === DRAWER_TYPES.OVERLAY;
@@ -998,7 +998,6 @@ export const updateDrawerType = (scene: THREE.Scene, drawerGroupId: string, newT
   drawerMesh.userData.drawerType = newType;
 
   // Redux update (drawer group only)
-
 
   if (drawerData) {
     store.dispatch(updateObject({ ...drawerData, drawerType: newType }));
