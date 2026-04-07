@@ -227,5 +227,3 @@ export class DesignBuilder {
     return finalRoot;
   }
 }
-
-

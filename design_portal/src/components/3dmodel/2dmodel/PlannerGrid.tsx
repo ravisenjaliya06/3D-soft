@@ -23,7 +23,6 @@ export default function PlannerGrid() {
     points,
     walls,
     startPointId,
-    inputLength,
     setInputLength,
     getPreviewData,
     handleViewerClick,
@@ -240,11 +239,7 @@ export default function PlannerGrid() {
                       autoFocus
                       type="number"
                       step="0.01"
-                      value={
-                        localInput !== null
-                          ? localInput
-                          : (preview.length / 30.48).toFixed(2)
-                      }
+                      value={localInput !== null ? localInput : (preview.length / 30.48).toFixed(2)}
                       onChange={(e) => {
                         const valStr = e.target.value;
                         setLocalInput(valStr);
