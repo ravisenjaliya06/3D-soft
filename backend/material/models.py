@@ -3,6 +3,8 @@ import uuid
 
 # Django imports
 from django.db import models
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill
 
 # App imports
 from umaboy.models import Organization
@@ -359,7 +361,40 @@ class FinishesLibrary(models.Model):
     image = models.ImageField(
         max_length=255, null=True, blank=True, upload_to="upload_textures"
     )
+    image_thumbnail = ImageSpecField(
+        source="image",
+        processors=[ResizeToFill(100, 100)],
+        format="JPEG",
+        options={"quality": 60},
+    )
     is_deleted = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.image and self.image.name and self.image.name.startswith('/'):
+            self.image.name = self.image.name.lstrip('/')
+        super().save(*args, **kwargs)
+
+    @property
+    def thumbnail_safe_url(self) -> str:
+        """
+        Returns the thumbnail URL. If the image path is malformed (starts with /),
+        it automatically repairs the database record on-the-fly.
+        """
+        if not self.image or not self.image.name:
+            return self.url or ""
+
+        if self.image.name.startswith("/"):
+            self.image.name = self.image.name.lstrip("/")
+            self.save(update_fields=["image"])
+
+        try:
+            return self.image_thumbnail.url
+        except (Exception, ValueError, FileNotFoundError):
+            try:
+                return self.image.url
+            except (Exception, ValueError, FileNotFoundError):
+                return self.url or ""
+        return self.url or ""
 
 
 class Company(models.Model):

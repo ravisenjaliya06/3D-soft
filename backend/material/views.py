@@ -24,6 +24,7 @@ from .serializers import (
     FinishesLibrarySerializer,
     MaterialSerializer,
 )
+from .pagination import StandardResultsSetPagination
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -41,6 +42,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class FinishesLibraryListAPIView(viewsets.ModelViewSet):
     serializer_class = FinishesLibrarySerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self: "FinishesLibraryListAPIView") -> QuerySet[FinishesLibrary]:
         type = self.request.query_params.get("type")
