@@ -86,7 +86,14 @@ export default function PlannerGrid() {
   const rooms = findRoomsFromWalls(walls);
 
   useEffect(() => {
-    Viewer.current?.fitToViewer();
+    if (Viewer.current) {
+      Viewer.current.fitSelection(
+        GRID_SIZE.WIDTH / 2 - window.innerWidth / 2,
+        GRID_SIZE.HEIGHT / 2 - window.innerHeight / 2,
+        window.innerWidth,
+        window.innerHeight
+      );
+    }
   }, []);
 
   useEffect(() => {
