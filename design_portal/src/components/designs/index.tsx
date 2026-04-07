@@ -358,7 +358,7 @@ const Designs = () => {
     if (!isContactCharsAllowed(customerContact)) {
       validationErrors['customer_contact'] =
         'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
-        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
+      ('Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.');
     }
     if (!isContactCharsAllowed(customerContact)) {
       validationErrors['customer_contact'] =
