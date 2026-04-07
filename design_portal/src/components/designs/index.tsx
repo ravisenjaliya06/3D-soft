@@ -91,9 +91,14 @@ const Designs = () => {
     return (value.match(/\d/g) || []).length;
   };
 
+  const isContactCharsAllowed = (contact: string) => {
+    // Allow optional leading +, then digits, spaces or dashes only
+    return /^\+?[0-9\s-]*$/.test(contact);
+  };
+
   const isContactValid = (contact: string) => {
     const digits = countDigits(contact);
-    return digits >= 10 && digits <= 15;
+    return digits >= 7 && digits <= 15;
   };
 
   const handleCustomerChange =
@@ -109,10 +114,13 @@ const Designs = () => {
         return;
       }
       if (fieldId === 'customer_contact') {
-        if (isContactValid(value)) {
+        if (isContactCharsAllowed(value) && isContactValid(value)) {
           clearFieldError(fieldId);
         } else {
-          setFieldError(fieldId, 'Contact must contain 10–15 digits (spaces/dashes allowed).');
+          setFieldError(
+            fieldId,
+            'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.'
+          );
         }
         return;
       }
@@ -124,7 +132,7 @@ const Designs = () => {
     };
 
   const filterStatusOptions = [
-    { value: null, label: 'All Projects', icon: assets.design_list_icon, color: '' },
+    { value: null, label: 'All Designs', icon: assets.design_list_icon, color: '' },
     { value: 'Draft', label: 'Draft', icon: assets.draft_svg, color: styles.statusDraft },
     { value: 'Ready', label: 'Ready', icon: assets.ready_svg, color: styles.statusReady },
     { value: 'Nesting', label: 'Nesting', icon: assets.nesting_svg, color: styles.statusNesting },
@@ -345,7 +353,16 @@ const Designs = () => {
     }
     if (!isContactValid(customerContact)) {
       validationErrors['customer_contact'] =
-        'Contact must contain 10–15 digits (spaces/dashes allowed).';
+        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
+    }
+    if (!isContactCharsAllowed(customerContact)) {
+      validationErrors['customer_contact'] =
+        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
+        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
+    }
+    if (!isContactCharsAllowed(customerContact)) {
+      validationErrors['customer_contact'] =
+        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
     }
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -700,7 +717,7 @@ const Designs = () => {
               {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
               {!loading && filteredDesigns.length === 0 && (
                 <div className="rounded-3xl bg-white p-12 text-center font-medium text-slate-400">
-                  No projects found matching your criteria.
+                  No designs found matching your criteria.
                 </div>
               )}
 
@@ -830,7 +847,7 @@ const Designs = () => {
                   className={styles.loadmore}
                   onClick={() => setVisibleDesigns((prev) => prev + 6)}
                 >
-                  <p>View More Projects</p>
+                  <p>View More Designs</p>
                   <img src={assets.progress_upload} alt="" className={styles.process_upload} />
                 </div>
               </div>
