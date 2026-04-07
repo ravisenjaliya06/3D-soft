@@ -108,6 +108,8 @@ const Sidebar: React.FC = () => {
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
   const isUpdatingPositionRef = useRef(false);
+  // Ref for intersection observer to handle infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
   //temporarily disabled
   const sidebarRef = useRef<HTMLDivElement | null>(null);
 
@@ -302,11 +304,34 @@ const Sidebar: React.FC = () => {
     }
   };
 
+
+  // When the observerTarget becomes visible, load more results if they exist
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextPageUrl && !isFetchingTextures) {
+          getTextures(nextPageUrl);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [nextPageUrl, isFetchingTextures, isTextureListOpen]);
+
   useEffect(() => {
     getTextures();
   }, []);
 
-  // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMesh(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
@@ -382,15 +407,6 @@ const Sidebar: React.FC = () => {
       texture.name?.toLowerCase().includes(query) || texture.option?.toLowerCase().includes(query)
     );
   });
-
-  const handleLoadMore = () => {
-    if (nextPageUrl) {
-      getTextures(nextPageUrl);
-    }
-  };
-
-  // Check if there are more textures to load
-  const hasMoreTextures = !!nextPageUrl;
 
   // Reset visible count when search query changes
   useEffect(() => {
@@ -1943,8 +1959,8 @@ const Sidebar: React.FC = () => {
               <button
                 onClick={handleSetting}
                 className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                   } `}
               >
                 Setting
@@ -1954,8 +1970,8 @@ const Sidebar: React.FC = () => {
             <button
               onClick={handleNavigation}
               className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
             >
               Navigation
@@ -2108,8 +2124,8 @@ const Sidebar: React.FC = () => {
                                   {/* Knob */}
                                   <div
                                     className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                        ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                        : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
                                       }`}
                                   />
                                 </div>
@@ -2535,8 +2551,8 @@ const Sidebar: React.FC = () => {
                                                     handleControlClick(field.name, idx)
                                                   }
                                                   className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                      ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                      : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
                                                     } `}
                                                 >
                                                   <img
@@ -2795,8 +2811,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2847,8 +2863,8 @@ const Sidebar: React.FC = () => {
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.noBaseEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2864,8 +2880,8 @@ const Sidebar: React.FC = () => {
                           >
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.nailerEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -2895,8 +2911,8 @@ const Sidebar: React.FC = () => {
                             {/* Knob */}
                             <div
                               className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.skirtingEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
                                 }`}
                             />
                           </div>
@@ -3329,6 +3345,8 @@ const Sidebar: React.FC = () => {
                                 </div>
                               ))
                             )}
+                            {/* Sentinal element for Infinite Scroll */}
+                            <div ref={observerTarget} className="h-[10px] w-full" />
                           </div>
                           {isFetchingTextures && (
                             <div className="flex justify-center py-2">
@@ -3337,26 +3355,7 @@ const Sidebar: React.FC = () => {
                               </span>
                             </div>
                           )}
-                          {hasMoreTextures && !isFetchingTextures && (
-                            <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.3rem]">
-                              <button
-                                className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                                onClick={handleLoadMore}
-                              >
-                                Load More
-                                <div className="flex h-[0.5rem] w-[0.5rem] items-center justify-center p-[0rem]">
-                                  <img
-                                    className="h-[0.8rem] w-[0.8rem]"
-                                    src={assets.loadMore}
-                                    alt="Load More"
-                                  />
-                                </div>
-                              </button>
-                            </div>
-                          )}
                         </div>
-
-                        {/* Load More Button at bottom */}
                       </div>
                     )}
 
