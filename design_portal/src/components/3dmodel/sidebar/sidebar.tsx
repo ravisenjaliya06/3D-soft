@@ -2334,6 +2334,7 @@ const Sidebar: React.FC = () => {
                         </>
                       )}
                     </div>
+                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                   </>
                 )}
               </div>
@@ -2718,32 +2719,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= Handle/Handleless Selector ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Handle Mode
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-[0.5rem]">
-                      <select
-                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        value={handleMode}
-                        onChange={(e) => {
-                          const value = e.target.value as 'handle' | 'handleless';
-                          handleHandleModeChange(value);
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <option value="handle">Handle</option>
-                        <option value="handleless">Handleless</option>
-                      </select>
-                    </div>
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
+              {/* Moved to end after Material as per design sequence */}
 
               {/* ================= Top Plank ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
@@ -3389,6 +3365,34 @@ const Sidebar: React.FC = () => {
                   </>
                 )}
               </div>
+              <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+              {/* Standalone Handle Mode section after Material */}
+              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Handle Mode
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-[0.5rem]">
+                      <select
+                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        value={handleMode}
+                        onChange={(e) => {
+                          const value = e.target.value as 'handle' | 'handleless';
+                          handleHandleModeChange(value);
+                        }}
+                        disabled={isDisabled}
+                      >
+                        <option value="handle">Handle</option>
+                        <option value="handleless">Handleless</option>
+                      </select>
+                    </div>
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
             </>
           )}
         </>
