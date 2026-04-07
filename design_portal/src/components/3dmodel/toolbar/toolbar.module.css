@@ -1206,6 +1206,20 @@
   justify-content: center;
 }
 
+/* Force the Home list Furniture arrow to be visible by default */
+.left_toolbarlist_arrow.arrowAlways {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(0) !important;
+}
+
+/* Keep layout spacing but hide arrow for non-Furniture Home items */
+.left_toolbarlist_arrow.arrowHidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateX(-4px) !important;
+}
+
 .noItems {
   font-family: var(--font-family);
   font-size: 0.8rem;
