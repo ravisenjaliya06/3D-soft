@@ -96,8 +96,10 @@ const Sidebar: React.FC = () => {
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
   const [isInvisibleBox, setIsIncisibleBox] = useState<boolean>(false);
   const [textureData, setTextureData] = useState<any[]>([]);
-  const [visibleCount, setVisibleCount] = useState(40);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [isFetchingTextures, setIsFetchingTextures] = useState<boolean>(false);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(LOAD_MORE_INCREMENT);
   const [isMainObject, setIsMainObject] = useState<boolean>(false);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
@@ -272,10 +274,31 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const getTextures = async () => {
-    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
-    if (response.status === 200) {
-      setTextureData(response.data);
+  const getTextures = async (url?: string, search?: string) => {
+    setIsFetchingTextures(true);
+    let fetchUrl = url || API_ENDPOINT.GET_TEXTURES;
+
+    // If starting a fresh search from page 1
+    if (!url && search) {
+      // API_ENDPOINT.GET_TEXTURES already has a '?' for type=Texture
+      fetchUrl = `${API_ENDPOINT.GET_TEXTURES}&search=${encodeURIComponent(search)}`;
+    }
+
+    try {
+      const response = await commonService.get(fetchUrl);
+      if (response.status === 200) {
+        const results = response.data.results || response.data;
+        if (url) {
+          setTextureData((prev) => [...prev, ...results]);
+        } else {
+          setTextureData(results);
+        }
+        setNextPageUrl(response.data.next || null);
+      }
+    } catch (error) {
+      console.error('Error fetching textures:', error);
+    } finally {
+      setIsFetchingTextures(false);
     }
   };
 
@@ -361,18 +384,21 @@ const Sidebar: React.FC = () => {
   });
 
   const handleLoadMore = () => {
-    setVisibleCount((prev) => {
-      const newCount = prev + LOAD_MORE_INCREMENT;
-      return Math.min(newCount, filteredTextures.length);
-    });
+    if (nextPageUrl) {
+      getTextures(nextPageUrl);
+    }
   };
 
   // Check if there are more textures to load
-  const hasMoreTextures = visibleCount < filteredTextures.length;
+  const hasMoreTextures = !!nextPageUrl;
 
   // Reset visible count when search query changes
   useEffect(() => {
-    setVisibleCount(LOAD_MORE_INCREMENT);
+    const timer = setTimeout(() => {
+      // Only search from backend if not empty, otherwise load first page
+      getTextures(undefined, textureSearchQuery);
+    }, 500); // Debounce
+    return () => clearTimeout(timer);
   }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
@@ -1916,11 +1942,10 @@ const Sidebar: React.FC = () => {
             {selectedObject?.type !== OBJECT_TYPES.MODEL && (
               <button
                 onClick={handleSetting}
-                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                  isSettingOpen
+                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
                     ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                     : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+                  } `}
               >
                 Setting
               </button>
@@ -1928,11 +1953,10 @@ const Sidebar: React.FC = () => {
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
                   ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                   : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
+                } `}
             >
               Navigation
             </button>
@@ -2041,9 +2065,8 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                            isDisabled ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isDisabled ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -2084,11 +2107,10 @@ const Sidebar: React.FC = () => {
                                 >
                                   {/* Knob */}
                                   <div
-                                    className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                      minifixEnabled
+                                    className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
                                         ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
                                         : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                    }`}
+                                      }`}
                                   />
                                 </div>
                                 <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -2417,12 +2439,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                          | 'top'
-                                          | 'bottom'
-                                          | 'left'
-                                          | 'right'
-                                          | 'front'
-                                          | 'back',
+                                        | 'top'
+                                        | 'bottom'
+                                        | 'left'
+                                        | 'right'
+                                        | 'front'
+                                        | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -2512,11 +2534,10 @@ const Sidebar: React.FC = () => {
                                                   onClick={() =>
                                                     handleControlClick(field.name, idx)
                                                   }
-                                                  className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                                    isActive
+                                                  className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
                                                       ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
                                                       : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                  } `}
+                                                    } `}
                                                 >
                                                   <img
                                                     src={icon}
@@ -2773,11 +2794,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                topPlankEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2826,11 +2846,10 @@ const Sidebar: React.FC = () => {
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.noBaseEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.noBaseEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2844,11 +2863,10 @@ const Sidebar: React.FC = () => {
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.nailerEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.nailerEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -2876,11 +2894,10 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.skirtingEnabled
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.skirtingEnabled
                                   ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
                                   : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
+                                }`}
                             />
                           </div>
 
@@ -3214,9 +3231,8 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -3281,7 +3297,7 @@ const Sidebar: React.FC = () => {
                               </button>
                             </div>
 
-                            {filteredTextures.length === 0 ? (
+                            {filteredTextures.length === 0 && !isFetchingTextures ? (
                               <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
                                 <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
                                   No textures found
@@ -3291,14 +3307,14 @@ const Sidebar: React.FC = () => {
                                 </span>
                               </div>
                             ) : (
-                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
+                              filteredTextures.map((m, idx) => (
                                 <div
                                   key={`${m.option}-${idx}`}
                                   className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
                                   onClick={() => handleTextureSelect(m)}
                                 >
                                   <img
-                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
+                                    src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || "").replace(/\/$/, "")}${m.image_thumbnail || m.image}`}
                                     alt={m.name}
                                     className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
                                   />
@@ -3314,7 +3330,14 @@ const Sidebar: React.FC = () => {
                               ))
                             )}
                           </div>
-                          {hasMoreTextures && (
+                          {isFetchingTextures && (
+                            <div className="flex justify-center py-2">
+                              <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
+                                Loading...
+                              </span>
+                            </div>
+                          )}
+                          {hasMoreTextures && !isFetchingTextures && (
                             <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.3rem]">
                               <button
                                 className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
