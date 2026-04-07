@@ -3,6 +3,8 @@ import uuid
 
 # Django imports
 from django.db import models
+
+# External imports
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 
@@ -369,13 +371,13 @@ class FinishesLibrary(models.Model):
     )
     is_deleted = models.BooleanField(default=False)
 
-    def save(self, *args, **kwargs):
-        if self.image and self.image.name and self.image.name.startswith('/'):
-            self.image.name = self.image.name.lstrip('/')
+    def save(self: "FinishesLibrary", *args, **kwargs) -> None:
+        if self.image and self.image.name and self.image.name.startswith("/"):
+            self.image.name = self.image.name.lstrip("/")
         super().save(*args, **kwargs)
 
     @property
-    def thumbnail_safe_url(self) -> str:
+    def thumbnail_safe_url(self: "FinishesLibrary") -> str:
         """
         Returns the thumbnail URL. If the image path is malformed (starts with /),
         it automatically repairs the database record on-the-fly.
