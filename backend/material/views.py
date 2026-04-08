@@ -19,6 +19,7 @@ from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
 from .models import Company, FinishesLibrary, Material
+from .pagination import StandardResultsSetPagination
 from .serializers import (
     CompanySerializer,
     FinishesLibrarySerializer,
@@ -41,6 +42,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class FinishesLibraryListAPIView(viewsets.ModelViewSet):
     serializer_class = FinishesLibrarySerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self: "FinishesLibraryListAPIView") -> QuerySet[FinishesLibrary]:
         type = self.request.query_params.get("type")

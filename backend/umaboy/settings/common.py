@@ -52,6 +52,7 @@ THIRD_PARTY_APP = [
     "corsheaders",
     "django_filters",
     "django_celery_beat",
+    "imagekit",
 ]
 
 LOCAL_APP = ["umaboy", "user", "design", "mes_portal", "material"]

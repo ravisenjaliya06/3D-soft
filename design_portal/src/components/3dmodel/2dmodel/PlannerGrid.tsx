@@ -23,11 +23,15 @@ export default function PlannerGrid() {
     points,
     walls,
     startPointId,
+    setInputLength,
     getPreviewData,
     handleViewerClick,
     handleViewerMouseMove,
+    finalizeWallByInput,
     resetDrawing,
   } = useWallDrawing(GRID_SIZE.WIDTH, GRID_SIZE.HEIGHT);
+
+  const [localInput, setLocalInput] = useState<string | null>(null);
 
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const objects = useSelector((state: RootState) => state.data.objects);
@@ -72,10 +76,23 @@ export default function PlannerGrid() {
   // Get data for preview wall
   const preview = getPreviewData();
 
+  useEffect(() => {
+    if (!preview) {
+      setLocalInput(null);
+    }
+  }, [preview]);
+
   const rooms = findRoomsFromWalls(walls);
 
   useEffect(() => {
-    Viewer.current?.fitToViewer();
+    if (Viewer.current) {
+      Viewer.current.fitSelection(
+        GRID_SIZE.WIDTH / 2 - window.innerWidth / 2,
+        GRID_SIZE.HEIGHT / 2 - window.innerHeight / 2,
+        window.innerWidth,
+        window.innerHeight
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -201,18 +218,74 @@ export default function PlannerGrid() {
                   strokeWidth={2}
                 />
 
-                {/* Measurement text (centered) */}
-                <text
-                  x={preview.length / 2}
-                  y={-25}
-                  fill="#000"
-                  fontSize="14"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
+                {/* Measurement Input (centered) */}
+                <foreignObject
+                  x={preview.length / 2 - 40}
+                  y={-45}
+                  width={80}
+                  height={30}
+                  style={{ overflow: 'visible' }}
                 >
-                  {(preview.length / 30.48).toFixed(2)} ft
-                </text>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      type="number"
+                      step="0.01"
+                      value={localInput !== null ? localInput : (preview.length / 30.48).toFixed(2)}
+                      onChange={(e) => {
+                        const valStr = e.target.value;
+                        setLocalInput(valStr);
+                        const valNum = parseFloat(valStr);
+                        if (!isNaN(valNum)) {
+                          setInputLength(valNum * 30.48);
+                        } else {
+                          setInputLength(null);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          finalizeWallByInput();
+                          setLocalInput(null);
+                        } else if (e.key === 'Escape') {
+                          resetDrawing();
+                          setLocalInput(null);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      style={{
+                        width: '60px',
+                        padding: '2px 4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        border: '2px solid #1290ff',
+                        borderRadius: '4px',
+                        outline: 'none',
+                        background: 'white',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                    <span
+                      style={{
+                        marginLeft: '4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#333',
+                        textShadow: '0 0 2px white',
+                      }}
+                    >
+                      ft
+                    </span>
+                  </div>
+                </foreignObject>
               </g>
             )}
 
