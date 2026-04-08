@@ -304,7 +304,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-
   // When the observerTarget becomes visible, load more results if they exist
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1958,10 +1957,11 @@ const Sidebar: React.FC = () => {
             {selectedObject?.type !== OBJECT_TYPES.MODEL && (
               <button
                 onClick={handleSetting}
-                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                  } `}
+                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  isSettingOpen
+                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
               >
                 Setting
               </button>
@@ -1969,10 +1969,11 @@ const Sidebar: React.FC = () => {
 
             <button
               onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
+              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                isNavOpen
+                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+              } `}
             >
               Navigation
             </button>
@@ -2081,8 +2082,9 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -2099,14 +2101,18 @@ const Sidebar: React.FC = () => {
                     <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
                       {/* Header */}
                       <div className="mb-[0rem] flex items-center justify-between">
-                        <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                        <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
                           Minifix & Grooving
                         </p>
                         <button
                           onClick={() => toggleSection('minifix')}
-                          className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
+                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                         >
-                          {collapsed.minifix ? '+' : '−'}
+                          <img
+                            src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
+                            alt={collapsed.minifix ? 'Expand' : 'Collapse'}
+                            className="h-[0.8rem] w-[0.8rem]"
+                          />
                         </button>
                       </div>
                       {!collapsed.minifix && (
@@ -2123,10 +2129,11 @@ const Sidebar: React.FC = () => {
                                 >
                                   {/* Knob */}
                                   <div
-                                    className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                      ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                      }`}
+                                    className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                      minifixEnabled
+                                        ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                        : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                    }`}
                                   />
                                 </div>
                                 <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -2279,7 +2286,7 @@ const Sidebar: React.FC = () => {
                         </p>
                         <button
                           onClick={() => toggleSection('camlock')}
-                          className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                         >
                           <img
                             src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
@@ -2456,12 +2463,12 @@ const Sidebar: React.FC = () => {
                                     onChange={(e) =>
                                       handleBandingToggle(
                                         item.key as
-                                        | 'top'
-                                        | 'bottom'
-                                        | 'left'
-                                        | 'right'
-                                        | 'front'
-                                        | 'back',
+                                          | 'top'
+                                          | 'bottom'
+                                          | 'left'
+                                          | 'right'
+                                          | 'front'
+                                          | 'back',
                                         e.target.checked
                                       )
                                     }
@@ -2551,10 +2558,11 @@ const Sidebar: React.FC = () => {
                                                   onClick={() =>
                                                     handleControlClick(field.name, idx)
                                                   }
-                                                  className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                    } `}
+                                                  className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                    isActive
+                                                      ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                      : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                  } `}
                                                 >
                                                   <img
                                                     src={icon}
@@ -2786,10 +2794,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                topPlankEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2838,10 +2847,11 @@ const Sidebar: React.FC = () => {
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.noBaseEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.noBaseEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2855,10 +2865,11 @@ const Sidebar: React.FC = () => {
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.nailerEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.nailerEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -2886,10 +2897,11 @@ const Sidebar: React.FC = () => {
                           >
                             {/* Knob */}
                             <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${selectedObject?.skirtingEnabled
-                                ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
+                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                selectedObject?.skirtingEnabled
+                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                              }`}
                             />
                           </div>
 
@@ -3223,8 +3235,9 @@ const Sidebar: React.FC = () => {
                         <button
                           onClick={toggleTextureList}
                           disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
+                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                            isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
                         >
                           Select Texture
                           <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -3306,7 +3319,7 @@ const Sidebar: React.FC = () => {
                                   onClick={() => handleTextureSelect(m)}
                                 >
                                   <img
-                                    src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || "").replace(/\/$/, "")}${m.image_thumbnail || m.image}`}
+                                    src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || '').replace(/\/$/, '')}${m.image_thumbnail || m.image}`}
                                     alt={m.name}
                                     className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
                                   />
