@@ -2100,13 +2100,13 @@ const Sidebar: React.FC = () => {
                   <>
                     <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
                       {/* Header */}
-                      <div className="mb-[0rem] flex items-center justify-between">
+                      <div className="relative mb-[0rem] flex items-center justify-between">
                         <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
                           Minifix & Grooving
                         </p>
                         <button
                           onClick={() => toggleSection('minifix')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                         >
                           <img
                             src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
@@ -2280,13 +2280,13 @@ const Sidebar: React.FC = () => {
 
                     {/* ================= Camlock Screw Hole ================= */}
                     <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="relative flex items-center justify-between gap-[0.5rem]">
                         <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                           Camlock Screw Hole
                         </p>
                         <button
                           onClick={() => toggleSection('camlock')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                         >
                           <img
                             src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
@@ -2501,13 +2501,13 @@ const Sidebar: React.FC = () => {
                       <div key={menu.subMenu}>
                         {/* HEADER */}
                         <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                          <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                          <div className="relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
                             <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                               {menu.title}
                             </p>
                             <button
                               onClick={() => toggleSection('layout')}
-                              className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                              className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                             >
                               <img
                                 src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
@@ -2674,14 +2674,14 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
+                    <div className="relative flex items-center justify-between gap-[0.5rem]">
                       {/* Title */}
                       <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Position Move
                       </p>
                       <button
                         onClick={() => toggleSection('positionMove')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                       >
                         <img
                           src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
@@ -2716,14 +2716,14 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isMainObject && (
                 <>
                   <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
+                    <div className="relative flex items-center justify-between gap-[0.5rem]">
                       {/* Title */}
                       <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Position
                       </p>
                       <button
                         onClick={() => toggleSection('mainPosition')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                       >
                         <img
                           src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
@@ -2770,13 +2770,13 @@ const Sidebar: React.FC = () => {
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                 <>
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
+                    <div className="relative flex items-center justify-between gap-[0.5rem]">
                       <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Top Plank
                       </p>
                       <button
                         onClick={() => toggleSection('topPlank')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                       >
                         <img
                           src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
@@ -2824,13 +2824,13 @@ const Sidebar: React.FC = () => {
                   {/* ================= Base ================= */}
 
                   <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
+                    <div className="relative flex items-center justify-between gap-[0.5rem]">
                       <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                         Base
                       </p>
                       <button
                         onClick={() => toggleSection('base')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                        className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                       >
                         <img
                           src={collapsed.base ? assets.plusIcon : assets.minusIcon}
@@ -3138,13 +3138,13 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= MATERIAL ================= */}
-              <div className="flex items-center justify-between gap-[0.5rem]">
+              <div className="relative flex items-center justify-between gap-[0.5rem]">
                 <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                   Material
                 </p>
                 <button
                   onClick={() => toggleSection('material')}
-                  className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                  className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                 >
                   <img
                     src={collapsed.material ? assets.plusIcon : assets.minusIcon}
