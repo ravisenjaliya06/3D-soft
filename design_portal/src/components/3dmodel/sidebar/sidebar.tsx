@@ -2146,51 +2146,56 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Distance
                                 </p>
-                                <input
-                                  type="number"
-                                  disabled={isDisabled}
-                                  value={minifixDistanceInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setMinifixDistanceInput(value);
+                                <div className="relative w-[5.3rem]">
+                                  <input
+                                    type="number"
+                                    disabled={isDisabled}
+                                    value={minifixDistanceInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setMinifixDistanceInput(value);
 
-                                    if (value % 32 !== 0) {
-                                      toast(
-                                        ({ closeToast }) => (
-                                          <CustomToast
-                                            appearance="error"
-                                            message="Distance must be in multiple of 32"
-                                            closeToast={closeToast}
-                                          />
-                                        ),
-                                        {
-                                          position: 'top-center',
-                                          autoClose: 3000,
-                                          hideProgressBar: true, // as per user pref or default
-                                          closeButton: false,
-                                          icon: false,
-                                          className:
-                                            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
-                                          style: { padding: 0, minHeight: 'auto' },
-                                        }
-                                      );
-                                      return;
-                                    }
+                                      if (value % 32 !== 0) {
+                                        toast(
+                                          ({ closeToast }) => (
+                                            <CustomToast
+                                              appearance="error"
+                                              message="Distance must be in multiple of 32"
+                                              closeToast={closeToast}
+                                            />
+                                          ),
+                                          {
+                                            position: 'top-center',
+                                            autoClose: 3000,
+                                            hideProgressBar: true, // as per user pref or default
+                                            closeButton: false,
+                                            icon: false,
+                                            className:
+                                              '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                            style: { padding: 0, minHeight: 'auto' },
+                                          }
+                                        );
+                                        return;
+                                      }
 
-                                    // Save to cupboard object if it's a full cupboard
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({
-                                          id: selectedObject.id,
-                                          minifixDistance: value,
-                                        })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemMinifixDistance(value));
-                                    }
-                                  }}
-                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
+                                      // Save to cupboard object if it's a full cupboard
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({
+                                            id: selectedObject.id,
+                                            minifixDistance: value,
+                                          })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemMinifixDistance(value));
+                                      }
+                                    }}
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
+                                    MM
+                                  </span>
+                                </div>
                                 <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
                                   in multiple of 32
                                 </p>
@@ -2201,27 +2206,32 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Diameter Hole
                                 </p>
-                                <input
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={minifixDiameterHoleInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setMinifixDiameterHoleInput(value);
-                                    // Save to cupboard object if it's a full cupboard
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({
-                                          id: selectedObject.id,
-                                          minifixDiameterHole: value,
-                                        })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemMinifixDiameterHole(value));
-                                    }
-                                  }}
-                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
+                                <div className="relative w-[5.3rem]">
+                                  <input
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={minifixDiameterHoleInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setMinifixDiameterHoleInput(value);
+                                      // Save to cupboard object if it's a full cupboard
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({
+                                            id: selectedObject.id,
+                                            minifixDiameterHole: value,
+                                          })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemMinifixDiameterHole(value));
+                                      }
+                                    }}
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
+                                    MM
+                                  </span>
+                                </div>
                               </div>
                             </div>
 
@@ -2249,13 +2259,18 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Inside
                                 </p>
-                                <input
-                                  type="number"
-                                  disabled={true}
-                                  // value={inside}
-                                  // onChange={(e) => setInside(Number(e.target.value))}
-                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
+                                <div className="relative w-[5.3rem]">
+                                  <input
+                                    type="number"
+                                    disabled={true}
+                                    // value={inside}
+                                    // onChange={(e) => setInside(Number(e.target.value))}
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
+                                    MM
+                                  </span>
+                                </div>
                               </div>
 
                               {/* Edge to End */}
@@ -2263,13 +2278,18 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
                                   Edge to End
                                 </p>
-                                <input
-                                  type="number"
-                                  disabled={true}
-                                  // value={edgeToEnd}
-                                  // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                                  className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
+                                <div className="relative w-[5.3rem]">
+                                  <input
+                                    type="number"
+                                    disabled={true}
+                                    // value={edgeToEnd}
+                                    // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
+                                    MM
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
