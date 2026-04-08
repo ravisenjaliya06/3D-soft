@@ -148,3 +148,32 @@ class NestUtilsTestCase(APIBaseTestCase):
         self.assertTrue(out.endswith("nesting_data.json"))
         self.assertTrue(mock_dump.called)
         self.assertTrue(mock_open.called)
+
+    def test_map_texture_grain(self: "NestUtilsTestCase") -> None:
+        service = NestingService(width=1000, height=1000)
+        self.assertEqual(service.map_texture_grain(1), 1)
+        self.assertEqual(service.map_texture_grain("Vertical"), 1)
+        self.assertEqual(service.map_texture_grain("horizontal"), 2)
+        self.assertEqual(service.map_texture_grain("None"), 0)
+        self.assertEqual(service.map_texture_grain(5), 0)
+        self.assertEqual(service.map_texture_grain(None), 0)
+        self.assertEqual(service.map_texture_grain("invalid"), 0)
+
+    def test_extract_texture_value(self: "NestUtilsTestCase") -> None:
+        service = NestingService(width=1000, height=1000)
+        self.assertEqual(service._extract_texture_value({"textureGrain": 1}), 1)
+        self.assertEqual(
+            service._extract_texture_value({"attributes": {"texture_grain": 2}}), 2
+        )
+        self.assertEqual(
+            service._extract_texture_value({"options": {"texture": "Wood"}}), "Wood"
+        )
+        self.assertEqual(service._extract_texture_value({}), "")
+
+    def test_lookup_banding_thickness_fuzzy(self: "NestUtilsTestCase") -> None:
+        service = NestingService(width=100, height=100)
+        cache = {"thicker": 2.0}
+        self.assertEqual(
+            service.lookup_banding_thickness_by_name("thicker edge", cache), 2.0
+        )
+        self.assertEqual(service.lookup_banding_thickness_by_name("thick", cache), 2.0)

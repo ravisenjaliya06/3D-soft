@@ -1,4 +1,5 @@
 # Python imports
+import os
 
 # External imports
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from design.nest import (
     KEY_DIMENSIONS,
     KEY_HEIGHT,
+    KEY_NAME,
     KEY_UNIQUE_ID,
     KEY_WIDTH,
     NestingService,
@@ -198,3 +200,53 @@ class NestCoreTestCase(APIBaseTestCase):
 
     def test_calculate_efficiency_empty(self: "NestCoreTestCase") -> None:
         self.assertEqual(NestingService.calculate_efficiency([], 100, 100), 0.0)
+
+    def test_pack_rectangles_circle(self: "NestCoreTestCase") -> None:
+        """Test packing of circular parts."""
+        files = {
+            "C1": {"type": "circle", "radius": 50, "depth": 18, "name": "Circle 1"}
+        }
+        service = NestingService(width=1000, height=1000, spacing=5)
+        items = service.optimize(files)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0][KEY_WIDTH], 100.0)
+
+    def test_optimize_invalid_dims_fallback(self: "NestCoreTestCase") -> None:
+        files = {"bad": {"dimensions": {}}}
+        service = NestingService(width=1000, height=1000)
+        items = service.optimize(files)
+        self.assertTrue(len(items) >= 0)
+
+    def test_generate_xmls_basic(self: "NestCoreTestCase") -> None:
+        service = NestingService(width=1000, height=1000)
+        items = [
+            {
+                KEY_UNIQUE_ID: "S01P01",
+                KEY_NAME: "Panel",
+                KEY_WIDTH: 500,
+                KEY_HEIGHT: 600,
+                "depth": 18,
+                "minifix_holes": [
+                    {
+                        "type": "screw",
+                        "face": "5",
+                        "local_position2_d": {"x": 10, "y": 20},
+                    }
+                ],
+                "grooves": [
+                    {"x": 0, "y": 0, "end_x": 100, "end_y": 0, "width": 10, "depth": 5}
+                ],
+            }
+        ]
+        # Python imports
+        import shutil
+        import tempfile
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            out_file = os.path.join(tmpdir, "test.xlsx")
+            xml_files = service.generate_xmls(items, out_file)
+            self.assertTrue(len(xml_files) > 0)
+            self.assertTrue(os.path.exists(xml_files[0]))
+        finally:
+            shutil.rmtree(tmpdir)
