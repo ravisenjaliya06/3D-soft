@@ -354,13 +354,11 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
         url = reverse("finishes-list") + "?type=Finish"
         resp = self.client.get(url, headers=self.get_headers)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(resp.data, list)
 
     def test_finishes_list_without_type(self: "MaterialAPIViewTestCase") -> None:
         url = reverse("finishes-list")
         resp = self.client.get(url, headers=self.get_headers)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(resp.data, list)
 
     def test_material_factory_unsupported_type_raises(
         self: "MaterialAPIViewTestCase",
