@@ -70,6 +70,7 @@ import { DistanceInput } from './DistanceInput';
 import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import SidebarInput from './SidebarInput';
+import SidebarInputWithSuffix from './SidebarInputWithSuffix';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -2146,56 +2147,53 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Distance
                                 </p>
-                                <div className="relative w-[5.3rem]">
-                                  <input
-                                    type="number"
-                                    disabled={isDisabled}
-                                    value={minifixDistanceInput}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value);
-                                      setMinifixDistanceInput(value);
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  disabled={isDisabled}
+                                  value={minifixDistanceInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setMinifixDistanceInput(value);
 
-                                      if (value % 32 !== 0) {
-                                        toast(
-                                          ({ closeToast }) => (
-                                            <CustomToast
-                                              appearance="error"
-                                              message="Distance must be in multiple of 32"
-                                              closeToast={closeToast}
-                                            />
-                                          ),
-                                          {
-                                            position: 'top-center',
-                                            autoClose: 3000,
-                                            hideProgressBar: true, // as per user pref or default
-                                            closeButton: false,
-                                            icon: false,
-                                            className:
-                                              '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
-                                            style: { padding: 0, minHeight: 'auto' },
-                                          }
-                                        );
-                                        return;
-                                      }
+                                    if (value % 32 !== 0) {
+                                      toast(
+                                        ({ closeToast }) => (
+                                          <CustomToast
+                                            appearance="error"
+                                            message="Distance must be in multiple of 32"
+                                            closeToast={closeToast}
+                                          />
+                                        ),
+                                        {
+                                          position: 'top-center',
+                                          autoClose: 3000,
+                                          hideProgressBar: true, // as per user pref or default
+                                          closeButton: false,
+                                          icon: false,
+                                          className:
+                                            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                          style: { padding: 0, minHeight: 'auto' },
+                                        }
+                                      );
+                                      return;
+                                    }
 
-                                      // Save to cupboard object if it's a full cupboard
-                                      if (selectedObject && isFullCupboard) {
-                                        dispatch(
-                                          updateObject({
-                                            id: selectedObject.id,
-                                            minifixDistance: value,
-                                          })
-                                        );
-                                      } else {
-                                        dispatch(setActiveItemMinifixDistance(value));
-                                      }
-                                    }}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
-                                    MM
-                                  </span>
-                                </div>
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({
+                                          id: selectedObject.id,
+                                          minifixDistance: value,
+                                        })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemMinifixDistance(value));
+                                    }
+                                  }}
+                                />
                                 <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
                                   in multiple of 32
                                 </p>
@@ -2206,32 +2204,29 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Diameter Hole
                                 </p>
-                                <div className="relative w-[5.3rem]">
-                                  <input
-                                    type="number"
-                                    disabled={!minifixEnabled || isDisabled}
-                                    value={minifixDiameterHoleInput}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value);
-                                      setMinifixDiameterHoleInput(value);
-                                      // Save to cupboard object if it's a full cupboard
-                                      if (selectedObject && isFullCupboard) {
-                                        dispatch(
-                                          updateObject({
-                                            id: selectedObject.id,
-                                            minifixDiameterHole: value,
-                                          })
-                                        );
-                                      } else {
-                                        dispatch(setActiveItemMinifixDiameterHole(value));
-                                      }
-                                    }}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
-                                    MM
-                                  </span>
-                                </div>
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  disabled={!minifixEnabled || isDisabled}
+                                  value={minifixDiameterHoleInput}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setMinifixDiameterHoleInput(value);
+                                    // Save to cupboard object if it's a full cupboard
+                                    if (selectedObject && isFullCupboard) {
+                                      dispatch(
+                                        updateObject({
+                                          id: selectedObject.id,
+                                          minifixDiameterHole: value,
+                                        })
+                                      );
+                                    } else {
+                                      dispatch(setActiveItemMinifixDiameterHole(value));
+                                    }
+                                  }}
+                                />
                               </div>
                             </div>
 
@@ -2259,18 +2254,15 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                   Inside
                                 </p>
-                                <div className="relative w-[5.3rem]">
-                                  <input
-                                    type="number"
-                                    disabled={true}
-                                    // value={inside}
-                                    // onChange={(e) => setInside(Number(e.target.value))}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
-                                    MM
-                                  </span>
-                                </div>
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  disabled={true}
+                                  // value={inside}
+                                  // onChange={(e) => setInside(Number(e.target.value))}
+                                />
                               </div>
 
                               {/* Edge to End */}
@@ -2278,18 +2270,15 @@ const Sidebar: React.FC = () => {
                                 <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
                                   Edge to End
                                 </p>
-                                <div className="relative w-[5.3rem]">
-                                  <input
-                                    type="number"
-                                    disabled={true}
-                                    // value={edgeToEnd}
-                                    // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                  <span className="pointer-events-none absolute top-1/2 right-[0.25rem] -translate-y-1/2 text-[0.65rem] text-[var(--border-color)]">
-                                    MM
-                                  </span>
-                                </div>
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  disabled={true}
+                                  // value={edgeToEnd}
+                                  // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                />
                               </div>
                             </div>
                           </div>
@@ -2317,83 +2306,83 @@ const Sidebar: React.FC = () => {
                       </div>
                       {!collapsed.camlock && (
                         <>
-                          <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
-                            <div>
-                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                          <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                            {/* Left Column */}
+                            <div className="flex w-[6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Diameter
                               </p>
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camDiameterInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamDiameterInput(value);
-                                    // Save to cupboard object if it's a full cupboard
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camDiameter: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamDiameter(value));
-                                    }
-                                  }}
-                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </div>
-                            </div>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                disabled={!minifixEnabled || isDisabled}
+                                value={camDiameterInput}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  setCamDiameterInput(value);
+                                  if (selectedObject && isFullCupboard) {
+                                    dispatch(
+                                      updateObject({ id: selectedObject.id, camDiameter: value })
+                                    );
+                                  } else {
+                                    dispatch(setActiveItemCamDiameter(value));
+                                  }
+                                }}
+                              />
 
-                            <div>
-                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                                Depth
-                              </p>
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camDepthInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamDepthInput(value);
-                                    // Save to cupboard object if it's a full cupboard
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camDepth: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamDepth(value));
-                                    }
-                                  }}
-                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
+                              <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] text-[var(--primary-color)]">
                                 Height
                               </p>
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camHeightInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamHeightInput(value);
-                                    // Save to cupboard object if it's a full cupboard
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camHeight: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamHeight(value));
-                                    }
-                                  }}
-                                  className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </div>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                disabled={!minifixEnabled || isDisabled}
+                                value={camHeightInput}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  setCamHeightInput(value);
+                                  if (selectedObject && isFullCupboard) {
+                                    dispatch(
+                                      updateObject({ id: selectedObject.id, camHeight: value })
+                                    );
+                                  } else {
+                                    dispatch(setActiveItemCamHeight(value));
+                                  }
+                                }}
+                              />
+                            </div>
+
+                            {/* Divider */}
+                            <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+
+                            {/* Right Column */}
+                            <div className="flex w-[6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Depth
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                disabled={!minifixEnabled || isDisabled}
+                                value={camDepthInput}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  setCamDepthInput(value);
+                                  if (selectedObject && isFullCupboard) {
+                                    dispatch(
+                                      updateObject({ id: selectedObject.id, camDepth: value })
+                                    );
+                                  } else {
+                                    dispatch(setActiveItemCamDepth(value));
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
                         </>
@@ -2613,13 +2602,18 @@ const Sidebar: React.FC = () => {
                                           ))}
                                         </select>
                                       ) : (
-                                        <SidebarInput
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[3.5rem]"
+                                          inputClassName="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
                                           min={field.min}
                                           step={1}
+                                          type="number"
                                           value={field.value ?? ''}
-                                          onUpdate={field.onValueChange}
+                                          onChange={(e) =>
+                                            field.onValueChange(Number(e.target.value))
+                                          }
                                           disabled={field.disabled}
-                                          className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                         />
                                       )}
                                     </div>
@@ -2635,15 +2629,21 @@ const Sidebar: React.FC = () => {
                                     <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                       Width
                                     </p>
-                                    <SidebarInput
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
                                       min={1}
                                       step="1"
                                       value={dimensionsUI.width ?? ''}
-                                      onUpdate={(val) =>
-                                        handleDimensionChange('width', Math.max(1, val))
+                                      onChange={(e) =>
+                                        handleDimensionChange(
+                                          'width',
+                                          Math.max(1, Number(e.target.value))
+                                        )
                                       }
                                       disabled={isHorizontalPlank || isDisabled}
-                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     />
                                   </div>
 
@@ -2652,15 +2652,21 @@ const Sidebar: React.FC = () => {
                                     <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                       Height
                                     </p>
-                                    <SidebarInput
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
                                       min={1}
                                       step="1"
                                       value={dimensionsUI.height ?? ''}
-                                      onUpdate={(val) =>
-                                        handleDimensionChange('height', Math.max(1, val))
+                                      onChange={(e) =>
+                                        handleDimensionChange(
+                                          'height',
+                                          Math.max(1, Number(e.target.value))
+                                        )
                                       }
                                       disabled={isVerticalPlank || isDisabled}
-                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     />
                                   </div>
 
@@ -2669,15 +2675,21 @@ const Sidebar: React.FC = () => {
                                     <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                       Depth
                                     </p>
-                                    <SidebarInput
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
                                       min={1}
                                       step="1"
                                       value={dimensionsUI.depth ?? ''}
-                                      onUpdate={(val) =>
-                                        handleDimensionChange('depth', Math.max(1, val))
+                                      onChange={(e) =>
+                                        handleDimensionChange(
+                                          'depth',
+                                          Math.max(1, Number(e.target.value))
+                                        )
                                       }
                                       disabled={isQuickHideActive}
-                                      className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     />
                                   </div>
                                 </div>
@@ -2807,7 +2819,8 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.topPlank && (
                       <>
-                        <div className="flex items-center gap-[0rem]">
+                        {/* Row 1: Toggle only */}
+                        <div className="flex items-center gap-[0.5rem]">
                           <div
                             onClick={handleTopPlankToggle}
                             className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
@@ -2821,19 +2834,22 @@ const Sidebar: React.FC = () => {
                               }`}
                             />
                           </div>
+                        </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                        {/* Row 2: Label + Input */}
+                        <div className="mt-[0.6rem] flex items-center gap-[0.6rem]">
+                          <p className="mt-[0px] mb-[0px] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                             Top Plank Depth
                           </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
-                              onChange={handleTopPlankDepthChange}
-                              disabled={isDisabled || topPlankDisabled}
-                              className="ml-[1.3rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
+                          <SidebarInputWithSuffix
+                            wrapperClassName="relative w-[5rem]"
+                            inputClassName="h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.2rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            suffix="MM"
+                            type="number"
+                            value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
+                            onChange={handleTopPlankDepthChange}
+                            disabled={isDisabled || topPlankDisabled}
+                          />
                         </div>
                       </>
                     )}
@@ -2926,7 +2942,7 @@ const Sidebar: React.FC = () => {
                           </div>
 
                           <p
-                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]`}
+                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]`}
                           >
                             Skirting
                           </p>
@@ -2939,12 +2955,14 @@ const Sidebar: React.FC = () => {
                             >
                               Offset
                             </p>
-                            <input
+                            <SidebarInputWithSuffix
+                              wrapperClassName="relative w-[5rem]"
+                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              suffix="MM"
                               type="number"
                               value={selectedObject?.skirtingOffset ?? 10}
                               onChange={handleSkirtingOffsetChange}
                               disabled={!selectedObject?.skirtingEnabled || isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                           <div className="mr-[0.5rem] px-[3] py-[2]">
@@ -2953,12 +2971,14 @@ const Sidebar: React.FC = () => {
                             >
                               Height
                             </p>
-                            <input
+                            <SidebarInputWithSuffix
+                              wrapperClassName="relative w-[5rem]"
+                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              suffix="MM"
                               type="number"
                               value={selectedObject?.skirtingHeight ?? 75}
                               onChange={handleSkirtingHeightChange}
                               disabled={!selectedObject?.skirtingEnabled || isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                           </div>
                         </div>
