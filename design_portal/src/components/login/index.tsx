@@ -84,14 +84,14 @@ const Login = () => {
 
   const fields = [
     {
-      label: 'Email',
+      label: 'Email *',
       type: 'email',
       placeholder: 'Enter your email',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
     },
     {
-      label: 'Password',
+      label: 'Password *',
       icon: null,
       type: 'password',
       placeholder: 'Enter your password',

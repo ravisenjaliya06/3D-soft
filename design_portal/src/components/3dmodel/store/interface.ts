@@ -180,7 +180,6 @@ export interface DataState {
   hoverdMesh: THREE.Mesh | null;
   isWallDrawingActive: boolean;
   points: WallPoint[];
-  walls: MeshObjectData[];
   floor: Floor[];
   globalDoorsOpen?: boolean;
 }

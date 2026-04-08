@@ -583,9 +583,33 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     const objectSaver = new ObjectsSaver();
     const newVersionId = await objectSaver.saveAllObjects();
     if (newVersionId) {
-      window.location.href = `/design/${designId}/${newVersionId}`;
+      // Compute next version label (versions array is newest-first)
+      const nextVersionLabel = 'v' + ((designDetail?.versions?.length || 0) + 1);
+
+      // Show success toast before navigating so users can read it
+      toast(
+        ({ closeToast }) => (
+          <CustomToast
+            appearance="success"
+            message={`Design saved. Version updated to ${nextVersionLabel}.`}
+            closeToast={closeToast}
+          />
+        ),
+        {
+          position: 'top-center',
+          className:
+            '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+          style: { padding: 0, minHeight: 'auto' },
+        }
+      );
+
+      // Small delay to let user see the toast, then navigate to new version
+      setTimeout(() => {
+        window.location.href = `/design/${designId}/${newVersionId}`;
+      }, 1800);
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const headerTools = [

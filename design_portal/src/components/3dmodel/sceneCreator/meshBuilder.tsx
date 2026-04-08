@@ -18,6 +18,7 @@ import {
   MeshObjectData,
   OBJECT_TYPES,
   PART_TYPES,
+  TEXTURE_GRAIN,
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
@@ -161,6 +162,14 @@ export class MeshBuilder {
         texture.wrapT = THREE.RepeatWrapping;
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.repeat.set(1, 1);
+
+        //it is for texture grain when design loaded
+        texture.center.set(0.5, 0.5);
+        if (this.meshData.textureGrain === TEXTURE_GRAIN.VERTICAL) {
+          texture.rotation = Math.PI / 2;
+        } else {
+          texture.rotation = 0;
+        }
       }
     });
     return texture;
@@ -187,9 +196,10 @@ export class MeshBuilder {
       if (materialData.type === MATERIAL_TYPES.PANEL_STOCK) {
         createdMaterial = this._createTextureMaterial(materialData);
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
-        createdMaterial = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-        });
+        const wallTexture = this._createTexture(materialData);
+        createdMaterial = wallTexture
+          ? new THREE.MeshStandardMaterial({ map: wallTexture })
+          : new THREE.MeshStandardMaterial({ color: 0xffffff });
       } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
         // Support floor material type - use same texture loading as Panel Stock
         createdMaterial = this._createTextureMaterial(materialData);
@@ -312,8 +322,13 @@ export class MeshBuilder {
             curveSegments: 32,
           });
 
-          // 1. Position identically to the front face
-          plugGeom.translate(0, 0, thickness / 2 - pocketDepth);
+          // 1. Position identically to the selected face
+          const face = hole.face ?? 'front';
+          if (face === 'back') {
+            plugGeom.translate(0, 0, -thickness / 2);
+          } else {
+            plugGeom.translate(0, 0, thickness / 2 - pocketDepth);
+          }
 
           // 2. Rotate exactly identically to the main extrusion
           if (thicknessAxis === 'x') {
@@ -352,6 +367,20 @@ export class MeshBuilder {
   }
 
   private async _getGeometry(): Promise<THREE.BufferGeometry> {
+    if (this.meshData.type === FLOOR_PLAN_TYPES.FLOOR && this.meshData.floorData) {
+      const shape = new THREE.Shape();
+      const points = this.meshData.floorData.points;
+      if (points.length >= 3) {
+        shape.moveTo(points[0].x / 100, points[0].y / 100);
+        for (let i = 1; i < points.length; i++) {
+          shape.lineTo(points[i].x / 100, points[i].y / 100);
+        }
+        shape.closePath();
+        const geometry = new THREE.ShapeGeometry(shape);
+        geometry.rotateX(Math.PI / 2);
+        return geometry;
+      }
+    }
     let geometry: THREE.BufferGeometry;
     switch (this.meshData.geometryType) {
       case GEOMETRY.BOX_GEOMETRY:
@@ -1115,7 +1144,7 @@ export class MeshBuilder {
         mesh.material = this._getMaterial();
       }
     }
-    if (changes.dimensions || changes.holes || changes.panelDesign) {
+    if (changes.dimensions || changes.holes || changes.panelDesign || changes.floorData) {
       mesh.geometry.dispose();
       const geometry = await this._getGeometry();
       mesh.geometry = geometry;

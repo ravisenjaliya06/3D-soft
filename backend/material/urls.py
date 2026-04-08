@@ -2,7 +2,12 @@
 from django.urls import path
 
 # Local imports
-from .views import CompanyViewSet, FinishesLibraryListAPIView, MaterialViewSet
+from .views import (
+    CatalogPartMaterialViewSet,
+    CompanyViewSet,
+    FinishesLibraryListAPIView,
+    MaterialViewSet,
+)
 
 urlpatterns = [
     path(
@@ -58,5 +63,10 @@ urlpatterns = [
             }
         ),
         name="material-details",
+    ),
+    path(
+        "catalog/part/<uuid:part_id>/",
+        CatalogPartMaterialViewSet.as_view({"put": "update"}),
+        name="catalog-part-material-update",
     ),
 ]

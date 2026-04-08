@@ -1,7 +1,10 @@
+import { useDispatch } from 'react-redux';
 import { MeshObjectData } from '../../sceneCreator/interface';
 import { getWall2DPoints } from '../../sceneCreator/utils';
+import { setobjectSelected } from '../../store/dataSlice';
 
 export function Wall2D({ wall }: { wall: MeshObjectData }) {
+  const dispatch = useDispatch();
   //convert 3d position to 2d
   const { startPoint, endPoint } = getWall2DPoints(wall);
 
@@ -15,7 +18,14 @@ export function Wall2D({ wall }: { wall: MeshObjectData }) {
   const thickness = wall.thickness ?? 30;
 
   return (
-    <g transform={`translate(${x1}, ${y1}) rotate(${angle})`}>
+    <g
+      transform={`translate(${x1}, ${y1}) rotate(${angle})`}
+      onClick={(e) => {
+        e.stopPropagation();
+        dispatch(setobjectSelected(wall.id));
+      }}
+      style={{ cursor: 'pointer' }}
+    >
       <rect
         x={0}
         y={-thickness / 2}

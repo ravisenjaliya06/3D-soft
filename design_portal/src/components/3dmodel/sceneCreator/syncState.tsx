@@ -229,10 +229,17 @@ export class SyncManager {
         }
 
         const itemWithBanding = this._detectBandingFromScene(itemToAdd);
-        toAdd.push(itemWithBanding);
+
+        // Default textureGrain to 'None' for all new plank/object entries
+        const itemWithDefaults: MeshObjectData = {
+          ...itemWithBanding,
+          textureGrain: itemWithBanding.textureGrain ?? 'None',
+        };
+
+        toAdd.push(itemWithDefaults);
 
         // Update map so subsequent methods (like _sync2D) see it as existing
-        this.storeObjectMap.set(item.id, itemWithBanding);
+        this.storeObjectMap.set(item.id, itemWithDefaults);
       }
     });
 
@@ -266,16 +273,7 @@ export class SyncManager {
       right?: boolean;
       front?: boolean;
       back?: boolean;
-    } = {};
-
-    mesh.children.forEach((child) => {
-      if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
-        const edge = child.userData.edge;
-        if (edge && typeof edge === 'string') {
-          detectedBanding[edge as keyof typeof detectedBanding] = true;
-        }
-      }
-    });
+    } = mesh.userData.edgeBanding || {};
 
     // If we found any banding, add it to the meshData
     if (Object.keys(detectedBanding).length > 0) {
@@ -561,8 +559,13 @@ export class SyncManager {
         (userDataStr === PART_TYPES.HORIZONTAL_PLANK ||
           nameStr.includes('TOP') ||
           nameStr.includes('BOTTOM') ||
-          nameStr.includes('HORIZONTAL'));
-      const isBack = isPlank && (userDataStr === PART_TYPES.BACK_PLANK || nameStr.includes('BACK'));
+          nameStr.includes('HORIZONTAL') ||
+          nameStr.includes('SKIRTING'));
+      const isBack =
+        isPlank &&
+        (userDataStr === PART_TYPES.BACK_PLANK ||
+          nameStr.includes('BACK') ||
+          nameStr.includes('FRONT'));
 
       const isGeneric = !isVertical && !isHorizontal && !isBack;
 
@@ -617,7 +620,8 @@ export class SyncManager {
 
       // 🔹 Update Banding Children on the Plank
       child.children.forEach((subChild) => {
-        if (!(subChild instanceof THREE.Mesh) || !(subChild.geometry instanceof THREE.BoxGeometry)) return;
+        if (!(subChild instanceof THREE.Mesh) || !(subChild.geometry instanceof THREE.BoxGeometry))
+          return;
 
         if (subChild.userData.type === 'banding') {
           const edge = subChild.userData.edge;
@@ -692,7 +696,7 @@ export class SyncManager {
     }
   }
 
-  private async _applyDrag(mesh: THREE.Mesh) {
+  private async _applyDrag(mesh: THREE.Object3D) {
     if (!this.moveHandlerRef) return;
 
     const pos = await this.moveHandlerRef.enableDragging(mesh);
@@ -700,6 +704,14 @@ export class SyncManager {
   }
 
   private async _handleMultiple(list: MeshObjectData[], rootItem?: MeshObjectData) {
+    // Clear existing meshes for all objects in this batch to prevent duplicates
+    list.forEach((item) => {
+      const existingMesh = this._findMeshById(item.id);
+      if (existingMesh) {
+        this._removeMeshFromScene(existingMesh);
+      }
+    });
+
     const builder = new DesignBuilder(list, this.scene);
     const root = await builder.createDesign();
 
@@ -773,16 +785,7 @@ export class SyncManager {
         right?: boolean;
         front?: boolean;
         back?: boolean;
-      } = {};
-
-      mesh.children.forEach((child) => {
-        if (child instanceof THREE.Mesh && child.userData.type === 'banding') {
-          const edge = child.userData.edge;
-          if (edge && typeof edge === 'string') {
-            detectedBanding[edge as keyof typeof detectedBanding] = true;
-          }
-        }
-      });
+      } = mesh.userData.edgeBanding || {};
 
       // If we found banding and it's not already in Redux, update it
       if (Object.keys(detectedBanding).length > 0) {
@@ -813,18 +816,13 @@ export class SyncManager {
   }
 
   private async _handleSingle(item: MeshObjectData) {
+    if (!item) return;
     const existingMesh = this._findMeshById(item.id);
 
     if (existingMesh) {
       await this._updateMesh(existingMesh);
       updateOrRefreshOutline(this.scene, existingMesh);
       if (existingMesh.userData.isMain) generateCompartmentsFromMesh(existingMesh);
-      return;
-    }
-
-    // Don't create new mesh for floor - FloorManager handles geometry creation
-    // SyncManager only updates materials for existing floor meshes
-    if (item.type === 'floor') {
       return;
     }
 
@@ -964,6 +962,8 @@ export class SyncManager {
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {
+    if (!list || list.length === 0) return;
+
     const listIds = new Set(list.map((i) => i.id));
     const rootItem = list.find((i) => !i.parent || !listIds.has(i.parent));
 

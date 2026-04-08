@@ -22,12 +22,12 @@ export class SnapManager {
     this.platforms = [];
     this.cupboards = [];
 
-    for (const o of scene.children) {
-      if (!(o instanceof THREE.Mesh)) continue;
-      o.userData.type === FLOOR_PLAN_TYPES.WALL && this.walls.push(o);
-      o.userData.type === OBJECT_TYPES.PLATFORM && this.platforms.push(o);
-      o.userData.type === OBJECT_TYPES.CUPBOARD && this.cupboards.push(o);
-    }
+    scene.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      if (o.userData.type === FLOOR_PLAN_TYPES.WALL) this.walls.push(o);
+      if (o.userData.type === OBJECT_TYPES.PLATFORM) this.platforms.push(o);
+      if (o.userData.type === OBJECT_TYPES.CUPBOARD) this.cupboards.push(o);
+    });
   }
 
   public snapObject(object: THREE.Object3D, raycaster: THREE.Raycaster) {

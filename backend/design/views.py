@@ -8,7 +8,7 @@ import traceback
 from typing import Any, Dict, Optional
 
 # Django imports
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 # External imports
 import pandas as pd
@@ -266,10 +266,19 @@ class NestAPIViewset(ModelViewSet):
             )
 
         # Get all planks from catalogs
+        child_types = [
+            CatalogTypeChoices.DOOR,
+            CatalogTypeChoices.DRAWER_FACE,
+            CatalogTypeChoices.FRONT_DRAWER_PLANK,
+            CatalogTypeChoices.BACK_DRAWER_PLANK,
+            CatalogTypeChoices.BOTTOM_DRAWER_PLANK,
+            CatalogTypeChoices.RIGHT_DRAWER_PLANK,
+            CatalogTypeChoices.LEFT_DRAWER_PLANK,
+        ]
+
         catalogs_query = DesignCatalog.objects.filter(
             organization=request.user.selected_organization,
-            type=CatalogTypeChoices.PLANK,
-        )
+        ).filter(Q(type=CatalogTypeChoices.PLANK) | Q(type__in=child_types))
         if version:
             catalogs_query = catalogs_query.filter(version=version)
         else:
@@ -330,6 +339,10 @@ class NestAPIViewset(ModelViewSet):
                 "parent_name": item.get("parent_name", ""),
                 "material_name": item.get("material_name", "-"),
                 "banding_material_name": item.get("banding_material_name", "-"),
+                # Pass through texture grain in multiple shapes for downstream normalization
+                "textureGrain": item.get("textureGrain"),
+                "texture_grain": item.get("texture_grain"),
+                "texture": item.get("texture"),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")

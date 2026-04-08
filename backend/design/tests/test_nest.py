@@ -273,6 +273,159 @@ class NestModuleTestCase(APIBaseTestCase):
         self.assertEqual(item[KEY_HEIGHT], original_h)
         self.assertEqual(item[KEY_DIMENSIONS], f"{original_w:.2f} x {original_h:.2f}")
 
+    @patch("pandas.ExcelWriter")
+    def test_texture_grain_numeric_2_writes_two(
+        self: "NestModuleTestCase", mock_writer: MagicMock
+    ) -> None:
+        captured_df = {}
+
+        def capture_to_excel(
+            self_df: object,
+            writer: object,
+            sheet_name: str | None = None,
+            *args: object,
+            **kwargs: object,
+        ) -> None:
+            if sheet_name == "Cutting List":
+                captured_df["df1"] = self_df.copy()
+
+        with patch.object(
+            __import__("pandas").DataFrame, "to_excel", new=capture_to_excel
+        ):
+            svc = NestingService(width=2000, height=2000)
+            packed = [
+                {
+                    KEY_UNIQUE_ID: "SHEET0101",
+                    KEY_WIDTH: 100,
+                    KEY_HEIGHT: 50,
+                    "x": 0,
+                    "y": 0,
+                    "sheet_num": "SHEET01",
+                    KEY_NAME: "Part A",
+                    KEY_ID: "A",
+                    "texture_grain_code": 2,
+                }
+            ]
+            svc.generate_xmls(packed, "out.json")
+
+        df1 = captured_df["df1"]
+        self.assertIn("texture", df1.columns)
+        self.assertEqual(df1["texture"].iloc[0], 2)
+
+    @patch("pandas.ExcelWriter")
+    def test_texture_grain_string_horizontal_writes_two(
+        self: "NestModuleTestCase", mock_writer: MagicMock
+    ) -> None:
+        captured_df = {}
+
+        def capture_to_excel(
+            self_df: object,
+            writer: object,
+            sheet_name: str | None = None,
+            *args: object,
+            **kwargs: object,
+        ) -> None:
+            if sheet_name == "Cutting List":
+                captured_df["df1"] = self_df.copy()
+
+        with patch.object(
+            __import__("pandas").DataFrame, "to_excel", new=capture_to_excel
+        ):
+            svc = NestingService(width=2000, height=2000)
+            packed = [
+                {
+                    KEY_UNIQUE_ID: "SHEET0101",
+                    KEY_WIDTH: 100,
+                    KEY_HEIGHT: 50,
+                    "x": 0,
+                    "y": 0,
+                    "sheet_num": "SHEET01",
+                    KEY_NAME: "Part A",
+                    KEY_ID: "A",
+                    "texture": "Horizontal",
+                }
+            ]
+            svc.generate_xmls(packed, "out.json")
+
+        df1 = captured_df["df1"]
+        self.assertEqual(df1["texture"].iloc[0], 2)
+
+    @patch("pandas.ExcelWriter")
+    def test_texture_grain_missing_defaults_zero(
+        self: "NestModuleTestCase", mock_writer: MagicMock
+    ) -> None:
+        captured_df = {}
+
+        def capture_to_excel(
+            self_df: object,
+            writer: object,
+            sheet_name: str | None = None,
+            *args: object,
+            **kwargs: object,
+        ) -> None:
+            if sheet_name == "Cutting List":
+                captured_df["df1"] = self_df.copy()
+
+        with patch.object(
+            __import__("pandas").DataFrame, "to_excel", new=capture_to_excel
+        ):
+            svc = NestingService(width=2000, height=2000)
+            packed = [
+                {
+                    KEY_UNIQUE_ID: "SHEET0101",
+                    KEY_WIDTH: 100,
+                    KEY_HEIGHT: 50,
+                    "x": 0,
+                    "y": 0,
+                    "sheet_num": "SHEET01",
+                    KEY_NAME: "Part A",
+                    KEY_ID: "A",
+                }
+            ]
+            svc.generate_xmls(packed, "out.json")
+
+        df1 = captured_df["df1"]
+        self.assertEqual(df1["texture"].iloc[0], 0)
+
+    @patch("pandas.ExcelWriter")
+    def test_texture_grain_prefers_numeric_over_string(
+        self: "NestModuleTestCase", mock_writer: MagicMock
+    ) -> None:
+        captured_df = {}
+
+        def capture_to_excel(
+            self_df: object,
+            writer: object,
+            sheet_name: str | None = None,
+            *args: object,
+            **kwargs: object,
+        ) -> None:
+            if sheet_name == "Cutting List":
+                captured_df["df1"] = self_df.copy()
+
+        with patch.object(
+            __import__("pandas").DataFrame, "to_excel", new=capture_to_excel
+        ):
+            svc = NestingService(width=2000, height=2000)
+            packed = [
+                {
+                    KEY_UNIQUE_ID: "SHEET0101",
+                    KEY_WIDTH: 100,
+                    KEY_HEIGHT: 50,
+                    "x": 0,
+                    "y": 0,
+                    "sheet_num": "SHEET01",
+                    KEY_NAME: "Part A",
+                    KEY_ID: "A",
+                    "texture_grain_code": 1,
+                    "texture": "Horizontal",
+                }
+            ]
+            svc.generate_xmls(packed, "out.json")
+
+        df1 = captured_df["df1"]
+        self.assertEqual(df1["texture"].iloc[0], 1)
+
     def test_test_nesting_load_data(self: "NestModuleTestCase") -> None:
         """Exercise design.test_nesting.load_data by writing a temporary data.json and restoring it."""
         data_file = tn.DATA_FILE

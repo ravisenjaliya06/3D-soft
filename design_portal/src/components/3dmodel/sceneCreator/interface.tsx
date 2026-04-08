@@ -176,6 +176,7 @@ export interface MeshObjectData {
   rotation: Rotation;
   path?: string;
   unique_id?: string;
+  textureGrain?: TextureGrain;
 
   //optional properties
   description?: string;
@@ -205,6 +206,9 @@ export interface MeshObjectData {
   nailerEnabled?: boolean;
   nailerModel?: string;
   noBaseEnabled?: boolean;
+  skirtingEnabled?: boolean;
+  skirtingHeight?: number;
+  skirtingOffset?: number;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {
@@ -295,3 +299,11 @@ export type MeshObjectPatch = Omit<
   material?: Material[];
   panelDesign?: PanelDesignData;
 };
+
+export const TEXTURE_GRAIN = {
+  NONE: 'None',
+  HORIZONTAL: 'Horizontal',
+  VERTICAL: 'Vertical',
+} as const;
+
+export type TextureGrain = (typeof TEXTURE_GRAIN)[keyof typeof TEXTURE_GRAIN];
