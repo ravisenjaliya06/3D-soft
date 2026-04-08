@@ -100,18 +100,39 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [errorMessage, setFinishError] = useState<string | null>(null);
   const [texturesList, setTexturesList] = useState<any[]>([]);
   const [visibleTextureCount, setVisibleTextureCount] = useState(40);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [isLoadingTextures, setIsLoadingTextures] = useState<boolean>(false);
+  const [hoveredTextureId, setHoveredTextureId] = useState<string | null>(null);
+
+  const fetchTextures = async (url?: string) => {
+    if (isLoadingTextures) return;
+    setIsLoadingTextures(true);
+    try {
+      const fetchUrl = url || API_ENDPOINT.GET_TEXTURES;
+      const response = await commonService.get(fetchUrl);
+      if (response && response.data) {
+        const results = Array.isArray(response.data.results)
+          ? response.data.results
+          : Array.isArray(response.data)
+            ? response.data
+            : [];
+
+        if (url) {
+          setTexturesList((prev) => [...prev, ...results]);
+        } else {
+          setTexturesList(results);
+        }
+
+        setNextPageUrl(response.data.next || null);
+      }
+    } catch (error) {
+      console.error('Error fetching textures:', error);
+    } finally {
+      setIsLoadingTextures(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTextures = async () => {
-      try {
-        const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
-        if (response && response.data) {
-          setTexturesList(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching textures:', error);
-      }
-    };
     fetchTextures();
   }, []);
 
@@ -2908,16 +2929,18 @@ const AddMaterialPopup: React.FC<Props> = ({
               onScroll={(e: React.UIEvent<HTMLDivElement>) => {
                 const target = e.currentTarget;
                 if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
-                  if (visibleTextureCount < texturesList.length) {
+                  if (Array.isArray(texturesList) && visibleTextureCount < texturesList.length) {
                     setVisibleTextureCount((prev) => prev + 40);
+                  } else if (nextPageUrl && !isLoadingTextures) {
+                    fetchTextures(nextPageUrl);
                   }
                 }
               }}
             >
-              {texturesList.slice(0, visibleTextureCount).map((texture) => {
+              {(Array.isArray(texturesList) ? texturesList : []).slice(0, visibleTextureCount).map((texture) => {
                 const isSelected = value === texture.id;
-                const imageUrl = texture.image
-                  ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image.startsWith('/') ? '' : '/'}${texture.image}`
+                const imageUrl = texture.image_thumbnail
+                  ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image_thumbnail.startsWith('/') ? '' : '/'}${texture.image_thumbnail}`
                   : null;
 
                 return (
@@ -2928,15 +2951,25 @@ const AddMaterialPopup: React.FC<Props> = ({
                       handleInputChange(field.key, texture.id);
                       if (onActivate) onActivate();
                     }}
+                    onMouseEnter={() => setHoveredTextureId(texture.id)}
+                    onMouseLeave={() => setHoveredTextureId(null)}
                   >
-                    {imageUrl ? (
-                      <img src={imageUrl} alt={texture.name} className={styles.textureThumbnail} />
-                    ) : (
-                      <div className="flex h-[80px] w-[80px] items-center justify-center rounded-lg bg-slate-200 text-[10px] text-slate-400">
-                        No Image
+                    <div className={styles.textureImageContainer}>
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={texture.name}
+                          className={styles.textureThumbnail}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] text-slate-400">
+                          No Image
+                        </div>
+                      )}
+                      <div className={styles.textureOverlay}>
+                        <span className={styles.textureOverlayLabel}>{texture.name}</span>
                       </div>
-                    )}
-                    <span className={styles.textureLabel}>{texture.name}</span>
+                    </div>
                   </div>
                 );
               })}
@@ -3184,9 +3217,9 @@ const AddMaterialPopup: React.FC<Props> = ({
                         activeFieldKey === 'selectedTexture' ||
                         currentPopup?.title === 'Finish Details'
                       ) {
-                        const selectedTex = texturesList.find(
-                          (t) => t.id === formData.selectedTexture
-                        );
+                        const previewId = hoveredTextureId || formData.selectedTexture;
+                        const selectedTex = texturesList.find((t) => t.id === previewId);
+
                         if (selectedTex?.image) {
                           const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${selectedTex.image.startsWith('/') ? '' : '/'}${selectedTex.image}`;
                           return (
