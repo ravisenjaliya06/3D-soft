@@ -1,6 +1,7 @@
 # Python imports
 import smtplib
 from datetime import timedelta
+from typing import Self
 from unittest.mock import MagicMock, patch
 
 # Django imports
@@ -329,8 +330,6 @@ class UtilsTestCase(APIBaseTestCase):
         mock_material: MagicMock,
         mock_properties: MagicMock,
     ) -> None:
-        # Python imports
-        from typing import Self
 
         class F:
             def __init__(self: Self, name: str) -> None:

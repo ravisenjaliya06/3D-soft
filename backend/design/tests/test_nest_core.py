@@ -1,5 +1,7 @@
 # Python imports
 import os
+import shutil
+import tempfile
 
 # External imports
 import pytest
@@ -238,9 +240,6 @@ class NestCoreTestCase(APIBaseTestCase):
                 ],
             }
         ]
-        # Python imports
-        import shutil
-        import tempfile
 
         tmpdir = tempfile.mkdtemp()
         try:

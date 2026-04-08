@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 # External imports
 import pytest
+from rest_framework import status
 
 # App imports
 from design.nest import (
@@ -153,9 +154,6 @@ class NestExportersTestCase(APIBaseTestCase):
         mock_svg.return_value = ["out_A1.svg"]
         mock_layout.return_value = "out_layout.pdf"
         mock_labels.return_value = "out_labels.pdf"
-
-        # External imports
-        from rest_framework import status
 
         response = nest("out.json", self.files_basic, 1000, 1000)
 

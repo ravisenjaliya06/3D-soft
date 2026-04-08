@@ -369,7 +369,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_company_serializer_unique_validation_and_create_org(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        # App imports
 
         data = {"name": "UniqueCo", "material_type": "Banding"}
         req = self.client.post(
@@ -395,7 +394,6 @@ class MaterialAPIViewTestCase(APIBaseTestCase):
     def test_material_serializer_validate_properties_id_drops_model_file(
         self: "MaterialAPIViewTestCase",
     ) -> None:
-        # App imports
 
         payload = {
             "name": "WithProps",
