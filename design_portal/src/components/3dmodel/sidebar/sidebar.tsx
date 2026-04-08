@@ -2357,10 +2357,10 @@ const Sidebar: React.FC = () => {
                             </div>
 
                             {/* Divider */}
-                            <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+                            <div className="ml-[0.2rem] mr-[0.3rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
 
                             {/* Right Column */}
-                            <div className="flex w-[6rem] flex-col">
+                            <div className="mr-[0.7rem] flex w-[6rem] flex-col">
                               <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Depth
                               </p>
