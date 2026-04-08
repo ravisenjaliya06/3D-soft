@@ -87,6 +87,7 @@ const Register = () => {
       label: 'Name *',
       type: 'text',
       placeholder: 'Enter name',
+      value: name,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value),
       error: nameError,
       smallField: true,
@@ -95,6 +96,7 @@ const Register = () => {
       label: 'Email *',
       type: 'email',
       placeholder: 'Enter email',
+      value: email,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
       smallField: true,
@@ -107,15 +109,22 @@ const Register = () => {
       type: 'text',
       smallField: true,
       placeholder: 'Enter username',
+      value: username,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: usernameError,
     },
     {
       label: 'Phone Number *',
-      type: 'number',
+      type: 'text',
       smallField: true,
-      placeholder: 'Enter phone number',
-      onChange: (e: ChangeEvent<HTMLInputElement>) => setNumber(e.target.value),
+      placeholder: 'phone number',
+      value: phone,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (val.length <= 10) {
+          setNumber(val);
+        }
+      },
       error: phoneError,
     },
   ];
@@ -125,6 +134,7 @@ const Register = () => {
       label: 'Organization Name *',
       type: 'text',
       placeholder: 'Enter organization name',
+      value: organizationName,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value),
       onClickShowPassword: handleClickShowConfirmPassword,
       error: organizationNameError,
@@ -134,6 +144,7 @@ const Register = () => {
       type: 'password',
       placeholder: 'Enter password',
       showPassword,
+      value: password,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
       onClickShowPassword: handleClickShowPassword,
       error: passwordError,
@@ -143,6 +154,7 @@ const Register = () => {
       type: 'password',
       placeholder: 'Enter confirm password',
       showPassword: showConfirmPassword,
+      value: confirmPassword,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value),
       onClickShowPassword: handleClickShowConfirmPassword,
       error: confirmPasswordError,
