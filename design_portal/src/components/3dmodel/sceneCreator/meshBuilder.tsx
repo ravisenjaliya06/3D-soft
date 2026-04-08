@@ -549,32 +549,95 @@ export class MeshBuilder {
         : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`
       : '/glb/door_handle.glb';
 
-    const handleModel = await GLBLoader(backendUrl, mesh.name, {
-      width: materialProps.width ? materialProps.width : 5,
-      height: materialProps.height ? materialProps.height : 5,
-      depth: materialProps.depth ? materialProps.depth : 25,
-    });
+    // Show small placeholder for handle
+    const placeholder = this._createPlaceholder(
+      {
+        width: materialProps.width || 5,
+        height: materialProps.height || 5,
+        depth: materialProps.depth || 25,
+      },
+      materialProps.image // Use handle specific image if available
+    );
+    mesh.add(placeholder);
+    this._placeHandleOnMesh(placeholder, mesh, materialProps);
 
-    handleModel.name = `Handle_for_${mesh.name}`;
-    handleModel.userData.type = 'handle';
-    handleModel.userData.objectId = crypto.randomUUID();
+    try {
+      const handleModel = await GLBLoader(backendUrl, mesh.name, {
+        width: materialProps.width ? materialProps.width : 5,
+        height: materialProps.height ? materialProps.height : 5,
+        depth: materialProps.depth ? materialProps.depth : 25,
+      });
 
-    this._placeHandleOnMesh(handleModel, mesh, materialProps);
+      // Remove placeholder once loaded
+      mesh.remove(placeholder);
+      if (placeholder.geometry) placeholder.geometry.dispose();
+
+      handleModel.name = `Handle_for_${mesh.name}`;
+      handleModel.userData.type = 'handle';
+      handleModel.userData.objectId = crypto.randomUUID();
+
+      this._placeHandleOnMesh(handleModel, mesh, materialProps);
+    } catch (error) {
+      mesh.remove(placeholder);
+      console.error('Failed to load handle:', error);
+    }
   }
 
   private async _loadSink(mesh: THREE.Mesh) {
     const url = '/glb/kitchen_sink.glb';
 
-    const sinkModel = await GLBLoader(url, 'KitchenSink', {
-      width: this.meshData.dimensions.width,
-      height: this.meshData.dimensions.height,
-      depth: this.meshData.dimensions.depth,
-    });
-    sinkModel.name = `Sink_for_${mesh.name}`;
-    sinkModel.userData.type = OBJECT_TYPES.SINK;
-    sinkModel.userData.objectId = this.meshData.id;
+    // Show placeholder while loading
+    const placeholder = this._createPlaceholder(this.meshData.dimensions, this.meshData.image);
+    mesh.add(placeholder);
 
-    mesh.add(sinkModel);
+    try {
+      const sinkModel = await GLBLoader(url, 'KitchenSink', {
+        width: this.meshData.dimensions.width,
+        height: this.meshData.dimensions.height,
+        depth: this.meshData.dimensions.depth,
+      });
+
+      // Remove placeholder once loaded
+      mesh.remove(placeholder);
+      if (placeholder.geometry) placeholder.geometry.dispose();
+
+      sinkModel.name = `Sink_for_${mesh.name}`;
+      sinkModel.userData.type = OBJECT_TYPES.SINK;
+      sinkModel.userData.objectId = this.meshData.id;
+
+      mesh.add(sinkModel);
+    } catch (error) {
+      mesh.remove(placeholder);
+      console.error('Failed to load sink:', error);
+    }
+  }
+
+  private _createPlaceholder(dims: any, imageUrl?: string): THREE.Mesh {
+    const geometry = new THREE.BoxGeometry(dims.width || 1, dims.height || 1, dims.depth || 1);
+    let material: THREE.Material;
+
+    if (imageUrl) {
+      const fullUrl = imageUrl.startsWith('http') || imageUrl.startsWith('/')
+        ? imageUrl
+        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imageUrl}`;
+      const texture = this.textureLoader.load(fullUrl);
+      material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.7,
+      });
+    } else {
+      material = new THREE.MeshBasicMaterial({
+        color: 0xcccccc,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.5,
+      });
+    }
+
+    const placeholder = new THREE.Mesh(geometry, material);
+    placeholder.name = 'LoadingPlaceholder';
+    return placeholder;
   }
 
   private async _loadModel(mesh: THREE.Mesh) {
@@ -586,12 +649,20 @@ export class MeshBuilder {
         ? url
         : `${process.env.NEXT_PUBLIC_PUBLIC_API}${url}`;
 
+    // Show placeholder while loading
+    const placeholder = this._createPlaceholder(this.meshData.dimensions, this.meshData.image);
+    mesh.add(placeholder);
+
     try {
       const model = await GLBLoader(backendUrl, 'Model', {
         width: this.meshData.dimensions.width,
         height: this.meshData.dimensions.height,
         depth: this.meshData.dimensions.depth,
       });
+
+      // Remove placeholder once loaded
+      mesh.remove(placeholder);
+      if (placeholder.geometry) placeholder.geometry.dispose();
 
       model.name = `Model_for_${mesh.name}`;
       model.userData.type = OBJECT_TYPES.MODEL;
@@ -614,6 +685,7 @@ export class MeshBuilder {
 
       mesh.add(model);
     } catch (error) {
+      mesh.remove(placeholder);
       console.error('Failed to load model:', error);
     }
   }

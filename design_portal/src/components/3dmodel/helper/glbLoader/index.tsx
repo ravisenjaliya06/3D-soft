@@ -1,6 +1,17 @@
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+// --- Shared Loaders Configuration ---
+const dracoLoader = new DRACOLoader();
+// Using standard Google CDN for decoders to ensure it works without local setup
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+
+const ktx2Loader = new KTX2Loader();
+// Using standard Three.js CDN for Basis/KTX2 transcoder
+ktx2Loader.setTranscoderPath('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r151/examples/jsm/libs/basis/');
 
 // Cache to store the loaded GLB models (promises returning the scene) - Runtime Cache
 const glbParseCache = new Map<string, Promise<THREE.Object3D>>();
@@ -70,6 +81,8 @@ const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
 
       // 3. Parse with GLTFLoader
       const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+      loader.setKTX2Loader(ktx2Loader);
       loader.load(
         objectUrl,
         (glb) => {
@@ -100,22 +113,25 @@ export const prefetchGLB = (url: string): void => {
 };
 
 /**
- * Prefetch multiple URLs sequentially to avoid network choking
+ * Prefetch multiple URLs in batches to maximize speed without choking the network
  */
 export const prefetchAll = (urls: string[]): void => {
-  // We process these sequentially with delays to ensure the network isn't choked,
-  // preventing critical API calls (like Register/Login) from timing out or delaying.
+  const BATCH_SIZE = 4; // Fetch 4 files at once
+
   setTimeout(async () => {
-    for (const url of urls) {
+    // We process in batches to ensure the network isn't completely saturated,
+    // allowing other critical application requests to still go through.
+    for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+      const batch = urls.slice(i, i + BATCH_SIZE);
       try {
-        await fetchAndCacheBlob(url);
-        // Small pause between fetches to allow other requests to execute
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await Promise.all(batch.map((url) => fetchAndCacheBlob(url)));
+        // Tiny pause between batches to allow the event loop to breathe
+        await new Promise((resolve) => setTimeout(resolve, 50));
       } catch (e) {
         console.error('Error during batch prefetch', e);
       }
     }
-  }, 2000); // 3-second initial delay so first page load is prioritized
+  }, 2000); // Initial delay to prioritize the first page load
 };
 
 export const GLBLoader = (
