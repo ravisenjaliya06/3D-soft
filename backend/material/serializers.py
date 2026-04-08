@@ -467,9 +467,11 @@ class FinishTypeSerializer(serializers.ModelSerializer):
 
 
 class TextureSerializer(serializers.ModelSerializer):
+    image_thumbnail = serializers.ReadOnlyField(source="thumbnail_safe_url")
+
     class Meta:
         model = FinishesLibrary
-        fields = ["url", "image", "width", "height", "decal", "tile"]
+        fields = ["url", "image", "image_thumbnail", "width", "height", "decal", "tile"]
 
 
 class FinishesLibrarySerializerFactory:
@@ -485,9 +487,11 @@ class FinishesLibrarySerializerFactory:
 
 
 class FinishesLibrarySerializer(serializers.ModelSerializer):
+    image_thumbnail = serializers.ReadOnlyField(source="thumbnail_safe_url")
+
     class Meta:
         model = FinishesLibrary
-        fields = ["id", "name", "organization", "type", "image"]
+        fields = ["id", "name", "organization", "type", "image", "image_thumbnail"]
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary

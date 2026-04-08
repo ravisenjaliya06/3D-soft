@@ -27,6 +27,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
   const [startPointId, setStartPointId] = useState<string | null>(null);
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
+  const [inputLength, setInputLength] = useState<number | null>(null);
 
   // Dynamic center offset
   const offsetX = svgWidth / 2;
@@ -44,6 +45,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const resetDrawing = () => {
     setStartPointId(null);
     setPreviewEnd(null);
+    setInputLength(null);
   };
 
   // Find or create point for the given coordinates and add it to the store and drawing wall besed on it
@@ -86,23 +88,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   // We explicitly add the generic <T> here because react-svg-pan-zoom defines
   // <T,> makes this function generic so it can handle any event payload type.
   // The comma prevents TypeScript from parsing it as JSX.
-  const handleViewerClick = <T,>(event: ViewerMouseEvent<T>) => {
-    if (!isWallDrawingActive) return;
-
-    const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
-    const snappedPoint = snapToGrid(localCoordinates.x, localCoordinates.y);
-    const clickedPoint = findOrCreatePoint(snappedPoint.x, snappedPoint.y);
-
-    // If first point is not selected
-    if (!startPointId) {
-      setStartPointId(clickedPoint.id || null);
-      setPreviewEnd(null);
-      return;
-    }
-
-    // Get the start point object
-    const startPoint = points.find((point) => point.id === startPointId);
-    if (!startPoint) return;
+  // Create a wall between two points and handle room reconciliation
+  const createWallSegment = (startPoint: WallPoint, endCoords: { x: number; y: number }) => {
+    const clickedPoint = findOrCreatePoint(endCoords.x, endCoords.y);
 
     // Prevent drawing wall to itself
     const isSamePoint = startPoint.x === clickedPoint.x && startPoint.y === clickedPoint.y;
@@ -129,6 +117,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     if (isDuplicateWall) {
       setStartPointId(clickedPoint.id || null);
+      setInputLength(null);
       return;
     }
 
@@ -315,6 +304,33 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     // Set next start point for continuous drawing
     setStartPointId(clickedPoint.id || null);
     setPreviewEnd(null);
+    setInputLength(null);
+  };
+
+  const handleViewerClick = <T,>(event: ViewerMouseEvent<T>) => {
+    if (!isWallDrawingActive) return;
+
+    const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
+    const snappedCoords = snapToGrid(localCoordinates.x, localCoordinates.y);
+
+    // Use current preview end if it exists (handles manual length override)
+    const preview = getPreviewData();
+    const finalCoords = preview ? preview.effectiveEnd : snappedCoords;
+
+    // If first point is not selected
+    if (!startPointId) {
+      const clickedPoint = findOrCreatePoint(snappedCoords.x, snappedCoords.y);
+      setStartPointId(clickedPoint.id || null);
+      setPreviewEnd(null);
+      setInputLength(null);
+      return;
+    }
+
+    // Get the start point object
+    const startPoint = points.find((point) => point.id === startPointId);
+    if (!startPoint) return;
+
+    createWallSegment(startPoint, finalCoords);
   };
 
   // We explicitly add the generic <T> here because react-svg-pan-zoom defines
@@ -340,12 +356,36 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     const deltaX = previewEnd.x - start.x;
     const deltaY = previewEnd.y - start.y;
+    const angleRad = Math.atan2(deltaY, deltaX);
+    const angleDeg = (angleRad * 180) / Math.PI;
+
+    const mouseLength = Math.hypot(deltaX, deltaY);
+    const effectiveLength = inputLength !== null ? inputLength : mouseLength;
+
+    const effectiveEnd =
+      inputLength !== null
+        ? {
+            x: start.x + inputLength * Math.cos(angleRad),
+            y: start.y + inputLength * Math.sin(angleRad),
+          }
+        : previewEnd;
 
     return {
       start,
-      length: Math.hypot(deltaX, deltaY),
-      angle: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
+      length: effectiveLength,
+      angle: angleDeg,
+      effectiveEnd,
     };
+  };
+
+  const finalizeWallByInput = () => {
+    const preview = getPreviewData();
+    if (!preview || !startPointId) return;
+
+    const startPoint = points.find((point) => point.id === startPointId);
+    if (!startPoint) return;
+
+    createWallSegment(startPoint, preview.effectiveEnd);
   };
 
   return {
@@ -353,9 +393,12 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     walls,
     startPointId,
     previewEnd,
+    inputLength,
+    setInputLength,
     handleViewerClick,
     handleViewerMouseMove,
     getPreviewData,
+    finalizeWallByInput,
     resetDrawing,
   };
 }

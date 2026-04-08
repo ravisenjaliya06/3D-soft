@@ -3,12 +3,12 @@ import { Value } from 'react-svg-pan-zoom';
 import { GridData } from './interface';
 
 export const GRID_SIZE = {
-  WIDTH: 2100,
-  HEIGHT: 1000,
+  WIDTH: 10000,
+  HEIGHT: 10000,
 };
 
-// step of grid which is snapping point
-export const GRID_STEP = 20;
+// step of grid which is snapping point (1 ft = 30.48 units)
+export const GRID_STEP = 30.48;
 
 // initial value of react-svg-pan-zoom
 export const REACTSVGPANZOOM_INITIAL_VALUE: Value = {
@@ -35,5 +35,5 @@ export const REACTSVGPANZOOM_INITIAL_VALUE: Value = {
 export const GridRecordFactory = Record<GridData>({
   id: '',
   type: 'horizontal-streak',
-  properties: { step: 20 },
+  properties: { step: 30.48 },
 });
