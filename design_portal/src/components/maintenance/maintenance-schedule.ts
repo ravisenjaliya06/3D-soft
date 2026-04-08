@@ -23,11 +23,13 @@ export function getMaintenanceMode(now: Date = new Date()): MaintenanceMode {
     return 'none';
   }
 
-  if (hour >= 19 && hour < 20) {
-    return 'fullPage';
-  }
-  if (hour >= 13 && hour < 19) {
-    return 'banner';
+  if (process.env.NEXT_PUBLIC_MAINTENANCE === 'true') {
+    if (hour >= 19 && hour < 20) {
+      return 'fullPage';
+    }
+    if (hour >= 13 && hour < 19) {
+      return 'banner';
+    }
   }
 
   return 'none';
