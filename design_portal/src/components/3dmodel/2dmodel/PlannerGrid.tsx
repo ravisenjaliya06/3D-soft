@@ -3,12 +3,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ReactSVGPanZoom, Tool, TOOL_AUTO, Value } from 'react-svg-pan-zoom';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
+import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { RootState } from '../store';
 import { setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
 import { GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
 import { TwoDSidebar } from './TwoDSidebar';
-import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { useWallDrawing } from './walls/useWallDrawing';
 import { Wall2D } from './walls/wall2D';
 import { findRoomsFromWalls, getFloorPolygon } from './walls/wallFloor';
@@ -107,21 +107,9 @@ export default function PlannerGrid() {
     const labelY = midRef.y - pl.y * sign * labelLift - 14;
     previewWallLayer = (
       <g>
-        <polygon
-          points={footprintPts}
-          fill="url(#wallDoubleHatch)"
-          opacity="0.6"
-          stroke="none"
-        />
+        <polygon points={footprintPts} fill="url(#wallDoubleHatch)" opacity="0.6" stroke="none" />
 
-        <line
-          x1={rs.x}
-          y1={rs.y}
-          x2={re.x}
-          y2={re.y}
-          stroke="#1290ff"
-          strokeWidth={2}
-        />
+        <line x1={rs.x} y1={rs.y} x2={re.x} y2={re.y} stroke="#1290ff" strokeWidth={2} />
         <line
           x1={oppRs.x}
           y1={oppRs.y}
@@ -131,22 +119,8 @@ export default function PlannerGrid() {
           strokeWidth={2}
         />
 
-        <line
-          x1={re.x}
-          y1={re.y}
-          x2={oppRe.x}
-          y2={oppRe.y}
-          stroke="#1290ff"
-          strokeWidth={2}
-        />
-        <line
-          x1={rs.x}
-          y1={rs.y}
-          x2={oppRs.x}
-          y2={oppRs.y}
-          stroke="#1290ff"
-          strokeWidth={2}
-        />
+        <line x1={re.x} y1={re.y} x2={oppRe.x} y2={oppRe.y} stroke="#1290ff" strokeWidth={2} />
+        <line x1={rs.x} y1={rs.y} x2={oppRs.x} y2={oppRs.y} stroke="#1290ff" strokeWidth={2} />
 
         <line
           x1={midRef.x}
@@ -161,13 +135,7 @@ export default function PlannerGrid() {
         <circle cx={rs.x} cy={rs.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
         <circle cx={re.x} cy={re.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
 
-        <foreignObject
-          x={labelX}
-          y={labelY}
-          width={80}
-          height={30}
-          style={{ overflow: 'visible' }}
-        >
+        <foreignObject x={labelX} y={labelY} width={80} height={30} style={{ overflow: 'visible' }}>
           <div
             style={{
               display: 'flex',
