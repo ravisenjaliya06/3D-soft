@@ -2976,7 +2976,7 @@ const Sidebar: React.FC = () => {
                                   aria-checked={active}
                                   disabled={isDisabled}
                                   onClick={() => handleBaseModeSelect(opt.id)}
-                                  className={`min-w-0 flex-1 rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-[0.45rem] text-center text-[0.58rem] font-[600] transition-colors duration-150 ${
+                                  className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center leading-none text-[0.58rem] font-[600] transition-colors duration-150 ${
                                     active
                                       ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
                                       : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
@@ -2997,7 +2997,7 @@ const Sidebar: React.FC = () => {
                                 value={selectedObject?.nailerModel || 'stand_1'}
                                 onChange={(e) => handleNailerModelChange(e.target.value)}
                                 disabled={isDisabled}
-                                className="flex h-[1.3rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                className="flex h-[1.2rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                               >
                                 <option value="stand_1">Stand 1</option>
                                 <option value="stand_2">Stand 2</option>
@@ -3007,16 +3007,16 @@ const Sidebar: React.FC = () => {
                         </div>
 
                         {selectedObject?.skirtingEnabled && (
-                          <div className="mt-[0.35rem] mb-[0rem] ml-[0rem] flex max-w-[13.5rem] flex-row gap-[0.8rem] pb-[0rem]">
-                            <div className="mr-[1rem] flex-1 px-0 py-0">
+                          <div className="mt-[0.35rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                            <div className="flex w-[6rem] flex-col">
                               <p
-                                className={`mt-[0px] mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568] ${isDisabled ? 'opacity-50' : ''}`}
+                                className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
                               >
                                 Offset
                               </p>
                               <SidebarInputWithSuffix
                                 wrapperClassName="relative w-[5rem]"
-                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 suffix="MM"
                                 type="number"
                                 value={selectedObject?.skirtingOffset ?? 10}
@@ -3024,15 +3024,18 @@ const Sidebar: React.FC = () => {
                                 disabled={isDisabled}
                               />
                             </div>
-                            <div className="mr-[0.5rem] flex-1 px-0 py-0">
+
+                            <div className="ml-[0.2rem] mr-[0.3rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                            <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
                               <p
-                                className={`mt-[0px] mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568] ${isDisabled ? 'opacity-50' : ''}`}
+                                className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
                               >
                                 Height
                               </p>
                               <SidebarInputWithSuffix
                                 wrapperClassName="relative w-[5rem]"
-                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 suffix="MM"
                                 type="number"
                                 value={selectedObject?.skirtingHeight ?? 75}
