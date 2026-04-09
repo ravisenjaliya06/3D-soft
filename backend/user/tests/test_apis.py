@@ -1,7 +1,7 @@
 # Python imports
 import uuid
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # Django imports
 from django.contrib.messages import get_messages
@@ -37,18 +37,7 @@ class APIViewTestCase(APIBaseTestCase):
         )
         self.token = AccessToken.for_user(self.user)
 
-    @patch("user.serializers.duplicate_default_textures")
-    @patch("user.serializers.default_material_data")
-    @patch("user.serializers.duplicate_default_catalogs_for_organization")
-    @patch("user.serializers.get_ip_location")
-    def test_user_register(
-        self: "APIViewTestCase",
-        mock_textures: MagicMock,
-        mock_material: MagicMock,
-        mock_catalogs: MagicMock,
-        mock_location: MagicMock,
-    ) -> None:
-        mock_location.return_value = "Mumbai, India"
+    def test_user_register(self: "APIViewTestCase") -> None:
         user_count_before = User.objects.using(DEFAULT_DATABASE).count()
 
         response = self.client.post(
@@ -208,18 +197,9 @@ class APIViewTestCase(APIBaseTestCase):
             response.data["email"][0], "A user with this email already exists."
         )
 
-    @patch("user.serializers.duplicate_default_textures")
-    @patch("user.serializers.default_material_data")
-    @patch("user.serializers.duplicate_default_catalogs_for_organization")
-    @patch("user.serializers.get_ip_location")
     def test_user_registration_in_organization_with_all_permissions(
         self: "APIViewTestCase",
-        mock_textures: MagicMock,
-        mock_material: MagicMock,
-        mock_catalogs: MagicMock,
-        mock_location: MagicMock,
     ) -> None:
-        mock_location.return_value = "Mumbai, India"
         user_count_before = User.objects.using(DEFAULT_DATABASE).count()
 
         response = self.client.post(
