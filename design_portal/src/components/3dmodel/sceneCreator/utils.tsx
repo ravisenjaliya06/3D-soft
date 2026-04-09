@@ -10,6 +10,7 @@ import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
+import { TEXTURE_CACHE_NAME } from '../constants';
 import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
@@ -112,7 +113,7 @@ export const textureLoader = (
     // 1. Try to get Blob from Browser Cache (prefetched by getDesignCatalogs)
     if ('caches' in window) {
       try {
-        const cache = await caches.open('bravento-texture-cache-v1');
+        const cache = await caches.open(TEXTURE_CACHE_NAME);
         const response = await cache.match(url);
         if (response) {
           const blob = await response.blob();
