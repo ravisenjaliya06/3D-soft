@@ -71,7 +71,7 @@ jobs:
       - name: Check Code Coverage
         id: coverage
         run: |
-          pipenv run coverage report
+          pipenv run coverage report -m
           
           # Extract percentage number
           coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
