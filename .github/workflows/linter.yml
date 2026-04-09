@@ -29,7 +29,6 @@ jobs:
             backend
             !backend/umaboy/media
           sparse-checkout-cone-mode: false
-          show-progress: false
 
       - name: Setup Python
         uses: actions/setup-python@v5
