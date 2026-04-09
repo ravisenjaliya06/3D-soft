@@ -66,7 +66,7 @@ jobs:
         env:
           SECRET_KEY: 'testing-secret-key'
         run: |
-          pipenv run coverage run -m pytest
+          pipenv run pytest -n auto -v
 
       - name: Check Code Coverage
         id: coverage
