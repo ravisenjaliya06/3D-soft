@@ -2,7 +2,7 @@ import { _3DMODEL, assets } from '@/svgPaths';
 import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
@@ -115,6 +115,7 @@ const Sidebar: React.FC = () => {
   const sidebarRef = useRef<HTMLDivElement | null>(null);
 
   const dispatch = useDispatch();
+  const store = useStore<RootState>();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
   const objects = useSelector((state: RootState) => state.data.objects);
@@ -1474,56 +1475,201 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handleSkirtingToggle = async () => {
-    if (!selectedObject || !scene || isDisabled || !isLatestVersion) return;
+  type BaseMode = 'noBase' | 'nailer' | 'skirting';
 
+  const getSelectedCupboardFromStore = (): MeshObjectData | null => {
+    const state = store.getState();
+    const targetId = state.data.selectedChildObject || state.data.selectedObject;
+    if (!targetId) return null;
+    return state.data.objects.find((o) => o.id === targetId) ?? null;
+  };
+
+  const findCupboardMesh = (objectId: string): THREE.Mesh | null => {
+    if (!scene) return null;
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === objectId) {
         targetMesh = obj;
       }
     });
+    return targetMesh;
+  };
 
+  const getBaseMode = (obj: MeshObjectData | null | undefined): BaseMode => {
+    if (!obj) return 'noBase';
+    if (obj.skirtingEnabled) return 'skirting';
+    if (obj.nailerEnabled) return 'nailer';
+    return 'noBase';
+  };
+
+  /** True when the cupboard is already in the given base mode (no redundant work). */
+  const isAtBaseMode = (obj: MeshObjectData, target: BaseMode): boolean => {
+    if (target === 'skirting') return !!obj.skirtingEnabled;
+    if (target === 'nailer') return !!obj.nailerEnabled;
+    return !obj.skirtingEnabled && !obj.nailerEnabled && !!obj.noBaseEnabled;
+  };
+
+  const turnSkirtingOff = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard?.skirtingEnabled || !scene || isDisabled || !isLatestVersion) return;
+    const targetMesh = findCupboardMesh(cupboard.id);
     if (!targetMesh) return;
-
     try {
-      const isEnabled = !selectedObject.skirtingEnabled;
-      const defaultOffset = selectedObject.skirtingOffset ?? 10;
-      const defaultHeight = selectedObject.skirtingHeight ?? 75;
       const updatePatch: any = {
-        skirtingEnabled: isEnabled,
+        skirtingEnabled: false,
+        skirtingOffset: cupboard.skirtingOffset ?? 10,
+        skirtingHeight: cupboard.skirtingHeight ?? 75,
+      };
+      removeSkirtingPlanks(targetMesh);
+      if (!cupboard.noBaseEnabled) {
+        await applyNoBase(scene, targetMesh, false);
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+    } catch (error) {
+      console.error('Error turning skirting off:', error);
+    }
+  };
+
+  const turnSkirtingOn = async () => {
+    const c = getSelectedCupboardFromStore();
+    if (!c || c.skirtingEnabled || !scene || isDisabled || !isLatestVersion) return;
+    const targetMesh = findCupboardMesh(c.id);
+    if (!targetMesh) return;
+    try {
+      const defaultOffset = c.skirtingOffset ?? 10;
+      const defaultHeight = c.skirtingHeight ?? 75;
+      const updatePatch: any = {
+        skirtingEnabled: true,
         skirtingOffset: defaultOffset,
         skirtingHeight: defaultHeight,
       };
+      if (c.nailerEnabled) {
+        updatePatch.nailerEnabled = false;
+        await removeNailers(scene, targetMesh);
+      }
+      if (!c.noBaseEnabled) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      await applyObjectUpdate(c, updatePatch);
+      addSkirtingPlanks(targetMesh, { height: defaultHeight, offset: defaultOffset });
+    } catch (error) {
+      console.error('Error turning skirting on:', error);
+    }
+  };
 
-      if (isEnabled) {
-        // Turning skirting ON
-        // Automatically turn off Nailer if it was on
-        if (selectedObject.nailerEnabled) {
-          updatePatch.nailerEnabled = false;
-          await removeNailers(scene, targetMesh);
+  const turnNailerOff = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (
+      !cupboard?.nailerEnabled ||
+      !scene ||
+      !isFullCupboard ||
+      isQuickHideActive ||
+      !isLatestVersion
+    )
+      return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { nailerEnabled: false };
+      if (!hasExtendedSidePlanks(targetMesh)) {
+        updatePatch.noBaseEnabled = true;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (updatePatch.noBaseEnabled === false) {
+        await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      await removeNailers(scene, targetMesh);
+    } catch (error) {
+      console.error('Error turning nailer off:', error);
+    }
+  };
+
+  const turnNailerOn = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (
+      !cupboard ||
+      cupboard.nailerEnabled ||
+      !scene ||
+      !isFullCupboard ||
+      isQuickHideActive ||
+      !isLatestVersion
+    )
+      return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { nailerEnabled: true };
+      removeSkirtingPlanks(targetMesh);
+      updatePatch.skirtingEnabled = false;
+      if (cupboard.noBaseEnabled) {
+        updatePatch.noBaseEnabled = false;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (updatePatch.noBaseEnabled === false) {
+        await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      const defaultModel = cupboard.nailerModel || 'stand_1';
+      await addNailers(scene, targetMesh, defaultModel);
+    } catch (error) {
+      console.error('Error turning nailer on:', error);
+    }
+  };
+
+  const turnNoBaseOn = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard || cupboard.noBaseEnabled || !scene || !isFullCupboard || isDisabled) return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { noBaseEnabled: true };
+      removeSkirtingPlanks(targetMesh);
+      updatePatch.skirtingEnabled = false;
+      if (cupboard.nailerEnabled) {
+        updatePatch.nailerEnabled = false;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (cupboard.nailerEnabled) {
+        await removeNailers(scene, targetMesh);
+      }
+      await applyNoBase(scene, targetMesh, true);
+    } catch (error) {
+      console.error('Error turning no base on:', error);
+    }
+  };
+
+  const handleBaseModeSelect = async (target: BaseMode) => {
+    if (!isFullCupboard || isQuickHideActive || isDisabled || !scene) return;
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard) return;
+    if (isAtBaseMode(cupboard, target)) return;
+
+    try {
+      if (target === 'noBase') {
+        await turnSkirtingOff();
+        await turnNailerOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !after.noBaseEnabled) {
+          await turnNoBaseOn();
         }
-
-        // We use 'No Base' (flush sides) as the foundation for skirting
-        if (!selectedObject.noBaseEnabled) {
-          await applyNoBase(scene, targetMesh, true);
+      } else if (target === 'nailer') {
+        await turnSkirtingOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !isAtBaseMode(after, 'nailer')) {
+          await turnNailerOn();
         }
-
-        await applyObjectUpdate(selectedObject, updatePatch);
-        addSkirtingPlanks(targetMesh, { height: defaultHeight, offset: defaultOffset });
       } else {
-        // Turning skirting OFF
-        removeSkirtingPlanks(targetMesh);
-
-        // If we want the normal extended base back
-        if (!selectedObject.noBaseEnabled) {
-          await applyNoBase(scene, targetMesh, false);
+        await turnNailerOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !after.skirtingEnabled) {
+          await turnSkirtingOn();
         }
-
-        await applyObjectUpdate(selectedObject, updatePatch);
       }
     } catch (error) {
-      console.error('Error toggling skirting:', error);
+      console.error('Error selecting base mode:', error);
     }
   };
 
@@ -1580,103 +1726,6 @@ const Sidebar: React.FC = () => {
     // Rebuild skirting
     removeSkirtingPlanks(targetMesh);
     addSkirtingPlanks(targetMesh, { height: newHeight, offset: newOffset });
-  };
-
-  const handleNailerToggle = async () => {
-    if (!isFullCupboard || isQuickHideActive || !selectedObject || !scene || !isLatestVersion)
-      return;
-
-    let targetMesh: THREE.Mesh | null = null;
-    scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-        targetMesh = obj;
-      }
-    });
-
-    if (!targetMesh) return;
-
-    try {
-      const isEnabled = !selectedObject.nailerEnabled;
-      const updatePatch: any = { nailerEnabled: isEnabled };
-
-      if (isEnabled) {
-        // Turning nailer ON -> automatically remove skirting planks.
-        removeSkirtingPlanks(targetMesh);
-        updatePatch.skirtingEnabled = false;
-      }
-
-      if (isEnabled && selectedObject.noBaseEnabled) {
-        // If turning nailer ON, we must turn off "No Base".
-        updatePatch.noBaseEnabled = false;
-      } else if (!isEnabled) {
-        // If turning nailer OFF, revert to "No Base" automatically if there are no extended side planks
-        if (!hasExtendedSidePlanks(targetMesh)) {
-          updatePatch.noBaseEnabled = true;
-        }
-      }
-
-      await applyObjectUpdate(selectedObject, updatePatch);
-
-      // Now conditionally execute 3D logic
-      if (updatePatch.noBaseEnabled === false) {
-        await applyNoBase(scene, targetMesh, false);
-      } else if (updatePatch.noBaseEnabled === true) {
-        await applyNoBase(scene, targetMesh, true);
-      }
-
-      if (isEnabled) {
-        const defaultModel = selectedObject.nailerModel || 'stand_1';
-        await addNailers(scene, targetMesh, defaultModel);
-      } else {
-        await removeNailers(scene, targetMesh);
-      }
-    } catch (error) {
-      console.error('Error toggling nailer:', error);
-    }
-  };
-
-  const handleNoBaseToggle = async () => {
-    if (!isFullCupboard || isDisabled || !selectedObject || !scene) return;
-
-    let targetMesh: THREE.Mesh | null = null;
-    scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-        targetMesh = obj;
-      }
-    });
-
-    if (!targetMesh) return;
-
-    try {
-      const isEnabled = !selectedObject.noBaseEnabled;
-
-      // We will batch the patch update for boolean changes
-      const updatePatch: any = { noBaseEnabled: isEnabled };
-
-      if (isEnabled) {
-        // Remove skirting planks immediately
-        removeSkirtingPlanks(targetMesh);
-        updatePatch.skirtingEnabled = false;
-
-        // Turn off Nailer if it was on
-        if (selectedObject.nailerEnabled) {
-          updatePatch.nailerEnabled = false;
-        }
-      }
-
-      // Apply boolean toggles to Redux FIRST so it doesn't overwrite coordinate shifts
-      await applyObjectUpdate(selectedObject, updatePatch);
-
-      // THEN apply transformations that will shift the cupboard and update position coordinates
-      if (isEnabled && selectedObject.nailerEnabled) {
-        await removeNailers(scene, targetMesh);
-      }
-
-      // Execute side plank height adjustments based on no base status
-      await applyNoBase(scene, targetMesh, isEnabled);
-    } catch (error) {
-      console.error('Error toggling no base:', error);
-    }
   };
 
   const handleNailerModelChange = async (model: string) => {
@@ -2901,48 +2950,54 @@ const Sidebar: React.FC = () => {
                     </div>
                     {!collapsed.base && (
                       <>
-                        <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
+                        <div className="mt-[0.5rem] flex w-full max-w-[13.5rem] flex-col font-[700]">
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                            Base type
+                          </p>
                           <div
-                            onClick={handleNoBaseToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.noBaseEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                            role="radiogroup"
+                            aria-label="Base type"
+                            className="flex w-full gap-[0.35rem]"
                           >
-                            <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.noBaseEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
-                            />
+                            {(
+                              [
+                                { id: 'noBase' as const, label: 'No Base' },
+                                { id: 'nailer' as const, label: 'Nailer' },
+                                { id: 'skirting' as const, label: 'Skirting' },
+                              ] as const
+                            ).map((opt) => {
+                              const active =
+                                selectedObject && getBaseMode(selectedObject) === opt.id;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={active}
+                                  disabled={isDisabled}
+                                  onClick={() => handleBaseModeSelect(opt.id)}
+                                  className={`min-w-0 flex-1 rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-[0.45rem] text-center text-[0.58rem] font-[600] transition-colors duration-150 ${
+                                    active
+                                      ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
+                                      : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
+                                  } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                >
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
                           </div>
 
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
-                            No Base
-                          </p>
-                        </div>
-                        <div className="mt-[0.5rem] mb-[0.2rem] flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleNailerToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.nailerEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.nailerEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
-                            />
-                          </div>
-
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[800] text-[var(--primary-color)]">
-                            Nailer
-                          </p>
                           {selectedObject?.nailerEnabled && (
-                            <div className="ml-[3.4rem] flex items-center gap-[0rem]">
+                            <div className="mt-[0.25rem] w-full max-w-[13.5rem]">
+                              <p className="mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568]">
+                                Nailer model
+                              </p>
                               <select
                                 value={selectedObject?.nailerModel || 'stand_1'}
                                 onChange={(e) => handleNailerModelChange(e.target.value)}
                                 disabled={isDisabled}
-                                className="mt-[0.5rem] ml-[0.65rem] flex h-[1.3rem] w-[4.25rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                className="flex h-[1.3rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                               >
                                 <option value="stand_1">Stand 1</option>
                                 <option value="stand_2">Stand 2</option>
@@ -2950,62 +3005,43 @@ const Sidebar: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleSkirtingToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${selectedObject?.skirtingEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
-                            <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                selectedObject?.skirtingEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                              }`}
-                            />
-                          </div>
 
-                          <p
-                            className={`mt-[0px] mb-[0px] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]`}
-                          >
-                            Skirting
-                          </p>
-                        </div>
-
-                        <div className={`mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]`}>
-                          <div className="mr-[1rem] px-3 py-2">
-                            <p
-                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${!selectedObject?.skirtingEnabled || isDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
-                            >
-                              Offset
-                            </p>
-                            <SidebarInputWithSuffix
-                              wrapperClassName="relative w-[5rem]"
-                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              suffix="MM"
-                              type="number"
-                              value={selectedObject?.skirtingOffset ?? 10}
-                              onChange={handleSkirtingOffsetChange}
-                              disabled={!selectedObject?.skirtingEnabled || isDisabled}
-                            />
+                        {selectedObject?.skirtingEnabled && (
+                          <div className="mt-[0.35rem] mb-[0rem] ml-[0rem] flex max-w-[13.5rem] flex-row gap-[0.8rem] pb-[0rem]">
+                            <div className="mr-[1rem] flex-1 px-0 py-0">
+                              <p
+                                className={`mt-[0px] mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568] ${isDisabled ? 'opacity-50' : ''}`}
+                              >
+                                Offset
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                value={selectedObject?.skirtingOffset ?? 10}
+                                onChange={handleSkirtingOffsetChange}
+                                disabled={isDisabled}
+                              />
+                            </div>
+                            <div className="mr-[0.5rem] flex-1 px-0 py-0">
+                              <p
+                                className={`mt-[0px] mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568] ${isDisabled ? 'opacity-50' : ''}`}
+                              >
+                                Height
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                value={selectedObject?.skirtingHeight ?? 75}
+                                onChange={handleSkirtingHeightChange}
+                                disabled={isDisabled}
+                              />
+                            </div>
                           </div>
-                          <div className="mr-[0.5rem] px-[3] py-[2]">
-                            <p
-                              className={`mt-[0px] mb-[0px] text-[0.56rem] font-[700] ${!selectedObject?.skirtingEnabled || isDisabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
-                            >
-                              Height
-                            </p>
-                            <SidebarInputWithSuffix
-                              wrapperClassName="relative w-[5rem]"
-                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              suffix="MM"
-                              type="number"
-                              value={selectedObject?.skirtingHeight ?? 75}
-                              onChange={handleSkirtingHeightChange}
-                              disabled={!selectedObject?.skirtingEnabled || isDisabled}
-                            />
-                          </div>
-                        </div>
+                        )}
                       </>
                     )}
                   </div>

@@ -2937,42 +2937,44 @@ const AddMaterialPopup: React.FC<Props> = ({
                 }
               }}
             >
-              {(Array.isArray(texturesList) ? texturesList : []).slice(0, visibleTextureCount).map((texture) => {
-                const isSelected = value === texture.id;
-                const imageUrl = texture.image_thumbnail
-                  ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image_thumbnail.startsWith('/') ? '' : '/'}${texture.image_thumbnail}`
-                  : null;
+              {(Array.isArray(texturesList) ? texturesList : [])
+                .slice(0, visibleTextureCount)
+                .map((texture) => {
+                  const isSelected = value === texture.id;
+                  const imageUrl = texture.image_thumbnail
+                    ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image_thumbnail.startsWith('/') ? '' : '/'}${texture.image_thumbnail}`
+                    : null;
 
-                return (
-                  <div
-                    key={texture.id}
-                    className={`${styles.textureItem} ${isSelected ? styles.selected : ''}`}
-                    onClick={() => {
-                      handleInputChange(field.key, texture.id);
-                      if (onActivate) onActivate();
-                    }}
-                    onMouseEnter={() => setHoveredTextureId(texture.id)}
-                    onMouseLeave={() => setHoveredTextureId(null)}
-                  >
-                    <div className={styles.textureImageContainer}>
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={texture.name}
-                          className={styles.textureThumbnail}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] text-slate-400">
-                          No Image
+                  return (
+                    <div
+                      key={texture.id}
+                      className={`${styles.textureItem} ${isSelected ? styles.selected : ''}`}
+                      onClick={() => {
+                        handleInputChange(field.key, texture.id);
+                        if (onActivate) onActivate();
+                      }}
+                      onMouseEnter={() => setHoveredTextureId(texture.id)}
+                      onMouseLeave={() => setHoveredTextureId(null)}
+                    >
+                      <div className={styles.textureImageContainer}>
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={texture.name}
+                            className={styles.textureThumbnail}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] text-slate-400">
+                            No Image
+                          </div>
+                        )}
+                        <div className={styles.textureOverlay}>
+                          <span className={styles.textureOverlayLabel}>{texture.name}</span>
                         </div>
-                      )}
-                      <div className={styles.textureOverlay}>
-                        <span className={styles.textureOverlayLabel}>{texture.name}</span>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         );
