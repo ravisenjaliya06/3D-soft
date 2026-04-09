@@ -3,6 +3,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { GLB_CACHE_NAME, TEXTURE_CACHE_NAME } from '../../constants';
 
 // --- Shared Loaders Configuration ---
 const dracoLoader = new DRACOLoader();
@@ -14,9 +15,6 @@ ktx2Loader.setTranscoderPath(
 );
 
 const glbParseCache = new Map<string, Promise<THREE.Object3D>>();
-
-const GLB_CACHE_NAME = 'bravento-glb-cache-v2';
-const TEXTURE_CACHE_NAME = 'bravento-texture-cache-v1';
 
 const prefetchedUrls = new Set<string>();
 
