@@ -186,6 +186,8 @@ export interface MeshObjectData {
   isMain?: boolean;
   openDirection?: DirectionType;
   connectedTo?: string[];
+  /** +1 / -1: which side of the wall centerline the drawn reference edge lies on (undefined = legacy centerline drawing). */
+  wallOffsetSign?: number;
   thickness?: number;
   selected?: boolean;
   drawerType?: string;

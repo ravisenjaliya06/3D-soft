@@ -11,3 +11,6 @@ export const TEXTURES_URLS = {
     ao: '/texture/platform/Marble012_2K-JPG_NormalDX.jpg',
   },
 };
+
+export const GLB_CACHE_NAME = 'bravento-glb-cache-v2';
+export const TEXTURE_CACHE_NAME = 'bravento-texture-cache-v1';

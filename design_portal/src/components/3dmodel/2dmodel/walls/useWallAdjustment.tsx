@@ -1,7 +1,13 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
-import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
+import {
+  convertPosition2DTo3D,
+  findRotation,
+  getWallReferenceEdgePoints,
+  referenceEdgeToCenterline,
+  WALL_THICKNESS_2D_UNITS,
+} from '../../sceneCreator/utils';
 import { RootState } from '../../store';
 import { updateObjects, updatePoints } from '../../store/dataSlice';
 import { WallPoint } from '../interface';
@@ -16,8 +22,11 @@ export function useWallAdjustment() {
     const selectedWall = objects.find((obj) => obj.id === wallId);
     if (!selectedWall) return;
 
-    // 1. Determine canonical fixed/moving points
-    const { startPoint, endPoint } = getWall2DPoints(selectedWall);
+    const thickness =
+      selectedWall.dimensions?.depth ?? selectedWall.thickness ?? WALL_THICKNESS_2D_UNITS;
+
+    // 1. Canonical fixed/moving points on the reference edge (user polyline)
+    const { startPoint, endPoint } = getWallReferenceEdgePoints(selectedWall);
     const isVertical = Math.abs(endPoint.x - startPoint.x) < Math.abs(endPoint.y - startPoint.y);
 
     const isSamePt = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
@@ -26,13 +35,13 @@ export function useWallAdjustment() {
     // Count connections to decide pivot point
     const startConnections = objects.filter((obj) => {
       if (obj.type !== FLOOR_PLAN_TYPES.WALL || obj.id === wallId) return false;
-      const pts = getWall2DPoints(obj);
+      const pts = getWallReferenceEdgePoints(obj);
       return isSamePt(pts.startPoint, startPoint) || isSamePt(pts.endPoint, startPoint);
     }).length;
 
     const endConnections = objects.filter((obj) => {
       if (obj.type !== FLOOR_PLAN_TYPES.WALL || obj.id === wallId) return false;
-      const pts = getWall2DPoints(obj);
+      const pts = getWallReferenceEdgePoints(obj);
       return isSamePt(pts.startPoint, endPoint) || isSamePt(pts.endPoint, endPoint);
     }).length;
 
@@ -80,6 +89,14 @@ export function useWallAdjustment() {
       y: canonicalFixed.y + uy * newLength,
     };
 
+    const wallSign = selectedWall.wallOffsetSign;
+    const { startPoint: c0, endPoint: c1 } = referenceEdgeToCenterline(
+      canonicalFixed,
+      newMovingPoint,
+      wallSign,
+      thickness
+    );
+
     const objectUpdates: (Partial<MeshObjectData> & { id: string })[] = [];
     const pointUpdates: WallPoint[] = [];
 
@@ -93,15 +110,12 @@ export function useWallAdjustment() {
       }
     });
 
-    // 3. Update selected wall
-    // Important: We must maintain the wall's logical orientation from its origin if possible,
-    // but the geometry utilities (position/rotation) always assume startPoint -> endPoint.
-    // So we pass the NEW fixed/moving points as start/end.
+    // 3. Update selected wall (3D box uses centerline derived from reference edge)
     const updatedSelectedWall = {
       id: selectedWall.id,
       dimensions: { ...selectedWall.dimensions, width: newLength },
-      position: convertPosition2DTo3D({ startPoint: canonicalFixed, endPoint: newMovingPoint }),
-      rotation: findRotation({ startPoint: canonicalFixed, endPoint: newMovingPoint }),
+      position: convertPosition2DTo3D({ startPoint: c0, endPoint: c1 }),
+      rotation: findRotation({ startPoint: c0, endPoint: c1 }),
     };
     objectUpdates.push(updatedSelectedWall);
 
@@ -109,7 +123,7 @@ export function useWallAdjustment() {
     objects.forEach((obj) => {
       if (obj.type !== FLOOR_PLAN_TYPES.WALL || obj.id === wallId) return;
 
-      const { startPoint: otherStart, endPoint: otherEnd } = getWall2DPoints(obj);
+      const { startPoint: otherStart, endPoint: otherEnd } = getWallReferenceEdgePoints(obj);
 
       const isSamePoint = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
         Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
@@ -128,11 +142,18 @@ export function useWallAdjustment() {
 
       if (changed) {
         const newWidth = Math.hypot(nextEnd.x - nextStart.x, nextEnd.y - nextStart.y);
+        const ot = obj.dimensions?.depth ?? obj.thickness ?? WALL_THICKNESS_2D_UNITS;
+        const { startPoint: oc0, endPoint: oc1 } = referenceEdgeToCenterline(
+          nextStart,
+          nextEnd,
+          obj.wallOffsetSign,
+          ot
+        );
         const updatedWall = {
           id: obj.id,
           dimensions: { ...obj.dimensions, width: newWidth },
-          position: convertPosition2DTo3D({ startPoint: nextStart, endPoint: nextEnd }),
-          rotation: findRotation({ startPoint: nextStart, endPoint: nextEnd }),
+          position: convertPosition2DTo3D({ startPoint: oc0, endPoint: oc1 }),
+          rotation: findRotation({ startPoint: oc0, endPoint: oc1 }),
         };
         objectUpdates.push(updatedWall);
       }
