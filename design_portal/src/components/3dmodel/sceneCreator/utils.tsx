@@ -182,7 +182,7 @@ export const getWall2DPoints = (wall: MeshObjectData) => {
 };
 
 /** Default wall thickness in 2D units (matches dimensions.depth for new walls). */
-export const WALL_THICKNESS_2D_UNITS = 30;
+export const WALL_THICKNESS_2D_UNITS = 20;
 
 /** Unit perpendicular to (ux, uy) pointing to the "left" of the forward direction (SVG / y-down space). */
 export function perpLeft2D(ux: number, uy: number) {
