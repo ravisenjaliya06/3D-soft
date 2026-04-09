@@ -2357,7 +2357,7 @@ const Sidebar: React.FC = () => {
                             </div>
 
                             {/* Divider */}
-                            <div className="ml-[0.2rem] mr-[0.3rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+                            <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
 
                             {/* Right Column */}
                             <div className="mr-[0.7rem] flex w-[6rem] flex-col">
@@ -2621,12 +2621,12 @@ const Sidebar: React.FC = () => {
                                 </div>
                               )}
 
-                              {/* CUPBOARD LAYOUT - 2x2 GRID */}
+                              {/* CUPBOARD LAYOUT - aligned with Camlock / Minifix columns */}
                               {!isPlankSelected && !isPlatformSelected && (
-                                <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
-                                  {/* Width */}
-                                  <div className="flex flex-col gap-[0.2rem]">
-                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                  {/* Left column: Width, Depth */}
+                                  <div className="flex w-[6rem] flex-col">
+                                    <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                       Width
                                     </p>
                                     <SidebarInputWithSuffix
@@ -2645,34 +2645,8 @@ const Sidebar: React.FC = () => {
                                       }
                                       disabled={isHorizontalPlank || isDisabled}
                                     />
-                                  </div>
 
-                                  {/* Height */}
-                                  <div className="flex flex-col gap-[0.2rem]">
-                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                      Height
-                                    </p>
-                                    <SidebarInputWithSuffix
-                                      wrapperClassName="relative w-[5rem]"
-                                      inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                      suffix="MM"
-                                      type="number"
-                                      min={1}
-                                      step="1"
-                                      value={dimensionsUI.height ?? ''}
-                                      onChange={(e) =>
-                                        handleDimensionChange(
-                                          'height',
-                                          Math.max(1, Number(e.target.value))
-                                        )
-                                      }
-                                      disabled={isVerticalPlank || isDisabled}
-                                    />
-                                  </div>
-
-                                  {/* Depth */}
-                                  <div className="flex flex-col gap-[0.2rem]">
-                                    <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                       Depth
                                     </p>
                                     <SidebarInputWithSuffix
@@ -2690,6 +2664,31 @@ const Sidebar: React.FC = () => {
                                         )
                                       }
                                       disabled={isQuickHideActive}
+                                    />
+                                  </div>
+
+                                  <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                  {/* Right column: Height */}
+                                  <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                                    <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Height
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      min={1}
+                                      step="1"
+                                      value={dimensionsUI.height ?? ''}
+                                      onChange={(e) =>
+                                        handleDimensionChange(
+                                          'height',
+                                          Math.max(1, Number(e.target.value))
+                                        )
+                                      }
+                                      disabled={isVerticalPlank || isDisabled}
                                     />
                                   </div>
                                 </div>
@@ -2765,29 +2764,54 @@ const Sidebar: React.FC = () => {
                       </button>
                     </div>
                     {!collapsed.mainPosition && (
-                      <div className="grid grid-cols-2 gap-[0.4rem]">
-                        {['x', 'y', 'z'].map((axis) => (
-                          <div key={axis} className="flex flex-col gap-[0.2rem]">
-                            <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
-                              {axis}
-                            </p>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={Number(
-                                selectedObject?.position?.[axis as 'x' | 'y' | 'z'] ?? 0
-                              ).toFixed(2)}
-                              onChange={(e) =>
-                                handleMainObjectPositionChange(
-                                  axis as 'x' | 'y' | 'z',
-                                  Number(e.target.value)
-                                )
-                              }
-                              disabled={isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        ))}
+                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                        <div className="flex w-[6rem] flex-col">
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                            x
+                          </p>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={Number(selectedObject?.position?.x ?? 0).toFixed(2)}
+                            onChange={(e) =>
+                              handleMainObjectPositionChange('x', Number(e.target.value))
+                            }
+                            disabled={isDisabled}
+                            className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+
+                          <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                            z
+                          </p>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={Number(selectedObject?.position?.z ?? 0).toFixed(2)}
+                            onChange={(e) =>
+                              handleMainObjectPositionChange('z', Number(e.target.value))
+                            }
+                            disabled={isDisabled}
+                            className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </div>
+
+                        <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                        <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                            y
+                          </p>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={Number(selectedObject?.position?.y ?? 0).toFixed(2)}
+                            onChange={(e) =>
+                              handleMainObjectPositionChange('y', Number(e.target.value))
+                            }
+                            disabled={isDisabled}
+                            className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2836,14 +2860,14 @@ const Sidebar: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Row 2: Label + Input */}
-                        <div className="mt-[0.6rem] flex items-center gap-[0.6rem]">
-                          <p className="mt-[0px] mb-[0px] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                        {/* Depth: label above input (aligned with Layout / Position field pattern) */}
+                        <div className="mt-[1rem] flex w-[6rem] flex-col font-[700]">
+                          <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                             Top Plank Depth
                           </p>
                           <SidebarInputWithSuffix
                             wrapperClassName="relative w-[5rem]"
-                            inputClassName="h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.2rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             suffix="MM"
                             type="number"
                             value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
