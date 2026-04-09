@@ -27,6 +27,8 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             backend
+            !backend/umaboy/media
+          sparse-checkout-cone-mode: false
           show-progress: false
 
       - name: Setup Python
