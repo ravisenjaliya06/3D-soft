@@ -6,7 +6,7 @@ import { WallPoint } from '../2dmodel/interface';
 import { gettingDesignID } from '../design';
 import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
-import { prefetchGLB } from '../helper/glbLoader';
+import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
@@ -41,14 +41,9 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
     return;
   }
 
-  // 1. Early Prefetch: Trigger downloads immediately
-  const uniqueUrls = new Set<string>();
+  // 1. Early Prefetch: Trigger texture downloads immediately
+  const uniqueTextureUrls = new Set<string>();
   catalogs.forEach((item) => {
-    // GLB Paths
-    if (item.path) {
-      uniqueUrls.add(item.path);
-    }
-
     // Material Textures
     if (item.material) {
       const mats = Array.isArray(item.material) ? item.material : [item.material];
@@ -56,15 +51,15 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
         m?.textures?.forEach((t) => {
           if (t.textureDetail?.image) {
             // Match MeshBuilder URL construction for cache hit
-            uniqueUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
+            uniqueTextureUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
           }
         });
       });
     }
   });
 
-  // Fire and forget prefetch
-  uniqueUrls.forEach((url) => prefetchGLB(url));
+  // Fire and forget prefetch for textures ONLY
+  uniqueTextureUrls.forEach((url) => prefetchTexture(url));
 
   // 2. Batch Processing: Yield to main thread to stop UI freezing
   const BATCH_SIZE = 50;
@@ -117,7 +112,7 @@ export const textureLoader = (
     // 1. Try to get Blob from Browser Cache (prefetched by getDesignCatalogs)
     if ('caches' in window) {
       try {
-        const cache = await caches.open('bravento-glb-cache-v1');
+        const cache = await caches.open('bravento-texture-cache-v1');
         const response = await cache.match(url);
         if (response) {
           const blob = await response.blob();

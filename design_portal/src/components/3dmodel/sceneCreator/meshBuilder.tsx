@@ -617,9 +617,10 @@ export class MeshBuilder {
     let material: THREE.Material;
 
     if (imageUrl) {
-      const fullUrl = imageUrl.startsWith('http') || imageUrl.startsWith('/')
-        ? imageUrl
-        : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imageUrl}`;
+      const fullUrl =
+        imageUrl.startsWith('http') || imageUrl.startsWith('/')
+          ? imageUrl
+          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${imageUrl}`;
       const texture = this.textureLoader.load(fullUrl);
       material = new THREE.MeshBasicMaterial({
         map: texture,
