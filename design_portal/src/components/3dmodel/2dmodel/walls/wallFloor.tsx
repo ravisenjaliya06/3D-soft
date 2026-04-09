@@ -1,5 +1,5 @@
 import { MeshObjectData } from '../../sceneCreator/interface';
-import { getWall2DPoints } from '../../sceneCreator/utils';
+import { getWallReferenceEdgePoints } from '../../sceneCreator/utils';
 import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
@@ -11,7 +11,7 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   const pointCounts = new Map<string, number>();
 
   walls.forEach((wall) => {
-    const { startPoint, endPoint } = getWall2DPoints(wall);
+    const { startPoint, endPoint } = getWallReferenceEdgePoints(wall);
     const key1 = `${Math.round(startPoint.x)},${Math.round(startPoint.y)}`;
     const key2 = `${Math.round(endPoint.x)},${Math.round(endPoint.y)}`;
 
@@ -95,8 +95,8 @@ export function findConnectedWalls(walls: MeshObjectData[]): MeshObjectData[][] 
         if (w.connectedTo && w.connectedTo.includes(current.id)) return true;
 
         // Fallback to geometric check
-        const { startPoint: s1, endPoint: e1 } = getWall2DPoints(current);
-        const { startPoint: s2, endPoint: e2 } = getWall2DPoints(w);
+        const { startPoint: s1, endPoint: e1 } = getWallReferenceEdgePoints(current);
+        const { startPoint: s2, endPoint: e2 } = getWallReferenceEdgePoints(w);
 
         // Simple point equality check (using rounding to avoid float issues)
         const isSamePoint = (p1: WallPoint, p2: WallPoint) =>

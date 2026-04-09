@@ -17,6 +17,7 @@ const initialState: DataState = {
   showCreationCancelHint: false,
   isAlignmentActive: false,
   isWallDrawingActive: false,
+  wallDrawStartPointId: null,
   hoverdMesh: null,
   points: [],
   floor: [],
@@ -172,12 +173,17 @@ const dataSlice = createSlice({
     },
     toggleWallDrawing: (state, action: PayloadAction<boolean>) => {
       state.isWallDrawingActive = action.payload;
+      // New session whenever the wall tool is toggled (toolbar or Esc); chain is only stored while tool stays on.
+      state.wallDrawStartPointId = null;
       // Turn off other modes when wall drawing is active
       if (action.payload) {
         state.isQuickHideActive = false;
         state.isMeasurementActive = false;
         state.isAlignmentActive = false;
       }
+    },
+    setWallDrawStartPointId: (state, action: PayloadAction<string | null>) => {
+      state.wallDrawStartPointId = action.payload;
     },
     setUnitType: (state, action: PayloadAction<'mm' | 'cm' | 'in'>) => {
       state.currentUnitType = action.payload;
@@ -247,6 +253,7 @@ export const {
   toggleQuickHide,
   toggleMeasurement,
   toggleWallDrawing,
+  setWallDrawStartPointId,
   setUnitType,
   setCreationCancelHint,
   togglAlignment,

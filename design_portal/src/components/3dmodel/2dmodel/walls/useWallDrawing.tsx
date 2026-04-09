@@ -9,9 +9,23 @@ import {
   MeshObjectData,
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
-import { convertPosition2DTo3D, findRotation, getWall2DPoints } from '../../sceneCreator/utils';
+import {
+  computeWallOffsetSignForNewWall,
+  convertPosition2DTo3D,
+  findRotation,
+  getWallReferenceEdgePoints,
+  referenceEdgeToCenterline,
+  WALL_THICKNESS_2D_UNITS,
+} from '../../sceneCreator/utils';
 import { RootState } from '../../store';
-import { addObjects, addPoint, removeObject, setWalls, updateObjects } from '../../store/dataSlice';
+import {
+  addObjects,
+  addPoint,
+  removeObject,
+  setWallDrawStartPointId,
+  setWalls,
+  updateObjects,
+} from '../../store/dataSlice';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -24,8 +38,8 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const objects = storeSelector.objects;
   const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
   const isWallDrawingActive = storeSelector.isWallDrawingActive;
+  const startPointId = storeSelector.wallDrawStartPointId;
 
-  const [startPointId, setStartPointId] = useState<string | null>(null);
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [inputLength, setInputLength] = useState<number | null>(null);
 
@@ -41,9 +55,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     };
   }
 
-  // Reset wall drawing
+  // Reset in-session preview (Esc also exits mode via toggleWallDrawing, which clears wallDrawStartPointId)
   const resetDrawing = () => {
-    setStartPointId(null);
+    dispatch(setWallDrawStartPointId(null));
     setPreviewEnd(null);
     setInputLength(null);
   };
@@ -62,12 +76,13 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   // Update wall connections which wall connected to each wall
   const updateWallConnections = (allWalls: MeshObjectData[]) => {
     return allWalls.map((currentWall) => {
-      const { startPoint: currentStart, endPoint: currentEnd } = getWall2DPoints(currentWall);
+      const { startPoint: currentStart, endPoint: currentEnd } =
+        getWallReferenceEdgePoints(currentWall);
 
       const connectedWallIds = allWalls
         .filter((otherWall) => otherWall.id !== currentWall.id)
         .filter((otherWall) => {
-          const { startPoint, endPoint } = getWall2DPoints(otherWall);
+          const { startPoint, endPoint } = getWallReferenceEdgePoints(otherWall);
 
           const isSamePoint = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
             Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
@@ -98,7 +113,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     // Prevent duplicate wall in either direction
     const isDuplicateWall = walls.some((existingWall: MeshObjectData) => {
-      const wallCoords = getWall2DPoints(existingWall);
+      const wallCoords = getWallReferenceEdgePoints(existingWall);
       const start = wallCoords.startPoint;
       const end = wallCoords.endPoint;
 
@@ -116,12 +131,22 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     });
 
     if (isDuplicateWall) {
-      setStartPointId(clickedPoint.id || null);
+      dispatch(setWallDrawStartPointId(clickedPoint.id || null));
       setInputLength(null);
       return;
     }
 
-    // Calculate wall length (distance between points)
+    const thickness = WALL_THICKNESS_2D_UNITS;
+    const wallOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
+
+    const { startPoint: centerStart, endPoint: centerEnd } = referenceEdgeToCenterline(
+      startPoint,
+      clickedPoint,
+      wallOffsetSign,
+      thickness
+    );
+
+    // Run length along reference edge equals centerline length for straight segments
     const wallLength = Math.hypot(clickedPoint.x - startPoint.x, clickedPoint.y - startPoint.y);
 
     const wallMeshData = {
@@ -133,10 +158,11 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       dimensions: {
         width: wallLength,
         height: WALL_DEFAULT_HEIGHT,
-        depth: 30,
+        depth: thickness,
       },
-      position: convertPosition2DTo3D({ startPoint, endPoint: clickedPoint }),
-      rotation: findRotation({ startPoint, endPoint: clickedPoint }),
+      wallOffsetSign,
+      position: convertPosition2DTo3D({ startPoint: centerStart, endPoint: centerEnd }),
+      rotation: findRotation({ startPoint: centerStart, endPoint: centerEnd }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
       material: [
         {
@@ -163,10 +189,11 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     const updatedWalls = updateWallConnections([...walls, wallMeshData]);
 
+    // Update Redux before 3D sync so helpers that read the store (e.g. SyncManager maps) see the new wall.
+    dispatch(setWalls(updatedWalls));
+
     const dataManager = new SyncManager(wallMeshData);
     dataManager.syncData();
-
-    dispatch(setWalls(updatedWalls));
 
     // Find rooms from walls
     const rooms = findRoomsFromWalls(updatedWalls);
@@ -302,7 +329,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     }
 
     // Set next start point for continuous drawing
-    setStartPointId(clickedPoint.id || null);
+    dispatch(setWallDrawStartPointId(clickedPoint.id || null));
     setPreviewEnd(null);
     setInputLength(null);
   };
@@ -320,7 +347,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     // If first point is not selected
     if (!startPointId) {
       const clickedPoint = findOrCreatePoint(snappedCoords.x, snappedCoords.y);
-      setStartPointId(clickedPoint.id || null);
+      dispatch(setWallDrawStartPointId(clickedPoint.id || null));
       setPreviewEnd(null);
       setInputLength(null);
       return;
@@ -370,11 +397,15 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           }
         : previewEnd;
 
+    const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);
+
     return {
       start,
       length: effectiveLength,
       angle: angleDeg,
       effectiveEnd,
+      offsetSign,
+      thickness: WALL_THICKNESS_2D_UNITS,
     };
   };
 
