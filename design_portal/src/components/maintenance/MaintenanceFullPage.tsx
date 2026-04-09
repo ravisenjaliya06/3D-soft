@@ -2,32 +2,12 @@
 
 const MaintenanceFullPage = () => {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%)',
-        }}
-      />
-
-      {/* Content container */}
-      <div className="relative z-10 px-8 text-center">
-        {/* Logo */}
-        <div
-          className="mb-8 text-5xl font-semibold tracking-tight"
-          style={{
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          BREVENTO
-        </div>
-
-        {/* Status icon with spinner */}
-        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-white/10">
+    <div className="maintenance-wrapper">
+      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+      <div className="glow"></div>
+      <div className="container">
+        <div className="logo">BREVENTO</div>
+        <div className="status-icon">
           <svg
             width="32"
             height="32"
@@ -37,39 +17,119 @@ const MaintenanceFullPage = () => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-[#6366f1]"
+            style={{ color: 'var(--primary)' }}
           >
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
           </svg>
-          <div
-            className="absolute h-20 w-20 animate-spin rounded-full border-[3px] border-[#6366f1] border-t-transparent"
-            style={{
-              animationDuration: '2s',
-            }}
-          />
         </div>
-
-        {/* Title */}
-        <h1 className="mb-4 text-4xl font-semibold text-white">System Update in Progress</h1>
-
-        {/* Description */}
-        <p className="mx-auto mb-8 max-w-md text-lg leading-relaxed text-[#94a3b8]">
+        <h1>System Update in Progress</h1>
+        <p>
           We're currently updating our servers to bring you new features. We'll be back online in
           just a few minutes.
         </p>
-
-        {/* Progress bar */}
-        <div className="mx-auto h-1 w-52 overflow-hidden rounded-sm bg-white/10">
-          <div
-            className="h-full w-[30%] animate-[move_2s_ease-in-out_infinite] rounded-sm"
-            style={{
-              background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-            }}
-          />
+        <div className="progress-bar">
+          <div></div>
         </div>
       </div>
 
       <style jsx>{`
+        .maintenance-wrapper {
+          --bg: #0a0a0a;
+          --primary: #6366f1;
+          --secondary: #a855f7;
+          --text: #ffffff;
+          --text-dim: #94a3b8;
+
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          font-family: 'Outfit', sans-serif;
+          background-color: var(--bg);
+          color: var(--text);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .container {
+          text-align: center;
+          padding: 2rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        .logo {
+          font-size: 3rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          letter-spacing: -1px;
+        }
+
+        .status-icon {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 2rem;
+          border: 3px solid rgba(255, 255, 255, 0.1);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .status-icon::after {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border: 3px solid var(--primary);
+          border-radius: 50%;
+          border-top-color: transparent;
+          animation: spin 2s linear infinite;
+        }
+
+        h1 {
+          font-size: 2.5rem;
+          margin-bottom: 1rem;
+          font-weight: 600;
+        }
+
+        p {
+          color: var(--text-dim);
+          font-size: 1.1rem;
+          max-width: 450px;
+          margin: 0 auto 2rem;
+          line-height: 1.6;
+        }
+
+        .progress-bar {
+          width: 200px;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          margin: 0 auto;
+          border-radius: 2px;
+          overflow: hidden;
+        }
+
+        .progress-bar div {
+          height: 100%;
+          background: linear-gradient(90deg, var(--primary), var(--secondary));
+          width: 30%;
+          border-radius: 2px;
+          animation: move 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
         @keyframes move {
           0% {
             transform: translateX(-100%);
@@ -82,6 +142,18 @@ const MaintenanceFullPage = () => {
             transform: translateX(200%);
             width: 30%;
           }
+        }
+
+        .glow {
+          position: absolute;
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 0;
+          pointer-events: none;
         }
       `}</style>
     </div>
