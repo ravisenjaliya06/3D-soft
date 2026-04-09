@@ -130,6 +130,3 @@ run the following command:
 check.bat
 ```
 
-
----------
-
