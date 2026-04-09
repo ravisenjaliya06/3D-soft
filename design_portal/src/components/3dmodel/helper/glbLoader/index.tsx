@@ -6,31 +6,20 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 // --- Shared Loaders Configuration ---
 const dracoLoader = new DRACOLoader();
-// Using standard Google CDN for decoders to ensure it works without local setup
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
 
 const ktx2Loader = new KTX2Loader();
-// Using standard Three.js CDN for Basis/KTX2 transcoder
 ktx2Loader.setTranscoderPath(
   'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r151/examples/jsm/libs/basis/'
 );
 
-// Runtime Memory Cache (RAM) to store parsed 3D models.
-// Prevents "hanging" by ensuring each model is only parsed once.
 const glbParseCache = new Map<string, Promise<THREE.Object3D>>();
 
-// Browser Cache Name for Models (Persistent Storage)
 const GLB_CACHE_NAME = 'bravento-glb-cache-v2';
-// Browser Cache Name for Textures
 const TEXTURE_CACHE_NAME = 'bravento-texture-cache-v1';
 
-// Track URLs that have already been prefetched or loaded locally
 const prefetchedUrls = new Set<string>();
 
-/**
- * Prefetches a GLB model file into the browser's native network cache.
- * Uses low priority and deduplication.
- */
 export const prefetchModel = (url: string): void => {
   if (!url || prefetchedUrls.has(url)) return;
 
@@ -65,14 +54,8 @@ export const prefetchTexture = async (url: string): Promise<void> => {
   }
 };
 
-/**
- * Load GLB with Hybrid Caching:
- * 1. Memory Cache (RAM) -> Instant
- * 2. Persistent Cache (Disk) -> Fast
- * 3. Network -> Normal
- */
 const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
-  // --- LAYER 1: Memory Cache (Instant Repeated Clicks) ---
+  // Memory Cache (Instant Repeated Clicks)
   if (glbParseCache.has(url)) {
     return glbParseCache.get(url)!;
   }
@@ -82,7 +65,6 @@ const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
       let activeUrl = url;
       let isLocalUrl = false;
 
-      // --- LAYER 2: Persistent Cache (Fast Return Sessions) ---
       if ('caches' in window) {
         try {
           const cache = await caches.open(GLB_CACHE_NAME);
@@ -101,7 +83,7 @@ const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
       loader.setDRACOLoader(dracoLoader);
       loader.setKTX2Loader(ktx2Loader);
 
-      // --- LAYER 3: Fetch from Network (Single-Pass) ---
+      // Fetch from Network (Single-Pass)
       if (!isLocalUrl) {
         try {
           const response = await fetch(url);
@@ -157,7 +139,6 @@ export const GLBLoader = (
 
   // Ensure loading starts directly
   const loadPromise = loadAndParseGLB(url);
-  // ... existing scaling logic follows ...
 
   // Return a new promise that resolves to a *clone* of the cached model
   return loadPromise.then((cachedModel) => {
