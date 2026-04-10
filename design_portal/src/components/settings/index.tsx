@@ -1738,18 +1738,8 @@ const Settings = () => {
             {addMambarPopup && (
               <div className={styles.createpopupOverlay}>
                 <div className={styles.createpopup}>
-                  <div
-                    className={styles.firstpart}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '1.5rem',
-                    }}
-                  >
-                    <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
-                      Invite New Member
-                    </h5>
+                  <div className={styles.invitePopupHeader}>
+                    <h5 className={styles.addmembartitle}>Invite New Member</h5>
                     <img
                       src={assets.addmemberclose}
                       className={styles.createclose}
@@ -1775,11 +1765,12 @@ const Settings = () => {
                       <div className={styles.createinputGroup}>
                         {addmemberfields.map((field, index) => (
                           <InputField
-                            className={styles.inputField}
+                            className={styles.popupInputField}
                             key={index}
                             borderColor="#e2e8f0"
                             {...field}
                             error=""
+                            fullWidth={true}
                             mediumField={true}
                           />
                         ))}
@@ -1788,26 +1779,17 @@ const Settings = () => {
                       <p className={styles.membertitle}>Assign Roles</p>
 
                       <div className={styles.checkboxgroup}>
-                        {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map(
+                        {['Account Manager', 'Mes Editor', 'Catalog Manager', 'Designer'].map(
                           (role) => (
-                            <div
-                              key={role}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                marginBottom: '0.5rem',
-                              }}
-                            >
+                            <label key={role} htmlFor={role} className={styles.roleItem}>
                               <input
                                 type="checkbox"
                                 id={role}
                                 onChange={handleCheckboxChange}
-                                style={{ width: '1rem', height: '1rem', accentColor: '#392579' }}
+                                className={styles.roleCheckbox}
                               />
-                              <label htmlFor={role} style={{ marginLeft: '0.5rem' }}>
-                                {role}
-                              </label>
-                            </div>
+                              <span>{role}</span>
+                            </label>
                           )
                         )}
                       </div>
