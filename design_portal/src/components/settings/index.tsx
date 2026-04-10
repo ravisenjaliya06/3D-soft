@@ -618,19 +618,6 @@ const Settings = () => {
     },
   ];
 
-  const EdgeBandingInputFields = [
-    {
-      label: 'Edge Banding',
-      type: 'number',
-      placeholder: 'Edge Banding',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setEdgeBandingDistance(parseInt(e.target.value)),
-      error: '',
-      minField: true,
-      value: edgeBandingDistance,
-    },
-  ];
-
   const firstfieldsgroup = [
     {
       label: 'User Name',
@@ -818,19 +805,6 @@ const Settings = () => {
       mediumField: true,
     },
   ];
-
-  //smit|Harsh only for design not add function
-  const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
-  const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
-
-  const handleEdgeBandingToggle = () => {
-    if (edgeBandingDisabled) return;
-    setEdgeBandingEnabled((prev) => !prev);
-  };
-
-  useEffect(() => {
-    setEdgeBandingDisabled(false);
-  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
@@ -1445,9 +1419,7 @@ const Settings = () => {
             {/* 3. Design Setting Tab */}
             {activeMenu === 'Design setting' && (
               <>
-                <div
-                  className={`${styles.heading_containar} ${styles.designSettingsMainTitle}`}
-                >
+                <div className={`${styles.heading_containar} ${styles.designSettingsMainTitle}`}>
                   <h4>Set your default design preferences</h4>
                 </div>
 
