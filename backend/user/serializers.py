@@ -1,8 +1,6 @@
 # Python imports
-import contextlib
 import secrets
 import string
-import threading
 from typing import Dict, List
 
 # Django imports
@@ -12,7 +10,6 @@ from django.contrib.auth.password_validation import (
 )
 from django.core import exceptions
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # External imports
@@ -24,14 +21,13 @@ from design.constant import NESTING_SHEET_HEIGHT, NESTING_SHEET_WIDTH
 from design.models import DesignSetting
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import MOBILE_NUMBER_LENGTH
-from user.logger import UserLogger as Logger
 from user.utils import (
     add_user_to_organization,
-    default_material_data,
-    duplicate_default_catalogs_for_organization,
-    duplicate_default_textures,
+    duplicate_data,
+    fetch_and_update_location,
     get_client_ip,
     get_ip_location,
+    run_background_task,
     verify_otp,
 )
 
@@ -141,28 +137,10 @@ class SignupSerializer(PhoneValidationSerializer):
         user.location = location
         user.save()
 
-        def fetch_and_update_location(user_id: int, ip_addr: str) -> None:
-            Logger.info(
-                {
-                    "message": f"Starting fetch_and_update_location for user {user_id}",
-                    "timestamp": timezone.now().isoformat(),
-                }
-            )
-            with contextlib.suppress(Exception):
-                loc = get_ip_location(ip_addr)
-                if loc:
-                    User.objects.filter(id=user_id).update(location=loc)
-            Logger.info(
-                {
-                    "message": f"Completed fetch_and_update_location for user {user_id}",
-                    "timestamp": timezone.now().isoformat(),
-                }
-            )
-
         if ip_address:
-            threading.Thread(
+            run_background_task(
                 target=fetch_and_update_location, args=(user.id, ip_address)
-            ).start()
+            )
 
         organization, _ = Organization.objects.get_or_create(
             name=f"{user.username}'s Organization",
@@ -176,24 +154,7 @@ class SignupSerializer(PhoneValidationSerializer):
 
         add_user_to_organization(user, organization, group_names, is_invited=False)
 
-        def duplicate_data(org: Organization) -> None:
-            Logger.info(
-                {
-                    "message": f"Starting duplicate_data for org {org.id}",
-                    "timestamp": timezone.now().isoformat(),
-                }
-            )
-            duplicate_default_textures(org)
-            default_material_data(org)
-            duplicate_default_catalogs_for_organization(org)
-            Logger.info(
-                {
-                    "message": f"Completed duplicate_data for org {org.id}",
-                    "timestamp": timezone.now().isoformat(),
-                }
-            )
-
-        threading.Thread(target=duplicate_data, args=(organization,)).start()
+        run_background_task(target=duplicate_data, args=(organization,))
 
         DesignSetting.objects.get_or_create(
             organization=organization,

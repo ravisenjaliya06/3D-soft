@@ -1,15 +1,21 @@
 # Python imports
+import contextlib
+import functools
 import ipaddress
 import smtplib
+import sys
+import threading
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List, Optional
+from typing import Callable, List, Optional, TypeVar
 from urllib.request import Request
 
 # Django imports
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import OperationalError
 from django.forms.models import model_to_dict
 from django.utils import timezone
 
@@ -22,6 +28,50 @@ from material.models import Company, FinishesLibrary, Material, Properties
 from umaboy.models import Organization, User, UserOrganizationPermission
 from user.logger import UserLogger as Logger
 from user.typing import EmailData
+
+T = TypeVar("T")
+
+
+def with_db_retry(max_retries: int = 5, delay: float = 0.5) -> Callable:
+    """
+    Decorator to retry a database operation if it fails due to a lock.
+    """
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @functools.wraps(func)
+        def wrapper(*args: any, **kwargs: any) -> T:
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except OperationalError as e:
+                    if "database table is locked" in str(e).lower():
+                        last_exception = e
+                        time.sleep(delay)
+                        continue
+                    raise e
+                except Exception as e:
+                    raise e
+            raise last_exception
+
+        return wrapper
+
+    return decorator
+
+
+def run_background_task(
+    target: Callable, args: tuple = (), kwargs: dict = None
+) -> None:
+    """
+    Run a task in a background thread, or synchronously if running in pytest.
+    """
+    if kwargs is None:
+        kwargs = {}
+
+    if "pytest" in sys.modules:
+        target(*args, **kwargs)
+    else:
+        threading.Thread(target=target, args=args, kwargs=kwargs).start()
 
 
 def send_email(email_data: EmailData) -> bool:
@@ -173,6 +223,7 @@ def add_user_to_organization(
     permission_instance.save()
 
 
+@with_db_retry()
 def default_material_data(organization: Organization) -> bool:
     """
     Creates default materials, companies, and their properties
@@ -229,6 +280,7 @@ def default_material_data(organization: Organization) -> bool:
     return True
 
 
+@with_db_retry()
 def duplicate_default_textures(organization: Organization) -> None:
     Logger.info(
         {
@@ -250,6 +302,7 @@ def duplicate_default_textures(organization: Organization) -> None:
     )
 
 
+@with_db_retry()
 def duplicate_default_catalogs_for_organization(organization: Organization) -> None:
     """
     Clone all default catalogs (organization IS NULL) into the given organization.
@@ -334,8 +387,52 @@ def get_ip_location(ip_address: str) -> Optional[str]:
                 f"{data.get('regionName', '')}, "
                 f"{data.get('country', '')}"
             ).strip(", ")
-
     except (ValueError, requests.RequestException):
         return None
 
     return None
+
+
+@with_db_retry()
+def fetch_and_update_location(user_id: int, ip_addr: str) -> None:
+    """
+    Fetch IP location and update user model.
+    """
+    Logger.info(
+        {
+            "message": f"Starting fetch_and_update_location for user {user_id}",
+            "timestamp": timezone.now().isoformat(),
+        }
+    )
+    with contextlib.suppress(Exception):
+        loc = get_ip_location(ip_addr)
+        if loc:
+            User.objects.filter(id=user_id).update(location=loc)
+    Logger.info(
+        {
+            "message": f"Completed fetch_and_update_location for user {user_id}",
+            "timestamp": timezone.now().isoformat(),
+        }
+    )
+
+
+@with_db_retry()
+def duplicate_data(org: Organization) -> None:
+    """
+    Duplicate default textures, materials, and catalogs for a new organization.
+    """
+    Logger.info(
+        {
+            "message": f"Starting duplicate_data for org {org.id}",
+            "timestamp": timezone.now().isoformat(),
+        }
+    )
+    duplicate_default_textures(org)
+    default_material_data(org)
+    duplicate_default_catalogs_for_organization(org)
+    Logger.info(
+        {
+            "message": f"Completed duplicate_data for org {org.id}",
+            "timestamp": timezone.now().isoformat(),
+        }
+    )
