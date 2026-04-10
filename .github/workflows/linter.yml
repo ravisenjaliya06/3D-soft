@@ -66,12 +66,12 @@ jobs:
         env:
           SECRET_KEY: 'testing-secret-key'
         run: |
-          pipenv run coverage run -m pytest
+          pipenv run pytest -n auto --no-migrations --cov=./ --cov-report=term
 
       - name: Check Code Coverage
         id: coverage
         run: |
-          pipenv run coverage report
+          pipenv run coverage report -m
           
           # Extract percentage number
           coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
