@@ -190,6 +190,9 @@ export interface MaterialPropertiesInput {
   description?: string;
   type?: string;
   selectedTexture?: string;
+  textures?: any[];
+  finishes?: any[];
+  finish_types?: any[];
 
   unitOfIssue?: string;
   defaultCost?: number;

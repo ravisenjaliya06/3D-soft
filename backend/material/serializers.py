@@ -772,13 +772,24 @@ class MaterialSerializer(serializers.ModelSerializer):
                 )
 
         # Update textures
-        if textures_data:
-            receive_textures = self.initial_data["textures"]
+        if "textures" in self.initial_data and textures_data:
+            receive_textures = self.initial_data.get("textures", [])
+            if receive_textures:
+                ids_to_keep = [t.get("id") for t in receive_textures if t.get("id")]
+                MaterialTexture.objects.filter(material=instance).exclude(
+                    id__in=ids_to_keep
+                ).delete()
+
             for texture in receive_textures:
                 texture_id = texture.get("id")
-                updated_texture = texture.get("texture")
-                MaterialTexture.objects.filter(id=texture_id).update(
+                updated_texture = texture.get("texture") or texture_id
+
+                updated_count = MaterialTexture.objects.filter(id=texture_id).update(
                     texture=updated_texture
                 )
+                if updated_count == 0 and updated_texture:
+                    MaterialTexture.objects.create(
+                        material=instance, texture_id=updated_texture
+                    )
         instance.save()
         return instance

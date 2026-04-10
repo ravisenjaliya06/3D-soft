@@ -132,13 +132,45 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   };
 
+  const fetchMaterialDetail = async (id: string) => {
+    try {
+      const endpoint = API_ENDPOINT.UPDATE_MATERIAL(id);
+
+      const response = await commonService.get(endpoint);
+      if (response && response.data) {
+        setFormData((prev) => ({
+          ...prev,
+          ...response.data,
+          textures: response.data.textures || [],
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching material detail:', error);
+    }
+  };
+
   useEffect(() => {
     fetchTextures();
   }, []);
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      const materialId = initialData.id || initialData.materialId;
+      if (materialId) {
+        fetchMaterialDetail(materialId);
+      }
+
+      const updatedFormData = { ...initialData };
+      if (Array.isArray(initialData.textures) && initialData.textures.length > 0) {
+        const initialTex = initialData.textures[0];
+        const libraryId = initialTex.texture_id || initialTex.texture;
+        if (libraryId) {
+          updatedFormData.selectedTexture =
+            typeof libraryId === 'object' ? libraryId.id : libraryId;
+        }
+      }
+
+      setFormData(updatedFormData);
       if (initialData.type) {
         setSelectedMaterialType(initialData.type);
       }
@@ -2846,10 +2878,16 @@ const AddMaterialPopup: React.FC<Props> = ({
       const textures: any[] = [];
 
       if (formData.selectedTexture) {
-        const selectedTextureObj = texturesList.find((t) => t.id === formData.selectedTexture);
-        if (selectedTextureObj) {
-          const updatedTextureObj = { ...selectedTextureObj, texture: selectedTextureObj.id };
-          textures.push(updatedTextureObj);
+        const existingRelation = (formData.textures || initialData?.textures)?.find((t: any) => {
+          const tid = t.texture_id || t.texture;
+          const lid = typeof tid === 'object' ? tid.id : tid;
+          return lid === formData.selectedTexture;
+        });
+
+        if (existingRelation) {
+          textures.push(existingRelation);
+        } else {
+          textures.push({ texture: formData.selectedTexture });
         }
       }
 
@@ -3220,15 +3258,26 @@ const AddMaterialPopup: React.FC<Props> = ({
                         currentPopup?.title === 'Finish Details'
                       ) {
                         const previewId = hoveredTextureId || formData.selectedTexture;
-                        const selectedTex = texturesList.find((t) => t.id === previewId);
+                        const selectedTexInLibrary = texturesList.find((t) => t.id === previewId);
+                        let displayImageUrl = null;
+                        if (selectedTexInLibrary?.image) {
+                          displayImageUrl = selectedTexInLibrary.image;
+                        } else if (
+                          !hoveredTextureId &&
+                          Array.isArray(formData.textures) &&
+                          formData.textures.length > 0
+                        ) {
+                          const savedTex = formData.textures[0];
+                          displayImageUrl = savedTex.image || savedTex.texture_detail?.image;
+                        }
 
-                        if (selectedTex?.image) {
-                          const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${selectedTex.image.startsWith('/') ? '' : '/'}${selectedTex.image}`;
+                        if (displayImageUrl) {
+                          const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${displayImageUrl.startsWith('/') ? '' : '/'}${displayImageUrl}`;
                           return (
                             <img
                               src={imageUrl}
                               className={styles.previewImage}
-                              alt="Texture Guide"
+                              alt="Texture Preview"
                             />
                           );
                         } else {
