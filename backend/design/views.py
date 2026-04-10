@@ -431,23 +431,22 @@ class NestAPIViewset(ModelViewSet):
             if os.path.exists(json_path):
                 with open(json_path, "r", encoding="utf-8") as f:
                     json_data = json.load(f)
-                    if request.data.get("minimal"):
-                        # Return only essential fields to optimize large datasets (as requested by user)
-                        minimal_data = []
-                        for p in json_data:
-                            minimal_data.append(
-                                {
-                                    "id": p.get("ID"),
-                                    "unique_id": p.get("Unique ID", p.get("ID")),
-                                    "name": p.get("name", p.get("Name")),
-                                    "width": p.get("width"),
-                                    "height": p.get("height"),
-                                    "depth": p.get("depth", p.get("thickness")),
-                                    "type": p.get("type"),  # Needed for frontend formatting
-                                }
-                            )
-                        return Response(minimal_data, status=HTTP_200_OK)
-                    return Response(json_data, status=HTTP_200_OK)
+                    if not request.data.get("minimal"):
+                        return Response(json_data, status=HTTP_200_OK)
+                    minimal_data = []
+                    for part in json_data:
+                        minimal_data.append(
+                            {
+                                "id": part.get("ID"),
+                                "unique_id": part.get("Unique ID", part.get("ID")),
+                                "name": part.get("name", part.get("Name")),
+                                "width": part.get("width"),
+                                "height": part.get("height"),
+                                "depth": part.get("depth", part.get("thickness")),
+                                "type": part.get("type"),
+                            }
+                        )
+                    return Response(minimal_data, status=HTTP_200_OK)
             else:
                 return Response(
                     {"error": "Nesting data not found after generation"},
