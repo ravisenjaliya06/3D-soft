@@ -167,4 +167,5 @@ backend/output_gcodes.zip
 
 # Media and Thumbnails
 backend/media/
+backend/umaboy/media/upload_textures/*
 **/CACHE/
