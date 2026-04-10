@@ -3,13 +3,12 @@ from unittest.mock import MagicMock, patch
 
 # External imports
 import pytest
-from material.models import FinishesLibrary, Material, Properties
-from umaboy.models import Organization
-from material.models import Company
 
 # App imports
 from design.nest import KEY_ID, KEY_NAME, KEY_UNIQUE_ID, KEY_WIDTH, NestingService
+from material.models import Company, Material, Properties
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
+from umaboy.models import Organization
 
 
 @pytest.mark.django_db
@@ -287,8 +286,9 @@ class NestXmlsTestCase(APIBaseTestCase):
 
     def test_generate_xmls_material_cache(self: "NestXmlsTestCase") -> None:
         """Cover material thickness cache population (lines 613-632)."""
+        # App imports
         from umaboy.models import Organization
-        from material.models import Properties
+
         org = Organization.objects.create(name="Test Org 2")
         mat = Material.objects.create(organization=org, name="Edge 1", type="Banding")
         Properties.objects.create(material=mat, thickness=2.5)
@@ -368,14 +368,11 @@ class NestXmlsTestCase(APIBaseTestCase):
                 "grooves": [None],
             }
         ]
-        with self.assertLogs("design.nest", level="WARNING") as cm:
-            with patch("pandas.ExcelWriter"), patch("pandas.DataFrame.to_excel"), patch(
-                "builtins.open"
-            ), patch("zipfile.ZipFile"):
-                service.generate_xmls(items, "out.any")
-                self.assertTrue(
-                    any("Error processing hole" in out for out in cm.output)
-                )
-                self.assertTrue(
-                    any("Error processing groove" in out for out in cm.output)
-                )
+        with self.assertLogs("design.nest", level="WARNING") as cm, patch(
+            "pandas.ExcelWriter"
+        ), patch("pandas.DataFrame.to_excel"), patch("builtins.open"), patch(
+            "zipfile.ZipFile"
+        ):
+            service.generate_xmls(items, "out.any")
+            self.assertTrue(any("Error processing hole" in out for out in cm.output))
+            self.assertTrue(any("Error processing groove" in out for out in cm.output))

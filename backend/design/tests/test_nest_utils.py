@@ -9,9 +9,9 @@ import pytest
 # App imports
 from design import test_nesting as tn
 from design.constant import KEY_UNIQUE_ID, KEY_WIDTH
-from design.nest import NestingService
+from design.nest import NestingService, nest
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-from design.nest import nest
+
 
 @pytest.mark.django_db
 class NestUtilsTestCase(APIBaseTestCase):

@@ -11,7 +11,6 @@ from rest_framework.test import APIRequestFactory
 from design.models import DesignCatalog
 from design.serializers import SceneGetSerializer, ScenePayloadSerializer
 from material.models import FinishesLibrary, Material, Properties
-from umaboy.models import Organization
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -123,7 +122,7 @@ class SerializersCoverageTestCase(APIBaseTestCase):
         mat1 = Material.objects.create(
             organization=self.organization, name="Mat 1", type="Banding"
         )
-        prop = Properties.objects.create(material=mat1, thickness=1.0)
+        Properties.objects.create(material=mat1, thickness=1.0)
         props1 = serializer._serialize_properties(mat1)
         self.assertTrue(len(props1) > 0)
 
