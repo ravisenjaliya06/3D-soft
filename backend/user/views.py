@@ -1,6 +1,5 @@
 # Python imports
 import secrets
-import threading
 from datetime import timedelta
 from typing import Tuple
 
@@ -69,7 +68,7 @@ from user.serializers import (
     UserProfileSerializer,
 )
 from user.typing import EmailData
-from user.utils import send_email, send_google_chat_notification
+from user.utils import run_background_task, send_email, send_google_chat_notification
 
 # Local imports
 from .permissions import AccountManager
@@ -136,7 +135,7 @@ class UserAuthViewset(ModelViewSet):
             }
             | common_info_logger
         )
-        threading.Thread(target=self._send_otp_email, args=(user, otp)).start()
+        run_background_task(target=self._send_otp_email, args=(user, otp))
         registration_message = (
             "🟢 *New User Registered*\n"
             "----------------------------------\n"
@@ -145,10 +144,10 @@ class UserAuthViewset(ModelViewSet):
             f"📅 *Joined:* {user.date_joined.strftime('%Y-%m-%d %H:%M')}\n"
             "----------------------------------"
         )
-        threading.Thread(
+        run_background_task(
             target=send_google_chat_notification,
             args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, registration_message),
-        ).start()
+        )
         Logger.info({"message": "User registration completed"} | common_info_logger)
         return Response(
             {
@@ -187,13 +186,13 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        threading.Thread(
+        run_background_task(
             target=self._send_registration_notification_to_admin,
             args=(
-                request.build_absolute_uri(reverse("admin_dashboard")),
+                request,
                 user,
             ),
-        ).start()
+        )
 
         Logger.info(
             {
@@ -249,10 +248,10 @@ class UserAuthViewset(ModelViewSet):
             f"🆔 *ID:* `{user.id}`\n"
             "----------------------------------\n"
         )
-        threading.Thread(
+        run_background_task(
             target=send_google_chat_notification,
             args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, login_message),
-        ).start()
+        )
 
         connected_organizations = [
             {"id": org.id, "name": org.name} for org in user.organizations.all()
@@ -295,7 +294,7 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.validated_data
         otp, expiration_time = self._generate_otp()
         self._set_user_otp(user, otp, expiration_time)
-        threading.Thread(target=self._send_otp_email, args=(user, otp)).start()
+        run_background_task(target=self._send_otp_email, args=(user, otp))
 
         Logger.info(
             {
@@ -322,9 +321,9 @@ class UserAuthViewset(ModelViewSet):
         token = AccessToken.for_user(user)
         _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
-        threading.Thread(
+        run_background_task(
             target=self._send_forgot_password_email, args=(user, user.email, token)
-        ).start()
+        )
 
         Logger.info(
             {
@@ -574,7 +573,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         token = AccessToken.for_user(user)
         _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
-        threading.Thread(
+        run_background_task(
             target=self._send_welcome_email,
             args=(
                 user,
@@ -586,7 +585,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
                 request.user.selected_organization.display_name
                 or request.user.selected_organization.name,
             ),
-        ).start()
+        )
         return Response(
             {
                 "message": "User invited in organization",
@@ -950,10 +949,10 @@ class AdminView(viewsets.ViewSet):
                 f"🆔 *ID:* `{user.id}`\n"
                 "----------------------------------\n"
             )
-            threading.Thread(
+            run_background_task(
                 target=send_google_chat_notification,
                 args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, ghost_message),
-            ).start()
+            )
 
         return JsonResponse({"message": "Ghost status updated successfully"})
 

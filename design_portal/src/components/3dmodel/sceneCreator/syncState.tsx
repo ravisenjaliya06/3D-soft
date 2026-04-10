@@ -38,9 +38,14 @@ export class SyncManager {
     this.scene = scene;
     this.isAutoSync = isAutoSync;
     // Convert snake_case keys from database to camelCase
-    this.data = convertKeysToCamel<MeshObjectData | MeshObjectData[]>(data);
-    this.isArray = Array.isArray(this.data);
-
+    const converted = convertKeysToCamel<MeshObjectData | MeshObjectData[]>(data);
+    if (Array.isArray(converted) && converted.length === 1) {
+      this.data = converted[0];
+      this.isArray = false;
+    } else {
+      this.data = converted;
+      this.isArray = Array.isArray(this.data);
+    }
     if (!this.isArray) {
       this.meshBuilder = new MeshBuilder(this.data as MeshObjectData);
     }
