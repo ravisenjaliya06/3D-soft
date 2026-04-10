@@ -39,6 +39,11 @@
   overflow-y: auto;
 }
 
+.mainContentProfile {
+  overflow: hidden;
+  align-items: flex-start;
+}
+
 /* ─── Profile/Menu Sidebar ─── */
 .profileMenu {
   width: 280px;
@@ -127,6 +132,7 @@
 /* ─── Main Content Card ─── */
 .profile {
   flex: 1;
+  width: 100%;
   max-width: 900px;
   background: white;
   border-radius: 16px;
@@ -138,6 +144,11 @@
   overflow-y: auto;
   min-height: 26.1rem;
   animation: fadeIn 0.3s ease-out;
+}
+
+.profileNoScroll {
+  overflow: hidden;
+  min-height: auto;
 }
 
 @keyframes fadeIn {
@@ -183,19 +194,26 @@
 .form {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .inputGroup {
-  gap: 0.5rem;
+  gap: 1rem;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  row-gap: 0;
-  width: 18rem;
-  margin-bottom: 0.7rem !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 0.4rem;
+  column-gap: 1.8rem;
+  width: 100%;
+  margin-bottom: 0.9rem !important;
 }
 
 .inputField {
   width: 19rem;
+}
+
+.profileInputField {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* Input Fields Wrapper Styling (Attempting to target the InputField component wrapper) */
@@ -967,4 +985,29 @@
 }
 .dropdownItem:hover {
   background-color: #f1f5f9;
+}
+
+@media (max-width: 1280px) {
+  .profile {
+    padding: 1.75rem;
+  }
+}
+
+@media (max-width: 1140px) {
+  .mainContentProfile {
+    gap: 1.2rem;
+    padding-right: 1.25rem;
+    padding-left: 1.25rem;
+  }
+
+  .profileMenu {
+    width: 240px;
+    min-height: auto;
+  }
+
+  .inputGroup {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: 0.5rem;
+  }
 }

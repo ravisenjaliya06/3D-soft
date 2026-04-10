@@ -632,6 +632,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: '',
       mediumField: true,
+      fullWidth: true,
       readOnly: true,
       InputProps: {
         readOnly: true,
@@ -646,6 +647,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
       mediumField: true,
+      fullWidth: true,
       readOnly: true,
       InputProps: {
         readOnly: true,
@@ -663,6 +665,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value),
       error: nameError,
       mediumField: true,
+      fullWidth: true,
     },
     {
       label: 'Phone Number',
@@ -672,6 +675,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setNumber(e.target.value),
       error: phoneError,
       mediumField: true,
+      fullWidth: true,
     },
   ];
 
@@ -1014,7 +1018,9 @@ const Settings = () => {
       </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
-        <div className={styles.mainContent}>
+      <div
+        className={`${styles.mainContent} ${activeMenu === 'profile' ? styles.mainContentProfile : ''}`}
+      >
           {/* ─── Sidebar Menu ─── */}
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
@@ -1102,7 +1108,7 @@ const Settings = () => {
           </div>
 
           {/* ─── Main Content Area ─── */}
-          <div className={styles.profile}>
+          <div className={`${styles.profile} ${activeMenu === 'profile' ? styles.profileNoScroll : ''}`}>
             {/* 1. Profile Tab */}
             {activeMenu === 'profile' && (
               <>
@@ -1130,12 +1136,22 @@ const Settings = () => {
                 <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.inputGroup}>
                     {firstfieldsgroup.map((field, index) => (
-                      <InputField key={index} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.profileInputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
                   <div className={styles.inputGroup}>
                     {secordfieldsgroup.map((field, index) => (
-                      <InputField key={index} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.profileInputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
                   <button className={styles.saveButton} onClick={handleSave}>
