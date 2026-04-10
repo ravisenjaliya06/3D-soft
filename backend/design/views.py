@@ -430,7 +430,24 @@ class NestAPIViewset(ModelViewSet):
             # File should exist now — read and return it
             if os.path.exists(json_path):
                 with open(json_path, "r", encoding="utf-8") as f:
-                    return Response(json.load(f), status=HTTP_200_OK)
+                    json_data = json.load(f)
+                    if request.data.get("minimal"):
+                        # Return only essential fields to optimize large datasets (as requested by user)
+                        minimal_data = []
+                        for p in json_data:
+                            minimal_data.append(
+                                {
+                                    "id": p.get("ID"),
+                                    "unique_id": p.get("Unique ID", p.get("ID")),
+                                    "name": p.get("name", p.get("Name")),
+                                    "width": p.get("width"),
+                                    "height": p.get("height"),
+                                    "depth": p.get("depth", p.get("thickness")),
+                                    "type": p.get("type"),  # Needed for frontend formatting
+                                }
+                            )
+                        return Response(minimal_data, status=HTTP_200_OK)
+                    return Response(json_data, status=HTTP_200_OK)
             else:
                 return Response(
                     {"error": "Nesting data not found after generation"},
