@@ -206,24 +206,21 @@ const Register = () => {
               </div>
               <div className={styles.inputGroup}>
                 {thirdfieldsgroup.map((field, index) => (
-                  <div key={index}>
-                    <InputField
-                      className={styles.inputField}
-                      {...field}
-                      borderColor="var(--primary-color-grey-2 )"
-                    />
-                    {field.label.includes('Password *') && !field.label.includes('Confirm') && (
-                      <div className={styles.passwordStrengthBar}>
-                        <PasswordStrengthBar
-                          password={password}
-                          minLength={8}
-                          scoreWords={['Weak', 'Okay', 'Average', 'Good', 'Strong']}
-                          shortScoreWord="Too short"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <InputField
+                    className={styles.inputField}
+                    key={index}
+                    {...field}
+                    borderColor="var(--primary-color-grey-2 )"
+                  />
                 ))}
+              </div>
+              <div className={styles.passwordStrengthBar} aria-live="polite">
+                <PasswordStrengthBar
+                  password={password}
+                  minLength={8}
+                  scoreWords={['Weak', 'Fair', 'Good', 'Strong', 'Strong']}
+                  shortScoreWord="Too short"
+                />
               </div>
               {error && <p className={styles.registererrorMessage}>{error}</p>}
               <div className={styles.termsContainer}>
