@@ -111,7 +111,15 @@ const Settings = () => {
         API_ENDPOINT.GET_ORGANIZATION_USERS
       );
       if (response.status === 200) {
-        const membersData = response.data.users;
+        const membersData = response.data.users.map((member) => {
+          const emailPrefix = member.email?.split('@')?.[0]?.trim();
+          const displayName =
+            member.name?.trim() || member.username?.trim() || emailPrefix || 'N/A';
+          return {
+            ...member,
+            displayName,
+          };
+        });
         setMembers(membersData);
       } else {
         console.error('Failed to fetch members:', response.status);
@@ -1628,7 +1636,13 @@ const Settings = () => {
                       <tbody>
                         {filteredMembers.map((member) => (
                           <tr key={member.id}>
-                            <td style={{ fontWeight: 500 }}>{member.name}</td>
+                            <td style={{ fontWeight: 500 }}>
+                              {member.displayName ||
+                                member.name ||
+                                member.username ||
+                                member.email?.split('@')?.[0] ||
+                                'N/A'}
+                            </td>
                             <td className={styles.emailbox}>{member.email}</td>
                             <td className={styles.rolebox}>
                               <div className={styles.roleContainer}>
