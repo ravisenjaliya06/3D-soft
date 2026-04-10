@@ -1018,9 +1018,9 @@ const Settings = () => {
       </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
-      <div
-        className={`${styles.mainContent} ${activeMenu === 'profile' ? styles.mainContentProfile : ''}`}
-      >
+        <div
+          className={`${styles.mainContent} ${activeMenu === 'profile' ? styles.mainContentProfile : ''}`}
+        >
           {/* ─── Sidebar Menu ─── */}
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
@@ -1108,7 +1108,9 @@ const Settings = () => {
           </div>
 
           {/* ─── Main Content Area ─── */}
-          <div className={`${styles.profile} ${activeMenu === 'profile' ? styles.profileNoScroll : ''}`}>
+          <div
+            className={`${styles.profile} ${activeMenu === 'profile' ? styles.profileNoScroll : ''}`}
+          >
             {/* 1. Profile Tab */}
             {activeMenu === 'profile' && (
               <>
