@@ -1,6 +1,6 @@
 # Python imports
-from typing import Dict, Optional
 import os
+from typing import Dict, Optional
 
 # Django imports
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -509,11 +509,10 @@ class FinishesLibrarySerializer(serializers.ModelSerializer):
         ext = os.path.splitext(value.name)[1].lower()
         if ext not in valid_extensions:
             raise serializers.ValidationError(
-                "Unsupported file extension. Supported: "
-                + ", ".join(valid_extensions)
+                "Unsupported file extension. Supported: " + ", ".join(valid_extensions)
             )
 
-        return value    
+        return value
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
