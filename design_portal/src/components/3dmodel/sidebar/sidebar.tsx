@@ -2464,23 +2464,23 @@ const Sidebar: React.FC = () => {
                       </div>
                       {!collapsed.shelf && (
                         <>
-                          <div className="flex items-center gap-[1.8rem]">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
+                          <div className="mr-[1.1rem] flex items-start justify-between gap-[0.75rem]">
+                            <p className="mt-[0rem] mb-[0.2rem] w-[6rem] text-[0.6rem] leading-[1.1] font-[700] text-[var(--primary-color)]">
                               Shelves Inner Distance
                             </p>
-                            <div className="flex items-center gap-[1rem]">
-                              <input
-                                type="number"
-                                min={0}
-                                max={25}
-                                value={shelvesInnerDistance.toFixed(2)}
-                                onChange={(e) =>
-                                  handleShelvesInnerDistanceChange(Number(e.target.value))
-                                }
-                                disabled={isDisabled}
-                                className="h-[1.2rem] w-[4rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
+                            <SidebarInputWithSuffix
+                              wrapperClassName="relative w-[5rem]"
+                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              suffix="MM"
+                              type="number"
+                              min={0}
+                              max={25}
+                              value={shelvesInnerDistance.toFixed(2)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                handleShelvesInnerDistanceChange(Number(e.target.value))
+                              }
+                              disabled={isDisabled}
+                            />
                           </div>
                         </>
                       )}
@@ -2655,7 +2655,7 @@ const Sidebar: React.FC = () => {
                                           </select>
                                         ) : (
                                           <SidebarInputWithSuffix
-                                            wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[3.5rem]"
+                                            wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[5rem]"
                                             inputClassName="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                             suffix="MM"
                                             min={field.min}
