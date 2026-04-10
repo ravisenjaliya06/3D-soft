@@ -9,7 +9,7 @@ import {
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
-import { updateObjects, updatePoints } from '../../store/dataSlice';
+import { updatePoints } from '../../store/dataSlice';
 import { WallPoint } from '../interface';
 import { getFloorPolygon } from './wallFloor';
 
@@ -188,7 +188,6 @@ export function useWallAdjustment() {
     if (pointUpdates.length > 0) {
       dispatch(updatePoints(pointUpdates));
     }
-    dispatch(updateObjects(objectUpdates));
 
     // 7. Sync changes to 3D scene
     // Prepare ALL updated objects including the recalculated floors
