@@ -1445,7 +1445,9 @@ const Settings = () => {
             {/* 3. Design Setting Tab */}
             {activeMenu === 'Design setting' && (
               <>
-                <div className={styles.heading_containar}>
+                <div
+                  className={`${styles.heading_containar} ${styles.designSettingsMainTitle}`}
+                >
                   <h4>Set your default design preferences</h4>
                 </div>
 
@@ -1530,7 +1532,8 @@ const Settings = () => {
                       ))}
                     </div>
                   </div>
-
+                </div>
+                <div className={`${styles.mainContentminifix} ${styles.lastbox}`}>
                   <div className={styles.firstbox}>
                     <p>Camlock Screw Hole</p>
                     <div className={styles.minifixfieldsgroupdesign}>
@@ -1542,16 +1545,6 @@ const Settings = () => {
                 </div>
 
                 <div className={styles.lastbox}>
-                  <div className="flex items-center gap-[2rem]" style={{ marginBottom: '1rem' }}>
-                    <p style={{ margin: 0 }}>Edge Banding</p>
-                    <div
-                      onClick={handleEdgeBandingToggle}
-                      className={`${styles.toggleSwitch} ${edgeBandingEnabled ? styles.active : ''} ${edgeBandingDisabled ? styles.disabled : ''}`}
-                    >
-                      <div className={styles.toggleKnob} />
-                    </div>
-                  </div>
-
                   <div
                     className={styles.lastboxindiv}
                     style={{
@@ -1562,11 +1555,6 @@ const Settings = () => {
                       gap: '2rem',
                     }}
                   >
-                    <div className={styles.minifixfieldsgroupdesign}>
-                      {EdgeBandingInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
-                      ))}
-                    </div>
                     <button
                       className={styles.design_profile_save_button}
                       onClick={handleSaveDesignSettings}
