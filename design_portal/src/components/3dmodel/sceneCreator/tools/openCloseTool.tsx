@@ -193,6 +193,11 @@ export class CabinetMotionController {
   public toggleAll(scene: THREE.Scene, shouldOpen: boolean) {
     if (!scene) return;
 
+    // Ensure all world matrices are up to date before we start wrapping in pivots
+    scene.updateMatrixWorld(true);
+
+    const nodesToToggle: THREE.Mesh[] = [];
+
     scene.traverse((node) => {
       if (!(node instanceof THREE.Mesh)) return;
       const { type } = node.userData;
@@ -204,8 +209,19 @@ export class CabinetMotionController {
 
       const isCurrentlyClosed = node.userData.isClosed ?? true;
 
+      // Only toggle if the node's state doesn't match the desired shouldOpen state
       if (shouldOpen === isCurrentlyClosed) {
-        isDoor ? this.toggleDoor(node) : isDrawer ? this.toggleDrawer(node) : null;
+        nodesToToggle.push(node);
+      }
+    });
+
+    // Now safely iterate over the collected nodes and toggle them
+    nodesToToggle.forEach((node) => {
+      const type = node.userData.type;
+      if (type === PART_TYPES.DOOR) {
+        this.toggleDoor(node);
+      } else if (type === PART_TYPES.DRAWER) {
+        this.toggleDrawer(node);
       }
     });
   }
