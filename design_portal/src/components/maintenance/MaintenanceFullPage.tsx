@@ -3,7 +3,10 @@
 const MaintenanceFullPage = () => {
   return (
     <div className="maintenance-wrapper">
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap"
+        rel="stylesheet"
+      />
       <div className="glow"></div>
       <div className="container">
         <div className="logo">BREVENTO</div>
@@ -148,7 +151,7 @@ const MaintenanceFullPage = () => {
           position: absolute;
           width: 400px;
           height: 400px;
-          background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);

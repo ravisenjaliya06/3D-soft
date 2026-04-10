@@ -597,6 +597,8 @@ class MaterialSerializer(serializers.ModelSerializer):
             if properties_id:
                 properties_data.pop("model_file", None)
 
+            properties_data.pop("unit_of_issue", None)
+
         material_type = attrs.get("type")
         if not properties_data:
             return

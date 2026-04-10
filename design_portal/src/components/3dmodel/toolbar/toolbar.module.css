@@ -980,7 +980,7 @@
   position: fixed;
   overflow: hidden;
   top: 4rem;
-  left: 16.5rem;
+  left: calc(3.8rem + 12rem + 0.125rem);
   width: 12rem;
   height: 91%;
   background: rgba(255, 255, 255, 0.85);
