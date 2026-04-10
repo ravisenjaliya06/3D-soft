@@ -9,7 +9,7 @@ const MaintenanceFullPage = () => {
       />
       <div className="glow"></div>
       <div className="container">
-        <div className="logo">BREVENTO</div>
+        <div className="logo">BRAVENTO</div>
         <div className="status-icon">
           <svg
             width="32"
