@@ -2884,10 +2884,11 @@ const AddMaterialPopup: React.FC<Props> = ({
           return lid === formData.selectedTexture;
         });
 
-        textures.push({
-          texture: formData.selectedTexture,
-          id: existingRelation?.id,
-        });
+        if (existingRelation) {
+          textures.push(existingRelation);
+        } else {
+          textures.push({ texture: formData.selectedTexture });
+        }
       }
 
       return { finishes, finish_types, textures };

@@ -738,6 +738,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         properties_data = validated_data.pop("properties", None)
         finishes_data = validated_data.pop("finishes", [])
         finish_types_data = validated_data.pop("finish_types", [])
+        textures_data = validated_data.pop("textures", [])
 
         # Update main Material fields
         for attr, value in validated_data.items():
@@ -771,7 +772,7 @@ class MaterialSerializer(serializers.ModelSerializer):
                 )
 
         # Update textures
-        if "textures" in self.initial_data:
+        if "textures" in self.initial_data and textures_data:
             receive_textures = self.initial_data.get("textures", [])
             if receive_textures:
                 ids_to_keep = [t.get("id") for t in receive_textures if t.get("id")]
