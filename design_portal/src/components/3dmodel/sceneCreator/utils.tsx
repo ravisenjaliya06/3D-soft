@@ -6,10 +6,11 @@ import { WallPoint } from '../2dmodel/interface';
 import { gettingDesignID } from '../design';
 import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
-import { prefetchGLB } from '../helper/glbLoader';
+import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
+import { TEXTURE_CACHE_NAME } from '../constants';
 import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
@@ -41,14 +42,9 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
     return;
   }
 
-  // 1. Early Prefetch: Trigger downloads immediately
-  const uniqueUrls = new Set<string>();
+  // 1. Early Prefetch: Trigger texture downloads immediately
+  const uniqueTextureUrls = new Set<string>();
   catalogs.forEach((item) => {
-    // GLB Paths
-    if (item.path) {
-      uniqueUrls.add(item.path);
-    }
-
     // Material Textures
     if (item.material) {
       const mats = Array.isArray(item.material) ? item.material : [item.material];
@@ -56,15 +52,15 @@ export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDV
         m?.textures?.forEach((t) => {
           if (t.textureDetail?.image) {
             // Match MeshBuilder URL construction for cache hit
-            uniqueUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
+            uniqueTextureUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
           }
         });
       });
     }
   });
 
-  // Fire and forget prefetch
-  uniqueUrls.forEach((url) => prefetchGLB(url));
+  // Fire and forget prefetch for textures ONLY
+  uniqueTextureUrls.forEach((url) => prefetchTexture(url));
 
   // 2. Batch Processing: Yield to main thread to stop UI freezing
   const BATCH_SIZE = 50;
@@ -117,7 +113,7 @@ export const textureLoader = (
     // 1. Try to get Blob from Browser Cache (prefetched by getDesignCatalogs)
     if ('caches' in window) {
       try {
-        const cache = await caches.open('bravento-glb-cache-v1');
+        const cache = await caches.open(TEXTURE_CACHE_NAME);
         const response = await cache.match(url);
         if (response) {
           const blob = await response.blob();
@@ -180,6 +176,153 @@ export const getWall2DPoints = (wall: MeshObjectData) => {
     wall.rotation?.y ?? 0
   );
 };
+
+/** Default wall thickness in 2D units (matches dimensions.depth for new walls). */
+export const WALL_THICKNESS_2D_UNITS = 20;
+
+/** Unit perpendicular to (ux, uy) pointing to the "left" of the forward direction (SVG / y-down space). */
+export function perpLeft2D(ux: number, uy: number) {
+  return { x: -uy, y: ux };
+}
+
+/**
+ * Reference edge = user-drawn polyline (one face of the wall). Centerline is offset from it by (sign * t/2) along perpLeft(direction).
+ */
+export function getWallReferenceEdgePoints(wall: MeshObjectData): {
+  startPoint: WallPoint;
+  endPoint: WallPoint;
+} {
+  const { startPoint: cs, endPoint: ce } = getWall2DPoints(wall);
+  if (wall.wallOffsetSign == null) {
+    return { startPoint: { ...cs }, endPoint: { ...ce } };
+  }
+  const t = wall.dimensions?.depth ?? wall.thickness ?? WALL_THICKNESS_2D_UNITS;
+  const sign = wall.wallOffsetSign;
+  const dx = ce.x - cs.x;
+  const dy = ce.y - cs.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return { startPoint: { ...cs }, endPoint: { ...ce } };
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const half = (sign * t) / 2;
+  return {
+    startPoint: { x: cs.x - pl.x * half, y: cs.y - pl.y * half },
+    endPoint: { x: ce.x - pl.x * half, y: ce.y - pl.y * half },
+  };
+}
+
+/** Build centerline endpoints from reference edge for 3D placement. */
+export function referenceEdgeToCenterline(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  wallOffsetSign: number | undefined,
+  thickness: number
+): { startPoint: WallPoint; endPoint: WallPoint } {
+  if (wallOffsetSign == null) {
+    return { startPoint: { ...refStart }, endPoint: { ...refEnd } };
+  }
+  const sign = wallOffsetSign;
+  const dx = refEnd.x - refStart.x;
+  const dy = refEnd.y - refStart.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return { startPoint: { ...refStart }, endPoint: { ...refEnd } };
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const half = (sign * thickness) / 2;
+  return {
+    startPoint: {
+      x: refStart.x + pl.x * half,
+      y: refStart.y + pl.y * half,
+    },
+    endPoint: {
+      x: refEnd.x + pl.x * half,
+      y: refEnd.y + pl.y * half,
+    },
+  };
+}
+
+/**
+ * When starting a new segment at refStart, choose offset sign so the strip stays on the same side as an existing wall
+ * when continuing forward from its end, or the opposite side when attaching from its start (reverse direction).
+ */
+export function computeWallOffsetSignForNewWall(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  existingWalls: MeshObjectData[]
+): number {
+  const tol = 0.75;
+  const near = (a: WallPoint, b: WallPoint) =>
+    Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+  for (const w of existingWalls) {
+    const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(w);
+    const sw = w.wallOffsetSign ?? 1;
+    if (near(refStart, re)) {
+      return sw;
+    }
+    if (near(refStart, rs)) {
+      return -sw;
+    }
+  }
+  return 1;
+}
+
+/** Footprint from reference edge endpoints (shared by preview and placed walls). */
+export function getFootprintQuadFromReferenceEdge(
+  rs: WallPoint,
+  re: WallPoint,
+  sign: number,
+  t: number
+): [WallPoint, WallPoint, WallPoint, WallPoint] {
+  const dx = re.x - rs.x;
+  const dy = re.y - rs.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return [rs, re, re, rs];
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const oppRs = { x: rs.x + pl.x * sign * t, y: rs.y + pl.y * sign * t };
+  const oppRe = { x: re.x + pl.x * sign * t, y: re.y + pl.y * sign * t };
+  return [rs, re, oppRe, oppRs];
+}
+
+/** Four corners of the wall footprint in order: ref start → ref end → opposite end → opposite start (closed quad). */
+export function getWallFootprintQuad(
+  wall: MeshObjectData
+): [WallPoint, WallPoint, WallPoint, WallPoint] {
+  const t = wall.dimensions?.depth ?? wall.thickness ?? WALL_THICKNESS_2D_UNITS;
+  const sign = wall.wallOffsetSign ?? 1;
+
+  if (wall.wallOffsetSign == null) {
+    const { startPoint: cs, endPoint: ce } = getWall2DPoints(wall);
+    const dx = ce.x - cs.x;
+    const dy = ce.y - cs.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) {
+      return [cs, ce, ce, cs];
+    }
+    const ux = dx / len;
+    const uy = dy / len;
+    const pl = perpLeft2D(ux, uy);
+    const h = t / 2;
+    const a = { x: cs.x - pl.x * h, y: cs.y - pl.y * h };
+    const b = { x: ce.x - pl.x * h, y: ce.y - pl.y * h };
+    const c = { x: ce.x + pl.x * h, y: ce.y + pl.y * h };
+    const d = { x: cs.x + pl.x * h, y: cs.y + pl.y * h };
+    return [a, b, c, d];
+  }
+
+  const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(wall);
+  return getFootprintQuadFromReferenceEdge(rs, re, sign, t);
+}
 
 export const convertPosition3DTo2D = (
   position: THREE.Vector3,

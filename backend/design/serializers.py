@@ -261,6 +261,24 @@ class SceneGetSerializer(serializers.Serializer):
         if edge_data is not None:
             data["edge_banding"] = edge_data
 
+        # Merge parent and child materials by type (child overrides parent)
+        child_materials_qs = catalog.materials.all()
+        parent_materials_qs = (
+            catalog.parent.materials.all()
+            if catalog.parent_id
+            else Material.objects.none()
+        )
+
+        type_to_material: dict[str, Material] = {}
+        # Start with parent (defaults)
+        for m in parent_materials_qs:
+            type_to_material[m.type] = m
+        # Apply child overrides
+        for m in child_materials_qs:
+            type_to_material[m.type] = m
+
+        merged_materials = list(type_to_material.values())
+
         return {
             **data,
             "id": str(catalog.id),
@@ -270,7 +288,7 @@ class SceneGetSerializer(serializers.Serializer):
                 f"{settings.MEDIA_URL}{catalog.image.name}" if catalog.image else None
             ),
             "parent": str(catalog.parent_id) if catalog.parent_id else None,
-            "material": self._serialize_materials_without_cnc(catalog.materials.all()),
+            "material": self._serialize_materials_without_cnc(merged_materials),
         }
 
 

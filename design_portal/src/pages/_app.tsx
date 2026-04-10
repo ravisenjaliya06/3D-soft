@@ -1,4 +1,3 @@
-import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
 import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -38,7 +37,6 @@ const poppinsSemiBold = localFont({
 });
 
 export default function MyApp({ Component, pageProps }: AppProps) {
-  useGLBPreloader(); // Start preloading 3D assets in background
   const router = useRouter();
   const showMaintenanceBanner =
     router.pathname === REDIRECT.LOGIN || router.pathname === REDIRECT.DASHBOARD;

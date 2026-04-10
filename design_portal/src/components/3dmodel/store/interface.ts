@@ -179,6 +179,8 @@ export interface DataState {
   isAlignmentActive: boolean;
   hoverdMesh: THREE.Mesh | null;
   isWallDrawingActive: boolean;
+  /** Current vertex id for in-progress wall chain (survives 2D view remount). */
+  wallDrawStartPointId: string | null;
   points: WallPoint[];
   floor: Floor[];
   globalDoorsOpen?: boolean;

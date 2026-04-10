@@ -1,6 +1,4 @@
 # Python imports
-
-# Python imports
 from typing import Optional
 
 # Django imports
@@ -19,6 +17,7 @@ from umaboy.constant import DELETE, GET, POST, PUT
 
 # Local imports
 from .models import Company, FinishesLibrary, Material
+from .pagination import StandardResultsSetPagination
 from .serializers import (
     CompanySerializer,
     FinishesLibrarySerializer,
@@ -41,6 +40,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class FinishesLibraryListAPIView(viewsets.ModelViewSet):
     serializer_class = FinishesLibrarySerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self: "FinishesLibraryListAPIView") -> QuerySet[FinishesLibrary]:
         type = self.request.query_params.get("type")
@@ -137,7 +137,14 @@ class CatalogPartMaterialViewSet(viewsets.ViewSet):
             )
 
         # Replace any existing with only this material for now (quick, deterministic behavior)
-        catalog_part.materials.set([material])
+        # Preserve other material types; replace only this material's type
+        existing_materials = list(
+            catalog_part.materials.filter(
+                organization=request.user.selected_organization, is_deleted=False
+            )
+        )
+        preserved_materials = [m for m in existing_materials if m.type != material.type]
+        catalog_part.materials.set([*preserved_materials, material])
         return Response(
             {"detail": "Material assigned successfully."}, status=HTTP_200_OK
         )

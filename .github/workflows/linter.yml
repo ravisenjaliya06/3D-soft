@@ -25,6 +25,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          sparse-checkout: |
+            backend
+            !backend/umaboy/media
+          sparse-checkout-cone-mode: false
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -74,9 +78,9 @@ jobs:
           
           echo "Current Coverage: $coverage_percentage%"
           
-          # Logic: Fail if coverage is below 70%
-          if (( $(echo "$coverage_percentage < 70" | bc -l) )); then
-            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 70%)"
+          # Logic: Fail if coverage is below 90%
+          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 90%)"
             echo "Please add more tests."
             exit 1
           else

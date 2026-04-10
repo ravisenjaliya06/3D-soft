@@ -12,7 +12,7 @@ import {
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -28,7 +28,7 @@ import {
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
-import { GLBLoader, prefetchGLB } from '../helper/glbLoader';
+import { GLBLoader, prefetchModel } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -66,6 +66,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
+  const prefetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear prefetch timer on unmount
+  useEffect(() => {
+    return () => {
+      if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+    };
+  }, []);
 
   // When parent switches to 2d view, ensure toolbar shows Home and close any secondary panels
   useEffect(() => {
@@ -85,24 +93,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   }, [viewMode]);
 
-  useEffect(() => {
-    const allModels = [
-      ...SOFA,
-      ...FRIDGE,
-      ...STOVE,
-      ...TV,
-      ...DINNER_TABLE,
-      ...FLOWER,
-      ...MICROWAVE,
-      ...CENTER_STUDY_TABLE,
-    ];
-
-    allModels.forEach((item) => {
-      if (item.path) {
-        prefetchGLB(item.path);
-      }
-    });
-  }, []);
   const [catalogMenu, setcatalogMenu] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
@@ -144,12 +134,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         console.log(cabinetResponse.data, 'cabinetResponse.data');
       }
       setCabinetItems(cabinetResponse.data);
-      // Preload any GLB models found in the fetched cabinet items
-      cabinetResponse.data.flat().forEach((item: any) => {
-        if (item.path) {
-          prefetchGLB(item.path);
-        }
-      });
     }
   };
 
@@ -840,7 +824,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
                       <span>{option}</span>
-                      <div className={styles.left_toolbarlist_arrow}>
+                      <div
+                        className={`${styles.left_toolbarlist_arrow} ${
+                          option === 'Furniture' ? styles.arrowAlways : styles.arrowHidden
+                        }`}
+                      >
                         <img src={assets.left_arrow} alt="arrow" />
                       </div>
                     </div>
@@ -969,6 +957,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 <div
                   key={item.id}
                   className={styles.submenuItem}
+                  onMouseEnter={() => {
+                    if (item.path) {
+                      // Debounce prefetch: only fetch if hovered for 50ms
+                      if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+                      prefetchTimerRef.current = setTimeout(() => {
+                        prefetchModel(item.path);
+                      }, 50);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCabinetItemSelect(e, item);

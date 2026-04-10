@@ -164,3 +164,7 @@ cython_debug/
 #vscode
 .vscode/
 backend/output_gcodes.zip
+
+# Media and Thumbnails
+backend/media/
+**/CACHE/

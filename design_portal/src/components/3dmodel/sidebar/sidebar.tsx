@@ -96,8 +96,10 @@ const Sidebar: React.FC = () => {
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
   const [isInvisibleBox, setIsIncisibleBox] = useState<boolean>(false);
   const [textureData, setTextureData] = useState<any[]>([]);
-  const [visibleCount, setVisibleCount] = useState(40);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [isFetchingTextures, setIsFetchingTextures] = useState<boolean>(false);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(LOAD_MORE_INCREMENT);
   const [isMainObject, setIsMainObject] = useState<boolean>(false);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
@@ -106,6 +108,8 @@ const Sidebar: React.FC = () => {
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
   const isUpdatingPositionRef = useRef(false);
+  // Ref for intersection observer to handle infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
   //temporarily disabled
   const sidebarRef = useRef<HTMLDivElement | null>(null);
 
@@ -272,18 +276,61 @@ const Sidebar: React.FC = () => {
     }
   }, [selectedObject, scene]);
 
-  const getTextures = async () => {
-    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
-    if (response.status === 200) {
-      setTextureData(response.data);
+  const getTextures = async (url?: string, search?: string) => {
+    setIsFetchingTextures(true);
+    let fetchUrl = url || API_ENDPOINT.GET_TEXTURES;
+
+    // If starting a fresh search from page 1
+    if (!url && search) {
+      // API_ENDPOINT.GET_TEXTURES already has a '?' for type=Texture
+      fetchUrl = `${API_ENDPOINT.GET_TEXTURES}&search=${encodeURIComponent(search)}`;
+    }
+
+    try {
+      const response = await commonService.get(fetchUrl);
+      if (response.status === 200) {
+        const results = response.data.results || response.data;
+        if (url) {
+          setTextureData((prev) => [...prev, ...results]);
+        } else {
+          setTextureData(results);
+        }
+        setNextPageUrl(response.data.next || null);
+      }
+    } catch (error) {
+      console.error('Error fetching textures:', error);
+    } finally {
+      setIsFetchingTextures(false);
     }
   };
+
+  // When the observerTarget becomes visible, load more results if they exist
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextPageUrl && !isFetchingTextures) {
+          getTextures(nextPageUrl);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [nextPageUrl, isFetchingTextures, isTextureListOpen]);
 
   useEffect(() => {
     getTextures();
   }, []);
 
-  // let handleObject = objects.find((obj) => obj.id === targetId);
   const handleObject = findMesh(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
@@ -360,19 +407,13 @@ const Sidebar: React.FC = () => {
     );
   });
 
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => {
-      const newCount = prev + LOAD_MORE_INCREMENT;
-      return Math.min(newCount, filteredTextures.length);
-    });
-  };
-
-  // Check if there are more textures to load
-  const hasMoreTextures = visibleCount < filteredTextures.length;
-
   // Reset visible count when search query changes
   useEffect(() => {
-    setVisibleCount(LOAD_MORE_INCREMENT);
+    const timer = setTimeout(() => {
+      // Only search from backend if not empty, otherwise load first page
+      getTextures(undefined, textureSearchQuery);
+    }, 500); // Debounce
+    return () => clearTimeout(timer);
   }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
@@ -1026,22 +1067,22 @@ const Sidebar: React.FC = () => {
         {
           label: isVerticalPlank ? 'Thickness' : 'Width',
           name: 'width',
-          type: isVerticalPlank ? 'select' : 'number',
+          type: 'number',
           options: isVerticalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.width,
-          disabled: isVerticalPlank ? false : isHorizontalPlank || isDisabled,
+          disabled: true,
           onValueChange: (value: number) => handleDimensionChange('width', value),
           controls: isVerticalPlank ? null : ['Left', 'Right'],
         },
         {
           label: isHorizontalPlank ? 'Thickness' : 'Height',
           name: 'height',
-          type: isHorizontalPlank ? 'select' : 'number',
+          type: 'number',
           options: isHorizontalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.height,
-          disabled: isHorizontalPlank ? false : isVerticalPlank || isDisabled || isPlatformSelected,
+          disabled: true,
           onValueChange: (value: number) => handleDimensionChange('height', value),
           controls: isHorizontalPlank ? null : ['Top', 'Bottom'],
         },
@@ -2334,6 +2375,7 @@ const Sidebar: React.FC = () => {
                         </>
                       )}
                     </div>
+                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                   </>
                 )}
               </div>
@@ -2718,32 +2760,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* ================= Handle/Handleless Selector ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Handle Mode
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-[0.5rem]">
-                      <select
-                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        value={handleMode}
-                        onChange={(e) => {
-                          const value = e.target.value as 'handle' | 'handleless';
-                          handleHandleModeChange(value);
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <option value="handle">Handle</option>
-                        <option value="handleless">Handleless</option>
-                      </select>
-                    </div>
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
+              {/* Moved to end after Material as per design sequence */}
 
               {/* ================= Top Plank ================= */}
               {!isQuickHideActive && isSettingOpen && isFullCupboard && (
@@ -3281,7 +3298,7 @@ const Sidebar: React.FC = () => {
                               </button>
                             </div>
 
-                            {filteredTextures.length === 0 ? (
+                            {filteredTextures.length === 0 && !isFetchingTextures ? (
                               <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
                                 <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
                                   No textures found
@@ -3291,14 +3308,14 @@ const Sidebar: React.FC = () => {
                                 </span>
                               </div>
                             ) : (
-                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
+                              filteredTextures.map((m, idx) => (
                                 <div
                                   key={`${m.option}-${idx}`}
                                   className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
                                   onClick={() => handleTextureSelect(m)}
                                 >
                                   <img
-                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
+                                    src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || '').replace(/\/$/, '')}${m.image_thumbnail || m.image}`}
                                     alt={m.name}
                                     className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
                                   />
@@ -3313,27 +3330,17 @@ const Sidebar: React.FC = () => {
                                 </div>
                               ))
                             )}
+                            {/* Sentinal element for Infinite Scroll */}
+                            <div ref={observerTarget} className="h-[10px] w-full" />
                           </div>
-                          {hasMoreTextures && (
-                            <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.3rem]">
-                              <button
-                                className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                                onClick={handleLoadMore}
-                              >
-                                Load More
-                                <div className="flex h-[0.5rem] w-[0.5rem] items-center justify-center p-[0rem]">
-                                  <img
-                                    className="h-[0.8rem] w-[0.8rem]"
-                                    src={assets.loadMore}
-                                    alt="Load More"
-                                  />
-                                </div>
-                              </button>
+                          {isFetchingTextures && (
+                            <div className="flex justify-center py-2">
+                              <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
+                                Loading...
+                              </span>
                             </div>
                           )}
                         </div>
-
-                        {/* Load More Button at bottom */}
                       </div>
                     )}
 
@@ -3389,6 +3396,34 @@ const Sidebar: React.FC = () => {
                   </>
                 )}
               </div>
+              <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+              {/* Standalone Handle Mode section after Material */}
+              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                <>
+                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
+                    <div className="flex items-center justify-between">
+                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                        Handle Mode
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-[0.5rem]">
+                      <select
+                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                        value={handleMode}
+                        onChange={(e) => {
+                          const value = e.target.value as 'handle' | 'handleless';
+                          handleHandleModeChange(value);
+                        }}
+                        disabled={isDisabled}
+                      >
+                        <option value="handle">Handle</option>
+                        <option value="handleless">Handleless</option>
+                      </select>
+                    </div>
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                </>
+              )}
             </>
           )}
         </>
