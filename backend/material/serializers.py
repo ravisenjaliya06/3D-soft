@@ -1,5 +1,9 @@
 # Python imports
-from typing import Dict
+import os
+from typing import Dict, Optional
+
+# Django imports
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # External imports
 from rest_framework import serializers
@@ -492,6 +496,23 @@ class FinishesLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = FinishesLibrary
         fields = ["id", "name", "organization", "type", "image", "image_thumbnail"]
+        read_only_fields = ["organization"]
+
+    def validate_image(
+        self: "FinishesLibrarySerializer", value: Optional["InMemoryUploadedFile"]
+    ) -> "InMemoryUploadedFile":
+        if not value:
+            return value
+
+        valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext not in valid_extensions:
+            raise serializers.ValidationError(
+                "Unsupported file extension. Supported: " + ", ".join(valid_extensions)
+            )
+
+        return value
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
