@@ -11,6 +11,7 @@ from rest_framework.test import APIRequestFactory
 from design.models import DesignCatalog
 from design.serializers import SceneGetSerializer, ScenePayloadSerializer
 from material.models import FinishesLibrary, Material, Properties
+from umaboy.models import Organization
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
 
 
@@ -109,7 +110,51 @@ class SerializersCoverageTestCase(APIBaseTestCase):
 
     def test_attach_material_with_data(self: "SerializersCoverageTestCase") -> None:
         catalog = DesignCatalog.objects.create(name="Part", type="plank")
-        payload = {"material": [{"name": "New Mat", "type": "Banding"}]}
         serializer = ScenePayloadSerializer(context={"request": self.drf_request})
+        payload = {"material": [{"name": "M1", "type": "Banding"}]}
         serializer._attach_material(catalog, payload, self.drf_request)
         self.assertEqual(catalog.materials.count(), 1)
+
+    def test_serialize_properties_edge_cases(
+        self: "SerializersCoverageTestCase",
+    ) -> None:
+        """Cover property lookup logic (lines 223-229, 232)."""
+        serializer = SceneGetSerializer()
+        mat1 = Material.objects.create(
+            organization=self.organization, name="Mat 1", type="Banding"
+        )
+        prop = Properties.objects.create(material=mat1, thickness=1.0)
+        props1 = serializer._serialize_properties(mat1)
+        self.assertTrue(len(props1) > 0)
+
+        mat2 = Material.objects.create(
+            organization=self.organization, name="Mat 2", type="Banding"
+        )
+        props2 = serializer._serialize_properties(mat2)
+        self.assertEqual(props2, {})
+
+    def test_to_representation_legacy_edgebanding(
+        self: "SerializersCoverageTestCase",
+    ) -> None:
+        """Cover edgeBanding and edgebands keys (lines 257, 259)."""
+        serializer = SceneGetSerializer()
+        c1 = DesignCatalog.objects.create(
+            organization=self.organization, name="C1", data={"edgeBanding": "A"}
+        )
+        data1 = serializer.to_representation(c1)
+        self.assertEqual(data1["edge_banding"], "A")
+
+        c2 = DesignCatalog.objects.create(
+            organization=self.organization, name="C2", data={"edgebands": "B"}
+        )
+        data2 = serializer.to_representation(c2)
+        self.assertEqual(data2["edge_banding"], "B")
+
+    def test_scene_payload_serializer_no_items_explicit(
+        self: "SerializersCoverageTestCase",
+    ) -> None:
+        """Cover items=None in ScenePayloadSerializer.create (line 354)."""
+        serializer = ScenePayloadSerializer(context={"request": self.drf_request})
+        validated_data = {"design_id": str(self.design.id), "items": None}
+        result = serializer.create(validated_data)
+        self.assertEqual(result, {})

@@ -249,3 +249,82 @@ class NestCoreTestCase(APIBaseTestCase):
             self.assertTrue(os.path.exists(xml_files[0]))
         finally:
             shutil.rmtree(tmpdir)
+
+    def test_pack_rectangles_missing_keys(self: "NestCoreTestCase") -> None:
+        """Trigger KeyError in _pack_rectangles (lines 112-113)."""
+        service = NestingService(width=1000, height=1000)
+        packer = service._prepare_packer(service.SORT_ALGORITHMS[0])
+        remaining_files = {"bad": {"type": "rectangle"}}
+        service._pack_rectangles(packer, remaining_files)
+        packer.pack()
+        self.assertEqual(len(packer.rect_list()), 0)
+
+    def test_process_packed_results_zero_bin(self: "NestCoreTestCase") -> None:
+        """Trigger efficiency = 0.0 when bin size is zero (line 152)."""
+        service = NestingService(width=0, height=0)
+        packer = service._prepare_packer(service.SORT_ALGORITHMS[0])
+        _, eff, _ = service._process_packed_results(packer, {})
+        self.assertEqual(eff, 0.0)
+
+    def test_optimize_company_prefix_variants(self: "NestCoreTestCase") -> None:
+        """Cover barcode prefix logic for different company names (lines 257-264)."""
+        files = {
+            "1": {
+                "width": 100,
+                "height": 100,
+                "depth": 18,
+                "name": "P1",
+                "type": "rectangle",
+            }
+        }
+        service = NestingService(width=1000, height=1000)
+        items = service.optimize(files, company_name="MY Company")
+        self.assertTrue(items[0][KEY_UNIQUE_ID].startswith("MY"))
+
+        items = service.optimize(files, company_name="my company")
+        self.assertTrue(items[0][KEY_UNIQUE_ID].startswith("MC"))
+
+        items = service.optimize(files, company_name="Bravento")
+        self.assertTrue(items[0][KEY_UNIQUE_ID].startswith("BR"))
+
+    def test_optimize_retry_packing_failure(self: "NestCoreTestCase") -> None:
+        """Cover packing retry mechanism and warnings (lines 291, 295-299)."""
+        files = {
+            "1": {
+                "width": 2000,
+                "height": 2000,
+                "depth": 18,
+                "name": "Too Big",
+                "type": "rectangle",
+            }
+        }
+        service = NestingService(width=1000, height=1000)
+        with self.assertLogs("design.nest", level="WARNING") as cm:
+            items = service.optimize(files)
+            self.assertEqual(len(items), 0)
+            self.assertTrue(
+                any("Could not pack remaining files" in out for out in cm.output)
+            )
+
+    def test_map_texture_grain_invalid(self: "NestCoreTestCase") -> None:
+        """Cover error handling in texture mapping (lines 441-442)."""
+        self.assertEqual(NestingService.map_texture_grain({"not": "a string"}), 0)
+        self.assertEqual(NestingService.map_texture_grain(None), 0)
+
+    def test_parse_mm_thickness_variants_extended(self: "NestCoreTestCase") -> None:
+        """Cover invalid/negative thickness parsing (lines 462-463, 466)."""
+        self.assertIsNone(NestingService.parse_mm_thickness("0 mm"))
+        self.assertIsNone(NestingService.parse_mm_thickness("0.0 mm"))
+
+    def test_extract_plausible_thickness_invalid(self: "NestCoreTestCase") -> None:
+        """Cover invalid numeric tokens (lines 477-478)."""
+        self.assertIsNone(NestingService.extract_plausible_thickness("Edge 10.0"))
+
+    def test_lookup_banding_thickness_by_name_empty(self: "NestCoreTestCase") -> None:
+        """Cover empty name lookups (line 490)."""
+        self.assertIsNone(NestingService.lookup_banding_thickness_by_name(" ", {}))
+
+    def test_resolve_edge_thickness_plausible(self: "NestCoreTestCase") -> None:
+        """Cover successful plausible thickness resolution (line 574)."""
+        service = NestingService(width=100, height=100)
+        self.assertEqual(service.resolve_edge_thickness("Thick 1.5 gloss", {}), 1.5)

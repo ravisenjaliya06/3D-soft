@@ -3,6 +3,9 @@ from unittest.mock import MagicMock, patch
 
 # External imports
 import pytest
+from material.models import FinishesLibrary, Material, Properties
+from umaboy.models import Organization
+from material.models import Company
 
 # App imports
 from design.nest import KEY_ID, KEY_NAME, KEY_UNIQUE_ID, KEY_WIDTH, NestingService
@@ -268,3 +271,111 @@ class NestXmlsTestCase(APIBaseTestCase):
         self.assertTrue(mock_open.called)
         self.assertTrue(mock_writer.called)
         self.assertTrue(mock_zip.called)
+
+    def test_generate_xmls_company_filter(self: "NestXmlsTestCase") -> None:
+        org = Organization.objects.create(name="Test Org")
+        comp = Company.objects.create(organization=org, name="Special Company")
+        Material.objects.create(
+            organization=org, name="Material 1", type="Banding", company=comp
+        )
+
+        service = NestingService(width=1000, height=1000)
+        with patch("pandas.ExcelWriter"), patch("pandas.DataFrame.to_excel"), patch(
+            "builtins.open"
+        ), patch("zipfile.ZipFile"):
+            service.generate_xmls([], "out.any", company_name="Special Company")
+
+    def test_generate_xmls_material_cache(self: "NestXmlsTestCase") -> None:
+        """Cover material thickness cache population (lines 613-632)."""
+        from umaboy.models import Organization
+        from material.models import Properties
+        org = Organization.objects.create(name="Test Org 2")
+        mat = Material.objects.create(organization=org, name="Edge 1", type="Banding")
+        Properties.objects.create(material=mat, thickness=2.5)
+
+        service = NestingService(width=1000, height=1000)
+        with patch("pandas.ExcelWriter"), patch("pandas.DataFrame.to_excel"), patch(
+            "builtins.open"
+        ), patch("zipfile.ZipFile"):
+            service.generate_xmls([], "out.any")
+
+    def test_generate_xmls_coordinate_logic_edge_cases(
+        self: "NestXmlsTestCase",
+    ) -> None:
+        """Cover various face IDs and hole types (lines 791-792, 797-814)."""
+        service = NestingService(width=1000, height=1000)
+        items = [
+            {
+                KEY_UNIQUE_ID: "P1",
+                KEY_WIDTH: 100,
+                "height": 200,
+                "depth": 18,
+                "minifix_holes": [
+                    {
+                        "type": "CAM",
+                        "face": "3",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                    {
+                        "type": "CAM",
+                        "face": "4",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                    {
+                        "type": "CAM",
+                        "face": "2",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                    {
+                        "type": "CAM",
+                        "face": "1",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "6",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "1",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "2",
+                    },
+                ],
+            }
+        ]
+        with patch("pandas.ExcelWriter"), patch("pandas.DataFrame.to_excel"), patch(
+            "builtins.open"
+        ), patch("zipfile.ZipFile"):
+            service.generate_xmls(items, "out.any")
+
+    def test_generate_xmls_processing_errors(self: "NestXmlsTestCase") -> None:
+        """Cover exception handling for holes and grooves (lines 862-864, 889-891)."""
+        service = NestingService(width=1000, height=1000)
+        items = [
+            {
+                KEY_UNIQUE_ID: "P1",
+                KEY_WIDTH: 100,
+                "height": 200,
+                "depth": 18,
+                "minifix_holes": [None],
+                "grooves": [None],
+            }
+        ]
+        with self.assertLogs("design.nest", level="WARNING") as cm:
+            with patch("pandas.ExcelWriter"), patch("pandas.DataFrame.to_excel"), patch(
+                "builtins.open"
+            ), patch("zipfile.ZipFile"):
+                service.generate_xmls(items, "out.any")
+                self.assertTrue(
+                    any("Error processing hole" in out for out in cm.output)
+                )
+                self.assertTrue(
+                    any("Error processing groove" in out for out in cm.output)
+                )

@@ -8,9 +8,10 @@ import pytest
 
 # App imports
 from design import test_nesting as tn
+from design.constant import KEY_UNIQUE_ID, KEY_WIDTH
 from design.nest import NestingService
 from tests.testing import DEFAULT_DATABASE, APIBaseTestCase
-
+from design.nest import nest
 
 @pytest.mark.django_db
 class NestUtilsTestCase(APIBaseTestCase):
@@ -177,3 +178,65 @@ class NestUtilsTestCase(APIBaseTestCase):
             service.lookup_banding_thickness_by_name("thicker edge", cache), 2.0
         )
         self.assertEqual(service.lookup_banding_thickness_by_name("thick", cache), 2.0)
+
+    def test_nest_wrapper_exception(self: "NestUtilsTestCase") -> None:
+        with patch(
+            "design.nest.NestingService.optimize", side_effect=Exception("Nest error")
+        ):
+            response = nest("out", {}, 1000, 1000)
+            self.assertEqual(response.status_code, 500)
+            data = json.loads(response.content)
+            self.assertEqual(data["error"], "Nest error")
+
+    def test_generate_svg_coordinate_and_visual_logic(
+        self: "NestUtilsTestCase",
+    ) -> None:
+        """Cover coordinate logic and visual mapping in generate_svg (lines 1127-1128, 1162-1165, 1171-1181)."""
+        service = NestingService(width=1000, height=1000)
+        items = [
+            {
+                KEY_UNIQUE_ID: "P1",
+                KEY_WIDTH: 100,
+                "height": 200,
+                "depth": 18,
+                "x": 0,
+                "y": 0,
+                "sheet_num": "S1",
+                "is_rotated": False,
+                "minifix_holes": [
+                    {
+                        "type": "CAM",
+                        "face": "5",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "1",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "5",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "1",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "3",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "1",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "4",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "1",
+                    },
+                    {
+                        "type": "DOWEL",
+                        "face": "2",
+                        "local_position2_d": {"x": 10, "y": 20},
+                        "drill_type": "1",
+                    },
+                ],
+                "grooves": [],
+            }
+        ]
+        with patch("svgwrite.Drawing.save"):
+            service.generate_svg(items, "out.py")
