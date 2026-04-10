@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { SidebarContainer } from '../panelDesign/components/Sidebars';
 import styles from '../panelDesign/panelDesign.module.css';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { SyncManager } from '../sceneCreator/syncState';
-import { updateObject } from '../store/dataSlice';
 import { TwoDSidebarProps } from './interface';
 import { useWallAdjustment } from './walls/useWallAdjustment';
 
 export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({ object, pos, onDragStart }) => {
-  const dispatch = useDispatch();
   const { adjustWallLength } = useWallAdjustment();
 
   // Wall-specific state (Feet)
@@ -44,7 +41,6 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({ object, pos, onDragSta
     if (!isNaN(newVal) && newVal > 0) {
       const newDimensions = { ...object.dimensions, [dim]: newVal };
       const updateData = { id: object.id, dimensions: newDimensions };
-      dispatch(updateObject(updateData));
 
       // Perform 3D sync
       const syncManager = new SyncManager({ ...object, ...updateData } as MeshObjectData);
