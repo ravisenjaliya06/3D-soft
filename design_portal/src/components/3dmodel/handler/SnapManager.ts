@@ -132,6 +132,33 @@ export class SnapManager {
     }
   }
 
+  /**
+   * Raycasts on thin walls often hit front vs back face on alternating frames; face normals flip 180°.
+   * Pick the normal that points from the wall center toward the object so position/rotation stay stable.
+   */
+  private getStableWallOutwardNormal(
+    wall: THREE.Mesh,
+    hit: THREE.Intersection,
+    objectWorldPos: THREE.Vector3
+  ): THREE.Vector3 {
+    const n = hit.face
+      ? hit.face.normal.clone().transformDirection(wall.matrixWorld).normalize()
+      : new THREE.Vector3(0, 0, 1);
+    const wallCenter = new THREE.Vector3();
+    wall.getWorldPosition(wallCenter);
+    const towardObject = objectWorldPos.clone().sub(wallCenter);
+    if (towardObject.lengthSq() > 1e-6 && n.dot(towardObject) < 0) {
+      n.negate();
+    }
+    return n;
+  }
+
+  private getWallWorldForward(wall: THREE.Mesh): THREE.Vector3 {
+    const q = new THREE.Quaternion();
+    wall.getWorldQuaternion(q);
+    return new THREE.Vector3(0, 0, 1).applyQuaternion(q).normalize();
+  }
+
   //object snapping to wall
   private applyWallSnapping(object: THREE.Mesh, raycaster: THREE.Raycaster) {
     if (!this.walls.length) return;
@@ -140,9 +167,9 @@ export class SnapManager {
     if (!hit) return;
 
     const wall = hit.object as THREE.Mesh;
-    const wallNormal =
-      hit.face?.normal.clone().transformDirection(wall.matrixWorld).normalize() ??
-      new THREE.Vector3(0, 0, 1);
+    const objectWorldPos = new THREE.Vector3();
+    object.getWorldPosition(objectWorldPos);
+    const wallNormal = this.getStableWallOutwardNormal(wall, hit, objectWorldPos);
 
     // PLATFORM
     if (object.userData.type === OBJECT_TYPES.PLATFORM) {
@@ -220,7 +247,7 @@ export class SnapManager {
     finalPos.y = PLATFORM_HEIGHT;
     object.position.copy(finalPos);
 
-    const wallForward = new THREE.Vector3(0, 0, 1).applyQuaternion(wall.quaternion);
+    const wallForward = this.getWallWorldForward(wall);
     if (wallNormal.dot(wallForward) < 0) object.rotation.y += Math.PI;
   }
 
@@ -249,6 +276,10 @@ export class SnapManager {
     }
 
     object.rotation.y = wall.rotation.y;
+    const wallForward = this.getWallWorldForward(wall);
+    if (wallNormal.dot(wallForward) < 0) {
+      object.rotation.y += Math.PI;
+    }
   }
 
   private snapCupboardToWallEdges(object: THREE.Mesh, wall: THREE.Mesh, size: THREE.Vector3) {
