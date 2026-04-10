@@ -1,5 +1,6 @@
 # Python imports
 from typing import Dict, Optional
+import os
 
 # Django imports
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -500,18 +501,19 @@ class FinishesLibrarySerializer(serializers.ModelSerializer):
     def validate_image(
         self: "FinishesLibrarySerializer", value: Optional["InMemoryUploadedFile"]
     ) -> "InMemoryUploadedFile":
-        if value:
-            valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
-            # Python imports
-            import os
+        if not value:
+            return value
 
-            ext = os.path.splitext(value.name)[1]
-            if ext.lower() not in valid_extensions:
-                raise serializers.ValidationError(
-                    "Unsupported file extension. Supported: "
-                    + ", ".join(valid_extensions)
-                )
-        return value
+        valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext not in valid_extensions:
+            raise serializers.ValidationError(
+                "Unsupported file extension. Supported: "
+                + ", ".join(valid_extensions)
+            )
+
+        return value    
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
