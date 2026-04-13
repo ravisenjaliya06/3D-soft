@@ -14,12 +14,15 @@ type StatusStylesType = {
 };
 
 const Designs = () => {
+  const DESIGNS_BATCH_SIZE = 6;
+  const SCROLL_THRESHOLD_PX = 120;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState('list');
-  const [visibleDesigns, setVisibleDesigns] = useState(6);
+  const [visibleDesigns, setVisibleDesigns] = useState(DESIGNS_BATCH_SIZE);
+  const [isAppendingDesigns, setIsAppendingDesigns] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
@@ -33,6 +36,7 @@ const Designs = () => {
   const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const designsScrollRef = useRef<HTMLDivElement | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
   const actionDropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
@@ -106,7 +110,7 @@ const Designs = () => {
       const value = e.target.value;
       setter(value);
       if (fieldId === 'customer_email') {
-        if (isEmailValid(value)) {
+        if (!value.trim() || isEmailValid(value)) {
           clearFieldError(fieldId);
         } else {
           setFieldError(fieldId, 'Please enter a valid email address.');
@@ -114,7 +118,7 @@ const Designs = () => {
         return;
       }
       if (fieldId === 'customer_contact') {
-        if (isContactCharsAllowed(value) && isContactValid(value)) {
+        if (!value.trim() || (isContactCharsAllowed(value) && isContactValid(value))) {
           clearFieldError(fieldId);
         } else {
           setFieldError(
@@ -124,10 +128,14 @@ const Designs = () => {
         }
         return;
       }
-      if (value.trim()) {
-        clearFieldError(fieldId);
+      if (fieldId === 'order_number' || fieldId === 'customer_company') {
+        if (value.trim()) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'This field is required.');
+        }
       } else {
-        setFieldError(fieldId, 'This field is required.');
+        clearFieldError(fieldId);
       }
     };
 
@@ -175,7 +183,7 @@ const Designs = () => {
       value: orderNumber,
     },
     {
-      label: 'Customer Name*',
+      label: 'Customer Name',
       id: 'customer',
       type: 'text',
       placeholder: 'Enter customer name...',
@@ -193,7 +201,7 @@ const Designs = () => {
       value: customerCompany,
     },
     {
-      label: 'Customer Address*',
+      label: 'Customer Address',
       id: 'customer_address',
       type: 'text',
       placeholder: 'Enter customer address...',
@@ -202,7 +210,7 @@ const Designs = () => {
       value: customerAddress,
     },
     {
-      label: 'Customer GSTIN*',
+      label: 'Customer GSTIN',
       id: 'customer_gstin',
       type: 'text',
       placeholder: 'Enter customer GSTIN...',
@@ -211,7 +219,7 @@ const Designs = () => {
       value: customerGstin,
     },
     {
-      label: 'Customer Contact*',
+      label: 'Customer Contact',
       id: 'customer_contact',
       type: 'text',
       placeholder: 'Enter customer contact...',
@@ -220,7 +228,7 @@ const Designs = () => {
       value: customerContact,
     },
     {
-      label: 'Customer Email*',
+      label: 'Customer Email',
       id: 'customer_email',
       type: 'email',
       placeholder: 'Enter customer email...',
@@ -300,6 +308,28 @@ const Designs = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const hasMoreDesigns = visibleDesigns < filteredDesigns.length;
+
+  const loadMoreDesigns = () => {
+    if (!hasMoreDesigns || isAppendingDesigns || loading) return;
+    setIsAppendingDesigns(true);
+
+    window.setTimeout(() => {
+      setVisibleDesigns((prev) => Math.min(prev + DESIGNS_BATCH_SIZE, filteredDesigns.length));
+      setIsAppendingDesigns(false);
+    }, 250);
+  };
+
+  const handleDesignsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const reachedBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + SCROLL_THRESHOLD_PX;
+
+    if (reachedBottom) {
+      loadMoreDesigns();
+    }
+  };
+
   const buildDesignFormData = (includeStatus = false) => {
     const formData = new FormData();
 
@@ -336,12 +366,7 @@ const Designs = () => {
     const validationErrors: Record<string, string> = {};
     const requiredCustomer: Array<[string, string]> = [
       ['order_number', orderNumber],
-      ['customer', customerName],
       ['customer_company', customerCompany],
-      ['customer_address', customerAddress],
-      ['customer_gstin', customerGstin],
-      ['customer_contact', customerContact],
-      ['customer_email', customerEmail],
     ];
     requiredCustomer.forEach(([key, val]) => {
       if (!val || !val.trim()) {
@@ -351,16 +376,10 @@ const Designs = () => {
     if (customerEmail && !isEmailValid(customerEmail)) {
       validationErrors['customer_email'] = 'Please enter a valid email address.';
     }
-    if (!isContactValid(customerContact)) {
-      validationErrors['customer_contact'] =
-        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
-    }
-    if (!isContactCharsAllowed(customerContact)) {
-      validationErrors['customer_contact'] =
-        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
-      ('Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.');
-    }
-    if (!isContactCharsAllowed(customerContact)) {
+    if (
+      customerContact &&
+      (!isContactValid(customerContact) || !isContactCharsAllowed(customerContact))
+    ) {
       validationErrors['customer_contact'] =
         'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
     }
@@ -392,12 +411,7 @@ const Designs = () => {
     const validationErrors: Record<string, string> = {};
     const requiredCustomer: Array<[string, string]> = [
       ['order_number', orderNumber],
-      ['customer', customerName],
       ['customer_company', customerCompany],
-      ['customer_address', customerAddress],
-      ['customer_gstin', customerGstin],
-      ['customer_contact', customerContact],
-      ['customer_email', customerEmail],
     ];
     requiredCustomer.forEach(([key, val]) => {
       if (!val || !val.trim()) {
@@ -407,7 +421,7 @@ const Designs = () => {
     if (customerEmail && !isEmailValid(customerEmail)) {
       validationErrors['customer_email'] = 'Please enter a valid email address.';
     }
-    if (!isContactValid(customerContact)) {
+    if (customerContact && !isContactValid(customerContact)) {
       validationErrors['customer_contact'] =
         'Contact must contain 10–15 digits (spaces/dashes allowed).';
     }
@@ -528,6 +542,15 @@ const Designs = () => {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isDropdownOpen, activeDropdownId]);
+
+  useEffect(() => {
+    setVisibleDesigns(DESIGNS_BATCH_SIZE);
+    setIsAppendingDesigns(false);
+
+    if (designsScrollRef.current) {
+      designsScrollRef.current.scrollTop = 0;
+    }
+  }, [searchQuery, activeFilter, activeView]);
 
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -713,7 +736,11 @@ const Designs = () => {
               </div>
             </div>
 
-            <div className={styles.designviewpart}>
+            <div
+              className={styles.designviewpart}
+              ref={designsScrollRef}
+              onScroll={handleDesignsScroll}
+            >
               {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
               {!loading && filteredDesigns.length === 0 && (
                 <div className="rounded-3xl bg-white p-12 text-center font-medium text-slate-400">
@@ -841,15 +868,10 @@ const Designs = () => {
               )}
             </div>
 
-            {visibleDesigns < filteredDesigns.length && (
-              <div className={styles.designsLoadMore}>
-                <div
-                  className={styles.loadmore}
-                  onClick={() => setVisibleDesigns((prev) => prev + 6)}
-                >
-                  <p>View More Designs</p>
-                  <img src={assets.progress_upload} alt="" className={styles.process_upload} />
-                </div>
+            {isAppendingDesigns && (
+              <div className={styles.scrollLoaderRow}>
+                <div className={styles.scrollLoaderSpinner} />
+                <p>Loading more designs...</p>
               </div>
             )}
           </div>
