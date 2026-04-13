@@ -103,6 +103,7 @@ const AddMaterialPopup: React.FC<Props> = ({
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [isLoadingTextures, setIsLoadingTextures] = useState<boolean>(false);
   const [hoveredTextureId, setHoveredTextureId] = useState<string | null>(null);
+  const [isTextureDropdownOpen, setIsTextureDropdownOpen] = useState<boolean>(false);
 
   const fetchTextures = async (url?: string) => {
     if (isLoadingTextures) return;
@@ -2958,64 +2959,91 @@ const AddMaterialPopup: React.FC<Props> = ({
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
 
     switch (field.type) {
-      case 'texture-grid':
+      case 'texture-grid': {
+        const selectedTexture = (Array.isArray(texturesList) ? texturesList : []).find(
+          (texture) => texture.id === value
+        );
+
         return (
           <div className="flex w-full flex-col gap-4">
-            <span className="text-sm font-semibold text-slate-700">{field.label}</span>
-            <div
-              className={styles.textureGrid}
-              onScroll={(e: React.UIEvent<HTMLDivElement>) => {
-                const target = e.currentTarget;
-                if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
-                  if (Array.isArray(texturesList) && visibleTextureCount < texturesList.length) {
-                    setVisibleTextureCount((prev) => prev + 40);
-                  } else if (nextPageUrl && !isLoadingTextures) {
-                    fetchTextures(nextPageUrl);
-                  }
-                }
+            <button
+              type="button"
+              className={styles.textureDropdownTrigger}
+              onClick={() => {
+                setIsTextureDropdownOpen((prev) => !prev);
+                if (onActivate) onActivate();
               }}
             >
-              {(Array.isArray(texturesList) ? texturesList : [])
-                .slice(0, visibleTextureCount)
-                .map((texture) => {
-                  const isSelected = value === texture.id;
-                  const imageUrl = texture.image_thumbnail
-                    ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image_thumbnail.startsWith('/') ? '' : '/'}${texture.image_thumbnail}`
-                    : null;
+              <span>{selectedTexture?.name || field.label}</span>
+              <span
+                className={`${styles.textureDropdownArrow} ${isTextureDropdownOpen ? styles.open : ''}`}
+              >
+                ▾
+              </span>
+            </button>
+            {isTextureDropdownOpen && (
+              <div className={styles.textureDropdownPanel}>
+                <div
+                  className={styles.textureGridDropdown}
+                  onScroll={(e: React.UIEvent<HTMLDivElement>) => {
+                    const target = e.currentTarget;
+                    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+                      if (
+                        Array.isArray(texturesList) &&
+                        visibleTextureCount < texturesList.length
+                      ) {
+                        setVisibleTextureCount((prev) => prev + 40);
+                      } else if (nextPageUrl && !isLoadingTextures) {
+                        fetchTextures(nextPageUrl);
+                      }
+                    }
+                  }}
+                >
+                  {(Array.isArray(texturesList) ? texturesList : [])
+                    .slice(0, visibleTextureCount)
+                    .map((texture) => {
+                      const isSelected = value === texture.id;
+                      const imageUrl = texture.image_thumbnail
+                        ? `${process.env.NEXT_PUBLIC_PUBLIC_API}${texture.image_thumbnail.startsWith('/') ? '' : '/'}${texture.image_thumbnail}`
+                        : null;
 
-                  return (
-                    <div
-                      key={texture.id}
-                      className={`${styles.textureItem} ${isSelected ? styles.selected : ''}`}
-                      onClick={() => {
-                        handleInputChange(field.key, texture.id);
-                        if (onActivate) onActivate();
-                      }}
-                      onMouseEnter={() => setHoveredTextureId(texture.id)}
-                      onMouseLeave={() => setHoveredTextureId(null)}
-                    >
-                      <div className={styles.textureImageContainer}>
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={texture.name}
-                            className={styles.textureThumbnail}
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] text-slate-400">
-                            No Image
+                      return (
+                        <div
+                          key={texture.id}
+                          className={`${styles.textureItem} ${isSelected ? styles.selected : ''}`}
+                          onClick={() => {
+                            handleInputChange(field.key, texture.id);
+                            setIsTextureDropdownOpen(false);
+                            if (onActivate) onActivate();
+                          }}
+                          onMouseEnter={() => setHoveredTextureId(texture.id)}
+                          onMouseLeave={() => setHoveredTextureId(null)}
+                        >
+                          <div className={styles.textureImageContainer}>
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={texture.name}
+                                className={styles.textureThumbnail}
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] text-slate-400">
+                                No Image
+                              </div>
+                            )}
+                            <div className={styles.textureOverlay}>
+                              <span className={styles.textureOverlayLabel}>{texture.name}</span>
+                            </div>
                           </div>
-                        )}
-                        <div className={styles.textureOverlay}>
-                          <span className={styles.textureOverlayLabel}>{texture.name}</span>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </div>
         );
+      }
 
       case 'select':
         return (
@@ -3155,6 +3183,7 @@ const AddMaterialPopup: React.FC<Props> = ({
 
   useEffect(() => {
     setActiveFieldKey(null);
+    setIsTextureDropdownOpen(false);
   }, [currentStep]);
 
   return (

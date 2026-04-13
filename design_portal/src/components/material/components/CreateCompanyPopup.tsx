@@ -20,7 +20,7 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
 }) => {
   return (
     <div className={styles.createpopupOverlay}>
-      <div className={styles.createpopup}>
+      <div className={`${styles.createpopup} ${styles.createCompanyPopup}`}>
         <img
           src={assets.createicon || '/placeholder.svg'}
           className={styles.createicon}
@@ -44,8 +44,7 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
           >
             <div className={styles.createinputGroup}>
               <InputField
-                mediumField={true}
-                className={styles.inputField}
+                fullWidth={true}
                 borderColor="var(--primary-color-grey-2)"
                 value={companyName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -58,7 +57,7 @@ export const CreateCompanyPopup: React.FC<CreateCompanyPopupProps> = ({
             </div>
           </form>
         </div>
-        <div className={styles.createButtonGrop}>
+        <div className={`${styles.createButtonGrop} ${styles.createCompanyButtonGrop}`}>
           <button className={styles.cancelcreateButton} onClick={onClose}>
             Cancel
           </button>
