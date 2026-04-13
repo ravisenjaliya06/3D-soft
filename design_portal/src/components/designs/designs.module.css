@@ -255,6 +255,26 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.designviewpart::-webkit-scrollbar {
+  width: 6px;
+}
+
+.designviewpart::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.designviewpart::-webkit-scrollbar-thumb {
+  background: rgba(57, 37, 121, 0.25);
+  border-radius: 999px;
+}
+
+.designviewpart::-webkit-scrollbar-thumb:hover {
+  background: rgba(57, 37, 121, 0.4);
 }
 
 .designview {
@@ -858,6 +878,26 @@
   height: 1rem;
 }
 
+.scrollLoaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0 0.8rem;
+  color: #6f6c8f;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.scrollLoaderSpinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 2px solid rgba(57, 37, 121, 0.2);
+  border-top-color: #392579;
+  animation: spinLoader 0.8s linear infinite;
+}
+
 /* ─── Animations ─── */
 @keyframes fadeIn {
   from {
@@ -878,6 +918,12 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spinLoader {
+  to {
+    transform: rotate(360deg);
   }
 }
 

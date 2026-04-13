@@ -14,12 +14,15 @@ type StatusStylesType = {
 };
 
 const Designs = () => {
+  const DESIGNS_BATCH_SIZE = 6;
+  const SCROLL_THRESHOLD_PX = 120;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState('list');
-  const [visibleDesigns, setVisibleDesigns] = useState(6);
+  const [visibleDesigns, setVisibleDesigns] = useState(DESIGNS_BATCH_SIZE);
+  const [isAppendingDesigns, setIsAppendingDesigns] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
@@ -33,6 +36,7 @@ const Designs = () => {
   const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const designsScrollRef = useRef<HTMLDivElement | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
   const actionDropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
@@ -300,6 +304,28 @@ const Designs = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const hasMoreDesigns = visibleDesigns < filteredDesigns.length;
+
+  const loadMoreDesigns = () => {
+    if (!hasMoreDesigns || isAppendingDesigns || loading) return;
+    setIsAppendingDesigns(true);
+
+    window.setTimeout(() => {
+      setVisibleDesigns((prev) => Math.min(prev + DESIGNS_BATCH_SIZE, filteredDesigns.length));
+      setIsAppendingDesigns(false);
+    }, 250);
+  };
+
+  const handleDesignsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const reachedBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + SCROLL_THRESHOLD_PX;
+
+    if (reachedBottom) {
+      loadMoreDesigns();
+    }
+  };
+
   const buildDesignFormData = (includeStatus = false) => {
     const formData = new FormData();
 
@@ -529,6 +555,15 @@ const Designs = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isDropdownOpen, activeDropdownId]);
 
+  useEffect(() => {
+    setVisibleDesigns(DESIGNS_BATCH_SIZE);
+    setIsAppendingDesigns(false);
+
+    if (designsScrollRef.current) {
+      designsScrollRef.current.scrollTop = 0;
+    }
+  }, [searchQuery, activeFilter, activeView]);
+
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',
@@ -713,7 +748,11 @@ const Designs = () => {
               </div>
             </div>
 
-            <div className={styles.designviewpart}>
+            <div
+              className={styles.designviewpart}
+              ref={designsScrollRef}
+              onScroll={handleDesignsScroll}
+            >
               {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
               {!loading && filteredDesigns.length === 0 && (
                 <div className="rounded-3xl bg-white p-12 text-center font-medium text-slate-400">
@@ -841,15 +880,10 @@ const Designs = () => {
               )}
             </div>
 
-            {visibleDesigns < filteredDesigns.length && (
-              <div className={styles.designsLoadMore}>
-                <div
-                  className={styles.loadmore}
-                  onClick={() => setVisibleDesigns((prev) => prev + 6)}
-                >
-                  <p>View More Designs</p>
-                  <img src={assets.progress_upload} alt="" className={styles.process_upload} />
-                </div>
+            {isAppendingDesigns && (
+              <div className={styles.scrollLoaderRow}>
+                <div className={styles.scrollLoaderSpinner} />
+                <p>Loading more designs...</p>
               </div>
             )}
           </div>
