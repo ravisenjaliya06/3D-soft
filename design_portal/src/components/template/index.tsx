@@ -21,7 +21,7 @@ const Template = () => {
     {
       name: 'Blank Artist Canvas',
       description:
-        'A pure, infinite workspace for custom modeling. The ultimate starting point for original masterpieces.',
+        'A pure, infinite template for custom modeling. The ultimate starting point for original masterpieces.',
       icon: assets.blank,
       tag: 'Custom',
     },
@@ -68,7 +68,7 @@ const Template = () => {
           {/* Top Notch Header */}
           <div className={styles.createdesigns}>
             <div className={styles.createdesignscontent}>
-              <h2 className={styles.createdesignstext}>Select Your Workspace</h2>
+              <h2 className={styles.createdesignstext}>Select Your Template</h2>
               <p className={styles.createdesignssubtext}>
                 Begin with a pre-configured masterpiece or unleash your creativity with a blank
                 design environment.
